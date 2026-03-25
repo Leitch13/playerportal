@@ -339,7 +339,7 @@ export default function OnboardPage() {
               <div>
                 <label className="block text-sm font-medium text-primary mb-1">Logo URL</label>
                 <input
-                  type="url"
+                  type="text"
                   value={logoUrl}
                   onChange={(e) => setLogoUrl(e.target.value)}
                   placeholder="https://example.com/logo.png"
@@ -351,7 +351,7 @@ export default function OnboardPage() {
               <div>
                 <label className="block text-sm font-medium text-primary mb-1">Hero Image URL</label>
                 <input
-                  type="url"
+                  type="text"
                   value={heroImageUrl}
                   onChange={(e) => setHeroImageUrl(e.target.value)}
                   placeholder="https://example.com/hero.jpg"
