@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0a0a"/>
+  <circle cx="256" cy="210" r="90" fill="none" stroke="#4ecde6" stroke-width="8"/>
+  <path d="M256 120 L273 175 L330 175 L283 210 L300 265 L256 235 L212 265 L229 210 L182 175 L239 175 Z" fill="#4ecde6" opacity="0.3"/>
+  <text x="256" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="60" font-weight="700" fill="#4ecde6">PP</text>
+</svg>

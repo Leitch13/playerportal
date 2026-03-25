@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/payment-reminders",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/session-reminders",
+      "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/post-session",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/trial-followup",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/subscription-expiring",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/winback",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/progress-reports",
+      "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/cron/upsell-emails",
+      "schedule": "0 10 * * *"
+    }
+  ]
+}
