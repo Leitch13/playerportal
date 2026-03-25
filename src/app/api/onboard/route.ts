@@ -96,6 +96,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-create default subscription plans for the new academy
+    const defaultPlans = [
+      { name: '1 Session / Week', description: 'Perfect for getting started — one training session per week.', amount: 30, sessions_per_week: 1, sort_order: 1 },
+      { name: '2 Sessions / Week', description: 'Train twice a week for faster progress.', amount: 50, sessions_per_week: 2, sort_order: 2 },
+      { name: 'Unlimited', description: 'Unlimited sessions — train as much as you want.', amount: 70, sessions_per_week: 7, sort_order: 3 },
+    ]
+
+    await supabase.from('subscription_plans').insert(
+      defaultPlans.map(plan => ({
+        ...plan,
+        organisation_id: org.id,
+        active: true,
+      }))
+    )
+
     return NextResponse.json({ orgId: org.id })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
