@@ -278,7 +278,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
     const { data: availableGroups } = await supabase
       .from('training_groups')
       .select('id, name, max_capacity')
-      .eq('organisation_id', parentOrg)
+      .eq('organisation_id', parentProfile?.organisation_id ?? '')
       .order('name')
       .limit(5)
 
@@ -935,7 +935,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
         {/* ═══ BOOK SESSION CTA ═══ */}
         <div className="pt-4">
-          <Link href="/book" className="block w-full text-center py-3.5 bg-[#4ecde6] text-[#0a0a0a] rounded-2xl text-sm font-bold hover:bg-[#4ecde6]/90 transition-colors shadow-[0_0_20px_rgba(78,205,230,0.3)]">
+          <Link href={`/book/${orgSlug}`} className="block w-full text-center py-3.5 bg-[#4ecde6] text-[#0a0a0a] rounded-2xl text-sm font-bold hover:bg-[#4ecde6]/90 transition-colors shadow-[0_0_20px_rgba(78,205,230,0.3)]">
             Book Next Session
           </Link>
         </div>

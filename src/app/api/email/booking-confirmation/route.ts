@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Data not found' }, { status: 404 })
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'
 
   const template = bookingConfirmationEmail({
     parentName: parent.full_name?.split(' ')[0] || 'there',

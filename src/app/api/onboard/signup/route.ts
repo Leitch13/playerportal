@@ -16,6 +16,17 @@ export async function POST(request: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // Validate that the orgSlug actually exists before creating an admin user
+    const { data: org } = await supabase
+      .from('organisations')
+      .select('id')
+      .eq('slug', orgSlug)
+      .single()
+
+    if (!org) {
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
+    }
+
     // Create the user via admin API
     const { data, error } = await supabase.auth.admin.createUser({
       email,

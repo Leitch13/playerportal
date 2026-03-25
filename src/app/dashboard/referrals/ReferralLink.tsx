@@ -23,6 +23,16 @@ export default function ReferralLink({
   const [rewardAmount, setRewardAmount] = useState('')
   const [showRewardInput, setShowRewardInput] = useState(false)
 
+  // Build the referral URL — use relative path for SSR, full URL after mount
+  const relativePath = `/auth/signup?org=${orgSlug}&ref=${referralCode}`
+  const [referralUrl, setReferralUrl] = useState(relativePath)
+
+  useEffect(() => {
+    if (referralCode) {
+      setReferralUrl(`${window.location.origin}${relativePath}`)
+    }
+  }, [relativePath, referralCode])
+
   // Admin approve reward button
   if (approveReferralId) {
     return (
@@ -86,14 +96,6 @@ export default function ReferralLink({
   if (!approveReferralId && !referralCode) {
     return null
   }
-
-  // Build the referral URL — use relative path for SSR, full URL after mount
-  const relativePath = `/auth/signup?org=${orgSlug}&ref=${referralCode}`
-  const [referralUrl, setReferralUrl] = useState(relativePath)
-
-  useEffect(() => {
-    setReferralUrl(`${window.location.origin}${relativePath}`)
-  }, [relativePath])
 
   function handleCopy() {
     navigator.clipboard.writeText(referralUrl)

@@ -4,12 +4,11 @@ import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting disabled during testing
-    // const ip = request.headers.get('x-forwarded-for') || 'unknown'
-    // const { success } = rateLimit(`onboard:${ip}`, 20, 3600000)
-    // if (!success) {
-    //   return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
-    // }
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    const { success } = rateLimit(`onboard:${ip}`, 20, 3600000)
+    if (!success) {
+      return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
+    }
 
     // Use service role client — no user auth during onboarding
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -34,10 +33,6 @@ export async function POST(request: NextRequest) {
       primaryColor,
       logoUrl,
       heroImageUrl,
-      className,
-      classDay,
-      classTime,
-      classCapacity,
       plans,
     } = await request.json()
 
@@ -85,24 +80,6 @@ export async function POST(request: NextRequest) {
         { error: orgError.message },
         { status: 500 }
       )
-    }
-
-    // If class details provided, create the first training group
-    if (className && classDay && classTime) {
-      const { error: groupError } = await supabase
-        .from('training_groups')
-        .insert({
-          organisation_id: org.id,
-          name: className,
-          day_of_week: classDay,
-          time_slot: classTime,
-          max_capacity: classCapacity ? parseInt(classCapacity, 10) : 20,
-        })
-
-      if (groupError) {
-        console.error('Training group creation error:', groupError)
-        // Non-fatal: org was created, class can be added later
-      }
     }
 
     // Create subscription plans — use custom plans if provided, otherwise defaults

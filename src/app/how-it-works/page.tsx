@@ -14,7 +14,7 @@ const journeySteps = [
     title: 'Sign Up',
     time: '2 minutes',
     items: [
-      'Go to playerportal.com/onboard',
+      'Go to playerportallive.vercel.app/onboard',
       'Enter academy name, contact details, and slug',
       'Choose your branding colours',
       'Create your admin account',
@@ -38,7 +38,7 @@ const journeySteps = [
     title: 'Invite Parents',
     time: '2 minutes',
     items: [
-      'Share your unique booking page: playerportal.com/book/your-academy',
+      'Share your unique booking page: playerportallive.vercel.app/book/your-academy',
       'Share individual class links on WhatsApp, Instagram, flyers',
       'Parents sign up, book classes, and pay \u2014 all automated',
       'Referral system kicks in \u2014 parents invite other parents',

@@ -65,7 +65,7 @@ export default async function ReferralsPage() {
           </Card>
           <Card>
             <p className="text-sm text-text-light">Rewards Earned</p>
-            <p className="text-2xl font-bold mt-1">${(totalRewards / 100).toFixed(2)}</p>
+            <p className="text-2xl font-bold mt-1">&pound;{(totalRewards / 100).toFixed(2)}</p>
           </Card>
         </div>
 
@@ -88,7 +88,7 @@ export default async function ReferralsPage() {
                   <div className="flex items-center gap-3">
                     {referral.reward_amount && referral.status === 'rewarded' && (
                       <span className="text-sm font-medium text-primary">
-                        +${(referral.reward_amount / 100).toFixed(2)}
+                        +&pound;{(referral.reward_amount / 100).toFixed(2)}
                       </span>
                     )}
                     <StatusBadge status={referral.status} />
@@ -134,7 +134,7 @@ export default async function ReferralsPage() {
         </Card>
         <Card>
           <p className="text-sm text-text-light">Total Paid Out</p>
-          <p className="text-2xl font-bold mt-1">${(totalPaidOut / 100).toFixed(2)}</p>
+          <p className="text-2xl font-bold mt-1">&pound;{(totalPaidOut / 100).toFixed(2)}</p>
         </Card>
       </div>
 
@@ -172,7 +172,7 @@ export default async function ReferralsPage() {
                     </td>
                     <td className="py-3 pr-4">
                       {referral.reward_amount
-                        ? `$${(referral.reward_amount / 100).toFixed(2)}`
+                        ? `\u00A3${(referral.reward_amount / 100).toFixed(2)}`
                         : '—'}
                     </td>
                     <td className="py-3 pr-4 text-text-light text-xs">

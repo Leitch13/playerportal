@@ -27,15 +27,14 @@ function SignInForm() {
 
     const supabase = createClient()
 
-    // Sign out any existing session first
-    await supabase.auth.signOut({ scope: 'global' })
-
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
+      // Sign out other sessions after successful auth, then reload
+      await supabase.auth.signOut({ scope: 'others' })
       // Full page reload to ensure server-side cookies are refreshed
       window.location.href = '/dashboard'
     }

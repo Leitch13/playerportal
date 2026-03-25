@@ -5,13 +5,13 @@ import CancelFlow from './CancelFlow'
 export default async function CancelPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  if (!user) redirect('/auth/signin')
 
   // Get active subscriptions
   const { data: subscriptions } = await supabase
     .from('subscriptions')
     .select('id, stripe_subscription_id, status, subscription_plans(name, amount)')
-    .eq('profile_id', user.id)
+    .eq('parent_id', user.id)
     .in('status', ['active', 'trialing'])
 
   if (!subscriptions || subscriptions.length === 0) {
