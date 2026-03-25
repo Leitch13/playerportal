@@ -184,12 +184,8 @@ export default function OnboardPage() {
         return
       }
 
-      // 3. Sign out current session and redirect to signin
-      const supabase = createClient()
-      await supabase.auth.signOut({ scope: 'global' })
-
-      // 4. Redirect to signin with the new email pre-filled
-      window.location.href = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
+      // 3. Redirect through server-side signout to clear all cookies, then to signin
+      window.location.href = `/auth/signout?redirect=${encodeURIComponent(`/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`)}`
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
       setError(message)
