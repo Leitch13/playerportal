@@ -468,7 +468,8 @@ export default function OnboardPage() {
               <div>
                 <label className="block text-sm font-medium text-primary mb-1">Start Time</label>
                 <input
-                  type="time"
+                  type="text"
+                  placeholder="e.g. 17:00 or 5pm"
                   value={classTime}
                   onChange={(e) => setClassTime(e.target.value)}
                   className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"

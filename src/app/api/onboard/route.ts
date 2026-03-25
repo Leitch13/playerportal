@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
@@ -10,7 +10,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
     }
 
-    const supabase = await createClient()
+    // Use service role client — no user auth during onboarding
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     const {
       name,
@@ -82,7 +86,7 @@ export async function POST(request: NextRequest) {
           organisation_id: org.id,
           name: className,
           day_of_week: classDay,
-          start_time: classTime,
+          time_slot: classTime,
           max_capacity: classCapacity ? parseInt(classCapacity, 10) : 20,
         })
 
