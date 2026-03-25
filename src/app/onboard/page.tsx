@@ -165,12 +165,15 @@ export default function OnboardPage() {
         return
       }
 
-      // 2. Sign out any existing session first
+      // 2. Sign out any existing session completely
       const supabase = createClient()
-      await supabase.auth.signOut()
+      await supabase.auth.signOut({ scope: 'global' })
+
+      // Small delay to ensure session is fully cleared
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       // 3. Sign up the admin user
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email: adminEmail,
         password,
         options: {
@@ -188,24 +191,20 @@ export default function OnboardPage() {
         return
       }
 
-      // If no session returned, try signing in directly
-      if (signUpData?.user && !signUpData?.session) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: adminEmail,
-          password,
-        })
+      // 4. Sign in as the new user
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password,
+      })
 
-        if (signInError) {
-          // Email confirmation is required — show message
-          setError('Account created! Check your email to confirm, then sign in at /auth/signin')
-          setLoading(false)
-          return
-        }
+      if (signInError) {
+        // Redirect to signin page with success message
+        router.push(`/auth/signin?message=Academy created! Sign in with ${adminEmail}`)
+        return
       }
 
-      // 4. Redirect to dashboard
-      router.push('/dashboard')
-      router.refresh() // Clear any cached session data
+      // 5. Force a full page reload to clear all cached data and redirect
+      window.location.href = '/dashboard'
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
       setError(message)
