@@ -113,8 +113,7 @@ export default function OnboardPage() {
     setStep((s) => Math.max(s - 1, 0))
   }
 
-  async function handleSubmit(skipClass = false) {
-    if (!skipClass && !validateStep()) return
+  async function handleSubmit() {
     setLoading(true)
     setError(null)
 
@@ -558,7 +557,7 @@ export default function OnboardPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => handleSubmit(true)}
+                  onClick={() => handleSubmit()}
                   disabled={loading}
                   className="px-6 py-2.5 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
