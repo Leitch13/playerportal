@@ -8,7 +8,8 @@ const STEPS = [
   { label: 'Academy Details', icon: '1' },
   { label: 'Branding', icon: '2' },
   { label: 'Your Account', icon: '3' },
-  { label: 'First Class', icon: '4' },
+  { label: 'Pricing', icon: '4' },
+  { label: 'First Class', icon: '5' },
 ]
 
 function slugify(text: string): string {
@@ -46,7 +47,30 @@ export default function OnboardPage() {
   const [adminEmail, setAdminEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  // Step 4: First Class
+  // Step 4: Pricing
+  const [plans, setPlans] = useState([
+    { name: '1 Session / Week', amount: '30', sessions: '1' },
+    { name: '2 Sessions / Week', amount: '50', sessions: '2' },
+    { name: 'Unlimited', amount: '70', sessions: '7' },
+  ])
+
+  function updatePlan(index: number, field: string, value: string) {
+    setPlans(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p))
+  }
+
+  function addPlan() {
+    if (plans.length < 5) {
+      setPlans(prev => [...prev, { name: '', amount: '', sessions: '1' }])
+    }
+  }
+
+  function removePlan(index: number) {
+    if (plans.length > 1) {
+      setPlans(prev => prev.filter((_, i) => i !== index))
+    }
+  }
+
+  // Step 5: First Class
   const [className, setClassName] = useState('')
   const [classDay, setClassDay] = useState('')
   const [classTime, setClassTime] = useState('')
@@ -123,7 +147,14 @@ export default function OnboardPage() {
       const res = await fetch('/api/onboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orgPayload),
+        body: JSON.stringify({
+          ...orgPayload,
+          plans: plans.filter(p => p.name && p.amount).map(p => ({
+            name: p.name,
+            amount: parseFloat(p.amount) || 0,
+            sessions_per_week: parseInt(p.sessions) || 1,
+          })),
+        }),
       })
 
       const data = await res.json()
@@ -428,8 +459,89 @@ export default function OnboardPage() {
             </div>
           )}
 
-          {/* Step 4: First Class */}
+          {/* Step 4: Pricing */}
           {step === 3 && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-xl font-bold text-primary mb-1">Set Your Pricing</h2>
+                <p className="text-sm text-text-light">Create subscription plans for parents. You can change these anytime.</p>
+              </div>
+
+              <div className="space-y-4">
+                {plans.map((plan, i) => (
+                  <div key={i} className="relative bg-surface rounded-xl p-4 border border-border">
+                    {plans.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePlan(i)}
+                        className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full text-text-light hover:text-red-500 hover:bg-red-50 transition-colors text-sm"
+                      >
+                        &times;
+                      </button>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-text-light mb-1">Plan Name</label>
+                        <input
+                          type="text"
+                          value={plan.name}
+                          onChange={(e) => updatePlan(i, 'name', e.target.value)}
+                          placeholder="e.g. 1 Session / Week"
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-light mb-1">Price (£/month)</label>
+                        <input
+                          type="number"
+                          value={plan.amount}
+                          onChange={(e) => updatePlan(i, 'amount', e.target.value)}
+                          placeholder="30"
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-text-light mb-1">Sessions / Week</label>
+                        <select
+                          value={plan.sessions}
+                          onChange={(e) => updatePlan(i, 'sessions', e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 bg-white"
+                        >
+                          <option value="1">1 session</option>
+                          <option value="2">2 sessions</option>
+                          <option value="3">3 sessions</option>
+                          <option value="4">4 sessions</option>
+                          <option value="5">5 sessions</option>
+                          <option value="7">Unlimited</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {plans.length < 5 && (
+                <button
+                  type="button"
+                  onClick={addPlan}
+                  className="w-full py-2.5 border-2 border-dashed border-border rounded-xl text-sm font-medium text-text-light hover:border-accent hover:text-accent transition-colors"
+                >
+                  + Add Another Plan
+                </button>
+              )}
+
+              <div className="bg-accent/5 border border-accent/20 rounded-xl p-4">
+                <p className="text-xs text-text-light">
+                  <strong className="text-text">Tip:</strong> Parents can also pay quarterly (3 months upfront) and get 10% off. This is handled automatically.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: First Class */}
+          {step === 4 && (
             <div className="space-y-5">
               <div>
                 <h2 className="text-xl font-bold text-primary mb-1">First Class</h2>
@@ -506,7 +618,7 @@ export default function OnboardPage() {
             )}
 
             <div className="flex items-center gap-3">
-              {step === 3 && (
+              {step === 4 && (
                 <button
                   type="button"
                   onClick={() => handleSubmit(true)}
