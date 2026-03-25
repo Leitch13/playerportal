@@ -69,11 +69,7 @@ export default function OnboardPage() {
     }
   }
 
-  // Step 5: First Class
-  const [className, setClassName] = useState('')
-  const [classDay, setClassDay] = useState('')
-  const [classTime, setClassTime] = useState('')
-  const [classCapacity, setClassCapacity] = useState('20')
+  // Class setup removed — done from dashboard
 
   function handleNameChange(value: string) {
     setAcademyName(value)
@@ -136,12 +132,7 @@ export default function OnboardPage() {
         heroImageUrl,
       }
 
-      if (!skipClass && className && classDay && classTime) {
-        orgPayload.className = className
-        orgPayload.classDay = classDay
-        orgPayload.classTime = classTime
-        orgPayload.classCapacity = classCapacity
-      }
+      // Classes can be added from the dashboard after setup
 
       const res = await fetch('/api/onboard', {
         method: 'POST',
