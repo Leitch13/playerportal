@@ -49,7 +49,11 @@ export async function updateSession(request: NextRequest) {
     }
 
     // If signed in and on auth routes, redirect to dashboard
-    if (user && isAuthRoute) {
+    // BUT allow signout route and signin with query params (switching accounts)
+    const isSignout = request.nextUrl.pathname === '/auth/signout'
+    const isSigninWithParams = request.nextUrl.pathname === '/auth/signin' && request.nextUrl.searchParams.has('email')
+
+    if (user && isAuthRoute && !isSignout && !isSigninWithParams) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
