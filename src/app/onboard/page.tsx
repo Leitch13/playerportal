@@ -9,7 +9,6 @@ const STEPS = [
   { label: 'Branding', icon: '2' },
   { label: 'Your Account', icon: '3' },
   { label: 'Pricing', icon: '4' },
-  { label: 'First Class', icon: '5' },
 ]
 
 function slugify(text: string): string {
@@ -539,67 +538,6 @@ export default function OnboardPage() {
             </div>
           )}
 
-          {/* Step 5: First Class */}
-          {step === 4 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-xl font-bold text-primary mb-1">First Class</h2>
-                <p className="text-text-light text-sm">Optionally set up your first training group</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-primary mb-1">Class Name</label>
-                <input
-                  type="text"
-                  value={className}
-                  onChange={(e) => setClassName(e.target.value)}
-                  placeholder="e.g. Under 10s Training"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-primary mb-1">Day of Week</label>
-                <select
-                  value={classDay}
-                  onChange={(e) => setClassDay(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
-                >
-                  <option value="">Select a day</option>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                  <option value="Sunday">Sunday</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-primary mb-1">Start Time</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 17:00 or 5pm"
-                  value={classTime}
-                  onChange={(e) => setClassTime(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-primary mb-1">Max Capacity</label>
-                <input
-                  type="number"
-                  value={classCapacity}
-                  onChange={(e) => setClassCapacity(e.target.value)}
-                  min="1"
-                  max="100"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Navigation */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
@@ -617,16 +555,6 @@ export default function OnboardPage() {
             )}
 
             <div className="flex items-center gap-3">
-              {step === 4 && (
-                <button
-                  type="button"
-                  onClick={() => handleSubmit(true)}
-                  disabled={loading}
-                  className="px-5 py-2.5 text-sm font-medium text-text-light hover:text-primary transition-colors disabled:opacity-50"
-                >
-                  Skip &mdash; I&apos;ll set this up later
-                </button>
-              )}
 
               {step < STEPS.length - 1 ? (
                 <button
@@ -639,7 +567,7 @@ export default function OnboardPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => handleSubmit(false)}
+                  onClick={() => handleSubmit(true)}
                   disabled={loading}
                   className="px-6 py-2.5 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
