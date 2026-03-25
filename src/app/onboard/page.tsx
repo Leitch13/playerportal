@@ -167,7 +167,7 @@ export default function OnboardPage() {
 
       // 2. Sign up the admin user
       const supabase = createClient()
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: adminEmail,
         password,
         options: {
@@ -183,6 +183,23 @@ export default function OnboardPage() {
         setError(signUpError.message)
         setLoading(false)
         return
+      }
+
+      // If email confirmation is required, Supabase returns a user but no session
+      // In that case, redirect to a confirmation page
+      if (signUpData?.user && !signUpData?.session) {
+        // Try to sign in directly (works if email confirmation is disabled)
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: adminEmail,
+          password,
+        })
+
+        if (signInError) {
+          // Email confirmation is required — show message
+          setError('Account created! Check your email to confirm, then sign in at /auth/signin')
+          setLoading(false)
+          return
+        }
       }
 
       // 3. Redirect to dashboard
