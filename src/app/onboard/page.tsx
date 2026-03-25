@@ -92,8 +92,15 @@ export default function OnboardPage() {
   }
 
   async function handleSubmit() {
-    setLoading(true)
     setError(null)
+
+    // Validate account fields
+    if (!fullName.trim()) { setError('Your full name is required'); return }
+    if (!adminEmail.trim()) { setError('Email is required'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) { setError('Please enter a valid email'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
+
+    setLoading(true)
 
     try {
       // 1. Create organisation via API
@@ -264,7 +271,7 @@ export default function OnboardPage() {
                   Contact Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   placeholder="info@youracademy.com"
@@ -275,7 +282,7 @@ export default function OnboardPage() {
               <div>
                 <label className="block text-sm font-medium text-primary mb-1">Contact Phone</label>
                 <input
-                  type="tel"
+                  type="text"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                   placeholder="+44 7700 900000"
@@ -388,7 +395,7 @@ export default function OnboardPage() {
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="you@youracademy.com"
