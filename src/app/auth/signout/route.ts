@@ -6,9 +6,13 @@ export async function GET(request: NextRequest) {
   await supabase.auth.signOut()
 
   const redirectTo = request.nextUrl.searchParams.get('redirect') || '/auth/signin'
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'
 
-  const response = NextResponse.redirect(new URL(redirectTo, baseUrl))
+  // Use the request's own origin to build the redirect URL
+  const url = request.nextUrl.clone()
+  url.pathname = redirectTo.split('?')[0]
+  url.search = redirectTo.includes('?') ? '?' + redirectTo.split('?')[1] : ''
+
+  const response = NextResponse.redirect(url)
 
   // Get the Supabase project ref for cookie names
   const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] || ''
@@ -18,16 +22,11 @@ export async function GET(request: NextRequest) {
     `sb-${projectRef}-auth-token`,
     `sb-${projectRef}-auth-token.0`,
     `sb-${projectRef}-auth-token.1`,
-    'sb-access-token',
-    'sb-refresh-token',
   ]
 
   for (const name of cookiePrefixes) {
     response.cookies.set(name, '', { maxAge: 0, path: '/' })
   }
-
-  // Nuclear option: tell browser to clear all cookies for this site
-  response.headers.set('Clear-Site-Data', '"cookies", "storage"')
 
   return response
 }
