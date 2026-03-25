@@ -165,46 +165,31 @@ export default function OnboardPage() {
         return
       }
 
-      // 2. Sign out any existing session completely
-      const supabase = createClient()
-      await supabase.auth.signOut({ scope: 'global' })
-
-      // Small delay to ensure session is fully cleared
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      // 3. Sign up the admin user
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: adminEmail,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            org_slug: slug,
-            role: 'admin',
-          },
-        },
+      // 2. Create the admin user account via the API (server-side, no client session issues)
+      const signupRes = await fetch('/api/onboard/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: adminEmail,
+          password,
+          fullName,
+          orgSlug: slug,
+        }),
       })
 
-      if (signUpError) {
-        setError(signUpError.message)
+      const signupData = await signupRes.json()
+      if (!signupRes.ok) {
+        setError(signupData.error || 'Failed to create account')
         setLoading(false)
         return
       }
 
-      // 4. Sign in as the new user
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: adminEmail,
-        password,
-      })
+      // 3. Sign out current session and redirect to signin
+      const supabase = createClient()
+      await supabase.auth.signOut({ scope: 'global' })
 
-      if (signInError) {
-        // Redirect to signin page with success message
-        router.push(`/auth/signin?message=Academy created! Sign in with ${adminEmail}`)
-        return
-      }
-
-      // 5. Force a full page reload to clear all cached data and redirect
-      window.location.href = '/dashboard'
+      // 4. Redirect to signin with the new email pre-filled
+      window.location.href = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
       setError(message)
