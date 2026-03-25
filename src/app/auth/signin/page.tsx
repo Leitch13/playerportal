@@ -1,13 +1,22 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SignIn() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    const emailParam = searchParams.get('email')
+    const msgParam = searchParams.get('message')
+    if (emailParam) setEmail(emailParam)
+    if (msgParam) setMessage(msgParam)
+  }, [searchParams])
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,14 +27,18 @@ export default function SignIn() {
     setError('')
 
     const supabase = createClient()
+
+    // Sign out any existing session first
+    await supabase.auth.signOut({ scope: 'global' })
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      // Full page reload to ensure server-side cookies are refreshed
+      window.location.href = '/dashboard'
     }
   }
 
@@ -34,6 +47,11 @@ export default function SignIn() {
       <div className="bg-white rounded-xl border border-border p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold text-accent mb-1">Player Portal</h1>
         <p className="text-text-light text-sm mb-6">Sign in to your account</p>
+        {message && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+            ✅ {message}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-text mb-1">
