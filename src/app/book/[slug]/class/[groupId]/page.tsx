@@ -12,7 +12,7 @@ const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color
   academy: { label: 'Academy Programme', gradient: 'from-indigo-600/30 via-indigo-900/20 to-transparent', color: '#6366f1' },
   accelerator: { label: 'Accelerator Programme', gradient: 'from-rose-600/30 via-rose-900/20 to-transparent', color: '#f43f5e' },
   elite: { label: 'Elite Development', gradient: 'from-violet-600/30 via-violet-900/20 to-transparent', color: '#8b5cf6' },
-  camp: { label: 'Holiday Camp', gradient: 'from-green-600/30 via-green-900/20 to-transparent', color: '#22c55e' },
+  camp: { label: 'Football Camp', gradient: 'from-green-600/30 via-green-900/20 to-transparent', color: '#22c55e' },
   trial: { label: 'Trial Session', gradient: 'from-cyan-600/30 via-cyan-900/20 to-transparent', color: '#06b6d4' },
   girls: { label: 'Girls Only', gradient: 'from-fuchsia-600/30 via-fuchsia-900/20 to-transparent', color: '#d946ef' },
   adults: { label: 'Adult Session', gradient: 'from-slate-600/30 via-slate-900/20 to-transparent', color: '#64748b' },

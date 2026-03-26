@@ -16,7 +16,7 @@ const CLASS_TYPE_BADGES: Record<string, { label: string; bg: string; text: strin
   academy: { label: 'Academy', bg: 'bg-indigo-100', text: 'text-indigo-700' },
   accelerator: { label: 'Accelerator', bg: 'bg-rose-100', text: 'text-rose-700' },
   elite: { label: 'Elite', bg: 'bg-violet-100', text: 'text-violet-700' },
-  camp: { label: 'Camp', bg: 'bg-green-100', text: 'text-green-700' },
+  camp: { label: 'Football Camp', bg: 'bg-green-100', text: 'text-green-700' },
   trial: { label: 'Trial', bg: 'bg-cyan-100', text: 'text-cyan-700' },
   girls: { label: 'Girls Only', bg: 'bg-fuchsia-100', text: 'text-fuchsia-700' },
   adults: { label: 'Adults', bg: 'bg-slate-100', text: 'text-slate-700' },

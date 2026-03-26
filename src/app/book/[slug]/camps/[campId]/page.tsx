@@ -1,0 +1,245 @@
+import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import ShareButton from './ShareButton'
+
+type ScheduleDay = {
+  day: string
+  date: string
+  activities: string[]
+}
+
+type Camp = {
+  id: string
+  organisation_id: string
+  name: string
+  description: string | null
+  start_date: string
+  end_date: string
+  daily_start_time: string | null
+  daily_end_time: string | null
+  location: string | null
+  age_group: string | null
+  price: number | null
+  max_capacity: number | null
+  image_url: string | null
+  what_to_bring: string | null
+  schedule: ScheduleDay[]
+  is_published: boolean
+}
+
+function formatDateRange(start: string, end: string): string {
+  const s = new Date(start + 'T00:00:00')
+  const e = new Date(end + 'T00:00:00')
+  const sDay = s.getDate()
+  const eDay = e.getDate()
+  const month = s.toLocaleDateString('en-GB', { month: 'long' })
+  const year = s.getFullYear()
+  if (s.getMonth() === e.getMonth()) {
+    return `${sDay}-${eDay} ${month} ${year}`
+  }
+  const eMonth = e.toLocaleDateString('en-GB', { month: 'long' })
+  return `${sDay} ${month} - ${eDay} ${eMonth} ${year}`
+}
+
+function formatDayHeader(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
+function getDurationDays(start: string, end: string): number {
+  const s = new Date(start + 'T00:00:00')
+  const e = new Date(end + 'T00:00:00')
+  return Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1
+}
+
+const dayColors = [
+  'bg-emerald-500/10 border-emerald-500/20',
+  'bg-cyan-500/10 border-cyan-500/20',
+  'bg-blue-500/10 border-blue-500/20',
+  'bg-purple-500/10 border-purple-500/20',
+  'bg-amber-500/10 border-amber-500/20',
+  'bg-rose-500/10 border-rose-500/20',
+  'bg-teal-500/10 border-teal-500/20',
+]
+
+const dotColors = [
+  'bg-emerald-400',
+  'bg-cyan-400',
+  'bg-blue-400',
+  'bg-purple-400',
+  'bg-amber-400',
+  'bg-rose-400',
+  'bg-teal-400',
+]
+
+export default async function CampDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string; campId: string }>
+}) {
+  const { slug, campId } = await params
+  const supabase = await createClient()
+
+  const { data: org } = await supabase
+    .from('organisations')
+    .select('*')
+    .ilike('slug', slug)
+    .single()
+
+  if (!org) notFound()
+
+  const { data: camp } = await supabase
+    .from('camps')
+    .select('*')
+    .eq('id', campId)
+    .eq('is_published', true)
+    .single()
+
+  if (!camp) notFound()
+
+  const c = camp as Camp
+  const primaryColor = org.primary_color || '#4ecde6'
+  const days = getDurationDays(c.start_date, c.end_date)
+  const schedule: ScheduleDay[] = Array.isArray(c.schedule) ? c.schedule : []
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Hero */}
+      <div
+        className="relative py-20 px-6 text-white"
+        style={
+          c.image_url
+            ? { backgroundImage: `url(${c.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+            : { background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }
+        }
+      >
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <Link
+            href={`/book/${slug}/camps`}
+            className="inline-block mb-6 text-sm text-white/60 hover:text-white transition-colors"
+          >
+            &larr; All Camps
+          </Link>
+          <h1 className="text-4xl md:text-5xl font-bold mb-3">{c.name}</h1>
+          <div className="flex flex-wrap gap-4 text-white/80">
+            <span>{formatDateRange(c.start_date, c.end_date)}</span>
+            <span>{days} day{days !== 1 ? 's' : ''}</span>
+            {c.age_group && <span>{c.age_group}</span>}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-12 space-y-12">
+        {/* Key Details Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <DetailCard label="Dates" value={formatDateRange(c.start_date, c.end_date)} />
+          <DetailCard
+            label="Times"
+            value={`${c.daily_start_time || '09:00'} - ${c.daily_end_time || '15:00'}`}
+          />
+          {c.location && <DetailCard label="Location" value={c.location} />}
+          {c.age_group && <DetailCard label="Age Group" value={c.age_group} />}
+          {c.price != null && (
+            <DetailCard label="Price" value={`\u00A3${Number(c.price).toFixed(0)}`} />
+          )}
+          {c.max_capacity && (
+            <DetailCard label="Capacity" value={`${c.max_capacity} places`} />
+          )}
+        </div>
+
+        {/* Description */}
+        {c.description && (
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4">About This Camp</h2>
+            <p className="text-white/70 leading-relaxed whitespace-pre-line">{c.description}</p>
+          </section>
+        )}
+
+        {/* Daily Schedule */}
+        {schedule.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold text-white mb-6">Daily Schedule</h2>
+            <div className="space-y-4">
+              {schedule.map((day, idx) => (
+                <div
+                  key={idx}
+                  className={`rounded-xl border p-5 ${dayColors[idx % dayColors.length]}`}
+                >
+                  <h3 className="font-semibold text-white mb-4">
+                    {day.date ? formatDayHeader(day.date) : day.day}
+                  </h3>
+                  <div className="space-y-3 ml-2">
+                    {day.activities.map((activity, aIdx) => {
+                      const dashIndex = activity.indexOf(' - ')
+                      const time = dashIndex > -1 ? activity.substring(0, dashIndex) : ''
+                      const desc = dashIndex > -1 ? activity.substring(dashIndex + 3) : activity
+                      return (
+                        <div key={aIdx} className="flex items-start gap-3">
+                          <div className="flex flex-col items-center mt-1">
+                            <div className={`w-2.5 h-2.5 rounded-full ${dotColors[idx % dotColors.length]}`} />
+                            {aIdx < day.activities.length - 1 && (
+                              <div className="w-px h-6 bg-white/10 mt-1" />
+                            )}
+                          </div>
+                          <div>
+                            {time && (
+                              <span className="text-xs font-mono text-white/40 block">{time}</span>
+                            )}
+                            <span className="text-sm text-white/80">{desc}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* What to Bring */}
+        {c.what_to_bring && (
+          <section>
+            <h2 className="text-xl font-bold text-white mb-4">What to Bring</h2>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <p className="text-white/70 leading-relaxed whitespace-pre-line">{c.what_to_bring}</p>
+            </div>
+          </section>
+        )}
+
+        {/* CTA */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+          <Link
+            href={`/auth/signup?org=${slug}`}
+            className="w-full sm:w-auto text-center px-10 py-4 rounded-full text-lg font-bold transition-transform hover:scale-105"
+            style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
+          >
+            Book Camp {c.price != null && <>&#8212; &pound;{Number(c.price).toFixed(0)}</>}
+          </Link>
+          <ShareButton />
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-white/10 py-6 text-center text-xs text-white/30">
+        Powered by Player Portal
+      </footer>
+    </div>
+  )
+}
+
+function DetailCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="text-xs text-white/40 uppercase tracking-wide mb-1">{label}</div>
+      <div className="text-white font-semibold text-sm">{value}</div>
+    </div>
+  )
+}
+

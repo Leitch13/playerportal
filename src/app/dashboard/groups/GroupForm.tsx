@@ -17,7 +17,7 @@ const CLASS_TYPES = [
   { value: 'academy', label: 'Academy Programme' },
   { value: 'accelerator', label: 'Accelerator Programme' },
   { value: 'elite', label: 'Elite Development' },
-  { value: 'camp', label: 'Holiday Camp' },
+  { value: 'camp', label: 'Football Camp' },
   { value: 'trial', label: 'Trial Session' },
   { value: 'girls', label: 'Girls Only' },
   { value: 'adults', label: 'Adult Session' },

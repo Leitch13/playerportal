@@ -58,8 +58,19 @@ export default async function PublicBookingPage({
     .eq('active', true)
     .order('sort_order')
 
-  // Get upcoming events
+  // Get published camps
   const today = new Date().toISOString().split('T')[0]
+  const { data: camps } = await supabase
+    .from('camps')
+    .select('id')
+    .eq('organisation_id', org.id)
+    .eq('is_published', true)
+    .gte('end_date', today)
+    .limit(1)
+
+  const hasCamps = (camps || []).length > 0
+
+  // Get upcoming events
   const { data: events } = await supabase
     .from('events')
     .select('*')
@@ -225,6 +236,24 @@ export default async function PublicBookingPage({
                   </Link>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Football Camps */}
+        {hasCamps && (
+          <section className="relative overflow-hidden rounded-2xl p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }}>
+            <div className="relative z-10">
+              <span className="text-3xl block mb-2">&#127945;</span>
+              <h2 className="text-2xl font-bold mb-2">Football Camps</h2>
+              <p className="text-white/70 mb-5 max-w-md mx-auto">Holiday camps with full-day sessions, games, tournaments &amp; more.</p>
+              <Link
+                href={`/book/${slug}/camps`}
+                className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105"
+                style={{ backgroundColor: 'white', color: '#0a0a0a' }}
+              >
+                View Camps &rarr;
+              </Link>
             </div>
           </section>
         )}

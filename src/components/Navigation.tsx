@@ -230,6 +230,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     ]},
     { title: 'Academy', items: [
       { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
+      { href: '/dashboard/camps', label: 'Camps', icon: 'flag' },
       { href: '/dashboard/schedule', label: 'Calendar', icon: 'calendar' },
       { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
