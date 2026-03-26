@@ -73,13 +73,45 @@ export default async function ClassBookingPage({
     .eq('group_id', groupId)
     .eq('status', 'active')
 
-  // Get subscription plans for this org
-  const { data: plans } = await supabase
+  // Get plans specific to this class first, then fall back to class_type plans, then org-wide
+  const { data: classPlans } = await supabase
     .from('subscription_plans')
-    .select('id, name, amount, interval, sessions_per_week, is_active')
+    .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
     .eq('organisation_id', org.id)
     .eq('is_active', true)
+    .eq('training_group_id', groupId)
     .order('amount', { ascending: true })
+
+  let plans = classPlans && classPlans.length > 0 ? classPlans : null
+
+  // If no class-specific plans, try class_type plans
+  if (!plans || plans.length === 0) {
+    const classType = (group.class_type as string) || 'group'
+    const { data: typePlans } = await supabase
+      .from('subscription_plans')
+      .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
+      .eq('organisation_id', org.id)
+      .eq('is_active', true)
+      .eq('class_type', classType)
+      .is('training_group_id', null)
+      .order('amount', { ascending: true })
+
+    plans = typePlans && typePlans.length > 0 ? typePlans : null
+  }
+
+  // Fall back to org-wide plans (no group or type link)
+  if (!plans || plans.length === 0) {
+    const { data: orgPlans } = await supabase
+      .from('subscription_plans')
+      .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
+      .eq('organisation_id', org.id)
+      .eq('is_active', true)
+      .is('training_group_id', null)
+      .is('class_type', null)
+      .order('amount', { ascending: true })
+
+    plans = orgPlans
+  }
 
   const enrolled = count || 0
   const capacity = group.max_capacity || 20
