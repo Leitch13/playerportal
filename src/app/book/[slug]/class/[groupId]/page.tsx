@@ -73,6 +73,14 @@ export default async function ClassBookingPage({
     .eq('group_id', groupId)
     .eq('status', 'active')
 
+  // Get subscription plans for this org
+  const { data: plans } = await supabase
+    .from('subscription_plans')
+    .select('id, name, amount, interval, sessions_per_week, is_active')
+    .eq('organisation_id', org.id)
+    .eq('is_active', true)
+    .order('amount', { ascending: true })
+
   const enrolled = count || 0
   const capacity = group.max_capacity || 20
   const spotsLeft = capacity - enrolled
@@ -296,6 +304,64 @@ export default async function ClassBookingPage({
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
               <p className="text-white/70 leading-relaxed">{whatToBring}</p>
             </div>
+          </div>
+        )}
+
+        {/* Pricing Plans */}
+        {plans && plans.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Pricing Plans
+            </h2>
+            <div className="grid gap-3">
+              {plans.map((plan, i) => {
+                const amount = Number(plan.amount)
+                const quarterlyAmount = Math.round(amount * 3 * 0.9 * 100) / 100
+                const quarterlySaving = Math.round(amount * 3 * 0.1 * 100) / 100
+                const isPopular = i === Math.floor(plans.length / 2)
+                return (
+                  <div
+                    key={plan.id}
+                    className={`relative bg-white/[0.03] border rounded-2xl p-5 transition-all hover:bg-white/[0.05] ${
+                      isPopular ? 'border-[color:var(--accent)] ring-1 ring-[color:var(--accent)]/20' : 'border-white/[0.08]'
+                    }`}
+                    style={isPopular ? { borderColor: `${primaryColor}60`, ['--accent' as string]: primaryColor } : undefined}
+                  >
+                    {isPopular && (
+                      <span
+                        className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                        style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
+                      >
+                        Most Popular
+                      </span>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-base">{plan.name}</h3>
+                        {plan.sessions_per_week && (
+                          <p className="text-xs text-white/40 mt-0.5">
+                            {plan.sessions_per_week === 'unlimited' ? 'Unlimited sessions' : `${plan.sessions_per_week} session${plan.sessions_per_week === '1' ? '' : 's'} per week`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-extrabold" style={{ color: primaryColor }}>&pound;{amount.toFixed(0)}</span>
+                          <span className="text-xs text-white/40">/month</span>
+                        </div>
+                        <p className="text-[10px] text-green-400 mt-0.5">
+                          or &pound;{quarterlyAmount.toFixed(0)} quarterly (save &pound;{quarterlySaving.toFixed(0)})
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-center text-xs text-white/30 mt-3">
+              Pay monthly or save 10% with quarterly billing
+            </p>
           </div>
         )}
 
