@@ -7,6 +7,35 @@ import { createClient } from '@/lib/supabase/client'
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const AGE_GROUPS = ['U5', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U18', 'Adults', 'Mixed']
 
+const CLASS_TYPES = [
+  { value: 'group', label: 'Group Session' },
+  { value: 'small_group', label: 'Small Group (2-6 players)' },
+  { value: '1-2-1', label: '1-2-1 (Individual)' },
+  { value: 'camp', label: 'Holiday Camp' },
+  { value: 'trial', label: 'Trial Session' },
+]
+
+function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex items-center justify-between py-3 border-b border-border mb-4 group"
+    >
+      <h3 className="text-sm font-bold uppercase tracking-wider text-text-light group-hover:text-text transition-colors">{title}</h3>
+      <svg
+        className={`w-4 h-4 text-text-light transition-transform ${open ? 'rotate-180' : ''}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  )
+}
+
 export default function GroupForm({
   coaches,
   orgId,
@@ -27,24 +56,73 @@ export default function GroupForm({
     age_group: string | null
     description: string | null
     price_per_session: number | null
+    class_type?: string | null
+    short_description?: string | null
+    long_description?: string | null
+    benefits?: string[] | null
+    suitable_for?: string | null
+    what_to_bring?: string | null
+    image_url?: string | null
+    is_featured?: boolean | null
   }
   onClose?: () => void
 }) {
   const router = useRouter()
   const isEdit = !!editGroup
   const [open, setOpen] = useState(isEdit)
+
+  // Basic Info
   const [name, setName] = useState(editGroup?.name || '')
+  const [classType, setClassType] = useState(editGroup?.class_type || 'group')
+  const [ageGroup, setAgeGroup] = useState(editGroup?.age_group || '')
+  const [isFeatured, setIsFeatured] = useState(editGroup?.is_featured || false)
+
+  // Description & Details
+  const [shortDescription, setShortDescription] = useState(editGroup?.short_description || '')
+  const [longDescription, setLongDescription] = useState(editGroup?.long_description || editGroup?.description || '')
+  const [benefits, setBenefits] = useState<string[]>(editGroup?.benefits || [])
+  const [newBenefit, setNewBenefit] = useState('')
+  const [suitableFor, setSuitableFor] = useState(editGroup?.suitable_for || '')
+  const [whatToBring, setWhatToBring] = useState(editGroup?.what_to_bring || '')
+  const [imageUrl, setImageUrl] = useState(editGroup?.image_url || '')
+
+  // Schedule
   const [dayOfWeek, setDayOfWeek] = useState(editGroup?.day_of_week || '')
   const [startTime, setStartTime] = useState(editGroup?.time_slot || '')
   const [endTime, setEndTime] = useState(editGroup?.end_time || '')
   const [location, setLocation] = useState(editGroup?.location || '')
   const [coachId, setCoachId] = useState(editGroup?.coach_id || '')
+
+  // Pricing & Capacity
   const [maxCapacity, setMaxCapacity] = useState(editGroup?.max_capacity?.toString() || '20')
-  const [ageGroup, setAgeGroup] = useState(editGroup?.age_group || '')
-  const [description, setDescription] = useState(editGroup?.description || '')
   const [pricePerSession, setPricePerSession] = useState(editGroup?.price_per_session?.toString() || '')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Collapsible sections
+  const [sections, setSections] = useState({
+    basic: true,
+    details: isEdit,
+    pricing: true,
+    schedule: true,
+  })
+
+  function toggleSection(key: keyof typeof sections) {
+    setSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function addBenefit() {
+    const trimmed = newBenefit.trim()
+    if (trimmed && !benefits.includes(trimmed)) {
+      setBenefits([...benefits, trimmed])
+      setNewBenefit('')
+    }
+  }
+
+  function removeBenefit(index: number) {
+    setBenefits(benefits.filter((_, i) => i !== index))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,18 +130,26 @@ export default function GroupForm({
     setError('')
 
     const supabase = createClient()
-    const timeSlot = startTime && endTime ? `${startTime}–${endTime}` : startTime || null
+    const timeSlot = startTime && endTime ? `${startTime}\u2013${endTime}` : startTime || null
 
     const data = {
       organisation_id: orgId,
       name,
+      class_type: classType,
       day_of_week: dayOfWeek || null,
       time_slot: timeSlot,
       location: location || null,
       coach_id: coachId || null,
       max_capacity: maxCapacity ? parseInt(maxCapacity) : 20,
       age_group: ageGroup || null,
-      description: description || null,
+      description: shortDescription || longDescription || null,
+      short_description: shortDescription || null,
+      long_description: longDescription || null,
+      benefits: benefits.length > 0 ? benefits : null,
+      suitable_for: suitableFor || null,
+      what_to_bring: whatToBring || null,
+      image_url: imageUrl || null,
+      is_featured: isFeatured,
       price_per_session: pricePerSession ? parseFloat(pricePerSession) : null,
     }
 
@@ -87,6 +173,7 @@ export default function GroupForm({
       } else {
         setOpen(false)
         setName('')
+        setClassType('group')
         setDayOfWeek('')
         setStartTime('')
         setEndTime('')
@@ -94,7 +181,13 @@ export default function GroupForm({
         setCoachId('')
         setMaxCapacity('20')
         setAgeGroup('')
-        setDescription('')
+        setShortDescription('')
+        setLongDescription('')
+        setBenefits([])
+        setSuitableFor('')
+        setWhatToBring('')
+        setImageUrl('')
+        setIsFeatured(false)
         setPricePerSession('')
         router.refresh()
       }
@@ -113,6 +206,8 @@ export default function GroupForm({
     )
   }
 
+  const inputCls = 'w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary'
+
   return (
     <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
       <div className="flex items-center justify-between mb-5">
@@ -125,142 +220,265 @@ export default function GroupForm({
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Row 1: Name & Age Group */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-1.5">Class Name *</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="e.g. U10 Development Squad"
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Age Group</label>
-            <select
-              value={ageGroup}
-              onChange={(e) => setAgeGroup(e.target.value)}
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            >
-              <option value="">Select...</option>
-              {AGE_GROUPS.map((ag) => (
-                <option key={ag} value={ag}>{ag}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        {/* ── Basic Info ── */}
+        <SectionHeader title="Basic Info" open={sections.basic} onToggle={() => toggleSection('basic')} />
+        {sections.basic && (
+          <div className="space-y-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1.5">Class Name *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="e.g. U10 Development Squad"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Age Group</label>
+                <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} className={inputCls}>
+                  <option value="">Select...</option>
+                  {AGE_GROUPS.map((ag) => (
+                    <option key={ag} value={ag}>{ag}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-        {/* Row 2: Day, Start, End */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Day *</label>
-            <select
-              value={dayOfWeek}
-              onChange={(e) => setDayOfWeek(e.target.value)}
-              required
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            >
-              <option value="">Select day...</option>
-              {DAYS.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Start Time</label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">End Time</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-        </div>
-
-        {/* Row 3: Location, Coach, Capacity */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Location</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Main Pitch"
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Coach</label>
-            <select
-              value={coachId}
-              onChange={(e) => setCoachId(e.target.value)}
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            >
-              <option value="">Select coach...</option>
-              {coaches.map((c) => (
-                <option key={c.id} value={c.id}>{c.full_name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Max Capacity *</label>
-            <div className="relative">
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={maxCapacity}
-                onChange={(e) => setMaxCapacity(e.target.value)}
-                required
-                placeholder="20"
-                className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-light">players</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Class Type</label>
+                <select value={classType} onChange={(e) => setClassType(e.target.value)} className={inputCls}>
+                  {CLASS_TYPES.map((ct) => (
+                    <option key={ct.value} value={ct.value}>{ct.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-end pb-1">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <div
+                    className={`relative w-11 h-6 rounded-full transition-colors ${isFeatured ? 'bg-primary' : 'bg-gray-200'}`}
+                    onClick={() => setIsFeatured(!isFeatured)}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isFeatured ? 'translate-x-5' : ''}`} />
+                  </div>
+                  <span className="text-sm font-medium">Featured Class</span>
+                </label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Row 4: Price & Description */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Price Per Session (optional)</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light">&pound;</span>
-              <input
-                type="number"
-                min="0"
-                step="0.50"
-                value={pricePerSession}
-                onChange={(e) => setPricePerSession(e.target.value)}
-                placeholder="0.00"
-                className="w-full pl-7 pr-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        {/* ── Description & Details ── */}
+        <SectionHeader title="Description & Details" open={sections.details} onToggle={() => toggleSection('details')} />
+        {sections.details && (
+          <div className="space-y-4 pb-4">
+            {/* Short Description */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Short Description</label>
+              <div className="relative">
+                <textarea
+                  value={shortDescription}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 150) setShortDescription(e.target.value)
+                  }}
+                  placeholder="One-liner shown on class cards (max 150 chars)"
+                  rows={2}
+                  className={inputCls + ' resize-none'}
+                />
+                <span className={`absolute bottom-2 right-3 text-[10px] ${shortDescription.length >= 140 ? 'text-red-400' : 'text-text-light'}`}>
+                  {shortDescription.length}/150
+                </span>
+              </div>
+            </div>
+
+            {/* Full Description */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Full Description</label>
+              <textarea
+                value={longDescription}
+                onChange={(e) => setLongDescription(e.target.value)}
+                placeholder="Detailed description shown on the class detail page"
+                rows={5}
+                className={inputCls + ' resize-none'}
               />
             </div>
+
+            {/* Key Benefits */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Key Benefits</label>
+              <div className="space-y-2">
+                {benefits.map((b, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="flex-1 text-sm bg-surface-dark px-3 py-2 rounded-lg">{b}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeBenefit(i)}
+                      className="text-red-400 hover:text-red-600 text-sm px-2"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newBenefit}
+                    onChange={(e) => setNewBenefit(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBenefit() } }}
+                    placeholder="Add a benefit..."
+                    className={inputCls}
+                  />
+                  <button
+                    type="button"
+                    onClick={addBenefit}
+                    className="px-4 py-2.5 bg-primary/10 text-primary rounded-xl text-sm font-semibold hover:bg-primary/20 transition-colors whitespace-nowrap"
+                  >
+                    + Add
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Suitable For */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Suitable For</label>
+              <input
+                type="text"
+                value={suitableFor}
+                onChange={(e) => setSuitableFor(e.target.value)}
+                placeholder="e.g. Players aged 8-12 looking to improve technical skills"
+                className={inputCls}
+              />
+            </div>
+
+            {/* What to Bring */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">What to Bring</label>
+              <input
+                type="text"
+                value={whatToBring}
+                onChange={(e) => setWhatToBring(e.target.value)}
+                placeholder="e.g. Football boots, water bottle, shin pads"
+                className={inputCls}
+              />
+            </div>
+
+            {/* Image URL */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Image URL</label>
+              <input
+                type="text"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className={inputCls}
+              />
+              {imageUrl && (
+                <div className="mt-2 rounded-xl overflow-hidden border border-border bg-surface-dark">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imageUrl}
+                    alt="Class preview"
+                    className="w-full h-32 object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-1.5">Description</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of the class"
-              className="w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
+        )}
+
+        {/* ── Pricing & Capacity ── */}
+        <SectionHeader title="Pricing & Capacity" open={sections.pricing} onToggle={() => toggleSection('pricing')} />
+        {sections.pricing && (
+          <div className="space-y-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Price Per Session (optional)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light">&pound;</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.50"
+                    value={pricePerSession}
+                    onChange={(e) => setPricePerSession(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full pl-7 pr-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Max Capacity *</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={maxCapacity}
+                    onChange={(e) => setMaxCapacity(e.target.value)}
+                    required
+                    placeholder="20"
+                    className={inputCls}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-light">players</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ── Schedule ── */}
+        <SectionHeader title="Schedule" open={sections.schedule} onToggle={() => toggleSection('schedule')} />
+        {sections.schedule && (
+          <div className="space-y-4 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Day *</label>
+                <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)} required className={inputCls}>
+                  <option value="">Select day...</option>
+                  {DAYS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Start Time</label>
+                <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">End Time</label>
+                <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Location</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. Main Pitch"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Coach</label>
+                <select value={coachId} onChange={(e) => setCoachId(e.target.value)} className={inputCls}>
+                  <option value="">Select coach...</option>
+                  {coaches.map((c) => (
+                    <option key={c.id} value={c.id}>{c.full_name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-sm text-danger">{error}</p>}
 

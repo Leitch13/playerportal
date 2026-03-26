@@ -1,5 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import ShareButton from './ShareButton'
+
+const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color: string }> = {
+  group: { label: 'Group Session', gradient: 'from-blue-600/30 via-blue-900/20 to-transparent', color: '#3b82f6' },
+  small_group: { label: 'Small Group', gradient: 'from-purple-600/30 via-purple-900/20 to-transparent', color: '#a855f7' },
+  '1-2-1': { label: '1-2-1 Individual', gradient: 'from-amber-600/30 via-amber-900/20 to-transparent', color: '#f59e0b' },
+  camp: { label: 'Holiday Camp', gradient: 'from-green-600/30 via-green-900/20 to-transparent', color: '#22c55e' },
+  trial: { label: 'Trial Session', gradient: 'from-cyan-600/30 via-cyan-900/20 to-transparent', color: '#06b6d4' },
+}
 
 export default async function ClassBookingPage({
   params,
@@ -27,10 +36,10 @@ export default async function ClassBookingPage({
     )
   }
 
-  // Get the specific class
+  // Get the specific class with new fields
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, class_type, short_description, long_description, benefits, suitable_for, what_to_bring, image_url, is_featured, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
     .single()
@@ -62,12 +71,21 @@ export default async function ClassBookingPage({
   const isFull = spotsLeft <= 0
   const coach = group.coach as unknown as { full_name: string } | null
   const primaryColor = org.primary_color || '#4ecde6'
-  const price = (group as unknown as { price_per_session: number | null }).price_per_session
+  const price = group.price_per_session as number | null
+  const classType = (group.class_type as string) || 'group'
+  const typeConfig = CLASS_TYPE_CONFIG[classType] || CLASS_TYPE_CONFIG.group
+  const shortDesc = group.short_description as string | null
+  const longDesc = group.long_description as string | null
+  const benefits = group.benefits as string[] | null
+  const suitableFor = group.suitable_for as string | null
+  const whatToBring = group.what_to_bring as string | null
+  const imageUrl = group.image_url as string | null
+  const description = longDesc || (group.description as string | null)
 
   return (
     <div className="min-h-screen bg-[#060606] text-white">
       {/* Nav */}
-      <nav className="glass-dark border-b border-white/[0.06] sticky top-0 z-50">
+      <nav className="glass-dark border-b border-white/[0.06] sticky top-0 z-50 backdrop-blur-md bg-[#060606]/80">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <Link href={`/book/${slug}`} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,60 +93,124 @@ export default async function ClassBookingPage({
             </svg>
             All Classes
           </Link>
-          <span className="text-sm font-semibold" style={{ color: primaryColor }}>{org.name}</span>
+          <div className="flex items-center gap-3">
+            <ShareButton name={group.name} />
+            <span className="text-sm font-semibold" style={{ color: primaryColor }}>{org.name}</span>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#060606] via-[#0f172a] to-[#060606]" />
-        <div className="absolute top-10 left-1/4 w-[400px] h-[400px] rounded-full blur-[150px] animate-glow" style={{ background: `${primaryColor}15` }} />
+        {/* Background image or gradient */}
+        {imageUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#060606]/70 via-[#060606]/60 to-[#060606]" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#060606] via-[#0f172a] to-[#060606]" />
+            <div className={`absolute inset-0 bg-gradient-to-br ${typeConfig.gradient}`} />
+            <div className="absolute top-10 left-1/4 w-[400px] h-[400px] rounded-full blur-[150px]" style={{ background: `${primaryColor}15` }} />
+          </>
+        )}
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-12 text-center">
-          {/* Age group badge */}
-          {(group as unknown as { age_group: string | null }).age_group && (
-            <div className="inline-flex px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border" style={{ borderColor: `${primaryColor}40`, color: primaryColor, background: `${primaryColor}10` }}>
-              {(group as unknown as { age_group: string }).age_group}
-            </div>
-          )}
+          {/* Class type badge */}
+          <div className="inline-flex items-center gap-2 mb-4">
+            <span
+              className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border"
+              style={{ borderColor: `${typeConfig.color}50`, color: typeConfig.color, background: `${typeConfig.color}15` }}
+            >
+              {typeConfig.label}
+            </span>
+            {group.age_group && (
+              <span
+                className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border"
+                style={{ borderColor: `${primaryColor}40`, color: primaryColor, background: `${primaryColor}10` }}
+              >
+                {group.age_group as string}
+              </span>
+            )}
+          </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-3">{group.name}</h1>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 text-white/50 text-sm mb-6">
-            <span className="flex items-center gap-1.5" style={{ color: primaryColor }}>
-              <span className="font-semibold">{group.day_of_week || 'TBA'}</span>
-            </span>
-            {group.time_slot && <span>{group.time_slot}</span>}
-            {group.location && <span>📍 {group.location}</span>}
-            {coach?.full_name && <span>👤 {coach.full_name}</span>}
-          </div>
-
-          {(group as unknown as { description: string | null }).description && (
-            <p className="text-white/40 max-w-xl mx-auto leading-relaxed mb-8">
-              {(group as unknown as { description: string }).description}
-            </p>
+          {shortDesc && (
+            <p className="text-lg text-white/60 max-w-xl mx-auto leading-relaxed mb-4">{shortDesc}</p>
           )}
+
+          {/* Quick info pills */}
+          <div className="flex flex-wrap items-center justify-center gap-3 text-white/50 text-sm">
+            {group.day_of_week && (
+              <span className="flex items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                <span className="font-medium text-white/70">{group.day_of_week}</span>
+              </span>
+            )}
+            {group.time_slot && (
+              <span className="flex items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                <span className="font-medium text-white/70">{group.time_slot}</span>
+              </span>
+            )}
+            {group.location && (
+              <span className="flex items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span className="font-medium text-white/70">{group.location}</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-20">
-        {/* Stats cards */}
-        <div className="grid grid-cols-3 gap-3 mb-10">
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 text-center">
-            <div className="text-2xl font-extrabold" style={{ color: isFull ? '#ef4444' : primaryColor }}>
-              {isFull ? 'FULL' : spotsLeft}
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-10">
+          {group.day_of_week && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Day &amp; Time</div>
+              <div className="text-sm font-bold">{group.day_of_week}</div>
+              {group.time_slot && <div className="text-xs text-white/50 mt-0.5">{group.time_slot}</div>}
             </div>
-            <div className="text-xs text-white/40 mt-1">{isFull ? 'Waitlist open' : 'Spots left'}</div>
+          )}
+          {group.location && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Location</div>
+              <div className="text-sm font-bold">{group.location}</div>
+            </div>
+          )}
+          {group.age_group && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Age Group</div>
+              <div className="text-sm font-bold">{group.age_group as string}</div>
+            </div>
+          )}
+          {coach?.full_name && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Coach</div>
+              <div className="text-sm font-bold">{coach.full_name}</div>
+            </div>
+          )}
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+            <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Capacity</div>
+            <div className="text-sm font-bold" style={{ color: isFull ? '#ef4444' : spotsLeft <= 3 ? '#f97316' : primaryColor }}>
+              {isFull ? 'FULL' : `${spotsLeft} spots left`}
+            </div>
+            <div className="text-xs text-white/40 mt-0.5">{enrolled}/{capacity} enrolled</div>
           </div>
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 text-center">
-            <div className="text-2xl font-extrabold">{enrolled}</div>
-            <div className="text-xs text-white/40 mt-1">Enrolled</div>
-          </div>
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 text-center">
-            <div className="text-2xl font-extrabold">{capacity}</div>
-            <div className="text-xs text-white/40 mt-1">Max capacity</div>
-          </div>
+          {price != null && Number(price) > 0 && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+              <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Price</div>
+              <div className="text-sm font-bold" style={{ color: primaryColor }}>
+                &pound;{Number(price).toFixed(2)}
+              </div>
+              <div className="text-xs text-white/40 mt-0.5">per session</div>
+            </div>
+          )}
         </div>
 
         {/* Capacity bar */}
@@ -148,21 +230,72 @@ export default async function ClassBookingPage({
           </div>
         </div>
 
-        {/* Price */}
-        {price && Number(price) > 0 && (
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 mb-8 text-center">
-            <div className="text-xs text-white/40 uppercase tracking-wider mb-1">Price per session</div>
-            <div className="text-3xl font-extrabold" style={{ color: primaryColor }}>
-              &pound;{Number(price).toFixed(2)}
+        {/* Full Description */}
+        {description && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              About This Class
+            </h2>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+              <div className="text-white/70 leading-relaxed whitespace-pre-line">{description}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Key Benefits */}
+        {benefits && benefits.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Key Benefits
+            </h2>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+              <ul className="space-y-3">
+                {benefits.map((benefit, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-white/70">{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Suitable For */}
+        {suitableFor && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              Suitable For
+            </h2>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+              <p className="text-white/70 leading-relaxed">{suitableFor}</p>
+            </div>
+          </div>
+        )}
+
+        {/* What to Bring */}
+        {whatToBring && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              What to Bring
+            </h2>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+              <p className="text-white/70 leading-relaxed">{whatToBring}</p>
             </div>
           </div>
         )}
 
         {/* CTAs */}
-        <div className="space-y-3">
+        <div className="space-y-3 mb-10">
           <Link
             href={isFull ? `/auth/signup?org=${slug}&class=${groupId}` : `/book/${slug}/class/${groupId}/quick-book`}
-            className="block w-full text-center py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01]"
+            className="block w-full text-center py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01] hover:shadow-lg"
             style={{
               backgroundColor: isFull ? '#1e293b' : primaryColor,
               color: isFull ? '#94a3b8' : '#0a0a0a',
@@ -180,7 +313,7 @@ export default async function ClassBookingPage({
         </div>
 
         {/* Academy info */}
-        <div className="mt-12 pt-8 border-t border-white/[0.06] text-center">
+        <div className="pt-8 border-t border-white/[0.06] text-center">
           <p className="text-white/30 text-sm mb-3">Part of</p>
           <Link
             href={`/book/${slug}`}
@@ -191,8 +324,18 @@ export default async function ClassBookingPage({
           </Link>
           {(org.contact_email || org.contact_phone) && (
             <div className="flex flex-wrap gap-4 justify-center mt-3 text-xs text-white/30">
-              {org.contact_email && <span>✉️ {org.contact_email}</span>}
-              {org.contact_phone && <span>📞 {org.contact_phone}</span>}
+              {org.contact_email && (
+                <span className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  {org.contact_email}
+                </span>
+              )}
+              {org.contact_phone && (
+                <span className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                  {org.contact_phone}
+                </span>
+              )}
             </div>
           )}
         </div>

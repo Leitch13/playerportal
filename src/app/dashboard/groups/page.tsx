@@ -149,6 +149,14 @@ export default async function GroupsPage() {
                         description: (g as unknown as { description: string | null }).description,
                         price_per_session: (g as unknown as { price_per_session: number | null }).price_per_session,
                         end_time: null,
+                        class_type: (g as unknown as { class_type: string | null }).class_type,
+                        short_description: (g as unknown as { short_description: string | null }).short_description,
+                        long_description: (g as unknown as { long_description: string | null }).long_description,
+                        benefits: (g as unknown as { benefits: string[] | null }).benefits,
+                        suitable_for: (g as unknown as { suitable_for: string | null }).suitable_for,
+                        what_to_bring: (g as unknown as { what_to_bring: string | null }).what_to_bring,
+                        image_url: (g as unknown as { image_url: string | null }).image_url,
+                        is_featured: (g as unknown as { is_featured: boolean | null }).is_featured,
                       }}
                       coachName={coach?.full_name || null}
                       enrolled={enrolled}
