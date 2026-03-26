@@ -11,8 +11,16 @@ const CLASS_TYPES = [
   { value: 'group', label: 'Group Session' },
   { value: 'small_group', label: 'Small Group (2-6 players)' },
   { value: '1-2-1', label: '1-2-1 (Individual)' },
+  { value: '2-1', label: '2-1 (Pair Training)' },
+  { value: 'gk', label: 'Goalkeeper Training' },
+  { value: 'soccer_tots', label: 'Soccer Tots (Ages 3-5)' },
+  { value: 'academy', label: 'Academy Programme' },
+  { value: 'accelerator', label: 'Accelerator Programme' },
+  { value: 'elite', label: 'Elite Development' },
   { value: 'camp', label: 'Holiday Camp' },
   { value: 'trial', label: 'Trial Session' },
+  { value: 'girls', label: 'Girls Only' },
+  { value: 'adults', label: 'Adult Session' },
 ]
 
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {

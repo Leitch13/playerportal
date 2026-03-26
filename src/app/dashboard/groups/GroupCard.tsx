@@ -10,8 +10,16 @@ const CLASS_TYPE_BADGES: Record<string, { label: string; bg: string; text: strin
   group: { label: 'Group', bg: 'bg-blue-100', text: 'text-blue-700' },
   small_group: { label: 'Small Group', bg: 'bg-purple-100', text: 'text-purple-700' },
   '1-2-1': { label: '1-2-1', bg: 'bg-amber-100', text: 'text-amber-700' },
+  '2-1': { label: '2-1 Pair', bg: 'bg-orange-100', text: 'text-orange-700' },
+  gk: { label: 'GK Training', bg: 'bg-yellow-100', text: 'text-yellow-700' },
+  soccer_tots: { label: 'Soccer Tots', bg: 'bg-pink-100', text: 'text-pink-700' },
+  academy: { label: 'Academy', bg: 'bg-indigo-100', text: 'text-indigo-700' },
+  accelerator: { label: 'Accelerator', bg: 'bg-rose-100', text: 'text-rose-700' },
+  elite: { label: 'Elite', bg: 'bg-violet-100', text: 'text-violet-700' },
   camp: { label: 'Camp', bg: 'bg-green-100', text: 'text-green-700' },
   trial: { label: 'Trial', bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  girls: { label: 'Girls Only', bg: 'bg-fuchsia-100', text: 'text-fuchsia-700' },
+  adults: { label: 'Adults', bg: 'bg-slate-100', text: 'text-slate-700' },
 }
 
 interface GroupData {
