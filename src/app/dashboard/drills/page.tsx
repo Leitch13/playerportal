@@ -1,0 +1,37 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import type { UserRole } from '@/lib/types'
+import DrillsLibrary from './DrillsLibrary'
+
+export default async function DrillsPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/signin')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, organisation_id')
+    .eq('id', user.id)
+    .single()
+
+  const role = (profile?.role || 'parent') as UserRole
+  const isStaff = role === 'admin' || role === 'coach'
+  if (!isStaff) redirect('/dashboard')
+
+  const orgId = profile?.organisation_id || ''
+
+  const { data: drills } = await supabase
+    .from('drills')
+    .select('*')
+    .order('name')
+
+  return (
+    <DrillsLibrary
+      drills={drills || []}
+      orgId={orgId}
+      userId={user.id}
+    />
+  )
+}

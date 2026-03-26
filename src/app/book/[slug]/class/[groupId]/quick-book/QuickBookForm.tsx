@@ -1,12 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-/* ────────────────────────────────────────────── */
-/*  Types                                         */
-/* ────────────────────────────────────────────── */
 
 interface Plan {
   id: string
@@ -29,12 +25,6 @@ interface QuickBookFormProps {
   primaryColor: string
 }
 
-/* ────────────────────────────────────────────── */
-/*  Helpers                                       */
-/* ────────────────────────────────────────────── */
-
-const STEPS = ['Details', 'Child', 'Plan', 'Confirm'] as const
-
 function getQuarterlyPrice(monthlyAmount: number) {
   const total = monthlyAmount * 3
   const discounted = total * 0.9
@@ -43,627 +33,257 @@ function getQuarterlyPrice(monthlyAmount: number) {
 
 function Spinner({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      className="animate-spin"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
+    <svg className="animate-spin" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
   )
 }
 
-/* ────────────────────────────────────────────── */
-/*  Component                                     */
-/* ────────────────────────────────────────────── */
+function FieldError({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+      <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+      {message}
+    </p>
+  )
+}
 
-export function QuickBookForm({
-  isLoggedIn,
-  existingChildren,
-  plans,
-  orgSlug,
-  orgId,
-  orgName,
-  groupId,
-  groupName,
-  primaryColor,
-}: QuickBookFormProps) {
-  /* ── State: parent details (section 1) ── */
+function AuthSkeleton() {
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-12 animate-pulse">
+      <div className="flex items-center gap-1 mb-8">{[1, 2, 3].map((i) => (<div key={i} className="flex-1"><div className="h-1 rounded-full bg-white/[0.08]" /><div className="h-2 w-12 bg-white/[0.06] rounded mt-1.5" /></div>))}</div>
+      {[1, 2, 3].map((i) => (<div key={i} className="mb-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6"><div className="h-5 w-32 bg-white/[0.08] rounded mb-4" /><div className="space-y-3"><div className="h-12 bg-white/[0.04] rounded-xl" /><div className="grid grid-cols-2 gap-3"><div className="h-12 bg-white/[0.04] rounded-xl" /><div className="h-12 bg-white/[0.04] rounded-xl" /></div></div></div>))}
+    </div>
+  )
+}
+
+function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primaryColor: string }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#060606]/90 backdrop-blur-sm">
+      <div className="text-center">
+        <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ backgroundColor: `${primaryColor}20` }}>
+          <svg className="w-10 h-10 animate-bounce" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Booking Confirmed!</h2>
+        <p className="text-white/60 mb-1">You&apos;re all set for <span className="font-semibold text-white">{groupName}</span></p>
+        <p className="text-white/40 text-sm">Redirecting to payment...</p>
+        <div className="mt-6"><Spinner size={24} /></div>
+      </div>
+    </div>
+  )
+}
+
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor }: QuickBookFormProps) {
+  const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-
-  /* ── State: child details (section 2) ── */
   const [selectedChildId, setSelectedChildId] = useState<string | ''>('')
   const [childFirstName, setChildFirstName] = useState('')
   const [childLastName, setChildLastName] = useState('')
   const [childDob, setChildDob] = useState('')
-
-  /* ── State: plan (section 3) ── */
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
-    plans.length === 1 ? plans[0].id : null
-  )
-  const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>(
-    'monthly'
-  )
-
-  /* ── State: global ── */
-  const [error, setError] = useState('')
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans.length === 1 ? plans[0].id : null)
+  const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [globalError, setGlobalError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [activeSection, setActiveSection] = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [activeStep, setActiveStep] = useState(0)
+  const sectionRefs = useRef<(HTMLElement | null)[]>([])
 
   const isNewChild = selectedChildId === '' || selectedChildId === 'new'
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) || null
 
-  /* ── Derived: which step is the furthest completed ── */
-  function getCompletedStep(): number {
-    // Step 0: Details
-    if (!isLoggedIn && (!fullName || !email || !password || !agreedToTerms))
-      return 0
-    // Step 1: Child
-    if (isNewChild && (!childFirstName || !childLastName)) return 1
-    if (!isNewChild && !selectedChildId) return 1
-    // Step 2: Plan
-    if (!selectedPlanId) return 2
-    return 3
-  }
+  useEffect(() => { const t = setTimeout(() => setReady(true), 300); return () => clearTimeout(t) }, [])
 
-  const completedStep = getCompletedStep()
+  const steps = isLoggedIn ? ['Child', 'Plan', 'Confirm'] : ['Details', 'Child', 'Plan', 'Confirm']
+  const stepOffset = isLoggedIn ? 1 : 0
 
-  /* ── Scroll to section ── */
-  function scrollToSection(index: number) {
-    setActiveSection(index)
-    const el = document.getElementById(`section-${index}`)
+  const scrollToSection = useCallback((index: number) => {
+    setActiveStep(index)
+    const el = sectionRefs.current[index]
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  function validateField(field: string, value: string): string {
+    if (field === 'fullName') return value.trim().length < 2 ? 'Please enter your full name' : ''
+    if (field === 'email') return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? 'Please enter a valid email' : ''
+    if (field === 'password') return value.length < 6 ? 'Password must be at least 6 characters' : ''
+    if (field === 'childFirstName') return value.trim().length < 1 ? 'First name is required' : ''
+    if (field === 'childLastName') return value.trim().length < 1 ? 'Last name is required' : ''
+    return ''
   }
 
-  /* ── Submit handler ── */
-  async function handleBookAndPay() {
-    setError('')
-    setLoading(true)
+  function handleBlur(field: string, value: string) {
+    if (!value) return
+    setFieldErrors((prev) => ({ ...prev, [field]: validateField(field, value) }))
+  }
 
+  function handleDetailsComplete() {
+    const errs: Record<string, string> = { fullName: validateField('fullName', fullName), email: validateField('email', email), password: validateField('password', password) }
+    setFieldErrors((prev) => ({ ...prev, ...errs }))
+    if (!Object.values(errs).some(Boolean) && agreedToTerms) scrollToSection(isLoggedIn ? 0 : 1)
+  }
+
+  function handleChildComplete() {
+    if (isNewChild) {
+      const errs: Record<string, string> = { childFirstName: validateField('childFirstName', childFirstName), childLastName: validateField('childLastName', childLastName) }
+      setFieldErrors((prev) => ({ ...prev, ...errs }))
+      if (Object.values(errs).some(Boolean)) return
+    }
+    scrollToSection(isLoggedIn ? 1 : 2)
+  }
+
+  async function handleBookAndPay() {
+    setGlobalError('')
+    setLoading(true)
     try {
       const supabase = createClient()
       let userId: string | null = null
-
-      /* ── Step A: Sign up if not logged in ── */
       if (!isLoggedIn) {
-        const { data: signUpData, error: signUpError } =
-          await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                full_name: fullName,
-                phone,
-                role: 'parent',
-                org_slug: orgSlug.trim().toLowerCase(),
-              },
-            },
-          })
-
-        if (signUpError) {
-          setError(signUpError.message)
-          setLoading(false)
-          return
-        }
-
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, phone, role: 'parent', org_slug: orgSlug.trim().toLowerCase() } } })
+        if (signUpError) { setGlobalError(signUpError.message); setLoading(false); return }
         userId = signUpData.user?.id || null
-
-        // Fire-and-forget welcome email
-        fetch('/api/email/welcome', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            parentName: fullName,
-            parentEmail: email,
-            academyName: orgName,
-          }),
-        }).catch(() => {})
+        fetch('/api/email/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parentName: fullName, parentEmail: email, academyName: orgName }) }).catch(() => {})
       } else {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const { data: { user } } = await supabase.auth.getUser()
         userId = user?.id || null
       }
+      if (!userId) { setGlobalError('Could not authenticate. Please try again.'); setLoading(false); return }
 
-      if (!userId) {
-        setError('Could not authenticate. Please try again.')
-        setLoading(false)
-        return
-      }
-
-      /* ── Step B: Create or select child ── */
       let playerId: string
-
       if (isNewChild) {
-        // Get profile for org id
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('organisation_id')
-          .eq('id', userId)
-          .single()
-
-        const { data: child, error: childError } = await supabase
-          .from('players')
-          .insert({
-            organisation_id: profile?.organisation_id || orgId,
-            parent_id: userId,
-            first_name: childFirstName,
-            last_name: childLastName,
-            date_of_birth: childDob || null,
-          })
-          .select('id')
-          .single()
-
-        if (childError || !child) {
-          setError(childError?.message || 'Failed to add child')
-          setLoading(false)
-          return
-        }
-
+        const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
+        const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id || orgId, parent_id: userId, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null }).select('id').single()
+        if (childError || !child) { setGlobalError(childError?.message || 'Failed to add child'); setLoading(false); return }
         playerId = child.id
       } else {
         playerId = selectedChildId
       }
 
-      /* ── Step C: Create enrolment ── */
-      const { error: enrolError } = await supabase.from('enrolments').insert({
-        player_id: playerId,
-        group_id: groupId,
-        organisation_id: orgId,
-        status: 'active',
-        enrolled_at: new Date().toISOString(),
-      })
+      const { error: enrolError } = await supabase.from('enrolments').insert({ player_id: playerId, group_id: groupId, organisation_id: orgId, status: 'active', enrolled_at: new Date().toISOString() })
+      if (enrolError && !enrolError.message.includes('duplicate')) { setGlobalError(enrolError.message); setLoading(false); return }
 
-      if (enrolError) {
-        // If already enrolled, that's OK — continue to payment
-        if (!enrolError.message.includes('duplicate')) {
-          setError(enrolError.message)
-          setLoading(false)
-          return
-        }
-      }
-
-      /* ── Step D: Create Stripe checkout ── */
       if (selectedPlanId) {
-        const res = await fetch('/api/stripe/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            planId: selectedPlanId,
-            playerId,
-            billingOption,
-          }),
-        })
+        setShowSuccess(true)
+        const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId, billingOption }) })
         const data = await res.json()
-
-        if (data.url) {
-          window.location.href = data.url
-          return
-        } else {
-          setError(data.error || 'Failed to start payment')
-          setLoading(false)
-          return
-        }
+        if (data.url) { setTimeout(() => { window.location.href = data.url }, 1200); return }
+        else { setShowSuccess(false); setGlobalError(data.error || 'Failed to start payment'); setLoading(false); return }
       }
-    } catch {
-      setError('Something went wrong. Please try again.')
-      setLoading(false)
-    }
+    } catch { setShowSuccess(false); setGlobalError('Something went wrong. Please try again.'); setLoading(false) }
   }
 
-  /* ── Can submit? ── */
-  const canSubmit =
-    (isLoggedIn || (fullName && email && password && agreedToTerms)) &&
-    (isNewChild ? childFirstName && childLastName : !!selectedChildId) &&
-    !!selectedPlanId
+  const canSubmit = (isLoggedIn || (fullName && email && password && agreedToTerms)) && (isNewChild ? childFirstName && childLastName : !!selectedChildId) && !!selectedPlanId
+  const childDisplayName = isNewChild ? `${childFirstName} ${childLastName}`.trim() : existingChildren.find((c) => c.id === selectedChildId) ? `${existingChildren.find((c) => c.id === selectedChildId)!.first_name} ${existingChildren.find((c) => c.id === selectedChildId)!.last_name}` : ''
+  const displayPrice = selectedPlan && billingOption === 'monthly' ? `\u00A3${selectedPlan.amount.toFixed(2)}/mo` : selectedPlan ? `\u00A3${getQuarterlyPrice(selectedPlan.amount).discounted.toFixed(2)} for 3 months` : ''
 
-  /* ── Selected child name for summary ── */
-  const childDisplayName = isNewChild
-    ? `${childFirstName} ${childLastName}`.trim()
-    : existingChildren.find((c) => c.id === selectedChildId)
-      ? `${existingChildren.find((c) => c.id === selectedChildId)!.first_name} ${existingChildren.find((c) => c.id === selectedChildId)!.last_name}`
-      : ''
+  if (!ready) return <AuthSkeleton />
+  if (showSuccess) return <SuccessOverlay groupName={groupName} primaryColor={primaryColor} />
 
-  /* ── Price display ── */
-  const displayPrice =
-    selectedPlan && billingOption === 'monthly'
-      ? `\u00A3${selectedPlan.amount.toFixed(2)}/mo`
-      : selectedPlan
-        ? `\u00A3${getQuarterlyPrice(selectedPlan.amount).discounted.toFixed(2)} for 3 months`
-        : ''
+  const inputCls = (field?: string) => `w-full px-4 py-3 rounded-xl bg-white/[0.04] border text-white placeholder:text-white/25 focus:outline-none focus:ring-1 transition-all ${field && fieldErrors[field] ? 'border-red-500/50 focus:border-red-500/70 focus:ring-red-500/20' : 'border-white/[0.08] focus:border-white/20 focus:ring-white/10'}`
 
-  /* ────────────────────────────────────────────── */
-  /*  Render                                        */
-  /* ────────────────────────────────────────────── */
+  const sectionCls = (idx: number) => `mb-6 rounded-2xl border bg-white/[0.02] backdrop-blur-xl p-6 transition-all ${activeStep === idx ? 'border-white/[0.12]' : 'border-white/[0.06]'}`
+
+  const checkIcon = <svg className="w-5 h-5 ml-auto shrink-0" style={{ color: primaryColor }} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-12">
-      {/* ── Progress indicator ── */}
+      {/* Progress */}
       <div className="flex items-center gap-1 mb-8">
-        {STEPS.map((label, i) => {
-          if (isLoggedIn && i === 0) return null
-          const isCompleted = i < completedStep || (i === completedStep && completedStep === 3)
-          const isCurrent = i === activeSection
+        {steps.map((label, i) => {
+          const isCurrent = i === activeStep
+          const sIdx = i + stepOffset
+          const done = sIdx === 0 && !isLoggedIn ? !!(fullName && email && password && agreedToTerms) : sIdx === 1 ? (isNewChild ? !!(childFirstName && childLastName) : !!selectedChildId) : sIdx === 2 ? !!selectedPlanId : false
           return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => scrollToSection(i)}
-              className="flex-1 group"
-            >
-              <div
-                className="h-1 rounded-full transition-all duration-300"
-                style={{
-                  backgroundColor: isCompleted || isCurrent
-                    ? primaryColor
-                    : 'rgba(255,255,255,0.08)',
-                }}
-              />
-              <p
-                className={`text-[10px] mt-1.5 transition-colors ${
-                  isCurrent
-                    ? 'font-semibold'
-                    : isCompleted
-                      ? 'text-white/50'
-                      : 'text-white/25'
-                }`}
-                style={isCurrent ? { color: primaryColor } : undefined}
-              >
-                {i + 1}. {label}
-              </p>
+            <button key={label} type="button" onClick={() => scrollToSection(i)} className="flex-1">
+              <div className="h-1.5 rounded-full transition-all duration-300" style={{ backgroundColor: done || isCurrent ? primaryColor : 'rgba(255,255,255,0.08)' }} />
+              <div className="flex items-center gap-1 mt-1.5">
+                {done && <svg className="w-3 h-3 shrink-0" style={{ color: primaryColor }} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
+                <p className={`text-[10px] ${isCurrent ? 'font-bold' : done ? 'text-white/50' : 'text-white/25'}`} style={isCurrent ? { color: primaryColor } : undefined}>Step {i + 1}: {label}</p>
+              </div>
             </button>
           )
         })}
       </div>
 
-      {/* ── SECTION 1: Your Details (guests only) ── */}
+      {/* Section 1: Details (guests) */}
       {!isLoggedIn && (
-        <section
-          id="section-0"
-          className="mb-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-6"
-          onFocus={() => setActiveSection(0)}
-        >
+        <section ref={(el) => { sectionRefs.current[0] = el }} className={sectionCls(0)} style={activeStep === 0 ? { borderColor: `${primaryColor}40` } : undefined} onFocus={() => setActiveStep(0)}>
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-              style={{
-                backgroundColor: `${primaryColor}20`,
-                color: primaryColor,
-              }}
-            >
-              1
-            </span>
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>1</span>
             Your Details
+            {fullName && email && password && agreedToTerms && checkIcon}
           </h2>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-white/50 mb-1.5">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Smith"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-white/50 mb-1.5">
-                Email *
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@email.com"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-white/50 mb-1.5">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="07xxx xxxxxx"
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-white/50 mb-1.5">
-                Password *
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 6 characters"
-                required
-                minLength={6}
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
-              />
-            </div>
+            <div className="sm:col-span-2"><label className="block text-xs text-white/50 mb-1.5">Full Name *</label><input type="text" value={fullName} onChange={(e) => { setFullName(e.target.value); setFieldErrors((p) => ({ ...p, fullName: '' })) }} onBlur={() => handleBlur('fullName', fullName)} placeholder="John Smith" required className={inputCls('fullName')} /><FieldError message={fieldErrors.fullName || null} /></div>
+            <div><label className="block text-xs text-white/50 mb-1.5">Email *</label><input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setFieldErrors((p) => ({ ...p, email: '' })) }} onBlur={() => handleBlur('email', email)} placeholder="you@email.com" required className={inputCls('email')} /><FieldError message={fieldErrors.email || null} /></div>
+            <div><label className="block text-xs text-white/50 mb-1.5">Phone</label><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07xxx xxxxxx" className={inputCls()} /></div>
+            <div className="sm:col-span-2"><label className="block text-xs text-white/50 mb-1.5">Password *</label><input type="password" value={password} onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: '' })) }} onBlur={() => handleBlur('password', password)} placeholder="Min 6 characters" required minLength={6} className={inputCls('password')} /><FieldError message={fieldErrors.password || null} /></div>
           </div>
-
-          {/* Terms */}
           <div className="flex items-start gap-3 mt-4">
-            <input
-              type="checkbox"
-              id="quick-terms"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer accent-current"
-              style={{ accentColor: primaryColor }}
-            />
-            <label
-              htmlFor="quick-terms"
-              className="text-xs text-white/40 cursor-pointer leading-relaxed"
-            >
-              I agree to the{' '}
-              <Link
-                href="/terms"
-                target="_blank"
-                className="underline hover:text-white/60"
-                style={{ color: primaryColor }}
-              >
-                Terms &amp; Conditions
-              </Link>{' '}
-              and confirm I am the parent or legal guardian of the child being
-              registered.
-            </label>
+            <input type="checkbox" id="quick-terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer" style={{ accentColor: primaryColor }} />
+            <label htmlFor="quick-terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">I agree to the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Terms &amp; Conditions</Link> and confirm I am the parent or legal guardian of the child being registered.</label>
           </div>
+          <button type="button" onClick={handleDetailsComplete} disabled={!fullName || !email || !password || !agreedToTerms} className="mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Continue to Child Details &rarr;</button>
         </section>
       )}
 
-      {/* ── SECTION 2: Your Child ── */}
-      <section
-        id="section-1"
-        className="mb-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-6"
-        onFocus={() => setActiveSection(1)}
-      >
+      {/* Section 2: Child */}
+      <section ref={(el) => { sectionRefs.current[isLoggedIn ? 0 : 1] = el }} className={sectionCls(isLoggedIn ? 0 : 1)} style={activeStep === (isLoggedIn ? 0 : 1) ? { borderColor: `${primaryColor}40` } : undefined} onFocus={() => setActiveStep(isLoggedIn ? 0 : 1)}>
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span
-            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-            style={{
-              backgroundColor: `${primaryColor}20`,
-              color: primaryColor,
-            }}
-          >
-            {isLoggedIn ? '1' : '2'}
-          </span>
+          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>{isLoggedIn ? '1' : '2'}</span>
           Your Child
+          {(isNewChild ? childFirstName && childLastName : !!selectedChildId) && checkIcon}
         </h2>
-
-        {/* Existing children selector */}
         {isLoggedIn && existingChildren.length > 0 && (
-          <div className="mb-4">
-            <label className="block text-xs text-white/50 mb-1.5">
-              Select a child or add a new one
-            </label>
-            <select
-              value={selectedChildId}
-              onChange={(e) => setSelectedChildId(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all appearance-none"
-            >
-              <option value="" className="bg-[#111]">
-                -- Add a new child --
-              </option>
-              {existingChildren.map((c) => (
-                <option key={c.id} value={c.id} className="bg-[#111]">
-                  {c.first_name} {c.last_name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <div className="mb-4"><label className="block text-xs text-white/50 mb-1.5">Select a child or add a new one</label><select value={selectedChildId} onChange={(e) => setSelectedChildId(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all appearance-none"><option value="" className="bg-[#111]">-- Add a new child --</option>{existingChildren.map((c) => <option key={c.id} value={c.id} className="bg-[#111]">{c.first_name} {c.last_name}</option>)}</select></div>
         )}
-
-        {/* New child form */}
         {isNewChild && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-white/50 mb-1.5">
-                First Name *
-              </label>
-              <input
-                type="text"
-                value={childFirstName}
-                onChange={(e) => setChildFirstName(e.target.value)}
-                placeholder="First name"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-white/50 mb-1.5">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                value={childLastName}
-                onChange={(e) => setChildLastName(e.target.value)}
-                placeholder="Last name"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-white/50 mb-1.5">
-                Date of Birth
-              </label>
-              <input
-                type="date"
-                value={childDob}
-                onChange={(e) => setChildDob(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all [color-scheme:dark]"
-              />
-            </div>
+            <div><label className="block text-xs text-white/50 mb-1.5">First Name *</label><input type="text" value={childFirstName} onChange={(e) => { setChildFirstName(e.target.value); setFieldErrors((p) => ({ ...p, childFirstName: '' })) }} onBlur={() => handleBlur('childFirstName', childFirstName)} placeholder="First name" required className={inputCls('childFirstName')} /><FieldError message={fieldErrors.childFirstName || null} /></div>
+            <div><label className="block text-xs text-white/50 mb-1.5">Last Name *</label><input type="text" value={childLastName} onChange={(e) => { setChildLastName(e.target.value); setFieldErrors((p) => ({ ...p, childLastName: '' })) }} onBlur={() => handleBlur('childLastName', childLastName)} placeholder="Last name" required className={inputCls('childLastName')} /><FieldError message={fieldErrors.childLastName || null} /></div>
+            <div className="sm:col-span-2"><label className="block text-xs text-white/50 mb-1.5">Date of Birth</label><input type="date" value={childDob} onChange={(e) => setChildDob(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all [color-scheme:dark]" /></div>
           </div>
         )}
+        <button type="button" onClick={handleChildComplete} disabled={isNewChild ? !childFirstName || !childLastName : !selectedChildId} className="mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Continue to Choose Plan &rarr;</button>
       </section>
 
-      {/* ── SECTION 3: Choose Plan ── */}
-      <section
-        id="section-2"
-        className="mb-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-6"
-        onFocus={() => setActiveSection(2)}
-      >
+      {/* Section 3: Plan */}
+      <section ref={(el) => { sectionRefs.current[isLoggedIn ? 1 : 2] = el }} className={sectionCls(isLoggedIn ? 1 : 2)} style={activeStep === (isLoggedIn ? 1 : 2) ? { borderColor: `${primaryColor}40` } : undefined} onFocus={() => setActiveStep(isLoggedIn ? 1 : 2)}>
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span
-            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-            style={{
-              backgroundColor: `${primaryColor}20`,
-              color: primaryColor,
-            }}
-          >
-            {isLoggedIn ? '2' : '3'}
-          </span>
+          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>{isLoggedIn ? '2' : '3'}</span>
           Choose Plan
+          {selectedPlanId && checkIcon}
         </h2>
-
-        {plans.length === 0 ? (
-          <p className="text-sm text-white/40">
-            No plans available yet. Please contact the academy.
-          </p>
-        ) : (
+        {plans.length === 0 ? <p className="text-sm text-white/40">No plans available yet. Please contact the academy.</p> : (
           <>
-            {/* Billing toggle */}
             <div className="bg-white/[0.04] rounded-xl p-1 flex mb-5">
-              <button
-                type="button"
-                onClick={() => setBillingOption('monthly')}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  billingOption === 'monthly'
-                    ? 'bg-white/[0.08] text-white shadow-sm'
-                    : 'text-white/40 hover:text-white/60'
-                }`}
-              >
-                Pay Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingOption('quarterly')}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${
-                  billingOption === 'quarterly'
-                    ? 'bg-white/[0.08] text-white shadow-sm'
-                    : 'text-white/40 hover:text-white/60'
-                }`}
-              >
-                Pay 3 Months
-                <span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  -10%
-                </span>
-              </button>
+              <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
+              <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-10%</span></button>
             </div>
-
-            {/* Plan cards */}
             <div className="space-y-3">
               {plans.map((plan) => {
                 const monthly = plan.amount
                 const quarterly = getQuarterlyPrice(monthly)
                 const isSelected = selectedPlanId === plan.id
-
                 return (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPlanId(plan.id)
-                      setActiveSection(2)
-                    }}
-                    className={`w-full text-left rounded-xl border-2 p-4 transition-all ${
-                      isSelected
-                        ? 'bg-white/[0.04]'
-                        : 'border-white/[0.06] hover:border-white/[0.12]'
-                    }`}
-                    style={
-                      isSelected
-                        ? {
-                            borderColor: `${primaryColor}60`,
-                            boxShadow: `0 0 20px ${primaryColor}10`,
-                          }
-                        : undefined
-                    }
-                  >
+                  <button key={plan.id} type="button" onClick={() => { setSelectedPlanId(plan.id); setTimeout(() => scrollToSection(isLoggedIn ? 2 : 3), 300) }} className={`w-full text-left rounded-xl border-2 p-4 transition-all ${isSelected ? 'bg-white/[0.04]' : 'border-white/[0.06] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}10` } : undefined}>
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-bold text-white">{plan.name}</div>
-                        {plan.description && (
-                          <div className="text-xs text-white/40 mt-0.5">
-                            {plan.description}
-                          </div>
-                        )}
-                        <div className="text-xs text-white/30 mt-1">
-                          {plan.sessions_per_week} session
-                          {plan.sessions_per_week !== 1 ? 's' : ''} per week
-                        </div>
+                        {plan.description && <div className="text-xs text-white/40 mt-0.5">{plan.description}</div>}
+                        <div className="text-xs text-white/30 mt-1">{plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week</div>
                       </div>
                       <div className="text-right">
-                        {billingOption === 'monthly' ? (
-                          <>
-                            <div
-                              className="text-2xl font-bold"
-                              style={{ color: isSelected ? primaryColor : 'white' }}
-                            >
-                              &pound;{monthly.toFixed(0)}
-                            </div>
-                            <div className="text-xs text-white/40">/month</div>
-                          </>
-                        ) : (
-                          <>
-                            <div
-                              className="text-2xl font-bold text-green-400"
-                            >
-                              &pound;{quarterly.discounted.toFixed(0)}
-                            </div>
-                            <div className="text-xs text-white/30 line-through">
-                              &pound;{quarterly.total.toFixed(0)}
-                            </div>
-                            <div className="text-[10px] font-semibold text-green-400 mt-0.5">
-                              Save &pound;{quarterly.saving.toFixed(0)}
-                            </div>
-                          </>
-                        )}
+                        {billingOption === 'monthly' ? (<><div className="text-2xl font-bold" style={{ color: isSelected ? primaryColor : 'white' }}>&pound;{monthly.toFixed(0)}</div><div className="text-xs text-white/40">/month</div></>) : (<><div className="text-2xl font-bold text-green-400">&pound;{quarterly.discounted.toFixed(0)}</div><div className="text-xs text-white/30 line-through">&pound;{quarterly.total.toFixed(0)}</div><div className="text-[10px] font-semibold text-green-400 mt-0.5">Save &pound;{quarterly.saving.toFixed(0)}</div></>)}
                       </div>
                     </div>
-
-                    {/* Selection indicator */}
-                    {isSelected && (
-                      <div
-                        className="mt-3 pt-3 border-t text-xs font-medium"
-                        style={{
-                          borderColor: `${primaryColor}30`,
-                          color: primaryColor,
-                        }}
-                      >
-                        {billingOption === 'monthly'
-                          ? 'Auto-renews monthly, cancel anytime'
-                          : '3 months upfront, 10% off'}
-                      </div>
-                    )}
+                    {isSelected && <div className="mt-3 pt-3 border-t text-xs font-medium flex items-center gap-1" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>{billingOption === 'monthly' ? 'Auto-renews monthly, cancel anytime' : '3 months upfront, 10% off'}</div>}
                   </button>
                 )
               })}
@@ -672,111 +292,40 @@ export function QuickBookForm({
         )}
       </section>
 
-      {/* ── SECTION 4: Confirm & Pay ── */}
-      <section
-        id="section-3"
-        className="mb-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-6"
-        onFocus={() => setActiveSection(3)}
-      >
+      {/* Section 4: Confirm */}
+      <section ref={(el) => { sectionRefs.current[isLoggedIn ? 2 : 3] = el }} className={sectionCls(isLoggedIn ? 2 : 3)} style={activeStep === (isLoggedIn ? 2 : 3) ? { borderColor: `${primaryColor}40` } : undefined} onFocus={() => setActiveStep(isLoggedIn ? 2 : 3)}>
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span
-            className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-            style={{
-              backgroundColor: `${primaryColor}20`,
-              color: primaryColor,
-            }}
-          >
-            {isLoggedIn ? '3' : '4'}
-          </span>
+          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>{isLoggedIn ? '3' : '4'}</span>
           Confirm &amp; Pay
         </h2>
-
-        {/* Summary */}
-        <div className="space-y-3 mb-6">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-white/50">Class</span>
-            <span className="font-semibold text-white">{groupName}</span>
-          </div>
-          {childDisplayName && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white/50">Child</span>
-              <span className="font-semibold text-white">
-                {childDisplayName}
-              </span>
-            </div>
-          )}
-          {selectedPlan && (
-            <>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">Plan</span>
-                <span className="font-semibold text-white">
-                  {selectedPlan.name}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">Price</span>
-                <span className="font-bold" style={{ color: primaryColor }}>
-                  {displayPrice}
-                </span>
-              </div>
-            </>
-          )}
-          <div className="border-t border-white/[0.06]" />
+        <div className="space-y-3 mb-6 bg-white/[0.02] rounded-xl p-4 border border-white/[0.04]">
+          <div className="flex items-center justify-between text-sm"><span className="text-white/50">Class</span><span className="font-semibold text-white">{groupName}</span></div>
+          {childDisplayName && <div className="flex items-center justify-between text-sm"><span className="text-white/50">Child</span><span className="font-semibold text-white">{childDisplayName}</span></div>}
+          {selectedPlan && (<><div className="flex items-center justify-between text-sm"><span className="text-white/50">Plan</span><span className="font-semibold text-white">{selectedPlan.name}</span></div><div className="border-t border-white/[0.06]" /><div className="flex items-center justify-between text-sm"><span className="text-white/50">Total</span><span className="text-lg font-bold" style={{ color: primaryColor }}>{displayPrice}</span></div></>)}
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-            {error}
+        {globalError && (
+          <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">
+            <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+            <div><p className="font-medium">Booking failed</p><p className="text-xs text-red-400/70 mt-0.5">{globalError}</p></div>
           </div>
         )}
-
-        {/* Submit */}
-        <button
-          type="button"
-          onClick={handleBookAndPay}
-          disabled={!canSubmit || loading}
-          className="w-full py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-2"
-          style={{
-            backgroundColor: canSubmit ? primaryColor : 'rgba(255,255,255,0.06)',
-            color: canSubmit ? '#0a0a0a' : 'rgba(255,255,255,0.3)',
-          }}
-        >
-          {loading ? (
-            <>
-              <Spinner size={20} />
-              Setting up your booking...
-            </>
-          ) : (
-            <>Book &amp; Pay &rarr;</>
-          )}
+        <button type="button" onClick={handleBookAndPay} disabled={!canSubmit || loading} className="w-full py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-2" style={{ backgroundColor: canSubmit ? primaryColor : 'rgba(255,255,255,0.06)', color: canSubmit ? '#0a0a0a' : 'rgba(255,255,255,0.3)' }}>
+          {loading ? <><Spinner size={20} />Setting up your booking...</> : <>Book &amp; Pay &rarr;</>}
         </button>
-
-        {!canSubmit && !loading && (
-          <p className="text-xs text-white/30 text-center mt-3">
-            Complete all sections above to continue
-          </p>
-        )}
-
+        {!canSubmit && !loading && <p className="text-xs text-white/30 text-center mt-3">Complete all sections above to continue</p>}
         {canSubmit && !loading && (
-          <p className="text-xs text-white/30 text-center mt-3">
-            You&apos;ll be redirected to our secure payment page
-          </p>
+          <div className="text-center mt-3">
+            <p className="text-xs text-white/30">You&apos;ll be redirected to our secure payment page</p>
+            <div className="flex items-center justify-center gap-2 mt-2 text-white/20">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+              <span className="text-[10px]">SSL encrypted &middot; Powered by Stripe</span>
+            </div>
+          </div>
         )}
       </section>
 
-      {/* Already have an account? */}
       {!isLoggedIn && (
-        <p className="text-center text-sm text-white/40">
-          Already have an account?{' '}
-          <Link
-            href={`/auth/signin?redirect=/book/${orgSlug}/class/${groupId}/quick-book`}
-            className="underline hover:text-white/60"
-            style={{ color: primaryColor }}
-          >
-            Sign in
-          </Link>
-        </p>
+        <p className="text-center text-sm text-white/40">Already have an account? <Link href={`/auth/signin?redirect=/book/${orgSlug}/class/${groupId}/quick-book`} className="underline hover:text-white/60" style={{ color: primaryColor }}>Sign in</Link></p>
       )}
     </div>
   )

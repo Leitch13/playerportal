@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Card from '@/components/Card'
 import StatusBadge from '@/components/StatusBadge'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole, SubscriptionPlan } from '@/lib/types'
@@ -153,62 +152,63 @@ async function ParentPayments({
   }, 0)
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Payments & Subscriptions</h1>
+        <h1 className="text-2xl font-bold text-white">Payments & Subscriptions</h1>
         {hasStripeCustomer && <ManageBillingButton />}
       </div>
 
       {success && (
-        <div className="bg-cyan-50 border border-cyan-200 text-cyan-800 rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/30 text-[#4ecde6] rounded-lg px-4 py-3 text-sm font-medium">
           Payment successful! Your balance will update shortly.
         </div>
       )}
       {cancelled && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-4 py-3 text-sm font-medium">
           Payment was cancelled. You can try again anytime.
         </div>
       )}
       {subSuccess && (
-        <div className="bg-cyan-50 border border-cyan-200 text-cyan-800 rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/30 text-[#4ecde6] rounded-lg px-4 py-3 text-sm font-medium">
           Subscription activated! Welcome aboard.
         </div>
       )}
       {subCancelled && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-4 py-3 text-sm font-medium">
           Subscription setup was cancelled. You can subscribe anytime.
         </div>
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-xl font-bold text-primary">&pound;{monthlyTotal.toFixed(0)}</div>
-            <div className="text-xs text-text-light mt-0.5">Monthly</div>
+            <div className="text-xl font-bold text-[#4ecde6]">&pound;{monthlyTotal.toFixed(0)}</div>
+            <div className="text-xs text-white/60 mt-0.5">Monthly</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className={`text-xl font-bold ${outstanding > 0 ? 'text-warning' : 'text-accent'}`}>
+            <div className={`text-xl font-bold ${outstanding > 0 ? 'text-orange-400' : 'text-[#4ecde6]'}`}>
               &pound;{outstanding.toFixed(2)}
             </div>
-            <div className="text-xs text-text-light mt-0.5">Outstanding</div>
+            <div className="text-xs text-white/60 mt-0.5">Outstanding</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
             <div className="text-xl font-bold text-accent">&pound;{totalPaid.toFixed(2)}</div>
-            <div className="text-xs text-text-light mt-0.5">Total Paid</div>
+            <div className="text-xs text-white/60 mt-0.5">Total Paid</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className={`text-xl font-bold ${overdueCount > 0 ? 'text-danger' : 'text-accent'}`}>
+            <div className={`text-xl font-bold ${overdueCount > 0 ? 'text-red-400' : 'text-[#4ecde6]'}`}>
               {overdueCount}
             </div>
-            <div className="text-xs text-text-light mt-0.5">Overdue</div>
+            <div className="text-xs text-white/60 mt-0.5">Overdue</div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {activeSubs.length > 0 && (
@@ -222,22 +222,22 @@ async function ParentPayments({
               : null
 
             return (
-              <Card key={sub.id}>
+              <div key={sub.id} className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-semibold text-sm">
                       {plan?.name || 'Subscription'}
                       {player && (
-                        <span className="text-text-light font-normal">
+                        <span className="text-white/60 font-normal">
                           {' '}&mdash; {player.first_name} {player.last_name}
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-text-light mt-1 space-y-0.5">
+                    <div className="text-xs text-white/60 mt-1 space-y-0.5">
                       <div>&pound;{plan ? Number(plan.amount).toFixed(2) : '—'}/month</div>
                       {periodEnd && <div>Next payment: {periodEnd}</div>}
                       {sub.cancel_at_period_end && (
-                        <div className="text-warning font-medium">Cancels at end of period</div>
+                        <div className="text-orange-400 font-medium">Cancels at end of period</div>
                       )}
                     </div>
                   </div>
@@ -252,7 +252,7 @@ async function ParentPayments({
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
             )
           })}
         </div>
@@ -268,19 +268,19 @@ async function ParentPayments({
               const player = sub.player as unknown as { first_name: string; last_name: string } | null
 
               return (
-                <Card key={sub.id}>
+                <div key={sub.id} className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="font-semibold text-sm">
                           {plan?.name || 'Subscription'}
                           {player && (
-                            <span className="text-text-light font-normal">
+                            <span className="text-white/60 font-normal">
                               {' '}&mdash; {player.first_name} {player.last_name}
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-text-light mt-1">
+                        <div className="text-xs text-white/60 mt-1">
                           Assigned by your coach — activate to start paying
                         </div>
                       </div>
@@ -296,7 +296,7 @@ async function ParentPayments({
                       />
                     )}
                   </div>
-                </Card>
+                </div>
               )
             })}
         </div>
@@ -317,32 +317,32 @@ async function ParentPayments({
                 <div
                   key={bc.id}
                   className={`rounded-xl border p-4 ${
-                    isToday ? 'border-accent bg-accent/5 ring-1 ring-accent/20' : 'border-border bg-white dark:bg-surface-dark'
+                    isToday ? 'border-[#4ecde6] bg-[#4ecde6]/5 ring-1 ring-[#4ecde6]/20' : 'border-white/[0.08] bg-white/[0.05]'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-1">
                     <div className="font-semibold text-sm">{group?.name || 'Class'}</div>
                     {isToday && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                         Today
                       </span>
                     )}
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="font-bold text-primary">{group?.day_of_week || '—'}</span>
+                      <span className="font-bold text-[#4ecde6]">{group?.day_of_week || '—'}</span>
                       {group?.time_slot && (
                         <span className="text-primary font-medium">{group.time_slot}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-text-light">
+                    <div className="flex items-center gap-3 text-xs text-white/60">
                       {group?.location && <span>{group.location}</span>}
                       {group?.coach?.full_name && <span>{group.coach.full_name}</span>}
                     </div>
                     {player && (
                       <div className="flex items-center gap-1.5 text-xs pt-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                        <span className="text-accent font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
+                        <span className="text-[#4ecde6] font-medium">
                           {player.first_name} {player.last_name}
                         </span>
                       </div>
@@ -355,7 +355,7 @@ async function ParentPayments({
           <div className="text-center">
             <a
               href="/dashboard/schedule"
-              className="text-xs text-accent hover:underline font-medium"
+              className="text-xs text-[#4ecde6] hover:underline font-medium"
             >
               View full schedule & book more classes &rarr;
             </a>
@@ -364,17 +364,17 @@ async function ParentPayments({
       )}
 
       {bookedClasses.length === 0 && (
-        <Card>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center py-4 space-y-2">
-            <p className="text-sm text-text-light">No classes booked yet.</p>
+            <p className="text-sm text-white/60">No classes booked yet.</p>
             <a
               href="/dashboard/schedule"
-              className="inline-block px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="inline-block px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-medium hover:bg-[#4ecde6]/90 transition-colors"
             >
               Browse & Book Classes
             </a>
           </div>
-        </Card>
+        </div>
       )}
 
       {(plans || []).length > 0 && (
@@ -396,8 +396,8 @@ async function ParentPayments({
                   key={plan.id}
                   className={`rounded-xl border p-4 ${
                     isFullySubscribed
-                      ? 'border-accent/30 bg-accent/5'
-                      : 'border-border bg-white dark:bg-surface-dark'
+                      ? 'border-[#4ecde6]/30 bg-[#4ecde6]/5'
+                      : 'border-white/[0.08] bg-white/[0.05]'
                   }`}
                 >
                   <div className="space-y-3">
@@ -405,20 +405,20 @@ async function ParentPayments({
                       <div>
                         <div className="font-semibold">{plan.name}</div>
                         {plan.description && (
-                          <div className="text-xs text-text-light mt-0.5">{plan.description}</div>
+                          <div className="text-xs text-white/60 mt-0.5">{plan.description}</div>
                         )}
                       </div>
                       {isFullySubscribed && (
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                           Active
                         </span>
                       )}
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold">&pound;{Number(plan.amount).toFixed(0)}</span>
-                      <span className="text-sm text-text-light">/month</span>
+                      <span className="text-2xl font-bold text-white">&pound;{Number(plan.amount).toFixed(0)}</span>
+                      <span className="text-sm text-white/60">/month</span>
                     </div>
-                    <div className="text-xs text-text-light">
+                    <div className="text-xs text-white/60">
                       {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week
                     </div>
 
@@ -428,8 +428,8 @@ async function ParentPayments({
                           const player = sub.player as unknown as { first_name: string; last_name: string } | null
                           return (
                             <div key={sub.id} className="flex items-center gap-1.5 text-xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                              <span className="text-accent font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
+                              <span className="text-[#4ecde6] font-medium">
                                 {player ? `${player.first_name} ${player.last_name}` : 'Subscribed'}
                               </span>
                             </div>
@@ -484,12 +484,12 @@ async function ParentPayments({
               const canPay = remaining > 0 && p.status !== 'paid'
 
               return (
-                <Card key={p.id}>
+                <div key={p.id} className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="font-medium text-sm">{p.description || 'Payment'}</div>
-                        <div className="text-xs text-text-light">
+                        <div className="text-xs text-white/60">
                           {(p.player as unknown as { first_name: string; last_name: string })
                             ? `${(p.player as unknown as { first_name: string; last_name: string }).first_name} ${(p.player as unknown as { first_name: string; last_name: string }).last_name}`
                             : ''}
@@ -499,21 +499,21 @@ async function ParentPayments({
                       <StatusBadge status={p.status} />
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-light">
+                      <span className="text-white/60">
                         &pound;{paid.toFixed(2)} of &pound;{due.toFixed(2)}
                       </span>
                       <span className="font-medium">
                         {p.status === 'paid' ? 'Paid in full' : `${pct}% paid`}
                       </span>
                     </div>
-                    <div className="w-full bg-surface-dark rounded-full h-2">
+                    <div className="w-full bg-white/[0.05] rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all ${
                           p.status === 'paid'
-                            ? 'bg-accent'
+                            ? 'bg-[#4ecde6]'
                             : p.status === 'overdue'
-                              ? 'bg-danger'
-                              : 'bg-primary'
+                              ? 'bg-red-400'
+                              : 'bg-[#4ecde6]'
                         }`}
                         style={{ width: `${pct}%` }}
                       />
@@ -524,12 +524,13 @@ async function ParentPayments({
                       </div>
                     )}
                   </div>
-                </Card>
+                </div>
               )
             })}
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }
@@ -785,19 +786,20 @@ async function AdminPayments({
   ]
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Payments & Subscriptions</h1>
+      <h1 className="text-2xl font-bold text-white">Payments & Subscriptions</h1>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-surface-dark rounded-lg p-1">
+      <div className="flex gap-1 bg-white/[0.05] rounded-lg p-1">
         {tabs.map((tab) => (
           <a
             key={tab.key}
             href={`/dashboard/payments?tab=${tab.key}`}
             className={`flex-1 text-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-white dark:bg-primary text-primary dark:text-white shadow-sm'
-                : 'text-text-light hover:text-text'
+                ? 'bg-white bg-[#4ecde6] text-[#0a0a0a] shadow-sm'
+                : 'text-white/60 hover:text-text'
             }`}
           >
             {tab.label}
@@ -810,37 +812,37 @@ async function AdminPayments({
         <>
           {/* Summary stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card>
+            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
               <div className="text-center">
                 <div className="text-2xl font-bold text-accent">&pound;{stats.monthlyRevenue.toFixed(0)}</div>
-                <div className="text-xs text-text-light mt-0.5">Monthly Recurring</div>
+                <div className="text-xs text-white/60 mt-0.5">Monthly Recurring</div>
               </div>
-            </Card>
-            <Card>
+            </div>
+            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{stats.activeSubs}</div>
-                <div className="text-xs text-text-light mt-0.5">Active Subs</div>
+                <div className="text-2xl font-bold text-[#4ecde6]">{stats.activeSubs}</div>
+                <div className="text-xs text-white/60 mt-0.5">Active Subs</div>
               </div>
-            </Card>
-            <Card>
+            </div>
+            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
               <div className="text-center">
                 <div className="text-2xl font-bold text-accent">&pound;{stats.totalCollected.toFixed(0)}</div>
-                <div className="text-xs text-text-light mt-0.5">Collected</div>
+                <div className="text-xs text-white/60 mt-0.5">Collected</div>
               </div>
-            </Card>
-            <Card>
+            </div>
+            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
               <div className="text-center">
-                <div className={`text-2xl font-bold ${stats.overdueCount > 0 ? 'text-danger' : 'text-accent'}`}>
+                <div className={`text-2xl font-bold ${stats.overdueCount > 0 ? 'text-red-400' : 'text-[#4ecde6]'}`}>
                   {stats.overdueCount}
                 </div>
-                <div className="text-xs text-text-light mt-0.5">Overdue</div>
+                <div className="text-xs text-white/60 mt-0.5">Overdue</div>
               </div>
-            </Card>
+            </div>
           </div>
 
           {/* Active Subscriptions Table */}
           {(allSubscriptions || []).length > 0 && (
-            <Card title="Subscriptions">
+            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5"><h2 className="text-lg font-semibold text-white mb-4">Subscriptions</h2>
               <div className="space-y-2">
                 {(allSubscriptions || []).map((sub) => {
                   const plan = sub.plan as unknown as SubscriptionPlan
@@ -853,18 +855,18 @@ async function AdminPayments({
                   return (
                     <div
                       key={sub.id}
-                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg border border-border hover:bg-surface/50 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg border border-white/[0.08] hover:bg-white/[0.03] transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">
                           {parent?.full_name || '—'}
                           {player && (
-                            <span className="text-text-light font-normal">
+                            <span className="text-white/60 font-normal">
                               {' '}&middot; {player.first_name} {player.last_name}
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-text-light">
+                        <div className="text-xs text-white/60">
                           &pound;{plan ? Number(plan.amount).toFixed(0) : '—'}/mo &middot; Next: {periodEnd}
                         </div>
                       </div>
@@ -879,11 +881,13 @@ async function AdminPayments({
                   )
                 })}
               </div>
-            </Card>
+            </div>
           )}
 
+          <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+
           {/* One-off Payments */}
-          <div className="border-t border-border pt-6 space-y-4">
+          <div className="border-t border-white/[0.08] pt-6 space-y-4">
             <h2 className="text-lg font-semibold">One-off Payments</h2>
 
             <div className="flex flex-wrap gap-2">
@@ -893,8 +897,8 @@ async function AdminPayments({
                   href={`/dashboard/payments?tab=overview${f.key !== 'all' ? `&filter=${f.key}` : ''}`}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                     filter === f.key
-                      ? 'bg-primary text-white'
-                      : 'bg-surface-dark text-text-light hover:bg-border'
+                      ? 'bg-[#4ecde6] text-[#0a0a0a]'
+                      : 'bg-white/[0.05] text-white/60 hover:bg-border'
                   }`}
                 >
                   {f.label} ({f.count})
@@ -905,11 +909,11 @@ async function AdminPayments({
             {(payments || []).length === 0 ? (
               <EmptyState message={filter === 'all' ? 'No payments recorded yet.' : `No ${filter} payments.`} />
             ) : (
-              <Card>
+              <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-border">
+                      <tr className="border-b border-white/[0.08]">
                         <th className="text-left py-2 font-medium">Parent</th>
                         <th className="text-left py-2 font-medium">Player</th>
                         <th className="text-left py-2 font-medium hidden md:table-cell">Description</th>
@@ -921,10 +925,10 @@ async function AdminPayments({
                     </thead>
                     <tbody>
                       {(payments || []).map((p) => (
-                        <tr key={p.id} className="border-b border-border last:border-0 hover:bg-surface/50">
+                        <tr key={p.id} className="border-b border-white/[0.08] last:border-0 hover:bg-white/[0.03]">
                           <td className="py-2.5">
                             <div className="font-medium">{(p.parent as unknown as { full_name: string })?.full_name || '—'}</div>
-                            <div className="text-xs text-text-light hidden md:block">
+                            <div className="text-xs text-white/60 hidden md:block">
                               {(p.parent as unknown as { email: string })?.email}
                             </div>
                           </td>
@@ -933,14 +937,14 @@ async function AdminPayments({
                               ? `${(p.player as unknown as { first_name: string; last_name: string }).first_name} ${(p.player as unknown as { first_name: string; last_name: string }).last_name}`
                               : '—'}
                           </td>
-                          <td className="py-2.5 hidden md:table-cell text-text-light">{(p.description as string) || '—'}</td>
+                          <td className="py-2.5 hidden md:table-cell text-white/60">{(p.description as string) || '—'}</td>
                           <td className="py-2.5 font-medium">&pound;{Number(p.amount).toFixed(2)}</td>
                           <td className="py-2.5">
-                            <span className={Number(p.amount_paid || 0) >= Number(p.amount) ? 'text-accent font-medium' : ''}>
+                            <span className={Number(p.amount_paid || 0) >= Number(p.amount) ? 'text-[#4ecde6] font-medium' : ''}>
                               &pound;{Number(p.amount_paid || 0).toFixed(2)}
                             </span>
                           </td>
-                          <td className="py-2.5 hidden md:table-cell text-text-light">
+                          <td className="py-2.5 hidden md:table-cell text-white/60">
                             {p.due_date ? new Date(p.due_date as string).toLocaleDateString() : '—'}
                           </td>
                           <td className="py-2.5">
@@ -956,7 +960,7 @@ async function AdminPayments({
                     </tbody>
                   </table>
                 </div>
-              </Card>
+              </div>
             )}
           </div>
         </>
@@ -997,6 +1001,7 @@ async function AdminPayments({
           <PaymentManager parents={allParents || []} players={allPlayers || []} autoOpen={autoOpen} orgId={orgId} />
         </>
       )}
+    </div>
     </div>
   )
 }

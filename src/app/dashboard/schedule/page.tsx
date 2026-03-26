@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
 import StatusBadge from '@/components/StatusBadge'
 import BookClassButton from './BookClassButton'
@@ -179,18 +178,19 @@ async function AdminSchedule({
   const todayPlayerCount = todayClasses.reduce((sum, s) => sum + s.playerCount, 0)
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Calendar</h1>
-          <p className="text-sm text-text-light mt-1">
+          <h1 className="text-2xl font-bold text-white">Calendar</h1>
+          <p className="text-sm text-white/60 mt-1">
             Full schedule breakdown — weekly view, by group, coach, location & events.
           </p>
         </div>
         <a
           href="/dashboard/groups"
-          className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-light transition-colors"
+          className="px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-medium hover:bg-[#4ecde6]/90 transition-colors"
         >
           + Manage Sessions
         </a>
@@ -198,76 +198,78 @@ async function AdminSchedule({
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-        <Card>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalClasses}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Total Classes</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{totalClasses}</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Total Classes</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">{uniquePlayers}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Active Players</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Active Players</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalEnrolments}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Enrolments</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{totalEnrolments}</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Enrolments</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">{coaches}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Coaches</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Coaches</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className={`text-2xl font-bold ${todayClasses.length > 0 ? 'text-accent' : 'text-text-light'}`}>
+            <div className={`text-2xl font-bold ${todayClasses.length > 0 ? 'text-[#4ecde6]' : 'text-white/60'}`}>
               {todayClasses.length}
             </div>
-            <div className="text-[10px] text-text-light mt-0.5">Today&apos;s Classes</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Today&apos;s Classes</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className={`text-2xl font-bold ${todayPlayerCount > 0 ? 'text-accent' : 'text-text-light'}`}>
+            <div className={`text-2xl font-bold ${todayPlayerCount > 0 ? 'text-[#4ecde6]' : 'text-white/60'}`}>
               {todayPlayerCount}
             </div>
-            <div className="text-[10px] text-text-light mt-0.5">Players Today</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Players Today</div>
           </div>
-        </Card>
+        </div>
       </div>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
       {/* Today's highlight */}
       {todayClasses.length > 0 && (
-        <Card>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
-            <span className="px-2.5 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-semibold animate-pulse">
+            <span className="px-2.5 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-semibold animate-pulse">
               Live Today
             </span>
             <span className="text-sm font-semibold">{todayName}</span>
-            <span className="text-xs text-text-light">
+            <span className="text-xs text-white/60">
               · {todayClasses.length} class{todayClasses.length !== 1 ? 'es' : ''} · {todayPlayerCount} players
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {todayClasses.map((session) => (
-              <div key={session.id} className="rounded-xl border border-accent/20 bg-accent/5 p-3">
+              <div key={session.id} className="rounded-xl border border-[#4ecde6]/20 bg-[#4ecde6]/5 p-3">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-semibold text-sm">{session.groupName}</div>
-                    <div className="flex items-center gap-2 text-xs text-text-light mt-1">
+                    <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
                       {session.location && <span>📍 {session.location}</span>}
                       {session.coachName && <span>👤 {session.coachName}</span>}
                     </div>
                   </div>
                   <div className="text-right">
                     {session.timeSlot && (
-                      <div className="text-sm font-bold text-primary">{session.timeSlot}</div>
+                      <div className="text-sm font-bold text-[#4ecde6]">{session.timeSlot}</div>
                     )}
-                    <div className="text-xs text-accent font-medium mt-0.5">
+                    <div className="text-xs text-[#4ecde6] font-medium mt-0.5">
                       {session.playerCount} player{session.playerCount !== 1 ? 's' : ''}
                     </div>
                   </div>
@@ -275,8 +277,8 @@ async function AdminSchedule({
                 {session.players.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {session.players.map((p) => (
-                      <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded-full text-xs border border-border">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                      <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/[0.05] rounded-full text-xs border border-white/[0.08] text-white">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
                         {p.name}
                       </span>
                     ))}
@@ -285,35 +287,38 @@ async function AdminSchedule({
               </div>
             ))}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Full Calendar with Tabs */}
-      <Card>
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
         <CalendarTabs
           sessions={calendarSessions}
           events={calendarEvents}
           role={role as 'admin' | 'coach'}
         />
-      </Card>
+      </div>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
       {/* Quick links */}
-      <Card>
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
         <div className="flex items-center justify-center gap-6 py-2">
-          <a href="/dashboard/groups" className="text-sm text-accent hover:underline font-medium">
+          <a href="/dashboard/groups" className="text-sm text-[#4ecde6] hover:underline font-medium">
             Manage Sessions →
           </a>
-          <a href="/dashboard/enrolments" className="text-sm text-accent hover:underline font-medium">
+          <a href="/dashboard/enrolments" className="text-sm text-[#4ecde6] hover:underline font-medium">
             Manage Enrolments →
           </a>
-          <a href="/dashboard/attendance" className="text-sm text-accent hover:underline font-medium">
+          <a href="/dashboard/attendance" className="text-sm text-[#4ecde6] hover:underline font-medium">
             Take Attendance →
           </a>
-          <a href="/dashboard/events" className="text-sm text-accent hover:underline font-medium">
+          <a href="/dashboard/events" className="text-sm text-[#4ecde6] hover:underline font-medium">
             Manage Events →
           </a>
         </div>
-      </Card>
+      </div>
+    </div>
     </div>
   )
 }
@@ -465,51 +470,54 @@ async function ParentSchedule({
   )
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Calendar</h1>
-        <p className="text-sm text-text-light mt-1">
+        <h1 className="text-2xl font-bold text-white">Calendar</h1>
+        <p className="text-sm text-white/60 mt-1">
           View your schedule, browse available classes & upcoming events.
         </p>
       </div>
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalClasses}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Classes Available</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{totalClasses}</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Classes Available</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">{bookedGroups}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Classes Booked</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Classes Booked</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{(myPlayers || []).length}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Children</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{(myPlayers || []).length}</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Children</div>
           </div>
-        </Card>
-        <Card>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">{calendarEvents.length}</div>
-            <div className="text-[10px] text-text-light mt-0.5">Upcoming Events</div>
+            <div className="text-[10px] text-white/60 mt-0.5">Upcoming Events</div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Full Calendar with Tabs */}
-      <Card>
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
         <CalendarTabs
           sessions={calendarSessions}
           events={calendarEvents}
           role="parent"
         />
-      </Card>
+      </div>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
       {/* My Booked Classes with booking/cancel actions */}
       {bookedCount > 0 && (
@@ -525,24 +533,24 @@ async function ParentSchedule({
               const isToday = group.day_of_week === new Date().toLocaleDateString('en-GB', { weekday: 'long' })
 
               return (
-                <Card key={group.id} className={isToday ? 'ring-2 ring-accent' : ''}>
+                <div key={group.id} className={`bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 ${isToday ? 'ring-2 ring-[#4ecde6]' : ''}`}>
                   <div className="space-y-2">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="font-semibold text-sm">{group.name}</div>
-                        <div className="text-xs text-text-light">
+                        <div className="text-xs text-white/60">
                           {group.day_of_week}{group.time_slot && ` · ${group.time_slot}`}
                         </div>
                       </div>
                       {isToday && (
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                           Today
                         </span>
                       )}
                     </div>
 
                     {(group.location || group.coach) && (
-                      <div className="flex items-center gap-3 text-xs text-text-light">
+                      <div className="flex items-center gap-3 text-xs text-white/60">
                         {group.location && <span>📍 {group.location}</span>}
                         {group.coach && <span>👤 {group.coach.full_name}</span>}
                       </div>
@@ -566,12 +574,14 @@ async function ParentSchedule({
                       ))}
                     </div>
                   </div>
-                </Card>
+                </div>
               )
             }).filter(Boolean)}
           </div>
         </div>
       )}
+
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
       {/* All Available Classes by Day with Book buttons */}
       <div className="space-y-3">
@@ -588,15 +598,15 @@ async function ParentSchedule({
               return (
                 <div key={day}>
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className={`text-sm font-bold ${isToday ? 'text-accent' : 'text-text'}`}>
+                    <h3 className={`text-sm font-bold ${isToday ? 'text-[#4ecde6]' : 'text-white'}`}>
                       {day}
                     </h3>
                     {isToday && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                         Today
                       </span>
                     )}
-                    <span className="text-xs text-text-light">
+                    <span className="text-xs text-white/60">
                       {classes.length} class{classes.length !== 1 ? 'es' : ''}
                     </span>
                   </div>
@@ -618,8 +628,8 @@ async function ParentSchedule({
                           key={group.id}
                           className={`rounded-xl border p-4 ${
                             allBooked
-                              ? 'border-accent/30 bg-accent/5'
-                              : 'border-border bg-white'
+                              ? 'border-[#4ecde6]/30 bg-[#4ecde6]/5'
+                              : 'border-white/[0.08] bg-white/[0.05]'
                           }`}
                         >
                           <div className="flex items-start justify-between mb-2">
@@ -632,14 +642,14 @@ async function ParentSchedule({
                               )}
                             </div>
                             {allBooked && (
-                              <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
+                              <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                                 Booked ✓
                               </span>
                             )}
                           </div>
 
                           {(group.location || group.coach) && (
-                            <div className="flex items-center gap-3 text-xs text-text-light mb-3">
+                            <div className="flex items-center gap-3 text-xs text-white/60 mb-3">
                               {group.location && <span>📍 {group.location}</span>}
                               {group.coach?.full_name && <span>👤 {group.coach.full_name}</span>}
                             </div>
@@ -651,8 +661,8 @@ async function ParentSchedule({
                                 .filter((p) => enrolledPlayerIds.includes(p.id))
                                 .map((p) => (
                                   <div key={p.id} className="flex items-center gap-1.5 text-xs">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                                    <span className="text-accent font-medium">{p.first_name} booked</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
+                                    <span className="text-[#4ecde6] font-medium">{p.first_name} booked</span>
                                   </div>
                                 ))}
                             </div>
@@ -691,18 +701,19 @@ async function ParentSchedule({
       </div>
 
       {/* Help text */}
-      <Card>
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
         <div className="text-center py-2 space-y-1">
-          <p className="text-sm text-text-light">
+          <p className="text-sm text-white/60">
             Need to change or cancel a class? Use the cancel button above, or message your coach via{' '}
-            <a href="/dashboard/messages" className="text-accent hover:underline font-medium">Messages</a>.
+            <a href="/dashboard/messages" className="text-[#4ecde6] hover:underline font-medium">Messages</a>.
           </p>
-          <p className="text-xs text-text-light">
+          <p className="text-xs text-white/60">
             Payment for classes is handled through your{' '}
-            <a href="/dashboard/payments" className="text-accent hover:underline font-medium">subscription</a>.
+            <a href="/dashboard/payments" className="text-[#4ecde6] hover:underline font-medium">subscription</a>.
           </p>
         </div>
-      </Card>
+      </div>
+    </div>
     </div>
   )
 }

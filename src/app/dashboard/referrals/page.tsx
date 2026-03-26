@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Card from '@/components/Card'
 import StatusBadge from '@/components/StatusBadge'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
@@ -44,8 +43,9 @@ export default async function ReferralsPage() {
     const totalRewards = referrals?.filter((r) => r.status === 'rewarded').reduce((sum, r) => sum + (r.reward_amount || 0), 0) || 0
 
     return (
+      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Referrals</h1>
+        <h1 className="text-2xl font-bold text-white">Referrals</h1>
 
         {/* Referral link */}
         <ReferralLink
@@ -55,22 +55,24 @@ export default async function ReferralsPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <p className="text-sm text-text-light">Total Referrals</p>
+          <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+            <p className="text-sm text-white/60">Total Referrals</p>
             <p className="text-2xl font-bold mt-1">{totalReferrals}</p>
-          </Card>
-          <Card>
-            <p className="text-sm text-text-light">Successful Signups</p>
+          </div>
+          <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+            <p className="text-sm text-white/60">Successful Signups</p>
             <p className="text-2xl font-bold mt-1">{successfulSignups}</p>
-          </Card>
-          <Card>
-            <p className="text-sm text-text-light">Rewards Earned</p>
+          </div>
+          <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+            <p className="text-sm text-white/60">Rewards Earned</p>
             <p className="text-2xl font-bold mt-1">&pound;{(totalRewards / 100).toFixed(2)}</p>
-          </Card>
+          </div>
         </div>
 
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+
         {/* Referral list */}
-        <Card title="Your Referrals">
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5"><h2 className="text-lg font-semibold text-white mb-4">Your Referrals</h2>
           {!referrals || referrals.length === 0 ? (
             <EmptyState message="No referrals yet. Share your link to get started!" />
           ) : (
@@ -81,13 +83,13 @@ export default async function ReferralsPage() {
                     <p className="text-sm font-medium">
                       Referral #{referral.referral_code}
                     </p>
-                    <p className="text-xs text-text-light">
+                    <p className="text-xs text-white/60">
                       {new Date(referral.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     {referral.reward_amount && referral.status === 'rewarded' && (
-                      <span className="text-sm font-medium text-primary">
+                      <span className="text-sm font-medium text-[#4ecde6]">
                         +&pound;{(referral.reward_amount / 100).toFixed(2)}
                       </span>
                     )}
@@ -97,7 +99,8 @@ export default async function ReferralsPage() {
               ))}
             </div>
           )}
-        </Card>
+        </div>
+      </div>
       </div>
     )
   }
@@ -115,38 +118,41 @@ export default async function ReferralsPage() {
   const totalPaidOut = allReferrals?.filter((r) => r.status === 'rewarded').reduce((sum, r) => sum + (r.reward_amount || 0), 0) || 0
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Referrals</h1>
+      <h1 className="text-2xl font-bold text-white">Referrals</h1>
 
       {/* Admin stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <p className="text-sm text-text-light">Total Referrals</p>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+          <p className="text-sm text-white/60">Total Referrals</p>
           <p className="text-2xl font-bold mt-1">{totalReferrals}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-text-light">Awaiting Reward</p>
-          <p className="text-2xl font-bold mt-1 text-warning">{pendingCount}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-text-light">Rewarded</p>
-          <p className="text-2xl font-bold mt-1 text-primary">{rewardedCount}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-text-light">Total Paid Out</p>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+          <p className="text-sm text-white/60">Awaiting Reward</p>
+          <p className="text-2xl font-bold mt-1 text-orange-400">{pendingCount}</p>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+          <p className="text-sm text-white/60">Rewarded</p>
+          <p className="text-2xl font-bold mt-1 text-[#4ecde6]">{rewardedCount}</p>
+        </div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+          <p className="text-sm text-white/60">Total Paid Out</p>
           <p className="text-2xl font-bold mt-1">&pound;{(totalPaidOut / 100).toFixed(2)}</p>
-        </Card>
+        </div>
       </div>
 
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+
       {/* All referrals table */}
-      <Card title="All Referrals">
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5"><h2 className="text-lg font-semibold text-white mb-4">All Referrals</h2>
         {!allReferrals || allReferrals.length === 0 ? (
           <EmptyState message="No referrals yet." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-text-light">
+                <tr className="border-b border-white/[0.08] text-left text-white/60">
                   <th className="pb-3 font-medium">Referrer</th>
                   <th className="pb-3 font-medium">Code</th>
                   <th className="pb-3 font-medium">Status</th>
@@ -160,10 +166,10 @@ export default async function ReferralsPage() {
                   <tr key={referral.id}>
                     <td className="py-3 pr-4">
                       <p className="font-medium">{referral.referrer?.full_name || '—'}</p>
-                      <p className="text-xs text-text-light">{referral.referrer?.email || ''}</p>
+                      <p className="text-xs text-white/60">{referral.referrer?.email || ''}</p>
                     </td>
                     <td className="py-3 pr-4">
-                      <code className="bg-surface-dark px-2 py-0.5 rounded text-xs font-mono">
+                      <code className="bg-white/[0.05] px-2 py-0.5 rounded text-xs font-mono text-white/60">
                         {referral.referral_code}
                       </code>
                     </td>
@@ -175,7 +181,7 @@ export default async function ReferralsPage() {
                         ? `\u00A3${(referral.reward_amount / 100).toFixed(2)}`
                         : '—'}
                     </td>
-                    <td className="py-3 pr-4 text-text-light text-xs">
+                    <td className="py-3 pr-4 text-white/60 text-xs">
                       {new Date(referral.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-3">
@@ -192,7 +198,8 @@ export default async function ReferralsPage() {
             </table>
           </div>
         )}
-      </Card>
+      </div>
+    </div>
     </div>
   )
 }

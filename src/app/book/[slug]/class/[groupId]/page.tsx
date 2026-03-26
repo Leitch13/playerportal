@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ShareButton from './ShareButton'
+import StickyBookBar from './StickyBookBar'
 
 const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color: string }> = {
   group: { label: 'Group Session', gradient: 'from-blue-600/30 via-blue-900/20 to-transparent', color: '#3b82f6' },
@@ -165,9 +166,9 @@ export default async function ClassBookingPage({
           </>
         )}
 
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-12 text-center">
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-8 sm:pb-12 text-center">
           {/* Class type badge */}
-          <div className="inline-flex items-center gap-2 mb-4">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4">
             <span
               className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border"
               style={{ borderColor: `${typeConfig.color}50`, color: typeConfig.color, background: `${typeConfig.color}15` }}
@@ -447,8 +448,17 @@ export default async function ClassBookingPage({
         </div>
       </div>
 
+      {/* Sticky Mobile CTA Bar */}
+      <StickyBookBar
+        href={isFull ? `/auth/signup?org=${slug}&class=${groupId}` : `/book/${slug}/class/${groupId}/quick-book`}
+        label={isFull ? 'Join Waitlist' : 'Book Now'}
+        price={plans && plans.length > 0 ? `\u00A3${Number(plans[0].amount).toFixed(0)}` : (price != null && Number(price) > 0 ? `\u00A3${Number(price).toFixed(0)}` : null)}
+        primaryColor={primaryColor}
+        isFull={isFull}
+      />
+
       {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-white/20">
+      <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-white/20 pb-24 md:pb-6">
         Powered by Player Portal
       </footer>
     </div>

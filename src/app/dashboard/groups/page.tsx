@@ -80,53 +80,56 @@ export default async function GroupsPage() {
   const fillRate = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Classes</h1>
-          <p className="text-sm text-text-light mt-0.5">Manage your training sessions and class capacity</p>
+          <h1 className="text-2xl font-bold text-white">Classes</h1>
+          <p className="text-sm text-white/60 mt-0.5">Manage your training sessions and class capacity</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
-          <div className="text-2xl font-bold text-primary">{totalClasses}</div>
-          <div className="text-xs text-text-light mt-0.5">Total Classes</div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
+          <div className="text-2xl font-bold text-[#4ecde6]">{totalClasses}</div>
+          <div className="text-xs text-white/60 mt-0.5">Total Classes</div>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
           <div className="text-2xl font-bold text-accent">{totalEnrolled}</div>
-          <div className="text-xs text-text-light mt-0.5">Players Enrolled</div>
+          <div className="text-xs text-white/60 mt-0.5">Players Enrolled</div>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
-          <div className="text-2xl font-bold text-primary">{totalCapacity}</div>
-          <div className="text-xs text-text-light mt-0.5">Total Capacity</div>
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
+          <div className="text-2xl font-bold text-[#4ecde6]">{totalCapacity}</div>
+          <div className="text-xs text-white/60 mt-0.5">Total Capacity</div>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
           <div className={`text-2xl font-bold ${fillRate >= 80 ? 'text-orange-500' : 'text-emerald-500'}`}>{fillRate}%</div>
-          <div className="text-xs text-text-light mt-0.5">Fill Rate</div>
+          <div className="text-xs text-white/60 mt-0.5">Fill Rate</div>
         </div>
       </div>
+
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
       {/* Create new class (admin only) */}
       {isAdmin && <GroupForm coaches={coaches || []} orgId={orgId} />}
 
       {/* Classes by day */}
       {(groups || []).length === 0 ? (
-        <div className="bg-white rounded-2xl border border-border p-12 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
           <div className="text-4xl mb-3">📅</div>
-          <h3 className="text-lg font-bold mb-1">No classes yet</h3>
-          <p className="text-sm text-text-light mb-4">Create your first class to start enrolling players</p>
+          <h3 className="text-lg font-bold mb-1 text-white">No classes yet</h3>
+          <p className="text-sm text-white/60 mb-4">Create your first class to start enrolling players</p>
         </div>
       ) : (
         <div className="space-y-8">
           {Array.from(groupsByDay.entries()).map(([day, dayGroups]) => (
             <div key={day}>
               <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-lg font-bold">{day}</h2>
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-text-light font-medium">{dayGroups.length} class{dayGroups.length !== 1 ? 'es' : ''}</span>
+                <h2 className="text-lg font-bold text-white">{day}</h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+                <span className="text-xs text-white/60 font-medium">{dayGroups.length} class{dayGroups.length !== 1 ? 'es' : ''}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {dayGroups.map((g) => {
@@ -172,6 +175,7 @@ export default async function GroupsPage() {
           ))}
         </div>
       )}
+    </div>
     </div>
   )
 }
