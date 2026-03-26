@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import FileUpload from '@/components/FileUpload'
 
-interface Attachment {
-  name: string
-  url: string
-  type: string
-  size: number
-}
-
 interface SessionPlan {
   id: string
   title: string
@@ -25,6 +18,8 @@ interface SessionPlan {
   equipment: string | null
   notes: string | null
   status: string
+  diagram_url?: string | null
+  pdf_url?: string | null
 }
 
 export default function SessionPlanForm({
@@ -52,7 +47,8 @@ export default function SessionPlanForm({
   const [coolDown, setCoolDown] = useState(editPlan?.cool_down || '')
   const [equipment, setEquipment] = useState(editPlan?.equipment || '')
   const [notes, setNotes] = useState(editPlan?.notes || '')
-  const [attachments, setAttachments] = useState<Attachment[]>((editPlan as unknown as { attachments?: Attachment[] })?.attachments || [])
+  const [diagramUrl, setDiagramUrl] = useState(editPlan?.diagram_url || '')
+  const [pdfUrl, setPdfUrl] = useState(editPlan?.pdf_url || '')
 
   async function handleSave(status: string) {
     if (!title.trim()) return
@@ -72,7 +68,8 @@ export default function SessionPlanForm({
       cool_down: coolDown.trim() || null,
       equipment: equipment.trim() || null,
       notes: notes.trim() || null,
-      attachments: attachments.length > 0 ? JSON.stringify(attachments) : '[]',
+      diagram_url: diagramUrl || null,
+      pdf_url: pdfUrl || null,
       status,
     }
 
@@ -241,15 +238,28 @@ export default function SessionPlanForm({
       </div>
 
       {/* Attachments */}
-      <div>
-        <label className={labelCls}>Attachments (Diagrams, PDFs, Photos)</label>
-        <FileUpload
-          attachments={attachments}
-          onChange={setAttachments}
-          folder="session-plans"
-          accept="image/*,.pdf"
-          maxFiles={10}
-        />
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-white/60 border-b border-white/[0.08] pb-2">Attachments</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FileUpload
+            bucketName="coaching"
+            folder="session-plans/diagrams"
+            accept="image/*"
+            onUpload={(url) => setDiagramUrl(url)}
+            currentUrl={diagramUrl}
+            label="Pitch Diagram / Image"
+          />
+
+          <FileUpload
+            bucketName="coaching"
+            folder="session-plans/pdfs"
+            accept=".pdf"
+            onUpload={(url) => setPdfUrl(url)}
+            currentUrl={pdfUrl}
+            label="Session Plan PDF"
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-3 pt-2">

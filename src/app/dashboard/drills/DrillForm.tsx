@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import FileUpload from '@/components/FileUpload'
 
-interface Attachment {
-  name: string
-  url: string
-  type: string
-  size: number
-}
-
 interface Drill {
   id: string
   name: string
@@ -23,6 +16,7 @@ interface Drill {
   max_players: number | null
   difficulty: string
   image_url: string | null
+  pdf_url?: string | null
   created_by: string | null
 }
 
@@ -50,7 +44,7 @@ export default function DrillForm({
   const [ageGroup, setAgeGroup] = useState('')
   const [difficulty, setDifficulty] = useState(editDrill?.difficulty || 'intermediate')
   const [imageUrl, setImageUrl] = useState(editDrill?.image_url || '')
-  const [attachments, setAttachments] = useState<Attachment[]>((editDrill as unknown as { attachments?: Attachment[] })?.attachments || [])
+  const [pdfUrl, setPdfUrl] = useState(editDrill?.pdf_url || '')
 
   async function handleSave() {
     if (!name.trim()) return
@@ -69,8 +63,8 @@ export default function DrillForm({
       max_players: maxPlayers ? Number(maxPlayers) : null,
       age_group: ageGroup.trim() || null,
       difficulty,
-      image_url: imageUrl.trim() || null,
-      attachments: attachments.length > 0 ? JSON.stringify(attachments) : '[]',
+      image_url: imageUrl || null,
+      pdf_url: pdfUrl || null,
     }
 
     if (editDrill) {
@@ -194,28 +188,31 @@ export default function DrillForm({
             onChange={(e) => setAgeGroup(e.target.value)}
           />
         </div>
-
-        <div>
-          <label className={labelCls}>Image URL</label>
-          <input
-            className={inputCls}
-            placeholder="https://..."
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-          />
-        </div>
       </div>
 
-      {/* Attachments */}
-      <div>
-        <label className={labelCls}>Attachments (Diagrams, Photos, PDFs)</label>
-        <FileUpload
-          attachments={attachments}
-          onChange={setAttachments}
-          folder="drills"
-          accept="image/*,.pdf"
-          maxFiles={5}
-        />
+      {/* File Uploads */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-medium text-white/60 border-b border-white/[0.08] pb-2">Attachments</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FileUpload
+            bucketName="coaching"
+            folder="drills/images"
+            accept="image/*"
+            onUpload={(url) => setImageUrl(url)}
+            currentUrl={imageUrl}
+            label="Drill Diagram / Image"
+          />
+
+          <FileUpload
+            bucketName="coaching"
+            folder="drills/pdfs"
+            accept=".pdf"
+            onUpload={(url) => setPdfUrl(url)}
+            currentUrl={pdfUrl}
+            label="Drill PDF / Instructions"
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-3 pt-2">
