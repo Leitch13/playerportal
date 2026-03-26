@@ -202,7 +202,8 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
       { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
       { href: '/dashboard/session-notes', label: 'Session Notes', icon: 'clipboard' },
-      { href: '/dashboard/training-plans', label: 'Plans', icon: 'flag' },
+      { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
+      { href: '/dashboard/drills', label: 'Drill Library', icon: 'football' },
     ]},
     { title: 'Schedule', items: [
       { href: '/dashboard/schedule', label: 'Calendar', icon: 'calendar' },
@@ -235,6 +236,8 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
+      { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
+      { href: '/dashboard/drills', label: 'Drill Library', icon: 'football' },
     ]},
     { title: 'Engagement', items: [
       { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
