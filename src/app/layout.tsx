@@ -11,6 +11,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'),
   title: {
     default: 'Player Portal — The All-in-One Platform for Football Academies',
     template: '%s | Player Portal',
