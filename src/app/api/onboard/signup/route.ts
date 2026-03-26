@@ -43,7 +43,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    return NextResponse.json({ userId: data.user.id })
+    const userId = data.user.id
+
+    // Verify the handle_new_user trigger created the profile.
+    // Admin-created users may not fire the trigger in all Supabase configurations,
+    // so we manually insert the profile if it's missing.
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single()
+
+    if (!existingProfile) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email,
+          full_name: fullName,
+          role: 'admin',
+          organisation_id: org.id,
+        })
+
+      if (profileError) {
+        console.error('Failed to create profile for admin user:', profileError)
+        // Don't fail the whole flow — the user exists, profile can be fixed later
+      }
+    } else {
+      // Profile exists from trigger but may need org_id / role updated
+      await supabase
+        .from('profiles')
+        .update({ role: 'admin', organisation_id: org.id })
+        .eq('id', userId)
+    }
+
+    return NextResponse.json({ userId })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: message }, { status: 500 })

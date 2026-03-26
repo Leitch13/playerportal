@@ -14,18 +14,12 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(url)
 
-  // Get the Supabase project ref for cookie names
-  const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] || ''
-
-  // Clear ALL possible Supabase auth cookie variations
-  const cookiePrefixes = [
-    `sb-${projectRef}-auth-token`,
-    `sb-${projectRef}-auth-token.0`,
-    `sb-${projectRef}-auth-token.1`,
-  ]
-
-  for (const name of cookiePrefixes) {
-    response.cookies.set(name, '', { maxAge: 0, path: '/' })
+  // Clear ALL cookies that start with 'sb-' to ensure complete session wipe
+  const allCookies = request.cookies.getAll()
+  for (const cookie of allCookies) {
+    if (cookie.name.startsWith('sb-')) {
+      response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' })
+    }
   }
 
   return response

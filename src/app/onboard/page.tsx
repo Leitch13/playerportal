@@ -1,8 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 const STEPS = [
   { label: 'Academy Details', icon: '1' },
@@ -21,7 +19,6 @@ function slugify(text: string): string {
 }
 
 export default function OnboardPage() {
-  const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -151,8 +148,9 @@ export default function OnboardPage() {
         return
       }
 
-      // 3. Redirect to signin directly — the signout happens in the signin form
-      window.location.href = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
+      // 3. Force a clean session by going through signout first, then redirect to signin
+      const signinUrl = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
+      window.location.href = `/auth/signout?redirect=${encodeURIComponent(signinUrl)}`
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
       setError(message)
