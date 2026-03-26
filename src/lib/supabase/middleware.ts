@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
     // If not signed in and trying to access protected routes, redirect to sign-in
     const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
     const isApiRoute = request.nextUrl.pathname.startsWith('/api')
-    const isPublicRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/book') || request.nextUrl.pathname.startsWith('/terms') || request.nextUrl.pathname.startsWith('/onboard') || request.nextUrl.pathname.startsWith('/how-it-works') || request.nextUrl.pathname.startsWith('/privacy')
+    const isPublicRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/book') || request.nextUrl.pathname.startsWith('/terms') || request.nextUrl.pathname.startsWith('/onboard') || request.nextUrl.pathname.startsWith('/how-it-works') || request.nextUrl.pathname.startsWith('/privacy') || request.nextUrl.pathname.startsWith('/demo')
 
     if (!user && !isAuthRoute && !isPublicRoute && !isApiRoute) {
       const url = request.nextUrl.clone()

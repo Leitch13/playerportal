@@ -101,8 +101,18 @@ export default async function PublicBookingPage({
 
   const primaryColor = org.primary_color || '#4ecde6'
 
+  // Convert hex to r,g,b for CSS variable
+  const hexToRgb = (hex: string) => {
+    const h = hex.replace('#', '')
+    const num = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
+    return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`
+  }
+
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen bg-white"
+      style={{ '--brand-primary': primaryColor, '--brand-primary-rgb': hexToRgb(primaryColor), '--color-accent': primaryColor } as React.CSSProperties}
+    >
       <div className="relative py-12 sm:py-20 px-4 sm:px-6 text-center text-white" style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor} 100%)` }}>
         {org.hero_image_url && (<div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url(${org.hero_image_url})` }} />)}
         <div className="relative z-10 max-w-3xl mx-auto">

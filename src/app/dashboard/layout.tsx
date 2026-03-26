@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Navigation from '@/components/Navigation'
 import ThemeProvider from '@/components/ThemeProvider'
+import BrandProvider from '@/components/BrandProvider'
 import ResendVerificationButton from '@/components/ResendVerificationButton'
 import type { UserRole } from '@/lib/types'
 
@@ -20,13 +21,24 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, theme')
+    .select('full_name, role, theme, organisation_id')
     .eq('id', user.id)
     .single()
 
   const role = (profile?.role || 'parent') as UserRole
   const userName = profile?.full_name || user.email || 'User'
   const theme = (profile?.theme || 'light') as 'light' | 'dark' | 'system'
+
+  // Fetch org branding for white-label
+  let orgBrand: { primary_color: string | null; logo_url: string | null; name: string } | null = null
+  if (profile?.organisation_id) {
+    const { data } = await supabase
+      .from('organisations')
+      .select('primary_color, logo_url, name')
+      .eq('id', profile.organisation_id)
+      .single()
+    orgBrand = data
+  }
 
   // Count unread messages
   const { count: unreadCount } = await supabase
@@ -45,6 +57,11 @@ export default async function DashboardLayout({
 
   return (
     <ThemeProvider initialTheme={theme}>
+      <BrandProvider
+        primaryColor={orgBrand?.primary_color}
+        logoUrl={orgBrand?.logo_url}
+        orgName={orgBrand?.name}
+      >
       <div className="min-h-screen bg-surface has-bottom-nav lg:pb-0">
         <Navigation
           role={role}
@@ -52,6 +69,8 @@ export default async function DashboardLayout({
           userId={user.id}
           unreadCount={unreadCount || 0}
           notificationCount={notificationCount}
+          orgName={orgBrand?.name || undefined}
+          logoUrl={orgBrand?.logo_url || undefined}
         />
         <main className="lg:ml-64 min-h-[calc(100vh-3.5rem)]">
           {!user.email_confirmed_at && (
@@ -67,6 +86,7 @@ export default async function DashboardLayout({
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8">{children}</div>
         </main>
       </div>
+    </BrandProvider>
     </ThemeProvider>
   )
 }

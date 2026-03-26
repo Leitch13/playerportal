@@ -537,12 +537,20 @@ export default function HowItWorksPage() {
           <p className="text-white/40 text-lg mb-10 max-w-xl mx-auto">
             Join 50+ football academies already saving time, impressing parents, and growing faster with Player Portal.
           </p>
-          <Link
-            href="/onboard"
-            className="inline-flex px-10 py-5 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-lg hover:scale-[1.03] transition-all glow-accent"
-          >
-            Start Free Trial &mdash; No Card Required
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/onboard"
+              className="inline-flex px-10 py-5 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-lg hover:scale-[1.03] transition-all glow-accent"
+            >
+              Start Free Trial &mdash; No Card Required
+            </Link>
+            <Link
+              href="/demo"
+              className="inline-flex px-10 py-5 border border-white/15 text-white/70 rounded-full font-bold text-lg hover:bg-white/5 hover:text-white hover:border-white/25 transition-all"
+            >
+              Try the Demo
+            </Link>
+          </div>
           <p className="mt-8 text-sm text-white/30">
             Or{' '}
             <a href="mailto:hello@playerportal.io" className="text-[#4ecde6]/70 underline underline-offset-2 hover:text-[#4ecde6] transition-colors">

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+:root {
+  --brand-primary: #4ecde6;
+  --brand-primary-rgb: 78, 205, 230;
+}
+
 @theme inline {
   --color-primary: #0a0a0a;
   --color-primary-light: #141414;
@@ -75,7 +80,7 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #4ecde6 0%, #7dddf0 50%, #4ecde6 100%);
+  background: linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 60%, white) 50%, var(--brand-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -92,7 +97,7 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, #4ecde6, #7dddf0, #4ecde6);
+  background: linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, white), var(--brand-primary));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -100,17 +105,17 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
 /* Shimmer loading effect */
 .shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(78,205,230,0.1) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(var(--brand-primary-rgb),0.1) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
 
 /* Glow pulse for CTAs */
 .glow-accent {
-  box-shadow: 0 0 20px rgba(78,205,230,0.3), 0 0 60px rgba(78,205,230,0.1);
+  box-shadow: 0 0 20px rgba(var(--brand-primary-rgb),0.3), 0 0 60px rgba(var(--brand-primary-rgb),0.1);
 }
 .glow-accent:hover {
-  box-shadow: 0 0 30px rgba(78,205,230,0.5), 0 0 80px rgba(78,205,230,0.2);
+  box-shadow: 0 0 30px rgba(var(--brand-primary-rgb),0.5), 0 0 80px rgba(var(--brand-primary-rgb),0.2);
 }
 
 /* Animated gradient background */

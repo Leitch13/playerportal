@@ -147,12 +147,12 @@ export default function Home() {
               Start Free Trial
               <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">&rarr;</span>
             </Link>
-            <a
-              href="#how-it-works"
+            <Link
+              href="/demo"
               className="px-8 py-4 border border-white/15 text-white/70 rounded-full font-semibold text-lg hover:bg-white/5 hover:text-white hover:border-white/25 transition-all"
             >
-              See How It Works
-            </a>
+              Try the Demo
+            </Link>
           </div>
 
           {/* Stats */}

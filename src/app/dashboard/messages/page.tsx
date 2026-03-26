@@ -1,19 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import Card from '@/components/Card'
-import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
-import SendMessageForm from './SendMessageForm'
-import ParentReplyForm from './ParentReplyForm'
-import BulkMessageForm from './BulkMessageForm'
-import MessageThread from './MessageThread'
+import MessagesApp from './MessagesApp'
 
-export default async function MessagesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ add?: string }>
-}) {
-  const params = await searchParams
+export default async function MessagesPage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -22,126 +12,137 @@ export default async function MessagesPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, organisation_id')
+    .select('role, organisation_id, full_name')
     .eq('id', user.id)
     .single()
 
   const role = (profile?.role || 'parent') as UserRole
-  const isStaff = role === 'admin' || role === 'coach'
   const orgId = profile?.organisation_id || ''
 
-  // Get messages where I'm the recipient
-  const { data: inbox } = await supabase
+  // Fetch all messages where user is sender or recipient
+  const { data: allMessages } = await supabase
     .from('messages')
-    .select('*, sender:profiles!messages_sender_id_fkey(full_name)')
-    .eq('recipient_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
+    .select(
+      '*, sender:profiles!messages_sender_id_fkey(id, full_name, role), recipient:profiles!messages_recipient_id_fkey(id, full_name, role)'
+    )
+    .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+    .order('created_at', { ascending: true })
 
-  // Get messages I've sent
-  const { data: sent } = await supabase
-    .from('messages')
-    .select('*, recipient:profiles!messages_recipient_id_fkey(full_name)')
-    .eq('sender_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  // Group messages by thread_id
+  type RawMessage = NonNullable<typeof allMessages>[number]
+  const threadMap = new Map<
+    string,
+    {
+      threadId: string
+      messages: RawMessage[]
+      otherUser: { id: string; full_name: string; role: string }
+      lastMessage: RawMessage
+      unreadCount: number
+      subject: string | null
+    }
+  >()
 
-  // Mark unread as read
-  const unreadIds = (inbox || []).filter((m) => !m.read).map((m) => m.id)
-  if (unreadIds.length > 0) {
-    await supabase
-      .from('messages')
-      .update({ read: true })
-      .in('id', unreadIds)
+  for (const msg of allMessages || []) {
+    const threadId = msg.thread_id || msg.id
+    const existing = threadMap.get(threadId)
+    const sender = msg.sender as unknown as { id: string; full_name: string; role: string } | null
+    const recipient = msg.recipient as unknown as { id: string; full_name: string; role: string } | null
+    const otherUser =
+      msg.sender_id === user.id
+        ? recipient || { id: msg.recipient_id, full_name: 'Unknown', role: 'parent' }
+        : sender || { id: msg.sender_id, full_name: 'Unknown', role: 'parent' }
+
+    if (existing) {
+      existing.messages!.push(msg)
+      existing.lastMessage = msg
+      if (msg.recipient_id === user.id && !msg.read) {
+        existing.unreadCount++
+      }
+      if (!existing.subject && msg.subject) {
+        existing.subject = msg.subject
+      }
+    } else {
+      threadMap.set(threadId, {
+        threadId,
+        messages: [msg],
+        otherUser,
+        lastMessage: msg,
+        unreadCount: msg.recipient_id === user.id && !msg.read ? 1 : 0,
+        subject: msg.subject || null,
+      })
+    }
   }
 
-  // Get recipients for the send form
-  const { data: parents } = isStaff
-    ? await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('role', 'parent')
-        .order('full_name')
-    : { data: [] as { id: string; full_name: string }[] }
+  // Convert to array sorted by last message time (newest first)
+  const threads = Array.from(threadMap.values()).sort(
+    (a, b) =>
+      new Date(b.lastMessage.created_at).getTime() -
+      new Date(a.lastMessage.created_at).getTime()
+  )
 
-  // For parents, get staff they can message
-  const { data: staffMembers } = !isStaff
-    ? await supabase
-        .from('profiles')
-        .select('id, full_name, role')
-        .in('role', ['coach', 'admin'])
-        .order('full_name')
-    : { data: [] as { id: string; full_name: string; role: string }[] }
+  // Fetch potential recipients based on role
+  let recipients: { id: string; full_name: string; role: string }[] = []
 
-  // Groups for bulk messaging
-  const { data: groups } = isStaff
-    ? await supabase
-        .from('training_groups')
-        .select('id, name')
-        .order('name')
-    : { data: [] as { id: string; name: string }[] }
+  if (role === 'parent') {
+    // Parents see coaches and admins in their org
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('organisation_id', orgId)
+      .in('role', ['coach', 'admin'])
+      .order('full_name')
+    recipients = data || []
+  } else if (role === 'coach') {
+    // Coaches see parents + other coaches in their org
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('organisation_id', orgId)
+      .in('role', ['parent', 'coach', 'admin'])
+      .neq('id', user.id)
+      .order('full_name')
+    recipients = data || []
+  } else {
+    // Admins see everyone in their org
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('organisation_id', orgId)
+      .neq('id', user.id)
+      .order('full_name')
+    recipients = data || []
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Messages</h1>
-        {unreadIds.length > 0 && (
-          <span className="text-sm text-text-light">
-            {unreadIds.length} message{unreadIds.length !== 1 ? 's' : ''} marked as read
-          </span>
-        )}
-      </div>
-
-      {/* Staff message tools */}
-      {isStaff && (
-        <div className="flex flex-wrap gap-2">
-          <SendMessageForm parents={parents || []} autoOpen={params.add === '1'} orgId={orgId} />
-          <BulkMessageForm parents={parents || []} groups={groups || []} orgId={orgId} />
-        </div>
-      )}
-
-      {/* Parent reply form */}
-      {!isStaff && <ParentReplyForm staffMembers={staffMembers || []} orgId={orgId} />}
-
-      <Card title={`Inbox (${(inbox || []).length})`}>
-        {(inbox || []).length === 0 ? (
-          <EmptyState message="No messages yet." />
-        ) : (
-          <div className="divide-y divide-border">
-            {(inbox || []).map((m) => (
-              <MessageThread
-                key={m.id}
-                message={{
-                  ...m,
-                  sender: m.sender as unknown as { full_name: string } | null,
-                }}
-                currentUserId={user.id}
-                isStaff={isStaff}
-                orgId={orgId}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {(sent || []).length > 0 && (
-        <Card title={`Sent (${(sent || []).length})`}>
-          <div className="divide-y divide-border">
-            {(sent || []).map((m) => (
-              <MessageThread
-                key={m.id}
-                message={{
-                  ...m,
-                  recipient: m.recipient as unknown as { full_name: string } | null,
-                }}
-                currentUserId={user.id}
-                isStaff={isStaff}
-                orgId={orgId}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
-    </div>
+    <MessagesApp
+      currentUserId={user.id}
+      currentUserName={profile?.full_name || 'You'}
+      role={role}
+      orgId={orgId}
+      initialThreads={threads.map((t) => ({
+        threadId: t.threadId,
+        otherUser: t.otherUser,
+        lastMessage: {
+          body: t.lastMessage.body,
+          created_at: t.lastMessage.created_at,
+          sender_id: t.lastMessage.sender_id,
+        },
+        unreadCount: t.unreadCount,
+        subject: t.subject,
+        messages: (t.messages || []).map((m: Record<string, unknown>) => ({
+          id: m.id as string,
+          sender_id: m.sender_id as string,
+          recipient_id: m.recipient_id as string,
+          body: m.body as string,
+          subject: m.subject as string | null,
+          read: m.read as boolean,
+          created_at: m.created_at as string,
+          thread_id: (m.thread_id as string) || (m.id as string),
+          sender: m.sender as { id: string; full_name: string; role: string } | null,
+          recipient: m.recipient as { id: string; full_name: string; role: string } | null,
+        })),
+      }))}
+      recipients={recipients}
+    />
   )
 }

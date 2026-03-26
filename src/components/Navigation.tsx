@@ -238,6 +238,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
       { href: '/dashboard/drills', label: 'Drill Library', icon: 'football' },
+      { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
     ]},
     { title: 'Engagement', items: [
       { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
@@ -273,12 +274,16 @@ export default function Navigation({
   userId,
   unreadCount,
   notificationCount,
+  orgName,
+  logoUrl,
 }: {
   role: UserRole
   userName: string
   userId: string
   unreadCount?: number
   notificationCount?: number
+  orgName?: string
+  logoUrl?: string
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -331,7 +336,10 @@ export default function Navigation({
               </button>
 
               <Link href="/dashboard" className="flex items-center gap-2">
-                <span className="text-accent font-bold text-lg tracking-tight">Player Portal</span>
+                {logoUrl ? (
+                  <img src={logoUrl} alt={orgName || 'Logo'} className="h-7 w-auto object-contain" />
+                ) : null}
+                <span className="text-accent font-bold text-lg tracking-tight">{orgName || 'Player Portal'}</span>
               </Link>
             </div>
 

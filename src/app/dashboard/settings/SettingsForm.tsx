@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import EmailSetup from './EmailSetup'
+import StripeSetup from './StripeSetup'
 
 interface OrgData {
   id: string
@@ -31,7 +33,7 @@ interface UsageData {
   classes: number
 }
 
-const TABS = ['General', 'Branding', 'Team', 'Billing', 'Danger Zone'] as const
+const TABS = ['General', 'Branding', 'Team', 'Email', 'Billing', 'Danger Zone'] as const
 type Tab = typeof TABS[number]
 
 export default function SettingsForm({
@@ -274,30 +276,28 @@ export default function SettingsForm({
             </div>
           )}
 
+          {tab === 'Email' && <EmailSetup />}
+
           {tab === 'Billing' && (
-            <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
-              <h2 className="font-bold text-lg">Billing & Usage</h2>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-xl bg-surface/50">
-                  <p className="text-2xl font-bold text-accent">{usage.players}</p>
-                  <p className="text-xs text-text-light">Players</p>
-                </div>
-                <div className="text-center p-4 rounded-xl bg-surface/50">
-                  <p className="text-2xl font-bold text-accent">{usage.coaches}</p>
-                  <p className="text-xs text-text-light">Coaches</p>
-                </div>
-                <div className="text-center p-4 rounded-xl bg-surface/50">
-                  <p className="text-2xl font-bold text-accent">{usage.classes}</p>
-                  <p className="text-xs text-text-light">Classes</p>
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
+                <h2 className="font-bold text-lg">Usage</h2>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 rounded-xl bg-surface/50">
+                    <p className="text-2xl font-bold text-accent">{usage.players}</p>
+                    <p className="text-xs text-text-light">Players</p>
+                  </div>
+                  <div className="text-center p-4 rounded-xl bg-surface/50">
+                    <p className="text-2xl font-bold text-accent">{usage.coaches}</p>
+                    <p className="text-xs text-text-light">Coaches</p>
+                  </div>
+                  <div className="text-center p-4 rounded-xl bg-surface/50">
+                    <p className="text-2xl font-bold text-accent">{usage.classes}</p>
+                    <p className="text-xs text-text-light">Classes</p>
+                  </div>
                 </div>
               </div>
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-                <p className="font-semibold text-emerald-700">Pro Plan</p>
-                <p className="text-sm text-emerald-600 mt-0.5">All features included. Manage billing via Stripe.</p>
-              </div>
-              <button className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-primary text-white hover:opacity-90 transition-all">
-                Manage Billing Portal
-              </button>
+              <StripeSetup />
             </div>
           )}
 
