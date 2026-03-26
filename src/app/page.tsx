@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Player Portal — The All-in-One Platform for Football Academies',
+  title: 'Player Portal by playit loveit — The All-in-One Platform for Football Academies',
   description: 'Manage players, track progress, handle payments, and keep parents engaged. Start free today.',
 }
 
@@ -385,7 +385,7 @@ export default function Home() {
               <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#4ecde6] to-[#2ba8c3] flex items-center justify-center">
                 <span className="text-white font-bold text-[8px]">PP</span>
               </div>
-              <span className="text-sm font-semibold text-white/60">Player Portal</span>
+              <span className="text-sm font-semibold text-white/60">Player Portal <span className="text-white/30 font-normal">by playit loveit</span></span>
             </div>
             <div className="flex gap-8 text-sm text-white/30">
               <a href="#features" className="hover:text-white/60 transition-colors">Features</a>
@@ -394,7 +394,7 @@ export default function Home() {
               <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
             </div>
             <div className="text-xs text-white/20">
-              &copy; {new Date().getFullYear()} Player Portal. All rights reserved.
+              &copy; {new Date().getFullYear()} Player Portal by playit loveit. All rights reserved.
             </div>
           </div>
         </div>
