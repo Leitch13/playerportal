@@ -50,3 +50,25 @@ DO $$ BEGIN
       FOR ALL USING (organisation_id = public.get_my_org() AND public.get_my_role() IN ('admin', 'coach'));
   END IF;
 END $$;
+
+-- Add attachments support to session plans and drills
+ALTER TABLE public.session_plans ADD COLUMN IF NOT EXISTS attachments jsonb DEFAULT '[]';
+ALTER TABLE public.drills ADD COLUMN IF NOT EXISTS attachments jsonb DEFAULT '[]';
+
+-- Create storage bucket for coaching attachments
+INSERT INTO storage.buckets (id, name, public) VALUES ('coaching', 'coaching', true) ON CONFLICT DO NOTHING;
+
+-- Allow authenticated users to upload to coaching bucket
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users upload coaching files' AND tablename = 'objects') THEN
+    CREATE POLICY "Authenticated users upload coaching files" ON storage.objects
+      FOR INSERT WITH CHECK (bucket_id = 'coaching' AND auth.role() = 'authenticated');
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public read coaching files' AND tablename = 'objects') THEN
+    CREATE POLICY "Public read coaching files" ON storage.objects
+      FOR SELECT USING (bucket_id = 'coaching');
+  END IF;
+END $$;

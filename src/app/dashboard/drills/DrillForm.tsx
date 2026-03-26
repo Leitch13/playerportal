@@ -3,6 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import FileUpload from '@/components/FileUpload'
+
+interface Attachment {
+  name: string
+  url: string
+  type: string
+  size: number
+}
 
 interface Drill {
   id: string
@@ -42,6 +50,7 @@ export default function DrillForm({
   const [ageGroup, setAgeGroup] = useState('')
   const [difficulty, setDifficulty] = useState(editDrill?.difficulty || 'intermediate')
   const [imageUrl, setImageUrl] = useState(editDrill?.image_url || '')
+  const [attachments, setAttachments] = useState<Attachment[]>((editDrill as unknown as { attachments?: Attachment[] })?.attachments || [])
 
   async function handleSave() {
     if (!name.trim()) return
@@ -61,6 +70,7 @@ export default function DrillForm({
       age_group: ageGroup.trim() || null,
       difficulty,
       image_url: imageUrl.trim() || null,
+      attachments: attachments.length > 0 ? JSON.stringify(attachments) : '[]',
     }
 
     if (editDrill) {
@@ -194,6 +204,18 @@ export default function DrillForm({
             onChange={(e) => setImageUrl(e.target.value)}
           />
         </div>
+      </div>
+
+      {/* Attachments */}
+      <div>
+        <label className={labelCls}>Attachments (Diagrams, Photos, PDFs)</label>
+        <FileUpload
+          attachments={attachments}
+          onChange={setAttachments}
+          folder="drills"
+          accept="image/*,.pdf"
+          maxFiles={5}
+        />
       </div>
 
       <div className="flex items-center gap-3 pt-2">

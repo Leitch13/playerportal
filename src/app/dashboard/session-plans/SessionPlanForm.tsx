@@ -3,6 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import FileUpload from '@/components/FileUpload'
+
+interface Attachment {
+  name: string
+  url: string
+  type: string
+  size: number
+}
 
 interface SessionPlan {
   id: string
@@ -44,6 +52,7 @@ export default function SessionPlanForm({
   const [coolDown, setCoolDown] = useState(editPlan?.cool_down || '')
   const [equipment, setEquipment] = useState(editPlan?.equipment || '')
   const [notes, setNotes] = useState(editPlan?.notes || '')
+  const [attachments, setAttachments] = useState<Attachment[]>((editPlan as unknown as { attachments?: Attachment[] })?.attachments || [])
 
   async function handleSave(status: string) {
     if (!title.trim()) return
@@ -63,6 +72,7 @@ export default function SessionPlanForm({
       cool_down: coolDown.trim() || null,
       equipment: equipment.trim() || null,
       notes: notes.trim() || null,
+      attachments: attachments.length > 0 ? JSON.stringify(attachments) : '[]',
       status,
     }
 
@@ -227,6 +237,18 @@ export default function SessionPlanForm({
           placeholder="Any additional coach notes..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+        />
+      </div>
+
+      {/* Attachments */}
+      <div>
+        <label className={labelCls}>Attachments (Diagrams, PDFs, Photos)</label>
+        <FileUpload
+          attachments={attachments}
+          onChange={setAttachments}
+          folder="session-plans"
+          accept="image/*,.pdf"
+          maxFiles={10}
         />
       </div>
 
