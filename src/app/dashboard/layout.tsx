@@ -62,7 +62,7 @@ export default async function DashboardLayout({
         logoUrl={orgBrand?.logo_url}
         orgName={orgBrand?.name}
       >
-      <div className="min-h-screen bg-surface has-bottom-nav lg:pb-0">
+      <div className="min-h-screen bg-[#0a0a0a] has-bottom-nav lg:pb-0">
         <Navigation
           role={role}
           userName={userName}
@@ -84,7 +84,7 @@ export default async function DashboardLayout({
               </div>
             </div>
           )}
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8 space-y-6 animate-page-in">{children}</div>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8 space-y-6 animate-page-in text-white">{children}</div>
         </main>
       </div>
     </BrandProvider>
