@@ -952,15 +952,18 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { count: totalPlayers } = await supabase
     .from('players')
     .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
 
   const { count: totalParents } = await supabase
     .from('profiles')
     .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
     .eq('role', 'parent')
 
   const { count: activeSubs } = await supabase
     .from('subscriptions')
     .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
     .eq('status', 'active')
 
   // Monthly revenue (paid payments this month)
@@ -969,6 +972,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: paidThisMonth } = await supabase
     .from('payments')
     .select('amount_paid')
+    .eq('organisation_id', orgId)
     .eq('status', 'paid')
     .gte('paid_date', monthStart)
 
@@ -980,6 +984,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: prevMonthPaid } = await supabase
     .from('payments')
     .select('amount_paid')
+    .eq('organisation_id', orgId)
     .eq('status', 'paid')
     .gte('paid_date', prevMonthStart)
     .lte('paid_date', prevMonthEnd)
@@ -990,11 +995,13 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { count: newPlayersThisMonth } = await supabase
     .from('players')
     .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
     .gte('created_at', monthStart)
 
   const { count: newPlayersLastMonth } = await supabase
     .from('players')
     .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
     .gte('created_at', prevMonthStart)
     .lt('created_at', monthStart)
 
@@ -1008,6 +1015,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: recentPaidPayments } = await supabase
     .from('payments')
     .select('amount_paid, paid_date')
+    .eq('organisation_id', orgId)
     .eq('status', 'paid')
     .gte('paid_date', fourWeeksAgo.toISOString().split('T')[0])
     .order('paid_date', { ascending: true })
@@ -1046,6 +1054,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: recentEnrolments } = await supabase
     .from('enrolments')
     .select('id, status, enrolled_at, player:players(first_name, last_name), group:training_groups(name)')
+    .eq('organisation_id', orgId)
     .order('enrolled_at', { ascending: false })
     .limit(5)
 
@@ -1053,6 +1062,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: recentPayments } = await supabase
     .from('payments')
     .select('id, amount, status, description, created_at, parent:profiles!payments_parent_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
     .limit(5)
 
@@ -1060,6 +1070,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: recentMessages } = await supabase
     .from('messages')
     .select('id, subject, created_at, sender:profiles!messages_sender_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
     .limit(5)
 
@@ -1067,6 +1078,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { count: overdueCount } = await supabase
     .from('payments')
     .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
     .eq('status', 'overdue')
 
   // Build unified activity feed
