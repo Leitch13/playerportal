@@ -280,7 +280,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
                         <div className="text-xs text-white/30 mt-1">{plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week</div>
                       </div>
                       <div className="text-right">
-                        {billingOption === 'monthly' ? (<><div className="text-2xl font-bold" style={{ color: isSelected ? primaryColor : 'white' }}>&pound;{monthly.toFixed(0)}</div><div className="text-xs text-white/40">/month</div></>) : (<><div className="text-2xl font-bold text-green-400">&pound;{quarterly.discounted.toFixed(0)}</div><div className="text-xs text-white/30 line-through">&pound;{quarterly.total.toFixed(0)}</div><div className="text-[10px] font-semibold text-green-400 mt-0.5">Save &pound;{quarterly.saving.toFixed(0)}</div></>)}
+                        {billingOption === 'monthly' ? (<><div className="text-3xl font-extrabold" style={{ color: isSelected ? primaryColor : '#fff' }}>&pound;{monthly.toFixed(0)}</div><div className="text-sm text-white/50 font-medium">/month</div></>) : (<><div className="text-3xl font-extrabold text-green-400">&pound;{quarterly.discounted.toFixed(0)}</div><div className="text-sm text-white/30 line-through">&pound;{quarterly.total.toFixed(0)}</div><div className="text-xs font-bold text-green-400 mt-0.5">Save &pound;{quarterly.saving.toFixed(0)}</div></>)}
                       </div>
                     </div>
                     {isSelected && <div className="mt-3 pt-3 border-t text-xs font-medium flex items-center gap-1" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>{billingOption === 'monthly' ? 'Auto-renews monthly, cancel anytime' : '3 months upfront, 10% off'}</div>}
@@ -309,8 +309,8 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
             <div><p className="font-medium">Booking failed</p><p className="text-xs text-red-400/70 mt-0.5">{globalError}</p></div>
           </div>
         )}
-        <button type="button" onClick={handleBookAndPay} disabled={!canSubmit || loading} className="w-full py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-2" style={{ backgroundColor: canSubmit ? primaryColor : 'rgba(255,255,255,0.06)', color: canSubmit ? '#0a0a0a' : 'rgba(255,255,255,0.3)' }}>
-          {loading ? <><Spinner size={20} />Setting up your booking...</> : <>Book &amp; Pay &rarr;</>}
+        <button type="button" onClick={handleBookAndPay} disabled={!canSubmit || loading} className="w-full py-5 rounded-2xl font-extrabold text-xl transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-3 shadow-lg" style={{ backgroundColor: canSubmit ? primaryColor : 'rgba(255,255,255,0.06)', color: canSubmit ? '#0a0a0a' : 'rgba(255,255,255,0.3)', boxShadow: canSubmit ? `0 8px 30px ${primaryColor}40` : 'none' }}>
+          {loading ? <><Spinner size={22} />Setting up your booking...</> : <>Book &amp; Pay {displayPrice} &rarr;</>}
         </button>
         {!canSubmit && !loading && <p className="text-xs text-white/30 text-center mt-3">Complete all sections above to continue</p>}
         {canSubmit && !loading && (
