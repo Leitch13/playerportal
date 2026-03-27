@@ -33,11 +33,13 @@ export default async function GroupsPage() {
   const { data: groups } = await supabase
     .from('training_groups')
     .select('*, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('name')
 
   const { data: coaches } = await supabase
     .from('profiles')
     .select('id, full_name')
+    .eq('organisation_id', orgId)
     .in('role', ['admin', 'coach'])
     .order('full_name')
 

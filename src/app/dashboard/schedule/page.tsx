@@ -59,6 +59,7 @@ async function AdminSchedule({
   const { data: allGroups } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('name')
 
   type GroupRow = {
@@ -355,6 +356,7 @@ async function ParentSchedule({
   const { data: allGroups } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('name')
 
   type GroupRow = {
