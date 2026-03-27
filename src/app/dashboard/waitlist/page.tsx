@@ -36,22 +36,22 @@ export default async function WaitlistPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Waitlist</h1>
-        <p className="text-text-light text-sm mt-1">Manage players waiting for spots in full classes</p>
+        <p className="text-white/60 text-sm mt-1">Manage players waiting for spots in full classes</p>
       </div>
 
       {grouped.size === 0 && (
-        <div className="bg-white rounded-2xl border border-border p-12 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-12 text-center">
           <p className="text-4xl mb-3">🎉</p>
           <p className="font-semibold">No one on the waitlist</p>
-          <p className="text-sm text-text-light mt-1">All classes have available spots</p>
+          <p className="text-sm text-white/60 mt-1">All classes have available spots</p>
         </div>
       )}
 
       {Array.from(grouped.values()).map((group) => (
-        <div key={group.groupId} className="bg-white rounded-2xl border border-border overflow-hidden">
-          <div className="px-6 py-4 border-b border-border bg-surface/30">
+        <div key={group.groupId} className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/[0.08] bg-white/[0.03]">
             <h2 className="font-bold">{group.groupName}</h2>
-            <p className="text-xs text-text-light">{group.entries!.length} waiting</p>
+            <p className="text-xs text-white/60">{group.entries!.length} waiting</p>
           </div>
           <WaitlistManager entries={(group.entries || []).map(e => {
             const player = e.player as unknown as { id: string; full_name?: string; first_name?: string; last_name?: string } | null

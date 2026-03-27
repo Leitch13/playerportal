@@ -21,7 +21,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, role, theme, organisation_id')
+    .select('full_name, role, theme, organisation_id, is_super_admin')
     .eq('id', user.id)
     .single()
 
@@ -71,6 +71,7 @@ export default async function DashboardLayout({
           notificationCount={notificationCount}
           orgName={orgBrand?.name || undefined}
           logoUrl={orgBrand?.logo_url || undefined}
+          isSuperAdmin={profile?.is_super_admin || false}
         />
         <main className="lg:ml-64 min-h-[calc(100vh-3.5rem)]">
           {!user.email_confirmed_at && (
@@ -83,7 +84,7 @@ export default async function DashboardLayout({
               </div>
             </div>
           )}
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8">{children}</div>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-8 space-y-6 animate-page-in">{children}</div>
         </main>
       </div>
     </BrandProvider>

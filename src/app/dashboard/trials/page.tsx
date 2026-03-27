@@ -26,26 +26,26 @@ export default async function TrialsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Trial Bookings</h1>
-        <p className="text-text-light text-sm mt-1">Manage free trial requests from new families</p>
+        <p className="text-white/60 text-sm mt-1">Manage free trial requests from new families</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
           <p className="text-2xl font-bold text-yellow-500">{stats.pending}</p>
-          <p className="text-xs text-text-light font-medium">Pending</p>
+          <p className="text-xs text-white/60 font-medium">Pending</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
           <p className="text-2xl font-bold text-blue-500">{stats.confirmed}</p>
-          <p className="text-xs text-text-light font-medium">Confirmed</p>
+          <p className="text-xs text-white/60 font-medium">Confirmed</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
           <p className="text-2xl font-bold text-emerald-500">{stats.attended}</p>
-          <p className="text-xs text-text-light font-medium">Attended</p>
+          <p className="text-xs text-white/60 font-medium">Attended</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
+        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
           <p className="text-2xl font-bold">{stats.total}</p>
-          <p className="text-xs text-text-light font-medium">Total</p>
+          <p className="text-xs text-white/60 font-medium">Total</p>
         </div>
       </div>
 

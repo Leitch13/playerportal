@@ -224,20 +224,20 @@ export default async function PlayerDetailPage({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <Link href={isStaff ? '/dashboard/players' : '/dashboard/children'} className="text-sm text-primary hover:underline mb-1 inline-block">
+          <Link href={isStaff ? '/dashboard/players' : '/dashboard/children'} className="text-sm text-white/60 hover:text-white hover:underline mb-1 inline-block">
             &larr; Back
           </Link>
           <h1 className="text-2xl font-bold">{player.first_name} {player.last_name}</h1>
           <div className="flex flex-wrap gap-2 mt-1">
-            {player.age_group && <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">{player.age_group}</span>}
+            {player.age_group && <span className="px-2 py-0.5 rounded-full text-xs bg-white/10 text-white font-medium">{player.age_group}</span>}
             {player.position && <span className="px-2 py-0.5 rounded-full text-xs bg-accent/10 text-accent font-medium">{player.position}</span>}
-            {player.kit_size && <span className="px-2 py-0.5 rounded-full text-xs bg-surface-dark text-text-light font-medium">Kit: {player.kit_size}</span>}
+            {player.kit_size && <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.05] text-white/60 font-medium">Kit: {player.kit_size}</span>}
           </div>
         </div>
         <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
           <div>
             <div className="text-3xl font-bold text-accent">{attendanceRate}%</div>
-            <div className="text-xs text-text-light">Attendance</div>
+            <div className="text-xs text-white/60">Attendance</div>
           </div>
           <Link
             href={`/dashboard/players/${id}/report`}
@@ -253,7 +253,7 @@ export default async function PlayerDetailPage({
         {radarScores.length > 0 ? (
           <Card title="Skills Overview">
             <RadarChart scores={radarScores} />
-            <p className="text-xs text-text-light text-center mt-2">
+            <p className="text-xs text-white/60 text-center mt-2">
               Based on latest review ({new Date(latestReview.review_date).toLocaleDateString()})
             </p>
           </Card>
@@ -261,8 +261,8 @@ export default async function PlayerDetailPage({
           <Card>
             <div className="text-center py-8">
               <div className="text-4xl mb-2">{'\u{26BD}'}</div>
-              <p className="text-sm text-text-light">No reviews yet</p>
-              <p className="text-xs text-text-light mt-1">Skills chart will appear after the first progress review</p>
+              <p className="text-sm text-white/60">No reviews yet</p>
+              <p className="text-xs text-white/60 mt-1">Skills chart will appear after the first progress review</p>
             </div>
           </Card>
         )}
@@ -280,11 +280,11 @@ export default async function PlayerDetailPage({
             <PlayerProfileEditor player={player} />
           ) : (
             <div className="space-y-2 text-sm">
-              {player.date_of_birth && <p><span className="text-text-light">DOB:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
-              {player.position && <p><span className="text-text-light">Position:</span> {player.position}</p>}
-              {player.school && <p><span className="text-text-light">School:</span> {player.school}</p>}
-              {player.kit_size && <p><span className="text-text-light">Kit Size:</span> {player.kit_size}</p>}
-              {player.notes && <p><span className="text-text-light">Notes:</span> {player.notes}</p>}
+              {player.date_of_birth && <p><span className="text-white/60">DOB:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
+              {player.position && <p><span className="text-white/60">Position:</span> {player.position}</p>}
+              {player.school && <p><span className="text-white/60">School:</span> {player.school}</p>}
+              {player.kit_size && <p><span className="text-white/60">Kit Size:</span> {player.kit_size}</p>}
+              {player.notes && <p><span className="text-white/60">Notes:</span> {player.notes}</p>}
             </div>
           )}
         </Card>
@@ -294,13 +294,13 @@ export default async function PlayerDetailPage({
           <div className="space-y-3 text-sm">
             <div>
               <p className="font-medium">{parent?.full_name}</p>
-              <p className="text-text-light">{parent?.email}</p>
-              {parent?.phone && <p className="text-text-light">{parent.phone}</p>}
-              {parent?.address && <p className="text-text-light">{parent.address}</p>}
+              <p className="text-white/60">{parent?.email}</p>
+              {parent?.phone && <p className="text-white/60">{parent.phone}</p>}
+              {parent?.address && <p className="text-white/60">{parent.address}</p>}
             </div>
             {(player.emergency_contact_name || parent?.secondary_contact_name) && (
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-text-light font-medium mb-1">Emergency / Secondary Contact</p>
+              <div className="pt-2 border-t border-white/[0.08]">
+                <p className="text-xs text-white/60 font-medium mb-1">Emergency / Secondary Contact</p>
                 {player.emergency_contact_name && (
                   <p>{player.emergency_contact_name} {player.emergency_contact_phone && `— ${player.emergency_contact_phone}`}</p>
                 )}
@@ -310,8 +310,8 @@ export default async function PlayerDetailPage({
               </div>
             )}
             {player.medical_info && (
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-text-light font-medium mb-1">Medical Info</p>
+              <div className="pt-2 border-t border-white/[0.08]">
+                <p className="text-xs text-white/60 font-medium mb-1">Medical Info</p>
                 <p className="text-danger">{player.medical_info}</p>
               </div>
             )}
@@ -329,7 +329,7 @@ export default async function PlayerDetailPage({
                 <div key={enr.id} className="py-2 flex items-center justify-between">
                   <div>
                     <span className="font-medium text-sm">{enr.group?.name}</span>
-                    <span className="text-xs text-text-light ml-2">
+                    <span className="text-xs text-white/60 ml-2">
                       {enr.group?.day_of_week && `${enr.group.day_of_week}`}
                       {enr.group?.time_slot && ` ${enr.group.time_slot}`}
                       {enr.group?.location && ` · ${enr.group.location}`}
@@ -353,11 +353,11 @@ export default async function PlayerDetailPage({
               return (
                 <div
                   key={ach.id}
-                  className="flex flex-col items-center text-center p-3 rounded-lg bg-surface-dark/50 border border-border hover:border-accent/30 transition-colors"
+                  className="flex flex-col items-center text-center p-3 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:border-accent/30 transition-colors"
                 >
                   <span className="text-3xl mb-1">{achievement.emoji}</span>
                   <span className="text-xs font-medium text-text">{achievement.name}</span>
-                  <span className="text-[10px] text-text-light mt-0.5">
+                  <span className="text-[10px] text-white/60 mt-0.5">
                     {new Date(ach.awarded_at).toLocaleDateString()}
                   </span>
                 </div>
@@ -372,9 +372,9 @@ export default async function PlayerDetailPage({
         <Card title="Progress Reviews" action={<Link href="/dashboard/feedback" className="text-sm text-primary hover:underline">View all</Link>}>
           <div className="space-y-4">
             {(reviews || []).map((r) => (
-              <div key={r.id} className="border-b border-border pb-4 last:border-0 last:pb-0">
+              <div key={r.id} className="border-b border-white/[0.08] pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-text-light">
+                  <span className="text-xs text-white/60">
                     {new Date(r.review_date).toLocaleDateString()}
                     {' · '}{(r.coach as unknown as { full_name: string })?.full_name}
                   </span>
@@ -383,13 +383,13 @@ export default async function PlayerDetailPage({
                   {SCORE_CATEGORIES.map((cat) => (
                     <div key={cat.key} className="flex flex-col items-center gap-0.5">
                       <ScoreBadge score={r[cat.key] as number} />
-                      <span className="text-[10px] text-text-light">{cat.label}</span>
+                      <span className="text-[10px] text-white/60">{cat.label}</span>
                     </div>
                   ))}
                 </div>
                 {r.strengths && <p className="text-sm"><span className="text-accent font-medium">Strengths:</span> {r.strengths}</p>}
                 {r.focus_next && <p className="text-sm"><span className="text-warning font-medium">Focus:</span> {r.focus_next}</p>}
-                {r.parent_summary && <p className="text-sm bg-primary/5 rounded-lg p-3 mt-2">{r.parent_summary}</p>}
+                {r.parent_summary && <p className="text-sm bg-white/[0.05] rounded-lg p-3 mt-2">{r.parent_summary}</p>}
               </div>
             ))}
           </div>
@@ -433,7 +433,7 @@ export default async function PlayerDetailPage({
                           <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-purple-700 hover:underline flex items-center gap-1.5">
                             <span>🎨</span> {d.title}
                           </a>
-                          <span className="text-xs text-text-light">{new Date(d.created_at).toLocaleDateString()}</span>
+                          <span className="text-xs text-white/60">{new Date(d.created_at).toLocaleDateString()}</span>
                         </div>
                         {embedUrl && (
                           <div className="rounded-lg overflow-hidden border border-purple-200">
@@ -483,10 +483,10 @@ export default async function PlayerDetailPage({
                             <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
                               {d.title}
                             </a>
-                            {d.description && <p className="text-xs text-text-light">{d.description as string}</p>}
+                            {d.description && <p className="text-xs text-white/60">{d.description as string}</p>}
                           </div>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-surface-dark text-text-light">{d.folder as string}</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.05] text-white/60">{d.folder as string}</span>
                       </div>
                     )
                   })}
@@ -503,7 +503,7 @@ export default async function PlayerDetailPage({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
+                <tr className="border-b border-white/[0.08]">
                   <th className="text-left py-2 font-medium">Date</th>
                   <th className="text-left py-2 font-medium">Group</th>
                   <th className="text-left py-2 font-medium">Status</th>
@@ -511,7 +511,7 @@ export default async function PlayerDetailPage({
               </thead>
               <tbody>
                 {(attendance || []).map((a) => (
-                  <tr key={a.id} className="border-b border-border last:border-0">
+                  <tr key={a.id} className="border-b border-white/[0.08] last:border-0">
                     <td className="py-2">{new Date(a.session_date).toLocaleDateString()}</td>
                     <td className="py-2">{(a.group as unknown as { name: string })?.name || '—'}</td>
                     <td className="py-2">

@@ -7,7 +7,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import NotificationDropdown from '@/components/NotificationDropdown'
 import CommandPalette from '@/components/CommandPalette'
 import type { UserRole } from '@/lib/types'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 /* ── Inline SVG icons (Heroicons outline style, 24x24 viewBox) ── */
 const iconClass = "w-[18px] h-[18px] flex-shrink-0"
@@ -169,27 +169,22 @@ type NavGroup = { title: string; items: NavItem[] }
 const navGroups: Record<UserRole, NavGroup[]> = {
   parent: [
     { title: '', items: [
-      { href: '/dashboard', label: 'Home', icon: 'home' },
+      { href: '/dashboard', label: 'Dashboard', icon: 'home' },
     ]},
     { title: 'My Family', items: [
       { href: '/dashboard/children', label: 'My Children', icon: 'users' },
       { href: '/dashboard/schedule', label: 'Schedule', icon: 'calendar' },
       { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar' },
-      { href: '/dashboard/achievements', label: 'Awards', icon: 'trophy' },
-      { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
     ]},
     { title: 'Academy', items: [
       { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
       { href: '/dashboard/gallery', label: 'Gallery', icon: 'photo' },
-      { href: '/dashboard/announcements', label: 'News', icon: 'megaphone' },
-      { href: '/dashboard/documents', label: 'Documents', icon: 'document-text' },
       { href: '/dashboard/shop', label: 'Shop', icon: 'shopping-bag' },
     ]},
     { title: 'Account', items: [
       { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
-      { href: '/dashboard/referrals', label: 'Refer a Friend', icon: 'gift' },
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
-      { href: '/dashboard/waivers', label: 'Waivers', icon: 'clipboard-document' },
+      { href: '/dashboard/referrals', label: 'Refer a Friend', icon: 'gift' },
       { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
     ]},
   ],
@@ -198,65 +193,49 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard', label: 'Dashboard', icon: 'home' },
     ]},
     { title: 'Coaching', items: [
-      { href: '/dashboard/players', label: 'Players', icon: 'football' },
-      { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
-      { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
-      { href: '/dashboard/session-notes', label: 'Session Notes', icon: 'clipboard' },
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
-      { href: '/dashboard/drills', label: 'Drill Library', icon: 'football' },
-    ]},
-    { title: 'Schedule', items: [
-      { href: '/dashboard/schedule', label: 'Calendar', icon: 'calendar' },
-      { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
+      { href: '/dashboard/drills', label: 'Drills', icon: 'football' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
     ]},
-    { title: 'Community', items: [
-      { href: '/dashboard/achievements', label: 'Awards', icon: 'trophy' },
-      { href: '/dashboard/gallery', label: 'Gallery', icon: 'photo' },
-      { href: '/dashboard/documents', label: 'Documents', icon: 'document-text' },
-      { href: '/dashboard/parents', label: 'Parents', icon: 'user-group' },
+    { title: 'Communication', items: [
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
+      { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
+    ]},
+    { title: '', items: [
+      { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
     ]},
   ],
   admin: [
     { title: '', items: [
       { href: '/dashboard', label: 'Dashboard', icon: 'home' },
-      { href: '/dashboard/analytics', label: 'Analytics', icon: 'chart-bar-square' },
-    ]},
-    { title: 'People', items: [
-      { href: '/dashboard/players', label: 'Players', icon: 'football' },
-      { href: '/dashboard/parents', label: 'Parents', icon: 'user-group' },
-      { href: '/dashboard/trials', label: 'Trials', icon: 'flag' },
-      { href: '/dashboard/waitlist', label: 'Waitlist', icon: 'clock' },
     ]},
     { title: 'Academy', items: [
       { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
       { href: '/dashboard/camps', label: 'Camps', icon: 'flag' },
-      { href: '/dashboard/schedule', label: 'Calendar', icon: 'calendar' },
-      { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
+      { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
+      { href: '/dashboard/players', label: 'Players', icon: 'football' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
-      { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
+    ]},
+    { title: 'Coaching', items: [
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
       { href: '/dashboard/drills', label: 'Drill Library', icon: 'football' },
-      { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
+      { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
     ]},
-    { title: 'Engagement', items: [
-      { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
-      { href: '/dashboard/announcements', label: 'Announcements', icon: 'megaphone' },
-      { href: '/dashboard/achievements', label: 'Awards', icon: 'trophy' },
-      { href: '/dashboard/gallery', label: 'Gallery', icon: 'photo' },
+    { title: 'Communication', items: [
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
+      { href: '/dashboard/announcements', label: 'Announcements', icon: 'megaphone' },
     ]},
     { title: 'Finance', items: [
       { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
-      { href: '/dashboard/referrals', label: 'Referrals', icon: 'gift' },
-      { href: '/dashboard/promo-codes', label: 'Promo Codes', icon: 'tag' },
       { href: '/dashboard/shop/manage', label: 'Shop', icon: 'shopping-bag' },
+      { href: '/dashboard/referrals', label: 'Referrals', icon: 'gift' },
     ]},
-    { title: 'System', items: [
-      { href: '/dashboard/exports', label: 'Export Data', icon: 'arrow-down-tray' },
-      { href: '/dashboard/reports', label: 'Reports', icon: 'document-chart-bar' },
+    { title: 'Reports', items: [
+      { href: '/dashboard/analytics', label: 'Analytics', icon: 'chart-bar-square' },
+      { href: '/dashboard/exports', label: 'Exports', icon: 'arrow-down-tray' },
       { href: '/dashboard/audit', label: 'Audit Log', icon: 'shield-check' },
+    ]},
+    { title: '', items: [
       { href: '/dashboard/settings', label: 'Settings', icon: 'cog' },
     ]},
   ],
@@ -276,6 +255,7 @@ export default function Navigation({
   notificationCount,
   orgName,
   logoUrl,
+  isSuperAdmin,
 }: {
   role: UserRole
   userName: string
@@ -284,6 +264,7 @@ export default function Navigation({
   notificationCount?: number
   orgName?: string
   logoUrl?: string
+  isSuperAdmin?: boolean
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -293,6 +274,22 @@ export default function Navigation({
   const mobileTabs = mobileTabItems[role] || []
   const mobileItems = allItems.filter((i) => mobileTabs.includes(i.href))
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Collapsible groups with localStorage persistence
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('nav-collapsed')
+      if (saved) setCollapsed(JSON.parse(saved))
+    } catch {}
+  }, [])
+  const toggleGroup = useCallback((title: string) => {
+    setCollapsed(prev => {
+      const next = { ...prev, [title]: !prev[title] }
+      try { localStorage.setItem('nav-collapsed', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -413,54 +410,97 @@ export default function Navigation({
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed top-14 left-0 z-30 h-[calc(100vh-3.5rem)] w-64 bg-white dark:bg-primary-light border-r border-border dark:border-white/10 overflow-y-auto transition-transform duration-200 ease-out ${
+        className={`fixed top-14 left-0 z-30 h-[calc(100vh-3.5rem)] w-64 bg-[#0a0a0a] border-r border-white/[0.06] overflow-y-auto transition-transform duration-200 ease-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="p-3 space-y-1">
-          {groups.map((group, gi) => (
-            <div key={gi}>
-              {group.title && (
-                <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-light/60">
-                  {group.title}
-                </p>
-              )}
-              {group.items.map((item) => {
-                const active = pathname === item.href
-                const isMessages = item.href === '/dashboard/messages'
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
-                      active
-                        ? 'bg-accent/10 text-accent dark:bg-accent/15'
-                        : 'text-text/70 hover:bg-surface-dark dark:text-white/60 dark:hover:bg-white/5'
-                    }`}
+        <div className="p-3 space-y-0.5">
+          {groups.map((group, gi) => {
+            const isCollapsible = !!group.title
+            const isOpen = !collapsed[group.title]
+            const hasActiveChild = group.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+            return (
+              <div key={gi}>
+                {isCollapsible ? (
+                  <button
+                    onClick={() => toggleGroup(group.title)}
+                    className="w-full flex items-center justify-between px-3 pt-4 pb-1 group"
                   >
-                    <span className="w-5 flex items-center justify-center">{icons[item.icon] || item.icon}</span>
-                    <span className="flex-1">{item.label}</span>
-                    {isMessages && (unreadCount || 0) > 0 && (
-                      <span className="bg-danger text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold leading-none">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-          ))}
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40 group-hover:text-white/60 transition-colors">
+                      {group.title}
+                    </span>
+                    <svg
+                      className={`w-3 h-3 text-white/30 transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}
+                      fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  </button>
+                ) : null}
+                <div className={`overflow-hidden transition-all duration-200 ${
+                  isCollapsible && !isOpen && !hasActiveChild ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'
+                }`}>
+                  {group.items.map((item) => {
+                    const active = pathname === item.href
+                    const isMessages = item.href === '/dashboard/messages'
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                          active
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-white/60 hover:bg-white/5 hover:text-white/80'
+                        }`}
+                      >
+                        <span className="w-5 flex items-center justify-center">{icons[item.icon] || item.icon}</span>
+                        <span className="flex-1">{item.label}</span>
+                        {isMessages && (unreadCount || 0) > 0 && (
+                          <span className="bg-danger text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold leading-none">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
         </div>
 
+        {/* Platform Admin link (super admins only) */}
+        {isSuperAdmin && (
+          <div className="px-3 mt-2">
+            <Link
+              href="/platform"
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                pathname === '/platform'
+                  ? 'bg-indigo-500/15 text-indigo-400'
+                  : 'text-indigo-400/60 hover:bg-indigo-500/10 hover:text-indigo-400'
+              }`}
+            >
+              <span className="w-5 flex items-center justify-center">
+                <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+              </span>
+              <span className="flex-1">Platform Admin</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">Super</span>
+            </Link>
+          </div>
+        )}
+
         {/* Sidebar footer */}
-        <div className="p-3 mt-2 border-t border-border dark:border-white/10 sm:hidden">
+        <div className="p-3 mt-2 border-t border-white/[0.06] sm:hidden">
           <div className="flex items-center justify-between px-3 py-2">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
                 <span className="text-xs font-bold text-accent">{firstName[0]?.toUpperCase()}</span>
               </div>
-              <span className="text-sm font-medium text-text dark:text-white/80">{firstName}</span>
+              <span className="text-sm font-medium text-white/80">{firstName}</span>
             </div>
             <button onClick={handleSignOut} className="text-xs text-red-500 font-medium">
               Sign out
@@ -470,7 +510,7 @@ export default function Navigation({
       </aside>
 
       {/* ── Mobile bottom tab bar ── */}
-      <div className="mobile-bottom-nav lg:hidden bg-white dark:bg-primary-light border-t border-border dark:border-white/10">
+      <div className="mobile-bottom-nav lg:hidden bg-[#0a0a0a] border-t border-white/[0.06]">
         <div className="flex justify-around items-center h-14">
           {mobileItems.map((item) => {
             const active = pathname === item.href
@@ -479,7 +519,7 @@ export default function Navigation({
                 key={item.href}
                 href={item.href}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-colors ${
-                  active ? 'text-accent' : 'text-text-light'
+                  active ? 'text-accent' : 'text-white/50'
                 }`}
               >
                 <span className="flex items-center justify-center">{icons[item.icon] || item.icon}</span>

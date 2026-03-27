@@ -78,8 +78,8 @@ export default async function CampsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Camps</h1>
-          <p className="text-sm text-text-light mt-1">
+          <h1 className="text-2xl font-bold text-white">Camps</h1>
+          <p className="text-sm text-white/60 mt-1">
             Manage holiday camps and multi-day sessions
           </p>
         </div>
@@ -97,7 +97,7 @@ export default async function CampsPage() {
           <div className="overflow-x-auto -mx-6 -mb-6">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-text-light">
+                <tr className="border-b border-white/[0.08] text-left text-white/60">
                   <th className="px-6 py-3 font-medium">Camp</th>
                   <th className="px-6 py-3 font-medium">Dates</th>
                   <th className="px-6 py-3 font-medium">Age Group</th>
@@ -111,21 +111,21 @@ export default async function CampsPage() {
                 {allCamps.map((camp) => {
                   const status = getCampStatus(camp)
                   return (
-                    <tr key={camp.id} className="border-b border-border last:border-0 hover:bg-surface/50">
+                    <tr key={camp.id} className="border-b border-white/[0.08] last:border-0 hover:bg-white/[0.03]">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-text">{camp.name}</div>
+                        <div className="font-medium text-white">{camp.name}</div>
                         {camp.location && (
-                          <div className="text-xs text-text-light mt-0.5">{camp.location}</div>
+                          <div className="text-xs text-white/60 mt-0.5">{camp.location}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-text-light">
+                      <td className="px-6 py-4 text-white/60">
                         {formatDateRange(camp.start_date, camp.end_date)}
                       </td>
-                      <td className="px-6 py-4 text-text-light">{camp.age_group || '-'}</td>
-                      <td className="px-6 py-4 text-text-light">
+                      <td className="px-6 py-4 text-white/60">{camp.age_group || '-'}</td>
+                      <td className="px-6 py-4 text-white/60">
                         {camp.price != null ? `\u00A3${Number(camp.price).toFixed(0)}` : '-'}
                       </td>
-                      <td className="px-6 py-4 text-text-light">
+                      <td className="px-6 py-4 text-white/60">
                         {camp.max_capacity || '-'}
                       </td>
                       <td className="px-6 py-4">

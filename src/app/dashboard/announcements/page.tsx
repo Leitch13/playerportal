@@ -81,7 +81,7 @@ export default async function AnnouncementsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Announcements</h1>
-            <p className="text-text-light text-sm mt-1">Communicate with parents</p>
+            <p className="text-white/60 text-sm mt-1">Communicate with parents</p>
           </div>
         </div>
 
@@ -93,10 +93,10 @@ export default async function AnnouncementsPage() {
 
         <div className="space-y-3">
           {formattedAnnouncements.map(a => (
-            <div key={a.id} className={`bg-white rounded-2xl border p-5 ${
-              a.priority === 'urgent' ? 'border-l-4 border-l-red-500 border-border' :
-              a.priority === 'important' ? 'border-l-4 border-l-orange-500 border-border' :
-              'border-border'
+            <div key={a.id} className={`bg-white/[0.05] backdrop-blur-xl rounded-2xl border p-5 ${
+              a.priority === 'urgent' ? 'border-l-4 border-l-red-500 border-white/[0.08]' :
+              a.priority === 'important' ? 'border-l-4 border-l-orange-500 border-white/[0.08]' :
+              'border-white/[0.08]'
             }`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
@@ -128,7 +128,7 @@ export default async function AnnouncementsPage() {
             </div>
           ))}
           {formattedAnnouncements.length === 0 && (
-            <div className="bg-white rounded-2xl border border-border p-12 text-center">
+            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-12 text-center">
               <p className="text-4xl mb-3">📢</p>
               <p className="font-semibold">No announcements yet</p>
               <p className="text-sm text-text-light mt-1">Create your first announcement above</p>
@@ -144,7 +144,7 @@ export default async function AnnouncementsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Announcements</h1>
-        <p className="text-text-light text-sm mt-1">News and updates from your academy</p>
+        <p className="text-white/60 text-sm mt-1">News and updates from your academy</p>
       </div>
       <AnnouncementFeed
         announcements={formattedAnnouncements}

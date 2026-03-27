@@ -56,8 +56,8 @@ export default async function TermsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-text">Terms &amp; Holidays</h1>
-        <p className="text-sm text-text-light mt-1">
+        <h1 className="text-2xl font-bold text-white">Terms &amp; Holidays</h1>
+        <p className="text-sm text-white/60 mt-1">
           Manage academy term dates and holiday periods
         </p>
       </div>

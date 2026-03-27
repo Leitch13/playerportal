@@ -81,8 +81,8 @@ export default async function AuditPage({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-text dark:text-white">Audit Log</h1>
-          <p className="text-sm text-text-light mt-1">Track all actions across your organisation</p>
+          <h1 className="text-2xl font-bold text-white">Audit Log</h1>
+          <p className="text-sm text-white/60 mt-1">Track all actions across your organisation</p>
         </div>
       </div>
 

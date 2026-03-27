@@ -46,40 +46,40 @@ export default function WaitlistManager({ entries, groupId }: { entries: Waitlis
   }
 
   const statusColors: Record<string, string> = {
-    waiting: 'bg-yellow-50 text-yellow-700',
-    offered: 'bg-blue-50 text-blue-700',
-    expired: 'bg-red-50 text-red-600',
+    waiting: 'bg-yellow-500/20 text-yellow-400',
+    offered: 'bg-blue-500/20 text-blue-400',
+    expired: 'bg-red-500/20 text-red-400',
   }
 
   return (
     <div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border/50">
-            <th className="text-left px-6 py-2.5 font-semibold text-text-light">#</th>
-            <th className="text-left px-3 py-2.5 font-semibold text-text-light">Player</th>
-            <th className="text-left px-3 py-2.5 font-semibold text-text-light hidden sm:table-cell">Parent</th>
-            <th className="text-left px-3 py-2.5 font-semibold text-text-light hidden md:table-cell">Waiting</th>
-            <th className="text-left px-3 py-2.5 font-semibold text-text-light">Status</th>
-            <th className="text-right px-6 py-2.5 font-semibold text-text-light">Actions</th>
+          <tr className="border-b border-white/[0.08]/50">
+            <th className="text-left px-6 py-2.5 font-semibold text-white/60">#</th>
+            <th className="text-left px-3 py-2.5 font-semibold text-white/60">Player</th>
+            <th className="text-left px-3 py-2.5 font-semibold text-white/60 hidden sm:table-cell">Parent</th>
+            <th className="text-left px-3 py-2.5 font-semibold text-white/60 hidden md:table-cell">Waiting</th>
+            <th className="text-left px-3 py-2.5 font-semibold text-white/60">Status</th>
+            <th className="text-right px-6 py-2.5 font-semibold text-white/60">Actions</th>
           </tr>
         </thead>
         <tbody>
           {entries.map((e) => (
-            <tr key={e.id} className="border-b border-border/30 hover:bg-surface/20">
-              <td className="px-6 py-3 font-bold text-text-light">{e.position}</td>
+            <tr key={e.id} className="border-b border-white/[0.08]/30 hover:bg-white/[0.03]">
+              <td className="px-6 py-3 font-bold text-white/60">{e.position}</td>
               <td className="px-3 py-3 font-medium">{e.playerName}</td>
               <td className="px-3 py-3 hidden sm:table-cell">
                 <p className="font-medium">{e.parentName}</p>
-                <p className="text-xs text-text-light">{e.parentEmail}</p>
+                <p className="text-xs text-white/60">{e.parentEmail}</p>
               </td>
-              <td className="px-3 py-3 text-text-light hidden md:table-cell">{timeAgo(e.created_at)}</td>
+              <td className="px-3 py-3 text-white/60 hidden md:table-cell">{timeAgo(e.created_at)}</td>
               <td className="px-3 py-3">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusColors[e.status] || ''}`}>
                   {e.status}
                 </span>
                 {e.status === 'offered' && e.expires_at && (
-                  <p className="text-[10px] text-text-light mt-0.5">
+                  <p className="text-[10px] text-white/60 mt-0.5">
                     Expires {new Date(e.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
@@ -97,7 +97,7 @@ export default function WaitlistManager({ entries, groupId }: { entries: Waitlis
           ))}
         </tbody>
       </table>
-      <div className="px-6 py-4 border-t border-border/50">
+      <div className="px-6 py-4 border-t border-white/[0.08]/50">
         <button
           onClick={handleOffer}
           disabled={loading === 'offer' || entries.filter((e) => e.status === 'waiting').length === 0}

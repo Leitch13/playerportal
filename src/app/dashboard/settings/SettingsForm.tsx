@@ -91,7 +91,7 @@ export default function SettingsForm({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const inputClass = 'w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all'
+  const inputClass = 'w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
 
   return (
     <div className="space-y-6">
@@ -115,7 +115,7 @@ export default function SettingsForm({
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold text-left whitespace-nowrap transition-all ${
-                tab === t ? 'bg-primary text-white' : 'text-text-light hover:bg-surface hover:text-primary'
+                tab === t ? 'bg-primary text-white' : 'text-white/60 hover:bg-white/[0.05] hover:text-white'
               }`}
             >
               {t}
@@ -126,16 +126,16 @@ export default function SettingsForm({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {tab === 'General' && (
-            <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
+            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-5">
               <h2 className="font-bold text-lg">General Information</h2>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Academy Name</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Academy Name</label>
                 <input className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               </div>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Booking URL (slug)</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Booking URL (slug)</label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-surface border border-border rounded-xl px-4 py-2.5 text-sm text-text-light">
+                  <div className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-text-light">
                     /book/<strong className="text-primary">{form.slug}</strong>
                   </div>
                   <button onClick={copySlug} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
@@ -144,21 +144,21 @@ export default function SettingsForm({
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Description</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Description</label>
                 <textarea className={inputClass} rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-text-light block mb-1.5">Contact Email</label>
+                  <label className="text-xs font-medium text-white/60 block mb-1.5">Contact Email</label>
                   <input type="email" className={inputClass} value={form.contact_email} onChange={e => setForm({...form, contact_email: e.target.value})} />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-text-light block mb-1.5">Contact Phone</label>
+                  <label className="text-xs font-medium text-white/60 block mb-1.5">Contact Phone</label>
                   <input type="tel" className={inputClass} value={form.contact_phone} onChange={e => setForm({...form, contact_phone: e.target.value})} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Location</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Location</label>
                 <input className={inputClass} value={form.location} onChange={e => setForm({...form, location: e.target.value})} placeholder="e.g. Manchester, UK" />
               </div>
               <button
@@ -172,16 +172,16 @@ export default function SettingsForm({
           )}
 
           {tab === 'Branding' && (
-            <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
+            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-5">
               <h2 className="font-bold text-lg">Branding</h2>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Primary Colour</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Primary Colour</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={form.primary_color}
                     onChange={e => setForm({...form, primary_color: e.target.value})}
-                    className="w-12 h-12 rounded-xl border border-border cursor-pointer"
+                    className="w-12 h-12 rounded-xl border border-white/[0.08] cursor-pointer"
                   />
                   <input
                     className={inputClass + ' max-w-[140px]'}
@@ -193,19 +193,19 @@ export default function SettingsForm({
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Logo URL</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Logo URL</label>
                 <input className={inputClass} value={form.logo_url} onChange={e => setForm({...form, logo_url: e.target.value})} placeholder="https://..." />
                 {form.logo_url && (
-                  <div className="mt-2 w-20 h-20 rounded-xl border border-border overflow-hidden bg-surface flex items-center justify-center">
+                  <div className="mt-2 w-20 h-20 rounded-xl border border-white/[0.08] overflow-hidden bg-surface flex items-center justify-center">
                     <img src={form.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
                   </div>
                 )}
               </div>
               <div>
-                <label className="text-xs font-medium text-text-light block mb-1.5">Hero Image URL</label>
+                <label className="text-xs font-medium text-white/60 block mb-1.5">Hero Image URL</label>
                 <input className={inputClass} value={form.hero_image_url} onChange={e => setForm({...form, hero_image_url: e.target.value})} placeholder="https://..." />
                 {form.hero_image_url && (
-                  <div className="mt-2 w-full h-32 rounded-xl border border-border overflow-hidden bg-surface">
+                  <div className="mt-2 w-full h-32 rounded-xl border border-white/[0.08] overflow-hidden bg-surface">
                     <img src={form.hero_image_url} alt="Hero" className="w-full h-full object-cover" />
                   </div>
                 )}
@@ -221,11 +221,11 @@ export default function SettingsForm({
           )}
 
           {tab === 'Team' && (
-            <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
+            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-5">
               <h2 className="font-bold text-lg">Team Members</h2>
               <div className="space-y-2">
                 {team.map(m => (
-                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-surface/30 transition-colors">
+                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-white/[0.08]/50 hover:bg-surface/30 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-sm font-bold text-accent">
                         {m.name.charAt(0).toUpperCase()}
@@ -239,7 +239,7 @@ export default function SettingsForm({
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
                         m.role === 'admin' ? 'bg-purple-50 text-purple-600' :
                         m.role === 'coach' ? 'bg-blue-50 text-blue-600' :
-                        'bg-gray-50 text-gray-500'
+                        'bg-white/[0.05] text-white/50'
                       }`}>
                         {m.role}
                       </span>
@@ -260,7 +260,7 @@ export default function SettingsForm({
                 <h3 className="font-semibold text-sm mb-2">Invite Team Members</h3>
                 <p className="text-xs text-text-light mb-3">Share this signup link. New coaches/admins will join your academy automatically.</p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-surface border border-border rounded-xl px-4 py-2.5 text-sm text-text-light truncate">
+                  <div className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-text-light truncate">
                     /auth/signup?org={form.slug}
                   </div>
                   <button
@@ -287,18 +287,18 @@ export default function SettingsForm({
           )}
 
           {tab === 'Danger Zone' && (
-            <div className="bg-white rounded-2xl border border-red-200 p-6 space-y-5">
+            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-red-500/20 p-6 space-y-5">
               <h2 className="font-bold text-lg text-red-600">Danger Zone</h2>
               <p className="text-sm text-text-light">These actions are irreversible. Please be careful.</p>
 
-              <div className="p-4 rounded-xl border border-border space-y-3">
+              <div className="p-4 rounded-xl border border-white/[0.08] space-y-3">
                 <div>
                   <p className="font-semibold text-sm">Export All Data</p>
                   <p className="text-xs text-text-light">Download all your academy data as CSV files</p>
                 </div>
                 <a
                   href="/dashboard/exports"
-                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold border border-border hover:bg-surface transition-colors"
+                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold border border-white/[0.08] hover:bg-white/[0.05] transition-colors"
                 >
                   Go to Exports
                 </a>
