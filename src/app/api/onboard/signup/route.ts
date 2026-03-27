@@ -77,6 +77,19 @@ export async function POST(request: NextRequest) {
         .eq('id', userId)
     }
 
+    // Send welcome email to new admin (fire and forget)
+    try {
+      const { sendEmail } = await import('@/lib/email')
+      const { adminWelcomeEmail } = await import('@/lib/email-templates')
+      const { data: orgData } = await supabase.from('organisations').select('name').eq('slug', orgSlug).single()
+      const template = adminWelcomeEmail({
+        adminName: fullName.split(' ')[0],
+        academyName: orgData?.name || orgSlug,
+        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/dashboard`,
+      })
+      await sendEmail({ to: email, ...template })
+    } catch { /* email optional */ }
+
     return NextResponse.json({ userId })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)

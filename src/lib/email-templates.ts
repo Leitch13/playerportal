@@ -522,3 +522,46 @@ export function upsellSiblingEmail(params: { parentName: string; childName: stri
     `),
   }
 }
+
+export function adminWelcomeEmail(params: { adminName: string; academyName: string; dashboardUrl: string }) {
+  return {
+    subject: `Your academy is live! — ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#0a0a0a;font-size:22px">Your academy is ready! 🏟️</h2>
+      <p style="color:#666;margin:0 0 20px">Hi ${params.adminName},</p>
+      <p style="color:#666;line-height:1.6"><strong>${params.academyName}</strong> is now live on Player Portal. Here's what to do next:</p>
+      <div style="background:#f8f9fa;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:14px;color:#333;font-weight:600">Getting started:</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#666">1️⃣ Create your first class</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#666">2️⃣ Set up pricing plans</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#666">3️⃣ Share your booking link with parents</p>
+        <p style="margin:0;font-size:14px;color:#666">4️⃣ Connect Stripe to accept payments</p>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Go to Dashboard →</a>
+      </div>
+      <p style="color:#999;font-size:12px;text-align:center">Your 14-day free trial has started. No credit card required.</p>
+    `),
+  }
+}
+
+export function enrolmentConfirmationEmail(params: { parentName: string; childName: string; className: string; dayTime: string; academyName: string; dashboardUrl: string }) {
+  return {
+    subject: `${params.childName} is enrolled! — ${params.className}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#0a0a0a;font-size:22px">Enrolment confirmed ✅</h2>
+      <p style="color:#666;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#666;line-height:1.6"><strong>${params.childName}</strong> is now enrolled in <strong>${params.className}</strong> at <strong>${params.academyName}</strong>.</p>
+      <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#333" cellpadding="6">
+          <tr><td style="color:#999">Class</td><td style="text-align:right;font-weight:600">${params.className}</td></tr>
+          <tr><td style="color:#999">Schedule</td><td style="text-align:right">${params.dayTime}</td></tr>
+          <tr><td style="color:#999">Player</td><td style="text-align:right">${params.childName}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">View Schedule</a>
+      </div>
+    `),
+  }
+}
