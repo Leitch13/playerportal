@@ -296,8 +296,16 @@ export default function Navigation({
 
   async function handleSignOut() {
     const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/signin')
+    await supabase.auth.signOut({ scope: 'global' })
+    // Clear all sb- cookies client-side
+    document.cookie.split(';').forEach(cookie => {
+      const name = cookie.split('=')[0].trim()
+      if (name.startsWith('sb-')) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+      }
+    })
+    // Use signout route to also clear server-side cookies
+    window.location.href = '/auth/signout'
   }
 
   function cycleTheme() {

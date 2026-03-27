@@ -27,6 +27,18 @@ function SignInForm() {
 
     const supabase = createClient()
 
+    // Force sign out any existing session first
+    await supabase.auth.signOut()
+
+    // Clear all sb- cookies on the client side
+    document.cookie.split(';').forEach(cookie => {
+      const name = cookie.split('=')[0].trim()
+      if (name.startsWith('sb-')) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+      }
+    })
+
+    // Now sign in as the new user
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
