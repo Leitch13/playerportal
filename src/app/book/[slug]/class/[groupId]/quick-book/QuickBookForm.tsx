@@ -327,6 +327,26 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       {!isLoggedIn && (
         <p className="text-center text-sm text-white/40">Already have an account? <Link href={`/auth/signin?redirect=/book/${orgSlug}/class/${groupId}/quick-book`} className="underline hover:text-white/60" style={{ color: primaryColor }}>Sign in</Link></p>
       )}
+
+      {/* Extra bottom padding for sticky bar */}
+      <div className="h-24" />
+
+      {/* Sticky bottom booking bar — always visible */}
+      {canSubmit && !loading && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pt-3" style={{ background: 'linear-gradient(to top, #0a0a0a 60%, transparent)' }}>
+          <div className="max-w-lg mx-auto">
+            <button
+              type="button"
+              onClick={handleBookAndPay}
+              disabled={loading}
+              className="w-full py-4 rounded-2xl font-extrabold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+              style={{ backgroundColor: primaryColor, color: '#0a0a0a', boxShadow: `0 -4px 30px ${primaryColor}50` }}
+            >
+              Book &amp; Pay {displayPrice} &rarr;
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
