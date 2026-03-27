@@ -32,7 +32,7 @@ export default async function QuickBookPage({
   const { data: group } = await supabase
     .from('training_groups')
     .select(
-      'id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, coach:profiles!training_groups_coach_id_fkey(full_name)'
+      'id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, class_type, coach:profiles!training_groups_coach_id_fkey(full_name)'
     )
     .eq('id', groupId)
     .eq('organisation_id', org.id)
@@ -105,13 +105,41 @@ export default async function QuickBookPage({
     existingChildren = children || []
   }
 
-  // Fetch available plans for this org
-  const { data: plans } = await supabase
+  // Fetch plans: class-specific first, then class_type, then org-wide
+  const { data: classPlans } = await supabase
     .from('subscription_plans')
     .select('id, name, description, amount, sessions_per_week, interval')
     .eq('organisation_id', org.id)
     .eq('active', true)
-    .order('sort_order')
+    .eq('training_group_id', groupId)
+    .order('amount', { ascending: true })
+
+  let plans = classPlans && classPlans.length > 0 ? classPlans : null
+
+  if (!plans || plans.length === 0) {
+    const classType = (group as Record<string, unknown>).class_type as string || 'group'
+    const { data: typePlans } = await supabase
+      .from('subscription_plans')
+      .select('id, name, description, amount, sessions_per_week, interval')
+      .eq('organisation_id', org.id)
+      .eq('active', true)
+      .eq('class_type', classType)
+      .is('training_group_id', null)
+      .order('amount', { ascending: true })
+    plans = typePlans && typePlans.length > 0 ? typePlans : null
+  }
+
+  if (!plans || plans.length === 0) {
+    const { data: orgPlans } = await supabase
+      .from('subscription_plans')
+      .select('id, name, description, amount, sessions_per_week, interval')
+      .eq('organisation_id', org.id)
+      .eq('active', true)
+      .is('training_group_id', null)
+      .is('class_type', null)
+      .order('amount', { ascending: true })
+    plans = orgPlans
+  }
 
   const primaryColor = org.primary_color || '#4ecde6'
   const coach = group.coach as unknown as { full_name: string } | null
