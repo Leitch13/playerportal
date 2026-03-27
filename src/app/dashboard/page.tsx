@@ -1025,6 +1025,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const { data: todaysGroups } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .eq('day_of_week', today)
     .order('time_slot', { ascending: true })
 
