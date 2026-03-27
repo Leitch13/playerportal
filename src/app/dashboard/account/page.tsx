@@ -136,7 +136,7 @@ export default async function AccountPage() {
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 px-3 py-2 bg-surface-dark rounded-lg text-sm font-mono break-all">
-              {process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'}/auth/signup?org={org.slug}
+              {process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/auth/signup?org={org.slug}
             </code>
           </div>
         </Card>

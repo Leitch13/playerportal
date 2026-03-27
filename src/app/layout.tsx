@@ -11,7 +11,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'),
   title: {
     default: 'Player Portal — The All-in-One Platform for Football Academies',
     template: '%s | Player Portal',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_GB',
-    url: 'https://playerportal.app',
+    url: 'https://theplayerportal.net',
     siteName: 'Player Portal',
     title: 'Player Portal — Run Your Academy Like a Pro',
     description: 'Players. Progress. Payments. Parents. One platform that handles it all.',

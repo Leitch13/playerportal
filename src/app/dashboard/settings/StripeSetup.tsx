@@ -265,7 +265,7 @@ export default function StripeSetup() {
             <li>
               Set the endpoint URL to:
               <code className="block mt-1 p-2 rounded-lg bg-surface text-xs font-mono text-foreground select-all break-all">
-                https://playerportallive.vercel.app/api/stripe/webhooks
+                https://theplayerportal.net/api/stripe/webhooks
               </code>
             </li>
             <li>

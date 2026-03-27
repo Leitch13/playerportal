@@ -35,7 +35,7 @@ export async function GET() {
     } = {
       stripe_secret_key: hasSecretKey,
       stripe_webhook_secret: hasWebhookSecret,
-      webhook_url: 'https://playerportallive.vercel.app/api/stripe/webhooks',
+      webhook_url: 'https://theplayerportal.net/api/stripe/webhooks',
       webhooks: [],
       recent_events: [],
     }

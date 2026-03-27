@@ -259,7 +259,7 @@ export default function OnboardPage() {
                 {slug && (
                   <p className="mt-1.5 text-xs text-text-light">
                     Your booking page:{' '}
-                    <span className="font-medium text-accent">playerportallive.vercel.app/book/{slug}</span>
+                    <span className="font-medium text-accent">theplayerportal.net/book/{slug}</span>
                   </p>
                 )}
               </div>

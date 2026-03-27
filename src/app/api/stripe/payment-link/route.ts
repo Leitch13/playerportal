@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${request.headers.get('origin') || 'https://playerportallive.vercel.app'}/dashboard/payments?success=1`,
+          url: `${request.headers.get('origin') || 'https://theplayerportal.net'}/dashboard/payments?success=1`,
         },
       },
     })

@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         .eq('id', plan.id)
     }
 
-    const origin = request.headers.get('origin') || 'https://playerportallive.vercel.app'
+    const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
     if (isQuarterly) {
       // ═══ QUARTERLY: Pay 3 months upfront with 10% discount ═══

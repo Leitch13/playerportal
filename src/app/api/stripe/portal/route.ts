@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No billing account found' }, { status: 404 })
     }
 
-    const origin = request.headers.get('origin') || 'https://playerportallive.vercel.app'
+    const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
     // Create a Stripe Customer Portal session
     const session = await stripe.billingPortal.sessions.create({

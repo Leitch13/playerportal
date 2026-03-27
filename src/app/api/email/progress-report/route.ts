@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     ? Math.round((sessionsAttended / (totalSessions || 1)) * 100)
     : 0
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
   const template = progressReportEmail({
     parentName: parent.full_name?.split(' ')[0] || 'there',

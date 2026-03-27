@@ -42,7 +42,7 @@ export async function POST() {
     }
 
     // Generate an Account Link so the admin can complete Stripe onboarding
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${appUrl}/dashboard/settings?tab=billing`,

@@ -31,7 +31,7 @@ export async function POST() {
     if (org?.name) academyName = org.name
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
   const template = welcomeEmail({
     parentName: profile?.full_name || 'Admin',
     academyName,

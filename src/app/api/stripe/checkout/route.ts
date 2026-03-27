@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe Checkout Session
-    const origin = request.headers.get('origin') || 'https://playerportallive.vercel.app'
+    const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

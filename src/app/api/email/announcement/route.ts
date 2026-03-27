@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: parents } = await parentsQuery
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportallive.vercel.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
   let sent = 0
 
   for (const parent of parents || []) {
