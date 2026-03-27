@@ -241,8 +241,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url, billing: 'monthly' })
   } catch (err) {
     console.error('Stripe subscribe error:', err)
+    const message = err instanceof Error ? err.message : 'Failed to create subscription checkout'
     return NextResponse.json(
-      { error: 'Failed to create subscription checkout' },
+      { error: message },
       { status: 500 }
     )
   }
