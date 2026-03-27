@@ -84,21 +84,20 @@ const parentFeatures = [
   'Payment receipts & invoices',
 ]
 
+const allFeatures = [
+  'Unlimited players', 'Unlimited classes', 'Full analytics', 'Priority support',
+  'Custom branding', 'Merch shop', 'Session planner', 'Drill library',
+  'White-label', 'QR attendance', 'Parent portal', 'Messaging',
+  'Camps & events', 'CSV exports', 'Audit log',
+]
+
 const plans = [
   {
     name: 'Starter',
     price: '\u00a320',
     period: '/mo',
-    fee: '+ 3.5% per transaction',
-    desc: 'Perfect for small academies getting started.',
-    features: [
-      'Up to 50 players',
-      '3 classes',
-      'Basic analytics',
-      'Email support',
-      'Parent portal',
-      'QR attendance',
-    ],
+    fee: '3.5% transaction fee',
+    desc: 'All features included. Best if you process low volume.',
     cta: 'Start Free Trial',
     featured: false,
   },
@@ -106,18 +105,8 @@ const plans = [
     name: 'Pro',
     price: '\u00a330',
     period: '/mo',
-    fee: '+ 2% per transaction',
-    desc: 'For growing academies that need everything.',
-    features: [
-      'Up to 200 players',
-      'Unlimited classes',
-      'Full analytics',
-      'Priority support',
-      'Custom branding',
-      'Merch shop',
-      'Session planner',
-      'Drill library',
-    ],
+    fee: '2% transaction fee',
+    desc: 'All features included. The sweet spot for most academies.',
     cta: 'Start Free Trial',
     featured: true,
   },
@@ -125,16 +114,8 @@ const plans = [
     name: 'Enterprise',
     price: '\u00a350',
     period: '/mo',
-    fee: '0% transaction fees',
-    desc: 'For multi-site academies and large organisations.',
-    features: [
-      'Unlimited everything',
-      'Advanced analytics',
-      'Dedicated support',
-      'White-label',
-      'API access',
-      'Custom integrations',
-    ],
+    fee: '1% transaction fees',
+    desc: 'All features included. Lowest fees \u2014 keep more of every penny.',
     cta: 'Start Free Trial',
     featured: false,
   },
@@ -179,7 +160,7 @@ const faqs = [
   },
   {
     q: 'How do I get support?',
-    a: 'Pro plans get priority email and chat support. Starter plans have access to our community forum and knowledge base.',
+    a: 'All plans include priority email and chat support. We\u2019re here to help every academy succeed.',
   },
 ]
 
@@ -447,7 +428,10 @@ export default function HowItWorksPage() {
               Pick your plan. Start your 14-day free trial. No credit card required.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+          <p className="text-sm text-white/40 mt-4 max-w-xl mx-auto text-center">
+            Every plan includes everything. Choose based on your transaction volume.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start mt-10">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -462,27 +446,23 @@ export default function HowItWorksPage() {
                     Most Popular
                   </div>
                 )}
-                <div className="mb-8">
+                <div className="mb-6">
                   <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">{plan.name}</h3>
                   <div className="flex items-baseline gap-1 mb-1">
                     <span className={`text-5xl font-extrabold tracking-tight ${plan.featured ? 'gradient-text' : ''}`}>{plan.price}</span>
                     {plan.period && <span className="text-white/30 text-sm font-medium">{plan.period}</span>}
                   </div>
-                  <div className={`text-sm font-medium mb-3 ${plan.fee === '0% transaction fees' ? 'text-emerald-400' : 'text-white/40'}`}>
+                  <div className={`text-sm font-semibold mb-3 ${plan.fee === '1% transaction fees' ? 'text-emerald-400' : 'text-white/40'}`}>
                     {plan.fee}
                   </div>
                   <p className="text-sm text-white/30">{plan.desc}</p>
                 </div>
-                <ul className="space-y-3.5 mb-8 flex-1">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-3 text-sm text-white/50">
-                      <svg className="w-4 h-4 mt-0.5 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-lg bg-[#4ecde6]/5 border border-[#4ecde6]/10">
+                  <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-xs font-semibold text-[#4ecde6]">All features included</span>
+                </div>
                 <Link
                   href="/onboard"
                   className={`block text-center py-3.5 rounded-full font-semibold text-sm transition-all ${
@@ -495,6 +475,22 @@ export default function HowItWorksPage() {
                 </Link>
               </div>
             ))}
+          </div>
+          {/* Shared feature list */}
+          <div className="max-w-3xl mx-auto mt-14">
+            <h3 className="text-center text-sm font-semibold text-white/50 uppercase tracking-wider mb-6">
+              Included in every plan
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {allFeatures.map((feat) => (
+                <div key={feat} className="flex items-center gap-2.5 text-sm text-white/50">
+                  <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {feat}
+                </div>
+              ))}
+            </div>
           </div>
           {/* Notes */}
           <div className="text-center mt-12 space-y-3">

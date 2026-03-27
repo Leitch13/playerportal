@@ -11,12 +11,17 @@ CREATE TABLE IF NOT EXISTS public.platform_plans (
   created_at timestamptz DEFAULT now()
 );
 
--- Insert the 3 plans
+-- Insert the 3 plans (all plans share the same feature set; only price & transaction fee differ)
 INSERT INTO public.platform_plans (name, slug, monthly_price, transaction_fee_percent, features, sort_order) VALUES
-  ('Starter', 'starter', 20.00, 3.5, '["Up to 50 players", "3 classes", "Basic analytics", "Email support", "Parent portal", "QR attendance"]', 1),
-  ('Pro', 'pro', 30.00, 2.0, '["Up to 200 players", "Unlimited classes", "Full analytics", "Priority support", "Custom branding", "Merch shop", "Session planner", "Drill library"]', 2),
-  ('Enterprise', 'enterprise', 50.00, 0.0, '["Unlimited players", "Unlimited classes", "Advanced analytics", "Dedicated support", "White-label branding", "API access", "Custom integrations", "0% transaction fees"]', 3)
+  ('Starter', 'starter', 20.00, 3.5, '["Unlimited players", "Unlimited classes", "Full analytics", "Priority support", "Custom branding", "Merch shop", "Session planner", "Drill library", "White-label", "QR attendance", "Parent portal", "Messaging", "Camps & events", "CSV exports", "Audit log"]', 1),
+  ('Pro', 'pro', 30.00, 2.0, '["Unlimited players", "Unlimited classes", "Full analytics", "Priority support", "Custom branding", "Merch shop", "Session planner", "Drill library", "White-label", "QR attendance", "Parent portal", "Messaging", "Camps & events", "CSV exports", "Audit log"]', 2),
+  ('Enterprise', 'enterprise', 50.00, 1.0, '["Unlimited players", "Unlimited classes", "Full analytics", "Priority support", "Custom branding", "Merch shop", "Session planner", "Drill library", "White-label", "QR attendance", "Parent portal", "Messaging", "Camps & events", "CSV exports", "Audit log"]', 3)
 ON CONFLICT (slug) DO NOTHING;
+
+-- Update existing rows if they were already inserted with old features
+UPDATE public.platform_plans
+SET features = '["Unlimited players", "Unlimited classes", "Full analytics", "Priority support", "Custom branding", "Merch shop", "Session planner", "Drill library", "White-label", "QR attendance", "Parent portal", "Messaging", "Camps & events", "CSV exports", "Audit log"]'
+WHERE slug IN ('starter', 'pro', 'enterprise');
 
 -- Add platform plan reference to organisations
 ALTER TABLE public.organisations ADD COLUMN IF NOT EXISTS platform_plan_id uuid REFERENCES public.platform_plans(id);

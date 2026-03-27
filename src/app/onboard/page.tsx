@@ -15,9 +15,15 @@ interface PlatformPlan {
   name: string
   monthlyPrice: number
   transactionFee: number
-  features: string[]
   recommended?: boolean
 }
+
+const ALL_FEATURES = [
+  'Unlimited players', 'Unlimited classes', 'Full analytics', 'Priority support',
+  'Custom branding', 'Merch shop', 'Session planner', 'Drill library',
+  'White-label', 'QR attendance', 'Parent portal', 'Messaging',
+  'Camps & events', 'CSV exports', 'Audit log',
+]
 
 const PLATFORM_PLANS: PlatformPlan[] = [
   {
@@ -25,14 +31,6 @@ const PLATFORM_PLANS: PlatformPlan[] = [
     name: 'Starter',
     monthlyPrice: 20,
     transactionFee: 3.5,
-    features: [
-      'Up to 50 players',
-      '3 classes',
-      'Basic analytics',
-      'Email support',
-      'Parent portal',
-      'QR attendance',
-    ],
   },
   {
     slug: 'pro',
@@ -40,32 +38,12 @@ const PLATFORM_PLANS: PlatformPlan[] = [
     monthlyPrice: 30,
     transactionFee: 2,
     recommended: true,
-    features: [
-      'Up to 200 players',
-      'Unlimited classes',
-      'Full analytics',
-      'Priority support',
-      'Custom branding',
-      'Merch shop',
-      'Session planner',
-      'Drill library',
-    ],
   },
   {
     slug: 'enterprise',
     name: 'Enterprise',
     monthlyPrice: 50,
-    transactionFee: 0,
-    features: [
-      'Unlimited players',
-      'Unlimited classes',
-      'Advanced analytics',
-      'Dedicated support',
-      'White-label branding',
-      'API access',
-      'Custom integrations',
-      '0% transaction fees',
-    ],
+    transactionFee: 1,
   },
 ]
 
@@ -453,7 +431,7 @@ export default function OnboardPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-xl font-bold text-primary mb-1">Choose Your Plan</h2>
-                <p className="text-text-light text-sm">All plans include a 14-day free trial &mdash; no card required</p>
+                <p className="text-text-light text-sm">All features included. Pick the plan that saves you the most.</p>
               </div>
 
               {/* Plan Cards */}
@@ -509,27 +487,35 @@ export default function OnboardPage() {
                       </div>
 
                       {/* Transaction fee */}
-                      <p className={`text-sm font-medium mb-4 ${plan.transactionFee === 0 ? 'text-emerald-400' : 'text-white/50'}`}>
-                        {plan.transactionFee === 0 ? '0% transaction fee' : `${plan.transactionFee}% transaction fee`}
+                      <p className={`text-sm font-semibold mb-4 ${plan.transactionFee === 1 ? 'text-emerald-400' : 'text-white/50'}`}>
+                        {`${plan.transactionFee}% transaction fee`}
                       </p>
 
-                      {/* Divider */}
-                      <div className="h-px bg-white/10 mb-4" />
-
-                      {/* Features */}
-                      <ul className="space-y-2 flex-1">
-                        {plan.features.map((feature) => (
-                          <li key={feature} className="flex items-start gap-2 text-sm text-white/70">
-                            <svg className="w-4 h-4 text-[#4ecde6] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
+                      {/* All features badge */}
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#4ecde6]/5 border border-[#4ecde6]/10">
+                        <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-xs font-semibold text-[#4ecde6]">All features included</span>
+                      </div>
                     </button>
                   )
                 })}
+              </div>
+
+              {/* Shared feature list */}
+              <div className="bg-gradient-to-b from-[#111827] to-[#1a2332] border border-white/10 rounded-2xl p-5">
+                <h4 className="text-sm font-bold text-white mb-3">Every plan includes</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {ALL_FEATURES.map((feature) => (
+                    <div key={feature} className="flex items-center gap-2 text-xs text-white/60">
+                      <svg className="w-3.5 h-3.5 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {feature}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Cost comparison calculator */}
@@ -689,10 +675,7 @@ export default function OnboardPage() {
                     </p>
                     <p className="text-xs text-text-light">
                       &pound;{PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.monthlyPrice}/month &bull;{' '}
-                      {PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.transactionFee === 0
-                        ? '0% fees'
-                        : `${PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.transactionFee}% transaction fee`
-                      }
+                      {`${PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.transactionFee}% transaction fee`}
                     </p>
                   </div>
                 </div>

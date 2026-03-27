@@ -21,6 +21,13 @@ interface PlatformStatus {
   hasSubscription: boolean
 }
 
+const ALL_FEATURES = [
+  'Unlimited players', 'Unlimited classes', 'Full analytics', 'Priority support',
+  'Custom branding', 'Merch shop', 'Session planner', 'Drill library',
+  'White-label', 'QR attendance', 'Parent portal', 'Messaging',
+  'Camps & events', 'CSV exports', 'Audit log',
+]
+
 export default function PlatformBilling({
   usage,
 }: {
@@ -115,22 +122,6 @@ export default function PlatformBilling({
           ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
           : 'bg-red-500/20 text-red-400 border-red-500/30'
 
-  // Plan limits for usage bars
-  function getPlanLimits(slug: string | undefined) {
-    switch (slug) {
-      case 'starter':
-        return { players: 50, classes: 3 }
-      case 'pro':
-        return { players: 200, classes: Infinity }
-      case 'enterprise':
-        return { players: Infinity, classes: Infinity }
-      default:
-        return { players: 50, classes: 3 } // trial defaults to starter limits
-    }
-  }
-
-  const limits = getPlanLimits(currentPlan?.slug)
-
   return (
     <div className="space-y-6">
       {/* Current Plan Card - Dark Glass */}
@@ -171,29 +162,43 @@ export default function PlatformBilling({
                   Transaction Fee
                 </p>
                 <p className="text-2xl font-bold text-white mt-1">
-                  {Number(currentPlan.transaction_fee_percent) === 0
-                    ? '0%'
-                    : `${Number(currentPlan.transaction_fee_percent)}%`}
+                  {`${Number(currentPlan.transaction_fee_percent)}%`}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Usage bars */}
+          {/* All features included */}
           <div className="space-y-3">
             <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-              Usage
+              Your Plan Includes
             </p>
-            <UsageBar
-              label="Players"
-              used={usage.players}
-              limit={limits.players}
-            />
-            <UsageBar
-              label="Classes"
-              used={usage.classes}
-              limit={limits.classes}
-            />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {ALL_FEATURES.map((feat) => (
+                <div key={feat} className="flex items-center gap-2 text-xs text-gray-300">
+                  <svg className="w-3.5 h-3.5 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {feat}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Usage stats (no limits) */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+              <p className="text-xs text-gray-500">Players</p>
+              <p className="text-lg font-bold text-white">{usage.players}</p>
+            </div>
+            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+              <p className="text-xs text-gray-500">Coaches</p>
+              <p className="text-lg font-bold text-white">{usage.coaches}</p>
+            </div>
+            <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+              <p className="text-xs text-gray-500">Classes</p>
+              <p className="text-lg font-bold text-white">{usage.classes}</p>
+            </div>
           </div>
 
           {/* Actions */}
@@ -253,9 +258,7 @@ export default function PlatformBilling({
                       <span className="text-sm text-gray-500">/mo</span>
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
-                      {Number(plan.transaction_fee_percent) === 0
-                        ? 'No transaction fees'
-                        : `${Number(plan.transaction_fee_percent)}% transaction fee`}
+                      {`${Number(plan.transaction_fee_percent)}% transaction fee`}
                     </p>
                   </div>
 
@@ -310,40 +313,3 @@ export default function PlatformBilling({
   )
 }
 
-function UsageBar({
-  label,
-  used,
-  limit,
-}: {
-  label: string
-  used: number
-  limit: number
-}) {
-  const isUnlimited = !isFinite(limit)
-  const percent = isUnlimited ? Math.min((used / 500) * 100, 100) : Math.min((used / limit) * 100, 100)
-  const isNearLimit = !isUnlimited && percent >= 80
-  const isOverLimit = !isUnlimited && used > limit
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-400">{label}</span>
-        <span className="text-xs font-medium text-gray-300">
-          {used} / {isUnlimited ? 'Unlimited' : limit}
-        </span>
-      </div>
-      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${
-            isOverLimit
-              ? 'bg-red-500'
-              : isNearLimit
-                ? 'bg-amber-500'
-                : 'bg-accent'
-          }`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-    </div>
-  )
-}
