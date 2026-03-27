@@ -30,6 +30,34 @@ export default async function ImportPlayersPage() {
         </Link>
       </div>
 
+      {/* ClassForKids migration banner */}
+      <Link
+        href="/dashboard/players/import/migrate"
+        className="block bg-gradient-to-r from-[#4ecde6]/10 to-[#4ecde6]/5 border border-[#4ecde6]/20 rounded-xl p-5 hover:border-[#4ecde6]/40 transition-colors group"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="15" y2="15" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Switching from ClassForKids?</p>
+              <p className="text-xs text-[#888] mt-0.5">
+                Import all your players, parents, and class data automatically
+              </p>
+            </div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </div>
+      </Link>
+
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
         <strong>CSV Format:</strong> Your file should include columns for{' '}
         <code className="bg-blue-100 px-1 rounded">first_name</code>,{' '}

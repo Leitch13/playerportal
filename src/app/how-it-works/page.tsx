@@ -237,10 +237,7 @@ export default function HowItWorksPage() {
       <nav className="sticky top-0 z-50 glass-dark border-b border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#4ecde6] to-[#2ba8c3] flex items-center justify-center shadow-lg shadow-[#4ecde6]/20">
-              <span className="text-white font-extrabold text-xs">PP</span>
-            </div>
-            <span className="text-lg font-bold tracking-tight">Player Portal</span>
+            <img src="/logo.png" alt="Player Portal" className="h-9 w-auto object-contain" />
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <Link href="/#features" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Features</Link>
@@ -575,10 +572,8 @@ export default function HowItWorksPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#4ecde6] to-[#2ba8c3] flex items-center justify-center">
-                <span className="text-white font-bold text-[8px]">PP</span>
-              </div>
-              <span className="text-sm font-semibold text-white/60">Player Portal</span>
+              <img src="/logo.png" alt="Player Portal" className="h-7 w-auto object-contain" />
+              <span className="text-sm font-semibold text-white/60">by playit loveit</span>
             </div>
             <div className="flex gap-8 text-sm text-white/30">
               <Link href="/#features" className="hover:text-white/60 transition-colors">Features</Link>

@@ -203,11 +203,11 @@ export default function MessageThread({
   return (
     <div className="flex flex-col h-full">
       {/* Thread header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-[#1e1e1e] bg-[#0e0e0e]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/[0.05] text-white/60 transition-colors"
+            className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#1a1a1a] text-white/60 transition-colors"
           >
             <svg
               width="18"
@@ -241,7 +241,7 @@ export default function MessageThread({
           </div>
           {thread.subject && (
             <div className="ml-auto hidden sm:block">
-              <span className="text-xs text-white/30 bg-white/[0.05] px-2.5 py-1 rounded-lg border border-white/[0.06]">
+              <span className="text-xs text-white/30 bg-[#1a1a1a] px-2.5 py-1 rounded-lg border border-[#1e1e1e]">
                 {thread.subject}
               </span>
             </div>
@@ -266,7 +266,7 @@ export default function MessageThread({
               {/* Date separator */}
               {showDate && (
                 <div className="flex items-center justify-center my-4">
-                  <span className="text-[11px] text-white/25 bg-white/[0.04] px-3 py-1 rounded-full">
+                  <span className="text-[11px] text-white/25 bg-[#141414] px-3 py-1 rounded-full">
                     {formatDateSeparator(msg.created_at)}
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export default function MessageThread({
                               ? 'rounded-2xl rounded-tr-lg'
                               : 'rounded-2xl rounded-br-lg'
                           }`
-                        : `bg-white/[0.07] text-white/90 border border-white/[0.06] ${
+                        : `bg-[#1a1a1a] text-white/90 border border-[#1e1e1e] ${
                             sameSenderAsPrev
                               ? 'rounded-2xl rounded-tl-lg'
                               : 'rounded-2xl rounded-bl-lg'
@@ -319,7 +319,7 @@ export default function MessageThread({
       </div>
 
       {/* Message input */}
-      <div className="flex-shrink-0 p-3 border-t border-white/[0.06] bg-white/[0.02]">
+      <div className="flex-shrink-0 p-3 border-t border-[#1e1e1e] bg-[#0e0e0e]">
         <form onSubmit={handleSend} className="flex items-end gap-2">
           <textarea
             ref={inputRef}
@@ -328,7 +328,7 @@ export default function MessageThread({
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 px-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 resize-none transition-colors"
+            className="flex-1 px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 resize-none transition-colors"
             style={{ maxHeight: '120px' }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement

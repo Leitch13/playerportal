@@ -1374,6 +1374,26 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
+        {/* ═══ CLASSFORKIDS IMPORT ═══ */}
+        {(totalPlayers || 0) < 5 && (
+          <Link href="/dashboard/players/import/migrate" className="block group">
+            <div className="bg-gradient-to-r from-[#4ecde6]/10 to-transparent backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-4 hover:border-[#4ecde6]/40 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">Already have players? Import from ClassForKids</p>
+                  <p className="text-xs text-white/40 mt-0.5">Migrate all your data in minutes</p>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </Link>
+        )}
+
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+
         {/* ═══ QUICK ACTIONS ═══ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Link href="/dashboard/messages?add=1" className="block group">

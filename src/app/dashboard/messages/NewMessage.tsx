@@ -94,7 +94,7 @@ export default function NewMessage({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-[#1e1e1e] bg-[#0e0e0e]">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -142,7 +142,7 @@ export default function NewMessage({
             To
           </label>
           {selectedRecipient ? (
-            <div className="flex items-center gap-2 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2.5">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 border ${getRoleBadgeColor(
                   selectedRecipient.role
@@ -200,10 +200,10 @@ export default function NewMessage({
                   placeholder="Search by name or role..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 transition-colors"
+                  className="w-full pl-9 pr-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 transition-colors"
                 />
               </div>
-              <div className="max-h-48 overflow-y-auto rounded-xl border border-white/[0.06] bg-white/[0.03]">
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-[#1e1e1e] bg-[#141414]">
                 {filteredRecipients.length === 0 ? (
                   <p className="px-4 py-6 text-sm text-white/30 text-center">No recipients found</p>
                 ) : (
@@ -215,7 +215,7 @@ export default function NewMessage({
                         setRecipientId(r.id)
                         setSearch('')
                       }}
-                      className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] last:border-0"
+                      className="w-full text-left px-3 py-2.5 flex items-center gap-3 hover:bg-[#1a1a1a] transition-colors border-b border-[#1e1e1e] last:border-0"
                     >
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${getRoleBadgeColor(
@@ -250,7 +250,7 @@ export default function NewMessage({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="e.g. Training schedule change"
-            className="w-full px-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 transition-colors"
+            className="w-full px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 transition-colors"
           />
         </div>
 
@@ -264,13 +264,13 @@ export default function NewMessage({
             onChange={(e) => setBody(e.target.value)}
             placeholder="Type your message here..."
             rows={6}
-            className="w-full px-4 py-3 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 resize-none transition-colors leading-relaxed"
+            className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 resize-none transition-colors leading-relaxed"
           />
         </div>
       </div>
 
       {/* Send button */}
-      <div className="flex-shrink-0 p-4 border-t border-white/[0.06] bg-white/[0.02]">
+      <div className="flex-shrink-0 p-4 border-t border-[#1e1e1e] bg-[#0e0e0e]">
         <button
           onClick={handleSend}
           disabled={!recipientId || !body.trim() || sending}

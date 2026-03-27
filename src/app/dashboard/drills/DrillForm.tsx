@@ -79,11 +79,11 @@ export default function DrillForm({
   }
 
   const inputCls =
-    'w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 transition'
+    'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 transition'
   const labelCls = 'block text-xs font-medium text-white/50 mb-1'
 
   return (
-    <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-xl p-6 space-y-5">
+    <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-6 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-white font-semibold">{editDrill ? 'Edit Drill' : 'Add Drill'}</h2>
         <button onClick={onClose} className="text-white/40 hover:text-white text-sm transition">
@@ -192,7 +192,7 @@ export default function DrillForm({
 
       {/* File Uploads */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-white/60 border-b border-white/[0.08] pb-2">Attachments</h3>
+        <h3 className="text-sm font-medium text-white/60 border-b border-[#1e1e1e] pb-2">Attachments</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FileUpload

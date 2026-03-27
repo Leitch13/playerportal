@@ -119,7 +119,7 @@ function SignUp() {
 
   const stepLabels = ['Account', 'Child Details', 'Choose Plan']
   const primaryColor = orgColor
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
+  const inputCls = "w-full px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
 
   return (
     <div className="min-h-screen bg-[#060606] flex items-center justify-center px-4 py-8 relative overflow-hidden">
@@ -136,7 +136,7 @@ function SignUp() {
         {isTrial && <div className="rounded-xl px-4 py-3 mb-4 border border-green-500/20 bg-green-500/10 backdrop-blur-xl"><p className="text-sm font-medium text-green-400 text-center">&#127881; Free Trial — try a class with no commitment!</p></div>}
         {referrerName && <div className="rounded-xl px-4 py-3 mb-4 border border-purple-500/20 bg-purple-500/10 backdrop-blur-xl flex items-center justify-center gap-2"><span className="text-lg">&#127873;</span><p className="text-sm font-medium text-purple-400">Referred by {referrerName}!</p></div>}
 
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-6 sm:p-8 shadow-2xl">
           <div className="flex items-center gap-1 mb-6">
             {stepLabels.map((label, i) => (
               <div key={label} className="flex-1">
@@ -174,7 +174,7 @@ function SignUp() {
 
           {step === 2 && (
             <form onSubmit={handleAddChild} className="space-y-4">
-              <div className="rounded-xl px-4 py-3 mb-2 border bg-white/[0.02]" style={{ borderColor: `${primaryColor}30` }}><p className="text-sm font-medium" style={{ color: primaryColor }}>Account created! Now add your child&apos;s details.</p></div>
+              <div className="rounded-xl px-4 py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}><p className="text-sm font-medium" style={{ color: primaryColor }}>Account created! Now add your child&apos;s details.</p></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="block text-xs text-white/50 mb-1.5">Child&apos;s First Name *</label><input type="text" value={childFirstName} onChange={(e) => setChildFirstName(e.target.value)} required placeholder="First name" className={inputCls} /></div>
                 <div><label className="block text-xs text-white/50 mb-1.5">Last Name *</label><input type="text" value={childLastName} onChange={(e) => setChildLastName(e.target.value)} required placeholder="Last name" className={inputCls} /></div>
@@ -194,22 +194,22 @@ function SignUp() {
 
           {step === 3 && (
             <div className="space-y-4">
-              <div className="rounded-xl px-4 py-3 mb-2 border bg-white/[0.02]" style={{ borderColor: `${primaryColor}30` }}>
+              <div className="rounded-xl px-4 py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
                 <p className="text-sm font-medium" style={{ color: primaryColor }}>{childFirstName} is registered! Choose a subscription plan below.</p>
                 <p className="text-xs text-white/40 mt-1">You&apos;ll only be charged from today — no backdated fees.</p>
               </div>
               {plans.length > 0 ? (
                 <div className="space-y-4">
-                  <div className="bg-white/[0.04] rounded-xl p-1 flex">
-                    <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
-                    <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Save 10%</span></button>
+                  <div className="bg-[#1a1a1a] rounded-xl p-1 flex">
+                    <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
+                    <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Save 10%</span></button>
                   </div>
                   {plans.map((plan) => {
                     const monthly = Number(plan.amount)
                     const quarterly = getQuarterlyPrice(monthly)
                     const isSelected = selectedPlanId === plan.id
                     return (
-                      <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full text-left rounded-xl border-2 p-4 transition-all ${isSelected ? 'bg-white/[0.04]' : 'border-white/[0.06] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 30px ${primaryColor}15, 0 0 60px ${primaryColor}08` } : undefined}>
+                      <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full text-left rounded-xl border-2 p-4 transition-all ${isSelected ? 'bg-[#1a1a1a]' : 'border-[#1e1e1e] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 30px ${primaryColor}15, 0 0 60px ${primaryColor}08` } : undefined}>
                         <div className="flex items-center justify-between">
                           <div><div className="font-bold text-white">{plan.name}</div>{plan.description && <div className="text-xs text-white/40 mt-0.5">{plan.description}</div>}<div className="text-xs text-white/30 mt-1">{plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week</div></div>
                           <div className="text-right">{billingOption === 'monthly' ? (<><div className="text-2xl font-bold" style={{ color: isSelected ? primaryColor : 'white' }}>&pound;{monthly.toFixed(0)}</div><div className="text-xs text-white/40">/month</div></>) : (<><div className="text-2xl font-bold text-green-400">&pound;{quarterly.discounted.toFixed(0)}</div><div className="text-xs text-white/30 line-through">&pound;{quarterly.total.toFixed(0)}</div><div className="text-[10px] font-semibold text-green-400 mt-0.5">Save &pound;{quarterly.saving.toFixed(0)}</div></>)}</div>

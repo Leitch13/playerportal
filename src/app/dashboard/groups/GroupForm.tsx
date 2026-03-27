@@ -28,11 +28,11 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center justify-between py-3 border-b border-border mb-4 group"
+      className="w-full flex items-center justify-between py-3 border-b border-[#1e1e1e] mb-4 group"
     >
-      <h3 className="text-sm font-bold uppercase tracking-wider text-text-light group-hover:text-text transition-colors">{title}</h3>
+      <h3 className="text-sm font-bold uppercase tracking-wider text-[#888] group-hover:text-white transition-colors">{title}</h3>
       <svg
-        className={`w-4 h-4 text-text-light transition-transform ${open ? 'rotate-180' : ''}`}
+        className={`w-4 h-4 text-[#888] transition-transform ${open ? 'rotate-180' : ''}`}
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -214,15 +214,15 @@ export default function GroupForm({
     )
   }
 
-  const inputCls = 'w-full px-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary'
+  const inputCls = 'w-full px-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30'
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
+    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold">{isEdit ? 'Edit Class' : 'Create New Class'}</h2>
         <button
           onClick={() => { setOpen(false); onClose?.() }}
-          className="text-text-light hover:text-text text-xl leading-none"
+          className="text-[#888] hover:text-white text-xl leading-none"
         >
           &times;
         </button>
@@ -235,7 +235,7 @@ export default function GroupForm({
           <div className="space-y-4 pb-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1.5">Class Name *</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Class Name *</label>
                 <input
                   type="text"
                   value={name}
@@ -246,7 +246,7 @@ export default function GroupForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Age Group</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Age Group</label>
                 <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} className={inputCls}>
                   <option value="">Select...</option>
                   {AGE_GROUPS.map((ag) => (
@@ -258,7 +258,7 @@ export default function GroupForm({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Class Type</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Class Type</label>
                 <select value={classType} onChange={(e) => setClassType(e.target.value)} className={inputCls}>
                   {CLASS_TYPES.map((ct) => (
                     <option key={ct.value} value={ct.value}>{ct.label}</option>
@@ -268,7 +268,7 @@ export default function GroupForm({
               <div className="flex items-end pb-1">
                 <label className="flex items-center gap-3 cursor-pointer select-none">
                   <div
-                    className={`relative w-11 h-6 rounded-full transition-colors ${isFeatured ? 'bg-primary' : 'bg-gray-200'}`}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${isFeatured ? 'bg-primary' : 'bg-[#2a2a2a]'}`}
                     onClick={() => setIsFeatured(!isFeatured)}
                   >
                     <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isFeatured ? 'translate-x-5' : ''}`} />
@@ -286,7 +286,7 @@ export default function GroupForm({
           <div className="space-y-4 pb-4">
             {/* Short Description */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">Short Description</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Short Description</label>
               <div className="relative">
                 <textarea
                   value={shortDescription}
@@ -297,7 +297,7 @@ export default function GroupForm({
                   rows={2}
                   className={inputCls + ' resize-none'}
                 />
-                <span className={`absolute bottom-2 right-3 text-[10px] ${shortDescription.length >= 140 ? 'text-red-400' : 'text-text-light'}`}>
+                <span className={`absolute bottom-2 right-3 text-[10px] ${shortDescription.length >= 140 ? 'text-red-400' : 'text-[#888]'}`}>
                   {shortDescription.length}/150
                 </span>
               </div>
@@ -305,7 +305,7 @@ export default function GroupForm({
 
             {/* Full Description */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">Full Description</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Full Description</label>
               <textarea
                 value={longDescription}
                 onChange={(e) => setLongDescription(e.target.value)}
@@ -317,11 +317,11 @@ export default function GroupForm({
 
             {/* Key Benefits */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">Key Benefits</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Key Benefits</label>
               <div className="space-y-2">
                 {benefits.map((b, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="flex-1 text-sm bg-surface-dark px-3 py-2 rounded-lg">{b}</span>
+                    <span className="flex-1 text-sm bg-[#1a1a1a] px-3 py-2 rounded-lg">{b}</span>
                     <button
                       type="button"
                       onClick={() => removeBenefit(i)}
@@ -353,7 +353,7 @@ export default function GroupForm({
 
             {/* Suitable For */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">Suitable For</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Suitable For</label>
               <input
                 type="text"
                 value={suitableFor}
@@ -365,7 +365,7 @@ export default function GroupForm({
 
             {/* What to Bring */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">What to Bring</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">What to Bring</label>
               <input
                 type="text"
                 value={whatToBring}
@@ -377,7 +377,7 @@ export default function GroupForm({
 
             {/* Image URL */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">Image URL</label>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Image URL</label>
               <input
                 type="text"
                 value={imageUrl}
@@ -386,7 +386,7 @@ export default function GroupForm({
                 className={inputCls}
               />
               {imageUrl && (
-                <div className="mt-2 rounded-xl overflow-hidden border border-border bg-surface-dark">
+                <div className="mt-2 rounded-xl overflow-hidden border border-[#1e1e1e] bg-[#1a1a1a]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imageUrl}
@@ -406,9 +406,9 @@ export default function GroupForm({
           <div className="space-y-4 pb-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Price Per Session (optional)</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Price Per Session (optional)</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light">&pound;</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888]">&pound;</span>
                   <input
                     type="number"
                     min="0"
@@ -416,12 +416,12 @@ export default function GroupForm({
                     value={pricePerSession}
                     onChange={(e) => setPricePerSession(e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-7 pr-3 py-2.5 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full pl-7 pr-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Max Capacity *</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Max Capacity *</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -433,7 +433,7 @@ export default function GroupForm({
                     placeholder="20"
                     className={inputCls}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-light">players</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#888]">players</span>
                 </div>
               </div>
             </div>
@@ -446,7 +446,7 @@ export default function GroupForm({
           <div className="space-y-4 pb-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Day *</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Day *</label>
                 <select value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)} required className={inputCls}>
                   <option value="">Select day...</option>
                   {DAYS.map((d) => (
@@ -455,18 +455,18 @@ export default function GroupForm({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Start Time</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Start Time</label>
                 <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">End Time</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">End Time</label>
                 <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">Location</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Location</label>
                 <input
                   type="text"
                   value={location}
@@ -476,7 +476,7 @@ export default function GroupForm({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">Coach</label>
+                <label className="block text-sm font-medium text-white/70 mb-1.5">Coach</label>
                 <select value={coachId} onChange={(e) => setCoachId(e.target.value)} className={inputCls}>
                   <option value="">Select coach...</option>
                   {coaches.map((c) => (
@@ -501,7 +501,7 @@ export default function GroupForm({
           <button
             type="button"
             onClick={() => { setOpen(false); onClose?.() }}
-            className="px-6 py-2.5 border border-border rounded-xl text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-6 py-2.5 border border-[#1e1e1e] rounded-xl text-sm font-medium hover:bg-[#1e1e1e] transition-colors"
           >
             Cancel
           </button>

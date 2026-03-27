@@ -174,12 +174,12 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto py-8">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-lg font-semibold text-text">Create Camp</h2>
+      <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] w-full max-w-2xl mx-4">
+        <div className="flex items-center justify-between p-6 border-b border-[#1e1e1e]">
+          <h2 className="text-lg font-semibold text-white">Create Camp</h2>
           <button
             onClick={() => { setOpen(false); resetForm() }}
-            className="text-text-light hover:text-text text-xl leading-none"
+            className="text-[#888] hover:text-white/90 text-xl leading-none"
           >
             &times;
           </button>
@@ -188,51 +188,51 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
         <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1">Camp Name *</label>
+            <label className="block text-sm font-medium text-white mb-1">Camp Name *</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Easter Football Camp"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1">Description</label>
+            <label className="block text-sm font-medium text-white mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Tell parents what the camp is about..."
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
             />
           </div>
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Start Date *</label>
+              <label className="block text-sm font-medium text-white mb-1">Start Date *</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text mb-1">End Date *</label>
+              <label className="block text-sm font-medium text-white mb-1">End Date *</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
           </div>
           {duration > 0 && (
-            <p className="text-xs text-text-light -mt-3">
+            <p className="text-xs text-[#888] -mt-3">
               {duration} day{duration !== 1 ? 's' : ''}
             </p>
           )}
@@ -240,21 +240,21 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
           {/* Times */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Daily Start Time</label>
+              <label className="block text-sm font-medium text-white mb-1">Daily Start Time</label>
               <input
                 type="time"
                 value={dailyStartTime}
                 onChange={(e) => setDailyStartTime(e.target.value)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Daily End Time</label>
+              <label className="block text-sm font-medium text-white mb-1">Daily End Time</label>
               <input
                 type="time"
                 value={dailyEndTime}
                 onChange={(e) => setDailyEndTime(e.target.value)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
           </div>
@@ -262,23 +262,23 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
           {/* Location, Age Group */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Location</label>
+              <label className="block text-sm font-medium text-white mb-1">Location</label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. King George V Playing Fields"
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Age Group</label>
+              <label className="block text-sm font-medium text-white mb-1">Age Group</label>
               <input
                 type="text"
                 value={ageGroup}
                 onChange={(e) => setAgeGroup(e.target.value)}
                 placeholder="e.g. Ages 5-12"
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
           </div>
@@ -286,7 +286,7 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
           {/* Price, Capacity */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Price (&pound;)</label>
+              <label className="block text-sm font-medium text-white mb-1">Price (&pound;)</label>
               <input
                 type="number"
                 value={price}
@@ -294,17 +294,17 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
                 placeholder="e.g. 120"
                 min="0"
                 step="0.01"
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Max Capacity</label>
+              <label className="block text-sm font-medium text-white mb-1">Max Capacity</label>
               <input
                 type="number"
                 value={maxCapacity}
                 onChange={(e) => setMaxCapacity(e.target.value)}
                 min="1"
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               />
             </div>
           </div>
@@ -312,11 +312,11 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
           {/* Training Group */}
           {trainingGroups.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Link to Class (optional)</label>
+              <label className="block text-sm font-medium text-white mb-1">Link to Class (optional)</label>
               <select
                 value={trainingGroupId}
                 onChange={(e) => setTrainingGroupId(e.target.value)}
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
               >
                 <option value="">None</option>
                 {trainingGroups.map((g) => (
@@ -328,16 +328,16 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
 
           {/* Image URL */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1">Image URL</label>
+            <label className="block text-sm font-medium text-white mb-1">Image URL</label>
             <input
               type="text"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
             />
             {imageUrl && (
-              <div className="mt-2 rounded-lg overflow-hidden h-32 bg-gray-100">
+              <div className="mt-2 rounded-lg overflow-hidden h-32 bg-[#1a1a1a]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imageUrl}
@@ -353,13 +353,13 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
 
           {/* What to Bring */}
           <div>
-            <label className="block text-sm font-medium text-text mb-1">What to Bring</label>
+            <label className="block text-sm font-medium text-white mb-1">What to Bring</label>
             <textarea
               value={whatToBring}
               onChange={(e) => setWhatToBring(e.target.value)}
               rows={3}
               placeholder="e.g. Football boots, shin pads, water bottle, packed lunch..."
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
             />
           </div>
 
@@ -369,21 +369,21 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
               type="checkbox"
               checked={isPublished}
               onChange={(e) => setIsPublished(e.target.checked)}
-              className="rounded border-border"
+              className="rounded border-[#1e1e1e]"
             />
-            <span className="text-text">Published (visible on booking page)</span>
+            <span className="text-white">Published (visible on booking page)</span>
           </label>
 
           {/* Schedule Builder */}
-          <div className="border-t border-border pt-5">
+          <div className="border-t border-[#1e1e1e] pt-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-text">Daily Schedule</h3>
+              <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleGenerateDays}
                   disabled={!startDate || !endDate}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-text-light hover:bg-surface disabled:opacity-40 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#1e1e1e] text-[#888] hover:bg-[#1e1e1e] disabled:opacity-40 transition-colors"
                 >
                   Generate Days
                 </button>
@@ -399,17 +399,17 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
             </div>
 
             {schedule.length === 0 && (
-              <p className="text-xs text-text-light">
+              <p className="text-xs text-[#888]">
                 Set start and end dates, then click &quot;Generate Days&quot; or &quot;Use Template&quot;.
               </p>
             )}
 
             <div className="space-y-4">
               {schedule.map((day, dayIdx) => (
-                <div key={dayIdx} className="border border-border rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-text mb-3">
+                <div key={dayIdx} className="border border-[#1e1e1e] rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-white mb-3">
                     {day.day}{' '}
-                    <span className="text-text-light font-normal">
+                    <span className="text-[#888] font-normal">
                       {new Date(day.date + 'T00:00:00').toLocaleDateString('en-GB', {
                         day: 'numeric',
                         month: 'short',
@@ -424,7 +424,7 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
                           value={activity}
                           onChange={(e) => updateActivity(dayIdx, actIdx, e.target.value)}
                           placeholder="e.g. 09:00 - Warm Up & Skills"
-                          className="flex-1 border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                          className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
                         />
                         <button
                           type="button"
@@ -450,10 +450,10 @@ export default function CampForm({ orgId, trainingGroups }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-[#1e1e1e]">
           <button
             onClick={() => { setOpen(false); resetForm() }}
-            className="px-4 py-2 text-sm font-medium text-text-light hover:text-text transition-colors"
+            className="px-4 py-2 text-sm font-medium text-[#888] hover:text-white/90 transition-colors"
           >
             Cancel
           </button>

@@ -65,7 +65,7 @@ export default function DrillCard({
   }
 
   return (
-    <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-xl p-5 hover:border-white/[0.15] transition-colors flex flex-col">
+    <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-5 hover:border-[#2a2a2a] hover:bg-[#1a1a1a] transition-colors flex flex-col">
       {/* Category badge + difficulty */}
       <div className="flex items-center justify-between mb-3">
         {drill.category && (
@@ -94,7 +94,7 @@ export default function DrillCard({
       )}
 
       {/* Meta row */}
-      <div className="flex items-center gap-4 text-xs text-white/40 mt-auto pt-3 border-t border-white/[0.06]">
+      <div className="flex items-center gap-4 text-xs text-white/40 mt-auto pt-3 border-t border-[#1e1e1e]">
         <span>{drill.duration_minutes} min</span>
         <span>
           {drill.min_players}
@@ -105,7 +105,7 @@ export default function DrillCard({
 
       {/* Owner actions */}
       {isOwner && (
-        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/[0.06]">
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#1e1e1e]">
           <button
             onClick={() => onEdit(drill)}
             className="text-[#4ecde6] hover:text-[#4ecde6]/80 text-xs transition"

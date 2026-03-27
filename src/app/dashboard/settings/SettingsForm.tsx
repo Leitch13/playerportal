@@ -91,7 +91,7 @@ export default function SettingsForm({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const inputClass = 'w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
+  const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
 
   return (
     <div className="space-y-6">
@@ -104,7 +104,7 @@ export default function SettingsForm({
 
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-text-light text-sm mt-1">Manage your academy</p>
+        <p className="text-[#888] text-sm mt-1">Manage your academy</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -115,7 +115,7 @@ export default function SettingsForm({
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold text-left whitespace-nowrap transition-all ${
-                tab === t ? 'bg-primary text-white' : 'text-white/60 hover:bg-white/[0.05] hover:text-white'
+                tab === t ? 'bg-primary text-white' : 'text-white/60 hover:bg-[#1e1e1e] hover:text-white'
               }`}
             >
               {t}
@@ -126,16 +126,16 @@ export default function SettingsForm({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {tab === 'General' && (
-            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-5">
+            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
               <h2 className="font-bold text-lg">General Information</h2>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Academy Name</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Academy Name</label>
                 <input className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               </div>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Booking URL (slug)</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Booking URL (slug)</label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-text-light">
+                  <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888]">
                     /book/<strong className="text-primary">{form.slug}</strong>
                   </div>
                   <button onClick={copySlug} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
@@ -144,21 +144,21 @@ export default function SettingsForm({
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Description</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Description</label>
                 <textarea className={inputClass} rows={3} value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-white/60 block mb-1.5">Contact Email</label>
+                  <label className="text-xs font-medium text-white/70 block mb-1.5">Contact Email</label>
                   <input type="email" className={inputClass} value={form.contact_email} onChange={e => setForm({...form, contact_email: e.target.value})} />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-white/60 block mb-1.5">Contact Phone</label>
+                  <label className="text-xs font-medium text-white/70 block mb-1.5">Contact Phone</label>
                   <input type="tel" className={inputClass} value={form.contact_phone} onChange={e => setForm({...form, contact_phone: e.target.value})} />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Location</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Location</label>
                 <input className={inputClass} value={form.location} onChange={e => setForm({...form, location: e.target.value})} placeholder="e.g. Manchester, UK" />
               </div>
               <button
@@ -172,10 +172,10 @@ export default function SettingsForm({
           )}
 
           {tab === 'Branding' && (
-            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-5">
+            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
               <h2 className="font-bold text-lg">Branding</h2>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Primary Colour</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Primary Colour</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
@@ -193,7 +193,7 @@ export default function SettingsForm({
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Logo URL</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Logo URL</label>
                 <input className={inputClass} value={form.logo_url} onChange={e => setForm({...form, logo_url: e.target.value})} placeholder="https://..." />
                 {form.logo_url && (
                   <div className="mt-2 w-20 h-20 rounded-xl border border-white/[0.08] overflow-hidden bg-surface flex items-center justify-center">
@@ -202,7 +202,7 @@ export default function SettingsForm({
                 )}
               </div>
               <div>
-                <label className="text-xs font-medium text-white/60 block mb-1.5">Hero Image URL</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Hero Image URL</label>
                 <input className={inputClass} value={form.hero_image_url} onChange={e => setForm({...form, hero_image_url: e.target.value})} placeholder="https://..." />
                 {form.hero_image_url && (
                   <div className="mt-2 w-full h-32 rounded-xl border border-white/[0.08] overflow-hidden bg-surface">
@@ -221,24 +221,24 @@ export default function SettingsForm({
           )}
 
           {tab === 'Team' && (
-            <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-5">
+            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
               <h2 className="font-bold text-lg">Team Members</h2>
               <div className="space-y-2">
                 {team.map(m => (
-                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-white/[0.08]/50 hover:bg-surface/30 transition-colors">
+                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-sm font-bold text-accent">
                         {m.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-medium">{m.name}</p>
-                        <p className="text-xs text-text-light">{m.email}</p>
+                        <p className="text-xs text-[#888]">{m.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                        m.role === 'admin' ? 'bg-purple-50 text-purple-600' :
-                        m.role === 'coach' ? 'bg-blue-50 text-blue-600' :
+                        m.role === 'admin' ? 'bg-purple-500/20 text-purple-400' :
+                        m.role === 'coach' ? 'bg-blue-500/20 text-blue-400' :
                         'bg-white/[0.05] text-white/50'
                       }`}>
                         {m.role}
@@ -246,7 +246,7 @@ export default function SettingsForm({
                       {m.role !== 'admin' && (
                         <button
                           onClick={() => handleRemoveMember(m.id)}
-                          className="text-xs text-text-light hover:text-red-500 transition-colors"
+                          className="text-xs text-[#888] hover:text-red-500 transition-colors"
                         >
                           Remove
                         </button>
@@ -256,11 +256,11 @@ export default function SettingsForm({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-border">
+              <div className="pt-4 border-t border-[#1e1e1e]">
                 <h3 className="font-semibold text-sm mb-2">Invite Team Members</h3>
-                <p className="text-xs text-text-light mb-3">Share this signup link. New coaches/admins will join your academy automatically.</p>
+                <p className="text-xs text-[#888] mb-3">Share this signup link. New coaches/admins will join your academy automatically.</p>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-text-light truncate">
+                  <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
                     /auth/signup?org={form.slug}
                   </div>
                   <button
@@ -288,33 +288,33 @@ export default function SettingsForm({
 
           {tab === 'Danger Zone' && (
             <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-red-500/20 p-6 space-y-5">
-              <h2 className="font-bold text-lg text-red-600">Danger Zone</h2>
-              <p className="text-sm text-text-light">These actions are irreversible. Please be careful.</p>
+              <h2 className="font-bold text-lg text-red-400">Danger Zone</h2>
+              <p className="text-sm text-[#888]">These actions are irreversible. Please be careful.</p>
 
-              <div className="p-4 rounded-xl border border-white/[0.08] space-y-3">
+              <div className="p-4 rounded-xl border border-[#1e1e1e] space-y-3">
                 <div>
                   <p className="font-semibold text-sm">Export All Data</p>
-                  <p className="text-xs text-text-light">Download all your academy data as CSV files</p>
+                  <p className="text-xs text-[#888]">Download all your academy data as CSV files</p>
                 </div>
                 <a
                   href="/dashboard/exports"
-                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold border border-white/[0.08] hover:bg-white/[0.05] transition-colors"
+                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold border border-[#2a2a2a] hover:bg-[#1e1e1e] transition-colors"
                 >
                   Go to Exports
                 </a>
               </div>
 
-              <div className="p-4 rounded-xl border border-red-200 bg-red-50/50 space-y-3">
+              <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/10 space-y-3">
                 <div>
-                  <p className="font-semibold text-sm text-red-600">Delete Academy</p>
-                  <p className="text-xs text-text-light">Permanently delete your academy and all data. This cannot be undone.</p>
+                  <p className="font-semibold text-sm text-red-400">Delete Academy</p>
+                  <p className="text-xs text-[#888]">Permanently delete your academy and all data. This cannot be undone.</p>
                 </div>
                 <div>
-                  <label className="text-xs text-text-light block mb-1.5">
+                  <label className="text-xs text-[#888] block mb-1.5">
                     Type <strong className="text-red-600">{form.name}</strong> to confirm
                   </label>
                   <input
-                    className="w-full border border-red-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                    className="w-full bg-[#1a1a1a] border border-red-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500/30"
                     value={deleteConfirm}
                     onChange={e => setDeleteConfirm(e.target.value)}
                     placeholder={form.name}

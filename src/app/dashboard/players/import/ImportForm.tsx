@@ -219,12 +219,12 @@ export default function ImportForm() {
         <div className="space-y-4">
           <div className="flex items-center gap-4">
             <label className="flex-1">
-              <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+              <div className="flex items-center justify-center w-full h-32 border-2 border-dashed border-[#1e1e1e] rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
                 <div className="text-center">
-                  <svg className="mx-auto h-8 w-8 text-text-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="mx-auto h-8 w-8 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="mt-1 text-sm text-text-light">
+                  <p className="mt-1 text-sm text-[#888]">
                     {fileName ? fileName : 'Click to upload CSV file'}
                   </p>
                 </div>
@@ -250,7 +250,7 @@ export default function ImportForm() {
               <button
                 type="button"
                 onClick={reset}
-                className="text-sm text-text-light hover:text-text"
+                className="text-sm text-[#888] hover:text-white"
               >
                 Clear
               </button>
@@ -266,7 +266,7 @@ export default function ImportForm() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
+                  <tr className="border-b border-[#1e1e1e]">
                     <th className="text-left py-2 font-medium w-8">#</th>
                     <th className="text-left py-2 font-medium">Status</th>
                     <th className="text-left py-2 font-medium">First Name</th>
@@ -279,8 +279,8 @@ export default function ImportForm() {
                 </thead>
                 <tbody>
                   {previewRows.map((v) => (
-                    <tr key={v.rowIndex} className="border-b border-border last:border-0">
-                      <td className="py-2 text-text-light">{v.rowIndex}</td>
+                    <tr key={v.rowIndex} className="border-b border-[#1e1e1e] last:border-0">
+                      <td className="py-2 text-[#888]">{v.rowIndex}</td>
                       <td className="py-2">
                         {v.valid ? (
                           <span className="text-green-600" title="Valid">&#10003;</span>
@@ -301,13 +301,13 @@ export default function ImportForm() {
             </div>
 
             {validatedRows.length > 10 && (
-              <p className="text-sm text-text-light">
+              <p className="text-sm text-[#888]">
                 Showing first 10 of {validatedRows.length} rows.
               </p>
             )}
 
             <div className="flex items-center justify-between pt-2">
-              <div className="text-sm text-text-light">
+              <div className="text-sm text-[#888]">
                 {validCount} valid, {skippedCount} with errors
               </div>
               <button
@@ -331,7 +331,7 @@ export default function ImportForm() {
               <span>Importing players...</span>
               <span>{progress}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-[#1a1a1a] rounded-full h-2">
               <div
                 className="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
@@ -346,17 +346,17 @@ export default function ImportForm() {
         <Card title="Import Results">
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-700">{result.imported}</div>
-                <div className="text-sm text-green-600">Imported</div>
+              <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                <div className="text-2xl font-bold text-green-400">{result.imported}</div>
+                <div className="text-sm text-green-500">Imported</div>
               </div>
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-700">{skippedCount}</div>
-                <div className="text-sm text-yellow-600">Skipped (invalid)</div>
+              <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <div className="text-2xl font-bold text-yellow-400">{skippedCount}</div>
+                <div className="text-sm text-yellow-500">Skipped (invalid)</div>
               </div>
-              <div className="p-4 bg-red-50 rounded-lg">
-                <div className="text-2xl font-bold text-red-700">{result.errors.length}</div>
-                <div className="text-sm text-red-600">Errors</div>
+              <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+                <div className="text-2xl font-bold text-red-400">{result.errors.length}</div>
+                <div className="text-sm text-red-500">Errors</div>
               </div>
             </div>
 
@@ -365,7 +365,7 @@ export default function ImportForm() {
                 <h3 className="text-sm font-medium mb-2">Error Details</h3>
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {result.errors.map((err, idx) => (
-                    <div key={idx} className="text-sm text-red-600 bg-red-50 px-3 py-1.5 rounded">
+                    <div key={idx} className="text-sm text-red-400 bg-red-500/10 px-3 py-1.5 rounded">
                       Row {err.row}: {err.error}
                     </div>
                   ))}
@@ -377,7 +377,7 @@ export default function ImportForm() {
               <button
                 type="button"
                 onClick={reset}
-                className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface"
+                className="px-4 py-2 border border-[#2a2a2a] bg-[#1a1a1a] rounded-lg text-sm font-medium text-white hover:bg-[#222]"
               >
                 Import More
               </button>

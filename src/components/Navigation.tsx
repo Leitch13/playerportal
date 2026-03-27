@@ -342,8 +342,10 @@ export default function Navigation({
 
               <Link href="/dashboard" className="flex items-center gap-2">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={orgName || 'Logo'} className="h-7 w-auto object-contain" />
-                ) : null}
+                  <img src={logoUrl} alt={orgName || 'Logo'} className="h-8 w-auto object-contain" />
+                ) : (
+                  <img src="/logo.png" alt="Player Portal" className="h-8 w-auto object-contain" />
+                )}
                 <span className="text-accent font-bold text-lg tracking-tight">{orgName || 'Player Portal'}</span>
               </Link>
             </div>

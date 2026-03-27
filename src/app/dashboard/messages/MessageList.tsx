@@ -76,7 +76,7 @@ export default function MessageList({
             placeholder="Search conversations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 focus:ring-1 focus:ring-[#4ecde6]/20 transition-colors"
           />
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function MessageList({
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="w-12 h-12 bg-white/[0.05] rounded-xl flex items-center justify-center mb-3 border border-white/[0.08]">
+            <div className="w-12 h-12 bg-[#141414] rounded-xl flex items-center justify-center mb-3 border border-[#1e1e1e]">
               <svg
                 width="20"
                 height="20"
@@ -114,8 +114,8 @@ export default function MessageList({
               <button
                 key={thread.threadId}
                 onClick={() => onSelectThread(thread.threadId)}
-                className={`w-full text-left px-3 py-3 flex items-center gap-3 transition-all border-b border-white/[0.04] hover:bg-white/[0.04] ${
-                  isSelected ? 'bg-white/[0.06] border-l-2 border-l-[#4ecde6]' : ''
+                className={`w-full text-left px-3 py-3 flex items-center gap-3 transition-all border-b border-[#1e1e1e] hover:bg-[#1a1a1a] ${
+                  isSelected ? 'bg-[#1a1a1a] border-l-2 border-l-[#4ecde6]' : ''
                 }`}
               >
                 {/* Avatar */}

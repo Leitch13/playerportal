@@ -226,10 +226,7 @@ export default function OnboardPage() {
       {/* Header */}
       <div className="relative py-8 px-4 text-center">
         <div className="inline-flex items-center gap-2 mb-3">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#4ecde6] to-[#2ba8c3] flex items-center justify-center shadow-lg shadow-[#4ecde6]/20">
-            <span className="text-white font-extrabold text-[10px]">PP</span>
-          </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Player Portal</h1>
+          <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain" />
         </div>
         <p className="text-white/40 text-sm">Set up your academy in minutes</p>
       </div>
@@ -243,9 +240,9 @@ export default function OnboardPage() {
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                     i < step
-                      ? 'bg-accent text-primary'
+                      ? 'bg-[#4ecde6] text-[#0a0a0a]'
                       : i === step
-                        ? 'bg-accent text-primary ring-4 ring-accent/30'
+                        ? 'bg-[#4ecde6] text-[#0a0a0a] ring-4 ring-accent/30'
                         : 'bg-white/10 text-white/40'
                   }`}
                 >
@@ -275,10 +272,10 @@ export default function OnboardPage() {
 
       {/* Card */}
       <div className="flex-1 flex items-start justify-center px-4 pb-12">
-        <div className={`bg-white rounded-xl shadow-xl w-full ${step === 2 ? 'max-w-4xl' : 'max-w-lg'} p-6 sm:p-8 transition-all duration-300`}>
+        <div className={`bg-[#141414] border border-[#1e1e1e] rounded-xl w-full ${step === 2 ? 'max-w-4xl' : 'max-w-lg'} p-6 sm:p-8 transition-all duration-300`}>
           {/* Error */}
           {error && (
-            <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
               {error}
             </div>
           )}
@@ -287,12 +284,12 @@ export default function OnboardPage() {
           {step === 0 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-primary mb-1">Academy Details</h2>
-                <p className="text-text-light text-sm">Tell us about your football academy</p>
+                <h2 className="text-xl font-bold text-white mb-1">Academy Details</h2>
+                <p className="text-[#888] text-sm">Tell us about your football academy</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Academy Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -300,12 +297,12 @@ export default function OnboardPage() {
                   value={academyName}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g. Elite Football Academy"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Academy Slug <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -313,10 +310,10 @@ export default function OnboardPage() {
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="elite-football-academy"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
                 {slug && (
-                  <p className="mt-1.5 text-xs text-text-light">
+                  <p className="mt-1.5 text-xs text-[#888]">
                     Your booking page:{' '}
                     <span className="font-medium text-accent">theplayerportal.net/book/{slug}</span>
                   </p>
@@ -324,7 +321,7 @@ export default function OnboardPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Contact Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -332,40 +329,40 @@ export default function OnboardPage() {
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   placeholder="info@youracademy.com"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">Contact Phone</label>
+                <label className="block text-sm font-medium text-white mb-1">Contact Phone</label>
                 <input
                   type="text"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                   placeholder="+44 7700 900000"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">Description</label>
+                <label className="block text-sm font-medium text-white mb-1">Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder="Tell parents about your academy..."
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition resize-none"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30 resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">Location / City</label>
+                <label className="block text-sm font-medium text-white mb-1">Location / City</label>
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. London, UK"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
             </div>
@@ -375,24 +372,24 @@ export default function OnboardPage() {
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-primary mb-1">Branding</h2>
-                <p className="text-text-light text-sm">Customise the look of your booking page</p>
+                <h2 className="text-xl font-bold text-white mb-1">Branding</h2>
+                <p className="text-[#888] text-sm">Customise the look of your booking page</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">Primary Colour</label>
+                <label className="block text-sm font-medium text-white mb-1">Primary Colour</label>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="w-12 h-10 rounded-lg border border-border cursor-pointer"
+                    className="w-12 h-10 rounded-lg border border-[#1e1e1e] cursor-pointer"
                   />
                   <input
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="flex-1 px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition font-mono text-sm"
+                    className="flex-1 px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition font-mono text-sm placeholder:text-white/30"
                   />
                 </div>
                 <div className="mt-3 rounded-xl p-4" style={{ backgroundColor: primaryColor }}>
@@ -401,27 +398,27 @@ export default function OnboardPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">Logo URL</label>
+                <label className="block text-sm font-medium text-white mb-1">Logo URL</label>
                 <input
                   type="text"
                   value={logoUrl}
                   onChange={(e) => setLogoUrl(e.target.value)}
                   placeholder="https://example.com/logo.png"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
-                <p className="mt-1 text-xs text-text-light">Optional. You can add this later from settings.</p>
+                <p className="mt-1 text-xs text-[#888]">Optional. You can add this later from settings.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">Hero Image URL</label>
+                <label className="block text-sm font-medium text-white mb-1">Hero Image URL</label>
                 <input
                   type="text"
                   value={heroImageUrl}
                   onChange={(e) => setHeroImageUrl(e.target.value)}
                   placeholder="https://example.com/hero.jpg"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
-                <p className="mt-1 text-xs text-text-light">Optional. Shown at the top of your booking page.</p>
+                <p className="mt-1 text-xs text-[#888]">Optional. Shown at the top of your booking page.</p>
               </div>
             </div>
           )}
@@ -430,8 +427,8 @@ export default function OnboardPage() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-primary mb-1">Choose Your Plan</h2>
-                <p className="text-text-light text-sm">All features included. Pick the plan that saves you the most.</p>
+                <h2 className="text-xl font-bold text-white mb-1">Choose Your Plan</h2>
+                <p className="text-[#888] text-sm">All features included. Pick the plan that saves you the most.</p>
               </div>
 
               {/* Plan Cards */}
@@ -587,12 +584,12 @@ export default function OnboardPage() {
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-primary mb-1">Your Account</h2>
-                <p className="text-text-light text-sm">Create your admin account to manage everything</p>
+                <h2 className="text-xl font-bold text-white mb-1">Your Account</h2>
+                <p className="text-[#888] text-sm">Create your admin account to manage everything</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -600,12 +597,12 @@ export default function OnboardPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Smith"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -613,12 +610,12 @@ export default function OnboardPage() {
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="you@youracademy.com"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-primary mb-1">
+                <label className="block text-sm font-medium text-white mb-1">
                   Password <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -626,12 +623,12 @@ export default function OnboardPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-primary bg-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition"
+                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
-              <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
-                <p className="text-sm text-cyan-800">
+              <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-3">
+                <p className="text-sm text-cyan-400">
                   <span className="font-semibold">Admin role</span> will be assigned automatically.
                   You&apos;ll be able to invite coaches and manage everything from the dashboard.
                 </p>
@@ -643,26 +640,26 @@ export default function OnboardPage() {
           {step === 4 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-primary mb-1">Pricing</h2>
-                <p className="text-text-light text-sm">Set the plans parents will see on your booking page</p>
+                <h2 className="text-xl font-bold text-white mb-1">Pricing</h2>
+                <p className="text-[#888] text-sm">Set the plans parents will see on your booking page</p>
               </div>
 
-              <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
-                <p className="text-sm text-cyan-800">
+              <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4">
+                <p className="text-sm text-cyan-400">
                   <span className="font-semibold">Default plans</span> will be created for you automatically:
                 </p>
-                <ul className="mt-2 space-y-1 text-sm text-cyan-700">
+                <ul className="mt-2 space-y-1 text-sm text-cyan-300">
                   <li>1 Session / Week &mdash; &pound;30/month</li>
                   <li>2 Sessions / Week &mdash; &pound;50/month</li>
                   <li>Unlimited &mdash; &pound;70/month</li>
                 </ul>
-                <p className="mt-2 text-xs text-cyan-600">
+                <p className="mt-2 text-xs text-cyan-400">
                   You can customise plans, pricing, and add new ones from the dashboard after setup.
                 </p>
               </div>
 
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <h3 className="text-sm font-bold text-primary mb-2">Your selected platform plan</h3>
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
+                <h3 className="text-sm font-bold text-white mb-2">Your selected platform plan</h3>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#4ecde6] to-[#2ba8c3] flex items-center justify-center">
                     <span className="text-white font-bold text-xs">
@@ -670,10 +667,10 @@ export default function OnboardPage() {
                     </span>
                   </div>
                   <div>
-                    <p className="font-semibold text-primary">
+                    <p className="font-semibold text-white">
                       {PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.name} Plan
                     </p>
-                    <p className="text-xs text-text-light">
+                    <p className="text-xs text-[#888]">
                       &pound;{PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.monthlyPrice}/month &bull;{' '}
                       {`${PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.transactionFee}% transaction fee`}
                     </p>
@@ -684,13 +681,13 @@ export default function OnboardPage() {
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1e1e1e]">
             {step > 0 ? (
               <button
                 type="button"
                 onClick={prevStep}
                 disabled={loading}
-                className="px-5 py-2.5 text-sm font-medium text-text-light hover:text-primary transition-colors disabled:opacity-50"
+                className="px-5 py-2.5 text-sm font-medium text-[#888] hover:text-white transition-colors disabled:opacity-50"
               >
                 Back
               </button>
@@ -704,7 +701,7 @@ export default function OnboardPage() {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-6 py-2.5 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors"
+                  className="px-6 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:opacity-90 transition-colors"
                 >
                   Continue
                 </button>
@@ -713,7 +710,7 @@ export default function OnboardPage() {
                   type="button"
                   onClick={() => handleSubmit()}
                   disabled={loading}
-                  className="px-6 py-2.5 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {loading && (
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">

@@ -106,7 +106,7 @@ export default function CancelBookingButton({
     return (
       <button
         onClick={() => setStep('reason')}
-        className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50 transition-colors"
+        className="px-2 py-1 text-xs border border-red-500/30 text-red-600 rounded hover:bg-red-500/10 transition-colors"
       >
         Cancel
       </button>
@@ -128,14 +128,14 @@ export default function CancelBookingButton({
   return (
     <>
       <button
-        className="px-2 py-1 text-xs border border-red-200 text-red-600 rounded opacity-50"
+        className="px-2 py-1 text-xs border border-red-500/30 text-red-600 rounded opacity-50"
         disabled
       >
         Cancel
       </button>
 
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="bg-white dark:bg-primary-light rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-scale-in">
+        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-scale-in">
 
           {/* ── Step 1: Why? ── */}
           {step === 'reason' && (
@@ -143,7 +143,7 @@ export default function CancelBookingButton({
               <div className="text-center mb-5">
                 <span className="text-3xl">😔</span>
                 <h3 className="text-lg font-bold mt-2">We&apos;re sorry to see you go</h3>
-                <p className="text-sm text-text-light mt-1">Why are you cancelling this class?</p>
+                <p className="text-sm text-[#888] mt-1">Why are you cancelling this class?</p>
               </div>
               <div className="space-y-2 mb-5">
                 {REASONS.map((r) => (
@@ -153,7 +153,7 @@ export default function CancelBookingButton({
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-all ${
                       reason === r.id
                         ? 'bg-accent/10 border-2 border-accent font-semibold'
-                        : 'bg-surface dark:bg-white/5 border-2 border-transparent hover:bg-surface-dark dark:hover:bg-white/10'
+                        : 'bg-[#1a1a1a] border-2 border-transparent hover:bg-[#1e1e1e]-dark dark:hover:bg-white/10'
                     }`}
                   >
                     <span>{r.icon}</span>
@@ -164,14 +164,14 @@ export default function CancelBookingButton({
               <div className="flex gap-2">
                 <button
                   onClick={() => { setStep('idle'); setReason('') }}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-text-light border border-border hover:bg-surface transition-colors"
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#888] border border-[#1e1e1e] hover:bg-[#1e1e1e] transition-colors"
                 >
                   Never mind
                 </button>
                 <button
                   onClick={() => reason && setStep('offer')}
                   disabled={!reason}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-30 transition-colors dark:bg-red-900/20"
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-500/10 text-red-600 hover:bg-red-500/20 disabled:opacity-30 transition-colors dark:bg-red-900/20"
                 >
                   Continue
                 </button>
@@ -184,23 +184,23 @@ export default function CancelBookingButton({
             <div className="p-6 text-center">
               <span className="text-4xl">🎉</span>
               <h3 className="text-lg font-bold mt-3 mb-1">Wait — special offer!</h3>
-              <p className="text-sm text-text-light mb-4">
+              <p className="text-sm text-[#888] mb-4">
                 Stay and get <strong className="text-accent">50% off for the next 2 months</strong>
               </p>
 
-              <div className="bg-gradient-to-br from-accent/5 to-accent/10 dark:from-accent/10 dark:to-accent/5 border-2 border-accent/20 rounded-2xl p-5 mb-5">
+              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border-2 border-accent/20 rounded-2xl p-5 mb-5">
                 <p className="text-3xl font-extrabold text-accent">50% OFF</p>
                 <p className="text-sm text-accent/70 font-semibold mt-1">for 2 months — applied automatically</p>
               </div>
 
               <div className="space-y-2 text-left mb-5">
-                <div className="flex items-center gap-2 text-sm text-text">
+                <div className="flex items-center gap-2 text-sm text-white">
                   <span className="text-green-500">✓</span> Keep your child&apos;s place in {className || 'class'}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-text">
+                <div className="flex items-center gap-2 text-sm text-white">
                   <span className="text-green-500">✓</span> 50% off next 2 payments — automatic
                 </div>
-                <div className="flex items-center gap-2 text-sm text-text">
+                <div className="flex items-center gap-2 text-sm text-white">
                   <span className="text-green-500">✓</span> Cancel any time after — no strings
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function CancelBookingButton({
               <button
                 onClick={() => setStep('confirm')}
                 disabled={loading}
-                className="w-full py-2 text-sm text-text-light hover:text-red-500 transition-colors"
+                className="w-full py-2 text-sm text-[#888] hover:text-red-500 transition-colors"
               >
                 No thanks, cancel anyway
               </button>
@@ -234,20 +234,20 @@ export default function CancelBookingButton({
             <div className="p-6 text-center">
               <span className="text-3xl">⚠️</span>
               <h3 className="text-lg font-bold mt-2 mb-1">Are you sure?</h3>
-              <p className="text-sm text-text-light mb-4">
+              <p className="text-sm text-[#888] mb-4">
                 Your child will lose their place in {className || 'this class'}.
               </p>
 
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 mb-5 text-left">
-                <ul className="space-y-1.5 text-sm text-red-700 dark:text-red-400">
+              <div className="bg-red-500/100/10 rounded-xl p-3 mb-5 text-left">
+                <ul className="space-y-1.5 text-sm text-red-400">
                   <li className="flex items-center gap-2"><span>✕</span> Place in class lost</li>
                   <li className="flex items-center gap-2"><span>✕</span> May need to rejoin waitlist</li>
                   <li className="flex items-center gap-2"><span>✕</span> Losing the 50% off deal</li>
                 </ul>
               </div>
 
-              <div className="bg-accent/5 dark:bg-accent/10 rounded-xl p-3 mb-5">
-                <p className="text-sm text-text">
+              <div className="bg-accent/10 rounded-xl p-3 mb-5">
+                <p className="text-sm text-white">
                   💡 Last chance:{' '}
                   <button onClick={() => setStep('offer')} className="text-accent font-bold underline">
                     50% off for 2 months

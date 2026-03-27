@@ -69,7 +69,7 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full bg-white rounded-2xl border border-border border-dashed p-5 text-center hover:bg-surface/30 transition-colors group"
+        className="w-full bg-[#141414] rounded-2xl border border-[#1e1e1e] border-dashed p-5 text-center hover:bg-[#1a1a1a] transition-colors group"
       >
         <span className="text-2xl block mb-1 group-hover:scale-110 transition-transform inline-block">📢</span>
         <span className="font-semibold text-sm text-primary block">New Announcement</span>
@@ -78,21 +78,21 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-border p-6 space-y-4">
+    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-bold">New Announcement</h2>
-        <button onClick={() => setOpen(false)} className="text-text-light hover:text-primary text-sm">Cancel</button>
+        <button onClick={() => setOpen(false)} className="text-white/50 hover:text-primary text-sm">Cancel</button>
       </div>
 
       <input
-        className="w-full border border-border rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/50"
+        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white font-semibold focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
         placeholder="Title"
         value={title}
         onChange={e => setTitle(e.target.value)}
       />
 
       <textarea
-        className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 min-h-[100px]"
+        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 min-h-[100px] placeholder:text-white/30"
         placeholder="Write your message to parents..."
         value={body}
         onChange={e => setBody(e.target.value)}
@@ -101,16 +101,16 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
 
       <div className="flex flex-wrap items-center gap-3">
         {/* Audience */}
-        <div className="flex items-center gap-1 bg-surface rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-lg p-1">
           <button
             onClick={() => setAudience('all')}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${audience === 'all' ? 'bg-white shadow-sm text-primary' : 'text-text-light'}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${audience === 'all' ? 'bg-[#2a2a2a] text-white' : 'text-white/50'}`}
           >
             All Parents
           </button>
           <button
             onClick={() => setAudience('group')}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${audience === 'group' ? 'bg-white shadow-sm text-primary' : 'text-text-light'}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${audience === 'group' ? 'bg-[#2a2a2a] text-white' : 'text-white/50'}`}
           >
             Specific Class
           </button>
@@ -118,7 +118,7 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
 
         {audience === 'group' && (
           <select
-            className="border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
             value={groupId}
             onChange={e => setGroupId(e.target.value)}
           >
@@ -130,7 +130,7 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
         )}
 
         {/* Priority */}
-        <div className="flex items-center gap-1 bg-surface rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-lg p-1">
           {(['normal', 'important', 'urgent'] as const).map(p => (
             <button
               key={p}
@@ -139,8 +139,8 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
                 priority === p
                   ? p === 'urgent' ? 'bg-red-500 text-white shadow-sm' :
                     p === 'important' ? 'bg-orange-500 text-white shadow-sm' :
-                    'bg-white shadow-sm text-primary'
-                  : 'text-text-light'
+                    'bg-[#2a2a2a] text-white'
+                  : 'text-white/50'
               }`}
             >
               {p}
@@ -160,7 +160,7 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
         <button
           onClick={() => handleSend(true)}
           disabled={loading || !title || !body}
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm border border-border hover:bg-surface disabled:opacity-40 transition-all"
+          className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white border border-[#2a2a2a] bg-[#1a1a1a] hover:bg-[#222] disabled:opacity-40 transition-all"
         >
           Save Draft
         </button>

@@ -110,7 +110,7 @@ export default function ShopItem({
 
   if (success) {
     return (
-      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 flex flex-col items-center justify-center min-h-[320px]">
+      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6 flex flex-col items-center justify-center min-h-[320px]">
         <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
           <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -127,7 +127,7 @@ export default function ShopItem({
   }
 
   return (
-    <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden flex flex-col">
+    <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden flex flex-col">
       {/* Image / Placeholder */}
       {item.image_url ? (
         <div className="relative h-48 overflow-hidden">
@@ -181,7 +181,7 @@ export default function ShopItem({
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     selectedSize === size
                       ? 'bg-[#4ecde6] text-black'
-                      : 'bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white'
+                      : 'bg-[#1e1e1e] text-white/60 hover:bg-white/[0.12] hover:text-white'
                   }`}
                 >
                   {size}
@@ -201,7 +201,7 @@ export default function ShopItem({
               value={nameOnShirt}
               onChange={(e) => setNameOnShirt(e.target.value)}
               maxLength={20}
-              className="w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30"
             />
             <input
               type="text"
@@ -209,7 +209,7 @@ export default function ShopItem({
               value={playerNumber}
               onChange={(e) => setPlayerNumber(e.target.value)}
               maxLength={3}
-              className="w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30"
             />
           </div>
         )}
@@ -221,7 +221,7 @@ export default function ShopItem({
             <select
               value={selectedChild}
               onChange={(e) => setSelectedChild(e.target.value)}
-              className="w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30"
+              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30"
             >
               {players.map((c) => (
                 <option key={c.id} value={c.id} className="bg-[#1a1a1a]">
