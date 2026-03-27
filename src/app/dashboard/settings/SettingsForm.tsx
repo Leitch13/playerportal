@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import EmailSetup from './EmailSetup'
 import StripeSetup from './StripeSetup'
+import PlatformBilling from './PlatformBilling'
 
 interface OrgData {
   id: string
@@ -280,23 +281,7 @@ export default function SettingsForm({
 
           {tab === 'Billing' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl border border-border p-6 space-y-5">
-                <h2 className="font-bold text-lg">Usage</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded-xl bg-surface/50">
-                    <p className="text-2xl font-bold text-accent">{usage.players}</p>
-                    <p className="text-xs text-text-light">Players</p>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-surface/50">
-                    <p className="text-2xl font-bold text-accent">{usage.coaches}</p>
-                    <p className="text-xs text-text-light">Coaches</p>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-surface/50">
-                    <p className="text-2xl font-bold text-accent">{usage.classes}</p>
-                    <p className="text-xs text-text-light">Classes</p>
-                  </div>
-                </div>
-              </div>
+              <PlatformBilling usage={usage} />
               <StripeSetup />
             </div>
           )}

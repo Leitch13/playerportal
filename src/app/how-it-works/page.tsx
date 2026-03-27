@@ -87,56 +87,55 @@ const parentFeatures = [
 const plans = [
   {
     name: 'Starter',
-    price: 'Free',
-    period: '',
+    price: '\u00a320',
+    period: '/mo',
+    fee: '+ 3.5% per transaction',
     desc: 'Perfect for small academies getting started.',
     features: [
-      'Up to 30 players',
-      '1 coach account',
-      'Basic scheduling',
-      'Payment collection via Stripe',
-      'Parent self-service booking',
-      'Community support',
+      'Up to 50 players',
+      '3 classes',
+      'Basic analytics',
+      'Email support',
+      'Parent portal',
+      'QR attendance',
     ],
-    cta: 'Get Started Free',
+    cta: 'Start Free Trial',
     featured: false,
   },
   {
     name: 'Pro',
-    price: '\u00a349',
+    price: '\u00a330',
     period: '/mo',
+    fee: '+ 2% per transaction',
     desc: 'For growing academies that need everything.',
     features: [
       'Up to 200 players',
-      'Unlimited coaches',
-      'All Starter features included',
-      'Progress reviews & radar charts',
-      'Automated payment reminders',
-      'Waitlist management',
-      'Custom branding & colours',
-      'Referral tracking & rewards',
-      'CSV exports & reports',
-      'Priority email & chat support',
+      'Unlimited classes',
+      'Full analytics',
+      'Priority support',
+      'Custom branding',
+      'Merch shop',
+      'Session planner',
+      'Drill library',
     ],
     cta: 'Start Free Trial',
     featured: true,
   },
   {
     name: 'Enterprise',
-    price: 'Custom',
-    period: '',
+    price: '\u00a350',
+    period: '/mo',
+    fee: '0% transaction fees',
     desc: 'For multi-site academies and large organisations.',
     features: [
-      'Unlimited players & coaches',
-      'All Pro features included',
-      'Dedicated account manager',
-      'API access & integrations',
-      'White-label option',
-      'SLA guarantee',
-      'Onboarding & migration support',
-      'Custom feature development',
+      'Unlimited everything',
+      'Advanced analytics',
+      'Dedicated support',
+      'White-label',
+      'API access',
+      'Custom integrations',
     ],
-    cta: 'Contact Sales',
+    cta: 'Start Free Trial',
     featured: false,
   },
 ]
@@ -434,7 +433,9 @@ export default function HowItWorksPage() {
 
       {/* ── Pricing ── */}
       <section className="relative py-24 sm:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#4ecde6]/[0.04] rounded-full blur-[150px] pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
               Pricing
@@ -443,7 +444,7 @@ export default function HowItWorksPage() {
               Simple, transparent pricing
             </h2>
             <p className="text-white/40 text-lg max-w-xl mx-auto">
-              Start free. Upgrade when you&apos;re ready. Cancel anytime.
+              Pick your plan. Start your 14-day free trial. No credit card required.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
@@ -452,20 +453,23 @@ export default function HowItWorksPage() {
                 key={plan.name}
                 className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${
                   plan.featured
-                    ? 'bg-gradient-to-b from-[#4ecde6]/[0.08] to-transparent border-2 border-[#4ecde6]/30 shadow-2xl shadow-[#4ecde6]/10 md:scale-105 md:-my-4'
-                    : 'bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12]'
+                    ? 'bg-gradient-to-b from-[#4ecde6]/[0.08] to-[#4ecde6]/[0.02] border-2 border-[#4ecde6]/30 shadow-2xl shadow-[#4ecde6]/10 md:scale-[1.06] md:-my-6 ring-1 ring-[#4ecde6]/20'
+                    : 'bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.03]'
                 }`}
               >
                 {plan.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3] text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-lg">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3] text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-lg shadow-[#4ecde6]/30">
                     Most Popular
                   </div>
                 )}
                 <div className="mb-8">
-                  <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
+                  <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">{plan.name}</h3>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className={`text-5xl font-extrabold tracking-tight ${plan.featured ? 'gradient-text' : ''}`}>{plan.price}</span>
                     {plan.period && <span className="text-white/30 text-sm font-medium">{plan.period}</span>}
+                  </div>
+                  <div className={`text-sm font-medium mb-3 ${plan.fee === '0% transaction fees' ? 'text-emerald-400' : 'text-white/40'}`}>
+                    {plan.fee}
                   </div>
                   <p className="text-sm text-white/30">{plan.desc}</p>
                 </div>
@@ -480,10 +484,10 @@ export default function HowItWorksPage() {
                   ))}
                 </ul>
                 <Link
-                  href={plan.name === 'Enterprise' ? 'mailto:hello@playerportal.io' : '/onboard'}
+                  href="/onboard"
                   className={`block text-center py-3.5 rounded-full font-semibold text-sm transition-all ${
                     plan.featured
-                      ? 'bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] shadow-lg shadow-[#4ecde6]/20 glow-accent'
+                      ? 'bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] shadow-lg shadow-[#4ecde6]/25 glow-accent hover:shadow-xl hover:shadow-[#4ecde6]/30'
                       : 'border border-white/15 text-white/70 hover:bg-white/5 hover:text-white hover:border-white/25'
                   }`}
                 >
@@ -491,6 +495,15 @@ export default function HowItWorksPage() {
                 </Link>
               </div>
             ))}
+          </div>
+          {/* Notes */}
+          <div className="text-center mt-12 space-y-3">
+            <p className="text-sm text-white/40">
+              All plans include a 14-day free trial. No credit card required.
+            </p>
+            <p className="text-xs text-white/25 max-w-lg mx-auto">
+              Processing &pound;2,000/month? Starter costs &pound;90, Pro costs &pound;70, Enterprise costs &pound;50 &mdash; the best value at scale.
+            </p>
           </div>
         </div>
         {/* Cyan glow separator */}

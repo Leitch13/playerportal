@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       logoUrl,
       heroImageUrl,
       plans,
+      platformPlan,
     } = await request.json()
 
     if (!name || !slug || !contactEmail) {
@@ -57,6 +58,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Look up the platform plan by slug (default to 'pro' if not provided)
+    let platformPlanId: string | null = null
+    const planSlug = platformPlan || 'pro'
+    const { data: planRow } = await supabase
+      .from('platform_plans')
+      .select('id')
+      .eq('slug', planSlug)
+      .single()
+
+    if (planRow) {
+      platformPlanId = planRow.id
+    }
+
+    // Calculate trial end date: 14 days from now
+    const trialEndsAt = new Date()
+    trialEndsAt.setDate(trialEndsAt.getDate() + 14)
+
     // Create the organisation
     const { data: org, error: orgError } = await supabase
       .from('organisations')
@@ -70,6 +88,9 @@ export async function POST(request: NextRequest) {
         primary_color: primaryColor || '#4ecde6',
         logo_url: logoUrl || null,
         hero_image_url: heroImageUrl || null,
+        platform_plan_id: platformPlanId,
+        platform_subscription_status: 'trial',
+        platform_trial_ends_at: trialEndsAt.toISOString(),
       })
       .select('id')
       .single()

@@ -41,19 +41,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     }
 
-    // Look up the organisation's Stripe Connect account (if any).
-    // When the org has completed Connect onboarding the payment flows
-    // through their connected account and the platform takes a 5% fee.
+    // Look up the organisation's Stripe Connect account and platform plan.
+    // The platform fee is determined by the academy's billing plan:
+    //   Starter = 3.5%, Pro = 2%, Enterprise = 0%
     const { data: planOrg } = await supabase
       .from('organisations')
-      .select('stripe_account_id')
+      .select('stripe_account_id, platform_plan_id')
       .eq('id', plan.organisation_id)
       .single()
 
     const connectedAccountId = planOrg?.stripe_account_id as string | null
 
-    /** Platform fee rate applied to connected-account payments */
-    const PLATFORM_FEE_RATE = 0.05
+    // Resolve the platform fee rate from the academy's platform plan
+    let PLATFORM_FEE_RATE = 0.035 // default to Starter rate (3.5%)
+    if (planOrg?.platform_plan_id) {
+      const { data: platformPlan } = await supabase
+        .from('platform_plans')
+        .select('transaction_fee_percent')
+        .eq('id', planOrg.platform_plan_id)
+        .single()
+      if (platformPlan) {
+        PLATFORM_FEE_RATE = Number(platformPlan.transaction_fee_percent) / 100
+      }
+    }
 
     // Fetch parent profile
     const { data: profile } = await supabase
@@ -139,10 +149,11 @@ export async function POST(request: NextRequest) {
         },
       }
 
-      // Route payment through the connected account with a 5% platform fee
+      // Route payment through the connected account with the plan's platform fee
       if (connectedAccountId) {
+        const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(discountedTotal * PLATFORM_FEE_RATE) : 0
         quarterlySessionParams.payment_intent_data = {
-          application_fee_amount: Math.round(discountedTotal * PLATFORM_FEE_RATE),
+          ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
           transfer_data: {
             destination: connectedAccountId,
           },
@@ -211,10 +222,12 @@ export async function POST(request: NextRequest) {
         // are charged on the same date — Stripe automatically prorates
         // the first invoice from signup to anchor date
         billing_cycle_anchor: getFirstOfNextMonth(),
-        // For connected accounts, apply 5% platform fee on every invoice
+        // For connected accounts, apply the plan-based platform fee on every invoice
         ...(connectedAccountId
           ? {
-              application_fee_percent: PLATFORM_FEE_RATE * 100,
+              ...(PLATFORM_FEE_RATE > 0
+                ? { application_fee_percent: PLATFORM_FEE_RATE * 100 }
+                : {}),
               transfer_data: {
                 destination: connectedAccountId,
               },

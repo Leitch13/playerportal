@@ -1,11 +1,72 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 const STEPS = [
   { label: 'Academy Details', icon: '1' },
   { label: 'Branding', icon: '2' },
-  { label: 'Your Account', icon: '3' },
+  { label: 'Choose Your Plan', icon: '3' },
+  { label: 'Your Account', icon: '4' },
+  { label: 'Pricing', icon: '5' },
+]
+
+interface PlatformPlan {
+  slug: string
+  name: string
+  monthlyPrice: number
+  transactionFee: number
+  features: string[]
+  recommended?: boolean
+}
+
+const PLATFORM_PLANS: PlatformPlan[] = [
+  {
+    slug: 'starter',
+    name: 'Starter',
+    monthlyPrice: 20,
+    transactionFee: 3.5,
+    features: [
+      'Up to 50 players',
+      '3 classes',
+      'Basic analytics',
+      'Email support',
+      'Parent portal',
+      'QR attendance',
+    ],
+  },
+  {
+    slug: 'pro',
+    name: 'Pro',
+    monthlyPrice: 30,
+    transactionFee: 2,
+    recommended: true,
+    features: [
+      'Up to 200 players',
+      'Unlimited classes',
+      'Full analytics',
+      'Priority support',
+      'Custom branding',
+      'Merch shop',
+      'Session planner',
+      'Drill library',
+    ],
+  },
+  {
+    slug: 'enterprise',
+    name: 'Enterprise',
+    monthlyPrice: 50,
+    transactionFee: 0,
+    features: [
+      'Unlimited players',
+      'Unlimited classes',
+      'Advanced analytics',
+      'Dedicated support',
+      'White-label branding',
+      'API access',
+      'Custom integrations',
+      '0% transaction fees',
+    ],
+  },
 ]
 
 function slugify(text: string): string {
@@ -37,7 +98,11 @@ export default function OnboardPage() {
   const [logoUrl, setLogoUrl] = useState('')
   const [heroImageUrl, setHeroImageUrl] = useState('')
 
-  // Step 3: Account
+  // Step 3: Plan selection
+  const [selectedPlan, setSelectedPlan] = useState<string>('pro')
+  const [monthlyVolume, setMonthlyVolume] = useState(2000)
+
+  // Step 4: Account
   const [fullName, setFullName] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,6 +110,18 @@ export default function OnboardPage() {
   // Default plans created automatically by API
 
   // Class setup removed — done from dashboard
+
+  const costBreakdown = useMemo(() => {
+    return PLATFORM_PLANS.map((plan) => {
+      const fee = (monthlyVolume * plan.transactionFee) / 100
+      return {
+        slug: plan.slug,
+        platformFee: plan.monthlyPrice,
+        transactionFee: fee,
+        total: plan.monthlyPrice + fee,
+      }
+    })
+  }, [monthlyVolume])
 
   function handleNameChange(value: string) {
     setAcademyName(value)
@@ -67,6 +144,9 @@ export default function OnboardPage() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) { setError('Please enter a valid email'); return false }
     }
     if (step === 2) {
+      if (!selectedPlan) { setError('Please select a plan'); return false }
+    }
+    if (step === 3) {
       if (!fullName.trim()) { setError('Your full name is required'); return false }
       if (!adminEmail.trim()) { setError('Email is required'); return false }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) { setError('Please enter a valid email'); return false }
@@ -111,6 +191,7 @@ export default function OnboardPage() {
         primaryColor,
         logoUrl,
         heroImageUrl,
+        platformPlan: selectedPlan,
       }
 
       // Classes can be added from the dashboard after setup
@@ -177,7 +258,7 @@ export default function OnboardPage() {
 
       {/* Progress Steps */}
       <div className="flex justify-center px-4 mb-8">
-        <div className="flex items-center gap-0 max-w-xl w-full">
+        <div className="flex items-center gap-0 max-w-2xl w-full">
           {STEPS.map((s, i) => (
             <div key={i} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-shrink-0">
@@ -216,7 +297,7 @@ export default function OnboardPage() {
 
       {/* Card */}
       <div className="flex-1 flex items-start justify-center px-4 pb-12">
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 sm:p-8">
+        <div className={`bg-white rounded-xl shadow-xl w-full ${step === 2 ? 'max-w-4xl' : 'max-w-lg'} p-6 sm:p-8 transition-all duration-300`}>
           {/* Error */}
           {error && (
             <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -367,8 +448,157 @@ export default function OnboardPage() {
             </div>
           )}
 
-          {/* Step 3: Your Account */}
+          {/* Step 3: Choose Your Plan */}
           {step === 2 && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-xl font-bold text-primary mb-1">Choose Your Plan</h2>
+                <p className="text-text-light text-sm">All plans include a 14-day free trial &mdash; no card required</p>
+              </div>
+
+              {/* Plan Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {PLATFORM_PLANS.map((plan) => {
+                  const isSelected = selectedPlan === plan.slug
+                  const isRecommended = plan.recommended
+                  return (
+                    <button
+                      key={plan.slug}
+                      type="button"
+                      onClick={() => setSelectedPlan(plan.slug)}
+                      className={`relative flex flex-col rounded-2xl p-5 text-left transition-all duration-200 border-2 ${
+                        isSelected
+                          ? isRecommended
+                            ? 'border-[#4ecde6] bg-gradient-to-b from-[#0a1628] to-[#0d1f3c] shadow-[0_0_30px_rgba(78,205,230,0.2)]'
+                            : 'border-[#4ecde6] bg-gradient-to-b from-[#0a1628] to-[#0d1f3c] shadow-lg'
+                          : isRecommended
+                            ? 'border-[#4ecde6]/40 bg-gradient-to-b from-[#0c1a30] to-[#0f2240] hover:border-[#4ecde6]/70 hover:shadow-[0_0_20px_rgba(78,205,230,0.1)]'
+                            : 'border-white/10 bg-gradient-to-b from-[#111827] to-[#1a2332] hover:border-white/20'
+                      }`}
+                    >
+                      {/* Recommended badge */}
+                      {isRecommended && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <span className="px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3] text-white rounded-full shadow-lg shadow-[#4ecde6]/30">
+                            Recommended
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Glass overlay */}
+                      <div className="absolute inset-0 rounded-2xl bg-white/[0.03] pointer-events-none" />
+
+                      {/* Selected indicator */}
+                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isSelected ? 'border-[#4ecde6] bg-[#4ecde6]' : 'border-white/20'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* Plan name */}
+                      <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
+
+                      {/* Price */}
+                      <div className="flex items-baseline gap-1 mb-1">
+                        <span className="text-3xl font-extrabold text-white">&pound;{plan.monthlyPrice}</span>
+                        <span className="text-white/40 text-sm">/month</span>
+                      </div>
+
+                      {/* Transaction fee */}
+                      <p className={`text-sm font-medium mb-4 ${plan.transactionFee === 0 ? 'text-emerald-400' : 'text-white/50'}`}>
+                        {plan.transactionFee === 0 ? '0% transaction fee' : `${plan.transactionFee}% transaction fee`}
+                      </p>
+
+                      {/* Divider */}
+                      <div className="h-px bg-white/10 mb-4" />
+
+                      {/* Features */}
+                      <ul className="space-y-2 flex-1">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex items-start gap-2 text-sm text-white/70">
+                            <svg className="w-4 h-4 text-[#4ecde6] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Cost comparison calculator */}
+              <div className="bg-gradient-to-b from-[#111827] to-[#1a2332] border border-white/10 rounded-2xl p-5">
+                <h4 className="text-sm font-bold text-white mb-3">
+                  Cost Calculator
+                </h4>
+                <p className="text-white/50 text-xs mb-4">
+                  If your academy processes <span className="text-white font-semibold">&pound;{monthlyVolume.toLocaleString()}</span>/month in payments:
+                </p>
+
+                {/* Slider */}
+                <div className="mb-5">
+                  <input
+                    type="range"
+                    min={500}
+                    max={20000}
+                    step={500}
+                    value={monthlyVolume}
+                    onChange={(e) => setMonthlyVolume(Number(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#4ecde6] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#4ecde6] [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-[#4ecde6]/30"
+                  />
+                  <div className="flex justify-between text-xs text-white/30 mt-1">
+                    <span>&pound;500</span>
+                    <span>&pound;20,000</span>
+                  </div>
+                </div>
+
+                {/* Breakdown table */}
+                <div className="grid grid-cols-3 gap-3">
+                  {costBreakdown.map((item) => {
+                    const plan = PLATFORM_PLANS.find((p) => p.slug === item.slug)!
+                    const isCurrent = selectedPlan === item.slug
+                    return (
+                      <div
+                        key={item.slug}
+                        className={`rounded-xl p-3 text-center transition-all ${
+                          isCurrent
+                            ? 'bg-[#4ecde6]/10 border border-[#4ecde6]/30'
+                            : 'bg-white/[0.03] border border-white/5'
+                        }`}
+                      >
+                        <p className={`text-xs font-bold mb-1 ${isCurrent ? 'text-[#4ecde6]' : 'text-white/50'}`}>
+                          {plan.name}
+                        </p>
+                        <p className="text-lg font-extrabold text-white">
+                          &pound;{item.total.toFixed(0)}
+                        </p>
+                        <p className="text-[10px] text-white/30 mt-0.5">
+                          &pound;{item.platformFee} + &pound;{item.transactionFee.toFixed(0)} fees
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Trial note */}
+              <div className="flex items-center justify-center gap-2 text-sm text-white/50">
+                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>14-day free trial &mdash; no card required</span>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Your Account */}
+          {step === 3 && (
             <div className="space-y-5">
               <div>
                 <h2 className="text-xl font-bold text-primary mb-1">Your Account</h2>
@@ -423,7 +653,52 @@ export default function OnboardPage() {
             </div>
           )}
 
+          {/* Step 5: Pricing (placeholder — currently auto-created) */}
+          {step === 4 && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-xl font-bold text-primary mb-1">Pricing</h2>
+                <p className="text-text-light text-sm">Set the plans parents will see on your booking page</p>
+              </div>
 
+              <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4">
+                <p className="text-sm text-cyan-800">
+                  <span className="font-semibold">Default plans</span> will be created for you automatically:
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-cyan-700">
+                  <li>1 Session / Week &mdash; &pound;30/month</li>
+                  <li>2 Sessions / Week &mdash; &pound;50/month</li>
+                  <li>Unlimited &mdash; &pound;70/month</li>
+                </ul>
+                <p className="mt-2 text-xs text-cyan-600">
+                  You can customise plans, pricing, and add new ones from the dashboard after setup.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <h3 className="text-sm font-bold text-primary mb-2">Your selected platform plan</h3>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#4ecde6] to-[#2ba8c3] flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">
+                      {PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.name.charAt(0)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-primary">
+                      {PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.name} Plan
+                    </p>
+                    <p className="text-xs text-text-light">
+                      &pound;{PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.monthlyPrice}/month &bull;{' '}
+                      {PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.transactionFee === 0
+                        ? '0% fees'
+                        : `${PLATFORM_PLANS.find((p) => p.slug === selectedPlan)?.transactionFee}% transaction fee`
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
