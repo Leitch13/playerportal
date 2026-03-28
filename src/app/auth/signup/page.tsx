@@ -36,6 +36,7 @@ function SignUp() {
   const [childFirstName, setChildFirstName] = useState('')
   const [childLastName, setChildLastName] = useState('')
   const [childDob, setChildDob] = useState('')
+  const [childLevel, setChildLevel] = useState('development')
   const [childMedical, setChildMedical] = useState('')
   const [emergencyName, setEmergencyName] = useState('')
   const [emergencyPhone, setEmergencyPhone] = useState('')
@@ -94,7 +95,7 @@ function SignUp() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not signed in'); setLoading(false); return }
     const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', user.id).single()
-    const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null }).select('id').single()
+    const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null, playing_level: childLevel }).select('id').single()
     if (childError) { setError(childError.message); setLoading(false); return }
     setAddedChildId(child.id)
     const { data: plansData } = await supabase.from('subscription_plans').select('id, name, description, amount, sessions_per_week, interval').eq('active', true).order('sort_order')
@@ -180,6 +181,16 @@ function SignUp() {
                 <div><label className="block text-xs text-white/50 mb-1.5">Last Name *</label><input type="text" value={childLastName} onChange={(e) => setChildLastName(e.target.value)} required placeholder="Last name" className={inputCls} /></div>
               </div>
               <div><label className="block text-xs text-white/50 mb-1.5">Date of Birth</label><input type="date" value={childDob} onChange={(e) => setChildDob(e.target.value)} className={`${inputCls} [color-scheme:dark]`} /></div>
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5">Player Level</label>
+                <select value={childLevel} onChange={(e) => setChildLevel(e.target.value)} className={inputCls + ' appearance-none'}>
+                  <option value="beginner" className="bg-[#1a1a1a]">Beginner — Just starting out</option>
+                  <option value="development" className="bg-[#1a1a1a]">Development — Learning the basics</option>
+                  <option value="intermediate" className="bg-[#1a1a1a]">Intermediate — Good understanding</option>
+                  <option value="advanced" className="bg-[#1a1a1a]">Advanced — Strong technical ability</option>
+                  <option value="elite" className="bg-[#1a1a1a]">Elite — Academy/representative level</option>
+                </select>
+              </div>
               <div><label className="block text-xs text-white/50 mb-1.5">Medical / Allergies</label><input type="text" value={childMedical} onChange={(e) => setChildMedical(e.target.value)} placeholder="Any medical conditions or allergies" className={inputCls} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="block text-xs text-white/50 mb-1.5">Emergency Contact</label><input type="text" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} placeholder="Contact name" className={inputCls} /></div>

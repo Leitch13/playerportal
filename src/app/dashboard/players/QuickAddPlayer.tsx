@@ -34,6 +34,7 @@ export default function QuickAddPlayer({
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [ageGroup, setAgeGroup] = useState('')
+  const [playingLevel, setPlayingLevel] = useState('development')
   const [groupId, setGroupId] = useState('')
 
   // Existing parent
@@ -98,6 +99,7 @@ export default function QuickAddPlayer({
       first_name: firstName,
       last_name: lastName,
       age_group: ageGroup || null,
+      playing_level: playingLevel,
     })
 
     if (playerErr) {
@@ -133,6 +135,7 @@ export default function QuickAddPlayer({
     setFirstName('')
     setLastName('')
     setAgeGroup('')
+    setPlayingLevel('development')
     setGroupId('')
     setParentId('')
     setParentName('')
@@ -179,6 +182,17 @@ export default function QuickAddPlayer({
             <label className="block text-sm font-medium mb-1">Age Group</label>
             <input type="text" value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} placeholder="e.g. U10"
               className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Player Level</label>
+            <select value={playingLevel} onChange={(e) => setPlayingLevel(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="beginner">Beginner — Just starting out</option>
+              <option value="development">Development — Learning the basics</option>
+              <option value="intermediate">Intermediate — Good understanding</option>
+              <option value="advanced">Advanced — Strong technical ability</option>
+              <option value="elite">Elite — Academy/representative level</option>
+            </select>
           </div>
         </div>
 

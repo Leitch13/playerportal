@@ -93,6 +93,11 @@ export default async function PlayersPage({
                       <Link href={`/dashboard/players/${p.id}`} className="flex items-center gap-2 text-[#4ecde6] hover:underline">
                         <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="sm" />
                         {p.first_name} {p.last_name}
+                        {p.playing_level && (() => {
+                          const levelColors: Record<string, string> = { beginner: 'bg-green-500/15 text-green-400', development: 'bg-blue-500/15 text-blue-400', intermediate: 'bg-amber-500/15 text-amber-400', advanced: 'bg-purple-500/15 text-purple-400', elite: 'bg-red-500/15 text-red-400' }
+                          const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
+                          return <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${levelColors[p.playing_level] || 'bg-white/10 text-white'}`}>{levelLabels[p.playing_level] || p.playing_level}</span>
+                        })()}
                       </Link>
                     </td>
                     <td className="py-2.5">

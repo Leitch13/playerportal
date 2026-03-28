@@ -229,6 +229,11 @@ export default async function PlayerDetailPage({
           </Link>
           <h1 className="text-2xl font-bold">{player.first_name} {player.last_name}</h1>
           <div className="flex flex-wrap gap-2 mt-1">
+            {player.playing_level && (() => {
+              const levelColors: Record<string, string> = { beginner: 'bg-green-500/15 text-green-400', development: 'bg-blue-500/15 text-blue-400', intermediate: 'bg-amber-500/15 text-amber-400', advanced: 'bg-purple-500/15 text-purple-400', elite: 'bg-red-500/15 text-red-400' }
+              const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
+              return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[player.playing_level] || 'bg-white/10 text-white'}`}>{levelLabels[player.playing_level] || player.playing_level}</span>
+            })()}
             {player.age_group && <span className="px-2 py-0.5 rounded-full text-xs bg-white/10 text-white font-medium">{player.age_group}</span>}
             {player.position && <span className="px-2 py-0.5 rounded-full text-xs bg-accent/10 text-accent font-medium">{player.position}</span>}
             {player.kit_size && <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.05] text-white/60 font-medium">Kit: {player.kit_size}</span>}

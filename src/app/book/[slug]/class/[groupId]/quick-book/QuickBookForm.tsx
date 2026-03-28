@@ -86,6 +86,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
   const [childFirstName, setChildFirstName] = useState('')
   const [childLastName, setChildLastName] = useState('')
   const [childDob, setChildDob] = useState('')
+  const [childLevel, setChildLevel] = useState('development')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans.length === 1 ? plans[0].id : null)
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -158,7 +159,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       let playerId: string
       if (isNewChild) {
         const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
-        const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id || orgId, parent_id: userId, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null }).select('id').single()
+        const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id || orgId, parent_id: userId, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, playing_level: childLevel }).select('id').single()
         if (childError || !child) { setGlobalError(childError?.message || 'Failed to add child'); setLoading(false); return }
         playerId = child.id
       } else {
@@ -248,6 +249,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
             <div><label className="block text-xs text-white/50 mb-1.5">First Name *</label><input type="text" value={childFirstName} onChange={(e) => { setChildFirstName(e.target.value); setFieldErrors((p) => ({ ...p, childFirstName: '' })) }} onBlur={() => handleBlur('childFirstName', childFirstName)} placeholder="First name" required className={inputCls('childFirstName')} /><FieldError message={fieldErrors.childFirstName || null} /></div>
             <div><label className="block text-xs text-white/50 mb-1.5">Last Name *</label><input type="text" value={childLastName} onChange={(e) => { setChildLastName(e.target.value); setFieldErrors((p) => ({ ...p, childLastName: '' })) }} onBlur={() => handleBlur('childLastName', childLastName)} placeholder="Last name" required className={inputCls('childLastName')} /><FieldError message={fieldErrors.childLastName || null} /></div>
             <div className="sm:col-span-2"><label className="block text-xs text-white/50 mb-1.5">Date of Birth</label><input type="date" value={childDob} onChange={(e) => setChildDob(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all [color-scheme:dark]" /></div>
+            <div className="sm:col-span-2"><label className="block text-xs text-white/50 mb-1.5">Player Level</label><select value={childLevel} onChange={(e) => setChildLevel(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all appearance-none"><option value="beginner" className="bg-[#111]">Beginner — Just starting out</option><option value="development" className="bg-[#111]">Development — Learning the basics</option><option value="intermediate" className="bg-[#111]">Intermediate — Good understanding</option><option value="advanced" className="bg-[#111]">Advanced — Strong technical ability</option><option value="elite" className="bg-[#111]">Elite — Academy/representative level</option></select></div>
           </div>
         )}
         <button type="button" onClick={handleChildComplete} disabled={isNewChild ? !childFirstName || !childLastName : !selectedChildId} className="mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Continue to Choose Plan &rarr;</button>
