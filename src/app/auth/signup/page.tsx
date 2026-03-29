@@ -37,6 +37,7 @@ function SignUp() {
   const [childLastName, setChildLastName] = useState('')
   const [childDob, setChildDob] = useState('')
   const [childLevel, setChildLevel] = useState('development')
+  const [childLeague, setChildLeague] = useState('')
   const [childMedical, setChildMedical] = useState('')
   const [emergencyName, setEmergencyName] = useState('')
   const [emergencyPhone, setEmergencyPhone] = useState('')
@@ -95,7 +96,7 @@ function SignUp() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not signed in'); setLoading(false); return }
     const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', user.id).single()
-    const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null, playing_level: childLevel }).select('id').single()
+    const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null, playing_level: childLevel, league_level: childLeague || null }).select('id').single()
     if (childError) { setError(childError.message); setLoading(false); return }
     setAddedChildId(child.id)
     const { data: plansData } = await supabase.from('subscription_plans').select('id, name, description, amount, sessions_per_week, interval').eq('active', true).order('sort_order')
@@ -189,6 +190,18 @@ function SignUp() {
                   <option value="intermediate" className="bg-[#1a1a1a]">Intermediate — Good understanding</option>
                   <option value="advanced" className="bg-[#1a1a1a]">Advanced — Strong technical ability</option>
                   <option value="elite" className="bg-[#1a1a1a]">Elite — Academy/representative level</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5">League Level</label>
+                <select value={childLeague} onChange={(e) => setChildLeague(e.target.value)} className={inputCls + ' appearance-none'}>
+                  <option value="" className="bg-[#1a1a1a]">Select league level...</option>
+                  <option value="recreational" className="bg-[#1a1a1a]">Recreational</option>
+                  <option value="grassroots" className="bg-[#1a1a1a]">Grassroots</option>
+                  <option value="b_league" className="bg-[#1a1a1a]">B League</option>
+                  <option value="a_league" className="bg-[#1a1a1a]">A League</option>
+                  <option value="academy" className="bg-[#1a1a1a]">Academy</option>
+                  <option value="professional" className="bg-[#1a1a1a]">Professional Development</option>
                 </select>
               </div>
               <div><label className="block text-xs text-white/50 mb-1.5">Medical / Allergies</label><input type="text" value={childMedical} onChange={(e) => setChildMedical(e.target.value)} placeholder="Any medical conditions or allergies" className={inputCls} /></div>

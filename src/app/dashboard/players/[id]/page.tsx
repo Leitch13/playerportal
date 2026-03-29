@@ -234,6 +234,11 @@ export default async function PlayerDetailPage({
               const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
               return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[player.playing_level] || 'bg-white/10 text-white'}`}>{levelLabels[player.playing_level] || player.playing_level}</span>
             })()}
+            {player.league_level && (() => {
+              const leagueColors: Record<string, string> = { recreational: 'bg-gray-500/15 text-gray-400', grassroots: 'bg-lime-500/15 text-lime-400', b_league: 'bg-sky-500/15 text-sky-400', a_league: 'bg-orange-500/15 text-orange-400', academy: 'bg-violet-500/15 text-violet-400', professional: 'bg-rose-500/15 text-rose-400' }
+              const leagueLabels: Record<string, string> = { recreational: 'Recreational', grassroots: 'Grassroots', b_league: 'B League', a_league: 'A League', academy: 'Academy', professional: 'Pro Development' }
+              return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${leagueColors[player.league_level] || 'bg-white/10 text-white'}`}>{leagueLabels[player.league_level] || player.league_level}</span>
+            })()}
             {player.age_group && <span className="px-2 py-0.5 rounded-full text-xs bg-white/10 text-white font-medium">{player.age_group}</span>}
             {player.position && <span className="px-2 py-0.5 rounded-full text-xs bg-accent/10 text-accent font-medium">{player.position}</span>}
             {player.kit_size && <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.05] text-white/60 font-medium">Kit: {player.kit_size}</span>}
