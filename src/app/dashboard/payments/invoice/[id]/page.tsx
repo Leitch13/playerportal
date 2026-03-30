@@ -103,9 +103,9 @@ export default async function InvoicePage({
       </div>
 
       {/* Invoice document */}
-      <div className="bg-white rounded-xl shadow-sm border border-border print:shadow-none print:border-0 print:rounded-none">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 print:shadow-none print:border-0 print:rounded-none">
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-border">
+        <div className="px-8 pt-8 pb-6 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               {org?.logo_url && (
@@ -116,16 +116,16 @@ export default async function InvoicePage({
                 />
               )}
               <div>
-                <h2 className="text-xl font-bold text-primary">
+                <h2 className="text-xl font-bold text-gray-900">
                   {org?.name || 'Academy'}
                 </h2>
               </div>
             </div>
             <div className="text-right">
-              <h1 className="text-2xl font-bold tracking-wide text-primary">
+              <h1 className="text-2xl font-bold tracking-wide text-gray-900">
                 {isPaid ? 'RECEIPT' : 'INVOICE'}
               </h1>
-              <div className="mt-1 text-sm text-text-light">
+              <div className="mt-1 text-sm text-gray-500">
                 #{invoiceNumber}
               </div>
             </div>
@@ -136,7 +136,7 @@ export default async function InvoicePage({
         <div className="px-8 py-6 grid grid-cols-2 gap-8">
           {/* From */}
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-text-light mb-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
               From
             </div>
             <div className="text-sm space-y-0.5">
@@ -146,12 +146,12 @@ export default async function InvoicePage({
 
           {/* To */}
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-text-light mb-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
               To
             </div>
             <div className="text-sm space-y-0.5">
               <div className="font-semibold">{parent?.full_name || '—'}</div>
-              <div className="text-text-light">{parent?.email || ''}</div>
+              <div className="text-gray-500">{parent?.email || ''}</div>
             </div>
           </div>
         </div>
@@ -160,18 +160,18 @@ export default async function InvoicePage({
         <div className="px-8 pb-6">
           <div className="flex flex-wrap gap-6 text-sm">
             <div>
-              <span className="text-text-light">Date Issued: </span>
+              <span className="text-gray-500">Date Issued: </span>
               <span className="font-medium">{createdDate}</span>
             </div>
             {dueDate && (
               <div>
-                <span className="text-text-light">Due Date: </span>
+                <span className="text-gray-500">Due Date: </span>
                 <span className="font-medium">{dueDate}</span>
               </div>
             )}
             {paidDate && (
               <div>
-                <span className="text-text-light">Date Paid: </span>
+                <span className="text-gray-500">Date Paid: </span>
                 <span className="font-medium">{paidDate}</span>
               </div>
             )}
@@ -182,7 +182,7 @@ export default async function InvoicePage({
         <div className="px-8 pb-6">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b-2 border-primary/10">
+              <tr className="border-b-2 border-gray-200">
                 <th className="text-left py-3 font-semibold">Description</th>
                 <th className="text-left py-3 font-semibold hidden sm:table-cell">
                   Player
@@ -191,16 +191,16 @@ export default async function InvoicePage({
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-border">
+              <tr className="border-b border-gray-200">
                 <td className="py-4">
                   <div className="font-medium">{description}</div>
                   {playerName && (
-                    <div className="text-xs text-text-light mt-0.5 sm:hidden">
+                    <div className="text-xs text-gray-500 mt-0.5 sm:hidden">
                       {playerName}
                     </div>
                   )}
                 </td>
-                <td className="py-4 text-text-light hidden sm:table-cell">
+                <td className="py-4 text-gray-500 hidden sm:table-cell">
                   {playerName || '—'}
                 </td>
                 <td className="py-4 text-right font-medium">
@@ -216,10 +216,10 @@ export default async function InvoicePage({
           <div className="flex justify-end">
             <div className="w-64 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-text-light">Subtotal</span>
+                <span className="text-gray-500">Subtotal</span>
                 <span>&pound;{amount.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-base font-bold border-t-2 border-primary/10 pt-2">
+              <div className="flex justify-between text-base font-bold border-t-2 border-gray-200 pt-2">
                 <span>Total (GBP)</span>
                 <span>&pound;{amount.toFixed(2)}</span>
               </div>
@@ -257,13 +257,13 @@ export default async function InvoicePage({
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-border bg-surface/30 rounded-b-xl print:bg-transparent">
+        <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-xl print:bg-transparent">
           {isPaid && (
-            <p className="text-sm text-center text-text-light mb-4">
+            <p className="text-sm text-center text-gray-500 mb-4">
               Thank you for your payment.
             </p>
           )}
-          <p className="text-xs text-center text-text-light/60">
+          <p className="text-xs text-center text-gray-500/60">
             Player Portal &mdash; Youth Sports Management
           </p>
         </div>

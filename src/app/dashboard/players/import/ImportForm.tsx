@@ -242,7 +242,7 @@ export default function ImportForm() {
             <button
               type="button"
               onClick={() => downloadCSVTemplate()}
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-[#4ecde6] hover:underline"
             >
               Download CSV template
             </button>
@@ -283,9 +283,9 @@ export default function ImportForm() {
                       <td className="py-2 text-[#888]">{v.rowIndex}</td>
                       <td className="py-2">
                         {v.valid ? (
-                          <span className="text-green-600" title="Valid">&#10003;</span>
+                          <span className="text-green-400" title="Valid">&#10003;</span>
                         ) : (
-                          <span className="text-red-500" title={v.errors.join(', ')}>&#10007; {v.errors.join(', ')}</span>
+                          <span className="text-red-400" title={v.errors.join(', ')}>&#10007; {v.errors.join(', ')}</span>
                         )}
                       </td>
                       <td className="py-2">{v.row.first_name}</td>
@@ -314,7 +314,7 @@ export default function ImportForm() {
                 type="button"
                 onClick={handleImport}
                 disabled={importing || validCount === 0}
-                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-medium hover:bg-[#4ecde6]/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {importing ? 'Importing...' : `Import ${validCount} Players`}
               </button>
@@ -333,7 +333,7 @@ export default function ImportForm() {
             </div>
             <div className="w-full bg-[#1a1a1a] rounded-full h-2">
               <div
-                className="bg-primary h-2 rounded-full transition-all duration-300"
+                className="bg-[#4ecde6] h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -383,7 +383,7 @@ export default function ImportForm() {
               </button>
               <a
                 href="/dashboard/players"
-                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
+                className="px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-medium hover:bg-[#4ecde6]/90"
               >
                 View Players
               </a>

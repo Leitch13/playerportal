@@ -48,7 +48,7 @@ export default function ExportCard({ type, title, description, icon, count, hasD
   }
 
   return (
-    <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-5 flex flex-col">
+    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 flex flex-col transition-all duration-200 hover:border-[#2a2a2a]">
       <div className="flex items-start justify-between mb-3">
         <span className="text-3xl">{icon}</span>
         <span className="text-xs font-medium text-white/60 bg-white/[0.05] px-2 py-0.5 rounded-full">
@@ -63,14 +63,14 @@ export default function ExportCard({ type, title, description, icon, count, hasD
         <div className="flex gap-2 mb-3">
           <input
             type="date"
-            className="flex-1 border border-white/[0.08] bg-white/[0.05] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
+            className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
             value={fromDate}
             onChange={e => setFromDate(e.target.value)}
             placeholder="From"
           />
           <input
             type="date"
-            className="flex-1 border border-white/[0.08] bg-white/[0.05] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
+            className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
             value={toDate}
             onChange={e => setToDate(e.target.value)}
             placeholder="To"

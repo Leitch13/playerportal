@@ -171,47 +171,47 @@ export default function ClassPlanManager({
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`bg-white border rounded-2xl p-5 transition-all ${
-                plan.is_active ? 'border-border' : 'border-border/50 opacity-60'
+              className={`bg-[#141414] border rounded-2xl p-5 transition-all duration-200 ${
+                plan.is_active ? 'border-[#1e1e1e] hover:border-[#2a2a2a]' : 'border-[#1e1e1e]/50 opacity-60'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold">{plan.name}</h3>
+                    <h3 className="font-bold text-white">{plan.name}</h3>
                     {!plan.is_active && (
-                      <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-semibold">INACTIVE</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-white/[0.06] text-white/40 rounded-full font-semibold">INACTIVE</span>
                     )}
                   </div>
                   {plan.description && (
-                    <p className="text-sm text-text-light mt-0.5">{plan.description}</p>
+                    <p className="text-sm text-white/40 mt-0.5">{plan.description}</p>
                   )}
-                  <p className="text-xs text-text-light mt-1">
+                  <p className="text-xs text-white/40 mt-1">
                     {plan.sessions_per_week === 0 ? 'Unlimited sessions' : `${plan.sessions_per_week} session${(plan.sessions_per_week || 0) > 1 ? 's' : ''} / week`}
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-extrabold text-accent">&pound;{Number(plan.amount).toFixed(0)}</div>
-                  <div className="text-xs text-text-light">per {plan.interval}</div>
-                  <div className="text-[10px] text-green-600 mt-0.5">
+                  <div className="text-2xl font-extrabold text-[#4ecde6]">&pound;{Number(plan.amount).toFixed(0)}</div>
+                  <div className="text-xs text-white/40">per {plan.interval}</div>
+                  <div className="text-[10px] text-green-400 mt-0.5">
                     or &pound;{Math.round(Number(plan.amount) * 3 * 0.9)} quarterly
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.06]">
                 <button
                   onClick={() => handleTogglePlan(plan.id, plan.is_active)}
                   className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                     plan.is_active
-                      ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                      ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/25'
+                      : 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
                   }`}
                 >
                   {plan.is_active ? 'Deactivate' : 'Activate'}
                 </button>
                 <button
                   onClick={() => handleDeletePlan(plan.id)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
                 >
                   Delete
                 </button>
@@ -220,15 +220,15 @@ export default function ClassPlanManager({
           ))}
         </div>
       ) : (
-        <div className="bg-white border border-dashed border-border rounded-2xl p-8 text-center">
+        <div className="bg-[#141414] border border-dashed border-[#1e1e1e] rounded-2xl p-8 text-center">
           <div className="text-3xl mb-3">💰</div>
-          <h3 className="font-bold text-lg mb-1">No plans yet for {groupName}</h3>
-          <p className="text-text-light text-sm mb-4">
+          <h3 className="font-bold text-lg text-white mb-1">No plans yet for {groupName}</h3>
+          <p className="text-white/40 text-sm mb-4">
             Create pricing plans so parents can subscribe to this class.
           </p>
           <button
             onClick={loadTemplate}
-            className="px-4 py-2 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors"
+            className="px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#6dd8ee] transition-colors"
           >
             Load {classType === '1-2-1' ? '1-2-1' : classType === 'gk' ? 'Goalkeeper' : classType === 'soccer_tots' ? 'Soccer Tots' : classType.replace('_', ' ')} Template Plans
           </button>
@@ -237,36 +237,36 @@ export default function ClassPlanManager({
 
       {/* Add plan form */}
       {showAdd ? (
-        <div className="bg-white border border-accent/30 rounded-2xl p-5 space-y-4">
-          <h3 className="font-bold">Add New Plan</h3>
+        <div className="bg-[#141414] border border-[#4ecde6]/30 rounded-2xl p-5 space-y-4">
+          <h3 className="font-bold text-white">Add New Plan</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-light mb-1">Plan Name *</label>
+              <label className="block text-xs font-semibold text-white/40 mb-1">Plan Name *</label>
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="e.g. 1 Session / Week"
-                className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:ring-2 focus:ring-accent/50"
+                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-light mb-1">Price (£/month) *</label>
+              <label className="block text-xs font-semibold text-white/40 mb-1">Price (£/month) *</label>
               <input
                 type="number"
                 value={newAmount}
                 onChange={(e) => setNewAmount(e.target.value)}
                 placeholder="30"
                 step="0.01"
-                className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:ring-2 focus:ring-accent/50"
+                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-light mb-1">Sessions / Week</label>
+              <label className="block text-xs font-semibold text-white/40 mb-1">Sessions / Week</label>
               <select
                 value={newSessions}
                 onChange={(e) => setNewSessions(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:ring-2 focus:ring-accent/50"
+                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               >
                 <option value="1">1 session</option>
                 <option value="2">2 sessions</option>
@@ -277,13 +277,13 @@ export default function ClassPlanManager({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-light mb-1">Description</label>
+              <label className="block text-xs font-semibold text-white/40 mb-1">Description</label>
               <input
                 type="text"
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Optional description"
-                className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:ring-2 focus:ring-accent/50"
+                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               />
             </div>
           </div>
@@ -291,13 +291,13 @@ export default function ClassPlanManager({
             <button
               onClick={handleAddPlan}
               disabled={loading || !newName || !newAmount}
-              className="px-5 py-2 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors disabled:opacity-50"
+              className="px-5 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#6dd8ee] transition-colors disabled:opacity-50"
             >
               {loading ? 'Adding...' : 'Add Plan'}
             </button>
             <button
               onClick={() => setShowAdd(false)}
-              className="px-5 py-2 text-sm text-text-light hover:text-text transition-colors"
+              className="px-5 py-2 text-sm text-white/40 hover:text-white transition-colors"
             >
               Cancel
             </button>
@@ -307,14 +307,14 @@ export default function ClassPlanManager({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAdd(true)}
-            className="px-5 py-2.5 bg-accent text-primary rounded-xl text-sm font-bold hover:bg-accent-light transition-colors"
+            className="px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#6dd8ee] transition-colors"
           >
             + Add Plan
           </button>
           {plans.length === 0 && (
             <button
               onClick={loadTemplate}
-              className="px-5 py-2.5 border border-border text-text-light rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+              className="px-5 py-2.5 bg-white/[0.06] text-white hover:bg-white/[0.1] rounded-xl text-sm font-semibold transition-colors"
             >
               Load Template Plans
             </button>
@@ -323,8 +323,8 @@ export default function ClassPlanManager({
       )}
 
       {/* Preview info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-        <p className="text-sm text-blue-800">
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+        <p className="text-sm text-blue-400">
           <strong>Tip:</strong> Plans you create here will show on the class booking page for parents.
           They can choose monthly or quarterly billing (10% off). If no class-specific plans exist, org-wide plans are shown instead.
         </p>

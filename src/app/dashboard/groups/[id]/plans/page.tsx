@@ -31,14 +31,14 @@ export default async function ClassPlansPage({ params }: { params: Promise<{ id:
     .order('amount', { ascending: true })
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Link href="/dashboard/groups" className="text-text-light hover:text-text text-sm">&larr; Classes</Link>
+            <Link href="/dashboard/groups" className="text-white/40 hover:text-white text-sm">&larr; Classes</Link>
           </div>
-          <h1 className="text-2xl font-bold">Pricing Plans — {group.name}</h1>
-          <p className="text-text-light text-sm mt-1">
+          <h1 className="text-2xl font-bold text-white">Pricing Plans — {group.name}</h1>
+          <p className="text-white/40 text-sm mt-1">
             Create plans specific to this class. Parents will see these when booking.
           </p>
         </div>

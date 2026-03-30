@@ -14,17 +14,17 @@ export default async function ImportPlayersPage() {
   if (role !== 'admin') redirect('/dashboard')
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Import Players</h1>
-          <p className="text-text-light mt-1">
+          <h1 className="text-2xl font-bold text-white">Import Players</h1>
+          <p className="text-white/40 mt-1">
             Upload a CSV file to bulk import players into your organisation.
           </p>
         </div>
         <Link
           href="/dashboard/players"
-          className="text-sm text-text-light hover:text-text"
+          className="text-sm text-white/40 hover:text-white"
         >
           Back to Players
         </Link>
@@ -58,17 +58,17 @@ export default async function ImportPlayersPage() {
         </div>
       </Link>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-sm text-blue-400">
         <strong>CSV Format:</strong> Your file should include columns for{' '}
-        <code className="bg-blue-100 px-1 rounded">first_name</code>,{' '}
-        <code className="bg-blue-100 px-1 rounded">last_name</code> (required), and optionally{' '}
-        <code className="bg-blue-100 px-1 rounded">date_of_birth</code> (DD/MM/YYYY),{' '}
-        <code className="bg-blue-100 px-1 rounded">age_group</code>,{' '}
-        <code className="bg-blue-100 px-1 rounded">parent_email</code>,{' '}
-        <code className="bg-blue-100 px-1 rounded">parent_name</code>,{' '}
-        <code className="bg-blue-100 px-1 rounded">parent_phone</code>,{' '}
-        <code className="bg-blue-100 px-1 rounded">group_name</code>,{' '}
-        <code className="bg-blue-100 px-1 rounded">medical_info</code>.
+        <code className="bg-blue-500/15 px-1 rounded">first_name</code>,{' '}
+        <code className="bg-blue-500/15 px-1 rounded">last_name</code> (required), and optionally{' '}
+        <code className="bg-blue-500/15 px-1 rounded">date_of_birth</code> (DD/MM/YYYY),{' '}
+        <code className="bg-blue-500/15 px-1 rounded">age_group</code>,{' '}
+        <code className="bg-blue-500/15 px-1 rounded">parent_email</code>,{' '}
+        <code className="bg-blue-500/15 px-1 rounded">parent_name</code>,{' '}
+        <code className="bg-blue-500/15 px-1 rounded">parent_phone</code>,{' '}
+        <code className="bg-blue-500/15 px-1 rounded">group_name</code>,{' '}
+        <code className="bg-blue-500/15 px-1 rounded">medical_info</code>.
       </div>
 
       <ImportForm />

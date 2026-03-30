@@ -29,7 +29,7 @@ export default async function ExportsPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Export Data</h1>
         <p className="text-white/60 text-sm mt-1">Download your academy data as CSV files</p>

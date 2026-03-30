@@ -118,21 +118,21 @@ export default function QRDisplay({
     >
       {/* Header info */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-text">{groupName}</h1>
-        <p className="text-lg text-text-light mt-1">{today}</p>
+        <h1 className="text-3xl font-bold text-white">{groupName}</h1>
+        <p className="text-lg text-white/60 mt-1">{today}</p>
         {dayOfWeek && timeSlot && (
-          <p className="text-sm text-text-light mt-0.5">
+          <p className="text-sm text-white/60 mt-0.5">
             {dayOfWeek} at {timeSlot}
           </p>
         )}
         {coachName && (
-          <p className="text-sm text-text-light">Coach: {coachName}</p>
+          <p className="text-sm text-white/60">Coach: {coachName}</p>
         )}
-        <p className="text-4xl font-mono font-bold text-primary mt-2">{timeStr}</p>
+        <p className="text-4xl font-mono font-bold text-[#4ecde6] mt-2">{timeStr}</p>
       </div>
 
       {/* QR Code */}
-      <div className="bg-white rounded-2xl border-2 border-border p-6 shadow-lg">
+      <div className="bg-white rounded-2xl border-2 border-[#1e1e1e] p-6 shadow-lg">
         {qrDataUrl ? (
           <img
             src={qrDataUrl}
@@ -141,38 +141,38 @@ export default function QRDisplay({
           />
         ) : (
           <div className="w-[300px] h-[300px] md:w-[400px] md:h-[400px] flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4ecde6] border-t-transparent" />
           </div>
         )}
       </div>
 
       {/* Scan instruction */}
-      <p className="text-lg font-medium text-text mt-4">
+      <p className="text-lg font-medium text-white mt-4">
         Scan to check in your child
       </p>
 
       {/* Timer and controls */}
       <div className="flex items-center gap-4 mt-4">
-        <div className="text-sm text-text-light">
+        <div className="text-sm text-white/60">
           Refreshes in{' '}
-          <span className="font-mono font-bold text-primary">{secondsLeft}s</span>
+          <span className="font-mono font-bold text-[#4ecde6]">{secondsLeft}s</span>
         </div>
         <button
           onClick={regenerate}
-          className="px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-semibold hover:bg-primary/20 transition-colors"
+          className="px-4 py-2 bg-[#4ecde6]/10 text-[#4ecde6] rounded-xl text-sm font-semibold hover:bg-[#4ecde6]/20 transition-colors"
         >
           New QR Code
         </button>
         <button
           onClick={toggleFullscreen}
-          className="px-4 py-2 bg-gray-100 text-text rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
+          className="px-4 py-2 bg-white/[0.06] text-white rounded-xl text-sm font-semibold hover:bg-white/[0.1] transition-colors"
         >
           {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
       </div>
 
       {/* Session token (small, for debugging) */}
-      <p className="text-[10px] text-text-light/50 mt-6 font-mono">{token}</p>
+      <p className="text-[10px] text-white/20 mt-6 font-mono">{token}</p>
     </div>
   )
 }

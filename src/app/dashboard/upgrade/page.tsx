@@ -81,17 +81,17 @@ export default async function UpgradePage() {
     .order('sort_order')
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-xs font-semibold mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold mb-4">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 1L8.854 4.854L13 5.764L10 8.646L10.708 13L7 11L3.292 13L4 8.646L1 5.764L5.146 4.854L7 1Z" fill="currentColor" />
           </svg>
           Upgrade Options
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-text">Get More from Player Portal</h1>
-        <p className="text-text-light mt-2 text-sm max-w-lg mx-auto">
+        <h1 className="text-2xl md:text-3xl font-bold text-white">Get More from Player Portal</h1>
+        <p className="text-white/60 mt-2 text-sm max-w-lg mx-auto">
           Choose the plan that works best for your family. Every upgrade helps your child train consistently and improve faster.
         </p>
       </div>
@@ -115,7 +115,7 @@ export default async function UpgradePage() {
       {/* Pricing cards */}
       {(plans || []).length > 0 && (
         <div>
-          <h2 className="text-lg font-bold mb-4">Subscription Plans</h2>
+          <h2 className="text-lg font-bold text-white mb-4">Subscription Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(plans || []).map((plan: Record<string, unknown>, i: number) => {
               const amount = Number(plan.amount || 0)
@@ -126,43 +126,43 @@ export default async function UpgradePage() {
                 <div
                   key={plan.id as string}
                   className={`
-                    relative bg-white rounded-2xl border p-6 transition-all hover:shadow-lg
-                    ${isPopular ? 'border-accent shadow-md ring-1 ring-accent/20' : 'border-border'}
+                    relative bg-[#141414] rounded-2xl border p-6 transition-all duration-200 hover:border-[#2a2a2a]
+                    ${isPopular ? 'border-[#4ecde6] ring-1 ring-[#4ecde6]/20' : 'border-[#1e1e1e]'}
                   `}
                 >
                   {isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-accent text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#4ecde6] text-[#0a0a0a] text-[10px] font-bold uppercase tracking-wider rounded-full">
                       Most Popular
                     </div>
                   )}
 
                   <div className="text-center">
-                    <h3 className="text-base font-bold text-text">{plan.name as string}</h3>
+                    <h3 className="text-base font-bold text-white">{plan.name as string}</h3>
                     {plan.description ? (
-                      <p className="text-xs text-text-light mt-1">{String(plan.description)}</p>
+                      <p className="text-xs text-white/40 mt-1">{String(plan.description)}</p>
                     ) : null}
 
                     <div className="mt-4 mb-5">
-                      <span className="text-3xl font-bold text-text">&pound;{amount.toFixed(2)}</span>
-                      <span className="text-text-light text-sm">/{interval === 'year' ? 'yr' : 'mo'}</span>
+                      <span className="text-3xl font-bold text-white">&pound;{amount.toFixed(2)}</span>
+                      <span className="text-white/40 text-sm">/{interval === 'year' ? 'yr' : 'mo'}</span>
                     </div>
 
                     {/* Feature list */}
                     <ul className="text-left space-y-2 mb-5">
-                      <li className="flex items-center gap-2 text-xs text-text-light">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-success flex-shrink-0">
+                      <li className="flex items-center gap-2 text-xs text-white/60">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-emerald-400 flex-shrink-0">
                           <path d="M3 7L6 10L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         Weekly training sessions
                       </li>
-                      <li className="flex items-center gap-2 text-xs text-text-light">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-success flex-shrink-0">
+                      <li className="flex items-center gap-2 text-xs text-white/60">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-emerald-400 flex-shrink-0">
                           <path d="M3 7L6 10L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         Progress reviews &amp; reports
                       </li>
-                      <li className="flex items-center gap-2 text-xs text-text-light">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-success flex-shrink-0">
+                      <li className="flex items-center gap-2 text-xs text-white/60">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-emerald-400 flex-shrink-0">
                           <path d="M3 7L6 10L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         Cancel anytime — no lock-in
@@ -172,10 +172,10 @@ export default async function UpgradePage() {
                     <Link
                       href={`/dashboard/payments?tab=subscribe&plan=${plan.id as string}`}
                       className={`
-                        block w-full py-2.5 rounded-lg text-sm font-semibold text-center transition-all
+                        block w-full py-2.5 rounded-xl text-sm font-semibold text-center transition-all
                         ${isPopular
-                          ? 'bg-accent text-white hover:bg-accent-dark'
-                          : 'bg-primary text-white hover:bg-primary-light'
+                          ? 'bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#6dd8ee]'
+                          : 'bg-white/[0.06] text-white hover:bg-white/[0.1]'
                         }
                       `}
                     >
@@ -191,19 +191,19 @@ export default async function UpgradePage() {
 
       {/* Package deals section */}
       {!status.hasSubscription && status.activeEnrolmentCount > 0 && (
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-2xl border border-emerald-200 p-6">
+        <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-2xl border border-emerald-500/20 p-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-white text-2xl flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-white text-2xl flex-shrink-0">
               📦
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-bold text-emerald-900">Multi-Class Packages</h3>
-              <p className="text-sm text-emerald-700 mt-1">
+              <h3 className="text-base font-bold text-emerald-400">Multi-Class Packages</h3>
+              <p className="text-sm text-emerald-400/70 mt-1">
                 Buy a bundle of classes upfront and save 15%. Perfect if you prefer to pay in advance.
               </p>
               <Link
                 href="/dashboard/payments"
-                className="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
+                className="inline-flex items-center gap-1 mt-3 text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
               >
                 View packages
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -222,8 +222,8 @@ export default async function UpgradePage() {
       </div>
 
       {/* FAQ */}
-      <div className="bg-white rounded-2xl border border-border p-6">
-        <h2 className="text-lg font-bold mb-4">Frequently Asked Questions</h2>
+      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+        <h2 className="text-lg font-bold text-white mb-4">Frequently Asked Questions</h2>
         <div className="space-y-4">
           {[
             {
@@ -248,19 +248,19 @@ export default async function UpgradePage() {
             },
           ].map((faq, i) => (
             <details key={i} className="group">
-              <summary className="flex items-center justify-between cursor-pointer py-2 text-sm font-medium text-text hover:text-accent transition-colors">
+              <summary className="flex items-center justify-between cursor-pointer py-2 text-sm font-medium text-white hover:text-[#4ecde6] transition-colors">
                 {faq.q}
                 <svg
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
                   fill="none"
-                  className="text-text-light group-open:rotate-180 transition-transform flex-shrink-0 ml-2"
+                  className="text-white/40 group-open:rotate-180 transition-transform flex-shrink-0 ml-2"
                 >
                   <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </summary>
-              <p className="text-xs text-text-light leading-relaxed pl-0 pb-2">{faq.a}</p>
+              <p className="text-xs text-white/40 leading-relaxed pl-0 pb-2">{faq.a}</p>
             </details>
           ))}
         </div>
@@ -268,7 +268,7 @@ export default async function UpgradePage() {
 
       {/* Back link */}
       <div className="text-center pb-4">
-        <Link href="/dashboard" className="text-sm text-text-light hover:text-accent transition-colors">
+        <Link href="/dashboard" className="text-sm text-white/40 hover:text-[#4ecde6] transition-colors">
           &larr; Back to Dashboard
         </Link>
       </div>

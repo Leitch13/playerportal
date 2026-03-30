@@ -35,18 +35,18 @@ export default async function RemindersPage() {
   }
 
   const typeConfig: Record<string, { label: string; color: string; bg: string }> = {
-    '3_day': { label: '3 Day', color: 'text-blue-700', bg: 'bg-blue-50' },
-    '7_day': { label: '7 Day', color: 'text-orange-700', bg: 'bg-orange-50' },
-    '14_day': { label: '14 Day', color: 'text-red-600', bg: 'bg-red-50' },
-    'custom': { label: 'Manual', color: 'text-purple-700', bg: 'bg-purple-50' },
+    '3_day': { label: '3 Day', color: 'text-blue-400', bg: 'bg-blue-500/15' },
+    '7_day': { label: '7 Day', color: 'text-amber-400', bg: 'bg-amber-500/15' },
+    '14_day': { label: '14 Day', color: 'text-red-400', bg: 'bg-red-500/15' },
+    'custom': { label: 'Manual', color: 'text-purple-400', bg: 'bg-purple-500/15' },
   }
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Payment Reminders</h1>
-          <p className="text-text-light text-sm mt-1">Track automated and manual payment reminders</p>
+          <h1 className="text-2xl font-bold text-white">Payment Reminders</h1>
+          <p className="text-white/40 text-sm mt-1">Track automated and manual payment reminders</p>
         </div>
         <ManualReminder
           orgId={orgId}
@@ -65,35 +65,35 @@ export default async function RemindersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
-          <p className="text-2xl font-bold">{stats.total}</p>
-          <p className="text-xs text-text-light font-medium">Total Sent</p>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-2xl font-bold text-white">{stats.total}</p>
+          <p className="text-xs text-white/40 font-medium">Total Sent</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-blue-500">{stats.day3}</p>
-          <p className="text-xs text-text-light font-medium">3-Day</p>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-2xl font-bold text-blue-400">{stats.day3}</p>
+          <p className="text-xs text-white/40 font-medium">3-Day</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-orange-500">{stats.day7}</p>
-          <p className="text-xs text-text-light font-medium">7-Day</p>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-2xl font-bold text-amber-400">{stats.day7}</p>
+          <p className="text-xs text-white/40 font-medium">7-Day</p>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-red-500">{stats.day14}</p>
-          <p className="text-xs text-text-light font-medium">14-Day (Final)</p>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-2xl font-bold text-red-400">{stats.day14}</p>
+          <p className="text-xs text-white/40 font-medium">14-Day (Final)</p>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-border overflow-hidden">
+      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-surface/30">
-                <th className="text-left px-4 py-3 font-semibold text-text-light">Parent</th>
-                <th className="text-left px-4 py-3 font-semibold text-text-light">Amount</th>
-                <th className="text-left px-4 py-3 font-semibold text-text-light">Type</th>
-                <th className="text-left px-4 py-3 font-semibold text-text-light hidden md:table-cell">Sent</th>
-                <th className="text-left px-4 py-3 font-semibold text-text-light">Email</th>
+              <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+                <th className="text-left px-4 py-3 font-medium text-white/50 text-xs uppercase">Parent</th>
+                <th className="text-left px-4 py-3 font-medium text-white/50 text-xs uppercase">Amount</th>
+                <th className="text-left px-4 py-3 font-medium text-white/50 text-xs uppercase">Type</th>
+                <th className="text-left px-4 py-3 font-medium text-white/50 text-xs uppercase hidden md:table-cell">Sent</th>
+                <th className="text-left px-4 py-3 font-medium text-white/50 text-xs uppercase">Email</th>
               </tr>
             </thead>
             <tbody>
@@ -102,12 +102,12 @@ export default async function RemindersPage() {
                 const payment = r.payment as unknown as { amount: number } | null
                 const cfg = typeConfig[r.reminder_type] || typeConfig.custom
                 return (
-                  <tr key={r.id} className="border-b border-border/30 hover:bg-surface/20">
+                  <tr key={r.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
                     <td className="px-4 py-3">
-                      <p className="font-medium">{profile?.full_name || 'Unknown'}</p>
-                      <p className="text-xs text-text-light">{profile?.email || ''}</p>
+                      <p className="font-medium text-white">{profile?.full_name || 'Unknown'}</p>
+                      <p className="text-xs text-white/40">{profile?.email || ''}</p>
                     </td>
-                    <td className="px-4 py-3 font-semibold">
+                    <td className="px-4 py-3 font-semibold text-white">
                       £{Number(payment?.amount || 0).toFixed(2)}
                     </td>
                     <td className="px-4 py-3">
@@ -115,14 +115,14 @@ export default async function RemindersPage() {
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-text-light hidden md:table-cell">
+                    <td className="px-4 py-3 text-white/40 hidden md:table-cell">
                       {new Date(r.sent_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-4 py-3">
                       {r.email_sent ? (
-                        <span className="text-emerald-500 text-xs font-semibold">✓ Sent</span>
+                        <span className="text-emerald-400 text-xs font-semibold">Sent</span>
                       ) : (
-                        <span className="text-text-light text-xs">In-app only</span>
+                        <span className="text-white/40 text-xs">In-app only</span>
                       )}
                     </td>
                   </tr>
@@ -130,9 +130,9 @@ export default async function RemindersPage() {
               })}
               {(!reminders || reminders.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-text-light">
+                  <td colSpan={5} className="px-4 py-12 text-center text-white/40">
                     <p className="text-3xl mb-2">📭</p>
-                    <p className="font-semibold">No reminders sent yet</p>
+                    <p className="font-semibold text-white">No reminders sent yet</p>
                     <p className="text-xs mt-1">Automated reminders trigger at 3, 7, and 14 days overdue</p>
                   </td>
                 </tr>

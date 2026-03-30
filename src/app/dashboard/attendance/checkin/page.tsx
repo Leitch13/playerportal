@@ -16,8 +16,8 @@ export default async function CheckInPage({
         <Card>
           <div className="py-8">
             <div className="text-5xl mb-4">&#128683;</div>
-            <h2 className="text-lg font-semibold text-text">Invalid QR Code</h2>
-            <p className="text-sm text-text-light mt-1">
+            <h2 className="text-lg font-semibold text-white">Invalid QR Code</h2>
+            <p className="text-sm text-white/60 mt-1">
               This check-in link is invalid or has expired. Please scan the QR code again.
             </p>
           </div>
@@ -46,8 +46,8 @@ export default async function CheckInPage({
         <Card>
           <div className="py-8">
             <div className="text-5xl mb-4">&#128528;</div>
-            <h2 className="text-lg font-semibold text-text">Group Not Found</h2>
-            <p className="text-sm text-text-light mt-1">
+            <h2 className="text-lg font-semibold text-white">Group Not Found</h2>
+            <p className="text-sm text-white/60 mt-1">
               This training group could not be found. Please ask your coach for a new QR code.
             </p>
           </div>

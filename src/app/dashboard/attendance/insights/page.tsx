@@ -235,7 +235,7 @@ export default async function AttendanceInsightsPage() {
     .slice(0, 50)
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Attendance Insights</h1>
         <a

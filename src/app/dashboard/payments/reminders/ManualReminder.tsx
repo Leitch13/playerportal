@@ -57,23 +57,23 @@ export default function ManualReminder({ orgId, overdueParents }: { orgId: strin
       <button
         onClick={() => setOpen(true)}
         disabled={overdueParents.length === 0}
-        className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-white hover:opacity-90 disabled:opacity-40 transition-all"
+        className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#6dd8ee] disabled:opacity-40 transition-all"
       >
         Send Manual Reminder
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl border border-border p-6 w-full max-w-md space-y-4">
+          <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-lg">Send Manual Reminder</h2>
-              <button onClick={() => setOpen(false)} className="text-text-light hover:text-primary text-xl">×</button>
+              <h2 className="font-bold text-lg text-white">Send Manual Reminder</h2>
+              <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white text-xl">×</button>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-text-light block mb-1.5">Select Parent</label>
+              <label className="text-xs font-medium text-white/40 block mb-1.5">Select Parent</label>
               <select
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
                 value={selectedId}
                 onChange={e => setSelectedId(e.target.value)}
               >
@@ -87,17 +87,17 @@ export default function ManualReminder({ orgId, overdueParents }: { orgId: strin
             </div>
 
             {selected && (
-              <div className="bg-surface rounded-xl p-3 text-sm">
-                <p><strong>{selected.name}</strong></p>
-                <p className="text-text-light">{selected.email}</p>
-                <p className="text-red-500 font-semibold mt-1">£{selected.amount.toFixed(2)} overdue</p>
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 text-sm">
+                <p className="text-white font-medium">{selected.name}</p>
+                <p className="text-white/40">{selected.email}</p>
+                <p className="text-red-400 font-semibold mt-1">£{selected.amount.toFixed(2)} overdue</p>
               </div>
             )}
 
             <div>
-              <label className="text-xs font-medium text-text-light block mb-1.5">Custom Message (optional)</label>
+              <label className="text-xs font-medium text-white/40 block mb-1.5">Custom Message (optional)</label>
               <textarea
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
                 rows={3}
                 placeholder="Leave blank for default reminder message"
                 value={message}
@@ -109,13 +109,13 @@ export default function ManualReminder({ orgId, overdueParents }: { orgId: strin
               <button
                 onClick={handleSend}
                 disabled={!selected || loading}
-                className="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-40 transition-all"
+                className="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#6dd8ee] disabled:opacity-40 transition-all"
               >
                 {loading ? 'Sending...' : 'Send Reminder'}
               </button>
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-surface transition-colors"
+                className="px-4 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] text-white hover:bg-white/[0.1] transition-colors"
               >
                 Cancel
               </button>

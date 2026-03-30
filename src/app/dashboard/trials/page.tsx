@@ -23,7 +23,7 @@ export default async function TrialsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Trial Bookings</h1>
         <p className="text-white/60 text-sm mt-1">Manage free trial requests from new families</p>
@@ -31,19 +31,19 @@ export default async function TrialsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
           <p className="text-2xl font-bold text-yellow-500">{stats.pending}</p>
           <p className="text-xs text-white/60 font-medium">Pending</p>
         </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
           <p className="text-2xl font-bold text-blue-500">{stats.confirmed}</p>
           <p className="text-xs text-white/60 font-medium">Confirmed</p>
         </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
           <p className="text-2xl font-bold text-emerald-500">{stats.attended}</p>
           <p className="text-xs text-white/60 font-medium">Attended</p>
         </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl rounded-xl border border-white/[0.08] p-4 text-center">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
           <p className="text-2xl font-bold">{stats.total}</p>
           <p className="text-xs text-white/60 font-medium">Total</p>
         </div>

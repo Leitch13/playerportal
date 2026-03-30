@@ -132,7 +132,7 @@ export default async function CampsPage() {
                         <StatusBadge status={status} />
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-block w-2 h-2 rounded-full ${camp.is_published ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        <span className={`inline-block w-2 h-2 rounded-full ${camp.is_published ? 'bg-green-500' : 'bg-white/20'}`} />
                       </td>
                     </tr>
                   )

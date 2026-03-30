@@ -91,8 +91,8 @@ export default function CheckInForm({
     return (
       <div className="text-center py-12">
         <div className="text-5xl mb-4">&#128528;</div>
-        <h2 className="text-lg font-semibold text-text">No enrolled children</h2>
-        <p className="text-sm text-text-light mt-1">
+        <h2 className="text-lg font-semibold text-white">No enrolled children</h2>
+        <p className="text-sm text-white/60 mt-1">
           None of your children are enrolled in this group.
         </p>
       </div>
@@ -102,8 +102,8 @@ export default function CheckInForm({
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-text">{groupName}</h1>
-        <p className="text-sm text-text-light mt-1">{formattedDate}</p>
+        <h1 className="text-2xl font-bold text-white">{groupName}</h1>
+        <p className="text-sm text-white/60 mt-1">{formattedDate}</p>
       </div>
 
       <div className="space-y-3">
@@ -117,21 +117,21 @@ export default function CheckInForm({
               key={child.id}
               className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
                 isChecked
-                  ? 'bg-emerald-50 border-emerald-200'
-                  : 'bg-white border-border hover:border-primary/30'
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#4ecde6]/30'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
                     isChecked
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-primary/10 text-primary'
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-[#4ecde6]/10 text-[#4ecde6]'
                   }`}
                 >
                   {isChecked ? (
                     <svg
-                      className="w-6 h-6 text-emerald-600"
+                      className="w-6 h-6 text-emerald-400"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -148,11 +148,11 @@ export default function CheckInForm({
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold text-text">
+                  <p className="font-semibold text-white">
                     {child.first_name} {child.last_name}
                   </p>
                   {isChecked && (
-                    <p className="text-xs text-emerald-600 font-medium">
+                    <p className="text-xs text-emerald-400 font-medium">
                       {wasAlready ? 'Already checked in' : 'Checked in!'}
                     </p>
                   )}
@@ -163,11 +163,11 @@ export default function CheckInForm({
                 <button
                   onClick={() => handleCheckIn(child.id)}
                   disabled={isLoading}
-                  className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                  className="px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#6dd8ee] disabled:opacity-50 transition-colors"
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-[#0a0a0a] border-t-transparent" />
                       Checking in...
                     </span>
                   ) : (

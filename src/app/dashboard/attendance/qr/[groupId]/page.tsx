@@ -47,7 +47,7 @@ export default async function QRCodePage({
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white max-w-2xl mx-auto">
       <QRDisplay
         groupId={group.id}
         groupName={group.name}
