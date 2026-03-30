@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import AcademySearch from '@/components/AcademySearch'
 
 function SignInForm() {
   const searchParams = useSearchParams()
@@ -12,6 +13,7 @@ function SignInForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showAcademySearch, setShowAcademySearch] = useState(false)
 
   useEffect(() => {
     const emailParam = searchParams.get('email')
@@ -94,6 +96,25 @@ function SignInForm() {
           Don&apos;t have an account?{' '}
           <Link href="/auth/signup" className="text-accent hover:underline">Sign up</Link>
         </p>
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => setShowAcademySearch(!showAcademySearch)}
+            className="text-xs text-white/30 hover:text-white/50 transition-colors"
+          >
+            {showAcademySearch ? 'Hide search' : 'Find your academy'}
+          </button>
+          {showAcademySearch && (
+            <div className="mt-3">
+              <AcademySearch
+                onSelect={(academy) => {
+                  window.location.href = `/auth/signup?org=${academy.slug}`
+                }}
+                inputClassName="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent placeholder:text-white/30 text-sm"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

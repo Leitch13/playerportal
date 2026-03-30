@@ -11,6 +11,7 @@ import PlayerAvatar from '@/components/PlayerAvatar'
 import StatCard from '@/components/StatCard'
 import ReferralLink from './referrals/ReferralLink'
 import UpsellBanner from '@/components/UpsellBanner'
+import OnboardingChecklist from '@/components/OnboardingChecklist'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -1116,6 +1117,40 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   }
   activityFeed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
+  // ── Onboarding checklist data ──
+  const { count: classCount } = await supabase
+    .from('training_groups')
+    .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
+
+  const { count: planCount } = await supabase
+    .from('subscription_plans')
+    .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
+
+  const { count: coachCount } = await supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
+    .eq('role', 'coach')
+
+  const { data: orgData } = await supabase
+    .from('organisations')
+    .select('stripe_account_id, slug')
+    .eq('id', orgId)
+    .single()
+
+  const hasClasses = (classCount || 0) > 0
+  const hasPlans = (planCount || 0) > 0
+  const hasCoach = (coachCount || 0) > 0
+  const hasStripe = !!orgData?.stripe_account_id
+  const hasPlayers = (totalPlayers || 0) > 0
+  const bookingSlug = orgData?.slug || ''
+  const bookingUrl = bookingSlug ? `${process.env.NEXT_PUBLIC_BASE_URL || 'https://playerportal.co'}/book/${bookingSlug}` : ''
+
+  const onboardingCompleted = [hasClasses, hasPlans, hasCoach, hasStripe, hasPlayers].filter(Boolean).length
+  const showOnboarding = onboardingCompleted < 3
+
   // Relative time helper
   const relativeTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime()
@@ -1137,6 +1172,21 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           <h1 className="text-2xl md:text-3xl font-bold text-white mt-2">Hi {name}</h1>
           <p className="text-sm text-white/40 mt-1">Admin Dashboard</p>
         </div>
+
+        {/* ═══ ONBOARDING CHECKLIST ═══ */}
+        {showOnboarding && (
+          <>
+            <OnboardingChecklist
+              hasClasses={hasClasses}
+              hasPlans={hasPlans}
+              hasCoach={hasCoach}
+              hasStripe={hasStripe}
+              hasPlayers={hasPlayers}
+              bookingUrl={bookingUrl}
+            />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+          </>
+        )}
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 

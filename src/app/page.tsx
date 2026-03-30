@@ -172,6 +172,75 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* Hero Device Mockup */}
+          <div className="mt-20 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+            <div className="relative mx-auto max-w-[320px] sm:max-w-[360px] animate-float">
+              {/* Phone frame */}
+              <div className="relative rounded-[2.5rem] border-[3px] border-white/[0.12] bg-[#0a0a0a] p-3 shadow-2xl shadow-[#4ecde6]/10">
+                {/* Notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#0a0a0a] rounded-b-2xl border-b-[3px] border-x-[3px] border-white/[0.12] z-10" />
+                {/* Screen */}
+                <div className="rounded-[2rem] bg-[#0a0a0a] overflow-hidden pt-6 pb-4 px-4 space-y-4">
+                  {/* Status bar */}
+                  <div className="flex items-center justify-between text-[10px] text-white/30 px-1">
+                    <span>9:41</span>
+                    <div className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.24 4.24 0 00-6 0zm-4-4l2 2a8.49 8.49 0 0112 0l2-2c-4.42-4.42-11.58-4.42-16 0z"/></svg>
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17 7H7v10h10V7zm-8 8V9h6v6H9z"/><rect x="2" y="7" width="3" height="10" rx="1"/><rect x="19" y="7" width="3" height="10" rx="1"/></svg>
+                    </div>
+                  </div>
+                  {/* Greeting */}
+                  <div className="pt-1">
+                    <h3 className="text-lg font-bold text-white">Hi Sarah <span role="img" aria-label="wave">&#128075;</span></h3>
+                    <p className="text-[11px] text-white/30 mt-0.5">Welcome back to Player Portal</p>
+                  </div>
+                  {/* Next Session card */}
+                  <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-3.5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-semibold text-[#4ecde6] uppercase tracking-wider">Next Session</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-white">Monday 5:00 PM</p>
+                    <p className="text-[11px] text-white/40 mt-0.5">1-2-1 Training &middot; Coach Williams</p>
+                  </div>
+                  {/* Progress section */}
+                  <div className="rounded-xl bg-[#141414] border border-white/[0.06] p-3.5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">Jake&apos;s Progress</span>
+                      <span className="text-[10px] text-[#4ecde6] font-semibold">View All</span>
+                    </div>
+                    {/* Dribbling bar */}
+                    <div className="mb-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] text-white/60">Dribbling</span>
+                        <span className="text-[11px] font-bold text-white">85%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/[0.06]">
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3]" style={{ width: '85%' }} />
+                      </div>
+                    </div>
+                    {/* Passing bar */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] text-white/60">Passing</span>
+                        <span className="text-[11px] font-bold text-white">72%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/[0.06]">
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3]" style={{ width: '72%' }} />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Book button */}
+                  <button className="w-full py-2.5 rounded-xl bg-[#4ecde6] text-[#0a0a0a] text-xs font-bold">
+                    Book Next Session
+                  </button>
+                </div>
+              </div>
+              {/* Glow behind phone */}
+              <div className="absolute -inset-8 bg-[#4ecde6]/[0.06] rounded-full blur-3xl -z-10" />
+            </div>
+          </div>
         </div>
 
         {/* Fade to next section */}
@@ -192,12 +261,128 @@ export default function Home() {
               From player registration to parent engagement — every tool to run a world-class football academy.
             </p>
           </div>
+          {/* Featured top 3 with visual previews */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+            {/* Player Management */}
+            <div className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-7 hover:bg-white/[0.04] hover:border-[#4ecde6]/20 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center text-2xl mb-5 group-hover:bg-[#4ecde6]/10 group-hover:scale-110 transition-all duration-300">
+                {features[0].icon}
+              </div>
+              <h3 className="text-base font-bold mb-2 group-hover:text-[#4ecde6] transition-colors">{features[0].title}</h3>
+              <p className="text-sm text-white/40 leading-relaxed mb-5">{features[0].desc}</p>
+              {/* Mini player card mockup */}
+              <div className="rounded-xl bg-[#0a0a0a] border border-white/[0.06] p-3.5 flex items-center gap-3">
+                <div className="relative w-10 h-10 shrink-0">
+                  {/* Avatar circle */}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4ecde6]/30 to-[#2ba8c3]/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-[#4ecde6]">JW</span>
+                  </div>
+                  {/* Progress ring (SVG) */}
+                  <svg className="absolute inset-0 w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="#4ecde6" strokeWidth="2" strokeDasharray="100" strokeDashoffset="22" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-white truncate">Jake Williams</p>
+                  <p className="text-[10px] text-white/30">U12 &middot; Advanced</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-semibold">Active</span>
+                    <span className="text-[9px] text-white/20">78% progress</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Reviews */}
+            <div className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-7 hover:bg-white/[0.04] hover:border-[#4ecde6]/20 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center text-2xl mb-5 group-hover:bg-[#4ecde6]/10 group-hover:scale-110 transition-all duration-300">
+                {features[1].icon}
+              </div>
+              <h3 className="text-base font-bold mb-2 group-hover:text-[#4ecde6] transition-colors">{features[1].title}</h3>
+              <p className="text-sm text-white/40 leading-relaxed mb-5">{features[1].desc}</p>
+              {/* Mini radar chart mockup (pure SVG) */}
+              <div className="rounded-xl bg-[#0a0a0a] border border-white/[0.06] p-4 flex items-center justify-center">
+                <svg viewBox="0 0 200 200" className="w-full max-w-[160px] h-auto">
+                  {/* Grid hexagons */}
+                  {[0.3, 0.6, 0.9].map((scale) => (
+                    <polygon key={scale} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1"
+                      points={[0,1,2,3,4,5].map((i) => {
+                        const angle = (Math.PI / 3) * i - Math.PI / 2
+                        return `${100 + 80 * scale * Math.cos(angle)},${100 + 80 * scale * Math.sin(angle)}`
+                      }).join(' ')} />
+                  ))}
+                  {/* Axis lines */}
+                  {[0,1,2,3,4,5].map((i) => {
+                    const angle = (Math.PI / 3) * i - Math.PI / 2
+                    return <line key={i} x1="100" y1="100" x2={100 + 72 * Math.cos(angle)} y2={100 + 72 * Math.sin(angle)} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                  })}
+                  {/* Data polygon */}
+                  <polygon
+                    fill="rgba(78,205,230,0.12)" stroke="#4ecde6" strokeWidth="1.5"
+                    points={[0.85, 0.72, 0.65, 0.78, 0.90, 0.68].map((v, i) => {
+                      const angle = (Math.PI / 3) * i - Math.PI / 2
+                      return `${100 + 72 * v * Math.cos(angle)},${100 + 72 * v * Math.sin(angle)}`
+                    }).join(' ')}
+                  />
+                  {/* Data points */}
+                  {[0.85, 0.72, 0.65, 0.78, 0.90, 0.68].map((v, i) => {
+                    const angle = (Math.PI / 3) * i - Math.PI / 2
+                    return <circle key={i} cx={100 + 72 * v * Math.cos(angle)} cy={100 + 72 * v * Math.sin(angle)} r="3" fill="#4ecde6" />
+                  })}
+                  {/* Labels */}
+                  {[
+                    { label: 'Dribbling', v: 0.85 },
+                    { label: 'Passing', v: 0.72 },
+                    { label: 'Shooting', v: 0.65 },
+                    { label: 'Defending', v: 0.78 },
+                    { label: 'Pace', v: 0.90 },
+                    { label: 'Vision', v: 0.68 },
+                  ].map((item, i) => {
+                    const angle = (Math.PI / 3) * i - Math.PI / 2
+                    const lx = 100 + 95 * Math.cos(angle)
+                    const ly = 100 + 95 * Math.sin(angle)
+                    return <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" className="fill-white/40 text-[8px]">{item.label}</text>
+                  })}
+                </svg>
+              </div>
+            </div>
+
+            {/* Automated Payments */}
+            <div className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-7 hover:bg-white/[0.04] hover:border-[#4ecde6]/20 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center text-2xl mb-5 group-hover:bg-[#4ecde6]/10 group-hover:scale-110 transition-all duration-300">
+                {features[2].icon}
+              </div>
+              <h3 className="text-base font-bold mb-2 group-hover:text-[#4ecde6] transition-colors">{features[2].title}</h3>
+              <p className="text-sm text-white/40 leading-relaxed mb-5">{features[2].desc}</p>
+              {/* Mini payment card mockup */}
+              <div className="rounded-xl bg-[#0a0a0a] border border-white/[0.06] p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-white/30 uppercase tracking-wider font-semibold">Monthly Fee</p>
+                    <p className="text-xl font-extrabold text-white mt-0.5">&pound;30<span className="text-xs font-medium text-white/30">/mo</span></p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-[10px] font-bold text-emerald-400">Paid</span>
+                  </span>
+                </div>
+                <div className="h-px bg-white/[0.06]" />
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-white/30">Next: 1st April</span>
+                  <span className="text-white/30">Visa ****4242</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Remaining features */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((f, i) => (
+            {features.slice(3).map((f, i) => (
               <div
                 key={f.title}
                 className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-7 hover:bg-white/[0.04] hover:border-[#4ecde6]/20 transition-all duration-300"
-                style={{ animationDelay: `${i * 0.05}s` }}
+                style={{ animationDelay: `${(i + 3) * 0.05}s` }}
               >
                 <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center text-2xl mb-5 group-hover:bg-[#4ecde6]/10 group-hover:scale-110 transition-all duration-300">
                   {f.icon}
@@ -206,6 +391,201 @@ export default function Home() {
                 <p className="text-sm text-white/40 leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── See It In Action ── */}
+      <section className="relative py-24 sm:py-32">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4ecde6]/[0.02] to-transparent" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
+              Product Preview
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5">
+              See it in action
+            </h2>
+            <p className="text-white/40 text-lg max-w-2xl mx-auto leading-relaxed">
+              Three dashboards, one platform. Every user gets a tailored experience.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+            {/* Admin Dashboard */}
+            <div className="text-center group">
+              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-3 shadow-xl group-hover:border-[#4ecde6]/20 transition-all duration-300">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-1.5 px-2 py-2 border-b border-white/[0.06] mb-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400/60" />
+                  <span className="w-2 h-2 rounded-full bg-yellow-400/60" />
+                  <span className="w-2 h-2 rounded-full bg-green-400/60" />
+                  <div className="ml-2 flex-1 h-4 rounded bg-white/[0.04] flex items-center justify-center">
+                    <span className="text-[8px] text-white/20">app.playerportal.net/admin</span>
+                  </div>
+                </div>
+                {/* Screen content */}
+                <div className="space-y-3 px-1.5 pb-2">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-white">Academy Dashboard</span>
+                    <span className="w-5 h-5 rounded-full bg-[#4ecde6]/20 flex items-center justify-center text-[8px] text-[#4ecde6]">M</span>
+                  </div>
+                  {/* Stat row */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[{ v: '124', l: 'Players' }, { v: '18', l: 'Classes' }, { v: '96%', l: 'Retention' }].map((s) => (
+                      <div key={s.l} className="rounded-lg bg-[#141414] border border-white/[0.04] p-2 text-center">
+                        <div className="text-sm font-extrabold text-white">{s.v}</div>
+                        <div className="text-[8px] text-white/30">{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Revenue chart mockup */}
+                  <div className="rounded-lg bg-[#141414] border border-white/[0.04] p-2.5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[9px] text-white/40 font-semibold">Revenue</span>
+                      <span className="text-[9px] font-bold text-emerald-400">+12%</span>
+                    </div>
+                    <svg viewBox="0 0 200 50" className="w-full h-8">
+                      <polyline fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        points="0,40 30,35 60,28 90,32 120,18 150,22 180,12 200,8" />
+                      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4ecde6" stopOpacity="0.2" />
+                        <stop offset="100%" stopColor="#4ecde6" stopOpacity="0" />
+                      </linearGradient>
+                      <polygon fill="url(#chartGrad)" points="0,40 30,35 60,28 90,32 120,18 150,22 180,12 200,8 200,50 0,50" />
+                    </svg>
+                  </div>
+                  {/* Recent list */}
+                  <div className="space-y-1.5">
+                    {['Jake W. — Registered', 'Emma R. — Payment received', 'Session plan uploaded'].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[9px] text-white/30">
+                        <span className="w-1 h-1 rounded-full bg-[#4ecde6]/60" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-sm font-semibold text-white/60">For Academies</p>
+              <p className="text-xs text-white/30 mt-1">Full control over players, classes, and revenue</p>
+            </div>
+
+            {/* Parent Dashboard */}
+            <div className="text-center group md:-mt-4">
+              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-3 shadow-xl group-hover:border-[#4ecde6]/20 transition-all duration-300 ring-1 ring-[#4ecde6]/10">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-1.5 px-2 py-2 border-b border-white/[0.06] mb-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400/60" />
+                  <span className="w-2 h-2 rounded-full bg-yellow-400/60" />
+                  <span className="w-2 h-2 rounded-full bg-green-400/60" />
+                  <div className="ml-2 flex-1 h-4 rounded bg-white/[0.04] flex items-center justify-center">
+                    <span className="text-[8px] text-white/20">app.playerportal.net/parent</span>
+                  </div>
+                </div>
+                {/* Screen content */}
+                <div className="space-y-3 px-1.5 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#4ecde6]/30 to-[#4ecde6]/10 flex items-center justify-center">
+                      <span className="text-[8px] font-bold text-[#4ecde6]">S</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-white">Hi Sarah</span>
+                      <span className="text-[11px] ml-1" role="img" aria-label="wave">&#128075;</span>
+                    </div>
+                  </div>
+                  {/* Child card */}
+                  <div className="rounded-lg bg-[#141414] border border-white/[0.04] p-2.5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center text-[10px] font-bold text-white">J</div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-white">Jake Williams</p>
+                        <p className="text-[8px] text-white/30">U12 Advanced</p>
+                      </div>
+                    </div>
+                    {/* Mini progress bars */}
+                    {[{ l: 'Dribbling', w: '85%' }, { l: 'Passing', w: '72%' }, { l: 'Shooting', w: '65%' }].map((bar) => (
+                      <div key={bar.l} className="mb-1.5 last:mb-0">
+                        <div className="flex justify-between text-[8px] mb-0.5">
+                          <span className="text-white/40">{bar.l}</span>
+                          <span className="text-white/60 font-semibold">{bar.w}</span>
+                        </div>
+                        <div className="h-1 rounded-full bg-white/[0.06]">
+                          <div className="h-full rounded-full bg-[#4ecde6]" style={{ width: bar.w }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Upcoming */}
+                  <div className="rounded-lg bg-[#141414] border border-white/[0.04] p-2.5">
+                    <span className="text-[8px] text-[#4ecde6] font-semibold uppercase tracking-wider">Upcoming</span>
+                    <p className="text-[10px] font-semibold text-white mt-1">Mon 5:00 PM — 1-2-1 Training</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">Wed 6:00 PM — Group Session</p>
+                  </div>
+                  {/* Badge */}
+                  <div className="flex items-center gap-2 rounded-lg bg-yellow-400/5 border border-yellow-400/10 p-2">
+                    <span className="text-sm">&#127942;</span>
+                    <div>
+                      <p className="text-[9px] font-semibold text-yellow-400">New Badge!</p>
+                      <p className="text-[8px] text-white/30">10 Sessions Completed</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-sm font-semibold text-white/60">For Parents</p>
+              <p className="text-xs text-white/30 mt-1">Track progress, book sessions, stay connected</p>
+            </div>
+
+            {/* Coach View */}
+            <div className="text-center group">
+              <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-3 shadow-xl group-hover:border-[#4ecde6]/20 transition-all duration-300">
+                {/* Browser chrome */}
+                <div className="flex items-center gap-1.5 px-2 py-2 border-b border-white/[0.06] mb-3">
+                  <span className="w-2 h-2 rounded-full bg-red-400/60" />
+                  <span className="w-2 h-2 rounded-full bg-yellow-400/60" />
+                  <span className="w-2 h-2 rounded-full bg-green-400/60" />
+                  <div className="ml-2 flex-1 h-4 rounded bg-white/[0.04] flex items-center justify-center">
+                    <span className="text-[8px] text-white/20">app.playerportal.net/coach</span>
+                  </div>
+                </div>
+                {/* Screen content */}
+                <div className="space-y-3 px-1.5 pb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-white">Today&apos;s Sessions</span>
+                    <span className="text-[9px] text-[#4ecde6] font-semibold">3 sessions</span>
+                  </div>
+                  {/* Session cards */}
+                  {[
+                    { time: '4:00 PM', name: 'U10 Group', count: '12/14', color: 'bg-emerald-400' },
+                    { time: '5:00 PM', name: '1-2-1 Jake W.', count: '1/1', color: 'bg-[#4ecde6]' },
+                    { time: '6:30 PM', name: 'U14 Advanced', count: '8/10', color: 'bg-amber-400' },
+                  ].map((session) => (
+                    <div key={session.name} className="rounded-lg bg-[#141414] border border-white/[0.04] p-2.5 flex items-center gap-2.5">
+                      <div className={`w-1 h-8 rounded-full ${session.color}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-semibold text-white">{session.name}</p>
+                        <p className="text-[8px] text-white/30">{session.time}</p>
+                      </div>
+                      <span className="text-[9px] text-white/40 font-medium">{session.count}</span>
+                    </div>
+                  ))}
+                  {/* Drill plan */}
+                  <div className="rounded-lg bg-[#141414] border border-white/[0.04] p-2.5">
+                    <span className="text-[8px] text-white/40 font-semibold uppercase tracking-wider">Session Plan</span>
+                    <div className="mt-1.5 space-y-1">
+                      {['Warm-up: Rondo (10 min)', 'Drill: 1v1 attacking', 'Match play: 5v5'].map((d, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-[9px] text-white/40">
+                          <span className="w-3.5 h-3.5 rounded border border-white/10 flex items-center justify-center text-[7px] text-white/20">{i + 1}</span>
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-sm font-semibold text-white/60">For Coaches</p>
+              <p className="text-xs text-white/30 mt-1">Session plans, attendance, and player notes</p>
+            </div>
           </div>
         </div>
       </section>

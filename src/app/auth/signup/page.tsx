@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import AcademySearch from '@/components/AcademySearch'
 
 export default function SignUpPage() {
   return (<Suspense><SignUp /></Suspense>)
@@ -29,7 +30,9 @@ function SignUp() {
   const [orgSlug, setOrgSlug] = useState('')
   const [orgName, setOrgName] = useState<string | null>(null)
   const [orgColor, setOrgColor] = useState('#4ecde6')
+  const [orgLogo, setOrgLogo] = useState<string | null>(null)
   const [orgError, setOrgError] = useState('')
+  const [showAcademySearch, setShowAcademySearch] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
@@ -62,13 +65,17 @@ function SignUp() {
     }
   }, [refCode])
 
-  useEffect(() => { const org = searchParams.get('org'); if (org) { setOrgSlug(org); lookupOrg(org) } }, [searchParams])
+  useEffect(() => {
+    const org = searchParams.get('org')
+    if (org) { setOrgSlug(org); lookupOrg(org); setShowAcademySearch(false) }
+    else { setShowAcademySearch(true) }
+  }, [searchParams])
 
   async function lookupOrg(slug: string) {
     if (!slug.trim()) { setOrgName(null); setOrgError(''); return }
     const supabase = createClient()
-    const { data } = await supabase.from('organisations').select('name, primary_color').ilike('slug', slug.trim()).single()
-    if (data) { setOrgName(data.name); if (data.primary_color) setOrgColor(data.primary_color); setOrgError('') }
+    const { data } = await supabase.from('organisations').select('name, primary_color, logo_url').ilike('slug', slug.trim()).single()
+    if (data) { setOrgName(data.name); if (data.primary_color) setOrgColor(data.primary_color); if (data.logo_url) setOrgLogo(data.logo_url); setOrgError('') }
     else { setOrgName(null); setOrgError('Organisation not found') }
   }
 
@@ -130,6 +137,9 @@ function SignUp() {
 
       <div className="relative w-full max-w-lg">
         <div className="text-center mb-6">
+          {orgLogo && orgName && (
+            <img src={orgLogo} alt={orgName} className="w-14 h-14 rounded-xl object-cover mx-auto mb-3 bg-[#1a1a1a]" />
+          )}
           <h1 className="text-2xl font-bold text-white mb-1">{orgName ? orgName : 'Player Portal'}</h1>
           {orgName && <p className="text-sm text-white/40">Create your account to get started</p>}
           {!orgName && !searchParams.get('org') && <p className="text-sm text-white/40">Sign up to join your academy</p>}
@@ -148,14 +158,43 @@ function SignUp() {
             ))}
           </div>
 
-          {step === 1 && (
+          {step === 1 && showAcademySearch && !orgName && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5">Find Your Academy *</label>
+                <AcademySearch
+                  onSelect={(academy) => {
+                    setOrgSlug(academy.slug)
+                    setOrgName(academy.name)
+                    if (academy.logo_url) setOrgLogo(academy.logo_url)
+                    setShowAcademySearch(false)
+                    setOrgError('')
+                  }}
+                  inputClassName={inputCls}
+                />
+              </div>
+              <div className="relative flex items-center gap-3 text-white/20 text-xs">
+                <div className="flex-1 border-t border-white/10" />
+                <span>or enter code</span>
+                <div className="flex-1 border-t border-white/10" />
+              </div>
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5">Organisation Code</label>
+                <input type="text" value={orgSlug} onChange={(e) => { setOrgSlug(e.target.value); setOrgError(''); setOrgName(null) }} onBlur={() => lookupOrg(orgSlug)} placeholder="e.g. jsl" className={inputCls} />
+                {orgError && <p className="text-xs text-red-400 mt-1">{orgError}</p>}
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (!showAcademySearch || orgName) && (
             <form onSubmit={handleCreateAccount} className="space-y-4">
-              {!searchParams.get('org') && (
-                <div>
-                  <label className="block text-xs text-white/50 mb-1.5">Organisation Code *</label>
-                  <input type="text" value={orgSlug} onChange={(e) => { setOrgSlug(e.target.value); setOrgError(''); setOrgName(null) }} onBlur={() => lookupOrg(orgSlug)} required placeholder="e.g. jsl" className={inputCls} />
-                  {orgName && <p className="text-xs font-medium mt-1" style={{ color: primaryColor }}>&#10003; {orgName}</p>}
-                  {orgError && <p className="text-xs text-red-400 mt-1">{orgError}</p>}
+              {orgName && !searchParams.get('org') && (
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
+                  {orgLogo && <img src={orgLogo} alt="" className="w-8 h-8 rounded-lg object-cover bg-[#2a2a2a]" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: primaryColor }}>{orgName}</p>
+                  </div>
+                  <button type="button" onClick={() => { setOrgName(null); setOrgSlug(''); setOrgLogo(null); setOrgColor('#4ecde6'); setShowAcademySearch(true) }} className="text-xs text-white/30 hover:text-white/60 transition-colors">Change</button>
                 </div>
               )}
               <div><label className="block text-xs text-white/50 mb-1.5">Your Full Name *</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Smith" className={inputCls} /></div>

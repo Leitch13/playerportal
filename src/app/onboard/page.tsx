@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import FileUpload from '@/components/FileUpload'
 
 const STEPS = [
   { label: 'Academy Details', icon: '1' },
@@ -207,9 +209,20 @@ export default function OnboardPage() {
         return
       }
 
-      // 3. Force a clean session by going through signout first, then redirect to signin
-      const signinUrl = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
-      window.location.href = `/auth/signout?redirect=${encodeURIComponent(signinUrl)}`
+      // 3. Sign in directly with the credentials we just used
+      const supabase = createClient()
+      await supabase.auth.signOut() // clear any existing session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password,
+      })
+      if (signInError) {
+        // Fallback to signin page if auto-login fails
+        window.location.href = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
+        return
+      }
+      // Success — go straight to dashboard (full page reload to establish server cookies)
+      window.location.href = '/dashboard'
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
       setError(message)
@@ -398,27 +411,27 @@ export default function OnboardPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">Logo URL</label>
-                <input
-                  type="text"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                <FileUpload
+                  bucketName="branding"
+                  folder="logos"
+                  accept="image/*"
+                  onUpload={(url) => setLogoUrl(url)}
+                  currentUrl={logoUrl}
+                  label="Academy Logo"
                 />
                 <p className="mt-1 text-xs text-[#888]">Optional. You can add this later from settings.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">Hero Image URL</label>
-                <input
-                  type="text"
-                  value={heroImageUrl}
-                  onChange={(e) => setHeroImageUrl(e.target.value)}
-                  placeholder="https://example.com/hero.jpg"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                <FileUpload
+                  bucketName="branding"
+                  folder="heroes"
+                  accept="image/*"
+                  onUpload={(url) => setHeroImageUrl(url)}
+                  currentUrl={heroImageUrl}
+                  label="Hero Image (shown on your booking page)"
                 />
-                <p className="mt-1 text-xs text-[#888]">Optional. Shown at the top of your booking page.</p>
+                <p className="mt-1 text-xs text-[#888]">Optional. You can skip this and add it later.</p>
               </div>
             </div>
           )}
