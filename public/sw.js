@@ -24,3 +24,22 @@ self.addEventListener('fetch', (event) => {
     )
   )
 })
+
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() || {}
+  const title = data.title || 'Player Portal'
+  const options = {
+    body: data.body || '',
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    tag: data.tag || 'default',
+    data: { url: data.url || '/dashboard' },
+  }
+  event.waitUntil(self.registration.showNotification(title, options))
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/dashboard'
+  event.waitUntil(clients.openWindow(url))
+})

@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import InstallPrompt from '@/components/InstallPrompt'
+import NavigationProgress from '@/components/NavigationProgress'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -63,6 +65,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen antialiased">
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         {children}
         <ServiceWorkerRegister />
         <InstallPrompt />

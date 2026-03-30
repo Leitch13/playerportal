@@ -1498,8 +1498,36 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
 
   const myGroupIds = (myGroups || []).map((g) => g.id)
 
-  // Today's classes for this coach
-  const todaysClasses = (myGroups || []).filter((g) => g.day_of_week === today)
+  // Today's classes for this coach, sorted by time_slot
+  const todaysClasses = (myGroups || [])
+    .filter((g) => g.day_of_week === today)
+    .sort((a, b) => (a.time_slot || '').localeCompare(b.time_slot || ''))
+
+  // Find next upcoming class (or current one if in progress)
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const nextSession = todaysClasses.find((g) => {
+    if (!g.time_slot) return true // no time = show it
+    // Parse time like "09:00", "14:30", "9:00 AM", "2:30 PM"
+    const t = g.time_slot.trim()
+    let hours = 0, minutes = 0
+    const match12 = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+    const match24 = t.match(/^(\d{1,2}):(\d{2})$/)
+    if (match12) {
+      hours = parseInt(match12[1])
+      minutes = parseInt(match12[2])
+      if (match12[3].toUpperCase() === 'PM' && hours !== 12) hours += 12
+      if (match12[3].toUpperCase() === 'AM' && hours === 12) hours = 0
+    } else if (match24) {
+      hours = parseInt(match24[1])
+      minutes = parseInt(match24[2])
+    } else {
+      return true // can't parse = show it
+    }
+    const classMinutes = hours * 60 + minutes
+    // Show classes that start within the next 2 hours or started up to 1 hour ago
+    return classMinutes >= currentMinutes - 60
+  }) || todaysClasses[todaysClasses.length - 1] || null
 
   // Enrolled players per group (for today's classes)
   const todaysClassIds = todaysClasses.map((g) => g.id)
@@ -1552,6 +1580,55 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
             {(unreadCount || 0) > 0 && ` and ${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}`}.
           </p>
         </div>
+
+        {/* ═══ START NEXT SESSION HERO ═══ */}
+        {nextSession ? (() => {
+          const sessionPlayers = classPlayersMap.get(nextSession.id) || []
+          return (
+            <Link href={'/dashboard/session/' + nextSession.id} className="block group mb-6">
+              <div className="relative overflow-hidden bg-gradient-to-br from-[#4ecde6]/20 via-[#4ecde6]/10 to-[#0a0a0a] border-2 border-[#4ecde6]/40 rounded-2xl p-6 shadow-[0_0_30px_rgba(78,205,230,0.15)] hover:shadow-[0_0_40px_rgba(78,205,230,0.25)] hover:border-[#4ecde6]/60 transition-all">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#4ecde6]/5 rounded-full -translate-y-8 translate-x-8" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#4ecde6]/5 rounded-full translate-y-6 -translate-x-6" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4ecde6]/20 border border-[#4ecde6]/30 rounded-full text-[10px] font-bold text-[#4ecde6] uppercase tracking-wider">
+                      <span className="w-1.5 h-1.5 bg-[#4ecde6] rounded-full animate-pulse" />
+                      Next Up
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-1">{nextSession.name}</h3>
+                  <div className="flex items-center gap-3 text-sm text-white/50 mb-4">
+                    {nextSession.time_slot && (
+                      <span className="flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {nextSession.time_slot}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                      {sessionPlayers.length} player{sessionPlayers.length !== 1 ? 's' : ''}
+                    </span>
+                    {nextSession.location && (
+                      <span className="flex items-center gap-1">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {nextSession.location}
+                      </span>
+                    )}
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold shadow-[0_0_20px_rgba(78,205,230,0.3)] group-hover:shadow-[0_0_30px_rgba(78,205,230,0.5)] group-hover:bg-[#5fd8f0] transition-all animate-[pulse-glow_2s_ease-in-out_infinite]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Start Session &rarr;
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )
+        })() : todaysClasses.length === 0 ? (
+          <div className="mb-6 bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+            <p className="text-3xl mb-2">&#127958;</p>
+            <p className="text-sm text-white/50">No sessions today &mdash; enjoy your day off!</p>
+          </div>
+        ) : null}
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 

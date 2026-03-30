@@ -39,6 +39,7 @@
 @keyframes shimmer { from { background-position: -200% center; } to { background-position: 200% center; } }
 @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 @keyframes pulse-ring { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
+@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(78,205,230,0.3); } 50% { box-shadow: 0 0 35px rgba(78,205,230,0.5); } }
 
 body {
   background: var(--color-surface);

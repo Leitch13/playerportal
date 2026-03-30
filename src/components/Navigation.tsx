@@ -161,6 +161,17 @@ const icons: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
     </svg>
   ),
+  'play-circle': (
+    <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+    </svg>
+  ),
+  'ellipsis-horizontal': (
+    <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+    </svg>
+  ),
 }
 
 type NavItem = { href: string; label: string; icon: string }
@@ -191,6 +202,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
   coach: [
     { title: '', items: [
       { href: '/dashboard', label: 'Dashboard', icon: 'home' },
+      { href: '/dashboard/session', label: 'Session', icon: 'play-circle' },
     ]},
     { title: 'Coaching', items: [
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
@@ -244,7 +256,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
 
 const mobileTabItems: Record<UserRole, string[]> = {
   parent: ['/dashboard', '/dashboard/schedule', '/dashboard/payments', '/dashboard/messages', '/dashboard/account'],
-  coach: ['/dashboard', '/dashboard/players', '/dashboard/groups', '/dashboard/messages', '/dashboard/schedule'],
+  coach: ['/dashboard', '/dashboard/session', '/dashboard/messages', '/dashboard/account'],
   admin: ['/dashboard', '/dashboard/analytics', '/dashboard/groups', '/dashboard/payments', '/dashboard/settings'],
 }
 
@@ -257,6 +269,7 @@ export default function Navigation({
   orgName,
   logoUrl,
   isSuperAdmin,
+  nextSessionHref,
 }: {
   role: UserRole
   userName: string
@@ -266,6 +279,7 @@ export default function Navigation({
   orgName?: string
   logoUrl?: string
   isSuperAdmin?: boolean
+  nextSessionHref?: string
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -444,12 +458,17 @@ export default function Navigation({
                   isCollapsible && !isOpen && !hasActiveChild ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100'
                 }`}>
                   {group.items.map((item) => {
-                    const active = pathname === item.href
+                    const sidebarHref = item.href === '/dashboard/session'
+                      ? (nextSessionHref || '/dashboard/session-plans')
+                      : item.href
+                    const active = item.href === '/dashboard/session'
+                      ? pathname.startsWith('/dashboard/session')
+                      : pathname === item.href
                     const isMessages = item.href === '/dashboard/messages'
                     return (
                       <Link
                         key={item.href}
-                        href={item.href}
+                        href={sidebarHref}
                         onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                           active
@@ -516,17 +535,26 @@ export default function Navigation({
       <div className="mobile-bottom-nav lg:hidden bg-[#0a0a0a] border-t border-white/[0.06]">
         <div className="flex justify-around items-center h-14">
           {mobileItems.map((item) => {
-            const active = pathname === item.href
+            // For coach Session tab: resolve to dynamic next session href
+            const resolvedHref = item.href === '/dashboard/session'
+              ? (nextSessionHref || '/dashboard/session-plans')
+              : item.href
+            const active = item.href === '/dashboard/session'
+              ? pathname.startsWith('/dashboard/session')
+              : pathname === item.href
+            // Coach mobile: show "More" with ellipsis icon for account tab
+            const mobileLabel = (role === 'coach' && item.href === '/dashboard/account') ? 'More' : item.label
+            const mobileIcon = (role === 'coach' && item.href === '/dashboard/account') ? 'ellipsis-horizontal' : item.icon
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={resolvedHref}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-colors ${
                   active ? 'text-accent' : 'text-white/50'
                 }`}
               >
-                <span className="flex items-center justify-center">{icons[item.icon] || item.icon}</span>
-                <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+                <span className="flex items-center justify-center">{icons[mobileIcon] || mobileIcon}</span>
+                <span className="text-[10px] font-medium leading-tight">{mobileLabel}</span>
                 {item.href === '/dashboard/messages' && (unreadCount || 0) > 0 && (
                   <span className="absolute top-0 right-0 w-4 h-4 bg-danger rounded-full text-[9px] text-white flex items-center justify-center font-bold">
                     {unreadCount}

@@ -123,6 +123,33 @@ export default async function PublicBookingPage({
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-16">
+        {/* Free Trial CTA Banner */}
+        <section>
+          <Link
+            href={`/book/${slug}/trial/quick`}
+            className="group block relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 transition-all hover:scale-[1.01] hover:shadow-xl"
+            style={{ borderColor: '#10b981', background: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' }}
+          >
+            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] bg-emerald-400/20" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 text-white">
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm text-3xl shrink-0">
+                &#9889;
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">New</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">Free</span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-extrabold">Book a Free Trial Session</h3>
+                <p className="text-white/70 text-sm mt-0.5">No account needed. No payment. Takes 20 seconds to book.</p>
+              </div>
+              <div className="shrink-0 px-6 py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
+                Try Free &rarr;
+              </div>
+            </div>
+          </Link>
+        </section>
+
         {(plans || []).length > 0 && (
           <section>
             <h2 className="text-2xl font-bold text-center mb-2">Our Plans</h2>
@@ -259,7 +286,7 @@ export default async function PublicBookingPage({
             <span className="text-3xl block mb-2">&#9917;</span>
             <h2 className="text-2xl font-bold mb-2">Not sure yet? Try a free session!</h2>
             <p className="text-white/70 mb-5 max-w-md mx-auto">Book a free taster session for your child — no commitment, no payment needed.</p>
-            <Link href={`/book/${slug}/trial`} className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book Free Trial &rarr;</Link>
+            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book Free Trial &rarr;</Link>
           </div>
         </section>
 
@@ -268,7 +295,7 @@ export default async function PublicBookingPage({
           <p className="text-gray-600 mb-6">Sign up today and book your child&apos;s first class</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href={`/auth/signup?org=${slug}`} className="px-8 py-3 rounded-full font-semibold text-white transition-transform hover:scale-105" style={{ backgroundColor: primaryColor }}>Sign Up Free</Link>
-            <Link href={`/auth/signup?org=${slug}&trial=1`} className="px-8 py-3 rounded-full font-semibold border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a Free Trial</Link>
+            <Link href={`/book/${slug}/trial/quick`} className="px-8 py-3 rounded-full font-semibold border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a Free Trial</Link>
           </div>
           {(org.contact_email || org.contact_phone) && (
             <div className="mt-6 flex flex-wrap gap-4 justify-center text-sm text-gray-500">
