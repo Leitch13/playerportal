@@ -170,6 +170,24 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       const { error: enrolError } = await supabase.from('enrolments').insert({ player_id: playerId, group_id: groupId, organisation_id: orgId, status: 'active', enrolled_at: new Date().toISOString() })
       if (enrolError && !enrolError.message.includes('duplicate')) { setGlobalError(enrolError.message); setLoading(false); return }
 
+      // Send booking confirmation email
+      const parentEmail = isLoggedIn ? (await supabase.auth.getUser()).data.user?.email : email
+      if (parentEmail) {
+        fetch('/api/email/booking-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentName: isLoggedIn ? 'there' : fullName.split(' ')[0],
+            parentEmail,
+            childName: childDisplayName,
+            className: groupName,
+            academyName: orgName,
+            planName: selectedPlan?.name || '',
+            amount: selectedPlan ? `£${selectedPlan.amount.toFixed(2)}/month` : '',
+          }),
+        }).catch(() => {})
+      }
+
       if (selectedPlanId) {
         setShowSuccess(true)
         const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId, billingOption }) })
