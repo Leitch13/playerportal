@@ -97,15 +97,15 @@ export default function Home() {
             <a href="#pricing" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Pricing</a>
             <a href="#testimonials" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Testimonials</a>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/auth/signin" className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-white/60 hover:text-white transition-all">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/auth/signin" className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white/60 hover:text-white transition-all">
               Log in
             </Link>
             <Link
               href="/onboard"
-              className="px-5 py-2.5 text-sm font-semibold bg-white text-[#0a0a0a] rounded-full hover:bg-white/90 transition-all shadow-lg"
+              className="px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold bg-white text-[#0a0a0a] rounded-full hover:bg-white/90 transition-all shadow-lg"
             >
-              Get Started Free
+              Get Started
             </Link>
           </div>
         </div>
