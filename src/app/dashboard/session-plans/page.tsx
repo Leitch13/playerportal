@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { UserRole } from '@/lib/types'
 import SessionPlanForm from './SessionPlanForm'
@@ -129,12 +130,21 @@ export default async function SessionPlansPage() {
                           )}
                         </div>
 
-                        <SessionPlanForm
-                          groups={groups || []}
-                          coachId={user.id}
-                          orgId={orgId}
-                          editPlan={plan}
-                        />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Link
+                            href={`/dashboard/session-plans/${plan.id}`}
+                            className="px-3 py-1.5 bg-[#4ecde6]/10 text-[#4ecde6] rounded-lg text-xs font-semibold hover:bg-[#4ecde6]/20 transition-colors flex items-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            View
+                          </Link>
+                          <SessionPlanForm
+                            groups={groups || []}
+                            coachId={user.id}
+                            orgId={orgId}
+                            editPlan={plan}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
