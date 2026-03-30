@@ -226,6 +226,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/announcements', label: 'Announcements', icon: 'megaphone' },
     ]},
     { title: 'Finance', items: [
+      { href: '/dashboard/plans', label: 'Plans & Pricing', icon: 'tag' },
       { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
       { href: '/dashboard/shop/manage', label: 'Shop', icon: 'shopping-bag' },
       { href: '/dashboard/referrals', label: 'Referrals', icon: 'gift' },
