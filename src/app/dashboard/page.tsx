@@ -1326,14 +1326,22 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                           {g.location ? ` · ${g.location}` : ''}
                         </p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        {g.time_slot && <p className="text-sm font-bold text-[#4ecde6]">{g.time_slot}</p>}
-                        <div className="flex items-center gap-1 mt-1">
-                          <div className="w-14 h-1.5 bg-[#141414]/[0.06] rounded-full overflow-hidden">
-                            <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / 20) * 100, 100)}%` }} />
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          {g.time_slot && <p className="text-sm font-bold text-[#4ecde6]">{g.time_slot}</p>}
+                          <div className="flex items-center gap-1 mt-1">
+                            <div className="w-14 h-1.5 bg-[#141414]/[0.06] rounded-full overflow-hidden">
+                              <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / 20) * 100, 100)}%` }} />
+                            </div>
+                            <span className="text-[10px] text-white/40 font-medium">{playerCount}</span>
                           </div>
-                          <span className="text-[10px] text-white/40 font-medium">{playerCount}</span>
                         </div>
+                        <Link
+                          href={`/dashboard/session/${g.id}/live`}
+                          className="px-3 py-1.5 bg-[#4ecde6]/15 text-[#4ecde6] rounded-lg text-xs font-bold hover:bg-[#4ecde6]/25 transition-colors"
+                        >
+                          Start
+                        </Link>
                       </div>
                     </div>
                   )
@@ -1585,7 +1593,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
         {nextSession ? (() => {
           const sessionPlayers = classPlayersMap.get(nextSession.id) || []
           return (
-            <Link href={'/dashboard/session/' + nextSession.id} className="block group mb-6">
+            <Link href={'/dashboard/session/' + nextSession.id + '/live'} className="block group mb-6">
               <div className="relative overflow-hidden bg-gradient-to-br from-[#4ecde6]/20 via-[#4ecde6]/10 to-[#0a0a0a] border-2 border-[#4ecde6]/40 rounded-2xl p-6 shadow-[0_0_30px_rgba(78,205,230,0.15)] hover:shadow-[0_0_40px_rgba(78,205,230,0.25)] hover:border-[#4ecde6]/60 transition-all">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#4ecde6]/5 rounded-full -translate-y-8 translate-x-8" />
                 <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#4ecde6]/5 rounded-full translate-y-6 -translate-x-6" />
@@ -1716,7 +1724,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
                         <p className="text-xs text-white/30 mt-1">No players enrolled.</p>
                       )}
                       <div className="mt-3">
-                        <Link href={'/dashboard/session/' + g.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-xs font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+                        <Link href={'/dashboard/session/' + g.id + '/live'} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-xs font-semibold hover:bg-[#4ecde6]/90 transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           Start Session
                         </Link>

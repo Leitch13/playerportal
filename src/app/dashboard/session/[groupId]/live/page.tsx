@@ -73,8 +73,8 @@ export default async function LiveSessionPage({
   // Fetch existing attendance records for today
   const { data: existingAttendance } = await supabase
     .from('attendance')
-    .select('player_id, present')
-    .eq('group_id', groupId)
+    .select('player_id, status')
+    .eq('training_group_id', groupId)
     .eq('session_date', today)
 
   return (
@@ -89,7 +89,7 @@ export default async function LiveSessionPage({
         coachId={user.id}
         players={players}
         sessionPlan={sessionPlan}
-        existingAttendance={existingAttendance || []}
+        existingAttendance={(existingAttendance || []).map(a => ({ player_id: a.player_id, present: a.status === 'present' }))}
       />
     </div>
   )

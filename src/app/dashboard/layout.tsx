@@ -78,7 +78,7 @@ export default async function DashboardLayout({
         else return true
         return h * 60 + m >= nowMins - 60
       }) || coachGroups[coachGroups.length - 1]
-      nextSessionHref = `/dashboard/session/${next.id}`
+      nextSessionHref = `/dashboard/session/${next.id}/live`
     }
   }
 
