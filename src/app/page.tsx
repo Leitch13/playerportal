@@ -803,9 +803,10 @@ export default function Home() {
               <a href="#pricing" className="hover:text-white/60 transition-colors">Pricing</a>
               <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-white/60 transition-colors">Cookies</Link>
             </div>
             <div className="text-xs text-white/20">
-              &copy; {new Date().getFullYear()} Player Portal by playit loveit. All rights reserved.
+              &copy; 2026 Play It Love It Ltd. All rights reserved. Player Portal is a trademark of Play It Love It Ltd.
             </div>
           </div>
         </div>

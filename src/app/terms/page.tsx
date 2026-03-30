@@ -165,7 +165,38 @@ export default function TermsAndConditionsPage() {
 
           {/* 14 */}
           <section>
-            <h2 className="text-lg font-bold mb-3">14. Contact</h2>
+            <h2 className="text-lg font-bold mb-3">14. Intellectual Property &amp; Software Licence</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Player Portal is proprietary software owned by Play It Love It Ltd. All rights reserved.</li>
+              <li>By subscribing to Player Portal, you are granted a limited, non-exclusive, non-transferable, revocable licence to access and use the platform for the duration of your subscription.</li>
+              <li>You do not own any part of the Player Portal software, code, design, or intellectual property.</li>
+              <li>You may not copy, modify, distribute, sell, or lease any part of the platform or its underlying technology.</li>
+              <li>You may not reverse-engineer, decompile, or attempt to extract the source code of the platform.</li>
+              <li>All content, designs, logos, trademarks, and trade names associated with Player Portal are the property of Play It Love It Ltd.</li>
+              <li>Data you input into the platform (player records, class schedules, etc.) remains your property. We claim no ownership over your data.</li>
+              <li>We may use anonymised, aggregated data for improving the platform and generating industry insights, but we will never share or sell your identifiable data.</li>
+              <li>Any feedback, suggestions, or feature requests you provide may be used by us without obligation or compensation.</li>
+              <li>Violation of these intellectual property terms may result in immediate termination of your account without refund.</li>
+            </ul>
+          </section>
+
+          {/* 15 */}
+          <section>
+            <h2 className="text-lg font-bold mb-3">15. Software as a Service Terms</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Player Portal is provided &quot;as is&quot; and &quot;as available&quot; without warranty of any kind.</li>
+              <li>We do not guarantee uninterrupted or error-free service.</li>
+              <li>We reserve the right to modify, suspend, or discontinue any feature at any time.</li>
+              <li>We will provide reasonable notice before significant changes.</li>
+              <li>Your subscription fee grants access to the platform features available at the time of your subscription.</li>
+              <li>We are not liable for any loss of data, revenue, or business arising from the use of Player Portal.</li>
+              <li>Our total liability is limited to the amount you have paid us in the 12 months preceding the claim.</li>
+            </ul>
+          </section>
+
+          {/* 16 */}
+          <section>
+            <h2 className="text-lg font-bold mb-3">16. Contact</h2>
             <p>
               If you have any questions about these Terms, please contact the Academy through the Player Portal
               messaging system or via the contact details provided on your Academy&apos;s booking page.

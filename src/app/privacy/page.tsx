@@ -183,7 +183,16 @@ export default function PrivacyPolicyPage() {
 
           {/* 12 */}
           <section>
-            <h2 className="text-lg font-bold mb-3">12. Contact Us</h2>
+            <h2 className="text-lg font-bold mb-3">12. Intellectual Property</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>The Player Portal platform, including all software, design, and content, is protected by copyright and intellectual property laws.</li>
+              <li>Your use of the platform does not transfer any ownership rights to you.</li>
+            </ul>
+          </section>
+
+          {/* 13 */}
+          <section>
+            <h2 className="text-lg font-bold mb-3">13. Contact Us</h2>
             <p>
               If you have any questions about this Privacy Policy, wish to exercise your data rights, or need
               to raise a concern about how your data is being handled, please contact us:

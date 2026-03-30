@@ -15,6 +15,7 @@ ${content}
 <div style="text-align:center;padding:16px;color:#555;font-size:12px">
 <p style="margin:0">Sent by Player Portal &bull; <a href="${appUrl}" style="color:${accentColor};text-decoration:none">Visit Dashboard</a></p>
 <p style="margin:6px 0 0;color:#333;font-size:11px">You&apos;re receiving this because you have an account on Player Portal.</p>
+<p style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 Play It Love It Ltd. All rights reserved.</p>
 </div>
 </div></body></html>`
 }
