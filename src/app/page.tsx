@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import LandingMobileMenu from '@/components/LandingMobileMenu'
 
 export const metadata: Metadata = {
   title: 'Player Portal by playit loveit — The All-in-One Platform for Football Academies',
@@ -91,6 +92,7 @@ export default function Home() {
           <Link href="/" className="flex items-center gap-2.5">
             <img src="/logo.png" alt="Player Portal" className="h-9 w-auto object-contain" />
           </Link>
+          <LandingMobileMenu />
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Features</a>
             <Link href="/how-it-works" className="text-sm text-white/50 hover:text-white transition-colors font-medium">How It Works</Link>

@@ -28,26 +28,12 @@ function SignInForm() {
     setError('')
 
     const supabase = createClient()
-
-    // Force sign out any existing session first
-    await supabase.auth.signOut()
-
-    // Clear all sb- cookies on the client side
-    document.cookie.split(';').forEach(cookie => {
-      const name = cookie.split('=')[0].trim()
-      if (name.startsWith('sb-')) {
-        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
-      }
-    })
-
-    // Now sign in as the new user
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      // Full page reload to ensure server-side cookies are refreshed
       window.location.href = '/dashboard'
     }
   }
@@ -82,6 +68,11 @@ function SignInForm() {
               required
               className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent placeholder:text-white/30"
             />
+          </div>
+          <div className="text-right -mt-1">
+            <Link href="/auth/forgot-password" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+              Forgot password?
+            </Link>
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <button
