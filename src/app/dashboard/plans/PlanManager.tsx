@@ -90,6 +90,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
       setNewSessions('1')
       setNewDescription('')
       setShowAdd(false)
+      router.refresh()
     }
     setLoading(false)
   }
@@ -99,6 +100,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
     const supabase = createClient()
     await supabase.from('subscription_plans').delete().eq('id', planId)
     setPlans(plans.filter(p => p.id !== planId))
+    router.refresh()
   }
 
   async function handleToggle(planId: string, isActive: boolean) {
@@ -125,7 +127,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
       })
       .select()
       .single()
-    if (data) setPlans([...plans, data as Plan])
+    if (data) { setPlans([...plans, data as Plan]); router.refresh() }
   }
 
   function getTypeBadge(type: string) {
