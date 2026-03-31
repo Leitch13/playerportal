@@ -52,8 +52,9 @@ export default async function FeedbackPage() {
   }
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Progress Feedback</h1>
+      <h1 className="text-2xl font-bold text-white">Progress Feedback</h1>
 
       {(reviews || []).length === 0 ? (
         <EmptyState message="No feedback available yet. Your coach will add progress reviews after sessions." />
@@ -85,7 +86,7 @@ export default async function FeedbackPage() {
                 title={`${(review.player as unknown as { first_name: string; last_name: string })?.first_name} ${(review.player as unknown as { first_name: string; last_name: string })?.last_name}`}
               >
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 text-sm text-text-light">
+                  <div className="flex items-center gap-4 text-sm text-white/60">
                     <span>
                       Reviewed by{' '}
                       {
@@ -102,10 +103,10 @@ export default async function FeedbackPage() {
                     {SCORE_CATEGORIES.map((cat) => (
                       <div
                         key={cat.key}
-                        className="flex flex-col items-center gap-1 p-2 rounded-lg bg-surface"
+                        className="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.04]"
                       >
                         <ScoreBadge score={review[cat.key] as number} />
-                        <span className="text-xs text-text-light text-center">
+                        <span className="text-xs text-white/60 text-center">
                           {cat.label}
                         </span>
                       </div>
@@ -115,7 +116,7 @@ export default async function FeedbackPage() {
                   {review.strengths && (
                     <div>
                       <h3 className="text-sm font-medium mb-1">Strengths</h3>
-                      <p className="text-sm text-text-light">
+                      <p className="text-sm text-white/60">
                         {review.strengths}
                       </p>
                     </div>
@@ -123,17 +124,17 @@ export default async function FeedbackPage() {
                   {review.focus_next && (
                     <div>
                       <h3 className="text-sm font-medium mb-1">Focus Next</h3>
-                      <p className="text-sm text-text-light">
+                      <p className="text-sm text-white/60">
                         {review.focus_next}
                       </p>
                     </div>
                   )}
                   {review.parent_summary && (
-                    <div className="bg-primary/5 rounded-lg p-4">
+                    <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/10 rounded-lg p-4">
                       <h3 className="text-sm font-medium mb-1">
                         Coach Summary
                       </h3>
-                      <p className="text-sm">{review.parent_summary}</p>
+                      <p className="text-sm text-white/80">{review.parent_summary}</p>
                     </div>
                   )}
                 </div>
@@ -142,6 +143,7 @@ export default async function FeedbackPage() {
           </div>
         </>
       )}
+    </div>
     </div>
   )
 }

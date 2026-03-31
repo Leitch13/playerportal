@@ -125,12 +125,13 @@ async function AdminEvents({
   )
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Events & Holiday Camps</h1>
-          <p className="text-sm text-text-light mt-1">
+          <h1 className="text-2xl font-bold text-white">Events & Holiday Camps</h1>
+          <p className="text-sm text-white/60 mt-1">
             Create and manage events, camps, tournaments, and workshops.
           </p>
         </div>
@@ -141,26 +142,26 @@ async function AdminEvents({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{events.length}</div>
-            <div className="text-xs text-text-light mt-0.5">Total Events</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{events.length}</div>
+            <div className="text-xs text-white/60 mt-0.5">Total Events</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{upcomingEvents.length}</div>
-            <div className="text-xs text-text-light mt-0.5">Upcoming</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{upcomingEvents.length}</div>
+            <div className="text-xs text-white/60 mt-0.5">Upcoming</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalBookings}</div>
-            <div className="text-xs text-text-light mt-0.5">Bookings</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{totalBookings}</div>
+            <div className="text-xs text-white/60 mt-0.5">Bookings</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{activeEvents.length}</div>
-            <div className="text-xs text-text-light mt-0.5">Active</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{activeEvents.length}</div>
+            <div className="text-xs text-white/60 mt-0.5">Active</div>
           </div>
         </Card>
       </div>
@@ -188,35 +189,35 @@ async function AdminEvents({
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{event.name}</h3>
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-medium">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                           {EVENT_TYPE_LABELS[event.event_type] || event.event_type}
                         </span>
                         {!event.active && <StatusBadge status="cancelled" />}
                         {isPast && event.active && (
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium">
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-white/[0.06] text-white/60 font-medium">
                             Past
                           </span>
                         )}
                       </div>
                       {event.description && (
-                        <p className="text-sm text-text-light mt-1">{event.description}</p>
+                        <p className="text-sm text-white/60 mt-1">{event.description}</p>
                       )}
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
+                      <div className="text-lg font-bold text-[#4ecde6]">
                         {confirmedBookings.length}
                         {event.max_capacity && (
-                          <span className="text-sm font-normal text-text-light">
+                          <span className="text-sm font-normal text-white/60">
                             /{event.max_capacity}
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-text-light">booked</div>
+                      <div className="text-xs text-white/60">booked</div>
                     </div>
                   </div>
 
                   {/* Event details row */}
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-text-light">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
                     <span>
                       {new Date(event.start_date).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -244,7 +245,7 @@ async function AdminEvents({
                     {event.location && <span>{event.location}</span>}
                     {event.coach && <span>Coach: {event.coach.full_name}</span>}
                     {event.price != null && event.price > 0 && (
-                      <span className="font-semibold text-primary">
+                      <span className="font-semibold text-[#4ecde6]">
                         &pound;{event.price.toFixed(2)}
                       </span>
                     )}
@@ -254,7 +255,7 @@ async function AdminEvents({
                     {spotsLeft !== null && (
                       <span
                         className={`font-medium ${
-                          spotsLeft <= 0 ? 'text-danger' : spotsLeft <= 5 ? 'text-warning' : 'text-accent'
+                          spotsLeft <= 0 ? 'text-red-400' : spotsLeft <= 5 ? 'text-yellow-400' : 'text-[#4ecde6]'
                         }`}
                       >
                         {spotsLeft <= 0 ? 'Full' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
@@ -265,13 +266,13 @@ async function AdminEvents({
                   {/* Bookings table */}
                   {confirmedBookings.length > 0 && (
                     <div className="pt-2">
-                      <div className="text-xs font-medium text-text-light mb-2">
+                      <div className="text-xs font-medium text-white/60 mb-2">
                         Confirmed Bookings ({confirmedBookings.length})
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-border">
+                            <tr className="border-b border-[#1e1e1e]">
                               <th className="text-left py-1.5 font-medium text-xs">Player</th>
                               <th className="text-left py-1.5 font-medium text-xs">Parent</th>
                               <th className="text-left py-1.5 font-medium text-xs">Payment</th>
@@ -279,13 +280,13 @@ async function AdminEvents({
                           </thead>
                           <tbody>
                             {confirmedBookings.map((booking) => (
-                              <tr key={booking.id} className="border-b border-border last:border-0">
+                              <tr key={booking.id} className="border-b border-[#1e1e1e] last:border-0">
                                 <td className="py-1.5 text-xs">
                                   {booking.player
                                     ? `${booking.player.first_name} ${booking.player.last_name}`
                                     : '\u2014'}
                                 </td>
-                                <td className="py-1.5 text-xs text-text-light">
+                                <td className="py-1.5 text-xs text-white/60">
                                   {booking.parent?.full_name || '\u2014'}
                                 </td>
                                 <td className="py-1.5">
@@ -301,7 +302,7 @@ async function AdminEvents({
 
                   {/* Waitlisted / Cancelled summary */}
                   {(waitlistedBookings.length > 0 || cancelledBookings.length > 0) && (
-                    <div className="flex gap-4 text-xs text-text-light pt-1">
+                    <div className="flex gap-4 text-xs text-white/60 pt-1">
                       {waitlistedBookings.length > 0 && (
                         <span>{waitlistedBookings.length} waitlisted</span>
                       )}
@@ -316,6 +317,7 @@ async function AdminEvents({
           })}
         </div>
       )}
+    </div>
     </div>
   )
 }
@@ -420,11 +422,12 @@ async function ParentEvents({
   const totalBooked = bookings.filter((b) => b.status === 'confirmed').length
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Events & Holiday Camps</h1>
-        <p className="text-sm text-text-light mt-1">
+        <h1 className="text-2xl font-bold text-white">Events & Holiday Camps</h1>
+        <p className="text-sm text-white/60 mt-1">
           Browse upcoming events and book your children in.
         </p>
       </div>
@@ -433,20 +436,20 @@ async function ParentEvents({
       <div className="grid grid-cols-3 gap-3">
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{events.length}</div>
-            <div className="text-xs text-text-light mt-0.5">Upcoming Events</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{events.length}</div>
+            <div className="text-xs text-white/60 mt-0.5">Upcoming Events</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{totalBooked}</div>
-            <div className="text-xs text-text-light mt-0.5">Booked</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{totalBooked}</div>
+            <div className="text-xs text-white/60 mt-0.5">Booked</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{(myPlayers || []).length}</div>
-            <div className="text-xs text-text-light mt-0.5">Children</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{(myPlayers || []).length}</div>
+            <div className="text-xs text-white/60 mt-0.5">Children</div>
           </div>
         </Card>
       </div>
@@ -467,7 +470,7 @@ async function ParentEvents({
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="font-semibold text-sm">{event.name}</div>
-                        <div className="text-xs text-text-light">
+                        <div className="text-xs text-white/60">
                           {new Date(event.start_date).toLocaleDateString('en-GB', {
                             day: 'numeric',
                             month: 'short',
@@ -484,13 +487,13 @@ async function ParentEvents({
                           {event.start_time && ` \u00B7 ${event.start_time}`}
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-medium">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                         {EVENT_TYPE_LABELS[event.event_type] || event.event_type}
                       </span>
                     </div>
 
                     {(event.location || event.coach) && (
-                      <div className="flex items-center gap-3 text-xs text-text-light">
+                      <div className="flex items-center gap-3 text-xs text-white/60">
                         {event.location && <span>{event.location}</span>}
                         {event.coach && <span>Coach: {event.coach.full_name}</span>}
                       </div>
@@ -554,38 +557,38 @@ async function ParentEvents({
                   key={event.id}
                   className={`rounded-xl border p-4 ${
                     allBooked
-                      ? 'border-accent/30 bg-accent/5'
-                      : 'border-border bg-white'
+                      ? 'border-[#4ecde6]/30 bg-[#4ecde6]/5'
+                      : 'border-[#1e1e1e] bg-[#141414]'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2">
                         <div className="font-semibold">{event.name}</div>
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-medium">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                           {EVENT_TYPE_LABELS[event.event_type] || event.event_type}
                         </span>
                         {allBooked && (
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                             Booked
                           </span>
                         )}
                       </div>
                       {event.description && (
-                        <p className="text-sm text-text-light mt-1">{event.description}</p>
+                        <p className="text-sm text-white/60 mt-1">{event.description}</p>
                       )}
                     </div>
                     {event.price != null && event.price > 0 && (
                       <div className="text-right">
-                        <div className="text-lg font-bold text-primary">
+                        <div className="text-lg font-bold text-[#4ecde6]">
                           &pound;{event.price.toFixed(2)}
                         </div>
-                        <div className="text-xs text-text-light">per player</div>
+                        <div className="text-xs text-white/60">per player</div>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-text-light mb-3">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/60 mb-3">
                     <span>
                       {new Date(event.start_date).toLocaleDateString('en-GB', {
                         weekday: 'short',
@@ -617,7 +620,7 @@ async function ParentEvents({
                     {spotsLeft !== null && (
                       <span
                         className={`font-medium ${
-                          spotsLeft <= 0 ? 'text-danger' : spotsLeft <= 5 ? 'text-warning' : 'text-accent'
+                          spotsLeft <= 0 ? 'text-red-400' : spotsLeft <= 5 ? 'text-yellow-400' : 'text-[#4ecde6]'
                         }`}
                       >
                         {spotsLeft <= 0
@@ -634,8 +637,8 @@ async function ParentEvents({
                         .filter((p) => bookedPlayerIds.includes(p.id))
                         .map((p) => (
                           <div key={p.id} className="flex items-center gap-1.5 text-xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                            <span className="text-accent font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
+                            <span className="text-[#4ecde6] font-medium">
                               {p.first_name} booked
                             </span>
                           </div>
@@ -661,7 +664,7 @@ async function ParentEvents({
                   )}
 
                   {isFull && availablePlayers.length > 0 && (
-                    <div className="text-xs text-danger font-medium pt-1">
+                    <div className="text-xs text-red-400 font-medium pt-1">
                       This event is full. Contact us about the waitlist.
                     </div>
                   )}
@@ -675,14 +678,15 @@ async function ParentEvents({
       {/* Help text */}
       <Card>
         <div className="text-center py-2 space-y-1">
-          <p className="text-sm text-text-light">
+          <p className="text-sm text-white/60">
             Need to cancel a booking or ask about an event? Message your coach via{' '}
-            <a href="/dashboard/messages" className="text-accent hover:underline font-medium">
+            <a href="/dashboard/messages" className="text-[#4ecde6] hover:underline font-medium">
               Messages
             </a>.
           </p>
         </div>
       </Card>
+    </div>
     </div>
   )
 }

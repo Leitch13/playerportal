@@ -56,16 +56,17 @@ export default async function DocumentsPage({
     : { data: await supabase.from('players').select('id, first_name, last_name, parent_id').eq('parent_id', user.id).order('first_name').then(r => r.data) }
 
   const docTypeIcons: Record<string, string> = {
-    canva: '🎨',
-    pdf: '📄',
-    image: '🖼️',
-    video: '🎥',
-    link: '🔗',
+    canva: '\uD83C\uDFA8',
+    pdf: '\uD83D\uDCC4',
+    image: '\uD83D\uDDBC\uFE0F',
+    video: '\uD83C\uDFA5',
+    link: '\uD83D\uDD17',
   }
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Documents</h1>
+      <h1 className="text-2xl font-bold text-white">Documents</h1>
 
       {/* Add document form (staff only) */}
       {isStaff && (
@@ -84,7 +85,7 @@ export default async function DocumentsPage({
           <a
             href="/dashboard/documents"
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              activeFolder === 'all' ? 'bg-primary text-white' : 'bg-surface-dark text-text-light hover:bg-border'
+              activeFolder === 'all' ? 'bg-[#4ecde6] text-[#0a0a0a]' : 'bg-white/[0.06] text-white/60 hover:bg-white/[0.1]'
             }`}
           >
             All
@@ -94,7 +95,7 @@ export default async function DocumentsPage({
               key={f}
               href={`/dashboard/documents?folder=${encodeURIComponent(f)}`}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                activeFolder === f ? 'bg-primary text-white' : 'bg-surface-dark text-text-light hover:bg-border'
+                activeFolder === f ? 'bg-[#4ecde6] text-[#0a0a0a]' : 'bg-white/[0.06] text-white/60 hover:bg-white/[0.1]'
               }`}
             >
               {f}
@@ -111,26 +112,26 @@ export default async function DocumentsPage({
           {(documents || []).map((doc) => (
             <Card key={doc.id}>
               <div className="flex items-start gap-3">
-                <span className="text-2xl">{docTypeIcons[doc.doc_type as string] || '📁'}</span>
+                <span className="text-2xl">{docTypeIcons[doc.doc_type as string] || '\uD83D\uDCC1'}</span>
                 <div className="flex-1 min-w-0">
                   <a
                     href={doc.url as string}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-sm text-primary hover:underline block truncate"
+                    className="font-medium text-sm text-[#4ecde6] hover:underline block truncate"
                   >
                     {doc.title}
                   </a>
-                  {doc.description && <p className="text-xs text-text-light mt-0.5">{doc.description as string}</p>}
+                  {doc.description && <p className="text-xs text-white/60 mt-0.5">{doc.description as string}</p>}
                   <div className="flex flex-wrap gap-2 mt-1.5">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-surface-dark text-text-light">{doc.folder as string}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-white/60">{doc.folder as string}</span>
                     {(doc.player as unknown as { first_name: string; last_name: string }) && (
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary">
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-[#4ecde6]/10 text-[#4ecde6]">
                         {(doc.player as unknown as { first_name: string; last_name: string }).first_name}{' '}
                         {(doc.player as unknown as { first_name: string; last_name: string }).last_name}
                       </span>
                     )}
-                    <span className="text-xs text-text-light">{new Date(doc.created_at).toLocaleDateString()}</span>
+                    <span className="text-xs text-white/40">{new Date(doc.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
@@ -138,6 +139,7 @@ export default async function DocumentsPage({
           ))}
         </div>
       )}
+    </div>
     </div>
   )
 }

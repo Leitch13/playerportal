@@ -207,7 +207,7 @@ async function AdminSchedule({
         </div>
         <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{uniquePlayers}</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{uniquePlayers}</div>
             <div className="text-[10px] text-white/60 mt-0.5">Active Players</div>
           </div>
         </div>
@@ -219,7 +219,7 @@ async function AdminSchedule({
         </div>
         <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{coaches}</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{coaches}</div>
             <div className="text-[10px] text-white/60 mt-0.5">Coaches</div>
           </div>
         </div>
@@ -492,7 +492,7 @@ async function ParentSchedule({
         </div>
         <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{bookedGroups}</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{bookedGroups}</div>
             <div className="text-[10px] text-white/60 mt-0.5">Classes Booked</div>
           </div>
         </div>
@@ -504,7 +504,7 @@ async function ParentSchedule({
         </div>
         <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
           <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{calendarEvents.length}</div>
+            <div className="text-2xl font-bold text-[#4ecde6]">{calendarEvents.length}</div>
             <div className="text-[10px] text-white/60 mt-0.5">Upcoming Events</div>
           </div>
         </div>
@@ -638,7 +638,7 @@ async function ParentSchedule({
                             <div>
                               <div className="font-semibold text-sm">{group.name}</div>
                               {group.time_slot && (
-                                <div className="text-sm font-bold text-primary mt-0.5">
+                                <div className="text-sm font-bold text-[#4ecde6] mt-0.5">
                                   {group.time_slot}
                                 </div>
                               )}

@@ -41,8 +41,9 @@ export default async function EnrolmentsPage() {
     .order('name')
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Enrolments</h1>
+      <h1 className="text-2xl font-bold text-white">Enrolments</h1>
 
       <EnrolmentForm players={players || []} groups={groups || []} orgId={orgId} />
 
@@ -53,20 +54,20 @@ export default async function EnrolmentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 font-medium">Player</th>
-                  <th className="text-left py-2 font-medium">Group</th>
-                  <th className="text-left py-2 font-medium">Schedule</th>
-                  <th className="text-left py-2 font-medium">Enrolled</th>
-                  <th className="text-left py-2 font-medium">Status</th>
-                  <th className="text-left py-2 font-medium">Actions</th>
+                <tr className="border-b border-[#1e1e1e]">
+                  <th className="text-left py-2 font-medium text-white/60">Player</th>
+                  <th className="text-left py-2 font-medium text-white/60">Group</th>
+                  <th className="text-left py-2 font-medium text-white/60">Schedule</th>
+                  <th className="text-left py-2 font-medium text-white/60">Enrolled</th>
+                  <th className="text-left py-2 font-medium text-white/60">Status</th>
+                  <th className="text-left py-2 font-medium text-white/60">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {(enrolments || []).map((e) => (
                   <tr
                     key={e.id}
-                    className="border-b border-border last:border-0"
+                    className="border-b border-[#1e1e1e] last:border-0"
                   >
                     <td className="py-2 font-medium">
                       {(e.player as unknown as { first_name: string; last_name: string })?.first_name}{' '}
@@ -75,12 +76,12 @@ export default async function EnrolmentsPage() {
                     <td className="py-2">
                       {(e.group as unknown as { name: string })?.name}
                     </td>
-                    <td className="py-2 text-text-light">
+                    <td className="py-2 text-white/60">
                       {(e.group as unknown as { day_of_week: string })?.day_of_week}
                       {(e.group as unknown as { time_slot: string })?.time_slot &&
                         ` ${(e.group as unknown as { time_slot: string }).time_slot}`}
                     </td>
-                    <td className="py-2">
+                    <td className="py-2 text-white/60">
                       {new Date(e.enrolled_at).toLocaleDateString()}
                     </td>
                     <td className="py-2">
@@ -99,6 +100,7 @@ export default async function EnrolmentsPage() {
           </div>
         </Card>
       )}
+    </div>
     </div>
   )
 }

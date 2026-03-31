@@ -53,8 +53,9 @@ export default async function AchievementsPage() {
       .limit(20)
 
     return (
+      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Achievements</h1>
+        <h1 className="text-2xl font-bold text-white">Achievements</h1>
 
         {/* Achievement manager: create / edit / delete */}
         <AchievementManager
@@ -96,15 +97,15 @@ export default async function AchievementsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="pb-2 font-medium text-text-light">Achievement</th>
-                    <th className="pb-2 font-medium text-text-light">Player</th>
-                    <th className="pb-2 font-medium text-text-light">Awarded By</th>
-                    <th className="pb-2 font-medium text-text-light">Date</th>
-                    <th className="pb-2 font-medium text-text-light">Notes</th>
+                  <tr className="border-b border-[#1e1e1e] text-left">
+                    <th className="pb-2 font-medium text-white/60">Achievement</th>
+                    <th className="pb-2 font-medium text-white/60">Player</th>
+                    <th className="pb-2 font-medium text-white/60">Awarded By</th>
+                    <th className="pb-2 font-medium text-white/60">Date</th>
+                    <th className="pb-2 font-medium text-white/60">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-[#1e1e1e]">
                   {(recentAwards || []).map((award) => {
                     const achievement = award.achievement as unknown as {
                       name: string
@@ -128,7 +129,7 @@ export default async function AchievementsPage() {
                             </span>
                             <div>
                               <span className="font-medium">{achievement?.name}</span>
-                              <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-surface-dark text-text-light capitalize">
+                              <span className="ml-2 px-1.5 py-0.5 rounded text-xs bg-white/[0.06] text-white/60 capitalize">
                                 {achievement?.achievement_type}
                               </span>
                             </div>
@@ -137,14 +138,14 @@ export default async function AchievementsPage() {
                         <td className="py-2.5">
                           {player?.first_name} {player?.last_name}
                         </td>
-                        <td className="py-2.5 text-text-light">
+                        <td className="py-2.5 text-white/60">
                           {awarder?.full_name}
                         </td>
-                        <td className="py-2.5 text-text-light">
+                        <td className="py-2.5 text-white/60">
                           {new Date(award.awarded_at).toLocaleDateString()}
                         </td>
-                        <td className="py-2.5 text-text-light max-w-[200px] truncate">
-                          {award.notes || '—'}
+                        <td className="py-2.5 text-white/60 max-w-[200px] truncate">
+                          {award.notes || '\u2014'}
                         </td>
                       </tr>
                     )
@@ -154,6 +155,7 @@ export default async function AchievementsPage() {
             </div>
           )}
         </Card>
+      </div>
       </div>
     )
   }
@@ -182,15 +184,16 @@ export default async function AchievementsPage() {
   const totalAchievements = (playerAchievements || []).length
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Achievements</h1>
+      <h1 className="text-2xl font-bold text-white">Achievements</h1>
 
       {/* Progress summary */}
-      <div className="bg-primary/5 rounded-xl p-6 flex items-center gap-4">
-        <span className="text-4xl">🏆</span>
+      <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/10 rounded-xl p-6 flex items-center gap-4">
+        <span className="text-4xl">&#127942;</span>
         <div>
-          <p className="text-2xl font-bold text-primary">{totalAchievements}</p>
-          <p className="text-sm text-text-light">
+          <p className="text-2xl font-bold text-[#4ecde6]">{totalAchievements}</p>
+          <p className="text-sm text-white/60">
             {totalAchievements === 1 ? 'achievement' : 'achievements'} earned
           </p>
         </div>
@@ -220,20 +223,20 @@ export default async function AchievementsPage() {
               return (
                 <div
                   key={pa.id}
-                  className="bg-white rounded-xl border-2 border-warning/40 p-8 text-center print:border-warning print:shadow-none"
+                  className="bg-[#141414] rounded-xl border-2 border-yellow-500/40 p-8 text-center print:border-yellow-500 print:shadow-none"
                 >
-                  <div className="border-2 border-dashed border-warning/30 rounded-lg p-6 space-y-3">
+                  <div className="border-2 border-dashed border-yellow-500/30 rounded-lg p-6 space-y-3">
                     <span className="text-5xl block">{achievement?.badge_emoji}</span>
-                    <h3 className="text-xl font-bold text-warning">Certificate of Achievement</h3>
-                    <p className="text-lg font-semibold">{achievement?.name}</p>
-                    <p className="text-text-light">Awarded to</p>
-                    <p className="text-xl font-bold text-primary">
+                    <h3 className="text-xl font-bold text-yellow-400">Certificate of Achievement</h3>
+                    <p className="text-lg font-semibold text-white">{achievement?.name}</p>
+                    <p className="text-white/60">Awarded to</p>
+                    <p className="text-xl font-bold text-[#4ecde6]">
                       {player?.first_name} {player?.last_name}
                     </p>
                     {achievement?.description && (
-                      <p className="text-sm text-text-light italic">{achievement.description}</p>
+                      <p className="text-sm text-white/60 italic">{achievement.description}</p>
                     )}
-                    <p className="text-xs text-text-light mt-4">
+                    <p className="text-xs text-white/40 mt-4">
                       {new Date(pa.awarded_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
                         month: 'long',
@@ -241,7 +244,7 @@ export default async function AchievementsPage() {
                       })}
                     </p>
                     {pa.notes && (
-                      <p className="text-sm text-text-light">{pa.notes}</p>
+                      <p className="text-sm text-white/60">{pa.notes}</p>
                     )}
                   </div>
                 </div>
@@ -252,23 +255,23 @@ export default async function AchievementsPage() {
             return (
               <Card key={pa.id}>
                 <div className="flex items-center gap-4">
-                  <span className={`text-4xl w-16 h-16 flex items-center justify-center rounded-full ${achievement?.badge_color || 'bg-surface'}`}>
+                  <span className={`text-4xl w-16 h-16 flex items-center justify-center rounded-full ${achievement?.badge_color || 'bg-white/[0.06]'}`}>
                     {achievement?.badge_emoji}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{achievement?.name}</h3>
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-surface-dark text-text-light capitalize">
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.06] text-white/60 capitalize">
                         {achievement?.achievement_type}
                       </span>
                     </div>
-                    <p className="text-sm text-text-light mt-0.5">
+                    <p className="text-sm text-white/60 mt-0.5">
                       {player?.first_name} {player?.last_name}
                     </p>
                     {achievement?.description && (
-                      <p className="text-sm text-text-light mt-1">{achievement.description}</p>
+                      <p className="text-sm text-white/60 mt-1">{achievement.description}</p>
                     )}
-                    <div className="flex items-center gap-3 mt-2 text-xs text-text-light">
+                    <div className="flex items-center gap-3 mt-2 text-xs text-white/40">
                       <span>{new Date(pa.awarded_at).toLocaleDateString()}</span>
                       {pa.notes && <span>— {pa.notes}</span>}
                     </div>
@@ -279,6 +282,7 @@ export default async function AchievementsPage() {
           })}
         </div>
       )}
+    </div>
     </div>
   )
 }

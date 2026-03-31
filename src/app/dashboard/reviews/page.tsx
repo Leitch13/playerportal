@@ -42,8 +42,9 @@ export default async function ReviewsPage({
     .limit(50)
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Progress Reviews</h1>
+      <h1 className="text-2xl font-bold text-white">Progress Reviews</h1>
 
       <ReviewForm players={players || []} autoOpen={params.add === '1'} orgId={orgId} />
 
@@ -57,27 +58,27 @@ export default async function ReviewsPage({
               title={`${(review.player as unknown as { first_name: string; last_name: string })?.first_name} ${(review.player as unknown as { first_name: string; last_name: string })?.last_name}`}
             >
               <div className="space-y-3">
-                <div className="flex items-center gap-4 text-sm text-text-light">
+                <div className="flex items-center gap-4 text-sm text-white/60">
                   <span>By {(review.coach as unknown as { full_name: string })?.full_name}</span>
                   <span>{new Date(review.review_date).toLocaleDateString()}</span>
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                   {SCORE_CATEGORIES.map((cat) => (
-                    <div key={cat.key} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-surface">
+                    <div key={cat.key} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-white/[0.04]">
                       <ScoreBadge score={review[cat.key] as number} />
-                      <span className="text-[10px] text-text-light text-center">{cat.label}</span>
+                      <span className="text-[10px] text-white/60 text-center">{cat.label}</span>
                     </div>
                   ))}
                 </div>
                 {review.strengths && (
-                  <p className="text-sm"><span className="font-medium">Strengths:</span> {review.strengths}</p>
+                  <p className="text-sm"><span className="font-medium">Strengths:</span> <span className="text-white/60">{review.strengths}</span></p>
                 )}
                 {review.focus_next && (
-                  <p className="text-sm"><span className="font-medium">Focus Next:</span> {review.focus_next}</p>
+                  <p className="text-sm"><span className="font-medium">Focus Next:</span> <span className="text-white/60">{review.focus_next}</span></p>
                 )}
                 {review.parent_summary && (
-                  <div className="bg-primary/5 rounded-lg p-3">
-                    <p className="text-sm"><span className="font-medium">Parent Summary:</span> {review.parent_summary}</p>
+                  <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/10 rounded-lg p-3">
+                    <p className="text-sm"><span className="font-medium">Parent Summary:</span> <span className="text-white/80">{review.parent_summary}</span></p>
                   </div>
                 )}
               </div>
@@ -85,6 +86,7 @@ export default async function ReviewsPage({
           ))}
         </div>
       )}
+    </div>
     </div>
   )
 }

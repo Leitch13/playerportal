@@ -44,9 +44,10 @@ export default async function ChildrenPage() {
   }
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Children</h1>
+        <h1 className="text-2xl font-bold text-white">My Children</h1>
       </div>
 
       <AddChildForm orgId={orgId} />
@@ -68,7 +69,7 @@ export default async function ChildrenPage() {
                 action={
                   <Link
                     href={`/dashboard/players/${player.id}`}
-                    className="text-sm text-accent hover:underline"
+                    className="text-sm text-[#4ecde6] hover:underline"
                   >
                     View Profile
                   </Link>
@@ -87,7 +88,7 @@ export default async function ChildrenPage() {
                     <div>
                       <Link
                         href={`/dashboard/players/${player.id}`}
-                        className="text-base font-semibold hover:text-accent transition-colors"
+                        className="text-base font-semibold hover:text-[#4ecde6] transition-colors"
                       >
                         {player.first_name} {player.last_name}
                       </Link>
@@ -97,17 +98,17 @@ export default async function ChildrenPage() {
                   {/* Badges row */}
                   <div className="flex flex-wrap gap-1.5">
                     {player.age_group && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                         {player.age_group}
                       </span>
                     )}
                     {player.position && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
                         {player.position}
                       </span>
                     )}
                     {player.kit_size && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-surface-dark font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] text-white/60 font-medium">
                         Kit: {player.kit_size}
                       </span>
                     )}
@@ -117,13 +118,13 @@ export default async function ChildrenPage() {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {player.date_of_birth && (
                       <div>
-                        <span className="text-text-light">DOB:</span>{' '}
+                        <span className="text-white/40">DOB:</span>{' '}
                         {new Date(player.date_of_birth).toLocaleDateString()}
                       </div>
                     )}
                     {player.school && (
                       <div>
-                        <span className="text-text-light">School:</span>{' '}
+                        <span className="text-white/40">School:</span>{' '}
                         {player.school}
                       </div>
                     )}
@@ -131,9 +132,9 @@ export default async function ChildrenPage() {
 
                   {/* Medical alert */}
                   {player.medical_info && (
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-danger/5 border border-danger/10">
-                      <span className="text-danger text-xs">⚠️</span>
-                      <p className="text-xs text-danger">
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <span className="text-red-400 text-xs">&#9888;&#65039;</span>
+                      <p className="text-xs text-red-400">
                         {player.medical_info}
                       </p>
                     </div>
@@ -141,8 +142,8 @@ export default async function ChildrenPage() {
 
                   {/* Emergency contact */}
                   {player.emergency_contact_name && (
-                    <div className="text-xs text-text-light">
-                      <span className="font-medium text-text">
+                    <div className="text-xs text-white/40">
+                      <span className="font-medium text-white">
                         Emergency:
                       </span>{' '}
                       {player.emergency_contact_name}
@@ -152,36 +153,36 @@ export default async function ChildrenPage() {
                   )}
 
                   {player.notes && (
-                    <p className="text-xs text-text-light">
-                      <span className="font-medium text-text">Notes:</span>{' '}
+                    <p className="text-xs text-white/40">
+                      <span className="font-medium text-white">Notes:</span>{' '}
                       {player.notes}
                     </p>
                   )}
 
                   {/* Training groups */}
                   {activeGroups.length > 0 && (
-                    <div className="pt-3 border-t border-border">
-                      <p className="font-medium text-xs mb-2 text-text-light uppercase tracking-wide">
+                    <div className="pt-3 border-t border-[#1e1e1e]">
+                      <p className="font-medium text-xs mb-2 text-white/40 uppercase tracking-wide">
                         Sessions
                       </p>
                       <div className="space-y-1.5">
                         {activeGroups.map((e) => (
                           <div
                             key={e.id}
-                            className="flex items-center justify-between rounded-lg bg-surface p-2"
+                            className="flex items-center justify-between rounded-lg bg-white/[0.04] p-2"
                           >
                             <div>
                               <span className="text-xs font-medium">
                                 {e.group?.name}
                               </span>
                               {e.group?.day_of_week && (
-                                <span className="text-xs text-text-light ml-1">
+                                <span className="text-xs text-white/40 ml-1">
                                   — {e.group.day_of_week}
                                 </span>
                               )}
                             </div>
                             {e.group?.time_slot && (
-                              <span className="text-xs font-bold text-accent">
+                              <span className="text-xs font-bold text-[#4ecde6]">
                                 {e.group.time_slot}
                               </span>
                             )}
@@ -199,6 +200,7 @@ export default async function ChildrenPage() {
           })}
         </div>
       )}
+    </div>
     </div>
   )
 }

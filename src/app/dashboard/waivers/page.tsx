@@ -43,8 +43,9 @@ export default async function WaiversPage() {
       .eq('role', 'parent')
 
     return (
+      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Waivers & Consent Forms</h1>
+        <h1 className="text-2xl font-bold text-white">Waivers & Consent Forms</h1>
 
         <WaiverManager orgId={orgId} />
 
@@ -72,16 +73,16 @@ export default async function WaiversPage() {
                         ) : (
                           <StatusBadge status="waived" />
                         )}
-                        <span className="text-xs text-text-light">v{waiver.version}</span>
+                        <span className="text-xs text-white/40">v{waiver.version}</span>
                       </div>
-                      <p className="text-sm text-text-light line-clamp-2 mb-3">{waiver.content}</p>
+                      <p className="text-sm text-white/60 line-clamp-2 mb-3">{waiver.content}</p>
 
                       {/* Signature stats */}
                       <div className="flex flex-wrap gap-4 text-sm">
-                        <span className="text-cyan-700 font-medium">
+                        <span className="text-cyan-400 font-medium">
                           {sigs.length} signed
                         </span>
-                        <span className="text-yellow-700 font-medium">
+                        <span className="text-yellow-400 font-medium">
                           {unsignedParents.length} unsigned
                         </span>
                       </div>
@@ -89,12 +90,12 @@ export default async function WaiversPage() {
                       {/* Signed list */}
                       {sigs.length > 0 && (
                         <div className="mt-3">
-                          <p className="text-xs font-medium text-text-light mb-1">Signed by:</p>
+                          <p className="text-xs font-medium text-white/60 mb-1">Signed by:</p>
                           <div className="flex flex-wrap gap-1.5">
                             {sigs.map((sig) => (
                               <span
                                 key={sig.id}
-                                className="px-2 py-0.5 rounded-full text-xs bg-cyan-100 text-cyan-800"
+                                className="px-2 py-0.5 rounded-full text-xs bg-cyan-500/15 text-cyan-400"
                               >
                                 {(sig.parent as unknown as { full_name: string })?.full_name || 'Unknown'}
                                 {' - '}
@@ -112,12 +113,12 @@ export default async function WaiversPage() {
                       {/* Unsigned list */}
                       {unsignedParents.length > 0 && (
                         <div className="mt-2">
-                          <p className="text-xs font-medium text-text-light mb-1">Not yet signed:</p>
+                          <p className="text-xs font-medium text-white/60 mb-1">Not yet signed:</p>
                           <div className="flex flex-wrap gap-1.5">
                             {unsignedParents.map((p) => (
                               <span
                                 key={p.id}
-                                className="px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-800"
+                                className="px-2 py-0.5 rounded-full text-xs bg-yellow-500/15 text-yellow-400"
                               >
                                 {p.full_name}
                               </span>
@@ -132,6 +133,7 @@ export default async function WaiversPage() {
             })}
           </div>
         )}
+      </div>
       </div>
     )
   }
@@ -149,8 +151,9 @@ export default async function WaiversPage() {
     .eq('parent_id', user.id)
 
   return (
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Waivers & Consent Forms</h1>
+      <h1 className="text-2xl font-bold text-white">Waivers & Consent Forms</h1>
 
       {(waivers || []).length === 0 ? (
         <EmptyState message="No waivers to sign." />
@@ -178,6 +181,7 @@ export default async function WaiversPage() {
           orgId={orgId}
         />
       )}
+    </div>
     </div>
   )
 }
