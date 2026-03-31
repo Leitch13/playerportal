@@ -657,6 +657,140 @@ export function certExpiryEmail(params: {
   }
 }
 
+// ─── Trial Funnel Emails ────────────────────────────────────────────────────
+
+export function trialReminder48hEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className: string
+  date: string
+  location: string
+}) {
+  return {
+    subject: `See you on ${params.date}! — ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">See you on ${params.date}!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">We're excited to welcome <strong>${params.childName}</strong> to their free taster session at <strong>${params.academyName}</strong>!</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#999">Class</td><td style="text-align:right;font-weight:600">${params.className}</td></tr>
+          <tr><td style="color:#999">Date</td><td style="text-align:right;font-weight:600">${params.date}</td></tr>
+          <tr><td style="color:#999">Location</td><td style="text-align:right">${params.location}</td></tr>
+        </table>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0;border-left:3px solid #4ecde6">
+        <p style="margin:0 0 8px;font-size:14px;color:#4ecde6;font-weight:700">What to bring</p>
+        <ul style="padding-left:18px;margin:0;color:#aaa;font-size:13px;line-height:1.8">
+          <li>Comfortable sports kit &amp; trainers (astro boots if outdoors)</li>
+          <li>Water bottle</li>
+          <li>A positive attitude!</li>
+        </ul>
+      </div>
+      <p style="color:#aaa;line-height:1.6">No pressure, no commitment — just turn up, have fun, and see if it's the right fit. We can't wait to meet ${params.childName}!</p>
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:24px">Questions? Just reply to this email.</p>
+    `),
+  }
+}
+
+export function trialReminder24hEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className: string
+  date: string
+  location: string
+  mapUrl?: string
+}) {
+  return {
+    subject: `Tomorrow's the day! — ${params.childName}'s taster session`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Tomorrow's the day!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${params.childName}</strong>'s free taster session at <strong>${params.academyName}</strong> is <strong>tomorrow</strong>. Here's everything you need:</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#999">Class</td><td style="text-align:right;font-weight:600">${params.className}</td></tr>
+          <tr><td style="color:#999">Date</td><td style="text-align:right;font-weight:600">${params.date}</td></tr>
+          <tr><td style="color:#999">Location</td><td style="text-align:right">${params.location}</td></tr>
+        </table>
+      </div>
+      ${params.mapUrl ? `<div style="text-align:center;margin:20px 0">
+        <a href="${params.mapUrl}" style="display:inline-block;background:#1a1a1a;color:#4ecde6;padding:12px 24px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px;border:1px solid #333">📍 Get Directions</a>
+      </div>` : ''}
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0;border-left:3px solid #f59e0b">
+        <p style="margin:0 0 8px;font-size:14px;color:#f59e0b;font-weight:700">Quick reminders</p>
+        <ul style="padding-left:18px;margin:0;color:#aaa;font-size:13px;line-height:1.8">
+          <li>Arrive 5-10 minutes early so ${params.childName} can settle in</li>
+          <li>Bring comfortable sports kit, trainers &amp; a water bottle</li>
+          <li>Parents are welcome to stay and watch</li>
+        </ul>
+      </div>
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:24px">Can't make it? Just reply to this email and we'll rearrange.</p>
+    `),
+  }
+}
+
+export function trialReminder2hEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className: string
+  location: string
+}) {
+  return {
+    subject: `Almost time! — ${params.childName}'s session starts soon`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Almost time!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${params.childName}</strong>'s taster session is starting soon at <strong>${params.location}</strong>.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0;border-left:3px solid #10b981">
+        <p style="margin:0 0 8px;font-size:14px;color:#10b981;font-weight:700">Quick tips for a great first session</p>
+        <ul style="padding-left:18px;margin:0;color:#aaa;font-size:13px;line-height:1.8">
+          <li>Introduce ${params.childName} to the coach on arrival</li>
+          <li>Let them know it's okay to make mistakes — everyone does!</li>
+          <li>Encourage them to have fun and try their best</li>
+        </ul>
+      </div>
+      <p style="color:#aaa;line-height:1.6">We'll take care of the rest. See you shortly!</p>
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:24px">📍 ${params.location}</p>
+    `),
+  }
+}
+
+export function trialConversionEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className: string
+  discountCode: string
+  signupUrl: string
+}) {
+  return {
+    subject: `How did ${params.childName} enjoy their session? — ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">How did ${params.childName} enjoy it?</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> had a brilliant time at the <strong>${params.className}</strong> taster session with <strong>${params.academyName}</strong>!</p>
+      <p style="color:#aaa;line-height:1.6">If they loved it, we'd love to have them back. Here's a special offer just for taster families:</p>
+      <div style="background:linear-gradient(135deg,#0d2818,#0a1f14);border:2px solid #10b981;border-radius:16px;padding:24px;margin:24px 0;text-align:center">
+        <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#10b981">First month</p>
+        <p style="margin:0;font-size:36px;font-weight:800;color:#4ecde6">20% OFF</p>
+        <p style="margin:8px 0 0;font-size:13px;color:#aaa">Sign up within 7 days</p>
+        <div style="background:#1a1a1a;border-radius:8px;padding:10px;margin-top:12px;display:inline-block">
+          <p style="margin:0;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px">Your code</p>
+          <p style="margin:4px 0 0;font-size:20px;font-weight:800;color:#4ecde6;letter-spacing:2px;font-family:monospace">${params.discountCode}</p>
+        </div>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Sign Up Now</a>
+      </div>
+      <p style="color:#666;font-size:13px;text-align:center">Questions? Just reply to this email — we'd love to hear from you.</p>
+    `),
+  }
+}
+
 export function certExpiryAdminEmail(params: {
   adminName: string
   coachName: string
@@ -688,6 +822,40 @@ export function certExpiryAdminEmail(params: {
       <div style="text-align:center;margin:24px 0">
         <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">View Compliance</a>
       </div>
+    `),
+  }
+}
+
+export function monthlyHighlightsEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  monthLabel: string
+  sessionsAttended: number
+  attendanceRate: number
+  highlightsUrl: string
+}) {
+  return {
+    subject: `${params.childName}'s ${params.monthLabel} highlights are ready!`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Monthly Highlights Ready!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${params.childName}</strong>'s <strong>${params.monthLabel}</strong> highlight reel is ready to view and share!</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0;text-align:center">
+        <div style="display:inline-block;margin:0 16px">
+          <div style="font-size:28px;font-weight:800;color:#4ecde6">${params.sessionsAttended}</div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Sessions</div>
+        </div>
+        <div style="display:inline-block;margin:0 16px">
+          <div style="font-size:28px;font-weight:800;color:#4ecde6">${params.attendanceRate}%</div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Attendance</div>
+        </div>
+      </div>
+      <p style="color:#aaa;line-height:1.6">Download the highlight card and share it on Instagram, WhatsApp, or anywhere you like!</p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.highlightsUrl}" style="display:inline-block;background:linear-gradient(135deg, #a855f7, #ec4899);color:#ffffff;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View Highlights</a>
+      </div>
+      <p style="color:#666;font-size:13px">From ${params.academyName}</p>
     `),
   }
 }

@@ -16,14 +16,28 @@ interface Trial {
   notes: string | null
   status: string
   createdAt: string
+  reminder48h: boolean
+  reminder24h: boolean
+  reminder2h: boolean
+  followupSent: boolean
+  converted: boolean
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'Pending', color: 'text-yellow-700', bg: 'bg-yellow-50' },
-  confirmed: { label: 'Confirmed', color: 'text-blue-700', bg: 'bg-blue-50' },
-  attended: { label: 'Attended', color: 'text-emerald-700', bg: 'bg-emerald-50' },
-  no_show: { label: 'No Show', color: 'text-red-600', bg: 'bg-red-50' },
-  cancelled: { label: 'Cancelled', color: 'text-gray-500', bg: 'bg-gray-50' },
+  pending: { label: 'Pending', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+  confirmed: { label: 'Confirmed', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  attended: { label: 'Attended', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  no_show: { label: 'No Show', color: 'text-red-400', bg: 'bg-red-500/10' },
+  cancelled: { label: 'Cancelled', color: 'text-white/40', bg: 'bg-white/5' },
+}
+
+function getReminderBadge(t: Trial): { label: string; color: string } | null {
+  if (t.converted) return { label: 'Converted', color: 'text-[#4ecde6] bg-[#4ecde6]/10' }
+  if (t.followupSent) return { label: 'Followed up', color: 'text-amber-400 bg-amber-500/10' }
+  if (t.reminder2h) return { label: '2h sent', color: 'text-emerald-400 bg-emerald-500/10' }
+  if (t.reminder24h) return { label: '24h sent', color: 'text-blue-400 bg-blue-500/10' }
+  if (t.reminder48h) return { label: '48h sent', color: 'text-indigo-400 bg-indigo-500/10' }
+  return null
 }
 
 export default function TrialManager({ trials }: { trials: Trial[] }) {
@@ -53,13 +67,13 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 bg-surface rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-4 bg-[#141414] rounded-lg p-1 w-fit border border-[#1e1e1e]">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              filter === tab.key ? 'bg-white shadow-sm text-primary' : 'text-text-light hover:text-primary'
+              filter === tab.key ? 'bg-[#1e1e1e] text-white shadow-sm' : 'text-white/40 hover:text-white/70'
             }`}
           >
             {tab.label}
@@ -68,40 +82,42 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-border p-12 text-center">
-          <p className="text-text-light">No trial bookings {filter !== 'all' ? `with status "${filter}"` : 'yet'}</p>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+          <p className="text-white/40">No trial bookings {filter !== 'all' ? `with status "${filter}"` : 'yet'}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-surface/30">
-                  <th className="text-left px-4 py-3 font-semibold text-text-light">Child</th>
-                  <th className="text-left px-4 py-3 font-semibold text-text-light">Parent</th>
-                  <th className="text-left px-4 py-3 font-semibold text-text-light hidden md:table-cell">Class</th>
-                  <th className="text-left px-4 py-3 font-semibold text-text-light hidden lg:table-cell">Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-text-light">Status</th>
-                  <th className="text-right px-4 py-3 font-semibold text-text-light">Actions</th>
+                <tr className="border-b border-[#1e1e1e]">
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Child</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Parent</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden md:table-cell">Class</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden lg:table-cell">Date</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden lg:table-cell">Funnel</th>
+                  <th className="text-right px-4 py-3 font-semibold text-white/50 text-xs">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((t) => {
                   const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending
+                  const badge = getReminderBadge(t)
                   return (
-                    <tr key={t.id} className="border-b border-border/30 hover:bg-surface/20">
+                    <tr key={t.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/[0.02]">
                       <td className="px-4 py-3">
-                        <p className="font-medium">{t.childName}</p>
-                        {t.childAge && <p className="text-xs text-text-light">Age {t.childAge}</p>}
+                        <p className="font-medium text-white">{t.childName}</p>
+                        {t.childAge && <p className="text-xs text-white/40">Age {t.childAge}</p>}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium">{t.parentName}</p>
-                        <p className="text-xs text-text-light">{t.parentEmail}</p>
+                        <p className="font-medium text-white/80">{t.parentName}</p>
+                        <p className="text-xs text-white/40">{t.parentEmail}</p>
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-text-light">
+                      <td className="px-4 py-3 hidden md:table-cell text-white/50">
                         {t.groupName || 'Any'}
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-text-light">
+                      <td className="px-4 py-3 hidden lg:table-cell text-white/50">
                         {t.preferredDate
                           ? new Date(t.preferredDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
                           : 'Flexible'}
@@ -111,13 +127,22 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
                           {cfg.label}
                         </span>
                       </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {badge ? (
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-white/20">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center gap-1 justify-end">
                           {t.status === 'pending' && (
                             <button
                               onClick={() => updateStatus(t.id, 'confirmed')}
                               disabled={loading === t.id}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
                             >
                               Confirm
                             </button>
@@ -127,14 +152,14 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
                               <button
                                 onClick={() => updateStatus(t.id, 'attended')}
                                 disabled={loading === t.id}
-                                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
                               >
                                 Attended
                               </button>
                               <button
                                 onClick={() => updateStatus(t.id, 'no_show')}
                                 disabled={loading === t.id}
-                                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-500 hover:bg-red-100 transition-colors disabled:opacity-50"
+                                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                               >
                                 No Show
                               </button>
@@ -144,7 +169,7 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
                             <button
                               onClick={() => updateStatus(t.id, 'cancelled')}
                               disabled={loading === t.id}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold text-text-light hover:text-red-500 transition-colors disabled:opacity-50"
+                              className="px-2.5 py-1 rounded-md text-xs font-semibold text-white/30 hover:text-red-400 transition-colors disabled:opacity-50"
                             >
                               Cancel
                             </button>

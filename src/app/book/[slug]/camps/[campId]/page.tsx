@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ShareButton from './ShareButton'
+import CampBookingForm from './CampBookingForm'
 
 type ScheduleDay = {
   day: string
@@ -26,6 +27,12 @@ type Camp = {
   what_to_bring: string | null
   schedule: ScheduleDay[]
   is_published: boolean
+  early_bird_price: number | null
+  early_bird_deadline: string | null
+  sibling_discount_enabled: boolean
+  sibling_discount_percent: number | null
+  collect_medical_info: boolean
+  require_consent: boolean
 }
 
 function formatDateRange(start: string, end: string): string {
@@ -79,10 +86,16 @@ const dotColors = [
 
 export default async function CampDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; campId: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { slug, campId } = await params
+  const sp = await searchParams
+  const bookedParam = sp.booked === '1'
+  const bookingIdParam = typeof sp.booking === 'string' ? sp.booking : null
+
   const supabase = await createClient()
 
   const { data: org } = await supabase
@@ -106,6 +119,27 @@ export default async function CampDetailPage({
   const primaryColor = org.primary_color || '#4ecde6'
   const days = getDurationDays(c.start_date, c.end_date)
   const schedule: ScheduleDay[] = Array.isArray(c.schedule) ? c.schedule : []
+
+  // Get booking count for spots left
+  const { count: bookingCount } = await supabase
+    .from('camp_bookings')
+    .select('*', { count: 'exact', head: true })
+    .eq('camp_id', campId)
+    .in('payment_status', ['pending', 'paid'])
+
+  const spotsLeft = c.max_capacity ? c.max_capacity - (bookingCount || 0) : null
+
+  // If booked=1, mark booking as paid (Stripe redirect back)
+  if (bookedParam && bookingIdParam) {
+    // We trust the redirect — webhook will also confirm
+    await supabase
+      .from('camp_bookings')
+      .update({ payment_status: 'paid' })
+      .eq('id', bookingIdParam)
+  }
+
+  const today = new Date().toISOString().split('T')[0]
+  const isEarlyBird = c.early_bird_price && c.early_bird_deadline && today <= c.early_bird_deadline
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -132,97 +166,135 @@ export default async function CampDetailPage({
             <span>{days} day{days !== 1 ? 's' : ''}</span>
             {c.age_group && <span>{c.age_group}</span>}
           </div>
+          {/* Urgency banner */}
+          {spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 text-sm">
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+              <span className="text-red-300 font-medium">Only {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left!</span>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 space-y-12">
-        {/* Key Details Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <DetailCard label="Dates" value={formatDateRange(c.start_date, c.end_date)} />
-          <DetailCard
-            label="Times"
-            value={`${c.daily_start_time || '09:00'} - ${c.daily_end_time || '15:00'}`}
-          />
-          {c.location && <DetailCard label="Location" value={c.location} />}
-          {c.age_group && <DetailCard label="Age Group" value={c.age_group} />}
-          {c.price != null && (
-            <DetailCard label="Price" value={`\u00A3${Number(c.price).toFixed(0)}`} />
-          )}
-          {c.max_capacity && (
-            <DetailCard label="Capacity" value={`${c.max_capacity} places`} />
-          )}
-        </div>
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Left column - details */}
+          <div className="lg:col-span-3 space-y-10">
+            {/* Key Details Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <DetailCard label="Dates" value={formatDateRange(c.start_date, c.end_date)} />
+              <DetailCard
+                label="Times"
+                value={`${c.daily_start_time || '09:00'} - ${c.daily_end_time || '15:00'}`}
+              />
+              {c.location && <DetailCard label="Location" value={c.location} />}
+              {c.age_group && <DetailCard label="Age Group" value={c.age_group} />}
+              {c.price != null && (
+                <DetailCard
+                  label="Price"
+                  value={isEarlyBird ? `\u00A3${Number(c.early_bird_price).toFixed(0)}` : `\u00A3${Number(c.price).toFixed(0)}`}
+                />
+              )}
+              {c.max_capacity && (
+                <DetailCard label="Spots Left" value={spotsLeft !== null ? `${spotsLeft} / ${c.max_capacity}` : `${c.max_capacity} places`} />
+              )}
+            </div>
 
-        {/* Description */}
-        {c.description && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4">About This Camp</h2>
-            <p className="text-white/70 leading-relaxed whitespace-pre-line">{c.description}</p>
-          </section>
-        )}
+            {/* Description */}
+            {c.description && (
+              <section>
+                <h2 className="text-xl font-bold text-white mb-4">About This Camp</h2>
+                <p className="text-white/70 leading-relaxed whitespace-pre-line">{c.description}</p>
+              </section>
+            )}
 
-        {/* Daily Schedule */}
-        {schedule.length > 0 && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-6">Daily Schedule</h2>
-            <div className="space-y-4">
-              {schedule.map((day, idx) => (
-                <div
-                  key={idx}
-                  className={`rounded-xl border p-5 ${dayColors[idx % dayColors.length]}`}
-                >
-                  <h3 className="font-semibold text-white mb-4">
-                    {day.date ? formatDayHeader(day.date) : day.day}
-                  </h3>
-                  <div className="space-y-3 ml-2">
-                    {day.activities.map((activity, aIdx) => {
-                      const dashIndex = activity.indexOf(' - ')
-                      const time = dashIndex > -1 ? activity.substring(0, dashIndex) : ''
-                      const desc = dashIndex > -1 ? activity.substring(dashIndex + 3) : activity
-                      return (
-                        <div key={aIdx} className="flex items-start gap-3">
-                          <div className="flex flex-col items-center mt-1">
-                            <div className={`w-2.5 h-2.5 rounded-full ${dotColors[idx % dotColors.length]}`} />
-                            {aIdx < day.activities.length - 1 && (
-                              <div className="w-px h-6 bg-white/10 mt-1" />
-                            )}
-                          </div>
-                          <div>
-                            {time && (
-                              <span className="text-xs font-mono text-white/40 block">{time}</span>
-                            )}
-                            <span className="text-sm text-white/80">{desc}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+            {/* Daily Schedule */}
+            {schedule.length > 0 && (
+              <section>
+                <h2 className="text-xl font-bold text-white mb-6">Daily Schedule</h2>
+                <div className="space-y-4">
+                  {schedule.map((day, idx) => (
+                    <div
+                      key={idx}
+                      className={`rounded-xl border p-5 ${dayColors[idx % dayColors.length]}`}
+                    >
+                      <h3 className="font-semibold text-white mb-4">
+                        {day.date ? formatDayHeader(day.date) : day.day}
+                      </h3>
+                      <div className="space-y-3 ml-2">
+                        {day.activities.map((activity, aIdx) => {
+                          const dashIndex = activity.indexOf(' - ')
+                          const time = dashIndex > -1 ? activity.substring(0, dashIndex) : ''
+                          const desc = dashIndex > -1 ? activity.substring(dashIndex + 3) : activity
+                          return (
+                            <div key={aIdx} className="flex items-start gap-3">
+                              <div className="flex flex-col items-center mt-1">
+                                <div className={`w-2.5 h-2.5 rounded-full ${dotColors[idx % dotColors.length]}`} />
+                                {aIdx < day.activities.length - 1 && (
+                                  <div className="w-px h-6 bg-white/10 mt-1" />
+                                )}
+                              </div>
+                              <div>
+                                {time && (
+                                  <span className="text-xs font-mono text-white/40 block">{time}</span>
+                                )}
+                                <span className="text-sm text-white/80">{desc}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              </section>
+            )}
 
-        {/* What to Bring */}
-        {c.what_to_bring && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-4">What to Bring</h2>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-              <p className="text-white/70 leading-relaxed whitespace-pre-line">{c.what_to_bring}</p>
-            </div>
-          </section>
-        )}
+            {/* What to Bring */}
+            {c.what_to_bring && (
+              <section>
+                <h2 className="text-xl font-bold text-white mb-4">What to Bring</h2>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-white/70 leading-relaxed whitespace-pre-line">{c.what_to_bring}</p>
+                </div>
+              </section>
+            )}
 
-        {/* CTA */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-          <Link
-            href={`/auth/signup?org=${slug}`}
-            className="w-full sm:w-auto text-center px-10 py-4 rounded-full text-lg font-bold transition-transform hover:scale-105"
-            style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
-          >
-            Book Camp {c.price != null && <>&#8212; &pound;{Number(c.price).toFixed(0)}</>}
-          </Link>
-          <ShareButton />
+            <div className="pt-2">
+              <ShareButton />
+            </div>
+          </div>
+
+          {/* Right column - booking form */}
+          <div className="lg:col-span-2">
+            <div className="sticky top-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
+              <h3 className="text-lg font-bold text-white mb-5">Book Your Place</h3>
+              <CampBookingForm
+                camp={{
+                  id: c.id,
+                  organisation_id: c.organisation_id,
+                  name: c.name,
+                  start_date: c.start_date,
+                  end_date: c.end_date,
+                  daily_start_time: c.daily_start_time,
+                  daily_end_time: c.daily_end_time,
+                  location: c.location,
+                  price: c.price,
+                  early_bird_price: c.early_bird_price ?? null,
+                  early_bird_deadline: c.early_bird_deadline ?? null,
+                  sibling_discount_enabled: c.sibling_discount_enabled ?? false,
+                  sibling_discount_percent: c.sibling_discount_percent ?? null,
+                  collect_medical_info: c.collect_medical_info ?? false,
+                  require_consent: c.require_consent ?? false,
+                  max_capacity: c.max_capacity,
+                }}
+                slug={slug}
+                spotsLeft={spotsLeft}
+                primaryColor={primaryColor}
+                bookingId={bookedParam ? bookingIdParam : null}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -242,4 +314,3 @@ function DetailCard({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
-

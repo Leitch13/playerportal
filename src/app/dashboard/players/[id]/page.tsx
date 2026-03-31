@@ -250,10 +250,22 @@ export default async function PlayerDetailPage({
             <div className="text-xs text-white/60">Attendance</div>
           </div>
           <Link
+            href={`/dashboard/players/${id}/passport`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors"
+          >
+            <span>{'\u{1F3AE}'}</span> Passport
+          </Link>
+          <Link
             href={`/dashboard/players/${id}/report`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
           >
             <span>{'\u{1F4C4}'}</span> Progress Report
+          </Link>
+          <Link
+            href={`/dashboard/players/${id}/highlights`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-purple-500/15 to-pink-500/15 text-purple-400 hover:from-purple-500/25 hover:to-pink-500/25 transition-colors border border-purple-500/10"
+          >
+            <span>{'\u{2728}'}</span> Monthly Highlights
           </Link>
         </div>
       </div>

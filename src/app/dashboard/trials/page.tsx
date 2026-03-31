@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import TrialManager from './TrialManager'
 
 export default async function TrialsPage() {
@@ -15,22 +16,39 @@ export default async function TrialsPage() {
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
 
+  const allTrials = trials || []
   const stats = {
-    pending: (trials || []).filter(t => t.status === 'pending').length,
-    confirmed: (trials || []).filter(t => t.status === 'confirmed').length,
-    attended: (trials || []).filter(t => t.status === 'attended').length,
-    total: (trials || []).length,
+    pending: allTrials.filter(t => t.status === 'pending').length,
+    confirmed: allTrials.filter(t => t.status === 'confirmed').length,
+    attended: allTrials.filter(t => t.status === 'attended').length,
+    total: allTrials.length,
+    converted: allTrials.filter(t => t.converted).length,
+    conversionRate: allTrials.filter(t => t.status === 'attended').length > 0
+      ? Math.round(
+          (allTrials.filter(t => t.converted).length /
+            allTrials.filter(t => t.status === 'attended').length) *
+            100
+        )
+      : 0,
   }
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Trial Bookings</h1>
-        <p className="text-white/60 text-sm mt-1">Manage free trial requests from new families</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Trial Bookings</h1>
+          <p className="text-white/60 text-sm mt-1">Manage free trial requests from new families</p>
+        </div>
+        <Link
+          href="/dashboard/trials/funnel"
+          className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#4ecde6]/10 text-[#4ecde6] hover:bg-[#4ecde6]/20 border border-[#4ecde6]/20 transition-colors"
+        >
+          View Funnel
+        </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
           <p className="text-2xl font-bold text-yellow-500">{stats.pending}</p>
           <p className="text-xs text-white/60 font-medium">Pending</p>
@@ -47,9 +65,13 @@ export default async function TrialsPage() {
           <p className="text-2xl font-bold">{stats.total}</p>
           <p className="text-xs text-white/60 font-medium">Total</p>
         </div>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
+          <p className="text-2xl font-bold text-[#4ecde6]">{stats.conversionRate}%</p>
+          <p className="text-xs text-white/60 font-medium">Conversion</p>
+        </div>
       </div>
 
-      <TrialManager trials={(trials || []).map(t => ({
+      <TrialManager trials={allTrials.map(t => ({
         id: t.id,
         parentName: t.parent_name,
         parentEmail: t.parent_email,
@@ -61,6 +83,11 @@ export default async function TrialsPage() {
         notes: t.notes,
         status: t.status,
         createdAt: t.created_at,
+        reminder48h: t.reminder_48h_sent ?? false,
+        reminder24h: t.reminder_24h_sent ?? false,
+        reminder2h: t.reminder_2h_sent ?? false,
+        followupSent: t.followup_sent ?? false,
+        converted: t.converted ?? false,
       }))} />
     </div>
   )
