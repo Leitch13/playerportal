@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import type { UserRole } from '@/lib/types'
 import MessageList from './MessageList'
 import MessageThread from './MessageThread'
@@ -49,6 +50,110 @@ export default function MessagesApp({
   const [mobileView, setMobileView] = useState<'list' | 'thread'>('list')
 
   const selectedThread = threads.find((t) => t.threadId === selectedThreadId) || null
+
+  // Real-time subscription for new messages across all threads
+  const handleIncomingMessage = useCallback(
+    async (payload: { new: Record<string, unknown> }) => {
+      const newMsg = payload.new
+      // Skip messages we sent ourselves
+      if (newMsg.sender_id === currentUserId) return
+
+      const supabase = createClient()
+      // Fetch sender profile
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('id', newMsg.sender_id as string)
+        .single()
+
+      const { data: recipientProfile } = await supabase
+        .from('profiles')
+        .select('id, full_name, role')
+        .eq('id', newMsg.recipient_id as string)
+        .single()
+
+      const messageData: MessageData = {
+        id: newMsg.id as string,
+        sender_id: newMsg.sender_id as string,
+        recipient_id: newMsg.recipient_id as string,
+        body: newMsg.body as string,
+        subject: newMsg.subject as string | null,
+        read: false,
+        created_at: newMsg.created_at as string,
+        thread_id: newMsg.thread_id as string,
+        sender: senderProfile || null,
+        recipient: recipientProfile || null,
+      }
+
+      setThreads((prev) => {
+        const existingIdx = prev.findIndex((t) => t.threadId === messageData.thread_id)
+        if (existingIdx >= 0) {
+          const updated = [...prev]
+          const alreadyExists = updated[existingIdx].messages.some((m) => m.id === messageData.id)
+          if (!alreadyExists) {
+            const isViewingThread = selectedThreadId === messageData.thread_id
+            updated[existingIdx] = {
+              ...updated[existingIdx],
+              messages: [...updated[existingIdx].messages, messageData],
+              lastMessage: {
+                body: messageData.body,
+                created_at: messageData.created_at,
+                sender_id: messageData.sender_id,
+              },
+              unreadCount: isViewingThread
+                ? updated[existingIdx].unreadCount
+                : updated[existingIdx].unreadCount + 1,
+            }
+          }
+          const thread = updated.splice(existingIdx, 1)[0]
+          return [thread, ...updated]
+        } else {
+          // New thread from someone we haven't messaged before
+          const newThread: ThreadData = {
+            threadId: messageData.thread_id,
+            otherUser: messageData.sender || {
+              id: messageData.sender_id,
+              full_name: 'Unknown',
+              role: 'parent',
+            },
+            lastMessage: {
+              body: messageData.body,
+              created_at: messageData.created_at,
+              sender_id: messageData.sender_id,
+            },
+            unreadCount: 1,
+            subject: messageData.subject,
+            messages: [messageData],
+          }
+          return [newThread, ...prev]
+        }
+      })
+    },
+    [currentUserId, selectedThreadId]
+  )
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('messages-global')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `organisation_id=eq.${orgId}`,
+        },
+        (payload) => {
+          handleIncomingMessage(payload as { new: Record<string, unknown> })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [orgId, handleIncomingMessage])
 
   function handleSelectThread(threadId: string) {
     setSelectedThreadId(threadId)

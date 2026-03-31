@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import FileUpload from '@/components/FileUpload'
 
@@ -87,6 +87,40 @@ export default function OnboardPage() {
   const [adminEmail, setAdminEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  // Load saved progress from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('playerportal_onboard')
+    if (saved) {
+      try {
+        const data = JSON.parse(saved)
+        if (data.academyName) setAcademyName(data.academyName)
+        if (data.slug) { setSlug(data.slug); setSlugEdited(true) }
+        if (data.contactEmail) setContactEmail(data.contactEmail)
+        if (data.contactPhone) setContactPhone(data.contactPhone)
+        if (data.description) setDescription(data.description)
+        if (data.location) setLocation(data.location)
+        if (data.primaryColor) setPrimaryColor(data.primaryColor)
+        if (data.logoUrl) setLogoUrl(data.logoUrl)
+        if (data.heroImageUrl) setHeroImageUrl(data.heroImageUrl)
+        if (data.selectedPlan) setSelectedPlan(data.selectedPlan)
+        if (data.fullName) setFullName(data.fullName)
+        if (data.adminEmail) setAdminEmail(data.adminEmail)
+        if (typeof data.step === 'number') setStep(data.step)
+      } catch {
+        // Ignore corrupt data
+      }
+    }
+  }, [])
+
+  // Save progress to localStorage on every state change
+  useEffect(() => {
+    const data = {
+      academyName, slug, contactEmail, contactPhone, description, location,
+      primaryColor, logoUrl, heroImageUrl, selectedPlan, fullName, adminEmail, step,
+    }
+    localStorage.setItem('playerportal_onboard', JSON.stringify(data))
+  }, [academyName, slug, contactEmail, contactPhone, description, location, primaryColor, logoUrl, heroImageUrl, selectedPlan, fullName, adminEmail, step])
+
   // Default plans created automatically by API
 
   // Class setup removed — done from dashboard
@@ -102,6 +136,27 @@ export default function OnboardPage() {
       }
     })
   }, [monthlyVolume])
+
+  function clearAndStartOver() {
+    localStorage.removeItem('playerportal_onboard')
+    setStep(0)
+    setAcademyName('')
+    setSlug('')
+    setSlugEdited(false)
+    setContactEmail('')
+    setContactPhone('')
+    setDescription('')
+    setLocation('')
+    setPrimaryColor('#4ecde6')
+    setLogoUrl('')
+    setHeroImageUrl('')
+    setSelectedPlan('pro')
+    setMonthlyVolume(2000)
+    setFullName('')
+    setAdminEmail('')
+    setPassword('')
+    setError(null)
+  }
 
   function handleNameChange(value: string) {
     setAcademyName(value)
@@ -218,10 +273,12 @@ export default function OnboardPage() {
       })
       if (signInError) {
         // Fallback to signin page if auto-login fails
+        localStorage.removeItem('playerportal_onboard')
         window.location.href = `/auth/signin?email=${encodeURIComponent(adminEmail)}&message=${encodeURIComponent('Academy created! Sign in with your new account.')}`
         return
       }
-      // Success — go straight to dashboard (full page reload to establish server cookies)
+      // Success — clear saved progress and go to dashboard
+      localStorage.removeItem('playerportal_onboard')
       window.location.href = '/dashboard'
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
@@ -709,7 +766,13 @@ export default function OnboardPage() {
             )}
 
             <div className="flex items-center gap-3">
-
+              <button
+                type="button"
+                onClick={clearAndStartOver}
+                className="px-4 py-2 text-xs font-medium text-red-400/70 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 rounded-lg transition-colors"
+              >
+                Clear &amp; Start Over
+              </button>
               {step < STEPS.length - 1 ? (
                 <button
                   type="button"

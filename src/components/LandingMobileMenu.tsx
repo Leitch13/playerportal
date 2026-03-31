@@ -25,7 +25,6 @@ export default function LandingMobileMenu() {
           <a href="#features" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">Features</a>
           <Link href="/how-it-works" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">How It Works</Link>
           <a href="#pricing" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">Pricing</a>
-          <a href="#testimonials" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">Testimonials</a>
           <Link href="/demo" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">Try Demo</Link>
           <div className="pt-3 border-t border-white/[0.06] flex gap-3">
             <Link href="/auth/signin" className="flex-1 py-2.5 text-center text-sm text-white/60 border border-white/[0.1] rounded-xl hover:bg-white/[0.05]">Log in</Link>

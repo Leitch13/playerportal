@@ -62,26 +62,6 @@ const plans = [
   },
 ]
 
-const testimonials = [
-  {
-    quote: 'Player Portal completely transformed how we run our academy. Parents love it, payments come in on time, and I save 10+ hours a week.',
-    name: 'Marcus Thompson',
-    role: 'Head Coach & Owner',
-    academy: 'Southside FA',
-  },
-  {
-    quote: 'We went from spreadsheets and WhatsApp to a proper system overnight. The progress reviews alone have been a game-changer.',
-    name: 'Sarah Mitchell',
-    role: 'Academy Director',
-    academy: 'North London Elite',
-  },
-  {
-    quote: 'The referral system paid for itself in month one. We grew from 40 to 120 players in six months.',
-    name: 'James Okafor',
-    role: 'Founder',
-    academy: 'Premier Skills',
-  },
-]
 
 export default function Home() {
   return (
@@ -97,7 +77,6 @@ export default function Home() {
             <a href="#features" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Features</a>
             <Link href="/how-it-works" className="text-sm text-white/50 hover:text-white transition-colors font-medium">How It Works</Link>
             <a href="#pricing" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Pricing</a>
-            <a href="#testimonials" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Testimonials</a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link href="/auth/signin" className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white/60 hover:text-white transition-all">
@@ -130,7 +109,7 @@ export default function Home() {
             <span className="relative inline-block w-2 h-2 rounded-full bg-emerald-400">
               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
             </span>
-            Trusted by 50+ football academies across the UK
+            The all-in-one platform for football academies
           </div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-[-0.03em] leading-[0.95] mb-8 animate-slide-up">
@@ -164,9 +143,9 @@ export default function Home() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto animate-slide-up" style={{ animationDelay: '0.3s' }}>
             {[
-              { value: '50+', label: 'Academies' },
-              { value: '3,000+', label: 'Players' },
-              { value: '4.9★', label: 'Rating' },
+              { value: '14-day', label: 'Free Trial' },
+              { value: 'No card', label: 'Required' },
+              { value: 'Cancel', label: 'Anytime' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-2xl sm:text-3xl font-extrabold tracking-tight">{stat.value}</div>
@@ -717,78 +696,32 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
-      <section id="testimonials" className="relative py-24 sm:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
-              Testimonials
-            </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5">
-              Loved by academy owners
-            </h2>
-            <p className="text-white/40 text-lg max-w-xl mx-auto">
-              See why coaches across the UK trust Player Portal to run their business.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <div
-                key={t.name}
-                className="relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8 hover:border-white/[0.12] transition-all duration-300"
-              >
-                {/* Stars */}
-                <div className="flex gap-0.5 mb-5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  ))}
-                </div>
-                <blockquote className="text-white/60 text-sm leading-relaxed mb-6">
-                  &ldquo;{t.quote}&rdquo;
-                </blockquote>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4ecde6]/20 to-[#4ecde6]/5 flex items-center justify-center">
-                    <span className="text-sm font-bold text-[#4ecde6]">{t.name[0]}</span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-sm">{t.name}</div>
-                    <div className="text-xs text-white/30">{t.role} &middot; {t.academy}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA ── */}
+      {/* ── CTA ── */}
       <section className="relative py-24 sm:py-32">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4ecde6]/[0.03] to-transparent" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6">
-            Ready to transform
+            Ready to modernise
             <br />
             <span className="gradient-text">your academy?</span>
           </h2>
           <p className="text-white/40 text-lg mb-10 max-w-xl mx-auto">
-            Join 50+ football academies already saving time, impressing parents, and growing faster with Player Portal.
+            Join football academies across the UK who are saving time and growing faster with Player Portal.
           </p>
-          <Link
-            href="/onboard"
-            className="inline-flex px-10 py-5 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-lg hover:scale-[1.03] transition-all glow-accent"
-          >
-            Get Started Free &mdash; No Card Required
-          </Link>
-          <p className="mt-8 text-sm text-white/30">
-            Or{' '}
-            <a href="mailto:hello@playerportal.io" className="text-[#4ecde6]/70 underline underline-offset-2 hover:text-[#4ecde6] transition-colors">
-              book a demo
-            </a>{' '}
-            with our team
-          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/onboard"
+              className="inline-flex items-center justify-center px-10 py-5 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-lg hover:scale-[1.03] transition-all glow-accent"
+            >
+              Start Free Trial
+            </Link>
+            <Link
+              href="/demo"
+              className="inline-flex items-center justify-center px-10 py-5 border border-white/15 text-white/70 rounded-full font-semibold text-lg hover:bg-white/5 hover:text-white hover:border-white/25 transition-all"
+            >
+              Book a Demo
+            </Link>
+          </div>
         </div>
       </section>
 
