@@ -51,6 +51,7 @@ export default async function SettingsPage() {
         primary_color: org.primary_color || '#4ecde6',
         logo_url: org.logo_url || '',
         hero_image_url: org.hero_image_url || '',
+        google_review_url: org.google_review_url || '',
       } : null}
       team={(teamMembers || []).map(m => ({
         id: m.id,

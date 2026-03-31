@@ -186,6 +186,8 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/children', label: 'My Children', icon: 'users' },
       { href: '/dashboard/schedule', label: 'Schedule', icon: 'calendar' },
       { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar' },
+      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy' },
+      { href: '/dashboard/engagement', label: 'My Score', icon: 'chart-bar-square' },
     ]},
     { title: 'Academy', items: [
       { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
@@ -208,10 +210,12 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
       { href: '/dashboard/drills', label: 'Drills', icon: 'football' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
+      { href: '/dashboard/cpd', label: 'CPD & Certs', icon: 'shield-check' },
     ]},
     { title: 'Communication', items: [
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
       { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
+      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy' },
     ]},
     { title: '', items: [
       { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
@@ -236,6 +240,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'Communication', items: [
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
       { href: '/dashboard/announcements', label: 'Announcements', icon: 'megaphone' },
+      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy' },
     ]},
     { title: 'Finance', items: [
       { href: '/dashboard/plans', label: 'Plans & Pricing', icon: 'tag' },
@@ -247,6 +252,8 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/analytics', label: 'Analytics', icon: 'chart-bar-square' },
       { href: '/dashboard/exports', label: 'Exports', icon: 'arrow-down-tray' },
       { href: '/dashboard/audit', label: 'Audit Log', icon: 'shield-check' },
+      { href: '/dashboard/cpd', label: 'Compliance', icon: 'shield-check' },
+      { href: '/dashboard/engagement', label: 'Engagement', icon: 'chart-bar' },
     ]},
     { title: '', items: [
       { href: '/dashboard/settings', label: 'Settings', icon: 'cog' },

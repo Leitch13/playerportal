@@ -598,3 +598,96 @@ export function enrolmentConfirmationEmail(params: { parentName: string; childNa
     `),
   }
 }
+
+export function reviewPromptEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  sessionCount: number
+  dashboardUrl: string
+}) {
+  return {
+    subject: `How's ${params.childName} doing at ${params.academyName}?`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">We'd love your feedback!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${params.childName}</strong> has now completed <strong>${params.sessionCount} sessions</strong> at <strong>${params.academyName}</strong> — what a milestone!</p>
+      <p style="color:#aaa;line-height:1.6">We'd love to know how things are going. It only takes a moment.</p>
+      <div style="text-align:center;margin:28px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Share Your Feedback</a>
+      </div>
+      <p style="color:#666;font-size:13px;margin-top:24px;text-align:center">Your feedback helps us improve and helps other parents find us.</p>
+    `),
+  }
+}
+
+export function certExpiryEmail(params: {
+  coachName: string
+  certName: string
+  certType: string
+  expiryDate: string
+  daysUntilExpiry: number
+  dashboardUrl: string
+}) {
+  const isExpired = params.daysUntilExpiry < 0
+  const urgencyColor = isExpired ? '#ef4444' : params.daysUntilExpiry <= 7 ? '#ef4444' : '#f59e0b'
+  return {
+    subject: isExpired
+      ? `Certification expired: ${params.certName}`
+      : `Certification expiring in ${params.daysUntilExpiry} days: ${params.certName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">${isExpired ? 'Certification Expired' : 'Certification Expiring Soon'}</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.coachName},</p>
+      <p style="color:#aaa;line-height:1.6">${
+        isExpired
+          ? `Your <strong>${params.certName}</strong> certification has expired. Please renew it as soon as possible to remain compliant.`
+          : `Your <strong>${params.certName}</strong> certification is expiring in <strong style="color:${urgencyColor}">${params.daysUntilExpiry} days</strong>. Please arrange renewal before it expires.`
+      }</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#ddd">
+          <tr><td style="color:#999;padding:4px 0">Certificate</td><td style="text-align:right;font-weight:600">${params.certName}</td></tr>
+          <tr><td style="color:#999;padding:4px 0">Type</td><td style="text-align:right">${params.certType}</td></tr>
+          <tr><td style="color:#999;padding:4px 0">${isExpired ? 'Expired' : 'Expires'}</td><td style="text-align:right;color:${urgencyColor};font-weight:600">${params.expiryDate}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">Update Certifications</a>
+      </div>
+    `),
+  }
+}
+
+export function certExpiryAdminEmail(params: {
+  adminName: string
+  coachName: string
+  certName: string
+  certType: string
+  expiryDate: string
+  daysUntilExpiry: number
+  dashboardUrl: string
+}) {
+  const isExpired = params.daysUntilExpiry < 0
+  return {
+    subject: isExpired
+      ? `Coach cert expired: ${params.coachName} - ${params.certName}`
+      : `Coach cert expiring: ${params.coachName} - ${params.certName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Coach Certification Alert</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.adminName},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${params.coachName}</strong>'s <strong>${params.certName}</strong> ${
+        isExpired ? 'has expired' : `is expiring in <strong style="color:#f59e0b">${params.daysUntilExpiry} days</strong>`
+      }. Please follow up to ensure compliance.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#ddd">
+          <tr><td style="color:#999;padding:4px 0">Coach</td><td style="text-align:right;font-weight:600">${params.coachName}</td></tr>
+          <tr><td style="color:#999;padding:4px 0">Certificate</td><td style="text-align:right">${params.certName}</td></tr>
+          <tr><td style="color:#999;padding:4px 0">Type</td><td style="text-align:right">${params.certType}</td></tr>
+          <tr><td style="color:#999;padding:4px 0">${isExpired ? 'Expired' : 'Expires'}</td><td style="text-align:right;color:${isExpired ? '#ef4444' : '#f59e0b'};font-weight:600">${params.expiryDate}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">View Compliance</a>
+      </div>
+    `),
+  }
+}

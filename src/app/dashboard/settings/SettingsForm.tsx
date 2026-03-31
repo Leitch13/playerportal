@@ -18,6 +18,7 @@ interface OrgData {
   primary_color: string
   logo_url: string
   hero_image_url: string
+  google_review_url: string
 }
 
 interface TeamMember {
@@ -53,7 +54,7 @@ export default function SettingsForm({
   const [form, setForm] = useState<OrgData>(org || {
     id: '', name: '', slug: '', description: '', contact_email: '',
     contact_phone: '', location: '', primary_color: '#4ecde6',
-    logo_url: '', hero_image_url: '',
+    logo_url: '', hero_image_url: '', google_review_url: '',
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [copied, setCopied] = useState(false)
@@ -161,8 +162,13 @@ export default function SettingsForm({
                 <label className="text-xs font-medium text-white/70 block mb-1.5">Location</label>
                 <input className={inputClass} value={form.location} onChange={e => setForm({...form, location: e.target.value})} placeholder="e.g. Manchester, UK" />
               </div>
+              <div>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Google Review URL</label>
+                <input className={inputClass} value={form.google_review_url} onChange={e => setForm({...form, google_review_url: e.target.value})} placeholder="https://g.page/r/your-academy/review" />
+                <p className="text-[10px] text-white/30 mt-1">Parents will be directed here after rating their experience positively. Find your link at Google Business Profile.</p>
+              </div>
               <button
-                onClick={() => handleSave({ name: form.name, description: form.description, contact_email: form.contact_email, contact_phone: form.contact_phone, location: form.location })}
+                onClick={() => handleSave({ name: form.name, description: form.description, contact_email: form.contact_email, contact_phone: form.contact_phone, location: form.location, google_review_url: form.google_review_url })}
                 disabled={saving}
                 className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all"
               >

@@ -12,6 +12,8 @@ import StatCard from '@/components/StatCard'
 import ReferralLink from './referrals/ReferralLink'
 import UpsellBanner from '@/components/UpsellBanner'
 import OnboardingChecklist from '@/components/OnboardingChecklist'
+import EngagementScore from '@/components/EngagementScore'
+import ReviewPrompt from '@/components/ReviewPrompt'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -232,6 +234,20 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
   const orgSlug = parentOrg?.slug || ''
   const referralCode = parentProfile?.referral_code || ''
 
+  // Referral count for engagement score
+  const { count: referralCount } = await supabase
+    .from('referrals')
+    .select('id', { count: 'exact', head: true })
+    .eq('referrer_id', userId)
+
+  // Profile completeness for engagement score
+  const { data: fullProfile } = await supabase
+    .from('profiles')
+    .select('phone, address')
+    .eq('id', userId)
+    .single()
+  const profileComplete = !!(fullProfile?.phone && fullProfile?.address)
+
   // ── Upsell status queries ──
   const [
     { count: attendedTrialCount },
@@ -341,6 +357,79 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
     }
   }
 
+  // ── Review prompt: check if any child has 10+ sessions and no existing prompt ──
+  let reviewPromptData: { promptId: string; childName: string; googleReviewUrl: string | null } | null = null
+  if (playerIds.length > 0) {
+    // Count total attendance per player
+    const { data: attendanceCounts } = await supabase
+      .from('attendance')
+      .select('player_id')
+      .in('player_id', playerIds)
+      .eq('present', true)
+
+    const countByPlayer = new Map<string, number>()
+    for (const a of attendanceCounts || []) {
+      countByPlayer.set(a.player_id, (countByPlayer.get(a.player_id) || 0) + 1)
+    }
+
+    // Find players with 10+ sessions
+    const eligible = playerIds.filter((id) => (countByPlayer.get(id) || 0) >= 10)
+
+    if (eligible.length > 0) {
+      // Check for existing review_prompts for this parent
+      const { data: existingPrompts } = await supabase
+        .from('review_prompts')
+        .select('id, player_id, status')
+        .eq('profile_id', userId)
+        .in('player_id', eligible)
+
+      const promptedPlayerIds = new Set((existingPrompts || []).map((p) => p.player_id))
+      const unprompted = eligible.filter((id) => !promptedPlayerIds.has(id))
+
+      // Also check for pending prompts to show
+      const pendingPrompt = (existingPrompts || []).find((p) => p.status === 'pending')
+
+      if (pendingPrompt) {
+        const player = (players || []).find((p) => p.id === pendingPrompt.player_id)
+        const { data: orgData } = await supabase
+          .from('organisations')
+          .select('google_review_url')
+          .eq('id', parentProfile?.organisation_id ?? '')
+          .single()
+        reviewPromptData = {
+          promptId: pendingPrompt.id,
+          childName: player?.first_name || 'your child',
+          googleReviewUrl: orgData?.google_review_url || null,
+        }
+      } else if (unprompted.length > 0) {
+        // Auto-create a review prompt for the first unprompted eligible child
+        const player = (players || []).find((p) => p.id === unprompted[0])
+        const { data: newPrompt } = await supabase
+          .from('review_prompts')
+          .insert({
+            profile_id: userId,
+            organisation_id: parentProfile?.organisation_id,
+            player_id: unprompted[0],
+            status: 'pending',
+          })
+          .select('id')
+          .single()
+        if (newPrompt) {
+          const { data: orgData } = await supabase
+            .from('organisations')
+            .select('google_review_url')
+            .eq('id', parentProfile?.organisation_id ?? '')
+            .single()
+          reviewPromptData = {
+            promptId: newPrompt.id,
+            childName: player?.first_name || 'your child',
+            googleReviewUrl: orgData?.google_review_url || null,
+          }
+        }
+      }
+    }
+  }
+
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-lg mx-auto space-y-0">
@@ -431,6 +520,18 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           </>
         )}
 
+        {/* ═══ REVIEW PROMPT ═══ */}
+        {reviewPromptData && (
+          <>
+            <ReviewPrompt
+              promptId={reviewPromptData.promptId}
+              childName={reviewPromptData.childName}
+              googleReviewUrl={reviewPromptData.googleReviewUrl}
+            />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+          </>
+        )}
+
         {/* ═══ MERCH UPSELL ═══ */}
         <Link href="/dashboard/shop" className="block group">
           <div className="bg-gradient-to-r from-[#4ecde6]/[0.08] to-transparent backdrop-blur-xl border border-[#4ecde6]/[0.15] rounded-2xl p-4 flex items-center gap-4 hover:border-[#4ecde6]/30 transition-all">
@@ -470,6 +571,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
             <p className="text-2xl font-bold text-purple-400 mt-1">{newReviewCount || 0}</p>
             <p className="text-[10px] text-white/30 mt-0.5">This week</p>
           </div>
+        </div>
+
+        {/* ═══ ENGAGEMENT SCORE CARD ═══ */}
+        <div className="mt-3">
+          <EngagementScore
+            attendanceRate={overallAttendanceRate}
+            currentStreak={attendanceStreak}
+            paymentStatus={(overdueCount || 0) > 0 ? 'overdue' : totalAttendanceRecords.length > 0 ? 'current' : 'none'}
+            referralCount={referralCount || 0}
+            profileComplete={profileComplete}
+            childName={(players || [])[0]?.first_name || 'your child'}
+            compact
+          />
         </div>
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
