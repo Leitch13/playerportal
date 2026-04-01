@@ -189,6 +189,9 @@ export const POSITIONS = [
 export const KIT_SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const
 
 // Score categories for progress reviews
+// NOTE: These are the FALLBACK defaults. Organisations can define custom scoring
+// categories in the `scoring_categories` table. Always prefer fetching from the
+// database first and fall back to these only when no custom categories exist.
 export const SCORE_CATEGORIES = [
   { key: 'attitude', label: 'Attitude' },
   { key: 'effort', label: 'Effort' },

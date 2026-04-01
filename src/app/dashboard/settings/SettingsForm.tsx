@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import EmailSetup from './EmailSetup'
 import StripeSetup from './StripeSetup'
 import PlatformBilling from './PlatformBilling'
+import ScoringCategories from './ScoringCategories'
 
 interface OrgData {
   id: string
@@ -35,7 +36,7 @@ interface UsageData {
   classes: number
 }
 
-const TABS = ['General', 'Branding', 'Team', 'Email', 'Billing', 'Danger Zone'] as const
+const TABS = ['General', 'Branding', 'Team', 'Scoring', 'Email', 'Billing', 'Danger Zone'] as const
 type Tab = typeof TABS[number]
 
 export default function SettingsForm({
@@ -282,6 +283,8 @@ export default function SettingsForm({
               </div>
             </div>
           )}
+
+          {tab === 'Scoring' && org && <ScoringCategories orgId={org.id} />}
 
           {tab === 'Email' && <EmailSetup />}
 

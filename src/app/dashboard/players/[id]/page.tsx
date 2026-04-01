@@ -5,6 +5,7 @@ import Card from '@/components/Card'
 import ScoreBadge from '@/components/ScoreBadge'
 import StatusBadge from '@/components/StatusBadge'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import PlayerProfileEditor from './PlayerProfileEditor'
 import QuickLinkCanva from './QuickLinkCanva'
 import PlayerAvatar from '@/components/PlayerAvatar'
@@ -34,6 +35,15 @@ export default async function PlayerDetailPage({
 
   const role = profile?.role || 'parent'
   const orgId = profile?.organisation_id || ''
+
+  // Fetch custom scoring categories for this org
+  const { data: dbScoringCategories } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = normalizeCategories(dbScoringCategories as ScoringCategory[] | null)
 
   // Fetch player with parent info
   const { data: player } = await supabase
@@ -131,12 +141,12 @@ export default async function PlayerDetailPage({
     }
   }
 
-  // Build radar chart scores from latest review
+  // Build radar chart scores from latest review using custom categories
   const latestReview = (reviews || [])[0]
   const radarScores = latestReview
-    ? SCORE_CATEGORIES.map((cat) => ({
+    ? scoringCategories.map((cat) => ({
         label: cat.label,
-        value: (latestReview[cat.key] as number) || 0,
+        value: (latestReview[cat.key as keyof typeof latestReview] as number) || 0,
       }))
     : []
 
@@ -402,9 +412,9 @@ export default async function PlayerDetailPage({
                   </span>
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-2">
-                  {SCORE_CATEGORIES.map((cat) => (
+                  {scoringCategories.map((cat) => (
                     <div key={cat.key} className="flex flex-col items-center gap-0.5">
-                      <ScoreBadge score={r[cat.key] as number} />
+                      <ScoreBadge score={(r as Record<string, unknown>)[cat.key] as number} />
                       <span className="text-[10px] text-white/60">{cat.label}</span>
                     </div>
                   ))}

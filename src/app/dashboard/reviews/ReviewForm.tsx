@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory, type NormalizedCategory } from '@/lib/scoring-categories'
 
 interface Player {
   id: string
@@ -42,10 +43,33 @@ export default function ReviewForm({
   const [parentSummary, setParentSummary] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
+  const [categories, setCategories] = useState<NormalizedCategory[]>(
+    SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
+  )
 
   useEffect(() => {
     if (autoOpen) setOpen(true)
   }, [autoOpen])
+
+  // Fetch custom scoring categories for this org
+  useEffect(() => {
+    if (!orgId) return
+    const supabase = createClient()
+    supabase
+      .from('scoring_categories')
+      .select('*')
+      .eq('organisation_id', orgId)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        const cats = normalizeCategories(data as ScoringCategory[] | null)
+        setCategories(cats)
+        // Initialize scores for custom categories
+        const newDefaults: Record<string, number> = {}
+        cats.forEach((c) => { newDefaults[c.key] = 3 })
+        setScores(newDefaults)
+      })
+  }, [orgId])
 
   function setScore(key: string, value: number) {
     setScores((prev) => ({ ...prev, [key]: value }))
@@ -161,7 +185,7 @@ export default function ReviewForm({
         <div>
           <h3 className="text-sm font-medium mb-3">Tap to Score (1-5)</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {SCORE_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <div key={cat.key} className="bg-surface rounded-lg p-3 text-center">
                 <div className="text-xs text-text-light mb-2">{cat.label}</div>
                 <div className="flex justify-center gap-1">

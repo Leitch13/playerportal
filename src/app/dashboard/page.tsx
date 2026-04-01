@@ -7,6 +7,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import StatCard from '@/components/StatCard'
 import ReferralLink from './referrals/ReferralLink'
@@ -1610,6 +1611,15 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
 async function CoachDashboard({ userId, name, orgId }: { userId: string; name: string; orgId: string }) {
   const supabase = await createClient()
 
+  // Fetch custom scoring categories
+  const { data: dbScoringCats } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = normalizeCategories(dbScoringCats as ScoringCategory[] | null)
+
   // Coach's groups
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long' })
 
@@ -1877,10 +1887,10 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
                         </span>
                         <span className="text-xs text-white/30">{new Date(r.review_date).toLocaleDateString()}</span>
                       </div>
-                      <div className="grid grid-cols-6 gap-1">
-                        {SCORE_CATEGORIES.map((cat) => (
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+                        {scoringCategories.map((cat) => (
                           <div key={cat.key} className="flex flex-col items-center gap-0.5">
-                            <ScoreBadge score={r[cat.key] as number} />
+                            <ScoreBadge score={(r as Record<string, unknown>)[cat.key] as number} />
                             <span className="text-[9px] text-white/30">{cat.label.substring(0, 4)}</span>
                           </div>
                         ))}

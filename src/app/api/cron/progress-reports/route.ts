@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { progressReportEmail } from '@/lib/email-templates'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 
 export const dynamic = 'force-dynamic'
 
-const SCORE_CATEGORIES = [
+const FALLBACK_SCORE_CATEGORIES = [
   { key: 'attitude', label: 'Attitude' },
   { key: 'effort', label: 'Effort' },
   { key: 'technical_quality', label: 'Technical Quality' },
@@ -45,6 +46,24 @@ export async function GET(request: NextRequest) {
     `)
     .gte('created_at', since)
 
+  // Cache scoring categories per org to avoid repeated queries
+  const orgCategoriesCache: Record<string, { key: string; label: string }[]> = {}
+
+  async function getOrgCategories(orgIdVal: string) {
+    if (orgCategoriesCache[orgIdVal]) return orgCategoriesCache[orgIdVal]
+    const { data: dbCats } = await supabase
+      .from('scoring_categories')
+      .select('*')
+      .eq('organisation_id', orgIdVal)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+    const cats = (dbCats as ScoringCategory[] | null)?.length
+      ? normalizeCategories(dbCats as ScoringCategory[])
+      : FALLBACK_SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
+    orgCategoriesCache[orgIdVal] = cats
+    return cats
+  }
+
   let sent = 0
 
   for (const review of reviews || []) {
@@ -57,8 +76,12 @@ export async function GET(request: NextRequest) {
 
     if (!player?.parent?.email) continue
 
+    // Get org-specific scoring categories
+    const reviewOrgId = (review as Record<string, unknown>).organisation_id as string
+    const reviewCategories = reviewOrgId ? await getOrgCategories(reviewOrgId) : FALLBACK_SCORE_CATEGORIES
+
     // Calculate scores
-    const scores = SCORE_CATEGORIES.map(cat => ({
+    const scores = reviewCategories.map(cat => ({
       category: cat.label,
       score: Number((review as Record<string, unknown>)[cat.key] || 0),
     }))

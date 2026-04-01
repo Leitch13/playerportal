@@ -1,18 +1,21 @@
 'use client'
 
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { type NormalizedCategory } from '@/lib/scoring-categories'
 
 interface Review {
   review_date: string
-  attitude: number
-  effort: number
-  technical_quality: number
-  game_understanding: number
-  confidence: number
-  physical_movement: number
+  [key: string]: unknown
 }
 
-export default function ProgressTrend({ reviews }: { reviews: Review[] }) {
+export default function ProgressTrend({
+  reviews,
+  scoringCategories,
+}: {
+  reviews: Review[]
+  scoringCategories?: NormalizedCategory[]
+}) {
+  const categories = scoringCategories || SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
   if (reviews.length < 2) return null
 
   // Sort oldest to newest for the chart
@@ -23,23 +26,18 @@ export default function ProgressTrend({ reviews }: { reviews: Review[] }) {
 
   // Calculate average score per review
   const dataPoints = sorted.map((r) => {
-    const avg =
-      (r.attitude +
-        r.effort +
-        r.technical_quality +
-        r.game_understanding +
-        r.confidence +
-        r.physical_movement) /
-      6
+    const catScores = categories.map((cat) => ((r[cat.key] as number) || 0))
+    const total = catScores.reduce((sum, v) => sum + v, 0)
+    const avg = categories.length > 0 ? total / categories.length : 0
     return {
-      date: new Date(r.review_date).toLocaleDateString('en-GB', {
+      date: new Date(r.review_date as string).toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
       }),
       avg: Math.round(avg * 10) / 10,
-      scores: SCORE_CATEGORIES.map((cat) => ({
+      scores: categories.map((cat) => ({
         label: cat.label,
-        value: r[cat.key as keyof Review] as number,
+        value: (r[cat.key] as number) || 0,
       })),
     }
   })

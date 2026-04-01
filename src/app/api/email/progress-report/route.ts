@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 import { progressReportEmail } from '@/lib/email-templates'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 
-const SCORE_CATEGORIES = [
+const FALLBACK_SCORE_CATEGORIES = [
   { key: 'attitude', label: 'Attitude' },
   { key: 'effort', label: 'Effort' },
   { key: 'technical_quality', label: 'Technical Quality' },
@@ -42,8 +43,19 @@ export async function POST(request: NextRequest) {
   const { data: orgId } = await supabase.rpc('get_my_org')
   const { data: org } = await supabase.from('organisations').select('name').eq('id', orgId).single()
 
+  // Fetch custom scoring categories for this org
+  const { data: dbScoringCats } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = (dbScoringCats as ScoringCategory[] | null)?.length
+    ? normalizeCategories(dbScoringCats as ScoringCategory[])
+    : FALLBACK_SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
+
   // Build scores array
-  const scoreList = SCORE_CATEGORIES.map(cat => ({
+  const scoreList = scoringCategories.map(cat => ({
     category: cat.label,
     score: Number(scores?.[cat.key] || 0),
   }))

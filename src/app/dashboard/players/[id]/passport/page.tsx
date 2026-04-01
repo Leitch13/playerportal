@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ProgressionPassport from './ProgressionPassport'
+import { type ScoringCategory } from '@/lib/scoring-categories'
 
 const DEFAULT_SKILLS = [
   'Ball Control',
@@ -49,6 +50,18 @@ export default async function PassportPage({
     redirect('/dashboard/children')
   }
 
+  // Fetch custom scoring categories to determine skill names
+  const { data: dbScoringCategories } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const customSkillNames =
+    (dbScoringCategories as ScoringCategory[] | null)?.length
+      ? (dbScoringCategories as ScoringCategory[]).map((c) => c.name)
+      : DEFAULT_SKILLS
+
   // Fetch skill levels
   let { data: skillLevels } = await supabase
     .from('skill_levels')
@@ -56,9 +69,9 @@ export default async function PassportPage({
     .eq('player_id', id)
     .order('skill_name')
 
-  // Auto-create default skills if none exist
+  // Auto-create skills if none exist, using org's custom categories
   if (!skillLevels || skillLevels.length === 0) {
-    const inserts = DEFAULT_SKILLS.map((name) => ({
+    const inserts = customSkillNames.map((name) => ({
       organisation_id: orgId,
       player_id: id,
       skill_name: name,

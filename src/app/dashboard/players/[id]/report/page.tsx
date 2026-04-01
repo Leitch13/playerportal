@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import ReportActions from './ReportActions'
 
@@ -210,6 +211,15 @@ export default async function PlayerReportPage({
     redirect('/dashboard/players')
   }
 
+  // Fetch custom scoring categories for this org
+  const { data: dbScoringCategories } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = normalizeCategories(dbScoringCategories as ScoringCategory[] | null)
+
   // Fetch organisation for header
   const { data: organisation } = await supabase
     .from('organisations')
@@ -284,24 +294,24 @@ export default async function PlayerReportPage({
   // Latest review + radar scores
   const latestReview = (reviews || [])[0]
   const radarScores = latestReview
-    ? SCORE_CATEGORIES.map((cat) => ({
+    ? scoringCategories.map((cat) => ({
         label: cat.label,
-        value: (latestReview[cat.key] as number) || 0,
+        value: (latestReview[cat.key as keyof typeof latestReview] as number) || 0,
       }))
     : []
 
   // Overall average from latest review
   const overallAverage = latestReview
-    ? SCORE_CATEGORIES.reduce((sum, cat) => sum + ((latestReview[cat.key] as number) || 0), 0) /
-      SCORE_CATEGORIES.length
+    ? scoringCategories.reduce((sum, cat) => sum + ((latestReview[cat.key as keyof typeof latestReview] as number) || 0), 0) /
+      scoringCategories.length
     : 0
 
   // Areas of strength (score >= 4) and areas to develop (score <= 2) from latest review
   const strengths: string[] = []
   const areasToImprove: string[] = []
   if (latestReview) {
-    for (const cat of SCORE_CATEGORIES) {
-      const score = (latestReview[cat.key] as number) || 0
+    for (const cat of scoringCategories) {
+      const score = (latestReview[cat.key as keyof typeof latestReview] as number) || 0
       if (score >= 4) strengths.push(cat.label)
       if (score <= 2) areasToImprove.push(cat.label)
     }
@@ -534,14 +544,14 @@ export default async function PlayerReportPage({
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {SCORE_CATEGORIES.map((cat) => {
-                      const score = r[cat.key] as number
+                    {scoringCategories.map((cat) => {
+                      const score = (r as Record<string, unknown>)[cat.key] as number
                       return (
                         <span
                           key={cat.key}
                           className={`score-${score} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium`}
                         >
-                          {cat.label}: {score}
+                          {cat.label}: {score || '-'}
                         </span>
                       )
                     })}

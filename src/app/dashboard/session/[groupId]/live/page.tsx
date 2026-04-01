@@ -90,6 +90,7 @@ export default async function LiveSessionPage({
         players={players}
         sessionPlan={sessionPlan}
         existingAttendance={(existingAttendance || []).map(a => ({ player_id: a.player_id, present: a.status === 'present' }))}
+        orgId={profile?.organisation_id || ''}
       />
     </div>
   )

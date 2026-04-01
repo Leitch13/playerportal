@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import HighlightReel from './HighlightReel'
 
 export default async function HighlightsPage({
@@ -38,6 +39,15 @@ export default async function HighlightsPage({
   if (role === 'parent' && player.parent_id !== user.id) {
     redirect('/dashboard/children')
   }
+
+  // Fetch custom scoring categories
+  const { data: dbScoringCats } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = normalizeCategories(dbScoringCats as ScoringCategory[] | null)
 
   // Fetch organisation for branding
   const { data: organisation } = await supabase
@@ -108,8 +118,8 @@ export default async function HighlightsPage({
   if (latestReview) {
     let bestScore = 0
     let bestLabel = ''
-    for (const cat of SCORE_CATEGORIES) {
-      const score = (latestReview[cat.key] as number) || 0
+    for (const cat of scoringCategories) {
+      const score = (latestReview[cat.key as keyof typeof latestReview] as number) || 0
       if (score > bestScore) {
         bestScore = score
         bestLabel = cat.label

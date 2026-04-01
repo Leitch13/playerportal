@@ -4,6 +4,7 @@ import Card from '@/components/Card'
 import ScoreBadge from '@/components/ScoreBadge'
 import EmptyState from '@/components/EmptyState'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ProgressTrend from './ProgressTrend'
 
 export default async function FeedbackPage() {
@@ -12,6 +13,23 @@ export default async function FeedbackPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+
+  // Get profile for org
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('organisation_id')
+    .eq('id', user.id)
+    .single()
+  const orgId = profile?.organisation_id || ''
+
+  // Fetch custom scoring categories
+  const { data: dbScoringCats } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = normalizeCategories(dbScoringCats as ScoringCategory[] | null)
 
   // Get parent's children
   const { data: players } = await supabase
@@ -64,15 +82,14 @@ export default async function FeedbackPage() {
           {Object.entries(reviewsByPlayer).map(([pid, data]) => (
             <Card key={pid} title={`${data.name} — Progress Over Time`}>
               <ProgressTrend
-                reviews={(data.reviews || []).map((r) => ({
-                  review_date: r.review_date,
-                  attitude: r.attitude as number,
-                  effort: r.effort as number,
-                  technical_quality: r.technical_quality as number,
-                  game_understanding: r.game_understanding as number,
-                  confidence: r.confidence as number,
-                  physical_movement: r.physical_movement as number,
-                }))}
+                reviews={(data.reviews || []).map((r) => {
+                  const row: Record<string, unknown> & { review_date: string } = { review_date: r.review_date }
+                  for (const cat of scoringCategories) {
+                    row[cat.key] = (r as Record<string, unknown>)[cat.key] as number
+                  }
+                  return row
+                })}
+                scoringCategories={scoringCategories}
               />
             </Card>
           ))}
@@ -100,12 +117,12 @@ export default async function FeedbackPage() {
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {SCORE_CATEGORIES.map((cat) => (
+                    {scoringCategories.map((cat) => (
                       <div
                         key={cat.key}
                         className="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.04]"
                       >
-                        <ScoreBadge score={review[cat.key] as number} />
+                        <ScoreBadge score={(review as Record<string, unknown>)[cat.key] as number} />
                         <span className="text-xs text-white/60 text-center">
                           {cat.label}
                         </span>

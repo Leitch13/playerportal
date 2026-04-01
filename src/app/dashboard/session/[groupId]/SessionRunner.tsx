@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory, type NormalizedCategory } from '@/lib/scoring-categories'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import Card from '@/components/Card'
 
@@ -19,6 +20,7 @@ interface SessionRunnerProps {
   sessionDate: string
   coachId: string
   players: PlayerInfo[]
+  orgId?: string
 }
 
 type Tab = 'attendance' | 'notes' | 'reviews'
@@ -41,8 +43,27 @@ export default function SessionRunner({
   sessionDate,
   coachId,
   players,
+  orgId,
 }: SessionRunnerProps) {
   const [activeTab, setActiveTab] = useState<Tab>('attendance')
+  const [scoringCategories, setScoringCategories] = useState<NormalizedCategory[]>(
+    SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
+  )
+
+  // Fetch custom scoring categories
+  useEffect(() => {
+    if (!orgId) return
+    const supabase = createClient()
+    supabase
+      .from('scoring_categories')
+      .select('*')
+      .eq('organisation_id', orgId)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        setScoringCategories(normalizeCategories(data as ScoringCategory[] | null))
+      })
+  }, [orgId])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -269,6 +290,7 @@ export default function SessionRunner({
           currentIndex={currentReviewIndex}
           setCurrentIndex={setCurrentReviewIndex}
           updateReview={updateReview}
+          scoringCategories={scoringCategories}
         />
       )}
 
@@ -459,6 +481,7 @@ function ReviewsTab({
   currentIndex,
   setCurrentIndex,
   updateReview,
+  scoringCategories,
 }: {
   players: PlayerInfo[]
   reviews: Record<string, PlayerReview>
@@ -469,6 +492,7 @@ function ReviewsTab({
     field: keyof PlayerReview,
     value: number | string | boolean
   ) => void
+  scoringCategories: NormalizedCategory[]
 }) {
   if (players.length === 0) {
     return (
@@ -519,8 +543,8 @@ function ReviewsTab({
 
           {/* Score categories */}
           <div className="space-y-3">
-            {SCORE_CATEGORIES.map((cat) => {
-              const score = review[cat.key as keyof PlayerReview] as number
+            {scoringCategories.map((cat) => {
+              const score = (review as unknown as Record<string, unknown>)[cat.key] as number || 0
               return (
                 <div key={cat.key} className="flex items-center justify-between">
                   <span className="text-sm font-medium w-36">{cat.label}</span>

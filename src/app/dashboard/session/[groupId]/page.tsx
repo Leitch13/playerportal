@@ -59,6 +59,7 @@ export default async function RunSessionPage({
         sessionDate={today}
         coachId={user.id}
         players={players}
+        orgId={profile?.organisation_id || ''}
       />
     </div>
   )

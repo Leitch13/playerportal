@@ -4,6 +4,7 @@ import Card from '@/components/Card'
 import ScoreBadge from '@/components/ScoreBadge'
 import EmptyState from '@/components/EmptyState'
 import { SCORE_CATEGORIES } from '@/lib/types'
+import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ReviewForm from './ReviewForm'
 
 export default async function ReviewsPage({
@@ -25,6 +26,15 @@ export default async function ReviewsPage({
     .single()
 
   const orgId = profile?.organisation_id || ''
+
+  // Fetch custom scoring categories
+  const { data: dbScoringCats } = await supabase
+    .from('scoring_categories')
+    .select('*')
+    .eq('organisation_id', orgId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+  const scoringCategories = normalizeCategories(dbScoringCats as ScoringCategory[] | null)
 
   const { data: players } = await supabase
     .from('players')
@@ -63,9 +73,9 @@ export default async function ReviewsPage({
                   <span>{new Date(review.review_date).toLocaleDateString()}</span>
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                  {SCORE_CATEGORIES.map((cat) => (
+                  {scoringCategories.map((cat) => (
                     <div key={cat.key} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-white/[0.04]">
-                      <ScoreBadge score={review[cat.key] as number} />
+                      <ScoreBadge score={(review as Record<string, unknown>)[cat.key] as number} />
                       <span className="text-[10px] text-white/60 text-center">{cat.label}</span>
                     </div>
                   ))}
