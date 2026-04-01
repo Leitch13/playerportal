@@ -88,6 +88,11 @@ const icons: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
     </svg>
   ),
+  funnel: (
+    <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+    </svg>
+  ),
   'chat-bubble': (
     <svg className={iconClass} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
@@ -190,6 +195,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/engagement', label: 'My Score', icon: 'chart-bar-square' },
     ]},
     { title: 'Academy', items: [
+      { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar-days' },
       { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
       { href: '/dashboard/gallery', label: 'Gallery', icon: 'photo' },
       { href: '/dashboard/shop', label: 'Shop', icon: 'shopping-bag' },
@@ -207,6 +213,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/session', label: 'Session', icon: 'play-circle' },
     ]},
     { title: 'Coaching', items: [
+      { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar-days' },
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
       { href: '/dashboard/drills', label: 'Drills', icon: 'football' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
@@ -227,10 +234,12 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     ]},
     { title: 'Academy', items: [
       { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
+      { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar' },
       { href: '/dashboard/camps', label: 'Camps', icon: 'flag' },
       { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
       { href: '/dashboard/players', label: 'Players', icon: 'football' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
+      { href: '/dashboard/leads', label: 'Leads', icon: 'funnel' },
     ]},
     { title: 'Coaching', items: [
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
