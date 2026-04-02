@@ -10,12 +10,12 @@ export default async function ImportPlayersPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (profileError || profile?.role !== 'admin') redirect('/dashboard')
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">

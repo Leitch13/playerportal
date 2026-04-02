@@ -4,18 +4,24 @@ import { createClient } from '@/lib/supabase/server'
 import MigrateForm from './MigrateForm'
 
 export default async function MigrateFromClassForKidsPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/signin')
+  let userRole = 'parent'
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/signin')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    userRole = profile?.role || 'parent'
+  } catch {
+    redirect('/auth/signin')
+  }
+  if (userRole !== 'admin') redirect('/dashboard')
 
   return (
     <div className="space-y-6">
