@@ -405,7 +405,19 @@ export default async function PrintableReportPage({
         @media screen {
           .print-report-wrapper {
             max-width: 800px;
-            margin: 0 auto;
+            margin: -1.5rem auto;
+            padding: 1.5rem;
+            min-height: 100vh;
+            background: #0a0a0a;
+          }
+          .print-report {
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+          }
+        }
+        @media screen and (min-width: 1024px) {
+          .print-report-wrapper {
+            margin: -2rem auto;
+            padding: 2rem;
           }
         }
       `}</style>
@@ -502,6 +514,14 @@ export default async function PrintableReportPage({
         </div>
 
         {/* ─── ATTENDANCE BAR ─── */}
+        {totalSessions === 0 && (
+          <div className="avoid-break" style={{ padding: '16px 32px', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, width: '100px' }}>Attendance</span>
+              <span style={{ fontSize: '13px', color: '#94a3b8' }}>No sessions recorded yet</span>
+            </div>
+          </div>
+        )}
         {totalSessions > 0 && (
           <div className="avoid-break" style={{ padding: '16px 32px', borderBottom: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -516,6 +536,14 @@ export default async function PrintableReportPage({
               </div>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', width: '40px', textAlign: 'right' }}>{attendanceRate}%</span>
             </div>
+          </div>
+        )}
+
+        {/* ─── NO REVIEWS FALLBACK ─── */}
+        {!latestReview && (
+          <div className="avoid-break" style={{ padding: '32px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '4px' }}>No progress reviews have been recorded yet.</div>
+            <div style={{ fontSize: '12px', color: '#cbd5e1' }}>Scores and feedback will appear here after the first coach review.</div>
           </div>
         )}
 

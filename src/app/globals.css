@@ -42,7 +42,7 @@
 @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(78,205,230,0.3); } 50% { box-shadow: 0 0 35px rgba(78,205,230,0.5); } }
 
 body {
-  background: var(--color-surface);
+  background: #060606;
   color: var(--color-text);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   letter-spacing: -0.011em;
@@ -56,9 +56,8 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 /* Premium scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-.dark ::-webkit-scrollbar-thumb { background: #334155; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
 
 /* ─── Utility Effects ─── */
 .card-hover { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1); }

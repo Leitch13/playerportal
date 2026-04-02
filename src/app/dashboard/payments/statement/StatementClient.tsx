@@ -87,13 +87,13 @@ export default function StatementClient({
   }
 
   return (
-    <div className="statement-page max-w-4xl mx-auto">
+    <div className="statement-page max-w-4xl mx-auto bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen print:bg-white print:m-0 print:p-0 print:min-h-0">
       {/* Action buttons - hidden when printing */}
       <div className="mb-8 no-print">
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-medium hover:bg-[#4ecde6]/90 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-bold hover:bg-[#3dbcd5] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -123,20 +123,20 @@ export default function StatementClient({
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-lg text-sm text-white"
+            className="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
           />
           <span className="text-white/40">to</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-lg text-sm text-white"
+            className="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
           />
         </div>
       </div>
 
       {/* Statement document */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 print:shadow-none print:border-0 print:rounded-none">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 print:shadow-none print:border-0 print:rounded-none">
         {/* Header */}
         <div className="px-8 pt-8 pb-6 border-b border-gray-200">
           <div className="flex items-start justify-between">

@@ -225,7 +225,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#4ecde6]/90 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#3dbcd5] transition-colors flex items-center gap-1.5"
           >
             <IconPlus /> Add Lead
           </button>
@@ -265,12 +265,12 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
 
       {/* Pipeline View */}
       {view === 'pipeline' && (
-        <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {STATUSES.map(status => {
             const config = STATUS_CONFIG[status]
             const columnLeads = grouped[status]
             return (
-              <div key={status} className="flex-shrink-0 w-[280px]">
+              <div key={status} className="flex-shrink-0 w-[280px] snap-start">
                 <div className={`rounded-xl border ${config.border} ${config.bg} px-3 py-2 mb-2 flex items-center justify-between`}>
                   <span className={`text-sm font-bold ${config.color}`}>{config.label}</span>
                   <span className={`text-xs font-bold ${config.color} bg-white/5 rounded-full px-2 py-0.5`}>{columnLeads.length}</span>
@@ -538,8 +538,8 @@ function AddLeadModal({
               value={form.interested_in} onChange={e => set('interested_in', e.target.value)}
               className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              <option value="">Select a group...</option>
-              {trainingGroups.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+              <option value="" className="bg-[#1a1a1a] text-white">Select a group...</option>
+              {trainingGroups.map(g => <option key={g.id} value={g.name} className="bg-[#1a1a1a] text-white">{g.name}</option>)}
             </select>
           </div>
           <div>
@@ -548,7 +548,7 @@ function AddLeadModal({
               value={form.source} onChange={e => set('source', e.target.value)}
               className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              {SOURCES.map(s => <option key={s} value={s}>{SOURCE_LABELS[s]}</option>)}
+              {SOURCES.map(s => <option key={s} value={s} className="bg-[#1a1a1a] text-white">{SOURCE_LABELS[s]}</option>)}
             </select>
           </div>
           <div>
@@ -562,7 +562,7 @@ function AddLeadModal({
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/10 transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={saving || !form.first_name.trim()} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#4ecde6]/90 transition-colors disabled:opacity-50">
+            <button type="submit" disabled={saving || !form.first_name.trim()} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#3dbcd5] transition-colors disabled:opacity-50">
               {saving ? 'Saving...' : 'Add Lead'}
             </button>
           </div>
@@ -700,8 +700,8 @@ function LeadDetailPanel({
               onChange={e => onUpdate(lead.id, { interested_in: e.target.value || null })}
               className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              <option value="">None selected</option>
-              {trainingGroups.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+              <option value="" className="bg-[#1a1a1a] text-white">None selected</option>
+              {trainingGroups.map(g => <option key={g.id} value={g.name} className="bg-[#1a1a1a] text-white">{g.name}</option>)}
             </select>
           </section>
 
@@ -713,8 +713,8 @@ function LeadDetailPanel({
               onChange={e => onUpdate(lead.id, { assigned_to: e.target.value || null })}
               className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              <option value="">Unassigned</option>
-              {teamMembers.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
+              <option value="" className="bg-[#1a1a1a] text-white">Unassigned</option>
+              {teamMembers.map(m => <option key={m.id} value={m.id} className="bg-[#1a1a1a] text-white">{m.full_name}</option>)}
             </select>
           </section>
 
@@ -771,7 +771,7 @@ function LeadDetailPanel({
               <button
                 onClick={convertToTrial}
                 disabled={saving}
-                className="w-full px-4 py-2.5 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#4ecde6]/90 transition-colors disabled:opacity-50"
+                className="w-full px-4 py-2.5 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#3dbcd5] transition-colors disabled:opacity-50"
               >
                 Convert to Trial Booking
               </button>

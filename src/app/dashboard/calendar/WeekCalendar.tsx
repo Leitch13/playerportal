@@ -356,7 +356,7 @@ export default function WeekCalendar({ groups, role, locations, classTypes }: Pr
           {role === 'admin' && (
             <a
               href="/dashboard/groups"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-medium hover:bg-[#4ecde6]/90 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-bold hover:bg-[#3dbcd5] transition-colors"
             >
               <IconPlus />
               Add Class
@@ -439,9 +439,9 @@ export default function WeekCalendar({ groups, role, locations, classTypes }: Pr
               onChange={(e) => setFilterLocation(e.target.value)}
               className="bg-[#141414] border border-[#1e1e1e] rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-[#4ecde6]/50 appearance-none cursor-pointer"
             >
-              <option value="">All Locations</option>
+              <option value="" className="bg-[#1a1a1a] text-white">All Locations</option>
               {locations.map((loc) => (
-                <option key={loc} value={loc}>{loc}</option>
+                <option key={loc} value={loc} className="bg-[#1a1a1a] text-white">{loc}</option>
               ))}
             </select>
           )}
@@ -1067,7 +1067,7 @@ function ClassDetailModal({
               ) : (
                 <a
                   href="/dashboard/schedule"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-[#4ecde6] text-[#0a0a0a] font-semibold text-sm hover:bg-[#4ecde6]/90 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-[#4ecde6] text-[#0a0a0a] font-semibold text-sm hover:bg-[#3dbcd5] transition-colors"
                 >
                   Book a Trial
                 </a>

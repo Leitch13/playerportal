@@ -65,7 +65,7 @@ const plans = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#060606] text-white overflow-hidden">
+    <div className="min-h-screen bg-[#060606] text-white overflow-x-hidden">
       {/* ── Nav ── */}
       <nav className="sticky top-0 z-50 glass-dark border-b border-white/[0.06]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">

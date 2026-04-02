@@ -188,13 +188,13 @@ export default async function RegisterPage({
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/attendance/register"
-              className="px-4 py-2 bg-white/[0.08] text-white text-sm font-medium rounded-xl hover:bg-white/[0.12] transition-colors"
+              className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors"
             >
               Back
             </Link>
             <Link
               href={`/dashboard/attendance/register/${groupId}/blank`}
-              className="px-4 py-2 bg-white/[0.08] text-white text-sm font-medium rounded-xl hover:bg-white/[0.12] transition-colors"
+              className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors"
             >
               Blank Register
             </Link>
@@ -210,7 +210,7 @@ export default async function RegisterPage({
               type="date"
               name="from"
               defaultValue={from}
-              className="bg-white/[0.08] border border-white/[0.12] rounded-lg px-3 py-1.5 text-sm text-white"
+              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             />
           </div>
           <div>
@@ -219,12 +219,12 @@ export default async function RegisterPage({
               type="date"
               name="to"
               defaultValue={to}
-              className="bg-white/[0.08] border border-white/[0.12] rounded-lg px-3 py-1.5 text-sm text-white"
+              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-1.5 bg-[#4ecde6] text-black text-sm font-semibold rounded-lg hover:bg-[#4ecde6]/90 transition-colors"
+            className="px-4 py-1.5 bg-[#4ecde6] text-[#0a0a0a] text-sm font-bold rounded-lg hover:bg-[#3dbcd5] transition-colors"
           >
             Update
           </button>
@@ -232,7 +232,7 @@ export default async function RegisterPage({
       </div>
 
       {/* Printable register */}
-      <div className="print-container bg-white text-black p-6 lg:p-8 mt-4 no-print:rounded-2xl">
+      <div className="print-container bg-white text-black p-6 lg:p-8 mt-4 rounded-2xl shadow-lg print:shadow-none print:rounded-none print:mt-0">
         {/* Header */}
         <div className="flex items-start justify-between mb-6 border-b-2 border-black pb-4">
           <div>

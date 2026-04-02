@@ -484,7 +484,7 @@ export default function MessagingHub({
             <h1 className="text-xl font-bold text-white">Messages</h1>
             <button
               onClick={() => setShowNewModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-bold hover:bg-[#3dbcd5] transition-colors"
             >
               <IconPlus />
               New Message
@@ -653,7 +653,7 @@ export default function MessagingHub({
                           return (
                             <div
                               key={msg.id}
-                              className={`flex mb-2 ${isOwn ? 'justify-end' : 'justify-start'}`}
+                              className={`flex mb-3 ${isOwn ? 'justify-end' : 'justify-start'}`}
                             >
                               <div className="max-w-[75%] group">
                                 {!isOwn && (
@@ -693,13 +693,13 @@ export default function MessagingHub({
                       onKeyDown={handleKeyDown}
                       placeholder="Type a message..."
                       rows={1}
-                      className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-xl px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors resize-none"
+                      className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors resize-none"
                       style={{ maxHeight: 120 }}
                     />
                     <button
                       onClick={handleSend}
                       disabled={!messageInput.trim() || sending}
-                      className="flex-shrink-0 w-10 h-10 bg-[#4ecde6] text-[#0a0a0a] rounded-xl flex items-center justify-center hover:bg-[#4ecde6]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex-shrink-0 w-10 h-10 bg-[#4ecde6] text-[#0a0a0a] rounded-lg flex items-center justify-center hover:bg-[#3dbcd5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {sending ? (
                         <div className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
@@ -938,7 +938,7 @@ function NewConversationModal({
           <button
             onClick={handleCreate}
             disabled={!selectedRecipient || !firstMessage.trim() || creating}
-            className="w-full py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-bold hover:bg-[#3dbcd5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {creating ? (
               <div className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />

@@ -49,7 +49,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
   }, [calcRemaining])
 
   return (
-    <span className={`text-[11px] font-mono ${urgent ? 'text-red-400' : 'text-blue-400'}`}>
+    <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${urgent ? 'text-red-400 bg-red-500/10' : 'text-blue-400 bg-blue-500/10'}`}>
       {remaining}
     </span>
   )
@@ -138,7 +138,7 @@ export default function WaitlistManager({ entries, groupId }: { entries: Waitlis
                 </td>
                 <td className="px-3 py-3 text-white/60 hidden md:table-cell">{timeAgo(e.created_at)}</td>
                 <td className="px-3 py-3">
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
                     {config.label}
                   </span>
                   {e.status === 'offered' && e.expires_at && (
@@ -171,7 +171,7 @@ export default function WaitlistManager({ entries, groupId }: { entries: Waitlis
         <button
           onClick={handlePromote}
           disabled={loading === 'promote' || !hasWaiting}
-          className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:opacity-90 disabled:opacity-40 transition-all"
+          className="px-4 py-2 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#3dbcd5] disabled:opacity-40 transition-colors"
         >
           {loading === 'promote' ? 'Promoting...' : 'Promote Next'}
         </button>
