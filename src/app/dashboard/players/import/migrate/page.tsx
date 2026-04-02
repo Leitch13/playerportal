@@ -10,8 +10,12 @@ export default async function MigrateFromClassForKidsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
 
-  const { data: role } = await supabase.rpc('get_my_role')
-  if (role !== 'admin') redirect('/dashboard')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (profile?.role !== 'admin') redirect('/dashboard')
 
   return (
     <div className="space-y-6">
