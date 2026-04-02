@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
@@ -137,7 +138,15 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Manage Attendance</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Manage Attendance</h1>
+        <Link
+          href="/dashboard/attendance/register"
+          className="px-4 py-2 bg-[#4ecde6] text-black text-sm font-semibold rounded-xl hover:bg-[#4ecde6]/90 transition-colors"
+        >
+          Print Register
+        </Link>
+      </div>
       <AttendanceManager
         groups={groups || []}
         players={players || []}

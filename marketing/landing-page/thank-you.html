@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're In! | John Leitch — Football Coaching Mentorship</title>
+    <meta name="description" content="Your free guide is on its way. Check your inbox for 'From Kickabout to 300 Players' by John Leitch.">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== CUSTOM PROPERTIES ===== */
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #161616;
+            --bg-card-hover: #1c1c1c;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent: #4ecde6;
+            --accent-dark: #38b2cf;
+            --accent-glow: rgba(78, 205, 230, 0.15);
+            --accent-glow-strong: rgba(78, 205, 230, 0.3);
+            --border: #222222;
+            --border-light: #2a2a2a;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 20px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --max-width: 800px;
+        }
+
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        button { font-family: inherit; cursor: pointer; border: none; }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ===== BACKGROUND GLOW ===== */
+        .bg-glow {
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 100px 0 60px;
+        }
+
+        .checkmark-circle {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: var(--accent-glow-strong);
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 32px;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .checkmark-circle svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--accent);
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow-strong); }
+            50% { box-shadow: 0 0 40px 10px var(--accent-glow); }
+        }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero .subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ===== NEXT STEPS ===== */
+        .next-steps {
+            position: relative;
+            z-index: 1;
+            padding: 0 0 80px;
+        }
+
+        .next-steps-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 32px;
+        }
+
+        .next-steps-label::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .step-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .step-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .step-content h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        .step-content p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .step-content .step-note {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .step-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent);
+            transition: gap 0.2s;
+        }
+
+        .step-link:hover {
+            gap: 10px;
+        }
+
+        .step-link svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-section {
+            position: relative;
+            z-index: 1;
+            padding: 0 0 80px;
+            text-align: center;
+        }
+
+        .video-section h2 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .video-section .video-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .video-placeholder {
+            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            aspect-ratio: 16 / 9;
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .video-placeholder:hover {
+            border-color: var(--accent);
+        }
+
+        .play-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 30px var(--accent-glow-strong);
+        }
+
+        .video-placeholder:hover .play-button {
+            transform: scale(1.1);
+            box-shadow: 0 0 50px var(--accent-glow-strong);
+        }
+
+        .play-button svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--bg-primary);
+            margin-left: 4px;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: var(--text-muted);
+            background: rgba(10, 10, 10, 0.8);
+            padding: 6px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* ===== COUNTDOWN SECTION ===== */
+        .countdown-section {
+            position: relative;
+            z-index: 1;
+            padding: 0 0 80px;
+            text-align: center;
+        }
+
+        .countdown-box {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(78, 205, 230, 0.05) 100%);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: 48px 32px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .countdown-box .urgency-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .countdown-box h2 {
+            font-size: clamp(22px, 4vw, 28px);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 32px;
+            line-height: 1.3;
+        }
+
+        .countdown-timer {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .timer-block {
+            text-align: center;
+        }
+
+        .timer-value {
+            display: block;
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            letter-spacing: -0.03em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .timer-separator {
+            font-size: clamp(28px, 5vw, 44px);
+            font-weight: 300;
+            color: var(--text-muted);
+            line-height: 1;
+            padding-top: 4px;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 36px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            text-decoration: none;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow-strong);
+            background: var(--accent-dark);
+        }
+
+        .cta-button svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer-brand {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .footer-brand span {
+            color: var(--accent);
+        }
+
+        .footer-tagline {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .footer-copy {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .fade-up-delay-1 { animation-delay: 0.15s; }
+        .fade-up-delay-2 { animation-delay: 0.3s; }
+        .fade-up-delay-3 { animation-delay: 0.45s; }
+        .fade-up-delay-4 { animation-delay: 0.6s; }
+        .fade-up-delay-5 { animation-delay: 0.75s; }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== CONFETTI ===== */
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 640px) {
+            .hero {
+                padding: 80px 0 48px;
+            }
+
+            .step-card {
+                padding: 24px;
+                gap: 16px;
+            }
+
+            .step-number {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .countdown-box {
+                padding: 32px 20px;
+            }
+
+            .countdown-timer {
+                gap: 10px;
+            }
+
+            .cta-button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+        <div class="container">
+            <div class="checkmark-circle fade-up">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h1 class="fade-up fade-up-delay-1">You're In! <span>Check Your Inbox</span></h1>
+            <p class="subtitle fade-up fade-up-delay-2">Your free guide is on its way. While you wait...</p>
+        </div>
+    </section>
+
+    <!-- ===== NEXT STEPS ===== -->
+    <section class="next-steps">
+        <div class="container">
+            <div class="next-steps-label fade-up fade-up-delay-2">What to do next</div>
+            <div class="steps-grid">
+
+                <div class="step-card fade-up fade-up-delay-2">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Check Your Email</h3>
+                        <p>Your copy of <strong>"From Kickabout to 300 Players"</strong> should land in your inbox within the next few minutes. If you don't see it, check your spam or promotions folder.</p>
+                        <p class="step-note">Look for an email from John Leitch / PlayIt Love It</p>
+                    </div>
+                </div>
+
+                <div class="step-card fade-up fade-up-delay-3">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Follow Me on Instagram</h3>
+                        <p>I share daily tips, behind-the-scenes of running PlayIt Love It, and coaching insights you won't get anywhere else.</p>
+                        <a href="https://instagram.com/YOUR_HANDLE" target="_blank" rel="noopener" class="step-link">
+                            @johnleitch on Instagram
+                            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="step-card fade-up fade-up-delay-4">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Book a Free Strategy Call</h3>
+                        <p>If you're serious about growing your coaching business, let's talk. I'll give you a personalised breakdown of where you are now and what to do next.</p>
+                        <a href="https://calendly.com/YOUR_LINK" target="_blank" rel="noopener" class="step-link">
+                            Book your free call now
+                            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== VIDEO ===== -->
+    <section class="video-section">
+        <div class="container">
+            <h2 class="fade-up fade-up-delay-3">Watch This While You Wait</h2>
+            <p class="video-subtitle fade-up fade-up-delay-3">A quick 2-minute intro to the system behind everything I do</p>
+            <div class="video-placeholder fade-up fade-up-delay-4" id="videoPlaceholder">
+                <!-- Replace with your actual embed: <iframe src="..." ...></iframe> -->
+                <div class="play-button">
+                    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </div>
+                <span class="video-label">2-min intro to the system</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== COUNTDOWN ===== -->
+    <section class="countdown-section">
+        <div class="container">
+            <div class="countdown-box fade-up fade-up-delay-4">
+                <div class="urgency-label">Limited-time offer</div>
+                <h2>Your Exclusive Free Strategy Call Offer Expires In</h2>
+                <div class="countdown-timer" id="countdownTimer">
+                    <div class="timer-block">
+                        <span class="timer-value" id="hours">47</span>
+                        <span class="timer-label">Hours</span>
+                    </div>
+                    <div class="timer-separator">:</div>
+                    <div class="timer-block">
+                        <span class="timer-value" id="minutes">59</span>
+                        <span class="timer-label">Minutes</span>
+                    </div>
+                    <div class="timer-separator">:</div>
+                    <div class="timer-block">
+                        <span class="timer-value" id="seconds">59</span>
+                        <span class="timer-label">Seconds</span>
+                    </div>
+                </div>
+                <a href="https://calendly.com/YOUR_LINK" target="_blank" rel="noopener" class="cta-button">
+                    Book Your Free Strategy Call
+                    <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-brand fade-up fade-up-delay-5">John Leitch <span>/ PlayIt Love It</span></div>
+            <p class="footer-tagline fade-up fade-up-delay-5">Helping football coaches build the business they deserve.</p>
+            <p class="footer-copy fade-up fade-up-delay-5">&copy; 2026 John Leitch. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ===== COUNTDOWN TIMER =====
+        (function() {
+            var STORAGE_KEY = 'jl_thankyou_deadline';
+            var deadline;
+
+            // Check if a deadline already exists in localStorage
+            var stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                deadline = new Date(parseInt(stored, 10));
+            } else {
+                // Set a 48-hour deadline from now
+                deadline = new Date(Date.now() + 48 * 60 * 60 * 1000);
+                localStorage.setItem(STORAGE_KEY, deadline.getTime().toString());
+            }
+
+            var hoursEl = document.getElementById('hours');
+            var minutesEl = document.getElementById('minutes');
+            var secondsEl = document.getElementById('seconds');
+
+            function pad(n) {
+                return n < 10 ? '0' + n : n.toString();
+            }
+
+            function updateTimer() {
+                var now = new Date();
+                var diff = deadline - now;
+
+                if (diff <= 0) {
+                    hoursEl.textContent = '00';
+                    minutesEl.textContent = '00';
+                    secondsEl.textContent = '00';
+                    return;
+                }
+
+                var totalSeconds = Math.floor(diff / 1000);
+                var h = Math.floor(totalSeconds / 3600);
+                var m = Math.floor((totalSeconds % 3600) / 60);
+                var s = totalSeconds % 60;
+
+                hoursEl.textContent = pad(h);
+                minutesEl.textContent = pad(m);
+                secondsEl.textContent = pad(s);
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        })();
+
+        // ===== CONFETTI BURST ON LOAD =====
+        (function() {
+            var colors = ['#4ecde6', '#38b2cf', '#ffffff', '#a0a0a0'];
+            var container = document.body;
+
+            for (var i = 0; i < 40; i++) {
+                var piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.width = (Math.random() * 8 + 4) + 'px';
+                piece.style.height = (Math.random() * 8 + 4) + 'px';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                piece.style.opacity = (Math.random() * 0.7 + 0.3).toString();
+
+                var duration = (Math.random() * 2 + 1.5);
+                var delay = Math.random() * 0.5;
+                piece.style.animation = 'confettiFall ' + duration + 's ' + delay + 's ease-out forwards';
+
+                container.appendChild(piece);
+
+                // Clean up after animation
+                (function(el, dur, del) {
+                    setTimeout(function() {
+                        if (el.parentNode) el.parentNode.removeChild(el);
+                    }, (dur + del) * 1000 + 200);
+                })(piece, duration, delay);
+            }
+
+            // Add confetti keyframes dynamically
+            var style = document.createElement('style');
+            style.textContent = '@keyframes confettiFall { 0% { top: -20px; transform: rotate(0deg) scale(1); opacity: 1; } 100% { top: 100vh; transform: rotate(' + (Math.random() * 720 - 360) + 'deg) scale(0.3); opacity: 0; } }';
+            document.head.appendChild(style);
+        })();
+
+        // ===== VIDEO PLACEHOLDER CLICK =====
+        document.getElementById('videoPlaceholder').addEventListener('click', function() {
+            // Replace this with your actual video embed URL
+            // Example: this.innerHTML = '<iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1" ... ></iframe>';
+            alert('Replace this placeholder with your video embed URL in the HTML.');
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '@/lib/email'
+import { waitlistDeclinedEmail, waitlistSpotAvailableEmail } from '@/lib/email-templates'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function promoteNext(supabase: any, groupId: string) {
+  // Find the next waiting entry
+  const { data: nextEntry } = await supabase
+    .from('waitlist')
+    .select(`
+      id, player_id, parent_id, training_group_id, organisation_id, position,
+      player:players(id, full_name, first_name, last_name),
+      parent:profiles!waitlist_parent_id_fkey(full_name, email),
+      group:training_groups!waitlist_training_group_id_fkey(id, name)
+    `)
+    .eq('training_group_id', groupId)
+    .eq('status', 'waiting')
+    .order('position', { ascending: true })
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (!nextEntry) return null
+
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000)
+
+  await supabase.from('waitlist').update({
+    status: 'offered',
+    offered_at: now.toISOString(),
+    expires_at: expiresAt.toISOString(),
+  }).eq('id', nextEntry.id)
+
+  // Create notification
+  await supabase.from('notifications').insert({
+    profile_id: nextEntry.parent_id,
+    organisation_id: nextEntry.organisation_id,
+    type: 'waitlist',
+    title: 'A spot has opened up!',
+    body: 'A spot has become available in the class. You have 48 hours to confirm.',
+    link: '/dashboard/waitlist',
+  })
+
+  // Send email
+  const parent = nextEntry.parent as unknown as { full_name: string; email: string } | null
+  const player = nextEntry.player as unknown as { full_name?: string; first_name?: string; last_name?: string } | null
+  const group = nextEntry.group as unknown as { name: string } | null
+
+  if (parent?.email) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+    const template = waitlistSpotAvailableEmail({
+      parentName: parent.full_name?.split(' ')[0] || 'there',
+      childName: player?.full_name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'your child',
+      className: group?.name || 'the class',
+      acceptUrl: `${appUrl}/api/waitlist/accept?id=${nextEntry.id}`,
+      declineUrl: `${appUrl}/api/waitlist/decline?id=${nextEntry.id}`,
+      expiryDate: expiresAt.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    })
+    await sendEmail({ to: parent.email, ...template })
+  }
+
+  return nextEntry.id
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { id } = await request.json()
+
+    if (!id) {
+      return NextResponse.json({ error: 'Waitlist entry id is required' }, { status: 400 })
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Fetch the entry
+    const { data: entry } = await supabase
+      .from('waitlist')
+      .select(`
+        id, training_group_id, status,
+        player:players(id, full_name, first_name, last_name),
+        parent:profiles!waitlist_parent_id_fkey(full_name, email),
+        group:training_groups!waitlist_training_group_id_fkey(id, name)
+      `)
+      .eq('id', id)
+      .single()
+
+    if (!entry) {
+      return NextResponse.json({ error: 'Waitlist entry not found' }, { status: 404 })
+    }
+
+    if (entry.status !== 'offered') {
+      return NextResponse.json({ error: `Cannot decline — current status is "${entry.status}"` }, { status: 400 })
+    }
+
+    // Update to declined
+    await supabase.from('waitlist').update({ status: 'declined' }).eq('id', id)
+
+    // Send decline confirmation email
+    const parent = entry.parent as unknown as { full_name: string; email: string } | null
+    const player = entry.player as unknown as { full_name?: string; first_name?: string; last_name?: string } | null
+    const group = entry.group as unknown as { name: string } | null
+
+    if (parent?.email) {
+      const template = waitlistDeclinedEmail({
+        parentName: parent.full_name?.split(' ')[0] || 'there',
+        childName: player?.full_name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'your child',
+        className: group?.name || 'the class',
+      })
+      await sendEmail({ to: parent.email, ...template })
+    }
+
+    // Promote the next person
+    const promoted = await promoteNext(supabase, entry.training_group_id)
+
+    return NextResponse.json({ success: true, next_promoted: promoted })
+  } catch (err) {
+    console.error('[WAITLIST DECLINE ERROR]', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// Support GET for email link clicks
+export async function GET(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get('id')
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+
+  if (!id) {
+    return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=missing_id`)
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: entry } = await supabase
+    .from('waitlist')
+    .select(`
+      id, training_group_id, status,
+      player:players(id, full_name, first_name, last_name),
+      parent:profiles!waitlist_parent_id_fkey(full_name, email),
+      group:training_groups!waitlist_training_group_id_fkey(id, name)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (!entry || entry.status !== 'offered') {
+    return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=invalid`)
+  }
+
+  await supabase.from('waitlist').update({ status: 'declined' }).eq('id', id)
+
+  const parent = entry.parent as unknown as { full_name: string; email: string } | null
+  const player = entry.player as unknown as { full_name?: string; first_name?: string; last_name?: string } | null
+  const group = entry.group as unknown as { name: string } | null
+
+  if (parent?.email) {
+    const template = waitlistDeclinedEmail({
+      parentName: parent.full_name?.split(' ')[0] || 'there',
+      childName: player?.full_name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'your child',
+      className: group?.name || 'the class',
+    })
+    await sendEmail({ to: parent.email, ...template })
+  }
+
+  await promoteNext(supabase, entry.training_group_id)
+
+  return NextResponse.redirect(`${appUrl}/dashboard/waitlist?declined=true`)
+}

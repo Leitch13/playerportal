@@ -220,9 +220,19 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
 /* Print styles */
 @media print {
-  nav, .mobile-bottom-nav, .no-print { display: none !important; }
-  body { background: white !important; }
+  @page { margin: 1.5cm; size: A4; }
+  nav, .mobile-bottom-nav, .no-print, aside, header { display: none !important; }
+  body { background: white !important; color: #0f172a !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .print-only { display: block !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  .invoice-page, .statement-page { margin: 0 !important; max-width: 100% !important; }
+  .invoice-page > div:last-child, .statement-page > div:last-child { border: none !important; box-shadow: none !important; border-radius: 0 !important; }
+  /* Print report styles */
+  .print-report-wrapper { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .print-report { box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+  .page-break { page-break-before: always; }
+  .avoid-break { page-break-inside: avoid; }
+  svg { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
 }
 
 /* Mobile bottom nav */

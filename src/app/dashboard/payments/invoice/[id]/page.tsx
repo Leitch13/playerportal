@@ -57,16 +57,25 @@ export default async function InvoicePage({
   const { data: org } = orgId
     ? await supabase
         .from('organisations')
-        .select('name, logo_url, slug')
+        .select('name, logo_url, slug, email, phone, address')
         .eq('id', orgId)
         .single()
     : { data: null }
 
+  // Extract org fields safely
+  const orgRecord = org as Record<string, unknown> | null
+  const orgAddress = (orgRecord?.address as string) || ''
+  const orgEmail = (orgRecord?.email as string) || ''
+  const orgPhone = (orgRecord?.phone as string) || ''
+
   // Derive invoice data
-  const invoiceNumber = (payment.id as string).substring(0, 8).toUpperCase()
+  const orgSlug = (org?.slug || 'PP').toUpperCase()
+  const invoiceNumber = `INV-${orgSlug}-${(payment.id as string).substring(0, 8).toUpperCase()}`
   const isPaid = payment.status === 'paid'
   const amount = Number(payment.amount)
   const amountPaid = Number(payment.amount_paid || 0)
+  const discount = Number((payment as Record<string, unknown>).discount || 0)
+  const subtotal = amount + discount
   const createdDate = new Date(payment.created_at as string).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -87,6 +96,10 @@ export default async function InvoicePage({
       })
     : null
 
+  // Derive period from due date
+  const periodDate = payment.due_date ? new Date(payment.due_date as string) : new Date(payment.created_at as string)
+  const period = periodDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+
   const player = payment.player as unknown as {
     first_name: string
     last_name: string
@@ -94,6 +107,9 @@ export default async function InvoicePage({
 
   const description = (payment.description as string) || 'Coaching Fee'
   const playerName = player ? `${player.first_name} ${player.last_name}` : null
+  const paymentMethod = (payment as Record<string, unknown>).payment_method as string | null
+  const stripePaymentId = (payment as Record<string, unknown>).stripe_payment_intent_id as string | null
+  const cardLast4 = (payment as Record<string, unknown>).card_last4 as string | null
 
   return (
     <div className="invoice-page max-w-3xl mx-auto">
@@ -111,7 +127,7 @@ export default async function InvoicePage({
               {org?.logo_url && (
                 <img
                   src={org.logo_url}
-                  alt={org.name || 'Academy'}
+                  alt={org?.name || 'Academy'}
                   className="w-14 h-14 rounded-lg object-cover"
                 />
               )}
@@ -119,14 +135,26 @@ export default async function InvoicePage({
                 <h2 className="text-xl font-bold text-gray-900">
                   {org?.name || 'Academy'}
                 </h2>
+                {orgAddress && (
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {orgAddress}
+                  </div>
+                )}
+                {(orgEmail || orgPhone) && (
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    {orgEmail}
+                    {orgEmail && orgPhone && ' | '}
+                    {orgPhone}
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-right">
               <h1 className="text-2xl font-bold tracking-wide text-gray-900">
                 {isPaid ? 'RECEIPT' : 'INVOICE'}
               </h1>
-              <div className="mt-1 text-sm text-gray-500">
-                #{invoiceNumber}
+              <div className="mt-1 text-sm font-mono text-gray-500">
+                {invoiceNumber}
               </div>
             </div>
           </div>
@@ -136,21 +164,24 @@ export default async function InvoicePage({
         <div className="px-8 py-6 grid grid-cols-2 gap-8">
           {/* From */}
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
               From
             </div>
             <div className="text-sm space-y-0.5">
-              <div className="font-semibold">{org?.name || 'Academy'}</div>
+              <div className="font-semibold text-gray-900">{org?.name || 'Academy'}</div>
+              {orgEmail && (
+                <div className="text-gray-500">{orgEmail}</div>
+              )}
             </div>
           </div>
 
           {/* To */}
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
-              To
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+              Bill To
             </div>
             <div className="text-sm space-y-0.5">
-              <div className="font-semibold">{parent?.full_name || '—'}</div>
+              <div className="font-semibold text-gray-900">{parent?.full_name || '\u2014'}</div>
               <div className="text-gray-500">{parent?.email || ''}</div>
             </div>
           </div>
@@ -158,21 +189,21 @@ export default async function InvoicePage({
 
         {/* Dates */}
         <div className="px-8 pb-6">
-          <div className="flex flex-wrap gap-6 text-sm">
+          <div className="flex flex-wrap gap-8 text-sm">
             <div>
-              <span className="text-gray-500">Date Issued: </span>
-              <span className="font-medium">{createdDate}</span>
+              <span className="text-gray-400 text-xs uppercase tracking-wider block mb-0.5">Date Issued</span>
+              <span className="font-medium text-gray-900">{createdDate}</span>
             </div>
             {dueDate && (
               <div>
-                <span className="text-gray-500">Due Date: </span>
-                <span className="font-medium">{dueDate}</span>
+                <span className="text-gray-400 text-xs uppercase tracking-wider block mb-0.5">Due Date</span>
+                <span className="font-medium text-gray-900">{dueDate}</span>
               </div>
             )}
             {paidDate && (
               <div>
-                <span className="text-gray-500">Date Paid: </span>
-                <span className="font-medium">{paidDate}</span>
+                <span className="text-gray-400 text-xs uppercase tracking-wider block mb-0.5">Date Paid</span>
+                <span className="font-medium text-gray-900">{paidDate}</span>
               </div>
             )}
           </div>
@@ -183,28 +214,37 @@ export default async function InvoicePage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-gray-200">
-                <th className="text-left py-3 font-semibold">Description</th>
-                <th className="text-left py-3 font-semibold hidden sm:table-cell">
+                <th className="text-left py-3 font-semibold text-gray-700">Description</th>
+                <th className="text-left py-3 font-semibold text-gray-700 hidden sm:table-cell">
                   Player
                 </th>
-                <th className="text-right py-3 font-semibold">Amount</th>
+                <th className="text-left py-3 font-semibold text-gray-700 hidden sm:table-cell">
+                  Period
+                </th>
+                <th className="text-right py-3 font-semibold text-gray-700">Amount</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-200">
+              <tr className="border-b border-gray-100">
                 <td className="py-4">
-                  <div className="font-medium">{description}</div>
+                  <div className="font-medium text-gray-900">{description}</div>
                   {playerName && (
                     <div className="text-xs text-gray-500 mt-0.5 sm:hidden">
                       {playerName}
                     </div>
                   )}
+                  <div className="text-xs text-gray-400 mt-0.5 sm:hidden">
+                    {period}
+                  </div>
                 </td>
-                <td className="py-4 text-gray-500 hidden sm:table-cell">
-                  {playerName || '—'}
+                <td className="py-4 text-gray-600 hidden sm:table-cell">
+                  {playerName || '\u2014'}
                 </td>
-                <td className="py-4 text-right font-medium">
-                  &pound;{amount.toFixed(2)}
+                <td className="py-4 text-gray-600 hidden sm:table-cell">
+                  {period}
+                </td>
+                <td className="py-4 text-right font-medium text-gray-900">
+                  &pound;{(discount > 0 ? subtotal : amount).toFixed(2)}
                 </td>
               </tr>
             </tbody>
@@ -214,33 +254,51 @@ export default async function InvoicePage({
         {/* Totals */}
         <div className="px-8 pb-6">
           <div className="flex justify-end">
-            <div className="w-64 space-y-2">
+            <div className="w-72 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Subtotal</span>
-                <span>&pound;{amount.toFixed(2)}</span>
+                <span className="text-gray-900">&pound;{(discount > 0 ? subtotal : amount).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-base font-bold border-t-2 border-gray-200 pt-2">
-                <span>Total (GBP)</span>
-                <span>&pound;{amount.toFixed(2)}</span>
-              </div>
-              {amountPaid > 0 && amountPaid < amount && (
-                <div className="flex justify-between text-sm text-accent">
-                  <span>Amount Paid</span>
-                  <span>&pound;{amountPaid.toFixed(2)}</span>
+              {discount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount</span>
+                  <span>-&pound;{discount.toFixed(2)}</span>
                 </div>
               )}
+              <div className="flex justify-between text-base font-bold border-t-2 border-gray-900 pt-2">
+                <span className="text-gray-900">Total (GBP)</span>
+                <span className="text-gray-900">&pound;{amount.toFixed(2)}</span>
+              </div>
               {amountPaid > 0 && amountPaid < amount && (
-                <div className="flex justify-between text-sm font-semibold text-warning">
-                  <span>Balance Due</span>
-                  <span>&pound;{(amount - amountPaid).toFixed(2)}</span>
-                </div>
+                <>
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span>Amount Paid</span>
+                    <span>&pound;{amountPaid.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold text-orange-600">
+                    <span>Balance Due</span>
+                    <span>&pound;{(amount - amountPaid).toFixed(2)}</span>
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Status badge */}
-        <div className="px-8 pb-6 flex justify-end">
+        {/* Status badge + Payment method */}
+        <div className="px-8 pb-6 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            {isPaid && (cardLast4 || stripePaymentId || paymentMethod) && (
+              <span>
+                Paid via{' '}
+                {cardLast4
+                  ? `card ending ${cardLast4}`
+                  : paymentMethod === 'stripe'
+                    ? 'Stripe'
+                    : paymentMethod || 'online payment'}
+              </span>
+            )}
+          </div>
           <span
             className={`inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
               isPaid
@@ -258,13 +316,11 @@ export default async function InvoicePage({
 
         {/* Footer */}
         <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-xl print:bg-transparent">
-          {isPaid && (
-            <p className="text-sm text-center text-gray-500 mb-4">
-              Thank you for your payment.
-            </p>
-          )}
-          <p className="text-xs text-center text-gray-500/60">
-            Player Portal &mdash; Youth Sports Management
+          <p className="text-sm text-center text-gray-600 mb-2">
+            Thank you for choosing {org?.name || 'our academy'}.
+          </p>
+          <p className="text-xs text-center text-gray-400">
+            {invoiceNumber} &middot; Generated by Player Portal
           </p>
         </div>
       </div>

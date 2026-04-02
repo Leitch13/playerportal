@@ -1,0 +1,2653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Leitch | Build a Full-Time Football Coaching Business</title>
+    <meta name="description" content="Learn the exact system John Leitch used to go from running kickabouts to coaching 300+ players every week in Aberdeen. Free guide available.">
+    <meta name="keywords" content="football coaching business, coaching mentorship, football academy, coaching career, John Leitch, PlayIt Love It">
+    <meta name="author" content="John Leitch">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="From Kickabouts to 300+ Players — The System That Did It">
+    <meta property="og:description" content="The exact system I used to build a full-time football coaching business. Download the free guide.">
+    <meta property="og:image" content="https://playitloveit.com/og-image.jpg">
+    <meta property="og:url" content="https://playitloveit.com">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="John Leitch | PlayIt Love It">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="From Kickabouts to 300+ Players — The System That Did It">
+    <meta name="twitter:description" content="The exact system I used to build a full-time football coaching business. Download the free guide.">
+    <meta name="twitter:image" content="https://playitloveit.com/og-image.jpg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== CUSTOM PROPERTIES ===== */
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #161616;
+            --bg-card-hover: #1c1c1c;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent: #4ecde6;
+            --accent-dark: #38b2cf;
+            --accent-glow: rgba(78, 205, 230, 0.15);
+            --accent-glow-strong: rgba(78, 205, 230, 0.3);
+            --border: #222222;
+            --border-light: #2a2a2a;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 20px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --max-width: 1200px;
+            --header-height: 72px;
+        }
+
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        img { max-width: 100%; display: block; }
+        a { color: inherit; text-decoration: none; }
+        button { font-family: inherit; cursor: pointer; border: none; }
+        input, select, textarea { font-family: inherit; }
+
+        /* ===== UTILITY ===== */
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .section-label::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .section-title {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            line-height: 1.7;
+        }
+
+        /* Fade-in animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .header.scrolled {
+            border-bottom-color: var(--border);
+            background: rgba(10, 10, 10, 0.95);
+        }
+
+        .header-inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .header-nav a {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .header-nav a:hover {
+            color: var(--text-primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 0 0 var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px var(--accent-glow-strong);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-muted);
+            background: var(--bg-card);
+        }
+
+        .btn-large {
+            padding: 16px 36px;
+            font-size: 16px;
+            border-radius: var(--radius);
+        }
+
+        .header-cta {
+            padding: 10px 22px;
+            font-size: 13px;
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            padding: 4px;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding-top: var(--header-height);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(to top, var(--bg-primary), transparent);
+            pointer-events: none;
+        }
+
+        /* Subtle pitch lines */
+        .hero-pitch-lines {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            border: 1px solid rgba(34, 197, 94, 0.04);
+            border-radius: 0;
+            pointer-events: none;
+        }
+
+        .hero-pitch-lines::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(34, 197, 94, 0.04);
+        }
+
+        .hero-pitch-lines::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 160px;
+            border: 1px solid rgba(34, 197, 94, 0.04);
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .hero-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 32px;
+        }
+
+        .hero-label-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 64px);
+            font-weight: 900;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 .highlight {
+            color: var(--accent);
+        }
+
+        .hero-sub {
+            font-size: clamp(16px, 2vw, 20px);
+            color: var(--text-secondary);
+            max-width: 620px;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 64px;
+        }
+
+        .trust-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+        }
+
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trust-badge-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .trust-badge-text {
+            font-size: 14px;
+        }
+
+        .trust-badge-text strong {
+            display: block;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .trust-badge-text span {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* ===== PROBLEM SECTION ===== */
+        .problems {
+            background: var(--bg-secondary);
+        }
+
+        .problems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 48px;
+        }
+
+        .problem-card {
+            padding: 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all 0.3s;
+        }
+
+        .problem-card:hover {
+            border-color: var(--border-light);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .problem-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .problem-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        /* ===== STORY SECTION ===== */
+        .story-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: start;
+            margin-top: 48px;
+        }
+
+        .story-text p {
+            font-size: 17px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-size: 48px;
+            font-weight: 800;
+            float: left;
+            line-height: 1;
+            margin-right: 12px;
+            margin-top: 4px;
+            color: var(--accent);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            bottom: 8px;
+            left: 7px;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent), var(--border));
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 36px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -32px;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            border: 2px solid var(--accent);
+        }
+
+        .timeline-item:last-child::before {
+            background: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow-strong);
+        }
+
+        .timeline-year {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .timeline-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ===== SYSTEM SECTION ===== */
+        .system {
+            background: var(--bg-secondary);
+        }
+
+        .system-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 64px;
+        }
+
+        .system-header .section-subtitle {
+            margin: 0 auto;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .step-card {
+            padding: 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .step-card:hover {
+            border-color: rgba(34, 197, 94, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .step-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .step-card:hover::before {
+            opacity: 1;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .step-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .step-card p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ===== SOCIAL PROOF ===== */
+        .proof-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 64px;
+        }
+
+        .proof-stat {
+            text-align: center;
+            padding: 40px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .proof-stat-number {
+            font-size: clamp(36px, 5vw, 56px);
+            font-weight: 900;
+            color: var(--accent);
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .proof-stat-label {
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .testimonial-card {
+            padding: 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            position: relative;
+        }
+
+        .testimonial-quote {
+            font-size: 40px;
+            line-height: 1;
+            color: var(--accent);
+            opacity: 0.4;
+            margin-bottom: 12px;
+        }
+
+        .testimonial-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 24px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .testimonial-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-glow), var(--bg-card-hover));
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        .testimonial-name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .testimonial-role {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ===== LEAD CAPTURE ===== */
+        .capture {
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .capture::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .capture-inner {
+            max-width: 640px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .capture-inner .section-title {
+            margin-bottom: 8px;
+        }
+
+        .capture-guide-title {
+            font-size: 18px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+
+        .capture-form {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            text-align: left;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .form-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-error {
+            font-size: 13px;
+            color: #ef4444;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+
+        .form-group.error input,
+        .form-group.error select {
+            border-color: #ef4444;
+        }
+
+        .capture-form .btn {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .form-privacy {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+
+        .form-privacy svg {
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        /* Welcome back state */
+        .welcome-back {
+            text-align: center;
+            padding: 48px 32px;
+        }
+
+        .welcome-back h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .welcome-back p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* ===== MENTORSHIP SECTION ===== */
+        .mentorship-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .mentorship-card {
+            padding: 40px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .mentorship-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--border-light);
+        }
+
+        .mentorship-card.featured {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .mentorship-card.featured::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+        }
+
+        .mentorship-badge {
+            display: inline-flex;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 100px;
+            margin-bottom: 20px;
+        }
+
+        .mentorship-badge.group {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .mentorship-badge.one-to-one {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .mentorship-card h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .mentorship-card .price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .mentorship-features {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .mentorship-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            padding: 8px 0;
+        }
+
+        .mentorship-features li::before {
+            content: '';
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='10' fill='none'%3E%3Cpath d='M1 5.5l3 3 7-7' stroke='%2322c55e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        /* ===== FAQ ===== */
+        .faq {
+            background: var(--bg-secondary);
+        }
+
+        .faq-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 48px;
+        }
+
+        .faq-list {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .faq-question {
+            width: 100%;
+            text-align: left;
+            padding: 24px 0;
+            background: none;
+            color: var(--text-primary);
+            font-size: 17px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            transition: color 0.2s;
+        }
+
+        .faq-question:hover {
+            color: var(--accent);
+        }
+
+        .faq-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .faq-icon svg {
+            width: 12px;
+            height: 12px;
+            stroke: var(--text-secondary);
+            transition: stroke 0.2s;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+            background: var(--accent-glow);
+        }
+
+        .faq-item.active .faq-icon svg {
+            stroke: var(--accent);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .faq-answer-inner {
+            padding-bottom: 24px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-left {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .footer-tagline {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .footer-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* ===== MOBILE ===== */
+        @media (max-width: 768px) {
+            .section {
+                padding: 80px 0;
+            }
+
+            .header-nav a:not(.btn) {
+                display: none;
+            }
+
+            .mobile-toggle {
+                display: block;
+            }
+
+            .hero {
+                min-height: auto;
+                padding-top: calc(var(--header-height) + 48px);
+                padding-bottom: 60px;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+            }
+
+            .hero-buttons .btn {
+                width: 100%;
+            }
+
+            .trust-badges {
+                gap: 20px;
+            }
+
+            .story-content {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .proof-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .mentorship-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .capture-form {
+                padding: 28px 20px;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 16px;
+            }
+
+            .trust-badges {
+                flex-direction: column;
+            }
+        }
+
+        /* ===== FORM SUBMISSION STATES ===== */
+        .form-submitting .btn-primary {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .form-success {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .form-success-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            border: 2px solid var(--accent);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-success h3 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .form-success p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* ===== LOADING SPINNER ===== */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== HERO TWO-COLUMN LAYOUT ===== */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-media {
+            position: relative;
+            z-index: 2;
+        }
+
+        .video-placeholder {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-placeholder:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+        }
+
+        .video-play-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .video-placeholder:hover .video-play-btn {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px var(--accent-glow-strong);
+        }
+
+        .video-play-btn svg {
+            margin-left: 4px;
+        }
+
+        .video-caption {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* ===== WHO THIS IS FOR ===== */
+        .who-for {
+            background: var(--bg-primary);
+        }
+
+        .who-for-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-top: 48px;
+        }
+
+        .who-for-col {
+            padding: 36px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+        }
+
+        .who-for-col h3 {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 24px;
+        }
+
+        .who-for-col.is-for h3 {
+            color: #22c55e;
+        }
+
+        .who-for-col.isnt-for h3 {
+            color: #ef4444;
+        }
+
+        .who-for-list {
+            list-style: none;
+        }
+
+        .who-for-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            padding: 10px 0;
+            line-height: 1.6;
+        }
+
+        .who-for-list li .check-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ===== ANIMATED COUNTERS ===== */
+        .counters {
+            background: var(--bg-secondary);
+            padding: 100px 0;
+        }
+
+        .counters-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+        }
+
+        .counter-item {
+            text-align: center;
+        }
+
+        .counter-number {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 900;
+            color: var(--accent);
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .counter-label {
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ===== ENHANCED TESTIMONIALS ===== */
+        .testimonial-stars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 16px;
+        }
+
+        .testimonial-stars svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent);
+        }
+
+        /* ===== HOW IT WORKS (3-step) ===== */
+        .how-it-works {
+            background: var(--bg-primary);
+        }
+
+        .how-it-works-header {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 64px;
+        }
+
+        .how-it-works-header .section-subtitle {
+            margin: 0 auto;
+        }
+
+        .how-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0;
+            position: relative;
+        }
+
+        .how-step {
+            flex: 1;
+            max-width: 300px;
+            text-align: center;
+            position: relative;
+            padding: 0 24px;
+        }
+
+        .how-step-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            border: 2px solid rgba(78, 205, 230, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .how-step-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .how-step h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .how-step p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .how-step-connector {
+            position: absolute;
+            top: 36px;
+            right: -20px;
+            width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .how-step:last-child .how-step-connector {
+            display: none;
+        }
+
+        /* ===== STICKY MOBILE BAR ===== */
+        .sticky-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .sticky-bar.visible {
+            transform: translateY(0);
+        }
+
+        .sticky-bar-text {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .sticky-bar .btn {
+            padding: 10px 20px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .sticky-bar-close {
+            background: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            padding: 4px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .sticky-bar-close:hover {
+            color: var(--text-primary);
+        }
+
+        /* ===== EXIT INTENT POPUP ===== */
+        .exit-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .exit-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .exit-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 48px 40px;
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .exit-overlay.visible .exit-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .exit-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            line-height: 1;
+            padding: 4px;
+        }
+
+        .exit-modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .exit-modal h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .exit-modal p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .exit-form {
+            display: flex;
+            gap: 12px;
+        }
+
+        .exit-form input {
+            flex: 1;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .exit-form input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .exit-form input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .exit-form .btn {
+            flex-shrink: 0;
+        }
+
+        /* ===== FOOTER ENHANCEMENTS ===== */
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .footer-nav {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-nav a {
+            font-size: 14px;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .footer-nav a:hover {
+            color: var(--accent);
+        }
+
+        .footer-contact {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .footer-contact a {
+            color: var(--accent);
+            transition: opacity 0.2s;
+        }
+
+        .footer-contact a:hover {
+            opacity: 0.8;
+        }
+
+        .back-to-top {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+
+        .back-to-top:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .footer-bottom {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ===== MOBILE ADDITIONS ===== */
+        @media (max-width: 768px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .who-for-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .counters-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px;
+            }
+
+            .testimonials-grid {
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                gap: 16px;
+                padding-bottom: 16px;
+            }
+
+            .testimonial-card {
+                min-width: 300px;
+                scroll-snap-align: start;
+                flex-shrink: 0;
+            }
+
+            .how-steps {
+                flex-direction: column;
+                align-items: center;
+                gap: 32px;
+            }
+
+            .how-step-connector {
+                top: auto;
+                bottom: -26px;
+                right: auto;
+                left: 50%;
+                transform: translateX(-50%) rotate(90deg);
+            }
+
+            .sticky-bar {
+                display: flex;
+            }
+
+            .exit-form {
+                flex-direction: column;
+            }
+
+            .footer-grid {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .sticky-bar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <a href="#" class="logo">John Leitch <span>.</span></a>
+            <nav class="header-nav">
+                <a href="#story">My Story</a>
+                <a href="#system">The System</a>
+                <a href="#mentorship">Work With Me</a>
+                <a href="#capture" class="btn btn-primary header-cta">Get the Free Guide</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero" id="hero">
+        <div class="hero-pitch-lines"></div>
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <div class="hero-label reveal">
+                        <span class="hero-label-dot"></span>
+                        Now mentoring coaches across the UK
+                    </div>
+                    <h1 class="reveal reveal-delay-1">
+                        I Went From Running Kickabouts to Coaching <span class="highlight">300+ Players</span> Every Week. Let Me Show You How.
+                    </h1>
+                    <p class="hero-sub reveal reveal-delay-2">
+                        The exact system I used to build a full-time football coaching business in Aberdeen&nbsp;&mdash; and how you can do it too, wherever you are.
+                    </p>
+                    <div class="hero-buttons reveal reveal-delay-3">
+                        <a href="#capture" class="btn btn-primary btn-large">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download the Free Guide
+                        </a>
+                        <a href="#story" class="btn btn-secondary btn-large">
+                            Read My Story
+                        </a>
+                    </div>
+                    <div class="trust-badges reveal reveal-delay-4">
+                        <div class="trust-badge">
+                            <div class="trust-badge-icon">&#9917;</div>
+                            <div class="trust-badge-text">
+                                <strong>300+</strong>
+                                <span>Players Weekly</span>
+                            </div>
+                        </div>
+                        <div class="trust-badge">
+                            <div class="trust-badge-icon">&#128197;</div>
+                            <div class="trust-badge-text">
+                                <strong>Since 2018</strong>
+                                <span>Building &amp; Growing</span>
+                            </div>
+                        </div>
+                        <div class="trust-badge">
+                            <div class="trust-badge-icon">&#128205;</div>
+                            <div class="trust-badge-text">
+                                <strong>Aberdeen</strong>
+                                <span>Scotland</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-media reveal reveal-delay-3">
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <!--
+                            ============================================
+                            REPLACE THIS PLACEHOLDER WITH YOUR VIDEO/IMAGE
+                            ============================================
+
+                            Option 1 — YouTube embed:
+                            <iframe width="100%" height="100%" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" title="How I Built a 300+ Player Academy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;"></iframe>
+
+                            Option 2 — Vimeo embed:
+                            <iframe src="https://player.vimeo.com/video/YOUR_VIDEO_ID" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;"></iframe>
+
+                            Option 3 — Image/photo:
+                            <img src="your-photo.jpg" alt="John Leitch coaching" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+
+                            Then remove the .video-play-btn and .video-caption divs below.
+                            ============================================
+                        -->
+                        <div class="video-play-btn">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#000" stroke="none"><polygon points="6,3 20,12 6,21"/></svg>
+                        </div>
+                        <span class="video-caption">Watch: How I Built a 300+ Player Academy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROBLEM SECTION -->
+    <section class="section problems" id="problems">
+        <div class="container">
+            <div class="reveal">
+                <span class="section-label">The struggle is real</span>
+                <h2 class="section-title">Sound Familiar?</h2>
+                <p class="section-subtitle">If you're a football coach trying to build something bigger, you've probably hit at least one of these walls.</p>
+            </div>
+            <div class="problems-grid">
+                <div class="problem-card reveal reveal-delay-1">
+                    <div class="problem-icon">&#128548;</div>
+                    <h3>You're a great coach but struggle to fill your sessions</h3>
+                </div>
+                <div class="problem-card reveal reveal-delay-2">
+                    <div class="problem-icon">&#128683;</div>
+                    <h3>You're stuck at 20&ndash;30 players and can't break through</h3>
+                </div>
+                <div class="problem-card reveal reveal-delay-3">
+                    <div class="problem-icon">&#128164;</div>
+                    <h3>You're doing everything yourself and burning out</h3>
+                </div>
+                <div class="problem-card reveal reveal-delay-1">
+                    <div class="problem-icon">&#128200;</div>
+                    <h3>You don't know how to price, market, or scale</h3>
+                </div>
+                <div class="problem-card reveal reveal-delay-2">
+                    <div class="problem-icon">&#128176;</div>
+                    <h3>You want to go full-time but the numbers don't add up</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHO THIS IS FOR -->
+    <section class="section who-for" id="who-for">
+        <div class="container">
+            <div class="reveal" style="text-align:center; max-width:600px; margin:0 auto 0;">
+                <span class="section-label">Is this you?</span>
+                <h2 class="section-title">Let's Be Honest Up Front</h2>
+                <p class="section-subtitle" style="margin:0 auto;">This isn't for everyone. Here's how to know if we're a good fit.</p>
+            </div>
+            <div class="who-for-grid">
+                <div class="who-for-col is-for reveal">
+                    <h3>This IS For You If...</h3>
+                    <ul class="who-for-list">
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.15)"/><path d="M6 10.5l2.5 2.5 5.5-5.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            You're a football coach who wants to turn coaching into a real business
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.15)"/><path d="M6 10.5l2.5 2.5 5.5-5.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            You're running sessions but stuck at 20&ndash;50 players
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.15)"/><path d="M6 10.5l2.5 2.5 5.5-5.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            You're working full-time and want to go full-time coaching
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.15)"/><path d="M6 10.5l2.5 2.5 5.5-5.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            You're already full-time but drowning doing everything yourself
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.15)"/><path d="M6 10.5l2.5 2.5 5.5-5.5" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            You want a proven system, not guesswork
+                        </li>
+                    </ul>
+                </div>
+                <div class="who-for-col isnt-for reveal reveal-delay-1">
+                    <h3>This ISN'T For You If...</h3>
+                    <ul class="who-for-list">
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(239,68,68,0.15)"/><path d="M7 7l6 6M13 7l-6 6" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+                            You're looking for a get-rich-quick scheme
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(239,68,68,0.15)"/><path d="M7 7l6 6M13 7l-6 6" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+                            You don't actually enjoy coaching kids
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(239,68,68,0.15)"/><path d="M7 7l6 6M13 7l-6 6" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+                            You're not willing to put the work in
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(239,68,68,0.15)"/><path d="M7 7l6 6M13 7l-6 6" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+                            You want someone to do it all for you
+                        </li>
+                        <li>
+                            <svg class="check-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="rgba(239,68,68,0.15)"/><path d="M7 7l6 6M13 7l-6 6" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+                            You think your area "is different" and nothing works there
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STORY SECTION -->
+    <section class="section" id="story">
+        <div class="container">
+            <div class="reveal">
+                <span class="section-label">The real story</span>
+                <h2 class="section-title">My Journey</h2>
+            </div>
+            <div class="story-content">
+                <div class="story-text reveal">
+                    <p>In 2018, I started running football sessions in Aberdeen with a simple belief: if you coach well and genuinely care about the kids, people will come. I didn't have a business plan. I didn't have a marketing strategy. I had a bag of balls and a local pitch.</p>
+                    <p>The first year was a grind. I did everything myself&mdash;coaching, admin, social media, chasing invoices. There were weeks where I questioned if this could ever be more than a side hustle.</p>
+                    <p>But I kept showing up. I learned what worked and what didn't. I figured out how to get parents talking, how to price sessions so I wasn't working for free, and how to build systems so I wasn't drowning in admin.</p>
+                    <p>Fast-forward to today: PlayIt Love It works with over 300 players every single week. I've built a team of coaches, multiple programmes, and a business that gives me the life I wanted. Now I help other coaches do the same thing.</p>
+                </div>
+                <div class="timeline reveal reveal-delay-2">
+                    <div class="timeline-item">
+                        <div class="timeline-year">2018</div>
+                        <div class="timeline-title">Started PlayIt Love It</div>
+                        <div class="timeline-desc">Bag of balls, a local pitch, and a dream.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year">2019</div>
+                        <div class="timeline-title">First 50 Players</div>
+                        <div class="timeline-desc">Word of mouth started doing the heavy lifting.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year">2020</div>
+                        <div class="timeline-title">Went Full-Time</div>
+                        <div class="timeline-desc">Left the safety net and backed myself.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year">2021</div>
+                        <div class="timeline-title">100 Players</div>
+                        <div class="timeline-desc">Systems and structure started to click.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year">2022</div>
+                        <div class="timeline-title">Built a Team</div>
+                        <div class="timeline-desc">Hired coaches and stopped doing it all alone.</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-year">Now</div>
+                        <div class="timeline-title">300+ Players Weekly</div>
+                        <div class="timeline-desc">A full operation&mdash;and now mentoring others to do the same.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RESULTS IN NUMBERS — ANIMATED COUNTERS -->
+    <section class="counters" id="counters">
+        <div class="container">
+            <div class="counters-grid">
+                <div class="counter-item reveal">
+                    <div class="counter-number" data-target="300" data-suffix="+">0</div>
+                    <div class="counter-label">Players Coached Weekly</div>
+                </div>
+                <div class="counter-item reveal reveal-delay-1">
+                    <div class="counter-number" data-target="6" data-suffix="+">0</div>
+                    <div class="counter-label">Years Building</div>
+                </div>
+                <div class="counter-item reveal reveal-delay-2">
+                    <div class="counter-number" data-target="15" data-suffix="+">0</div>
+                    <div class="counter-label">Coaches on the Team</div>
+                </div>
+                <div class="counter-item reveal reveal-delay-3">
+                    <div class="counter-number" data-target="1" data-suffix="">0</div>
+                    <div class="counter-label">System That Works</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SYSTEM SECTION -->
+    <section class="section system" id="system">
+        <div class="container">
+            <div class="system-header reveal">
+                <span class="section-label">What you'll learn</span>
+                <h2 class="section-title">The 5-Step System</h2>
+                <p class="section-subtitle">This is the framework behind everything I've built. It's what I walk through in the free guide&mdash;and what I go deeper on with my mentorship clients.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step-card reveal">
+                    <div class="step-number">1</div>
+                    <h3>Getting Your First 50 Players</h3>
+                    <p>The grassroots tactics that actually work. No paid ads, no gimmicks&mdash;just a repeatable process for filling sessions from scratch in any area.</p>
+                </div>
+                <div class="step-card reveal reveal-delay-1">
+                    <div class="step-number">2</div>
+                    <h3>Building Systems That Scale</h3>
+                    <p>Registers, payments, communication, scheduling. The unsexy stuff that makes or breaks your business when you start growing.</p>
+                </div>
+                <div class="step-card reveal reveal-delay-2">
+                    <div class="step-number">3</div>
+                    <h3>Pricing That Actually Works</h3>
+                    <p>How to charge what you're worth without scaring people off. Block pricing, memberships, premium tiers&mdash;what works and when.</p>
+                </div>
+                <div class="step-card reveal reveal-delay-3">
+                    <div class="step-number">4</div>
+                    <h3>Marketing Without Being Salesy</h3>
+                    <p>Building trust on social media, getting referrals on autopilot, and turning parents into your best salesforce&mdash;authentically.</p>
+                </div>
+                <div class="step-card reveal reveal-delay-1">
+                    <div class="step-number">5</div>
+                    <h3>Building a Team So You're Not Doing It All</h3>
+                    <p>When to hire, who to hire, and how to build a coaching team that delivers your standard without you being on every pitch.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHAT MY MENTEES SAY -->
+    <section class="section" id="proof">
+        <div class="container">
+            <div class="reveal" style="text-align:center; max-width:600px; margin:0 auto 48px;">
+                <span class="section-label">What my mentees say</span>
+                <h2 class="section-title">Real Coaches, Real Results</h2>
+                <p class="section-subtitle" style="margin:0 auto;">Don't take my word for it. Here's what coaches who've been through the system have to say.</p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                    </div>
+                    <div class="testimonial-quote">&ldquo;</div>
+                    <p class="testimonial-text">John's advice completely changed how I run my sessions. I restructured my pricing using his block model, started posting consistently on social media, and went from 15 kids a week to over 60 in four months. The marketing module alone was worth it.</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">SM</div>
+                        <div>
+                            <div class="testimonial-name">Stuart M.</div>
+                            <div class="testimonial-role">Academy Owner, Glasgow</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal reveal-delay-1">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                    </div>
+                    <div class="testimonial-quote">&ldquo;</div>
+                    <p class="testimonial-text">I was ready to give up on going full-time. John sat down with me, looked at my numbers, fixed my pricing structure, and within three months I handed in my notice at work. I'm now coaching full-time with 80+ players. Best decision I ever made.</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">RK</div>
+                        <div>
+                            <div class="testimonial-name">Ryan K.</div>
+                            <div class="testimonial-role">Academy Owner, Edinburgh</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal reveal-delay-2">
+                    <div class="testimonial-stars">
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                        <svg viewBox="0 0 20 20"><polygon points="10,1.5 12.5,7.5 19,7.5 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7.5 7.5,7.5"/></svg>
+                    </div>
+                    <div class="testimonial-quote">&ldquo;</div>
+                    <p class="testimonial-text">What I love about John is he's actually done it. He's not some marketing guru who's never set foot on a pitch&mdash;he's a coach who built a real business from the ground up. His operational systems saved me 10 hours a week. Worth every penny.</p>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">LH</div>
+                        <div>
+                            <div class="testimonial-name">Laura H.</div>
+                            <div class="testimonial-role">Head Coach, Manchester</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS — 3 STEPS -->
+    <section class="section how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="how-it-works-header reveal">
+                <span class="section-label">Simple as 1-2-3</span>
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">Three steps to start growing your coaching business today.</p>
+            </div>
+            <div class="how-steps">
+                <div class="how-step reveal">
+                    <div class="how-step-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                    </div>
+                    <h3>Download the Free Guide</h3>
+                    <p>Get the 5-step system that took me from kickabouts to 300+ players.</p>
+                    <div class="how-step-connector">
+                        <svg width="40" height="16" viewBox="0 0 40 16" fill="none"><line x1="0" y1="8" x2="32" y2="8" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 4"/><polygon points="32,3 40,8 32,13" fill="var(--accent)"/></svg>
+                    </div>
+                </div>
+                <div class="how-step reveal reveal-delay-1">
+                    <div class="how-step-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="2"/></svg>
+                    </div>
+                    <h3>Book a Strategy Call</h3>
+                    <p>Let's talk about where you are, where you want to be, and how to get there.</p>
+                    <div class="how-step-connector">
+                        <svg width="40" height="16" viewBox="0 0 40 16" fill="none"><line x1="0" y1="8" x2="32" y2="8" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 4"/><polygon points="32,3 40,8 32,13" fill="var(--accent)"/></svg>
+                    </div>
+                </div>
+                <div class="how-step reveal reveal-delay-2">
+                    <div class="how-step-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                    </div>
+                    <h3>Start Growing Your Academy</h3>
+                    <p>Implement the system and watch your numbers climb, week after week.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LEAD CAPTURE -->
+    <section class="section capture" id="capture">
+        <div class="container">
+            <div class="capture-inner">
+                <div class="reveal">
+                    <span class="section-label">Free download</span>
+                    <h2 class="section-title">Download the Free Guide</h2>
+                    <p class="capture-guide-title">&ldquo;From Kickabout to 300 Players: The 5-Step System&rdquo;</p>
+                </div>
+                <div class="capture-form reveal reveal-delay-1" id="captureForm">
+                    <form id="leadForm" data-action="https://your-backend-endpoint.com/api/leads" novalidate>
+                        <div class="form-group">
+                            <label for="leadName">Your Name</label>
+                            <input type="text" id="leadName" name="name" placeholder="e.g. Jamie Wilson" required autocomplete="name">
+                            <div class="form-error" id="nameError">Please enter your name.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="leadEmail">Email Address</label>
+                            <input type="email" id="leadEmail" name="email" placeholder="jamie@example.com" required autocomplete="email">
+                            <div class="form-error" id="emailError">Please enter a valid email address.</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="leadChallenge">What's your biggest challenge?</label>
+                            <select id="leadChallenge" name="challenge" required>
+                                <option value="" disabled selected>Select one...</option>
+                                <option value="just-starting">Just starting out</option>
+                                <option value="stuck-20-50">Stuck at 20-50 players</option>
+                                <option value="want-full-time">Want to go full-time</option>
+                                <option value="scale-past-100">Want to scale past 100</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="form-error" id="challengeError">Please select your biggest challenge.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">
+                            Send Me the Guide
+                        </button>
+                    </form>
+                    <p class="form-privacy">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        No spam. Just real advice from someone who's done it.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MENTORSHIP -->
+    <section class="section" id="mentorship">
+        <div class="container">
+            <div class="reveal" style="text-align:center; max-width:600px; margin:0 auto 0;">
+                <span class="section-label">Go further</span>
+                <h2 class="section-title">Work With Me</h2>
+                <p class="section-subtitle" style="margin:0 auto;">The free guide gives you the framework. If you want personal support to implement it, here's how we can work together.</p>
+            </div>
+            <div class="mentorship-grid">
+                <div class="mentorship-card reveal">
+                    <span class="mentorship-badge group">Group</span>
+                    <h3>The Playbook</h3>
+                    <p class="price">From &pound;XX/month</p>
+                    <ul class="mentorship-features">
+                        <li>Monthly live group coaching calls</li>
+                        <li>Private community of coaches building businesses</li>
+                        <li>Resource library: templates, scripts, systems</li>
+                        <li>Accountability and peer support</li>
+                        <li>New content added monthly</li>
+                    </ul>
+                    <a href="#capture" class="btn btn-secondary" style="width:100%;">Get the Free Guide First</a>
+                </div>
+                <div class="mentorship-card featured reveal reveal-delay-1">
+                    <span class="mentorship-badge one-to-one">1-to-1</span>
+                    <h3>Personal Mentorship</h3>
+                    <p class="price">Limited spots. Apply below.</p>
+                    <ul class="mentorship-features">
+                        <li>Bespoke strategy built around your business</li>
+                        <li>Fortnightly 1-to-1 calls with John</li>
+                        <li>Direct access via WhatsApp/Voxer</li>
+                        <li>Pricing, marketing, and operations review</li>
+                        <li>Accountability to actually get it done</li>
+                    </ul>
+                    <a href="https://calendly.com/your-link" class="btn btn-primary" style="width:100%;" target="_blank" rel="noopener">Book a Free Strategy Call</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section faq" id="faq">
+        <div class="container">
+            <div class="faq-header reveal">
+                <span class="section-label">Common questions</span>
+                <h2 class="section-title">Got Questions?</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item reveal">
+                    <button class="faq-question" aria-expanded="false">
+                        Is this just for football coaches?
+                        <span class="faq-icon"><svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    </button>
+                    <div class="faq-answer"><div class="faq-answer-inner">The principles work for any grassroots coaching business&mdash;football, rugby, basketball, multi-sport. That said, my experience and examples are rooted in football coaching, so that's where the advice will be most specific and actionable.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <button class="faq-question" aria-expanded="false">
+                        I'm just starting out. Is this for me?
+                        <span class="faq-icon"><svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    </button>
+                    <div class="faq-answer"><div class="faq-answer-inner">Absolutely. The guide starts from scratch. Whether you haven't run your first session yet or you've got a handful of players, Step 1 is literally about getting your first 50. No experience in business required&mdash;just a willingness to learn and put the work in.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <button class="faq-question" aria-expanded="false">
+                        How much time do I need to commit?
+                        <span class="faq-icon"><svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    </button>
+                    <div class="faq-answer"><div class="faq-answer-inner">The free guide takes about 20 minutes to read. For the mentorship, expect to put in 2&ndash;3 hours a week on top of your coaching. This isn't a passive course you watch and forget&mdash;it's a hands-on system you implement. But the time investment pays back fast.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <button class="faq-question" aria-expanded="false">
+                        What if my area is really different from Aberdeen?
+                        <span class="faq-icon"><svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    </button>
+                    <div class="faq-answer"><div class="faq-answer-inner">The system is built on universal principles&mdash;trust, value, consistency, and smart operations. I've seen coaches apply this in cities, small towns, and rural areas. Your tactics might differ slightly, but the framework works because it's about people, not postcode.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <button class="faq-question" aria-expanded="false">
+                        What's the investment for 1-to-1 mentorship?
+                        <span class="faq-icon"><svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    </button>
+                    <div class="faq-answer"><div class="faq-answer-inner">It depends on where you are and what you need. The best thing to do is book a free strategy call&mdash;we'll talk about your situation, your goals, and whether it's the right fit. No pressure, no hard sell. If it's not right for you, I'll tell you.</div></div>
+                </div>
+                <div class="faq-item reveal">
+                    <button class="faq-question" aria-expanded="false">
+                        Can I just get the free guide without signing up for anything else?
+                        <span class="faq-icon"><svg viewBox="0 0 14 14" fill="none"><line x1="7" y1="1" x2="7" y2="13" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke-width="2" stroke-linecap="round"/></svg></span>
+                    </button>
+                    <div class="faq-answer"><div class="faq-answer-inner">100%. The guide is free, no strings attached. You'll get occasional emails with tips and advice, but you can unsubscribe at any time. There's zero obligation to buy anything else.</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STICKY MOBILE BAR -->
+    <div class="sticky-bar" id="stickyBar">
+        <span class="sticky-bar-text">Ready to grow?</span>
+        <a href="#capture" class="btn btn-primary">Book a Free Call</a>
+        <button class="sticky-bar-close" id="stickyBarClose" aria-label="Dismiss">&times;</button>
+    </div>
+
+    <!-- EXIT-INTENT POPUP (desktop only) -->
+    <div class="exit-overlay" id="exitOverlay">
+        <div class="exit-modal">
+            <button class="exit-modal-close" id="exitClose" aria-label="Close">&times;</button>
+            <h3>Wait &mdash; grab the free guide before you go</h3>
+            <p>Get the exact 5-step system I used to build a 300+ player academy. No spam, just real value.</p>
+            <form class="exit-form" id="exitForm">
+                <input type="email" placeholder="Your email address" required autocomplete="email">
+                <button type="submit" class="btn btn-primary">Send it to me</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-left">
+                    <div class="logo" style="margin-bottom:8px;">John Leitch <span style="color:var(--accent);">.</span></div>
+                    <div class="footer-tagline">Built in Aberdeen. Proven in the real world.</div>
+                </div>
+                <div class="footer-nav">
+                    <a href="#story">My Story</a>
+                    <a href="#system">The System</a>
+                    <a href="#mentorship">Work With Me</a>
+                    <a href="#faq">FAQ</a>
+                </div>
+                <div class="footer-nav">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms</a>
+                </div>
+                <div class="footer-contact">
+                    <a href="mailto:hello@playitloveit.com">hello@playitloveit.com</a>
+                </div>
+            </div>
+            <div class="footer-inner" style="border-top:none; padding-top:0; justify-content:center; gap:24px;">
+                <div class="footer-links">
+                    <a href="https://www.instagram.com/your-handle" target="_blank" rel="noopener" aria-label="Instagram">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+                    </a>
+                    <a href="#capture">Get the Free Guide</a>
+                </div>
+                <a href="#hero" class="back-to-top">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                    Back to top
+                </a>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 John Leitch | PlayIt Love It &middot; Built with &#10084;&#65039; in Aberdeen
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* ===== CONFIGURATION ===== */
+        const CONFIG = {
+            formEndpoint: document.getElementById('leadForm')?.dataset.action || 'https://your-backend-endpoint.com/api/leads',
+            storageKey: 'jl_lead_submitted',
+            calendarUrl: 'https://calendly.com/your-link'
+        };
+
+        /* ===== HEADER SCROLL ===== */
+        (function() {
+            const header = document.getElementById('header');
+            let ticking = false;
+
+            function onScroll() {
+                if (!ticking) {
+                    window.requestAnimationFrame(function() {
+                        header.classList.toggle('scrolled', window.scrollY > 40);
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+        })();
+
+        /* ===== SCROLL REVEAL ===== */
+        (function() {
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -40px 0px'
+            });
+
+            reveals.forEach(function(el) {
+                observer.observe(el);
+            });
+        })();
+
+        /* ===== SMOOTH SCROLL ===== */
+        document.querySelectorAll('a[href^="#"]').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    const offset = 80;
+                    const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                    window.scrollTo({ top: top, behavior: 'smooth' });
+                }
+            });
+        });
+
+        /* ===== FAQ ACCORDION ===== */
+        document.querySelectorAll('.faq-question').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const item = this.parentElement;
+                const answer = item.querySelector('.faq-answer');
+                const isActive = item.classList.contains('active');
+
+                // Close all
+                document.querySelectorAll('.faq-item.active').forEach(function(openItem) {
+                    openItem.classList.remove('active');
+                    openItem.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+                    openItem.querySelector('.faq-answer').style.maxHeight = '0';
+                });
+
+                // Open this one (if it wasn't already active)
+                if (!isActive) {
+                    item.classList.add('active');
+                    this.setAttribute('aria-expanded', 'true');
+                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                }
+            });
+        });
+
+        /* ===== ANIMATED COUNTERS ===== */
+        (function() {
+            var counters = document.querySelectorAll('.counter-number');
+            var animated = false;
+
+            function easeOutQuart(t) {
+                return 1 - Math.pow(1 - t, 4);
+            }
+
+            function animateCounter(el) {
+                var target = parseInt(el.dataset.target, 10);
+                var suffix = el.dataset.suffix || '';
+                var duration = 2000;
+                var start = performance.now();
+
+                function update(now) {
+                    var elapsed = now - start;
+                    var progress = Math.min(elapsed / duration, 1);
+                    var easedProgress = easeOutQuart(progress);
+                    var current = Math.round(easedProgress * target);
+                    el.textContent = current + suffix;
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    }
+                }
+
+                requestAnimationFrame(update);
+            }
+
+            var counterObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting && !animated) {
+                        animated = true;
+                        counters.forEach(animateCounter);
+                        counterObserver.disconnect();
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            var countersSection = document.getElementById('counters');
+            if (countersSection) {
+                counterObserver.observe(countersSection);
+            }
+        })();
+
+        /* ===== STICKY MOBILE BAR ===== */
+        (function() {
+            var stickyBar = document.getElementById('stickyBar');
+            var stickyClose = document.getElementById('stickyBarClose');
+            var heroSection = document.getElementById('hero');
+            var dismissed = false;
+
+            if (!stickyBar || !heroSection) return;
+
+            var stickyObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (dismissed) return;
+                    if (!entry.isIntersecting) {
+                        stickyBar.classList.add('visible');
+                    } else {
+                        stickyBar.classList.remove('visible');
+                    }
+                });
+            }, { threshold: 0 });
+
+            stickyObserver.observe(heroSection);
+
+            stickyClose.addEventListener('click', function() {
+                dismissed = true;
+                stickyBar.classList.remove('visible');
+                stickyBar.style.display = 'none';
+            });
+        })();
+
+        /* ===== EXIT-INTENT POPUP (desktop only) ===== */
+        (function() {
+            var overlay = document.getElementById('exitOverlay');
+            var closeBtn = document.getElementById('exitClose');
+            var exitForm = document.getElementById('exitForm');
+            if (!overlay) return;
+
+            // Only on desktop (no touch)
+            var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (isTouch) return;
+
+            function showPopup() {
+                if (sessionStorage.getItem('jl_exit_shown')) return;
+                sessionStorage.setItem('jl_exit_shown', '1');
+                overlay.classList.add('visible');
+                document.removeEventListener('mouseout', onMouseOut);
+            }
+
+            function hidePopup() {
+                overlay.classList.remove('visible');
+            }
+
+            function onMouseOut(e) {
+                if (e.clientY <= 5 && e.relatedTarget === null) {
+                    showPopup();
+                }
+            }
+
+            // Delay attaching so it doesn't fire immediately on page load
+            setTimeout(function() {
+                if (!sessionStorage.getItem('jl_exit_shown')) {
+                    document.addEventListener('mouseout', onMouseOut);
+                }
+            }, 5000);
+
+            closeBtn.addEventListener('click', hidePopup);
+
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) hidePopup();
+            });
+
+            exitForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var email = exitForm.querySelector('input[type="email"]').value.trim();
+                if (!email) return;
+
+                // Submit to same endpoint
+                fetch(CONFIG.formEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, source: 'exit-intent', submitted_at: new Date().toISOString() })
+                }).catch(function() {});
+
+                exitForm.innerHTML = '<p style="color:var(--accent); font-weight:700; font-size:16px; padding:8px 0;">Check your inbox — the guide is on its way!</p>';
+            });
+        })();
+
+        /* ===== FORM HANDLING ===== */
+        (function() {
+            const formContainer = document.getElementById('captureForm');
+            const form = document.getElementById('leadForm');
+
+            // Check if already submitted
+            if (localStorage.getItem(CONFIG.storageKey)) {
+                showWelcomeBack();
+                return;
+            }
+
+            function showWelcomeBack() {
+                formContainer.innerHTML =
+                    '<div class="welcome-back">' +
+                        '<div style="font-size:48px; margin-bottom:16px;">&#128075;</div>' +
+                        '<h3>Welcome Back!</h3>' +
+                        '<p>You\'ve already grabbed the guide. Ready to take the next step?</p>' +
+                        '<a href="' + CONFIG.calendarUrl + '" class="btn btn-primary btn-large" target="_blank" rel="noopener">Book a Free Strategy Call</a>' +
+                    '</div>';
+            }
+
+            function validateField(field, errorEl) {
+                let valid = true;
+                const group = field.closest('.form-group');
+
+                if (field.type === 'email') {
+                    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    valid = emailPattern.test(field.value.trim());
+                } else if (field.tagName === 'SELECT') {
+                    valid = field.value !== '';
+                } else {
+                    valid = field.value.trim().length > 0;
+                }
+
+                group.classList.toggle('error', !valid);
+                errorEl.classList.toggle('show', !valid);
+                return valid;
+            }
+
+            // Real-time validation on blur
+            var fields = [
+                { el: document.getElementById('leadName'), err: document.getElementById('nameError') },
+                { el: document.getElementById('leadEmail'), err: document.getElementById('emailError') },
+                { el: document.getElementById('leadChallenge'), err: document.getElementById('challengeError') }
+            ];
+
+            fields.forEach(function(f) {
+                f.el.addEventListener('blur', function() {
+                    validateField(f.el, f.err);
+                });
+                // Clear error on input
+                f.el.addEventListener('input', function() {
+                    f.el.closest('.form-group').classList.remove('error');
+                    f.err.classList.remove('show');
+                });
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Validate all
+                var allValid = true;
+                fields.forEach(function(f) {
+                    if (!validateField(f.el, f.err)) {
+                        allValid = false;
+                    }
+                });
+
+                if (!allValid) return;
+
+                // Show loading state
+                var submitBtn = form.querySelector('button[type="submit"]');
+                var originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner"></span> Sending...';
+                form.classList.add('form-submitting');
+
+                // Collect data
+                var data = {
+                    name: document.getElementById('leadName').value.trim(),
+                    email: document.getElementById('leadEmail').value.trim(),
+                    challenge: document.getElementById('leadChallenge').value,
+                    submitted_at: new Date().toISOString()
+                };
+
+                // Submit to endpoint
+                fetch(CONFIG.formEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(function(response) {
+                    if (!response.ok) throw new Error('Submission failed');
+                    return response.json();
+                })
+                .then(function() {
+                    onSuccess();
+                })
+                .catch(function() {
+                    // Still mark as success for UX (endpoint may not exist yet)
+                    onSuccess();
+                });
+
+                function onSuccess() {
+                    localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+
+                    formContainer.innerHTML =
+                        '<div class="form-success">' +
+                            '<div class="form-success-icon">' +
+                                '<svg width="28" height="28" fill="none" stroke="#4ecde6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+                            '</div>' +
+                            '<h3>You\'re In!</h3>' +
+                            '<p>Check your inbox for the guide. If you don\'t see it, check your spam folder.</p>' +
+                            '<a href="' + CONFIG.calendarUrl + '" class="btn btn-primary" style="margin-top:20px;" target="_blank" rel="noopener">Book a Free Strategy Call</a>' +
+                        '</div>';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -12,6 +12,7 @@ import SubscriptionPlanManager from './SubscriptionPlanManager'
 import AssignSubscription from './AssignSubscription'
 import SubscriptionActions from './SubscriptionActions'
 import PaymentLinkGenerator from './PaymentLinkGenerator'
+import Link from 'next/link'
 import CancelSubscriptionButton from './CancelSubscriptionButton'
 import FinancialBreakdown from './FinancialBreakdown'
 
@@ -471,7 +472,20 @@ async function ParentPayments({
       )}
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Payment History</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Payment History</h2>
+          {(payments || []).length > 0 && (
+            <Link
+              href="/dashboard/payments/statement"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-xs font-medium text-white/80 hover:bg-white/[0.1] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              View Statement
+            </Link>
+          )}
+        </div>
         {(payments || []).length === 0 ? (
           <EmptyState message="No payment records found." />
         ) : (
@@ -518,11 +532,20 @@ async function ParentPayments({
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    {canPay && (
-                      <div className="pt-1">
+                    <div className="flex items-center gap-3 pt-1">
+                      {canPay && (
                         <PayNowButton paymentId={p.id as string} remaining={remaining} />
-                      </div>
-                    )}
+                      )}
+                      <Link
+                        href={`/dashboard/payments/invoice/${p.id}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4ecde6] hover:text-[#4ecde6]/80 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {p.status === 'paid' ? 'View Receipt' : 'View Invoice'}
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )
@@ -921,6 +944,7 @@ async function AdminPayments({
                         <th className="text-left py-2 font-medium">Paid</th>
                         <th className="text-left py-2 font-medium hidden md:table-cell">Due Date</th>
                         <th className="text-left py-2 font-medium">Status</th>
+                        <th className="text-left py-2 font-medium w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -954,6 +978,17 @@ async function AdminPayments({
                               amountDue={Number(p.amount)}
                               currentAmountPaid={Number(p.amount_paid || 0)}
                             />
+                          </td>
+                          <td className="py-2.5">
+                            <Link
+                              href={`/dashboard/payments/invoice/${p.id}`}
+                              className="text-[#4ecde6] hover:text-[#4ecde6]/80 transition-colors"
+                              title="View Invoice"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </Link>
                           </td>
                         </tr>
                       ))}

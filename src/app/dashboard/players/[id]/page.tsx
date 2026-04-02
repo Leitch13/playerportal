@@ -272,6 +272,13 @@ export default async function PlayerDetailPage({
             <span>{'\u{1F4C4}'}</span> Progress Report
           </Link>
           <Link
+            href={`/dashboard/players/${id}/report/print`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            Download PDF
+          </Link>
+          <Link
             href={`/dashboard/players/${id}/highlights`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-purple-500/15 to-pink-500/15 text-purple-400 hover:from-purple-500/25 hover:to-pink-500/25 transition-colors border border-purple-500/10"
           >

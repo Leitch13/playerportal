@@ -18,7 +18,7 @@ export default async function WaitlistPage() {
       group:training_groups!waitlist_training_group_id_fkey(id, name)
     `)
     .eq('organisation_id', orgId)
-    .in('status', ['waiting', 'offered', 'expired'])
+    .in('status', ['waiting', 'offered', 'accepted', 'declined', 'expired'])
     .order('position')
 
   // Group by class
@@ -32,16 +32,31 @@ export default async function WaitlistPage() {
     grouped.get(g.id)!.entries!.push(entry)
   }
 
+  // Count active (waiting + offered) per group for the subtitle
+  const activeCount = (items: typeof entries) =>
+    (items || []).filter((e) => e.status === 'waiting' || e.status === 'offered').length
+
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Waitlist</h1>
-        <p className="text-white/60 text-sm mt-1">Manage players waiting for spots in full classes</p>
+        <p className="text-white/60 text-sm mt-1">Manage players waiting for spots in full classes. When a spot opens, the next person is automatically offered the place.</p>
+      </div>
+
+      {/* Auto-promote info banner */}
+      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-[#4ecde6]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="text-[#4ecde6] text-sm">&#9889;</span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-white/90">Auto-promote is active</p>
+          <p className="text-xs text-white/50 mt-0.5">When an enrolment is cancelled, the next person on the waitlist is automatically offered the spot with a 48-hour deadline. Expired offers cascade to the next person.</p>
+        </div>
       </div>
 
       {grouped.size === 0 && (
         <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
-          <p className="text-4xl mb-3">🎉</p>
+          <p className="text-4xl mb-3">&#127881;</p>
           <p className="font-semibold">No one on the waitlist</p>
           <p className="text-sm text-white/60 mt-1">All classes have available spots</p>
         </div>
@@ -49,9 +64,11 @@ export default async function WaitlistPage() {
 
       {Array.from(grouped.values()).map((group) => (
         <div key={group.groupId} className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#1e1e1e] bg-white/[0.03]">
-            <h2 className="font-bold">{group.groupName}</h2>
-            <p className="text-xs text-white/60">{group.entries!.length} waiting</p>
+          <div className="px-6 py-4 border-b border-[#1e1e1e] bg-white/[0.03] flex items-center justify-between">
+            <div>
+              <h2 className="font-bold">{group.groupName}</h2>
+              <p className="text-xs text-white/60">{activeCount(group.entries)} active &middot; {group.entries!.length} total</p>
+            </div>
           </div>
           <WaitlistManager entries={(group.entries || []).map(e => {
             const player = e.player as unknown as { id: string; full_name?: string; first_name?: string; last_name?: string } | null

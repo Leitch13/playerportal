@@ -67,6 +67,93 @@ export function waitlistOfferEmail(params: {
   }
 }
 
+export function waitlistSpotAvailableEmail(params: {
+  parentName: string
+  childName: string
+  className: string
+  acceptUrl: string
+  declineUrl: string
+  expiryDate: string
+}) {
+  return {
+    subject: `A spot has opened up in ${params.className}!`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Great news!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">A spot has opened up in <strong>${params.className}</strong> for <strong>${params.childName}</strong>!</p>
+      <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:12px;padding:16px;margin:20px 0">
+        <p style="margin:0;font-size:14px;color:#92400e"><strong>You have 48 hours to accept this offer.</strong></p>
+        <p style="margin:8px 0 0;font-size:13px;color:#92400e">Expires: ${params.expiryDate}</p>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.acceptUrl}" style="display:inline-block;background:#22c55e;color:#ffffff;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px;margin-right:12px">Accept Spot</a>
+        <a href="${params.declineUrl}" style="display:inline-block;background:#333;color:#aaa;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Decline</a>
+      </div>
+      <p style="color:#666;font-size:13px">If you don't respond in time, the spot will be offered to the next family on the waitlist.</p>
+    `),
+  }
+}
+
+export function waitlistAcceptedEmail(params: {
+  parentName: string
+  childName: string
+  className: string
+}) {
+  return {
+    subject: `You're in! ${params.childName} is enrolled in ${params.className}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">You're in!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${params.childName}</strong> has been successfully enrolled in <strong>${params.className}</strong>.</p>
+      <div style="background:#052e16;border:1px solid #22c55e;border-radius:12px;padding:16px;margin:20px 0">
+        <p style="margin:0;font-size:14px;color:#86efac"><strong>Enrolment confirmed.</strong> You can view details in your dashboard.</p>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 8px;font-size:14px;color:#ddd;font-weight:600">What to bring</p>
+        <p style="margin:0 0 4px;font-size:14px;color:#aaa">Football boots, shin pads, water bottle, and a good attitude!</p>
+      </div>
+      <p style="color:#666;font-size:13px;text-align:center">See you on the pitch!</p>
+    `),
+  }
+}
+
+export function waitlistExpiredEmail(params: {
+  parentName: string
+  childName: string
+  className: string
+}) {
+  return {
+    subject: `Your waitlist offer for ${params.className} has expired`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Offer Expired</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">Unfortunately, the 48-hour window to accept the spot in <strong>${params.className}</strong> for <strong>${params.childName}</strong> has passed.</p>
+      <div style="background:#1c1917;border:1px solid #78716c;border-radius:12px;padding:16px;margin:20px 0">
+        <p style="margin:0;font-size:14px;color:#a8a29e">The spot has been offered to the next family on the waitlist.</p>
+      </div>
+      <p style="color:#aaa;line-height:1.6">If you'd still like a place, you can rejoin the waitlist from your dashboard. We'll let you know as soon as another spot opens up.</p>
+      <p style="color:#666;font-size:13px;text-align:center">We hope to see ${params.childName} on the pitch soon!</p>
+    `),
+  }
+}
+
+export function waitlistDeclinedEmail(params: {
+  parentName: string
+  childName: string
+  className: string
+}) {
+  return {
+    subject: `Waitlist spot declined — ${params.className}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">No worries!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">We've noted that you've declined the spot in <strong>${params.className}</strong> for <strong>${params.childName}</strong>. No problem at all.</p>
+      <p style="color:#aaa;line-height:1.6">If you change your mind or would like to join a different class, you can always browse available options in your dashboard.</p>
+      <p style="color:#666;font-size:13px;text-align:center">We hope to see ${params.childName} at a future session!</p>
+    `),
+  }
+}
+
 export function paymentReminderEmail(params: {
   parentName: string
   amount: string
