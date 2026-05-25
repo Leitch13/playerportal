@@ -108,11 +108,31 @@ export default function NotificationDropdown({
     setLoading(false)
   }, [userId])
 
+  // Fetch when dropdown opens
   useEffect(() => {
     if (open) {
       fetchNotifications()
     }
   }, [open, fetchNotifications])
+
+  // Poll for new unread count every 30 seconds
+  useEffect(() => {
+    async function pollUnread() {
+      const supabase = createClient()
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile_id', userId)
+        .eq('read', false)
+
+      if (typeof count === 'number') {
+        setUnreadCount(count)
+      }
+    }
+
+    const interval = setInterval(pollUnread, 30_000)
+    return () => clearInterval(interval)
+  }, [userId])
 
   // Close on click outside
   useEffect(() => {
@@ -181,21 +201,21 @@ export default function NotificationDropdown({
 
       {/* Dropdown */}
       <div
-        className={`absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden transition-all duration-200 origin-top-right ${
+        className={`absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-[#141414] rounded-xl shadow-2xl border border-gray-200 dark:border-[#1e1e1e] z-50 overflow-hidden transition-all duration-200 ease-out origin-top-right ${
           open
             ? 'opacity-100 scale-100 translate-y-0'
             : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#1e1e1e]">
           <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
             Notifications
           </h3>
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-xs text-blue-600 dark:text-[#4ecde6] hover:underline font-medium"
             >
               Mark all as read
             </button>
@@ -234,16 +254,16 @@ export default function NotificationDropdown({
           ) : (
             grouped.map((group) => (
               <div key={group.label}>
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-gray-800/50 sticky top-0">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-[#1a1a1a] sticky top-0">
                   {group.label}
                 </div>
                 {group.items.map((notification) => (
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-l-[3px] ${
+                    className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1e1e1e] transition-colors border-l-[3px] ${
                       !notification.read
-                        ? 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-900/10'
+                        ? 'border-l-[#4ecde6] bg-blue-50/50 dark:bg-[#4ecde6]/5'
                         : 'border-l-transparent'
                     }`}
                   >

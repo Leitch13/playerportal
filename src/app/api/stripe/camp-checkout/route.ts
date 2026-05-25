@@ -91,7 +91,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (bookingError || !booking) {
-      console.error('Booking insert error:', bookingError)
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
 
@@ -148,7 +147,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url, bookingId: booking.id })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error('Camp checkout error:', message)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

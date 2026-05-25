@@ -7,6 +7,8 @@ import EmailSetup from './EmailSetup'
 import StripeSetup from './StripeSetup'
 import PlatformBilling from './PlatformBilling'
 import ScoringCategories from './ScoringCategories'
+import DataExportButton from '@/components/DataExportButton'
+import EmbedCode from './EmbedCode'
 
 interface OrgData {
   id: string
@@ -20,6 +22,13 @@ interface OrgData {
   logo_url: string
   hero_image_url: string
   google_review_url: string
+  sibling_discount_enabled: boolean
+  sibling_discount_percent: number
+  quarterly_billing_enabled: boolean
+  quarterly_discount_percent: number
+  retention_offer_enabled: boolean
+  retention_offer_percent: number
+  retention_offer_months: number | null
 }
 
 interface TeamMember {
@@ -36,7 +45,7 @@ interface UsageData {
   classes: number
 }
 
-const TABS = ['General', 'Branding', 'Team', 'Scoring', 'Email', 'Billing', 'Danger Zone'] as const
+const TABS = ['General', 'Branding', 'Team', 'Scoring', 'Email', 'Billing', 'Website Embed', 'Data & Backups', 'Danger Zone'] as const
 type Tab = typeof TABS[number]
 
 export default function SettingsForm({
@@ -56,6 +65,9 @@ export default function SettingsForm({
     id: '', name: '', slug: '', description: '', contact_email: '',
     contact_phone: '', location: '', primary_color: '#4ecde6',
     logo_url: '', hero_image_url: '', google_review_url: '',
+    sibling_discount_enabled: false, sibling_discount_percent: 10,
+    quarterly_billing_enabled: true, quarterly_discount_percent: 10,
+    retention_offer_enabled: true, retention_offer_percent: 25, retention_offer_months: null,
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [copied, setCopied] = useState(false)
@@ -135,7 +147,7 @@ export default function SettingsForm({
                 <input className={inputClass} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               </div>
               <div>
-                <label className="text-xs font-medium text-white/70 block mb-1.5">Booking URL (slug)</label>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Booking URL (Your Academy ID)</label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888]">
                     /book/<strong className="text-primary">{form.slug}</strong>
@@ -292,6 +304,279 @@ export default function SettingsForm({
             <div className="space-y-6">
               <PlatformBilling usage={usage} />
               <StripeSetup />
+
+              {/* Sibling Discount */}
+              <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="font-bold text-lg text-white">Sibling Discount</h2>
+                    <p className="text-sm text-white/50 mt-1 max-w-lg">
+                      Automatically apply a discount when a parent signs up a second (or more) child.
+                      The discount is applied to every renewal for as long as the sibling is enrolled.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      checked={form.sibling_discount_enabled}
+                      onChange={(e) => setForm({ ...form, sibling_discount_enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#2a2a2a] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
+                  </label>
+                </div>
+
+                {form.sibling_discount_enabled && (
+                  <>
+                    <div className="max-w-xs">
+                      <label className="block text-xs font-semibold text-white/60 mb-1.5">Discount percentage</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          step={1}
+                          value={form.sibling_discount_percent}
+                          onChange={(e) => setForm({ ...form, sibling_discount_percent: Math.max(1, Math.min(50, Number(e.target.value) || 10)) })}
+                          className={inputClass + ' pr-10'}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm font-semibold">%</span>
+                      </div>
+                      <p className="text-[11px] text-white/40 mt-1.5">Most academies set this at 10–15%</p>
+                    </div>
+
+                    <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/15 rounded-xl p-4 text-sm space-y-1.5">
+                      <p className="text-[#4ecde6] font-semibold text-xs uppercase tracking-wider">Example</p>
+                      <p className="text-white/70">
+                        If the Smith family signs up Jamie at <strong className="text-white">£50/mo</strong>, then later adds his sister Lily:
+                      </p>
+                      <ul className="text-white/70 space-y-0.5 pl-4">
+                        <li>• Jamie: £50/mo (no change)</li>
+                        <li>• Lily: £{(50 * (1 - form.sibling_discount_percent / 100)).toFixed(2)}/mo ({form.sibling_discount_percent}% off applied automatically)</li>
+                        <li>• Family total: £{(50 + 50 * (1 - form.sibling_discount_percent / 100)).toFixed(2)}/mo</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
+
+                <button
+                  onClick={() => handleSave({
+                    sibling_discount_enabled: form.sibling_discount_enabled,
+                    sibling_discount_percent: form.sibling_discount_percent,
+                  })}
+                  disabled={saving}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-50 transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Save sibling discount'}
+                </button>
+              </div>
+
+              {/* Quarterly (3-month prepay) billing */}
+              <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="font-bold text-lg text-white">Quarterly Billing (3-Month Prepay)</h2>
+                    <p className="text-sm text-white/50 mt-1 max-w-lg">
+                      Give parents the option to pay upfront for 3 months with a discount. Improves your cash flow
+                      and reduces churn. You choose whether to offer it and how much to discount.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      checked={form.quarterly_billing_enabled}
+                      onChange={(e) => setForm({ ...form, quarterly_billing_enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#2a2a2a] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
+                  </label>
+                </div>
+
+                {form.quarterly_billing_enabled && (
+                  <>
+                    <div className="max-w-xs">
+                      <label className="block text-xs font-semibold text-white/60 mb-1.5">Discount percentage</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={0}
+                          max={50}
+                          step={1}
+                          value={form.quarterly_discount_percent}
+                          onChange={(e) => setForm({ ...form, quarterly_discount_percent: Math.max(0, Math.min(50, Number(e.target.value) || 0)) })}
+                          className={inputClass + ' pr-10'}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm font-semibold">%</span>
+                      </div>
+                      <p className="text-[11px] text-white/40 mt-1.5">Common: 5–10%. Set to 0 to still offer prepay without a discount.</p>
+                    </div>
+
+                    <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/15 rounded-xl p-4 text-sm space-y-1.5">
+                      <p className="text-[#4ecde6] font-semibold text-xs uppercase tracking-wider">Example on a £50/mo plan</p>
+                      <ul className="text-white/70 space-y-0.5 pl-4">
+                        <li>• Monthly: £50 × 3 = £150</li>
+                        <li>• Quarterly: <strong className="text-white">£{(150 * (1 - form.quarterly_discount_percent / 100)).toFixed(2)}</strong> upfront ({form.quarterly_discount_percent}% off)</li>
+                        <li>• Parent saves: £{(150 * form.quarterly_discount_percent / 100).toFixed(2)} · Effective rate: £{(150 * (1 - form.quarterly_discount_percent / 100) / 3).toFixed(2)}/mo</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
+
+                {!form.quarterly_billing_enabled && (
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 text-sm text-white/50">
+                    Parents will only see monthly billing. Quarterly option is hidden from your booking page.
+                  </div>
+                )}
+
+                <button
+                  onClick={() => handleSave({
+                    quarterly_billing_enabled: form.quarterly_billing_enabled,
+                    quarterly_discount_percent: form.quarterly_discount_percent,
+                  })}
+                  disabled={saving}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-50 transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Save quarterly billing'}
+                </button>
+              </div>
+
+              {/* Cancellation retention offer */}
+              <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="font-bold text-lg text-white">Cancellation Retention Offer</h2>
+                    <p className="text-sm text-white/50 mt-1 max-w-lg">
+                      When a parent tries to cancel, offer them a last-chance discount to stay.
+                      Typically saves 30–40% of potential churn. You choose the discount and how long it lasts.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
+                    <input
+                      type="checkbox"
+                      checked={form.retention_offer_enabled}
+                      onChange={(e) => setForm({ ...form, retention_offer_enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[#2a2a2a] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
+                  </label>
+                </div>
+
+                {form.retention_offer_enabled && (
+                  <>
+                    {/* Quick presets */}
+                    <div>
+                      <label className="block text-xs font-semibold text-white/60 mb-2">Quick presets</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { label: '25% off forever', p: 25, m: null },
+                          { label: '50% off for 2 months', p: 50, m: 2 },
+                          { label: '50% off for 1 month', p: 50, m: 1 },
+                          { label: '10% off forever', p: 10, m: null },
+                        ].map((preset) => {
+                          const active = form.retention_offer_percent === preset.p && form.retention_offer_months === preset.m
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => setForm({ ...form, retention_offer_percent: preset.p, retention_offer_months: preset.m })}
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+                                active
+                                  ? 'bg-[#4ecde6] text-[#0a0a0a]'
+                                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Custom inputs */}
+                    <div className="grid grid-cols-2 gap-4 max-w-md">
+                      <div>
+                        <label className="block text-xs font-semibold text-white/60 mb-1.5">Discount %</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min={1}
+                            max={90}
+                            step={1}
+                            value={form.retention_offer_percent}
+                            onChange={(e) => setForm({ ...form, retention_offer_percent: Math.max(1, Math.min(90, Number(e.target.value) || 25)) })}
+                            className={inputClass + ' pr-10'}
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm font-semibold">%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-white/60 mb-1.5">Duration</label>
+                        <select
+                          value={form.retention_offer_months == null ? 'forever' : String(form.retention_offer_months)}
+                          onChange={(e) => setForm({ ...form, retention_offer_months: e.target.value === 'forever' ? null : Number(e.target.value) })}
+                          className={inputClass}
+                        >
+                          <option value="forever">Forever</option>
+                          <option value="1">1 month</option>
+                          <option value="2">2 months</option>
+                          <option value="3">3 months</option>
+                          <option value="6">6 months</option>
+                          <option value="12">12 months</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/15 rounded-xl p-4 text-sm space-y-1.5">
+                      <p className="text-[#4ecde6] font-semibold text-xs uppercase tracking-wider">What parents will see</p>
+                      <p className="text-white/70">
+                        When a parent on a <strong className="text-white">£50/mo</strong> plan tries to cancel:
+                      </p>
+                      <p className="text-white/80 pl-4">
+                        &quot;Wait! How about <strong className="text-[#4ecde6]">{form.retention_offer_percent}% off</strong> your subscription — {form.retention_offer_months ? `for ${form.retention_offer_months} month${form.retention_offer_months !== 1 ? 's' : ''}` : 'forever'}?&quot;
+                      </p>
+                      <p className="text-white/60 text-xs pl-4">
+                        New rate: £{(50 * (1 - form.retention_offer_percent / 100)).toFixed(2)}/mo
+                        {form.retention_offer_months
+                          ? ` for ${form.retention_offer_months} month${form.retention_offer_months !== 1 ? 's' : ''}, then back to £50/mo`
+                          : ' for as long as they stay subscribed'}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {!form.retention_offer_enabled && (
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 text-sm text-white/50">
+                    No retention offer will be shown. Parents clicking cancel go straight to the confirmation step.
+                  </div>
+                )}
+
+                <button
+                  onClick={() => handleSave({
+                    retention_offer_enabled: form.retention_offer_enabled,
+                    retention_offer_percent: form.retention_offer_percent,
+                    retention_offer_months: form.retention_offer_months,
+                  })}
+                  disabled={saving}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-50 transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Save retention offer'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === 'Website Embed' && org && <EmbedCode slug={form.slug} />}
+
+          {tab === 'Data & Backups' && (
+            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+              <h2 className="font-bold text-lg">Data & Backups</h2>
+              <div className="p-4 rounded-xl border border-[#1e1e1e] space-y-3">
+                <div>
+                  <p className="font-semibold text-sm">Export All Data</p>
+                  <p className="text-xs text-[#888]">Download a backup of all your academy data as JSON</p>
+                </div>
+                <DataExportButton />
+              </div>
             </div>
           )}
 

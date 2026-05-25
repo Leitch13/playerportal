@@ -106,10 +106,10 @@ export default function PaymentManager({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Add Payment</h2>
-        <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">Close</button>
+        <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white text-sm">Close</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -121,7 +121,7 @@ export default function PaymentManager({
               setPlayerId('')
             }}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select parent...</option>
             {parents.map((p) => (
@@ -134,7 +134,7 @@ export default function PaymentManager({
           <select
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Optional...</option>
             {filteredPlayers.map((p) => (
@@ -149,7 +149,7 @@ export default function PaymentManager({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g. Spring term fees"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -164,7 +164,7 @@ export default function PaymentManager({
               setStatus(recalcStatus(e.target.value, amountPaid))
             }}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -179,7 +179,7 @@ export default function PaymentManager({
               setStatus(recalcStatus(amount, e.target.value))
             }}
             placeholder="0.00"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -188,7 +188,7 @@ export default function PaymentManager({
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -196,14 +196,14 @@ export default function PaymentManager({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="unpaid">Unpaid</option>
             <option value="partial">Partial</option>
             <option value="paid">Paid</option>
             <option value="overdue">Overdue</option>
           </select>
-          <p className="text-xs text-text-light mt-1">Auto-calculated from amounts, or override manually</p>
+          <p className="text-xs text-white/60 mt-1">Auto-calculated from amounts, or override manually</p>
         </div>
 
         {success && <p className="text-sm text-accent font-medium md:col-span-3">{success}</p>}
@@ -219,7 +219,7 @@ export default function PaymentManager({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>

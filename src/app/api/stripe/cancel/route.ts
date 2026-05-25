@@ -79,8 +79,7 @@ export async function POST(request: NextRequest) {
       endDate,
       message: `Your subscription will remain active until ${endDate}`,
     })
-  } catch (err) {
-    console.error('Cancel error:', err)
+  } catch {
     return NextResponse.json({ error: 'Failed to cancel' }, { status: 500 })
   }
 }

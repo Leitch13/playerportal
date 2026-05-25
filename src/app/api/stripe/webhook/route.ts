@@ -20,8 +20,7 @@ export async function POST(request: NextRequest) {
   if (webhookSecret && signature) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err)
+    } catch {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
   } else {
@@ -62,47 +61,62 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', paymentId)
 
-        console.log(`Payment ${paymentId} updated: £${newAmountPaid} paid, status: ${newStatus}`)
       }
     }
 
-    // Handle subscription checkout completion — create local subscription record
+    // Handle subscription checkout completion — create or update local subscription record
     if (session.mode === 'subscription' && session.subscription) {
       const planId = session.metadata?.supabase_plan_id
-      const userId = session.metadata?.supabase_user_id
+      // Migration flow includes an existing subscription row to update
+      const existingSubscriptionId = session.metadata?.supabase_subscription_id
+      const userId = session.metadata?.supabase_user_id || session.metadata?.supabase_parent_id
       const playerId = session.metadata?.supabase_player_id
 
       if (planId && userId) {
         // Fetch the full subscription from Stripe for period info
         const stripeSubResponse = await stripe.subscriptions.retrieve(session.subscription as string)
-        // Use any to access period fields which vary by Stripe API version
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const stripeSub = stripeSubResponse as any
 
-        // Get user's organisation for org-scoped insert
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('organisation_id')
-          .eq('id', userId)
-          .single()
+        // Migration path: activate the existing pending_migration row
+        if (existingSubscriptionId) {
+          await supabase.from('subscriptions').update({
+            status: stripeSub.status || 'active',
+            stripe_subscription_id: stripeSub.id,
+            stripe_customer_id: session.customer as string,
+            current_period_start: stripeSub.current_period_start
+              ? new Date(stripeSub.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: stripeSub.current_period_end
+              ? new Date(stripeSub.current_period_end * 1000).toISOString()
+              : null,
+            invite_confirmed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }).eq('id', existingSubscriptionId)
+        } else {
+          // Normal (non-migration) path: insert a new row
+          const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('organisation_id')
+            .eq('id', userId)
+            .single()
 
-        await supabase.from('subscriptions').insert({
-          parent_id: userId,
-          player_id: playerId || null,
-          plan_id: planId,
-          status: stripeSub.status || 'active',
-          stripe_subscription_id: stripeSub.id,
-          stripe_customer_id: session.customer as string,
-          organisation_id: userProfile?.organisation_id || '00000000-0000-0000-0000-000000000001',
-          current_period_start: stripeSub.current_period_start
-            ? new Date(stripeSub.current_period_start * 1000).toISOString()
-            : null,
-          current_period_end: stripeSub.current_period_end
-            ? new Date(stripeSub.current_period_end * 1000).toISOString()
-            : null,
-        })
-
-        console.log(`Subscription created for user ${userId}, plan ${planId}`)
+          await supabase.from('subscriptions').insert({
+            parent_id: userId,
+            player_id: playerId || null,
+            plan_id: planId,
+            status: stripeSub.status || 'active',
+            stripe_subscription_id: stripeSub.id,
+            stripe_customer_id: session.customer as string,
+            organisation_id: userProfile?.organisation_id || '00000000-0000-0000-0000-000000000001',
+            current_period_start: stripeSub.current_period_start
+              ? new Date(stripeSub.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: stripeSub.current_period_end
+              ? new Date(stripeSub.current_period_end * 1000).toISOString()
+              : null,
+          })
+        }
       }
     }
   }
@@ -124,7 +138,6 @@ export async function POST(request: NextRequest) {
       })
       .eq('stripe_subscription_id', stripeSubId)
 
-    console.log(`Subscription ${stripeSubId} updated: status=${sub.status}`)
   }
 
   // ─── SUBSCRIPTION DELETED (fully canceled) ───
@@ -141,7 +154,6 @@ export async function POST(request: NextRequest) {
       })
       .eq('stripe_subscription_id', stripeSubId)
 
-    console.log(`Subscription ${stripeSubId} canceled`)
   }
 
   // ─── INVOICE PAID (subscription renewal success) ───
@@ -156,7 +168,6 @@ export async function POST(request: NextRequest) {
         })
         .eq('stripe_subscription_id', invoice.subscription as string)
 
-      console.log(`Invoice paid for subscription ${invoice.subscription}`)
     }
   }
 
@@ -172,7 +183,6 @@ export async function POST(request: NextRequest) {
         })
         .eq('stripe_subscription_id', invoice.subscription as string)
 
-      console.log(`Payment failed for subscription ${invoice.subscription}`)
     }
   }
 

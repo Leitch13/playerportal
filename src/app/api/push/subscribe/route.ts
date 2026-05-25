@@ -30,13 +30,11 @@ export async function POST(req: NextRequest) {
     )
 
     if (error) {
-      console.error('[Push] Failed to save subscription:', error)
       return NextResponse.json({ error: 'Failed to save subscription' }, { status: 500 })
     }
 
     return NextResponse.json({ ok: true })
-  } catch (err) {
-    console.error('[Push] Subscribe error:', err)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

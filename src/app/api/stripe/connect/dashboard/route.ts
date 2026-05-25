@@ -23,8 +23,7 @@ export async function POST() {
 
     const loginLink = await stripe.accounts.createLoginLink(org.stripe_account_id)
     return NextResponse.json({ url: loginLink.url })
-  } catch (err) {
-    console.error('Stripe dashboard link error:', err)
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create dashboard link' },
       { status: 500 },

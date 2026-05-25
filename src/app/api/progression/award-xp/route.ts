@@ -175,8 +175,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
-  } catch (err) {
-    console.error('[award-xp] Error:', err)
+  } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

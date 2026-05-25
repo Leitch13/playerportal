@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
 import PhotoUploader from './PhotoUploader'
@@ -11,6 +12,7 @@ export default async function GalleryPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('photo_gallery')
 
   const { data: profile } = await supabase
     .from('profiles')

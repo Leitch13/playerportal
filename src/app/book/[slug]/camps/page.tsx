@@ -160,7 +160,7 @@ export default async function CampsListingPage({
 
                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
                       {camp.price != null && (
-                        <span className="text-2xl font-bold" style={{ color: primaryColor }}>
+                        <span className="text-2xl font-bold text-white">
                           &pound;{Number(camp.price).toFixed(0)}
                           <span className="text-sm font-normal text-white/40 ml-1">per week</span>
                         </span>

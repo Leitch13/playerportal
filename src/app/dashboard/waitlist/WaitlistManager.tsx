@@ -69,10 +69,9 @@ export default function WaitlistManager({ entries, groupId }: { entries: Waitlis
       })
       if (!res.ok) {
         const data = await res.json()
-        console.error('Promote failed:', data.error)
       }
-    } catch (err) {
-      console.error('Promote error:', err)
+    } catch {
+      // promote failed
     }
     router.refresh()
     setLoading(null)

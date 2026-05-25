@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     .eq('day_of_week', tomorrowDay)
 
   if (groupsError) {
-    console.error('[SESSION REMINDERS] Error fetching groups:', groupsError)
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
   }
 

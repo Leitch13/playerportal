@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 
 export default async function ReviewFeedbackPage() {
   const supabase = await createClient()
@@ -8,6 +9,7 @@ export default async function ReviewFeedbackPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('progress_reviews')
 
   const { data: profile } = await supabase
     .from('profiles')

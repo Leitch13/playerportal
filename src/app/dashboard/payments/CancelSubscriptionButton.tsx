@@ -85,7 +85,7 @@ export default function CancelSubscriptionButton({
     return (
       <button
         onClick={() => setStep('reason')}
-        className="text-xs text-text-light hover:text-danger transition-colors"
+        className="text-xs text-white/60 hover:text-danger transition-colors"
       >
         Cancel
       </button>
@@ -94,17 +94,17 @@ export default function CancelSubscriptionButton({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+      <div className="bg-[#141414] rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
 
         {/* Step 1: Reason survey */}
         {step === 'reason' && (
           <div className="p-6">
             <div className="text-center mb-5">
-              <div className="w-14 h-14 bg-surface rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-14 h-14 bg-[#0a0a0a] rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-2xl">💬</span>
               </div>
               <h3 className="text-lg font-bold">We&apos;re sorry to hear that</h3>
-              <p className="text-sm text-text-light mt-1">Could you tell us why you&apos;re thinking of leaving?</p>
+              <p className="text-sm text-white/60 mt-1">Could you tell us why you&apos;re thinking of leaving?</p>
             </div>
 
             <div className="space-y-2 mb-4">
@@ -115,7 +115,7 @@ export default function CancelSubscriptionButton({
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-left transition-all ${
                     selectedReason === reason.id
                       ? 'bg-accent/10 border-2 border-accent font-semibold'
-                      : 'bg-surface/50 border-2 border-transparent hover:bg-surface'
+                      : 'bg-[#0a0a0a]/50 border-2 border-transparent hover:bg-[#0a0a0a]'
                   }`}
                 >
                   <span className="text-lg">{reason.icon}</span>
@@ -129,7 +129,7 @@ export default function CancelSubscriptionButton({
 
             {selectedReason === 'other' && (
               <textarea
-                className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 mb-4"
+                className="w-full border border-[#1e1e1e] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 mb-4"
                 rows={2}
                 placeholder="Tell us more..."
                 value={otherText}
@@ -147,7 +147,7 @@ export default function CancelSubscriptionButton({
               </button>
               <button
                 onClick={() => { setStep('idle'); setSelectedReason(''); setOtherText('') }}
-                className="w-full px-4 py-2 text-xs text-text-light hover:text-text transition-colors"
+                className="w-full px-4 py-2 text-xs text-white/60 hover:text-white transition-colors"
               >
                 Never mind, I&apos;ll stay
               </button>
@@ -162,9 +162,9 @@ export default function CancelSubscriptionButton({
               <span className="text-2xl">🎁</span>
             </div>
             <h3 className="text-lg font-bold mb-1">Wait — we have a special offer!</h3>
-            <p className="text-sm text-text-light mb-2">
+            <p className="text-sm text-white/60 mb-2">
               We&apos;d love to keep you. How about <span className="font-bold text-accent">25% off</span> your
-              {' '}<span className="font-medium text-text">{planName}</span> subscription?
+              {' '}<span className="font-medium text-white">{planName}</span> subscription?
             </p>
 
             {selectedReason === 'too_expensive' && (
@@ -177,8 +177,8 @@ export default function CancelSubscriptionButton({
             <div className="bg-gradient-to-r from-accent/5 to-accent/10 border border-accent/20 rounded-xl p-5 mb-6">
               <div className="flex items-center justify-center gap-4">
                 <div className="text-right">
-                  <div className="text-sm text-text-light line-through">&pound;{Number(amount).toFixed(2)}</div>
-                  <div className="text-[10px] text-text-light">per month</div>
+                  <div className="text-sm text-white/60 line-through">&pound;{Number(amount).toFixed(2)}</div>
+                  <div className="text-[10px] text-white/60">per month</div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                   <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -208,7 +208,7 @@ export default function CancelSubscriptionButton({
               <button
                 onClick={() => setStep('confirm')}
                 disabled={actionLoading}
-                className="w-full px-4 py-2.5 text-text-light text-sm hover:text-danger transition-colors"
+                className="w-full px-4 py-2.5 text-white/60 text-sm hover:text-danger transition-colors"
               >
                 No thanks, I still want to cancel
               </button>
@@ -225,12 +225,12 @@ export default function CancelSubscriptionButton({
               </svg>
             </div>
             <h3 className="text-lg font-bold mb-1">Are you sure?</h3>
-            <p className="text-sm text-text-light mb-2">
-              Your <span className="font-medium text-text">{planName}</span> subscription will be cancelled
+            <p className="text-sm text-white/60 mb-2">
+              Your <span className="font-medium text-white">{planName}</span> subscription will be cancelled
               at the end of your current billing period.
             </p>
-            <div className="bg-surface rounded-xl p-3 mb-5">
-              <p className="text-xs text-text-light">
+            <div className="bg-[#0a0a0a] rounded-xl p-3 mb-5">
+              <p className="text-xs text-white/60">
                 ✓ You won&apos;t be charged again<br/>
                 ✓ Access continues until period ends<br/>
                 ✓ You can re-subscribe any time
@@ -259,12 +259,12 @@ export default function CancelSubscriptionButton({
         {/* Step: Cancelled confirmation */}
         {step === 'cancelled' && (
           <div className="p-6 text-center">
-            <div className="w-14 h-14 bg-surface rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 bg-[#0a0a0a] rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">👋</span>
             </div>
             <h3 className="text-lg font-bold mb-1">Subscription Cancelled</h3>
-            <p className="text-sm text-text-light mb-4">
-              Your <span className="font-medium text-text">{planName}</span> subscription has been cancelled.
+            <p className="text-sm text-white/60 mb-4">
+              Your <span className="font-medium text-white">{planName}</span> subscription has been cancelled.
             </p>
             {endDate && (
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 mb-5 border border-amber-200 dark:border-amber-700/30">
@@ -273,8 +273,8 @@ export default function CancelSubscriptionButton({
                 </p>
               </div>
             )}
-            <div className="bg-surface rounded-xl p-3 mb-5">
-              <p className="text-xs text-text-light">
+            <div className="bg-[#0a0a0a] rounded-xl p-3 mb-5">
+              <p className="text-xs text-white/60">
                 ✓ No further charges will be made<br />
                 ✓ You can re-subscribe any time
               </p>
@@ -295,12 +295,12 @@ export default function CancelSubscriptionButton({
               <span className="text-2xl">🎉</span>
             </div>
             <h3 className="text-lg font-bold mb-1">Welcome back!</h3>
-            <p className="text-sm text-text-light mb-2">
+            <p className="text-sm text-white/60 mb-2">
               Your 25% discount has been applied.
             </p>
             <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 mb-5">
               <p className="text-2xl font-bold text-accent mb-1">
-                &pound;{discountedAmount}<span className="text-sm font-medium text-text-light">/mo</span>
+                &pound;{discountedAmount}<span className="text-sm font-medium text-white/60">/mo</span>
               </p>
               <p className="text-xs text-emerald-600 font-semibold">
                 Saving &pound;{savedAmount} every month — forever
@@ -317,10 +317,10 @@ export default function CancelSubscriptionButton({
 
         {/* Close button — only show during flow steps, not on result screens */}
         {!['cancelled', 'retained'].includes(step) && (
-          <div className="border-t border-border px-6 py-3">
+          <div className="border-t border-[#1e1e1e] px-6 py-3">
             <button
               onClick={() => { setStep('idle'); setSelectedReason(''); setOtherText('') }}
-              className="w-full text-center text-xs text-text-light hover:text-text transition-colors"
+              className="w-full text-center text-xs text-white/60 hover:text-white transition-colors"
             >
               Close
             </button>

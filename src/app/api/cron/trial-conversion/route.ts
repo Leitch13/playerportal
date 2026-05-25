@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
     .lte('preferred_date', oneDayAgo.toISOString().split('T')[0])
 
   if (trialsError) {
-    console.error('[TRIAL CONVERSION] Error fetching trials:', trialsError)
     return NextResponse.json({ error: 'Failed to fetch trials' }, { status: 500 })
   }
 

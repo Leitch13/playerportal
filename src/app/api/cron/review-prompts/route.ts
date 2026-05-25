@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
     .eq('present', true)
 
   if (attError) {
-    console.error('[REVIEW CRON] Error fetching attendance:', attError)
     return NextResponse.json({ error: 'Failed to fetch attendance' }, { status: 500 })
   }
 
@@ -96,7 +95,6 @@ export async function GET(request: NextRequest) {
     })
 
     if (insertError) {
-      console.error(`[REVIEW CRON] Error creating prompt for player ${player.id}:`, insertError)
       errors++
       continue
     }
@@ -122,11 +120,8 @@ export async function GET(request: NextRequest) {
       emailsSent++
     } else {
       errors++
-      console.error(`[REVIEW CRON] Email failed for ${parent.email}:`, result.error)
     }
   }
-
-  console.log(`[REVIEW CRON] Created: ${created}, Emails: ${emailsSent}, Errors: ${errors}`)
 
   return NextResponse.json({
     message: 'Review prompts processed',

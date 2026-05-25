@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import AuditFilters from './AuditFilters'
 import AuditTable from './AuditTable'
 
@@ -13,6 +14,7 @@ export default async function AuditPage({
   const supabase = await createClient()
   const { data: role } = await supabase.rpc('get_my_role')
   if (role !== 'admin') redirect('/dashboard')
+  await requireFeature('audit_log')
 
   const { data: orgId } = await supabase.rpc('get_my_org')
 

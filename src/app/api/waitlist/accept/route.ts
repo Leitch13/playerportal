@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
       })
 
     if (enrolError) {
-      console.error('[ENROLMENT INSERT ERROR]', enrolError)
       return NextResponse.json({ error: 'Failed to create enrolment' }, { status: 500 })
     }
 
@@ -75,8 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, enrolment_created: true })
-  } catch (err) {
-    console.error('[WAITLIST ACCEPT ERROR]', err)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

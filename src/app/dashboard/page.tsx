@@ -13,8 +13,11 @@ import StatCard from '@/components/StatCard'
 import ReferralLink from './referrals/ReferralLink'
 import UpsellBanner from '@/components/UpsellBanner'
 import OnboardingChecklist from '@/components/OnboardingChecklist'
+import ParentOnboardingChecklist from '@/components/ParentOnboardingChecklist'
+import ParentWelcomeModal from '@/components/ParentWelcomeModal'
 import EngagementScore from '@/components/EngagementScore'
 import ReviewPrompt from '@/components/ReviewPrompt'
+import SmartInsights from '@/components/SmartInsights'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -95,7 +98,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
   // Latest review per player for the children cards
   const { data: latestReviews } = await supabase
     .from('progress_reviews')
-    .select('id, player_id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement, review_date')
+    .select('id, player_id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement, review_date, parent_summary, coach:profiles!progress_reviews_coach_id_fkey(full_name)')
     .in('player_id', playerIds.length > 0 ? playerIds : ['none'])
     .order('review_date', { ascending: false })
 
@@ -145,14 +148,27 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
     }
   }
 
-  // Build latest review summary map for children cards
+  // Build latest review summary map for children cards (prefer this week, fallback to any latest)
   const latestReviewSummaryMap = new Map<string, string>()
   for (const r of weekReviews || []) {
     if (!latestReviewSummaryMap.has(r.player_id) && r.parent_summary) {
       latestReviewSummaryMap.set(r.player_id, r.parent_summary)
     }
   }
+  // Fallback: fill from latestReviews (any date) for players not covered by this week
+  for (const r of latestReviews || []) {
+    const rev = r as typeof r & { parent_summary?: string | null }
+    if (!latestReviewSummaryMap.has(r.player_id) && rev.parent_summary) {
+      latestReviewSummaryMap.set(r.player_id, rev.parent_summary)
+    }
+  }
 
+  // Build the most recent review with summary across all children (for the hero review card)
+  const latestOverallReview = (latestReviews || []).find(r => {
+    const rev = r as typeof r & { parent_summary?: string | null; coach?: { full_name: string } | null }
+    return !!rev.parent_summary
+  }) as (Record<string, unknown> & { player_id: string; parent_summary?: string | null; coach?: { full_name: string } | null }) | undefined
+  const latestOverallReviewPlayer = latestOverallReview ? (players || []).find(p => p.id === latestOverallReview.player_id) : null
 
   // Build week data per player for digest
   const weekDataByPlayer = new Map<string, {
@@ -230,10 +246,28 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
     .eq('id', userId)
     .single()
   const { data: parentOrg } = parentProfile?.organisation_id
-    ? await supabase.from('organisations').select('slug').eq('id', parentProfile.organisation_id).single()
+    ? await supabase.from('organisations').select('slug, name, primary_color').eq('id', parentProfile.organisation_id).single()
     : { data: null }
   const orgSlug = parentOrg?.slug || ''
+  const parentOrgName = parentOrg?.name || 'Player Portal'
+  const parentOrgPrimary = parentOrg?.primary_color || '#4ecde6'
   const referralCode = parentProfile?.referral_code || ''
+
+  // Has this parent sent any messages yet? (for onboarding checklist)
+  const { count: messagesSentCount } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', userId)
+  const hasSentMessage = (messagesSentCount || 0) > 0
+
+  // Was this parent migrated from an external system (ClassForKids etc.)?
+  // We detect via invite_source on any subscription belonging to them.
+  const { count: migrationSubCount } = await supabase
+    .from('subscriptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('parent_id', userId)
+    .not('invite_source', 'is', null)
+  const isMigratedParent = (migrationSubCount || 0) > 0
 
   // Referral count for engagement score
   const { count: referralCount } = await supabase
@@ -327,9 +361,9 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
   // Next upcoming session
   const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   const todayIdx = new Date().getDay()
-  let nextSession: { day: string; group: string; time: string } | null = null
+  let nextSession: { day: string; group: string; time: string; location: string } | null = null
   if (todaysSessions.length > 0) {
-    nextSession = { day: 'Today', group: todaysSessions[0].groupName, time: todaysSessions[0].timeSlot }
+    nextSession = { day: 'Today', group: todaysSessions[0].groupName, time: todaysSessions[0].timeSlot, location: todaysSessions[0].location }
   } else {
     // Find the next day with a session
     for (const p of players || []) {
@@ -338,7 +372,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           const dayIdx = DAY_ORDER.indexOf(e.group.day_of_week)
           if (dayIdx > todayIdx) {
             if (!nextSession) {
-              nextSession = { day: e.group.day_of_week, group: e.group.name, time: e.group.time_slot || '' }
+              nextSession = { day: e.group.day_of_week, group: e.group.name, time: e.group.time_slot || '', location: e.group.location || '' }
             }
           }
         }
@@ -349,7 +383,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
       for (const p of players || []) {
         for (const e of (p.enrolments as unknown as EnrolmentRow[]) || []) {
           if (e.status === 'active' && e.group?.day_of_week) {
-            nextSession = { day: e.group.day_of_week, group: e.group.name, time: e.group.time_slot || '' }
+            nextSession = { day: e.group.day_of_week, group: e.group.name, time: e.group.time_slot || '', location: e.group.location || '' }
             break
           }
         }
@@ -433,20 +467,102 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
-      <div className="max-w-lg mx-auto space-y-0">
+      <div className="max-w-2xl mx-auto space-y-0">
         {/* ═══ HEADER ═══ */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Hi {name} <span aria-hidden="true">&#128075;</span></h1>
+            <h1 className="text-2xl font-bold text-white">{greeting}, {name}</h1>
             <p className="text-sm text-white/40 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           </div>
-          <Link href="/dashboard/messages" className="relative w-10 h-10 bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-xl flex items-center justify-center">
+          <Link href="/dashboard/messages" className="relative w-10 h-10 bg-[#141414] border border-[#1e1e1e] rounded-xl flex items-center justify-center hover:border-[#4ecde6]/30 transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             {(unreadCount || 0) > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
             )}
           </Link>
         </div>
+
+        {/* ═══ FIRST-RUN WELCOME MODAL (client-side, shows once) ═══ */}
+        <ParentWelcomeModal
+          parentName={name}
+          academyName={parentOrgName}
+          primaryColor={parentOrgPrimary}
+          firstChildName={firstChildName}
+          hasSubscription={hasSubscription}
+          isMigrated={isMigratedParent}
+          nextSession={nextSession ? { day: nextSession.day, time: nextSession.time, group: nextSession.group } : null}
+        />
+
+        {/* ═══ PARENT ONBOARDING CHECKLIST (dismissable) ═══ */}
+        <ParentOnboardingChecklist
+          hasChild={childCount > 0}
+          hasSubscription={hasSubscription}
+          hasMessage={hasSentMessage}
+          hasViewedProgress={false}
+          isMigrated={isMigratedParent}
+          primaryColor={parentOrgPrimary}
+        />
+
+        {/* ═══ WELCOME ONBOARDING CARD (no children) ═══ */}
+        {(players || []).length === 0 && (
+          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white">Welcome! Get started by adding your child</h2>
+                <p className="text-xs text-white/40 mt-0.5">Three quick steps to get up and running</p>
+              </div>
+            </div>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6] flex-shrink-0">1</div>
+                <span className="text-sm text-white/70">Add your child</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">2</div>
+                <span className="text-sm text-white/40">Book a session</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">3</div>
+                <span className="text-sm text-white/40">Track their progress</span>
+              </div>
+            </div>
+            <Link href="/dashboard/children" className="inline-block px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+              Add Your Child
+            </Link>
+          </div>
+        )}
+
+        {/* ═══ CHILDREN QUICK LINKS ═══ */}
+        {(players || []).length > 0 && (
+          <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
+            {(players || []).map((p) => (
+              <Link
+                key={p.id}
+                href={`/dashboard/players/${p.id}`}
+                className="flex items-center gap-2 bg-[#141414] border border-[#1e1e1e] rounded-full pl-1 pr-3.5 py-1 hover:border-[#4ecde6]/30 transition-all flex-shrink-0 group"
+              >
+                {p.photo_url ? (
+                  <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="xs" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    {p.first_name.charAt(0)}
+                  </div>
+                )}
+                <span className="text-xs font-medium text-white/70 group-hover:text-[#4ecde6] transition-colors whitespace-nowrap">{p.first_name}</span>
+              </Link>
+            ))}
+            <Link
+              href="/dashboard/children"
+              className="flex items-center gap-1.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-3.5 py-1.5 hover:border-[#4ecde6]/40 transition-all flex-shrink-0"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span className="text-xs font-semibold text-[#4ecde6] whitespace-nowrap">Add Child</span>
+            </Link>
+          </div>
+        )}
 
         {/* ═══ ALERT BANNERS ═══ */}
         {((overdueCount || 0) > 0 || (unreadCount || 0) > 0) && (
@@ -485,7 +601,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
         {/* ═══ NEXT SESSION CARD ═══ */}
-        {nextSession && (
+        {nextSession ? (
           <>
             <Link href="/dashboard/schedule" className="block group">
               <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-5 shadow-[0_0_20px_rgba(78,205,230,0.1)]">
@@ -497,6 +613,12 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                     <p className="text-xs text-white/40 font-medium uppercase tracking-wider">Next Session</p>
                     <p className="text-lg font-bold text-white mt-0.5">{nextSession.day} {nextSession.time}</p>
                     <p className="text-sm text-white/60">{nextSession.group}</p>
+                    {nextSession.location && (
+                      <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {nextSession.location}
+                      </p>
+                    )}
                   </div>
                   <span className="text-[#4ecde6]/60 text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
                 </div>
@@ -505,7 +627,25 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
             </Link>
             <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
           </>
-        )}
+        ) : (players || []).length > 0 ? (
+          <>
+            <Link href="/dashboard/schedule" className="block group">
+              <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 hover:border-[#4ecde6]/30 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/[0.04] rounded-xl flex items-center justify-center border border-white/[0.08]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white/60">No sessions today</p>
+                    <p className="text-xs text-white/40 mt-0.5">Check the timetable to book your next one</p>
+                  </div>
+                  <span className="text-[#4ecde6]/60 text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
+                </div>
+              </div>
+            </Link>
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+          </>
+        ) : null}
 
         {/* ═══ UPSELL BANNER ═══ */}
         {primaryUpsell && (
@@ -559,7 +699,15 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           </div>
           <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
             <p className="text-xs text-white/40 font-medium">Attendance</p>
-            <p className="text-2xl font-bold text-emerald-400 mt-1">{overallAttendanceRate}%</p>
+            <div className="flex items-center gap-2.5 mt-1">
+              <p className="text-2xl font-bold text-emerald-400">{overallAttendanceRate}%</p>
+              <div className="relative w-10 h-10 flex-shrink-0">
+                <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15" fill="none" stroke={overallAttendanceRate >= 80 ? '#22c55e' : overallAttendanceRate >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(overallAttendanceRate / 100) * 94.2} 94.2`} />
+                </svg>
+              </div>
+            </div>
             <p className="text-[10px] text-white/30 mt-0.5">Overall rate</p>
           </div>
           <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
@@ -827,24 +975,41 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           </>
         )}
 
-        {/* ═══ RECENT FEEDBACK ═══ */}
-        {(weekReviews || []).length > 0 && (() => {
-          const latestReview = (weekReviews || [])[0]
-          const coachName = latestReview ? (latestReview.coach as unknown as { full_name: string })?.full_name || 'Coach' : ''
+        {/* ═══ LATEST PROGRESS REVIEW ═══ */}
+        {(() => {
+          // Prefer this week's review, fallback to any latest review with summary
+          const weekReview = (weekReviews || []).find(r => r.parent_summary)
+          const reviewToShow = weekReview || latestOverallReview
+          if (!reviewToShow?.parent_summary) return null
+          const coachName = (reviewToShow as unknown as { coach?: { full_name: string } })?.coach?.full_name || 'Coach'
+          const playerForReview = (players || []).find(p => p.id === reviewToShow.player_id)
+          const isThisWeek = !!weekReview
           return (
             <>
-              <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center border border-purple-500/20">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <Link href={`/dashboard/feedback${playerForReview ? `?player=${playerForReview.id}` : ''}`} className="block group">
+                <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 hover:border-purple-500/30 transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center border border-purple-500/20">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold text-white">Latest Progress Review</h2>
+                        {playerForReview && (
+                          <p className="text-[11px] text-white/40">{playerForReview.first_name} &middot; {new Date(reviewToShow.review_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{isThisWeek ? ' (this week)' : ''}</p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-purple-400/60 text-sm group-hover:translate-x-1 transition-transform">&rarr;</span>
                   </div>
-                  <h2 className="text-sm font-bold text-white">Recent Feedback</h2>
+                  <div className="bg-purple-500/[0.05] border-l-2 border-purple-400/40 rounded-r-xl px-3 py-2.5">
+                    <p className="text-sm text-white/60 italic leading-relaxed">
+                      &ldquo;{reviewToShow.parent_summary!.length > 150 ? reviewToShow.parent_summary!.substring(0, 150) + '...' : reviewToShow.parent_summary}&rdquo;
+                    </p>
+                  </div>
+                  <p className="text-xs text-white/30 mt-2">&mdash; {coachName}</p>
                 </div>
-                {latestReview?.parent_summary && (
-                  <p className="text-sm text-white/60 italic leading-relaxed">&ldquo;{latestReview.parent_summary}&rdquo;</p>
-                )}
-                <p className="text-xs text-white/30 mt-2">&mdash; {coachName}</p>
-              </div>
+              </Link>
               <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
             </>
           )
@@ -1041,7 +1206,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           </Link>
           <Link href="/dashboard/account" className="block group">
             <div className="bg-[#141414]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
-              <div className="w-8 h-8 bg-[#1a1a1a]0/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+              <div className="w-8 h-8 bg-[#1a1a1a] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               </div>
               <p className="text-[10px] font-medium text-white/40">Account</p>
@@ -1148,7 +1313,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long' })
   const { data: todaysGroups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('organisation_id', orgId)
     .eq('day_of_week', today)
     .order('time_slot', { ascending: true })
@@ -1169,7 +1334,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   // Recent activity: latest 5 enrolments
   const { data: recentEnrolments } = await supabase
     .from('enrolments')
-    .select('id, status, enrolled_at, player:players(first_name, last_name), group:training_groups(name)')
+    .select('id, player_id, status, enrolled_at, player:players(first_name, last_name), group:training_groups(name)')
     .eq('organisation_id', orgId)
     .order('enrolled_at', { ascending: false })
     .limit(5)
@@ -1197,17 +1362,56 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
     .eq('organisation_id', orgId)
     .eq('status', 'overdue')
 
+  // Attendance rate (last 30 days)
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const { data: recentAttendance } = await supabase
+    .from('attendance')
+    .select('present')
+    .eq('organisation_id', orgId)
+    .gte('session_date', thirtyDaysAgo.toISOString().split('T')[0])
+  const totalAttendanceRecords = (recentAttendance || []).length
+  const presentCount = (recentAttendance || []).filter((a) => a.present).length
+  const attendanceRate = totalAttendanceRecords > 0 ? Math.round((presentCount / totalAttendanceRecords) * 100) : 0
+
+  // New leads this week
+  const weekStart = new Date()
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+  const weekStartStr = weekStart.toISOString().split('T')[0]
+  const { count: newLeadsThisWeek } = await supabase
+    .from('leads')
+    .select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId)
+    .gte('created_at', weekStartStr)
+
+  // Recent trial bookings for activity feed
+  const { data: recentTrials } = await supabase
+    .from('trial_bookings')
+    .select('id, child_name, parent_name, status, created_at, group:training_groups(name)')
+    .eq('organisation_id', orgId)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  // Recent attendance for activity feed
+  const { data: recentAttendanceEvents } = await supabase
+    .from('attendance')
+    .select('id, present, session_date, player:players(first_name, last_name), group:training_groups(name)')
+    .eq('organisation_id', orgId)
+    .order('session_date', { ascending: false })
+    .limit(5)
+
   // Build unified activity feed
-  const activityFeed: { type: 'enrolment' | 'payment' | 'message'; name: string; detail: string; date: string; amount?: string; status?: string }[] = []
+  const activityFeed: { type: 'enrolment' | 'payment' | 'message' | 'trial' | 'attendance'; name: string; detail: string; date: string; amount?: string; status?: string; link: string }[] = []
   for (const e of recentEnrolments || []) {
     const pl = e.player as unknown as { first_name: string; last_name: string }
     const gr = e.group as unknown as { name: string }
     activityFeed.push({
       type: 'enrolment',
       name: `${pl?.first_name || ''} ${pl?.last_name || ''}`.trim(),
-      detail: gr?.name || 'Group',
+      detail: `Enrolled in ${gr?.name || 'Group'}`,
       date: e.enrolled_at,
       status: e.status,
+      link: `/dashboard/players/${e.player_id}`,
     })
   }
   for (const p of recentPayments || []) {
@@ -1215,10 +1419,11 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
     activityFeed.push({
       type: 'payment',
       name: pa?.full_name || 'Parent',
-      detail: p.description || 'Payment',
+      detail: p.description || 'Payment received',
       date: p.created_at,
       amount: `£${Number(p.amount).toFixed(2)}`,
       status: p.status,
+      link: '/dashboard/payments',
     })
   }
   for (const m of recentMessages || []) {
@@ -1228,6 +1433,29 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
       name: se?.full_name || 'Unknown',
       detail: m.subject || 'Message',
       date: m.created_at,
+      link: '/dashboard/messages',
+    })
+  }
+  for (const t of recentTrials || []) {
+    const gr = t.group as unknown as { name: string }
+    activityFeed.push({
+      type: 'trial',
+      name: t.child_name || t.parent_name || 'Unknown',
+      detail: `Trial booked${gr?.name ? ` — ${gr.name}` : ''}`,
+      date: t.created_at,
+      status: t.status,
+      link: '/dashboard/trials',
+    })
+  }
+  for (const a of recentAttendanceEvents || []) {
+    const pl = a.player as unknown as { first_name: string; last_name: string }
+    const gr = a.group as unknown as { name: string }
+    activityFeed.push({
+      type: 'attendance',
+      name: `${pl?.first_name || ''} ${pl?.last_name || ''}`.trim(),
+      detail: `${a.present ? 'Attended' : 'Absent'} — ${gr?.name || 'Session'}`,
+      date: a.session_date,
+      link: '/dashboard/attendance',
     })
   }
   activityFeed.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -1280,7 +1508,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
-      <div className="max-w-2xl mx-auto space-y-0">
+      <div className="max-w-4xl mx-auto space-y-0">
         {/* ═══ HEADER ═══ */}
         <div className="mb-6">
           <p className="text-xs text-white/30 font-medium tracking-widest uppercase">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -1302,6 +1530,16 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
             <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
           </>
         )}
+
+        <SmartInsights
+          attendanceRate={attendanceRate}
+          monthlyRevenue={monthlyRevenue}
+          prevRevenue={prevRevenue}
+          totalPlayers={totalPlayers || 0}
+          newLeadsThisWeek={newLeadsThisWeek || 0}
+          overdueCount={overdueCount || 0}
+          todaysSessionCount={(todaysGroups || []).length}
+        />
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
@@ -1325,34 +1563,36 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
         {/* ═══ REVENUE CARD ═══ */}
-        <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-          <p className="text-xs text-white/40 font-medium uppercase tracking-wider mb-1">Monthly Revenue</p>
-          <p className="text-3xl font-bold text-white">&pound;{monthlyRevenue.toFixed(0)}</p>
-          {revenueTrend !== 0 && (
-            <div className="flex items-center gap-1 mt-1">
-              <span className={`text-xs font-semibold ${revenueTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {revenueTrend > 0 ? '+' : ''}{revenueTrend}%
-              </span>
-              <span className="text-[10px] text-white/30">vs last month</span>
+        <Link href="/dashboard/payments" className="block">
+          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
+            <p className="text-xs text-white/40 font-medium uppercase tracking-wider mb-1">Monthly Revenue</p>
+            <p className="text-3xl font-bold text-white">&pound;{monthlyRevenue.toFixed(0)}</p>
+            {revenueTrend !== 0 && (
+              <div className="flex items-center gap-1 mt-1">
+                <span className={`text-xs font-semibold ${revenueTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {revenueTrend > 0 ? '+' : ''}{revenueTrend}%
+                </span>
+                <span className="text-[10px] text-white/30">vs last month</span>
+              </div>
+            )}
+            {/* Mini sparkline */}
+            <div className="mt-4 flex items-end gap-1 h-8">
+              {weeklyRevenue.map((val, i) => {
+                const max = Math.max(...weeklyRevenue, 1)
+                const h = Math.max((val / max) * 100, 8)
+                return (
+                  <div key={i} className="flex-1 bg-[#4ecde6]/20 rounded-sm relative overflow-hidden" style={{ height: `${h}%` }}>
+                    <div className="absolute inset-0 bg-[#4ecde6]/40 rounded-sm" />
+                  </div>
+                )
+              })}
             </div>
-          )}
-          {/* Mini sparkline */}
-          <div className="mt-4 flex items-end gap-1 h-8">
-            {weeklyRevenue.map((val, i) => {
-              const max = Math.max(...weeklyRevenue, 1)
-              const h = Math.max((val / max) * 100, 8)
-              return (
-                <div key={i} className="flex-1 bg-[#4ecde6]/20 rounded-sm relative overflow-hidden" style={{ height: `${h}%` }}>
-                  <div className="absolute inset-0 bg-[#4ecde6]/40 rounded-sm" />
-                </div>
-              )
-            })}
+            <p className="text-[10px] text-white/30 mt-2">Weekly revenue (last 4 weeks)</p>
+            <div className="mt-3 h-1 bg-[#141414]/[0.06] rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#4ecde6]/60 to-[#4ecde6] rounded-full" style={{ width: `${Math.min((monthlyRevenue / Math.max(prevRevenue, 1)) * 50, 100)}%` }} />
+            </div>
           </div>
-          <p className="text-[10px] text-white/30 mt-2">Weekly revenue (last 4 weeks)</p>
-          <div className="mt-3 h-1 bg-[#141414]/[0.06] rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#4ecde6]/60 to-[#4ecde6] rounded-full" style={{ width: `${Math.min((monthlyRevenue / Math.max(prevRevenue, 1)) * 50, 100)}%` }} />
-          </div>
-        </div>
+        </Link>
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
@@ -1389,6 +1629,33 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
               <p className="text-xs text-white/40 font-medium">Active Subs</p>
               <p className="text-2xl font-bold text-emerald-400 mt-1">{activeSubs || 0}</p>
               <p className="text-[10px] text-white/30 mt-0.5">Subscriptions</p>
+            </div>
+          </Link>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+
+        {/* ═══ SECONDARY STATS ═══ */}
+        <div className="grid grid-cols-3 gap-3">
+          <Link href="/dashboard/attendance" className="block">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
+              <p className="text-xs text-white/40 font-medium">Attendance</p>
+              <p className={`text-2xl font-bold mt-1 ${attendanceRate >= 80 ? 'text-emerald-400' : attendanceRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{attendanceRate}%</p>
+              <p className="text-[10px] text-white/30 mt-0.5">Last 30 days</p>
+            </div>
+          </Link>
+          <Link href="/dashboard/leads" className="block">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
+              <p className="text-xs text-white/40 font-medium">New Leads</p>
+              <p className="text-2xl font-bold text-[#4ecde6] mt-1">{newLeadsThisWeek || 0}</p>
+              <p className="text-[10px] text-white/30 mt-0.5">This week</p>
+            </div>
+          </Link>
+          <Link href="/dashboard/payments?status=overdue" className="block">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-red-500/20 transition-all">
+              <p className="text-xs text-white/40 font-medium">Overdue</p>
+              <p className={`text-2xl font-bold mt-1 ${(overdueCount || 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>{overdueCount || 0}</p>
+              <p className="text-[10px] text-white/30 mt-0.5">Payments</p>
             </div>
           </Link>
         </div>
@@ -1446,7 +1713,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                           {g.time_slot && <p className="text-sm font-bold text-[#4ecde6]">{g.time_slot}</p>}
                           <div className="flex items-center gap-1 mt-1">
                             <div className="w-14 h-1.5 bg-[#141414]/[0.06] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / 20) * 100, 100)}%` }} />
+                              <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / (g.max_capacity || 20)) * 100, 100)}%` }} />
                             </div>
                             <span className="text-[10px] text-white/40 font-medium">{playerCount}</span>
                           </div>
@@ -1491,10 +1758,12 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           <div className="divide-y divide-white/[0.04]">
             {activityFeed.length > 0 ? (
               activityFeed.slice(0, 10).map((item, i) => (
-                <div key={`${item.type}-${i}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#141414]/[0.02] transition-colors">
+                <Link key={`${item.type}-${i}`} href={item.link} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#141414]/[0.02] transition-colors">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     item.type === 'enrolment' ? 'bg-emerald-500/10 border border-emerald-500/20' :
                     item.type === 'payment' ? 'bg-blue-500/10 border border-blue-500/20' :
+                    item.type === 'trial' ? 'bg-amber-500/10 border border-amber-500/20' :
+                    item.type === 'attendance' ? 'bg-green-500/10 border border-green-500/20' :
                     'bg-purple-500/10 border border-purple-500/20'
                   }`}>
                     {item.type === 'enrolment' && (
@@ -1506,6 +1775,12 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                     {item.type === 'message' && (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     )}
+                    {item.type === 'trial' && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    )}
+                    {item.type === 'attendance' && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white">{item.name}</p>
@@ -1516,7 +1791,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                     {item.status && <StatusBadge status={item.status} />}
                     <p className="text-[10px] text-white/30 mt-0.5">{relativeTime(item.date)}</p>
                   </div>
-                </div>
+                </Link>
               ))
             ) : (
               <div className="px-5 py-8 text-center">
@@ -1537,10 +1812,10 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
               <span className="text-sm font-semibold text-[#4ecde6]">Add Player</span>
             </div>
           </Link>
-          <Link href="/dashboard/session-notes?add=1" className="block">
+          <Link href="/dashboard/leads" className="block">
             <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl py-3.5 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)] flex items-center justify-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span className="text-sm font-semibold text-[#4ecde6]">Create Session</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span className="text-sm font-semibold text-[#4ecde6]">View Leads</span>
             </div>
           </Link>
         </div>
@@ -1549,7 +1824,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
 
         {/* ═══ CLASSFORKIDS IMPORT ═══ */}
         {(totalPlayers || 0) < 5 && (
-          <Link href="/dashboard/players/import/migrate" className="block group">
+          <Link href="/dashboard/players/import/switch" className="block group">
             <div className="bg-gradient-to-r from-[#4ecde6]/10 to-transparent backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-4 hover:border-[#4ecde6]/40 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -1681,7 +1956,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
   // Recent reviews by this coach
   const { data: recentReviews } = await supabase
     .from('progress_reviews')
-    .select('id, review_date, parent_summary, player:players(first_name, last_name), attitude, effort, technical_quality, game_understanding, confidence, physical_movement')
+    .select('id, player_id, review_date, parent_summary, player:players(first_name, last_name), attitude, effort, technical_quality, game_understanding, confidence, physical_movement')
     .eq('coach_id', userId)
     .order('review_date', { ascending: false })
     .limit(5)
@@ -1700,6 +1975,35 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
     .select('id', { count: 'exact', head: true })
     .eq('recipient_id', userId)
     .eq('read', false)
+
+  // Attendance streak: count consecutive session dates (most recent first) where the coach marked attendance
+  let attendanceStreak = 0
+  if (myGroupIds.length > 0) {
+    const { data: attendanceDates } = await supabase
+      .from('attendance')
+      .select('session_date')
+      .in('group_id', myGroupIds)
+      .order('session_date', { ascending: false })
+      .limit(200)
+
+    // Get unique dates in descending order
+    const uniqueDates = [...new Set((attendanceDates || []).map((a) => a.session_date))].sort().reverse()
+
+    // Count consecutive dates (allowing weekends/gaps of up to 3 days between sessions)
+    if (uniqueDates.length > 0) {
+      attendanceStreak = 1
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const prev = new Date(uniqueDates[i - 1])
+        const curr = new Date(uniqueDates[i])
+        const diffDays = Math.round((prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24))
+        if (diffDays <= 7) {
+          attendanceStreak++
+        } else {
+          break
+        }
+      }
+    }
+  }
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
@@ -1765,7 +2069,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
         {/* ═══ COACH STATS ═══ */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Link href="/dashboard/schedule" className="block">
             <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
               <div className="w-9 h-9 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
@@ -1789,6 +2093,15 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
               </div>
               <p className="text-xl font-bold text-emerald-400">{(recentReviews || []).length}</p>
               <p className="text-[10px] text-white/40 mt-0.5">Reviews</p>
+            </div>
+          </Link>
+          <Link href="/dashboard/attendance" className="block">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
+              <div className="w-9 h-9 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <p className="text-xl font-bold text-orange-400">{attendanceStreak}</p>
+              <p className="text-[10px] text-white/40 mt-0.5">Streak</p>
             </div>
           </Link>
         </div>
@@ -1847,10 +2160,14 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
                       ) : (
                         <p className="text-xs text-white/30 mt-1">No players enrolled.</p>
                       )}
-                      <div className="mt-3">
+                      <div className="mt-3 flex items-center gap-2">
                         <Link href={'/dashboard/session/' + g.id + '/live'} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-xs font-semibold hover:bg-[#4ecde6]/90 transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           Start Session
+                        </Link>
+                        <Link href={'/dashboard/session/' + g.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#141414] border border-[#1e1e1e] text-white/70 rounded-lg text-xs font-semibold hover:border-[#4ecde6]/40 hover:text-[#4ecde6] transition-colors">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                          Review Players
                         </Link>
                       </div>
                     </div>
@@ -1881,16 +2198,16 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
                   {(recentReviews || []).map((r) => (
                     <div key={r.id} className="border-b border-white/[0.06] pb-3 last:border-0 last:pb-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-white">
+                        <Link href={'/dashboard/players/' + r.player_id} className="text-sm font-medium text-white hover:text-[#4ecde6] transition-colors">
                           {(r.player as unknown as { first_name: string; last_name: string })?.first_name}{' '}
                           {(r.player as unknown as { first_name: string; last_name: string })?.last_name}
-                        </span>
+                        </Link>
                         <span className="text-xs text-white/30">{new Date(r.review_date).toLocaleDateString()}</span>
                       </div>
                       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
                         {scoringCategories.map((cat) => (
                           <div key={cat.key} className="flex flex-col items-center gap-0.5">
-                            <ScoreBadge score={(r as Record<string, unknown>)[cat.key] as number} />
+                            <ScoreBadge score={((r as Record<string, unknown>).scores as Record<string, number> | null)?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number} />
                             <span className="text-[9px] text-white/30">{cat.label.substring(0, 4)}</span>
                           </div>
                         ))}

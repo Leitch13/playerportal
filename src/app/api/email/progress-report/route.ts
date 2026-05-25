@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     .from('attendance')
     .select('id', { count: 'exact', head: true })
     .eq('player_id', playerId)
-    .eq('status', 'present')
+    .eq('present', true)
 
   const sessionsAttended = presentCount || 0
   const attendanceRate = (totalSessions || 0) > 0

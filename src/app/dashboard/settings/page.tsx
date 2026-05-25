@@ -52,6 +52,13 @@ export default async function SettingsPage() {
         logo_url: org.logo_url || '',
         hero_image_url: org.hero_image_url || '',
         google_review_url: org.google_review_url || '',
+        sibling_discount_enabled: !!org.sibling_discount_enabled,
+        sibling_discount_percent: Number(org.sibling_discount_percent ?? 10),
+        quarterly_billing_enabled: org.quarterly_billing_enabled !== false,
+        quarterly_discount_percent: Number(org.quarterly_discount_percent ?? 10),
+        retention_offer_enabled: org.retention_offer_enabled !== false,
+        retention_offer_percent: Number(org.retention_offer_percent ?? 25),
+        retention_offer_months: org.retention_offer_months == null ? null : Number(org.retention_offer_months),
       } : null}
       team={(teamMembers || []).map(m => ({
         id: m.id,

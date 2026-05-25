@@ -45,8 +45,8 @@ export default function HighlightReel({ data }: { data: HighlightData }) {
       link.download = `${data.playerName.replace(/\s+/g, '-')}-highlights-${format}.png`
       link.href = dataUrl
       link.click()
-    } catch (err) {
-      console.error('Failed to download image:', err)
+    } catch {
+      // download failed
     } finally {
       setDownloading(false)
     }
@@ -79,10 +79,8 @@ export default function HighlightReel({ data }: { data: HighlightData }) {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       }
-    } catch (err) {
-      if ((err as Error).name !== 'AbortError') {
-        console.error('Share failed:', err)
-      }
+    } catch {
+      // share failed or was cancelled
     }
   }, [data.playerName, data.monthLabel, data.shareUrl])
 

@@ -1,5 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import CertificateView from './CertificateView'
 
 export default async function CertificatePage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,6 +11,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('achievements')
 
   const { data: award } = await supabase
     .from('academy_awards')

@@ -110,7 +110,7 @@ export default function BulkMessageForm({
   }
 
   return (
-    <div className="bg-white dark:bg-surface-dark rounded-xl border border-border p-6">
+    <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-6">
       <h2 className="text-lg font-semibold mb-4">Bulk Message</h2>
 
       {sent > 0 && (
@@ -131,7 +131,7 @@ export default function BulkMessageForm({
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   mode === m
                     ? 'bg-primary text-white dark:bg-accent dark:text-primary'
-                    : 'bg-surface-dark text-text-light hover:bg-border'
+                    : 'bg-white/5 text-white/60 hover:bg-border'
                 }`}
               >
                 {m === 'all' ? `All Parents (${parents.length})` :
@@ -149,7 +149,7 @@ export default function BulkMessageForm({
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Choose a group...</option>
               {groups.map((g) => (
@@ -166,7 +166,7 @@ export default function BulkMessageForm({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="e.g. Important: Schedule Change"
-            className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -178,7 +178,7 @@ export default function BulkMessageForm({
             required
             rows={5}
             placeholder="Write your message here..."
-            className="w-full px-3 py-2 border border-border rounded-lg bg-white dark:bg-surface-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -193,7 +193,7 @@ export default function BulkMessageForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>

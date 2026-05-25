@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
 import CampForm from './CampForm'
@@ -69,6 +70,7 @@ export default async function CampsPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('camps')
 
   const { data: profile } = await supabase
     .from('profiles')

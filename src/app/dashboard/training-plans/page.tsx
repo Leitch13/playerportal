@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
@@ -11,6 +12,7 @@ export default async function TrainingPlansPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('session_plans')
 
   const { data: profile } = await supabase
     .from('profiles')

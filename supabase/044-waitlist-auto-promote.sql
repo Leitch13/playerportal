@@ -5,10 +5,6 @@ ALTER TABLE public.waitlist DROP CONSTRAINT IF EXISTS waitlist_status_check;
 ALTER TABLE public.waitlist ADD CONSTRAINT waitlist_status_check
   CHECK (status IN ('waiting', 'offered', 'accepted', 'declined', 'expired', 'cancelled'));
 
--- Add offer_expires_at as alias-friendly column (mirrors expires_at for clarity)
--- The table already has: position, status, offered_at, expires_at
--- We keep using expires_at as the canonical column name.
-
 -- Update the promote_waitlist function to be more robust
 CREATE OR REPLACE FUNCTION public.promote_waitlist(group_id uuid)
 RETURNS uuid AS $$
@@ -33,11 +29,11 @@ BEGIN
   WHERE id = next_entry.id;
 
   -- Create notification for the parent
-  INSERT INTO public.notifications (profile_id, organisation_id, type, title, body, link)
+  INSERT INTO public.notifications (user_id, organisation_id, type, title, body, link)
   VALUES (
     next_entry.parent_id,
     next_entry.organisation_id,
-    'waitlist',
+    'waitlist_offer',
     'A spot has opened up!',
     'A spot has become available in the class. You have 48 hours to confirm.',
     '/dashboard/waitlist'
@@ -57,9 +53,9 @@ BEGIN
     RETURN OLD;
   END IF;
 
-  -- On UPDATE: promote when status changes to cancelled or inactive
+  -- On UPDATE: promote when status changes to cancelled
   IF TG_OP = 'UPDATE' THEN
-    IF NEW.status IN ('cancelled', 'inactive') AND OLD.status NOT IN ('cancelled', 'inactive') THEN
+    IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
       PERFORM public.promote_waitlist(NEW.group_id);
     END IF;
     RETURN NEW;

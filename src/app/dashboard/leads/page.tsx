@@ -9,6 +9,12 @@ export default async function LeadsPage() {
 
   const { data: orgId } = await supabase.rpc('get_my_org')
 
+  const { data: orgData } = await supabase
+    .from('organisations')
+    .select('name')
+    .eq('id', orgId)
+    .single()
+
   const { data: leads } = await supabase
     .from('leads')
     .select('*')
@@ -34,6 +40,7 @@ export default async function LeadsPage() {
         teamMembers={teamMembers || []}
         trainingGroups={trainingGroups || []}
         orgId={orgId || ''}
+        orgName={orgData?.name || ''}
       />
     </div>
   )

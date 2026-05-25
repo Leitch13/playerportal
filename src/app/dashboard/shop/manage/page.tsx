@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import ManageShopClient from './ManageShopClient'
 
 export const metadata = { title: 'Manage Shop' }
@@ -10,6 +11,7 @@ export default async function ManageShopPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('shop')
 
   const { data: role } = await supabase.rpc('get_my_role')
   if (role !== 'admin') redirect('/dashboard')

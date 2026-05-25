@@ -59,7 +59,7 @@ export default function SubscriptionActions({
         value={currentPlanId}
         onChange={(e) => changePlan(e.target.value)}
         disabled={loading || currentStatus === 'canceled'}
-        className="px-2 py-1 border border-border rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
+        className="px-2 py-1 border border-[#1e1e1e] rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
       >
         {plans.map((p) => (
           <option key={p.id} value={p.id}>{p.name}</option>
@@ -131,7 +131,7 @@ export default function SubscriptionActions({
         </button>
       )}
       {currentStatus === 'canceled' && (
-        <span className="text-xs text-text-light italic">Canceled</span>
+        <span className="text-xs text-white/60 italic">Canceled</span>
       )}
     </div>
   )

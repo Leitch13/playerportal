@@ -105,7 +105,7 @@ export default function PaymentStatusToggleClient({
       {/* Quick amount paid editor */}
       {editing ? (
         <div className="flex items-center gap-1">
-          <span className="text-xs text-text-light">&pound;</span>
+          <span className="text-xs text-white/60">&pound;</span>
           <input
             type="number"
             step="0.01"
@@ -113,7 +113,7 @@ export default function PaymentStatusToggleClient({
             max={amountDue}
             value={amountPaid}
             onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-            className="w-20 text-xs px-2 py-1 border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/20"
+            className="w-20 text-xs px-2 py-1 border border-[#1e1e1e] rounded focus:outline-none focus:ring-1 focus:ring-primary/20"
             autoFocus
           />
           <button
@@ -125,7 +125,7 @@ export default function PaymentStatusToggleClient({
           </button>
           <button
             onClick={() => setEditing(false)}
-            className="text-xs px-1 py-1 text-text-light hover:text-text"
+            className="text-xs px-1 py-1 text-white/60 hover:text-white"
           >
             &times;
           </button>

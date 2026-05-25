@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
     .lte('expiry_date', thirtyDaysOut.toISOString().split('T')[0])
 
   if (certsError) {
-    console.error('[CERT EXPIRY] Error fetching certifications:', certsError)
     return NextResponse.json({ error: 'Failed to fetch certifications' }, { status: 500 })
   }
 

@@ -41,16 +41,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     }
 
-    // Look up the organisation's Stripe Connect account and platform plan.
-    // The platform fee is determined by the academy's billing plan:
-    //   Starter = 3.5%, Pro = 2%, Enterprise = 0%
+    // Look up the organisation's Stripe Connect account, platform plan, discounts, etc.
     const { data: planOrg } = await supabase
       .from('organisations')
-      .select('stripe_account_id, platform_plan_id')
+      .select('stripe_account_id, platform_plan_id, sibling_discount_enabled, sibling_discount_percent, stripe_sibling_coupon_id, quarterly_billing_enabled, quarterly_discount_percent')
       .eq('id', plan.organisation_id)
       .single()
 
+    // Respect the academy's quarterly-billing settings
+    const quarterlyEnabled = planOrg?.quarterly_billing_enabled !== false // default true
+    const quarterlyDiscountRate = Math.max(0, Math.min(50, Number(planOrg?.quarterly_discount_percent ?? 10))) / 100
+
+    if (isQuarterly && !quarterlyEnabled) {
+      return NextResponse.json({ error: 'This academy does not offer quarterly billing.' }, { status: 400 })
+    }
+
     const connectedAccountId = planOrg?.stripe_account_id as string | null
+
+    // ── SAFETY GATE: refuse to take payments if the academy hasn't connected Stripe ──
+    // Without this, payments would silently route to the platform account instead of the academy,
+    // and the academy would never see the money. Better to block at checkout with a clear message.
+    if (!connectedAccountId) {
+      return NextResponse.json(
+        { error: 'This academy is still finishing their setup. Payments are not available yet — please check back in a day or two.' },
+        { status: 503 }
+      )
+    }
+
+    // ── Detect if this parent already has an active subscription with the academy ──
+    // If they do, and the academy has sibling discount enabled, auto-apply.
+    let siblingCouponId: string | null = null
+    if (planOrg?.sibling_discount_enabled && Number(planOrg?.sibling_discount_percent) > 0) {
+      const { count: existingActiveSubs } = await supabase
+        .from('subscriptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_id', user.id)
+        .eq('organisation_id', plan.organisation_id)
+        .eq('status', 'active')
+
+      if ((existingActiveSubs || 0) > 0) {
+        // Get or create the Stripe coupon for this org's sibling discount
+        let couponId = planOrg.stripe_sibling_coupon_id as string | null
+        const discountPercent = Number(planOrg.sibling_discount_percent)
+
+        if (!couponId) {
+          const coupon = await stripe.coupons.create({
+            name: `${discountPercent}% sibling discount`,
+            percent_off: discountPercent,
+            duration: 'forever',
+            metadata: {
+              organisation_id: plan.organisation_id,
+              type: 'sibling_discount',
+            },
+          })
+          couponId = coupon.id
+
+          await supabase
+            .from('organisations')
+            .update({ stripe_sibling_coupon_id: couponId })
+            .eq('id', plan.organisation_id)
+        }
+
+        siblingCouponId = couponId
+      }
+    }
 
     // Resolve the platform fee rate from the academy's platform plan
     let PLATFORM_FEE_RATE = 0.035 // default to Starter rate (3.5%)
@@ -109,11 +163,11 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
     if (isQuarterly) {
-      // ═══ QUARTERLY: Pay 3 months upfront with 10% discount ═══
+      // ═══ QUARTERLY: Pay 3 months upfront with per-academy configured discount ═══
       // One-time payment (not recurring subscription) — covers 3 full months
       const monthlyAmount = Number(plan.amount)
       const quarterlyTotal = monthlyAmount * 3
-      const discountedTotal = Math.round(quarterlyTotal * 0.9 * 100) // 10% off, in pence
+      const discountedTotal = Math.round(quarterlyTotal * (1 - quarterlyDiscountRate) * 100) // in pence
 
       // Create a one-time price for the quarterly payment
       const quarterlyPrice = await stripe.prices.create({
@@ -124,7 +178,7 @@ export async function POST(request: NextRequest) {
           supabase_plan_id: plan.id,
           billing_option: 'quarterly',
           months_covered: '3',
-          discount_percent: '10',
+          discount_percent: String(quarterlyDiscountRate * 100),
         },
       })
 
@@ -140,12 +194,14 @@ export async function POST(request: NextRequest) {
         payment_method_types: ['card'],
         success_url: `${origin}/dashboard/payments?sub_success=1&billing=quarterly`,
         cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
+        ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           billing_option: 'quarterly',
           months_covered: '3',
+          ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
       }
 
@@ -166,7 +222,8 @@ export async function POST(request: NextRequest) {
         url: session.url,
         billing: 'quarterly',
         total: (discountedTotal / 100).toFixed(2),
-        saving: ((quarterlyTotal * 0.1)).toFixed(2),
+        saving: (quarterlyTotal * quarterlyDiscountRate).toFixed(2),
+        discountPercent: Math.round(quarterlyDiscountRate * 100),
       })
     }
 
@@ -206,17 +263,20 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       success_url: `${origin}/dashboard/payments?sub_success=1&billing=monthly`,
       cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
+      ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
       metadata: {
         supabase_plan_id: planId,
         supabase_user_id: user.id,
         supabase_player_id: playerId || '',
         billing_option: 'monthly',
+        ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
       },
       subscription_data: {
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
+          ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
         // Anchor billing to the 1st of next month so all parents
         // are charged on the same date — Stripe automatically prorates
@@ -238,9 +298,13 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create(monthlySessionParams)
 
-    return NextResponse.json({ url: session.url, billing: 'monthly' })
+    return NextResponse.json({
+      url: session.url,
+      billing: 'monthly',
+      siblingDiscountApplied: !!siblingCouponId,
+      siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
+    })
   } catch (err) {
-    console.error('Stripe subscribe error:', err)
     const message = err instanceof Error ? err.message : 'Failed to create subscription checkout'
     return NextResponse.json(
       { error: message },

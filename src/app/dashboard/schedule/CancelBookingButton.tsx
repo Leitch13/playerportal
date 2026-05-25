@@ -38,7 +38,6 @@ export default function CancelBookingButton({
       .eq('id', enrolmentId)
 
     if (error) {
-      console.error('Cancel enrolment error:', error)
       alert('Failed to cancel — please try again')
       setLoading(false)
     } else {
@@ -80,8 +79,7 @@ export default function CancelBookingButton({
     })
 
     if (error) {
-      console.error('Discount creation error:', error)
-      // Still show success — the parent chose to stay
+      // Discount creation failed but still show success — the parent chose to stay
     }
 
     // Create a notification for the admin
@@ -238,7 +236,7 @@ export default function CancelBookingButton({
                 Your child will lose their place in {className || 'this class'}.
               </p>
 
-              <div className="bg-red-500/100/10 rounded-xl p-3 mb-5 text-left">
+              <div className="bg-red-500/10 rounded-xl p-3 mb-5 text-left">
                 <ul className="space-y-1.5 text-sm text-red-400">
                   <li className="flex items-center gap-2"><span>✕</span> Place in class lost</li>
                   <li className="flex items-center gap-2"><span>✕</span> May need to rejoin waitlist</li>

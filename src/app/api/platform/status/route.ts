@@ -74,8 +74,7 @@ export async function GET() {
       trialEndsAt: org.platform_trial_ends_at,
       hasSubscription: !!org.platform_stripe_subscription_id,
     })
-  } catch (err) {
-    console.error('Platform status error:', err)
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch platform status' },
       { status: 500 }

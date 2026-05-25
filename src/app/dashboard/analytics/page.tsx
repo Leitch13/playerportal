@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import BarChart from '@/components/BarChart'
 import LineChart from '@/components/LineChart'
 import AttendanceHeatmap from '@/components/AttendanceHeatmap'
@@ -8,6 +9,7 @@ export default async function AnalyticsPage() {
   const supabase = await createClient()
   const { data: role } = await supabase.rpc('get_my_role')
   if (role !== 'admin') redirect('/dashboard')
+  await requireFeature('analytics')
 
   const { data: orgId } = await supabase.rpc('get_my_org')
 
@@ -82,9 +84,9 @@ export default async function AnalyticsPage() {
   // ── Attendance heatmap (by day of week) ──
   const { data: attendanceRecords } = await supabase
     .from('attendance')
-    .select('session_date, status')
+    .select('session_date, present')
     .eq('organisation_id', orgId)
-    .eq('status', 'present')
+    .eq('present', true)
     .gte('session_date', sixMonthsAgo.toISOString().split('T')[0])
 
   const dayCountMap = new Map<number, number>()
@@ -113,7 +115,8 @@ export default async function AnalyticsPage() {
 
   const { data: enrolments } = await supabase
     .from('enrolments')
-    .select('training_group_id')
+    .select('training_group_id, player_id')
+    .eq('organisation_id', orgId)
     .eq('status', 'active')
 
   const enrolCountMap = new Map<string, number>()
@@ -134,6 +137,92 @@ export default async function AnalyticsPage() {
       }
     })
     .sort((a, b) => b.fillRate - a.fillRate)
+
+  // ── Player retention rate ──
+  // Players created 3+ months ago who still have an active enrolment
+  const threeMonthsAgo = new Date()
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+
+  const { data: oldPlayers } = await supabase
+    .from('players')
+    .select('id')
+    .eq('organisation_id', orgId)
+    .lte('created_at', threeMonthsAgo.toISOString())
+
+  const oldPlayerIds = (oldPlayers || []).map((p) => p.id)
+  let retainedCount = 0
+  if (oldPlayerIds.length > 0) {
+    const { data: retainedEnrolments } = await supabase
+      .from('enrolments')
+      .select('player_id')
+      .eq('organisation_id', orgId)
+      .eq('status', 'active')
+      .in('player_id', oldPlayerIds)
+
+    const uniqueRetained = new Set((retainedEnrolments || []).map((e) => e.player_id))
+    retainedCount = uniqueRetained.size
+  }
+  const retentionRate = oldPlayerIds.length > 0
+    ? Math.round((retainedCount / oldPlayerIds.length) * 100)
+    : 100
+  const retentionColor = retentionRate >= 80 ? '#059669' : retentionRate >= 50 ? '#f59e0b' : '#ef4444'
+
+  // ── Churn tracking (cancelled enrolments in last 30 days) ──
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const { data: allEnrolments } = await supabase
+    .from('enrolments')
+    .select('status, enrolled_at')
+    .eq('organisation_id', orgId)
+
+  const totalEnrolmentCount = (allEnrolments || []).length
+  const cancelledRecent = (allEnrolments || []).filter(
+    (e) => e.status === 'cancelled' && e.enrolled_at && new Date(e.enrolled_at) >= thirtyDaysAgo
+  )
+  // Cancelled enrolments whose enrolled_at falls within the last 30 days
+  const churnCount = cancelledRecent.length
+  const churnRate = totalEnrolmentCount > 0
+    ? Math.round((churnCount / totalEnrolmentCount) * 100)
+    : 0
+
+  // ── Top classes by attendance rate ──
+  const { data: attendanceByGroup } = await supabase
+    .from('attendance')
+    .select('group_id, present')
+    .eq('organisation_id', orgId)
+    .eq('present', true)
+    .gte('session_date', sixMonthsAgo.toISOString().split('T')[0])
+
+  const attendanceCountMap = new Map<string, number>()
+  for (const a of attendanceByGroup || []) {
+    const gid = a.group_id
+    if (gid) attendanceCountMap.set(gid, (attendanceCountMap.get(gid) || 0) + 1)
+  }
+
+  const classAttendanceStats = (groups || [])
+    .map((g) => {
+      const enrolled = enrolCountMap.get(g.id) || 0
+      const attended = attendanceCountMap.get(g.id) || 0
+      // Attendance rate: total present marks / enrolled players (normalised)
+      const attendanceRate = enrolled > 0 ? Math.round((attended / enrolled) * 100 / 6) : 0 // divided by ~6 months
+      return {
+        name: g.name,
+        enrolled,
+        attended,
+        attendanceRate: Math.min(attendanceRate, 100),
+      }
+    })
+    .sort((a, b) => b.attendanceRate - a.attendanceRate)
+    .slice(0, 5)
+
+  // ── Revenue per player ──
+  const activePlayerCount = enrolments?.length
+    ? new Set(enrolments.map((e) => (e as Record<string, string>).player_id)).size
+    : 0
+  const revenuePerPlayer = activePlayerCount > 0
+    ? Math.round(totalRevenue / activePlayerCount)
+    : 0
 
   // ── Recent signups ──
   const { data: recentPlayers } = await supabase
@@ -167,6 +256,48 @@ export default async function AnalyticsPage() {
           sub="Players"
           color={monthlyGrowth >= 0 ? '#059669' : '#ef4444'}
         />
+      </div>
+
+      {/* Retention, Churn & Revenue per player */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-xs font-medium text-white/40 mb-1">Player Retention</p>
+          <div className="flex items-center gap-2">
+            <p className="text-2xl font-bold" style={{ color: retentionColor }}>{retentionRate}%</p>
+            <span
+              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{
+                backgroundColor: retentionColor + '20',
+                color: retentionColor,
+              }}
+            >
+              {retentionRate >= 80 ? 'Healthy' : retentionRate >= 50 ? 'At Risk' : 'Critical'}
+            </span>
+          </div>
+          <p className="text-[10px] text-white/40 mt-0.5">
+            {retainedCount} of {oldPlayerIds.length} players from 3+ months ago still active
+          </p>
+        </div>
+
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-xs font-medium text-white/40 mb-1">Churn</p>
+          <p className="text-2xl font-bold" style={{ color: churnRate > 10 ? '#ef4444' : churnRate > 5 ? '#f59e0b' : '#059669' }}>
+            {churnCount} <span className="text-sm font-medium text-white/40">cancelled</span>
+          </p>
+          <p className="text-[10px] text-white/40 mt-0.5">
+            {churnRate}% of {totalEnrolmentCount} total enrolments
+          </p>
+        </div>
+
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+          <p className="text-xs font-medium text-white/40 mb-1">Revenue per Player</p>
+          <p className="text-2xl font-bold" style={{ color: '#8b5cf6' }}>
+            &pound;{revenuePerPlayer.toLocaleString()}
+          </p>
+          <p className="text-[10px] text-white/40 mt-0.5">
+            &pound;{totalRevenue.toLocaleString()} across {activePlayerCount} active players (6 mo)
+          </p>
+        </div>
       </div>
 
       {/* Charts row */}
@@ -224,6 +355,43 @@ export default async function AnalyticsPage() {
               <p className="text-sm text-white/40">No classes yet</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Top Classes by Attendance Rate */}
+      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+        <h3 className="font-bold text-white mb-1">Top Classes by Attendance</h3>
+        <p className="text-xs text-white/40 mb-4">Ranked by attendance rate over the last 6 months</p>
+        <div className="space-y-3">
+          {classAttendanceStats.map((c, i) => (
+            <div key={c.name} className="flex items-center gap-3">
+              <span className="text-xs font-bold text-white/30 min-w-[20px]">#{i + 1}</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-white">{c.name}</span>
+                  <span className="text-xs text-white/40">{c.attended} sessions attended</span>
+                </div>
+                <div className="w-full bg-white/[0.06] rounded-full h-2">
+                  <div
+                    className="h-2 rounded-full transition-all"
+                    style={{
+                      width: `${c.attendanceRate}%`,
+                      backgroundColor: c.attendanceRate >= 80 ? '#059669' : c.attendanceRate >= 50 ? '#f59e0b' : '#ef4444',
+                    }}
+                  />
+                </div>
+              </div>
+              <span
+                className="text-xs font-bold min-w-[36px] text-right"
+                style={{ color: c.attendanceRate >= 80 ? '#059669' : c.attendanceRate >= 50 ? '#f59e0b' : '#ef4444' }}
+              >
+                {c.attendanceRate}%
+              </span>
+            </div>
+          ))}
+          {classAttendanceStats.length === 0 && (
+            <p className="text-sm text-white/40">No attendance data yet</p>
+          )}
         </div>
       </div>
 

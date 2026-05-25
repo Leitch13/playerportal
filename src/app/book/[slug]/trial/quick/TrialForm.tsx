@@ -144,6 +144,26 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       }),
     }).catch(() => {})
 
+    // Auto-create a lead in the pipeline (fire and forget)
+    const [firstName, ...lastParts] = parentName.trim().split(/\s+/)
+    fetch('/api/leads/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        organisation_id: orgId,
+        first_name: firstName,
+        last_name: lastParts.join(' ') || null,
+        email: parentEmail,
+        phone: phone || null,
+        child_name: childName,
+        child_age: childAge ? parseInt(childAge) : null,
+        interested_in: selectedGroup?.name || null,
+        source: 'website',
+        status: 'trial_booked',
+        notes: notes || null,
+      }),
+    }).catch(() => {})
+
     setSuccess(true)
     setLoading(false)
   }

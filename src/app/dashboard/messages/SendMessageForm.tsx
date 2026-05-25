@@ -70,7 +70,7 @@ export default function SendMessageForm({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
       <h2 className="text-lg font-semibold mb-4">New Message</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -79,7 +79,7 @@ export default function SendMessageForm({
             value={recipientId}
             onChange={(e) => setRecipientId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select parent...</option>
             {parents.map((p) => (
@@ -95,17 +95,35 @@ export default function SendMessageForm({
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Message *</label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {[
+              'Thanks for your message, I\'ll get back to you shortly',
+              'Your child did great today!',
+              'Reminder: please bring shin pads to the next session',
+              'Payment is now overdue, please settle at your earliest convenience',
+            ].map((tpl) => (
+              <button
+                key={tpl}
+                type="button"
+                onClick={() => setBody(tpl)}
+                className="px-3 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors truncate max-w-[260px]"
+                title={tpl}
+              >
+                {tpl}
+              </button>
+            ))}
+          </div>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             required
             rows={4}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div className="flex gap-2">
@@ -119,7 +137,7 @@ export default function SendMessageForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>

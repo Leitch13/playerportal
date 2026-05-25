@@ -45,7 +45,7 @@ export default function PaymentLinkGenerator() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-3 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-surface-dark transition-colors"
+        className="px-3 py-1.5 border border-[#1e1e1e] rounded-lg text-xs font-medium hover:bg-white/5 transition-colors"
       >
         Generate Payment Link
       </button>
@@ -53,14 +53,14 @@ export default function PaymentLinkGenerator() {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-5 space-y-4">
+    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-sm">Generate Payment Link</h3>
-        <button onClick={() => { setOpen(false); setLink('') }} className="text-text-light hover:text-text text-sm">
+        <button onClick={() => { setOpen(false); setLink('') }} className="text-white/60 hover:text-white text-sm">
           Close
         </button>
       </div>
-      <p className="text-xs text-text-light">
+      <p className="text-xs text-white/60">
         Create a shareable link that any parent can use to pay. Accepts card or bank transfer.
       </p>
 
@@ -74,7 +74,7 @@ export default function PaymentLinkGenerator() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g. Spring Term Fees"
               required
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           <div className="w-[120px]">
@@ -87,7 +87,7 @@ export default function PaymentLinkGenerator() {
               onChange={(e) => setAmount(e.target.value)}
               placeholder="40.00"
               required
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           <button
@@ -100,14 +100,14 @@ export default function PaymentLinkGenerator() {
         </form>
       ) : (
         <div className="space-y-3">
-          <div className="bg-surface rounded-lg p-3">
-            <p className="text-xs text-text-light mb-1">Share this link with parents:</p>
+          <div className="bg-[#0a0a0a] rounded-lg p-3">
+            <p className="text-xs text-white/60 mb-1">Share this link with parents:</p>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 readOnly
                 value={link}
-                className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-white font-mono text-xs"
+                className="flex-1 px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm bg-[#141414] font-mono text-xs"
               />
               <button
                 onClick={copyLink}

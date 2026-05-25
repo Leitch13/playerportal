@@ -70,7 +70,7 @@ export default function NewMessage({
       .single()
 
     if (error) {
-      console.error('Failed to send message:', error.message)
+      // message send failed
     } else if (data) {
       const recipient = recipients.find((r) => r.id === recipientId)
       const msgData: MessageData = {

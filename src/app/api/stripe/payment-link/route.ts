@@ -61,8 +61,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ url: paymentLink.url })
-  } catch (err) {
-    console.error('Payment link error:', err)
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create payment link' },
       { status: 500 }

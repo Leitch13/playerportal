@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     await supabase.from('notifications').insert({
       profile_id: nextEntry.parent_id,
       organisation_id: nextEntry.organisation_id,
-      type: 'waitlist',
+      type: 'waitlist_offer',
       title: 'A spot has opened up!',
       body: 'A spot has become available in the class. You have 48 hours to confirm.',
       link: '/dashboard/waitlist',
@@ -93,8 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ promoted: nextEntry.id, expires_at: expiresAt.toISOString() })
-  } catch (err) {
-    console.error('[WAITLIST PROMOTE ERROR]', err)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

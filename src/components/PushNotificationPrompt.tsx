@@ -45,8 +45,8 @@ export default function PushNotificationPrompt() {
         await saveSubscription(subscription)
       }
       setVisible(false)
-    } catch (err) {
-      console.error('[Push] Error enabling notifications:', err)
+    } catch {
+      // push enable failed
     } finally {
       setLoading(false)
     }

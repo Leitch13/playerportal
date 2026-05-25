@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       await supabase.from('notifications').insert({
         profile_id: nextEntry.parent_id,
         organisation_id: nextEntry.organisation_id,
-        type: 'waitlist',
+        type: 'waitlist_offer',
         title: 'A spot has opened up!',
         body: 'A spot has become available in the class. You have 48 hours to confirm.',
         link: '/dashboard/waitlist',

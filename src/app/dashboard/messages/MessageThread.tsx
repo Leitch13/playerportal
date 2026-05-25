@@ -169,7 +169,7 @@ export default function MessageThread({
       .single()
 
     if (error) {
-      console.error('Failed to send message:', error.message)
+      // message send failed
     } else if (data) {
       const msgData: MessageData = {
         id: data.id,

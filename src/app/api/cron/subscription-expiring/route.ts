@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
     .lte('current_period_end', targetEnd)
 
   if (subsError) {
-    console.error('[SUBSCRIPTION EXPIRING] Error fetching subscriptions:', subsError)
     return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 })
   }
 

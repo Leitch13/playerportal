@@ -49,8 +49,8 @@ export default function QRDisplay({
           color: { dark: '#0a0a0a', light: '#ffffff' },
         })
         setQrDataUrl(dataUrl)
-      } catch (err) {
-        console.error('QR generation error:', err)
+      } catch {
+        // QR generation failed
       }
     }
     generate()

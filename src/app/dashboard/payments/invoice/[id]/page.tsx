@@ -119,7 +119,7 @@ export default async function InvoicePage({
       </div>
 
       {/* Invoice document */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 print:shadow-none print:border-0 print:rounded-none">
+      <div className="bg-[#141414] rounded-xl shadow-sm border border-gray-200 print:shadow-none print:border-0 print:rounded-none">
         {/* Header */}
         <div className="px-8 pt-8 pb-6 border-b border-gray-200">
           <div className="flex items-start justify-between">
@@ -315,7 +315,7 @@ export default async function InvoicePage({
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 rounded-b-xl print:bg-transparent">
+        <div className="px-8 py-6 border-t border-gray-200 bg-[#0a0a0a] rounded-b-xl print:bg-transparent">
           <p className="text-sm text-center text-gray-600 mb-2">
             Thank you for choosing {org?.name || 'our academy'}.
           </p>

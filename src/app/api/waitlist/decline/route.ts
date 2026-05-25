@@ -36,7 +36,7 @@ async function promoteNext(supabase: any, groupId: string) {
   await supabase.from('notifications').insert({
     profile_id: nextEntry.parent_id,
     organisation_id: nextEntry.organisation_id,
-    type: 'waitlist',
+    type: 'waitlist_offer',
     title: 'A spot has opened up!',
     body: 'A spot has become available in the class. You have 48 hours to confirm.',
     link: '/dashboard/waitlist',
@@ -123,8 +123,7 @@ export async function POST(request: NextRequest) {
     const promoted = await promoteNext(supabase, entry.training_group_id)
 
     return NextResponse.json({ success: true, next_promoted: promoted })
-  } catch (err) {
-    console.error('[WAITLIST DECLINE ERROR]', err)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

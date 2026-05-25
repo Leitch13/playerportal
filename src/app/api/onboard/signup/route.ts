@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
         })
 
       if (profileError) {
-        console.error('Failed to create profile for admin user:', profileError)
         // Don't fail the whole flow — the user exists, profile can be fixed later
       }
     } else {

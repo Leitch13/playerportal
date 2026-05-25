@@ -211,7 +211,7 @@ export default function GiveAward({
         <button
           type="submit"
           disabled={saving || !playerId || !awardType}
-          className="w-full sm:w-auto bg-white text-black font-semibold rounded-lg px-6 py-2.5 text-sm hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          className="w-full sm:w-auto bg-[#141414] text-black font-semibold rounded-lg px-6 py-2.5 text-sm hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
         >
           {saving ? 'Saving...' : 'Give Award'}
         </button>

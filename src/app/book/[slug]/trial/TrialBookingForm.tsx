@@ -66,6 +66,26 @@ export default function TrialBookingForm({ orgId, groups, primaryColor, slug, ac
           date: preferredDate || undefined,
         }),
       }).catch(() => {}) // Don't block on email failure
+
+      // Auto-create a lead in the pipeline (fire and forget)
+      const [firstName, ...lastParts] = parentName.trim().split(/\s+/)
+      fetch('/api/leads/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organisation_id: orgId,
+          first_name: firstName,
+          last_name: lastParts.join(' ') || null,
+          email: parentEmail,
+          phone: parentPhone || null,
+          child_name: childName,
+          child_age: childAge ? parseInt(childAge) : null,
+          interested_in: selectedGroup?.name || null,
+          source: 'website',
+          status: 'trial_booked',
+          notes: notes || null,
+        }),
+      }).catch(() => {}) // Don't block on lead create failure
     }
     setLoading(false)
   }

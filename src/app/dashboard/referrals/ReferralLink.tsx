@@ -46,7 +46,7 @@ export default function ReferralLink({
           </button>
         ) : (
           <div className="flex items-center gap-1">
-            <span className="text-xs text-text-light">&pound;</span>
+            <span className="text-xs text-white/60">&pound;</span>
             <input
               type="number"
               min="0"
@@ -54,7 +54,7 @@ export default function ReferralLink({
               value={rewardAmount}
               onChange={(e) => setRewardAmount(e.target.value)}
               placeholder="0.00"
-              className="w-20 border border-border rounded px-2 py-1 text-xs"
+              className="w-20 border border-[#1e1e1e] rounded px-2 py-1 text-xs"
             />
             <button
               disabled={loading || !rewardAmount}
@@ -82,7 +82,7 @@ export default function ReferralLink({
                 setShowRewardInput(false)
                 setRewardAmount('')
               }}
-              className="text-xs px-2 py-1 rounded font-medium text-text-light hover:text-text"
+              className="text-xs px-2 py-1 rounded font-medium text-white/60 hover:text-white"
             >
               Cancel
             </button>
@@ -146,7 +146,7 @@ export default function ReferralLink({
               className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
                 copied
                   ? 'bg-green-400 text-green-900'
-                  : 'bg-white text-purple-600 hover:bg-white/90'
+                  : 'bg-[#141414] text-purple-600 hover:bg-white/90'
               }`}
             >
               {copied ? '✓ Copied!' : 'Copy Link'}
@@ -193,7 +193,7 @@ export default function ReferralLink({
             className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
               copied
                 ? 'bg-green-400 text-green-900'
-                : 'bg-white text-purple-600 hover:bg-white/90 hover:scale-[1.02]'
+                : 'bg-[#141414] text-purple-600 hover:bg-white/90 hover:scale-[1.02]'
             }`}
           >
             {copied ? '✓ Link Copied!' : '📋 Copy Link'}

@@ -21,7 +21,6 @@ export default function PayNowButton({
       })
 
       const text = await res.text()
-      console.error('Checkout response:', res.status, text)
 
       let data
       try {

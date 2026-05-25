@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
 import CoachCPD from './CoachCPD'
 
@@ -9,6 +10,7 @@ export default async function CPDPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('cpd_compliance')
 
   const { data: profile } = await supabase
     .from('profiles')

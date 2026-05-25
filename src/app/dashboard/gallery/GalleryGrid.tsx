@@ -23,9 +23,9 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
           <div
             key={photo.id}
             onClick={() => setSelected(photo)}
-            className="bg-white rounded-xl border border-border overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
+            className="bg-[#141414] rounded-xl border border-[#1e1e1e] overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
           >
-            <div className="aspect-[4/3] relative bg-surface-dark">
+            <div className="aspect-[4/3] relative bg-white/5">
               <img
                 src={photo.photo_url}
                 alt={photo.title}
@@ -46,7 +46,7 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
                   </span>
                 )}
                 {photo.session_date && (
-                  <span className="text-xs text-text-light">
+                  <span className="text-xs text-white/60">
                     {new Date(photo.session_date).toLocaleDateString()}
                   </span>
                 )}
@@ -63,7 +63,7 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+            className="bg-[#141414] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative">
@@ -82,7 +82,7 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
             <div className="p-4">
               <h3 className="font-semibold text-lg">{selected.title}</h3>
               {selected.description && (
-                <p className="text-sm text-text-light mt-1">{selected.description}</p>
+                <p className="text-sm text-white/60 mt-1">{selected.description}</p>
               )}
               <div className="flex flex-wrap gap-2 mt-2">
                 {(selected.group as unknown as { name: string })?.name && (
@@ -91,7 +91,7 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
                   </span>
                 )}
                 {selected.session_date && (
-                  <span className="text-xs text-text-light">
+                  <span className="text-xs text-white/60">
                     {new Date(selected.session_date).toLocaleDateString()}
                   </span>
                 )}

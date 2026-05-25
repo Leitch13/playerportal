@@ -5,6 +5,8 @@ import ThemeProvider from '@/components/ThemeProvider'
 import BrandProvider from '@/components/BrandProvider'
 import ResendVerificationButton from '@/components/ResendVerificationButton'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
+import GlobalSearch from '@/components/GlobalSearch'
+import { getOrgFeatures, featuresToArray } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
 
 export default async function DashboardLayout({
@@ -40,6 +42,14 @@ export default async function DashboardLayout({
       .single()
     orgBrand = data
   }
+
+  // Load feature gating context for this org
+  const featureCtx = profile?.organisation_id
+    ? await getOrgFeatures(profile.organisation_id)
+    : null
+  const availableFeatures = featureCtx ? featuresToArray(featureCtx) : []
+  const isPilot = featureCtx?.pilot || false
+  const planSlug = featureCtx?.planSlug || null
 
   // Count unread messages
   const { count: unreadCount } = await supabase
@@ -89,6 +99,7 @@ export default async function DashboardLayout({
         logoUrl={orgBrand?.logo_url}
         orgName={orgBrand?.name}
       >
+      <GlobalSearch />
       <div className="min-h-screen bg-[#0a0a0a] has-bottom-nav lg:pb-0">
         <Navigation
           role={role}
@@ -100,6 +111,9 @@ export default async function DashboardLayout({
           logoUrl={orgBrand?.logo_url || undefined}
           isSuperAdmin={profile?.is_super_admin || false}
           nextSessionHref={nextSessionHref}
+          availableFeatures={availableFeatures}
+          isPilot={isPilot}
+          planSlug={planSlug}
         />
         <main className="lg:ml-64 min-h-[calc(100vh-3.5rem)]">
           {!user.email_confirmed_at && (

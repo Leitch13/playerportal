@@ -37,7 +37,7 @@ async function createNotification(params: {
     is_read: false,
   })
   if (error) {
-    console.error('[WEBHOOK] Failed to create notification:', error)
+    // notification insert failed — non-critical, continue
   }
 }
 
@@ -64,8 +64,7 @@ async function trySendReceiptEmail(params: {
     })
     await sendEmail({ to: params.email, subject, html })
   } catch {
-    // Email module is optional — log and continue
-    console.log('[WEBHOOK] Email module unavailable, skipping receipt email')
+    // Email module is optional — continue
   }
 }
 
@@ -143,7 +142,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       subscription_plan_id: ctx.planId,
       created_at: now,
     })
-    console.log(`[WEBHOOK] Payment recorded for user ${ctx.userId}, amount: ${amountPaid}`)
   }
 
   // 2. Create / update enrolment for subscription checkouts
@@ -185,7 +183,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       })
     }
 
-    console.log(`[WEBHOOK] Enrolment upserted for subscription ${stripeSub.id}`)
   }
 
   // 3. In-app notification
@@ -298,7 +295,6 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     }
   }
 
-  console.log(`[WEBHOOK] Invoice payment succeeded for subscription ${subscriptionId}`)
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -352,7 +348,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     })
   }
 
-  console.log(`[WEBHOOK] Invoice payment failed for subscription ${subscriptionId}`)
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -393,7 +388,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     })
   }
 
-  console.log(`[WEBHOOK] Subscription ${stripeSubId} cancelled`)
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -424,7 +418,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     })
     .eq('stripe_subscription_id', stripeSubId)
 
-  console.log(`[WEBHOOK] Subscription ${stripeSubId} updated: status=${sub.status}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -437,7 +430,6 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get('stripe-signature')
 
   if (!signature) {
-    console.error('[WEBHOOK] Missing stripe-signature header')
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
@@ -451,11 +443,8 @@ export async function POST(request: NextRequest) {
     )
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error('[WEBHOOK] Signature verification failed:', message)
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    return NextResponse.json({ error: `Invalid signature: ${message}` }, { status: 400 })
   }
-
-  console.log(`[WEBHOOK] Received event: ${event.type} (${event.id})`)
 
   try {
     switch (event.type) {
@@ -480,11 +469,10 @@ export async function POST(request: NextRequest) {
         break
 
       default:
-        console.log(`[WEBHOOK] Unhandled event type: ${event.type}`)
+        break
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error(`[WEBHOOK] Error handling ${event.type}:`, message)
     // Return 200 to prevent Stripe from retrying on application errors
     // The event was received and signature verified; the processing error is ours
     return NextResponse.json({ received: true, error: message }, { status: 200 })

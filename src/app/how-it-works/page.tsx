@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PricingCalculator from '@/components/PricingCalculator'
 
 export const metadata: Metadata = {
   title: 'How It Works',
@@ -84,40 +85,67 @@ const parentFeatures = [
   'Payment receipts & invoices',
 ]
 
-const allFeatures = [
-  'Unlimited players', 'Unlimited classes', 'Full analytics', 'Priority support',
-  'Custom branding', 'Merch shop', 'Session planner', 'Drill library',
-  'White-label', 'QR attendance', 'Parent portal', 'Messaging',
-  'Camps & events', 'CSV exports', 'Audit log',
-]
-
 const plans = [
   {
     name: 'Starter',
     price: '\u00a320',
     period: '/mo',
     fee: '3.5% transaction fee',
-    desc: 'All features included. Best if you process low volume.',
+    desc: 'Everything you need to run a small academy \u2014 go live in under 10 minutes.',
     cta: 'Start Free Trial',
     featured: false,
+    featureHeading: 'Core features',
+    features: [
+      'Unlimited players',
+      'Booking page + parent signup',
+      'Automated Stripe payments',
+      'Class scheduling + capacity caps',
+      'Attendance (manual + QR)',
+      'Parent portal',
+      'Email notifications',
+      'CSV player import',
+    ],
   },
   {
     name: 'Pro',
-    price: '\u00a330',
+    price: '\u00a335',
     period: '/mo',
-    fee: '2% transaction fee',
-    desc: 'All features included. The sweet spot for most academies.',
+    fee: '2.5% transaction fee',
+    desc: 'The tools that lift retention, drive referrals and keep parents engaged.',
     cta: 'Start Free Trial',
     featured: true,
+    featureHeading: 'Everything in Starter, plus',
+    features: [
+      'Progress reviews + custom scoring',
+      'Parent messaging',
+      'Photo gallery',
+      'Waitlists + win-back automation',
+      'Referral engine',
+      'Full analytics + retention reports',
+      'Session planner + drill library',
+      'Achievements & badges',
+      'Camps & events engine',
+      'Weekly parent digest emails',
+    ],
   },
   {
     name: 'Enterprise',
-    price: '\u00a350',
+    price: '\u00a360',
     period: '/mo',
-    fee: '1% transaction fees',
-    desc: 'All features included. Lowest fees \u2014 keep more of every penny.',
+    fee: '2% transaction fee',
+    desc: 'White-label branding, unlimited staff and priority support for scaling academies.',
     cta: 'Start Free Trial',
     featured: false,
+    featureHeading: 'Everything in Pro, plus',
+    features: [
+      'White-label (custom domain + branding)',
+      'Merch shop',
+      'Unlimited coach accounts',
+      'API access',
+      'Audit log (compliance)',
+      'Priority support (1-hr response)',
+      'Dedicated onboarding call',
+    ],
   },
 ]
 
@@ -426,7 +454,7 @@ export default function HowItWorksPage() {
             </p>
           </div>
           <p className="text-sm text-white/40 mt-4 max-w-xl mx-auto text-center">
-            Every plan includes everything. Choose based on your transaction volume.
+            Pay less per transaction as you grow. Upgrade or downgrade anytime.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start mt-10">
             {plans.map((plan) => (
@@ -449,20 +477,29 @@ export default function HowItWorksPage() {
                     <span className={`text-5xl font-extrabold tracking-tight ${plan.featured ? 'gradient-text' : ''}`}>{plan.price}</span>
                     {plan.period && <span className="text-white/30 text-sm font-medium">{plan.period}</span>}
                   </div>
-                  <div className={`text-sm font-semibold mb-3 ${plan.fee === '1% transaction fees' ? 'text-emerald-400' : 'text-white/40'}`}>
+                  <div className={`text-sm font-semibold mb-3 ${plan.fee === '2% transaction fee' ? 'text-emerald-400' : 'text-white/40'}`}>
                     {plan.fee}
                   </div>
                   <p className="text-sm text-white/30">{plan.desc}</p>
                 </div>
-                <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-lg bg-[#4ecde6]/5 border border-[#4ecde6]/10">
-                  <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-semibold text-[#4ecde6]">All features included</span>
+                <div className="mb-6">
+                  <h4 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3">
+                    {plan.featureHeading}
+                  </h4>
+                  <ul className="space-y-2.5">
+                    {plan.features.map((feat) => (
+                      <li key={feat} className="flex items-start gap-2.5 text-sm text-white/70">
+                        <svg className="w-4 h-4 text-[#4ecde6] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 <Link
                   href="/onboard"
-                  className={`block text-center py-3.5 rounded-full font-semibold text-sm transition-all ${
+                  className={`block text-center py-3.5 rounded-full font-semibold text-sm transition-all mt-auto ${
                     plan.featured
                       ? 'bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] shadow-lg shadow-[#4ecde6]/25 glow-accent hover:shadow-xl hover:shadow-[#4ecde6]/30'
                       : 'border border-white/15 text-white/70 hover:bg-white/5 hover:text-white hover:border-white/25'
@@ -473,29 +510,15 @@ export default function HowItWorksPage() {
               </div>
             ))}
           </div>
-          {/* Shared feature list */}
-          <div className="max-w-3xl mx-auto mt-14">
-            <h3 className="text-center text-sm font-semibold text-white/50 uppercase tracking-wider mb-6">
-              Included in every plan
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {allFeatures.map((feat) => (
-                <div key={feat} className="flex items-center gap-2.5 text-sm text-white/50">
-                  <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  {feat}
-                </div>
-              ))}
-            </div>
+          {/* Cost calculator */}
+          <div className="mt-16">
+            <PricingCalculator />
           </div>
+
           {/* Notes */}
-          <div className="text-center mt-12 space-y-3">
+          <div className="text-center mt-12">
             <p className="text-sm text-white/40">
               All plans include a 14-day free trial. No credit card required.
-            </p>
-            <p className="text-xs text-white/25 max-w-lg mx-auto">
-              Processing &pound;2,000/month? Starter costs &pound;90, Pro costs &pound;70, Enterprise costs &pound;50 &mdash; the best value at scale.
             </p>
           </div>
         </div>

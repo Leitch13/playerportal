@@ -17,7 +17,34 @@ interface Plan {
   group?: { name: string } | null
 }
 
-export default function SessionPlanView({ plan, orgName, orgLogo }: { plan: Plan; orgName: string; orgLogo: string }) {
+interface Drill {
+  id: string
+  name: string
+  category: string | null
+  description: string | null
+  duration_minutes: number
+  difficulty: string
+}
+
+const categoryLabels: Record<string, string> = {
+  warm_up: 'Warm Up',
+  technical: 'Technical',
+  tactical: 'Tactical',
+  physical: 'Physical',
+  game: 'Game',
+  cool_down: 'Cool Down',
+}
+
+const categoryColors: Record<string, string> = {
+  warm_up: 'bg-orange-500/20 text-orange-400',
+  technical: 'bg-[#4ecde6]/20 text-[#4ecde6]',
+  tactical: 'bg-purple-500/20 text-purple-400',
+  physical: 'bg-rose-500/20 text-rose-400',
+  game: 'bg-emerald-500/20 text-emerald-400',
+  cool_down: 'bg-blue-500/20 text-blue-400',
+}
+
+export default function SessionPlanView({ plan, orgName, orgLogo, suggestedDrills = [] }: { plan: Plan; orgName: string; orgLogo: string; suggestedDrills?: Drill[] }) {
   const groupName = (plan.group as { name: string } | null)?.name || 'No class assigned'
   const dateStr = plan.session_date
     ? new Date(plan.session_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -149,6 +176,34 @@ export default function SessionPlanView({ plan, orgName, orgLogo }: { plan: Plan
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2 print:text-gray-500">Coach Notes</h2>
               <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line print:text-gray-600">{plan.notes}</p>
+            </div>
+          )}
+
+          {/* Suggested Drills */}
+          {suggestedDrills.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#4ecde6] mb-3 print:text-blue-600">Suggested Drills</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {suggestedDrills.map((drill) => (
+                  <div key={drill.id} className="bg-white/[0.03] border border-[#1e1e1e] rounded-lg p-3 print:bg-gray-50 print:border-gray-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-white print:text-black">{drill.name}</span>
+                      {drill.category && (
+                        <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-medium ${categoryColors[drill.category] || 'bg-white/10 text-white/50'}`}>
+                          {categoryLabels[drill.category] || drill.category}
+                        </span>
+                      )}
+                    </div>
+                    {drill.description && (
+                      <p className="text-xs text-white/40 line-clamp-2 print:text-gray-500">{drill.description}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-white/30 print:text-gray-400">
+                      <span>{drill.duration_minutes} min</span>
+                      <span className="capitalize">{drill.difficulty}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import InstallPrompt from '@/components/InstallPrompt'
+import CookieConsent from '@/components/CookieConsent'
 import NavigationProgress from '@/components/NavigationProgress'
 
 const inter = Inter({
@@ -71,6 +72,7 @@ export default function RootLayout({
         {children}
         <ServiceWorkerRegister />
         <InstallPrompt />
+        <CookieConsent />
       </body>
     </html>
   )

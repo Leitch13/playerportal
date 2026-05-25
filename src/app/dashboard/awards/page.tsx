@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import Card from '@/components/Card'
 import type { UserRole } from '@/lib/types'
 import AwardWall from './AwardWall'
@@ -12,6 +13,7 @@ export default async function AwardsPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('achievements')
 
   const { data: profile } = await supabase
     .from('profiles')

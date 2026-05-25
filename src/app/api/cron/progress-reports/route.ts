@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     .from('progress_reviews')
     .select(`
       id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement,
-      strengths, focus_areas, parent_summary,
+      strengths, focus_next, parent_summary,
       player:players!progress_reviews_player_id_fkey(
         id, first_name, last_name, parent_id,
         parent:profiles!players_parent_id_fkey(full_name, email)
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     // Get strengths and focus areas
     const strengths: string[] = (review.strengths as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-    const focusAreas: string[] = (review.focus_areas as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+    const focusAreas: string[] = (review.focus_next as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
 
     // Auto-derive strengths/focus from scores if not manually set
     if (strengths.length === 0) {
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       .from('attendance')
       .select('id', { count: 'exact', head: true })
       .eq('player_id', player.id)
-      .eq('status', 'present')
+      .eq('present', true)
 
     const sessionsAttended = presentCount || 0
     const attendanceRate = (totalSessions || 0) > 0

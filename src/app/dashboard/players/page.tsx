@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import EmptyState from '@/components/EmptyState'
 import QuickAddPlayer from './QuickAddPlayer'
+import ExportCSV from './ExportCSV'
+import ImportPlayersModal from './ImportPlayersModal'
 import PlayerAvatar from '@/components/PlayerAvatar'
 
 export default async function PlayersPage({
@@ -57,15 +59,8 @@ export default async function PlayersPage({
           autoOpen={params.add === '1'}
           orgId={orgId}
         />
-        <Link
-          href="/dashboard/players/import"
-          className="inline-flex items-center gap-2 px-4 py-2 border border-white/[0.08] rounded-lg text-sm font-medium hover:bg-white/[0.05] transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3-3m0 0l3 3m-3-3v12" />
-          </svg>
-          Import Players
-        </Link>
+        <ImportPlayersModal />
+        <ExportCSV />
       </div>
 
       <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />

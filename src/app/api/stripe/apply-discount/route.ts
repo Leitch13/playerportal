@@ -79,7 +79,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, discount: '25%' })
   } catch (err) {
-    console.error('Apply discount error:', err)
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: message }, { status: 500 })
   }

@@ -18,10 +18,16 @@ export default function CancelFlow({
   subscriptionId,
   planName,
   monthlyAmount,
+  retentionEnabled = true,
+  retentionPercent = 25,
+  retentionMonths = null,
 }: {
   subscriptionId: string
   planName: string
   monthlyAmount: number
+  retentionEnabled?: boolean
+  retentionPercent?: number
+  retentionMonths?: number | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('reason')
@@ -32,8 +38,12 @@ export default function CancelFlow({
   const [discountedAmount, setDiscountedAmount] = useState('')
   const [saving, setSaving] = useState('')
 
-  const discountPrice = (monthlyAmount * 0.75).toFixed(2)
-  const savingAmount = (monthlyAmount * 0.25).toFixed(2)
+  const discountFraction = Math.max(1, Math.min(90, retentionPercent)) / 100
+  const discountPrice = (monthlyAmount * (1 - discountFraction)).toFixed(2)
+  const savingAmount = (monthlyAmount * discountFraction).toFixed(2)
+  const durationText = retentionMonths && retentionMonths > 0
+    ? `for ${retentionMonths} month${retentionMonths !== 1 ? 's' : ''}`
+    : 'forever'
 
   async function handleAcceptOffer() {
     setLoading(true)
@@ -96,11 +106,11 @@ export default function CancelFlow({
 
       {/* ═══ STEP 1: Reason ═══ */}
       {step === 'reason' && (
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm">
           <div className="text-center mb-6">
             <p className="text-3xl mb-3">😔</p>
             <h1 className="text-xl font-bold text-primary">We&apos;re sorry to see you go</h1>
-            <p className="text-text-light text-sm mt-2">
+            <p className="text-white/60 text-sm mt-2">
               Before you cancel, help us understand why so we can improve.
             </p>
           </div>
@@ -113,7 +123,7 @@ export default function CancelFlow({
                 className={`w-full flex items-center gap-3 p-3.5 rounded-xl text-left text-sm transition-all ${
                   reason === r.id
                     ? 'bg-accent/10 border-2 border-accent text-primary font-medium'
-                    : 'border-2 border-border hover:border-accent/40 text-text'
+                    : 'border-2 border-[#1e1e1e] hover:border-accent/40 text-white'
                 }`}
               >
                 <span className="text-lg">{r.icon}</span>
@@ -127,19 +137,19 @@ export default function CancelFlow({
               value={reasonDetail}
               onChange={(e) => setReasonDetail(e.target.value)}
               placeholder="Tell us more..."
-              className="w-full p-3 rounded-xl border border-border text-sm resize-none h-20 mb-4 focus:outline-none focus:border-accent"
+              className="w-full p-3 rounded-xl border border-[#1e1e1e] text-sm resize-none h-20 mb-4 focus:outline-none focus:border-accent"
             />
           )}
 
           <div className="flex gap-3">
             <button
               onClick={() => router.push('/dashboard/payments')}
-              className="flex-1 py-3 rounded-xl text-sm font-medium text-text-light hover:text-text border border-border hover:border-primary/20 transition-all"
+              className="flex-1 py-3 rounded-xl text-sm font-medium text-white/60 hover:text-white border border-[#1e1e1e] hover:border-primary/20 transition-all"
             >
               Never mind
             </button>
             <button
-              onClick={() => reason && setStep('offer')}
+              onClick={() => reason && setStep(retentionEnabled ? 'offer' : 'confirm')}
               disabled={!reason}
               className="flex-1 py-3 rounded-xl text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40 transition-all"
             >
@@ -151,41 +161,41 @@ export default function CancelFlow({
 
       {/* ═══ STEP 2: 25% Off Offer ═══ */}
       {step === 'offer' && (
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm">
           <div className="text-center mb-6">
             <p className="text-4xl mb-3">🎉</p>
             <h1 className="text-xl font-bold text-primary">Wait! We have a special offer</h1>
-            <p className="text-text-light text-sm mt-2">
-              How about <strong className="text-accent">25% off</strong> your subscription — forever?
+            <p className="text-white/60 text-sm mt-2">
+              How about <strong className="text-accent">{retentionPercent}% off</strong> your subscription — {durationText}?
             </p>
           </div>
 
           {/* Pricing comparison */}
           <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-6 mb-6 border-2 border-accent">
             <div className="text-center">
-              <p className="text-sm text-text-light line-through mb-1">
+              <p className="text-sm text-white/60 line-through mb-1">
                 £{monthlyAmount.toFixed(2)}/month
               </p>
               <p className="text-4xl font-extrabold text-accent mb-1">
                 £{discountPrice}/mo
               </p>
               <div className="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
-                Save £{savingAmount}/month — forever
+                Save £{savingAmount}/month — {durationText}
               </div>
             </div>
           </div>
 
           <div className="space-y-3 mb-6">
-            <div className="flex items-center gap-2 text-sm text-text">
+            <div className="flex items-center gap-2 text-sm text-white">
               <span className="text-green-500">✓</span> Keep your child&apos;s place in class
             </div>
-            <div className="flex items-center gap-2 text-sm text-text">
-              <span className="text-green-500">✓</span> 25% off applied instantly
+            <div className="flex items-center gap-2 text-sm text-white">
+              <span className="text-green-500">✓</span> {retentionPercent}% off applied instantly
             </div>
-            <div className="flex items-center gap-2 text-sm text-text">
-              <span className="text-green-500">✓</span> Discount lasts forever
+            <div className="flex items-center gap-2 text-sm text-white">
+              <span className="text-green-500">✓</span> Discount lasts {durationText}
             </div>
-            <div className="flex items-center gap-2 text-sm text-text">
+            <div className="flex items-center gap-2 text-sm text-white">
               <span className="text-green-500">✓</span> Cancel any time in the future
             </div>
           </div>
@@ -201,13 +211,13 @@ export default function CancelFlow({
                 Applying discount...
               </span>
             ) : (
-              <>Stay & Save 25% →</>
+              <>Stay & Save {retentionPercent}% →</>
             )}
           </button>
 
           <button
             onClick={() => setStep('confirm')}
-            className="w-full py-3 rounded-xl text-sm font-medium text-text-light hover:text-red-500 transition-colors"
+            className="w-full py-3 rounded-xl text-sm font-medium text-white/60 hover:text-red-500 transition-colors"
           >
             No thanks, I still want to cancel
           </button>
@@ -216,11 +226,11 @@ export default function CancelFlow({
 
       {/* ═══ STEP 3: Final Confirmation ═══ */}
       {step === 'confirm' && (
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm">
           <div className="text-center mb-6">
             <p className="text-3xl mb-3">⚠️</p>
             <h1 className="text-xl font-bold text-primary">Are you sure?</h1>
-            <p className="text-text-light text-sm mt-2">
+            <p className="text-white/60 text-sm mt-2">
               Your subscription will remain active until the end of your current billing period.
             </p>
           </div>
@@ -243,26 +253,30 @@ export default function CancelFlow({
             </ul>
           </div>
 
-          <div className="bg-accent/5 rounded-xl p-4 mb-6 border border-accent/20">
-            <p className="text-sm text-primary">
-              💡 <strong>Last chance:</strong> You can still get{' '}
-              <button
-                onClick={() => setStep('offer')}
-                className="text-accent font-bold underline"
-              >
-                25% off forever
-              </button>{' '}
-              instead of cancelling.
-            </p>
-          </div>
+          {retentionEnabled && (
+            <div className="bg-accent/5 rounded-xl p-4 mb-6 border border-accent/20">
+              <p className="text-sm text-primary">
+                💡 <strong>Last chance:</strong> You can still get{' '}
+                <button
+                  onClick={() => setStep('offer')}
+                  className="text-accent font-bold underline"
+                >
+                  {retentionPercent}% off {durationText}
+                </button>{' '}
+                instead of cancelling.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3">
-            <button
-              onClick={() => setStep('offer')}
-              className="flex-1 py-3 rounded-xl text-sm font-medium bg-accent text-primary hover:opacity-90 transition-all"
-            >
-              Get 25% Off
-            </button>
+            {retentionEnabled && (
+              <button
+                onClick={() => setStep('offer')}
+                className="flex-1 py-3 rounded-xl text-sm font-medium bg-accent text-primary hover:opacity-90 transition-all"
+              >
+                Get {retentionPercent}% Off
+              </button>
+            )}
             <button
               onClick={handleConfirmCancel}
               disabled={loading}
@@ -283,11 +297,11 @@ export default function CancelFlow({
 
       {/* ═══ RETAINED: Accepted the offer ═══ */}
       {step === 'retained' && (
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm text-center">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm text-center">
           <p className="text-5xl mb-4">🎉</p>
           <h1 className="text-2xl font-bold text-primary mb-2">Welcome back!</h1>
-          <p className="text-text-light mb-6">
-            Your 25% discount has been applied. You now pay{' '}
+          <p className="text-white/60 mb-6">
+            Your {retentionPercent}% discount has been applied {durationText}. You now pay{' '}
             <strong className="text-accent">£{discountedAmount || discountPrice}/month</strong>
             {saving && <> (saving £{saving}/month)</>}.
           </p>
@@ -307,10 +321,10 @@ export default function CancelFlow({
 
       {/* ═══ CANCELLED: Subscription ended ═══ */}
       {step === 'cancelled' && (
-        <div className="bg-white rounded-2xl border border-border p-8 shadow-sm text-center">
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm text-center">
           <p className="text-3xl mb-4">👋</p>
           <h1 className="text-xl font-bold text-primary mb-2">Subscription Cancelled</h1>
-          <p className="text-text-light mb-4">
+          <p className="text-white/60 mb-4">
             Your {planName} subscription has been cancelled.
           </p>
           {endDate && (
@@ -320,7 +334,7 @@ export default function CancelFlow({
               </p>
             </div>
           )}
-          <p className="text-text-light text-sm mb-6">
+          <p className="text-white/60 text-sm mb-6">
             Changed your mind? You can re-subscribe any time from the payments page.
           </p>
           <button

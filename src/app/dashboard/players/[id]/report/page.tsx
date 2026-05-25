@@ -293,16 +293,17 @@ export default async function PlayerReportPage({
 
   // Latest review + radar scores
   const latestReview = (reviews || [])[0]
+  const latestJsonScores = latestReview ? (latestReview as Record<string, unknown>).scores as Record<string, number> | null : null
   const radarScores = latestReview
     ? scoringCategories.map((cat) => ({
         label: cat.label,
-        value: (latestReview[cat.key as keyof typeof latestReview] as number) || 0,
+        value: (latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0,
       }))
     : []
 
   // Overall average from latest review
   const overallAverage = latestReview
-    ? scoringCategories.reduce((sum, cat) => sum + ((latestReview[cat.key as keyof typeof latestReview] as number) || 0), 0) /
+    ? scoringCategories.reduce((sum, cat) => sum + ((latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0), 0) /
       scoringCategories.length
     : 0
 
@@ -311,7 +312,7 @@ export default async function PlayerReportPage({
   const areasToImprove: string[] = []
   if (latestReview) {
     for (const cat of scoringCategories) {
-      const score = (latestReview[cat.key as keyof typeof latestReview] as number) || 0
+      const score = (latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0
       if (score >= 4) strengths.push(cat.label)
       if (score <= 2) areasToImprove.push(cat.label)
     }
@@ -545,7 +546,8 @@ export default async function PlayerReportPage({
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {scoringCategories.map((cat) => {
-                      const score = (r as Record<string, unknown>)[cat.key] as number
+                      const jsonScores = (r as Record<string, unknown>).scores as Record<string, number> | null
+                      const score = jsonScores?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number
                       return (
                         <span
                           key={cat.key}

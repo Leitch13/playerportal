@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
 import EngagementPage from './EngagementPage'
 import AdminEngagement from './AdminEngagement'
@@ -10,6 +11,7 @@ export default async function EngagementRoute() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('engagement')
 
   const { data: profile } = await supabase
     .from('profiles')

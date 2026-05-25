@@ -16,6 +16,8 @@ export default async function RegisterListPage() {
     .eq('id', user.id)
     .single()
 
+  if (!profile) redirect('/dashboard')
+
   const role = (profile?.role || 'parent') as UserRole
   if (role === 'parent') redirect('/dashboard/attendance')
 

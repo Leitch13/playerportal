@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import StatusBadge from '@/components/StatusBadge'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
@@ -11,6 +12,7 @@ export default async function ReferralsPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('referrals')
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -76,7 +78,7 @@ export default async function ReferralsPage() {
           {!referrals || referrals.length === 0 ? (
             <EmptyState message="No referrals yet. Share your link to get started!" />
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-[#1e1e1e]">
               {referrals.map((referral) => (
                 <div key={referral.id} className="py-3 flex items-center justify-between">
                   <div>
@@ -161,7 +163,7 @@ export default async function ReferralsPage() {
                   <th className="pb-3 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-[#1e1e1e]">
                 {allReferrals.map((referral) => (
                   <tr key={referral.id}>
                     <td className="py-3 pr-4">

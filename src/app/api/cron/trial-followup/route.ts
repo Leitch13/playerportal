@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
     .lte('updated_at', yesterdayEnd)
 
   if (trialsError) {
-    console.error('[TRIAL FOLLOWUP] Error fetching trials:', trialsError)
     return NextResponse.json({ error: 'Failed to fetch trials' }, { status: 500 })
   }
 

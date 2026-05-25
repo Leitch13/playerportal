@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITIONS, KIT_SIZES } from '@/lib/types'
+import FileUpload from '@/components/FileUpload'
+import PlayerAvatar from '@/components/PlayerAvatar'
 
 interface PlayerData {
   id: string
@@ -18,6 +20,7 @@ interface PlayerData {
   kit_size: string | null
   school: string | null
   notes: string | null
+  photo_url?: string | null
 }
 
 export default function PlayerProfileEditor({ player }: { player: PlayerData }) {
@@ -26,6 +29,7 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState('')
 
+  const [photoUrl, setPhotoUrl] = useState<string | null>(player.photo_url || null)
   const [position, setPosition] = useState(player.position || '')
   const [dob, setDob] = useState(player.date_of_birth || '')
   const [ageGroup, setAgeGroup] = useState(player.age_group || '')
@@ -43,6 +47,7 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
     const { error } = await supabase
       .from('players')
       .update({
+        photo_url: photoUrl || null,
         position: position || null,
         date_of_birth: dob || null,
         age_group: ageGroup || null,
@@ -90,6 +95,35 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
 
   return (
     <div className="space-y-3">
+      {/* Photo upload */}
+      <div className="flex items-center gap-4 p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e]">
+        <PlayerAvatar
+          photoUrl={photoUrl}
+          firstName={player.first_name}
+          lastName={player.last_name}
+          size="lg"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white/80 mb-1">Player photo</p>
+          <FileUpload
+            bucketName="coaching"
+            folder="player-photos"
+            accept="image/*"
+            currentUrl={photoUrl || ''}
+            onUpload={(url) => setPhotoUrl(url)}
+          />
+          {photoUrl && (
+            <button
+              type="button"
+              onClick={() => setPhotoUrl(null)}
+              className="text-[11px] text-red-400 hover:text-red-300 mt-1"
+            >
+              Remove photo
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs text-text-light mb-0.5">DOB</label>

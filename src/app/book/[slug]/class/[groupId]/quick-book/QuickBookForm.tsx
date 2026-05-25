@@ -323,7 +323,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
         <div className="space-y-3 mb-6 bg-white/[0.02] rounded-xl p-4 border border-white/[0.04]">
           <div className="flex items-center justify-between text-sm"><span className="text-white/50">Class</span><span className="font-semibold text-white">{groupName}</span></div>
           {childDisplayName && <div className="flex items-center justify-between text-sm"><span className="text-white/50">Child</span><span className="font-semibold text-white">{childDisplayName}</span></div>}
-          {selectedPlan && (<><div className="flex items-center justify-between text-sm"><span className="text-white/50">Plan</span><span className="font-semibold text-white">{selectedPlan.name}</span></div><div className="border-t border-white/[0.06]" /><div className="flex items-center justify-between text-sm"><span className="text-white/50">Total</span><span className="text-lg font-bold" style={{ color: primaryColor }}>{displayPrice}</span></div></>)}
+          {selectedPlan && (<><div className="flex items-center justify-between text-sm"><span className="text-white/50">Plan</span><span className="font-semibold text-white">{selectedPlan.name}</span></div><div className="border-t border-white/[0.06]" /><div className="flex items-center justify-between text-sm"><span className="text-white/50">Total</span><span className="text-lg font-extrabold text-white">{displayPrice}</span></div></>)}
         </div>
         {globalError && (
           <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">

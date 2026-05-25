@@ -45,6 +45,7 @@ interface Props {
   teamMembers: TeamMember[]
   trainingGroups: TrainingGroup[]
   orgId: string
+  orgName: string
 }
 
 /* ------------------------------------------------------------------ */
@@ -99,6 +100,15 @@ function IconChevronLeft() {
 function IconUser() {
   return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2"/><path d="M2.5 12.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
 }
+function IconEmail() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1.5 3.5l5.5 4 5.5-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+}
+function IconDownload() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+}
+function IconCheck() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+}
 function IconCalendar() {
   return <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2.5" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1.5 5.5h11M4.5 1v2.5M9.5 1v2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
 }
@@ -116,17 +126,45 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function isOverdue(dateStr: string | null): boolean {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  d.setHours(0, 0, 0, 0)
+  return d < today
+}
+
+function isDueToday(dateStr: string | null): boolean {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  const today = new Date()
+  return d.toDateString() === today.toDateString()
+}
+
+function isFollowUpDue(dateStr: string | null): boolean {
+  return isOverdue(dateStr) || isDueToday(dateStr)
+}
+
 /* ------------------------------------------------------------------ */
 /*  Main component                                                     */
 /* ------------------------------------------------------------------ */
 
-export default function LeadsPipeline({ leads: initialLeads, teamMembers, trainingGroups, orgId }: Props) {
+export default function LeadsPipeline({ leads: initialLeads, teamMembers, trainingGroups, orgId, orgName }: Props) {
   const router = useRouter()
   const [view, setView] = useState<'pipeline' | 'list'>('pipeline')
   const [leads, setLeads] = useState(initialLeads)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [quickName, setQuickName] = useState('')
+  const [quickPhone, setQuickPhone] = useState('')
   const [detailLead, setDetailLead] = useState<Lead | null>(null)
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<string | null>(null)
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false)
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState<string>('')
 
   /* ---- Stats ---- */
   const stats = useMemo(() => {
@@ -140,12 +178,16 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
     const sourceCounts: Record<string, number> = {}
     leads.forEach(l => { sourceCounts[l.source] = (sourceCounts[l.source] || 0) + 1 })
     const maxSource = Math.max(...Object.values(sourceCounts), 1)
+    const overdueCount = leads.filter(l => l.follow_up_date && isOverdue(l.follow_up_date) && l.status !== 'enrolled' && l.status !== 'lost').length
+    const dueTodayCount = leads.filter(l => l.follow_up_date && isDueToday(l.follow_up_date) && l.status !== 'enrolled' && l.status !== 'lost').length
     return {
       thisMonth: thisMonth.length,
       conversionRate: leads.length > 0 ? Math.round((enrolled.length / leads.length) * 100) : 0,
       avgDaysToConvert: avgDays,
       sourceCounts,
       maxSource,
+      overdueCount,
+      dueTodayCount,
     }
   }, [leads])
 
@@ -173,6 +215,29 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
     setShowAddModal(false)
   }
 
+  async function quickAddLead(e: React.FormEvent) {
+    e.preventDefault()
+    if (!quickName.trim()) return
+    const [firstName, ...lastParts] = quickName.trim().split(/\s+/)
+    setSaving(true)
+    const supabase = createClient()
+    const { data: inserted, error } = await supabase.from('leads').insert({
+      organisation_id: orgId,
+      first_name: firstName,
+      last_name: lastParts.join(' ') || null,
+      phone: quickPhone.trim() || null,
+      source: 'manual',
+      status: 'new',
+    }).select().single()
+    if (!error && inserted) {
+      setLeads(prev => [inserted, ...prev])
+      setQuickName('')
+      setQuickPhone('')
+      setShowQuickAdd(false)
+    }
+    setSaving(false)
+  }
+
   async function moveStatus(lead: Lead, direction: 'forward' | 'backward') {
     const idx = STATUSES.indexOf(lead.status as Status)
     if (direction === 'forward' && idx < STATUSES.length - 1) {
@@ -182,14 +247,97 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
     }
   }
 
+  /* ---- Import trial bookings as leads ---- */
+  async function importTrials() {
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const supabase = createClient()
+      const { data: trials } = await supabase
+        .from('trial_bookings')
+        .select('*')
+        .eq('organisation_id', orgId)
+        .in('status', ['confirmed', 'attended'])
+
+      if (!trials || trials.length === 0) {
+        setImportResult('No trial bookings to import.')
+        setImporting(false)
+        return
+      }
+
+      const existingEmails = new Set(leads.filter(l => l.email).map(l => l.email!.toLowerCase()))
+      const toImport = trials.filter(t => t.parent_email && !existingEmails.has(t.parent_email.toLowerCase()))
+
+      if (toImport.length === 0) {
+        setImportResult('All trial bookings already exist as leads.')
+        setImporting(false)
+        return
+      }
+
+      const rows = toImport.map(t => ({
+        organisation_id: orgId,
+        first_name: t.parent_name?.split(' ')[0] || 'Unknown',
+        last_name: t.parent_name?.split(' ').slice(1).join(' ') || null,
+        email: t.parent_email,
+        phone: t.parent_phone || null,
+        child_name: t.child_name || null,
+        child_age: t.child_age || null,
+        source: 'website',
+        status: t.status === 'attended' ? 'trial_attended' : 'trial_booked',
+        notes: 'Auto-imported from trial booking',
+      }))
+
+      const { data: inserted, error } = await supabase.from('leads').insert(rows).select()
+      if (error) {
+        setImportResult(`Error: ${error.message}`)
+      } else if (inserted) {
+        setLeads(prev => [...inserted, ...prev])
+        setImportResult(`Imported ${inserted.length} lead${inserted.length === 1 ? '' : 's'} from trial bookings.`)
+      }
+    } catch {
+      setImportResult('An error occurred during import.')
+    }
+    setImporting(false)
+  }
+
+  /* ---- Bulk status update ---- */
+  async function bulkUpdateStatus(newStatus: string) {
+    if (selectedLeads.size === 0 || !newStatus) return
+    setSaving(true)
+    const supabase = createClient()
+    const ids = Array.from(selectedLeads)
+    const { error } = await supabase.from('leads').update({ status: newStatus, updated_at: new Date().toISOString() }).in('id', ids)
+    if (!error) {
+      setLeads(prev => prev.map(l => ids.includes(l.id) ? { ...l, status: newStatus, updated_at: new Date().toISOString() } : l))
+    }
+    setSelectedLeads(new Set())
+    setBulkStatus('')
+    setSaving(false)
+  }
+
+  function toggleLeadSelection(id: string) {
+    setSelectedLeads(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  /* ---- Filter leads ---- */
+  const filteredLeads = useMemo(() => {
+    if (!showOverdueOnly) return leads
+    return leads.filter(l => isFollowUpDue(l.follow_up_date) && l.status !== 'enrolled' && l.status !== 'lost')
+  }, [leads, showOverdueOnly])
+
   /* ---- Group leads by status ---- */
   const grouped = useMemo(() => {
     const map: Record<Status, Lead[]> = { new: [], contacted: [], trial_booked: [], trial_attended: [], enrolled: [], lost: [] }
-    leads.forEach(l => {
+    filteredLeads.forEach(l => {
       if (map[l.status as Status]) map[l.status as Status].push(l)
     })
     return map
-  }, [leads])
+  }, [filteredLeads])
 
   const memberName = (id: string | null) => {
     if (!id) return null
@@ -208,7 +356,20 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
           <h1 className="text-2xl font-bold">Leads Pipeline</h1>
           <p className="text-white/60 text-sm mt-1">Track enquiries from first contact to enrolment</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={importTrials}
+            disabled={importing}
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-[#1e1e1e] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <IconDownload /> {importing ? 'Importing...' : 'Import Trials'}
+          </button>
+          <button
+            onClick={() => setShowOverdueOnly(prev => !prev)}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors flex items-center gap-1.5 ${showOverdueOnly ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-white/5 border-[#1e1e1e] text-white/70 hover:text-white hover:bg-white/10'}`}
+          >
+            {showOverdueOnly ? 'Show All' : 'Overdue Only'}
+          </button>
           <div className="flex bg-[#141414] rounded-lg p-1 border border-[#1e1e1e]">
             <button
               onClick={() => setView('pipeline')}
@@ -232,39 +393,105 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
         </div>
       </div>
 
+      {/* Import result banner */}
+      {importResult && (
+        <div className="bg-[#141414] rounded-xl border border-[#4ecde6]/30 px-4 py-3 flex items-center justify-between">
+          <p className="text-sm text-[#4ecde6]">{importResult}</p>
+          <button onClick={() => setImportResult(null)} className="text-white/40 hover:text-white"><IconClose /></button>
+        </div>
+      )}
+
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
-          <p className="text-xs text-white/50 font-medium mb-1">Leads This Month</p>
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">This Month</p>
           <p className="text-2xl font-bold text-[#4ecde6]">{stats.thisMonth}</p>
+          <p className="text-[10px] text-white/40 mt-0.5">new leads</p>
         </div>
         <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
-          <p className="text-xs text-white/50 font-medium mb-1">Conversion Rate</p>
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">Conversion</p>
           <p className="text-2xl font-bold text-emerald-400">{stats.conversionRate}%</p>
+          <p className="text-[10px] text-white/40 mt-0.5">
+            {stats.avgDaysToConvert > 0 ? `~${stats.avgDaysToConvert} days avg` : 'first enrolments coming'}
+          </p>
         </div>
         <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
-          <p className="text-xs text-white/50 font-medium mb-1">Avg Days to Convert</p>
-          <p className="text-2xl font-bold text-purple-400">{stats.avgDaysToConvert}</p>
-        </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
-          <p className="text-xs text-white/50 font-medium mb-1">Leads by Source</p>
-          <div className="flex items-end gap-1 h-8 mt-1">
-            {Object.entries(stats.sourceCounts).map(([src, count]) => (
-              <div key={src} className="flex flex-col items-center flex-1 min-w-0">
-                <div
-                  className="w-full bg-[#4ecde6]/60 rounded-sm min-h-[2px] transition-all"
-                  style={{ height: `${Math.max((count / stats.maxSource) * 28, 2)}px` }}
-                  title={`${SOURCE_LABELS[src] || src}: ${count}`}
-                />
-                <span className="text-[8px] text-white/40 mt-0.5 truncate w-full text-center">{SOURCE_LABELS[src]?.[0] || src[0]}</span>
-              </div>
-            ))}
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">Follow-ups</p>
+          <div className="flex items-center gap-3 mt-0.5">
+            {stats.dueTodayCount > 0 && (
+              <span className="flex items-center gap-1 text-sm font-bold text-orange-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                {stats.dueTodayCount} today
+              </span>
+            )}
+            {stats.overdueCount > 0 && (
+              <span className="flex items-center gap-1 text-sm font-bold text-red-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                {stats.overdueCount} overdue
+              </span>
+            )}
+            {stats.dueTodayCount === 0 && stats.overdueCount === 0 && (
+              <span className="text-2xl font-bold text-white/30">—</span>
+            )}
           </div>
+          <p className="text-[10px] text-white/40 mt-0.5">
+            {stats.dueTodayCount === 0 && stats.overdueCount === 0 ? 'all clear' : 'need your attention'}
+          </p>
+        </div>
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">Top Source</p>
+          {Object.entries(stats.sourceCounts).length > 0 ? (
+            (() => {
+              const sorted = Object.entries(stats.sourceCounts).sort((a, b) => b[1] - a[1])
+              const [topSrc, topCount] = sorted[0]
+              return (
+                <>
+                  <p className="text-2xl font-bold text-purple-400">{SOURCE_LABELS[topSrc] || topSrc}</p>
+                  <p className="text-[10px] text-white/40 mt-0.5">{topCount} lead{topCount !== 1 ? 's' : ''}</p>
+                </>
+              )
+            })()
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-white/30">—</p>
+              <p className="text-[10px] text-white/40 mt-0.5">no leads yet</p>
+            </>
+          )}
         </div>
       </div>
 
       {/* Pipeline View */}
-      {view === 'pipeline' && (
+      {view === 'pipeline' && filteredLeads.length === 0 && (
+        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+          <div className="text-5xl mb-3">📥</div>
+          <h3 className="text-lg font-bold text-white mb-1">
+            {showOverdueOnly ? 'No overdue follow-ups' : 'No leads yet'}
+          </h3>
+          <p className="text-sm text-white/50 max-w-sm mx-auto mb-5">
+            {showOverdueOnly
+              ? "Nothing to chase today — you're all caught up. 🎉"
+              : 'Leads will appear here automatically when parents enquire via your booking page. Or add one manually.'}
+          </p>
+          {!showOverdueOnly && (
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 rounded-full text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] transition-colors"
+              >
+                Add your first lead
+              </button>
+              <button
+                onClick={importTrials}
+                disabled={importing}
+                className="px-4 py-2 rounded-full text-sm font-semibold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10 transition-colors"
+              >
+                {importing ? 'Importing...' : 'Import trial bookings'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {view === 'pipeline' && filteredLeads.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           {STATUSES.map(status => {
             const config = STATUS_CONFIG[status]
@@ -276,59 +503,93 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                   <span className={`text-xs font-bold ${config.color} bg-white/5 rounded-full px-2 py-0.5`}>{columnLeads.length}</span>
                 </div>
                 <div className="space-y-2 min-h-[200px]">
-                  {columnLeads.map(lead => (
-                    <button
-                      key={lead.id}
-                      onClick={() => setDetailLead(lead)}
-                      className="w-full text-left bg-[#141414] rounded-xl border border-[#1e1e1e] p-3 hover:border-[#2e2e2e] transition-all group"
-                    >
-                      <div className="flex items-start justify-between mb-1.5">
-                        <p className="text-sm font-semibold text-white truncate">
-                          {lead.first_name} {lead.last_name || ''}
-                        </p>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${config.bg} ${config.color} flex-shrink-0 ml-2`}>
-                          {SOURCE_LABELS[lead.source] || lead.source}
-                        </span>
+                  {columnLeads.map(lead => {
+                    const followUpDue = isFollowUpDue(lead.follow_up_date)
+                    const overdue = isOverdue(lead.follow_up_date)
+                    const borderClass = followUpDue
+                      ? overdue ? 'border-red-500/50' : 'border-orange-500/50'
+                      : 'border-[#1e1e1e]'
+                    return (
+                    <div key={lead.id} className="relative">
+                      {/* Checkbox */}
+                      <div
+                        onClick={(e) => { e.stopPropagation(); toggleLeadSelection(lead.id) }}
+                        className={`absolute top-2 left-2 z-10 w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedLeads.has(lead.id) ? 'bg-[#4ecde6] border-[#4ecde6]' : 'border-[#3a3a3a] bg-transparent hover:border-[#4ecde6]/50'}`}
+                      >
+                        {selectedLeads.has(lead.id) && <IconCheck />}
                       </div>
-                      {lead.child_name && (
-                        <p className="text-xs text-white/50 mb-1">
-                          Child: {lead.child_name}{lead.child_age ? ` (${lead.child_age})` : ''}
-                        </p>
-                      )}
-                      {lead.interested_in && (
-                        <p className="text-xs text-white/40 mb-1.5 truncate">{lead.interested_in}</p>
-                      )}
-                      <div className="flex items-center justify-between text-[10px] text-white/30">
-                        <span>{daysSince(lead.created_at)}d ago</span>
-                        {memberName(lead.assigned_to) && (
-                          <span className="flex items-center gap-1 text-white/40">
-                            <IconUser /> {memberName(lead.assigned_to)?.split(' ')[0]}
-                          </span>
+                      <button
+                        onClick={() => setDetailLead(lead)}
+                        className={`w-full text-left bg-[#141414] rounded-xl border ${borderClass} p-3 pl-8 hover:border-[#2e2e2e] transition-all group`}
+                      >
+                        <div className="flex items-start justify-between mb-1.5">
+                          <p className="text-sm font-semibold text-white truncate">
+                            {lead.first_name} {lead.last_name || ''}
+                          </p>
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                            {lead.email && (
+                              <a
+                                href={`mailto:${lead.email}?subject=${encodeURIComponent(`Following up from ${orgName || 'us'}`)}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-white/30 hover:text-[#4ecde6] transition-colors p-0.5"
+                                title="Send email"
+                              >
+                                <IconEmail />
+                              </a>
+                            )}
+                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                              {SOURCE_LABELS[lead.source] || lead.source}
+                            </span>
+                          </div>
+                        </div>
+                        {lead.child_name && (
+                          <p className="text-xs text-white/50 mb-1">
+                            Child: {lead.child_name}{lead.child_age ? ` (${lead.child_age})` : ''}
+                          </p>
                         )}
-                      </div>
-                      {/* Quick move buttons */}
-                      <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {STATUSES.indexOf(status) > 0 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); moveStatus(lead, 'backward') }}
-                            className="flex-1 flex items-center justify-center gap-1 text-[10px] text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-md py-1 transition-colors"
-                          >
-                            <IconChevronLeft /> Back
-                          </button>
+                        {lead.interested_in && (
+                          <p className="text-xs text-white/40 mb-1.5 truncate">{lead.interested_in}</p>
                         )}
-                        {STATUSES.indexOf(status) < STATUSES.length - 1 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); moveStatus(lead, 'forward') }}
-                            className="flex-1 flex items-center justify-center gap-1 text-[10px] text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-md py-1 transition-colors"
-                          >
-                            Next <IconChevronRight />
-                          </button>
+                        {followUpDue && (
+                          <p className={`text-[10px] font-medium mb-1 ${overdue ? 'text-red-400' : 'text-orange-400'}`}>
+                            {overdue ? 'Overdue' : 'Due today'}: {formatDate(lead.follow_up_date)}
+                          </p>
                         )}
-                      </div>
-                    </button>
-                  ))}
+                        <div className="flex items-center justify-between text-[10px] text-white/30">
+                          <span>{daysSince(lead.created_at)}d ago</span>
+                          {memberName(lead.assigned_to) && (
+                            <span className="flex items-center gap-1 text-white/40">
+                              <IconUser /> {memberName(lead.assigned_to)?.split(' ')[0]}
+                            </span>
+                          )}
+                        </div>
+                        {/* Quick move buttons */}
+                        <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {STATUSES.indexOf(status) > 0 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveStatus(lead, 'backward') }}
+                              className="flex-1 flex items-center justify-center gap-1 text-[10px] text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-md py-1 transition-colors"
+                            >
+                              <IconChevronLeft /> Back
+                            </button>
+                          )}
+                          {STATUSES.indexOf(status) < STATUSES.length - 1 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); moveStatus(lead, 'forward') }}
+                              className="flex-1 flex items-center justify-center gap-1 text-[10px] text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-md py-1 transition-colors"
+                            >
+                              Next <IconChevronRight />
+                            </button>
+                          )}
+                        </div>
+                      </button>
+                    </div>
+                    )
+                  })}
                   {columnLeads.length === 0 && (
-                    <div className="text-center text-white/20 text-xs py-8">No leads</div>
+                    <div className="flex items-center justify-center h-[140px] rounded-xl border border-dashed border-white/5 text-white/20 text-xs italic">
+                      Empty
+                    </div>
                   )}
                 </div>
               </div>
@@ -344,6 +605,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#1e1e1e] text-white/50 text-xs">
+                  <th className="w-10 px-4 py-3"><span className="sr-only">Select</span></th>
                   <th className="text-left px-4 py-3 font-medium">Name</th>
                   <th className="text-left px-4 py-3 font-medium">Child</th>
                   <th className="text-left px-4 py-3 font-medium">Source</th>
@@ -354,16 +616,38 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                 </tr>
               </thead>
               <tbody>
-                {leads.map(lead => {
+                {filteredLeads.map(lead => {
                   const config = STATUS_CONFIG[lead.status as Status] || STATUS_CONFIG.new
+                  const followUpDue = isFollowUpDue(lead.follow_up_date)
+                  const overdue = isOverdue(lead.follow_up_date)
                   return (
                     <tr
                       key={lead.id}
                       onClick={() => setDetailLead(lead)}
-                      className="border-b border-[#1e1e1e] hover:bg-white/[0.02] cursor-pointer transition-colors"
+                      className={`border-b hover:bg-white/[0.02] cursor-pointer transition-colors ${followUpDue ? (overdue ? 'border-red-500/30 bg-red-500/[0.03]' : 'border-orange-500/30 bg-orange-500/[0.03]') : 'border-[#1e1e1e]'}`}
                     >
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          onClick={() => toggleLeadSelection(lead.id)}
+                          className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${selectedLeads.has(lead.id) ? 'bg-[#4ecde6] border-[#4ecde6]' : 'border-[#3a3a3a] bg-transparent hover:border-[#4ecde6]/50'}`}
+                        >
+                          {selectedLeads.has(lead.id) && <IconCheck />}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 font-medium text-white">
-                        {lead.first_name} {lead.last_name || ''}
+                        <div className="flex items-center gap-2">
+                          {lead.first_name} {lead.last_name || ''}
+                          {lead.email && (
+                            <a
+                              href={`mailto:${lead.email}?subject=${encodeURIComponent(`Following up from ${orgName || 'us'}`)}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-white/30 hover:text-[#4ecde6] transition-colors"
+                              title="Send email"
+                            >
+                              <IconEmail />
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-white/60">
                         {lead.child_name || '-'}{lead.child_age ? ` (${lead.child_age})` : ''}
@@ -399,10 +683,10 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                     </tr>
                   )
                 })}
-                {leads.length === 0 && (
+                {filteredLeads.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-white/30">
-                      No leads yet. Click &quot;Add Lead&quot; to get started.
+                    <td colSpan={8} className="px-4 py-12 text-center text-white/30">
+                      {showOverdueOnly ? 'No overdue follow-ups.' : 'No leads yet. Click "Add Lead" to get started.'}
                     </td>
                   </tr>
                 )}
@@ -422,6 +706,36 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
         />
       )}
 
+      {/* Bulk Action Bar */}
+      {selectedLeads.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#141414] border border-[#1e1e1e] rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4">
+          <span className="text-sm font-semibold text-white">{selectedLeads.size} selected</span>
+          <select
+            value={bulkStatus}
+            onChange={e => setBulkStatus(e.target.value)}
+            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#4ecde6]/50"
+          >
+            <option value="" className="bg-[#1a1a1a]">Move to...</option>
+            {STATUSES.map(s => (
+              <option key={s} value={s} className="bg-[#1a1a1a]">{STATUS_CONFIG[s].label}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => bulkUpdateStatus(bulkStatus)}
+            disabled={!bulkStatus || saving}
+            className="px-4 py-1.5 rounded-lg text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#3dbcd5] transition-colors disabled:opacity-50"
+          >
+            Apply
+          </button>
+          <button
+            onClick={() => { setSelectedLeads(new Set()); setBulkStatus('') }}
+            className="text-white/40 hover:text-white transition-colors text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       {/* Lead Detail Panel */}
       {detailLead && (
         <LeadDetailPanel
@@ -433,6 +747,89 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
           trainingGroups={trainingGroups}
           saving={saving}
         />
+      )}
+
+      {/* Floating Quick-Add button (mobile-first, always visible) */}
+      <button
+        type="button"
+        onClick={() => setShowQuickAdd(true)}
+        className="fixed bottom-20 lg:bottom-6 right-4 z-40 w-14 h-14 rounded-full bg-[#4ecde6] text-[#0a0a0a] shadow-xl shadow-[#4ecde6]/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+        title="Quick add a lead"
+        aria-label="Quick add a lead"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {/* Quick-Add modal: just Name + Phone */}
+      {showQuickAdd && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => !saving && setShowQuickAdd(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-white">Quick add lead</h2>
+                <p className="text-xs text-white/50 mt-1">
+                  Capture the basics in 10 seconds. Fill in details later.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !saving && setShowQuickAdd(false)}
+                className="text-white/40 hover:text-white"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={quickAddLead} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-white/60 mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={quickName}
+                  onChange={(e) => setQuickName(e.target.value)}
+                  autoFocus
+                  required
+                  inputMode="text"
+                  autoCapitalize="words"
+                  className="w-full px-4 py-3 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a] text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50"
+                  placeholder="Jane Smith"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-white/60 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={quickPhone}
+                  onChange={(e) => setQuickPhone(e.target.value)}
+                  inputMode="tel"
+                  className="w-full px-4 py-3 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a] text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50"
+                  placeholder="07..."
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={saving || !quickName.trim()}
+                className="w-full py-3 rounded-full font-semibold text-sm bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? 'Adding…' : 'Add lead'}
+              </button>
+              <p className="text-[10px] text-white/30 text-center">
+                Added as &ldquo;new&rdquo; from manual source. Edit later to add more.
+              </p>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )

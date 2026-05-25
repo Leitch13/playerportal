@@ -28,7 +28,6 @@ export async function requestPushPermission(): Promise<NotificationPermission> {
 export async function subscribeToPush(): Promise<PushSubscription | null> {
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   if (!vapidKey) {
-    console.warn('[Push] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not configured — skipping push subscription.')
     return null
   }
 
@@ -57,8 +56,7 @@ export async function saveSubscription(subscription: PushSubscription): Promise<
       body: JSON.stringify(subscription.toJSON()),
     })
     return res.ok
-  } catch (err) {
-    console.error('[Push] Failed to save subscription:', err)
+  } catch {
     return false
   }
 }

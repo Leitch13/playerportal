@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
     .eq('day_of_week', todayDay)
 
   if (groupsError) {
-    console.error('[POST SESSION] Error fetching groups:', groupsError)
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
   }
 

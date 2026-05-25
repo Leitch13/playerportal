@@ -10,7 +10,6 @@ interface EmailOptions {
 
 export async function sendEmail({ to, subject, html }: EmailOptions) {
   if (!process.env.RESEND_API_KEY) {
-    console.log(`[EMAIL SKIPPED] To: ${to}, Subject: ${subject}`)
     return { success: true, skipped: true }
   }
   try {
@@ -22,12 +21,10 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
       html,
     })
     if (error) {
-      console.error('[EMAIL ERROR]', error)
       return { success: false, error }
     }
     return { success: true, id: data?.id }
   } catch (err) {
-    console.error('[EMAIL ERROR]', err)
     return { success: false, error: err }
   }
 }

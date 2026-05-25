@@ -716,8 +716,8 @@ function ComplianceSection({ coaches }: { coaches: CoachSummary[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ coachId, email, name }),
       })
-    } catch (e) {
-      console.error('Failed to send reminder', e)
+    } catch {
+      // reminder send failed
     }
     setSending(null)
   }

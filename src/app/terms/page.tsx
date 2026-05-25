@@ -167,12 +167,12 @@ export default function TermsAndConditionsPage() {
           <section>
             <h2 className="text-lg font-bold mb-3">14. Intellectual Property &amp; Software Licence</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Player Portal is proprietary software owned by Play It Love It Ltd. All rights reserved.</li>
+              <li>Player Portal is proprietary software owned by JSL Sports Technology Ltd. All rights reserved.</li>
               <li>By subscribing to Player Portal, you are granted a limited, non-exclusive, non-transferable, revocable licence to access and use the platform for the duration of your subscription.</li>
               <li>You do not own any part of the Player Portal software, code, design, or intellectual property.</li>
               <li>You may not copy, modify, distribute, sell, or lease any part of the platform or its underlying technology.</li>
               <li>You may not reverse-engineer, decompile, or attempt to extract the source code of the platform.</li>
-              <li>All content, designs, logos, trademarks, and trade names associated with Player Portal are the property of Play It Love It Ltd.</li>
+              <li>All content, designs, logos, trademarks, and trade names associated with Player Portal are the property of JSL Sports Technology Ltd.</li>
               <li>Data you input into the platform (player records, class schedules, etc.) remains your property. We claim no ownership over your data.</li>
               <li>We may use anonymised, aggregated data for improving the platform and generating industry insights, but we will never share or sell your identifiable data.</li>
               <li>Any feedback, suggestions, or feature requests you provide may be used by us without obligation or compensation.</li>
@@ -215,6 +215,10 @@ export default function TermsAndConditionsPage() {
         </div>
       </div>
 
+      <div className="flex gap-4 justify-center mt-8 mb-4 text-sm text-text/50">
+        <Link href="/privacy" className="hover:text-primary">Privacy Policy</Link>
+        <Link href="/dpa" className="hover:text-primary">Data Processing Agreement</Link>
+      </div>
       <footer className="border-t border-border py-6 text-center text-xs text-text-light">
         Powered by Player Portal
       </footer>

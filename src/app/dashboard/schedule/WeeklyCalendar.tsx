@@ -71,7 +71,7 @@ export default function WeeklyCalendar({
                   ? 'bg-primary text-white shadow-md'
                   : isToday
                     ? 'bg-accent/10 text-accent border border-accent/30'
-                    : 'bg-white border border-border hover:bg-surface-dark'
+                    : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5'
               }`}
             >
               <span className="text-xs font-medium">{SHORT_DAYS[i]}</span>
@@ -102,14 +102,14 @@ export default function WeeklyCalendar({
               Today
             </span>
           )}
-          <span className="text-text-light font-normal ml-2">
+          <span className="text-white/60 font-normal ml-2">
             {selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''}
           </span>
         </h3>
 
         {selectedSessions.length === 0 ? (
-          <div className="bg-surface rounded-xl p-6 text-center">
-            <p className="text-sm text-text-light">No classes on {selectedDay}</p>
+          <div className="bg-[#0a0a0a] rounded-xl p-6 text-center">
+            <p className="text-sm text-white/60">No classes on {selectedDay}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -119,7 +119,7 @@ export default function WeeklyCalendar({
                 className={`rounded-xl border p-4 ${
                   session.isBooked
                     ? 'border-accent/30 bg-accent/5'
-                    : 'border-border bg-white'
+                    : 'border-[#1e1e1e] bg-[#141414]'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -137,7 +137,7 @@ export default function WeeklyCalendar({
                         {session.playerName}
                       </p>
                     )}
-                    <div className="flex items-center gap-3 mt-1.5 text-xs text-text-light">
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
                       {session.location && <span>📍 {session.location}</span>}
                       {session.coachName && <span>👤 {session.coachName}</span>}
                     </div>
@@ -155,7 +155,7 @@ export default function WeeklyCalendar({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-text-light">
+      <div className="flex items-center gap-4 text-xs text-white/60">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-accent" />
           Booked

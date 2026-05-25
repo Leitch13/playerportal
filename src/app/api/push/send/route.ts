@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
     const vapidEmail = process.env.VAPID_EMAIL || 'mailto:hello@playerportal.com'
 
     if (!vapidPublicKey || !vapidPrivateKey) {
-      console.warn('[Push] VAPID keys not configured — cannot send push notifications.')
       return NextResponse.json(
         { error: 'Push notifications not configured' },
         { status: 503 }
@@ -41,7 +40,6 @@ export async function POST(req: NextRequest) {
       .eq('profile_id', profileId)
 
     if (error) {
-      console.error('[Push] Failed to fetch subscriptions:', error)
       return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 })
     }
 
@@ -69,8 +67,6 @@ export async function POST(req: NextRequest) {
         // 404 or 410 means the subscription is no longer valid
         if (statusCode === 404 || statusCode === 410) {
           expired.push(sub.id)
-        } else {
-          console.error('[Push] Failed to send to endpoint:', sub.endpoint, pushErr)
         }
       }
     }
@@ -81,8 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ sent, expired: expired.length })
-  } catch (err) {
-    console.error('[Push] Send error:', err)
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

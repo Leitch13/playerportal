@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import WaitlistManager from './WaitlistManager'
 
 export default async function WaitlistPage() {
   const supabase = await createClient()
   const { data: role } = await supabase.rpc('get_my_role')
   if (!role || !['admin', 'coach'].includes(role)) redirect('/dashboard')
+  await requireFeature('waitlists')
 
   const { data: orgId } = await supabase.rpc('get_my_org')
 

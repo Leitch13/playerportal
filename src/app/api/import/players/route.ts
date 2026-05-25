@@ -83,8 +83,9 @@ export async function POST(request: NextRequest) {
       try {
         let parentId: string | null = null
 
-        // Look up or create parent if parent_email provided
+        // Look up parent if parent_email provided
         if (player.parent_email) {
+          // Check within org first
           const { data: existingParent } = await supabase
             .from('profiles')
             .select('id')
@@ -95,35 +96,17 @@ export async function POST(request: NextRequest) {
           if (existingParent) {
             parentId = existingParent.id
           } else {
-            // Create a new parent profile via auth invite or direct insert
-            const { data: newParent, error: parentError } = await supabase
+            // Check any org
+            const { data: anyParent } = await supabase
               .from('profiles')
-              .insert({
-                email: player.parent_email,
-                full_name: player.parent_name || player.parent_email,
-                phone: player.parent_phone || null,
-                role: 'parent',
-                organisation_id: orgId,
-              })
               .select('id')
+              .eq('email', player.parent_email)
               .single()
 
-            if (parentError) {
-              // Parent might exist in another org or there could be a constraint
-              // Try fetching without org filter
-              const { data: anyParent } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('email', player.parent_email)
-                .single()
-
-              if (anyParent) {
-                parentId = anyParent.id
-              }
-              // If still no parent, continue without one
-            } else if (newParent) {
-              parentId = newParent.id
+            if (anyParent) {
+              parentId = anyParent.id
             }
+            // If no parent found, parentId stays null and we'll use admin as fallback below
           }
         }
 
@@ -133,20 +116,25 @@ export async function POST(request: NextRequest) {
           dateOfBirth = parseDOB(player.date_of_birth)
         }
 
+        // If no parent found, use the current admin user as parent placeholder
+        if (!parentId) {
+          parentId = user.id
+        }
+
         // Create player record
-        const fullName = `${player.first_name} ${player.last_name}`
+        const insertData: Record<string, unknown> = {
+          first_name: player.first_name,
+          last_name: player.last_name,
+          date_of_birth: dateOfBirth,
+          age_group: player.age_group || null,
+          medical_info: player.medical_info || null,
+          parent_id: parentId,
+          organisation_id: orgId,
+        }
+
         const { data: newPlayer, error: playerError } = await supabase
           .from('players')
-          .insert({
-            first_name: player.first_name,
-            last_name: player.last_name,
-            full_name: fullName,
-            date_of_birth: dateOfBirth,
-            age_group: player.age_group || null,
-            medical_info: player.medical_info || null,
-            parent_id: parentId,
-            organisation_id: orgId,
-          })
+          .insert(insertData)
           .select('id')
           .single()
 
@@ -163,7 +151,7 @@ export async function POST(request: NextRequest) {
               .from('enrolments')
               .insert({
                 player_id: newPlayer.id,
-                training_group_id: groupId,
+                group_id: groupId,
                 status: 'active',
               })
 

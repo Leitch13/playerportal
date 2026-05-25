@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import Card from '@/components/Card'
 import ScoreBadge from '@/components/ScoreBadge'
 import EmptyState from '@/components/EmptyState'
@@ -14,6 +15,7 @@ export default async function FeedbackPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('progress_reviews')
 
   // Get profile for org
   const { data: profile } = await supabase
@@ -93,8 +95,9 @@ export default async function FeedbackPage() {
               <ProgressTrend
                 reviews={(data.reviews || []).map((r) => {
                   const row: Record<string, unknown> & { review_date: string } = { review_date: r.review_date }
+                  const jsonScores = (r as Record<string, unknown>).scores as Record<string, number> | null
                   for (const cat of scoringCategories) {
-                    row[cat.key] = (r as Record<string, unknown>)[cat.key] as number
+                    row[cat.key] = jsonScores?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number
                   }
                   return row
                 })}
@@ -126,17 +129,21 @@ export default async function FeedbackPage() {
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {scoringCategories.map((cat) => (
-                      <div
-                        key={cat.key}
-                        className="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.04]"
-                      >
-                        <ScoreBadge score={(review as Record<string, unknown>)[cat.key] as number} />
-                        <span className="text-xs text-white/60 text-center">
-                          {cat.label}
-                        </span>
-                      </div>
-                    ))}
+                    {scoringCategories.map((cat) => {
+                      const jsonScores = (review as Record<string, unknown>).scores as Record<string, number> | null
+                      const score = jsonScores?.[cat.key] ?? (review as Record<string, unknown>)[cat.key] as number
+                      return (
+                        <div
+                          key={cat.key}
+                          className="flex flex-col items-center gap-1 p-2 rounded-lg bg-white/[0.04]"
+                        >
+                          <ScoreBadge score={score} />
+                          <span className="text-xs text-white/60 text-center">
+                            {cat.label}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
 
                   {review.strengths && (

@@ -18,14 +18,10 @@ interface PlatformPlan {
   monthlyPrice: number
   transactionFee: number
   recommended?: boolean
+  tagline: string
+  featureHeading: string
+  features: string[]
 }
-
-const ALL_FEATURES = [
-  'Unlimited players', 'Unlimited classes', 'Full analytics', 'Priority support',
-  'Custom branding', 'Merch shop', 'Session planner', 'Drill library',
-  'White-label', 'QR attendance', 'Parent portal', 'Messaging',
-  'Camps & events', 'CSV exports', 'Audit log',
-]
 
 const PLATFORM_PLANS: PlatformPlan[] = [
   {
@@ -33,19 +29,56 @@ const PLATFORM_PLANS: PlatformPlan[] = [
     name: 'Starter',
     monthlyPrice: 20,
     transactionFee: 3.5,
+    tagline: 'Go live in 10 minutes',
+    featureHeading: 'Core features',
+    features: [
+      'Unlimited players',
+      'Booking page + parent signup',
+      'Automated Stripe payments',
+      'Class scheduling + capacity caps',
+      'Attendance (manual + QR)',
+      'Parent portal',
+      'Email notifications',
+      'CSV player import',
+    ],
   },
   {
     slug: 'pro',
     name: 'Pro',
-    monthlyPrice: 30,
-    transactionFee: 2,
+    monthlyPrice: 35,
+    transactionFee: 2.5,
     recommended: true,
+    tagline: 'Retention & growth tools',
+    featureHeading: 'Everything in Starter, plus',
+    features: [
+      'Progress reviews + custom scoring',
+      'Parent messaging',
+      'Photo gallery',
+      'Waitlists + win-back automation',
+      'Referral engine',
+      'Full analytics + retention reports',
+      'Session planner + drill library',
+      'Achievements & badges',
+      'Camps & events engine',
+      'Weekly parent digests',
+    ],
   },
   {
     slug: 'enterprise',
     name: 'Enterprise',
-    monthlyPrice: 50,
-    transactionFee: 1,
+    monthlyPrice: 60,
+    transactionFee: 2,
+    tagline: 'Branding, scale & priority support',
+    featureHeading: 'Everything in Pro, plus',
+    features: [
+      'White-label (custom domain + branding)',
+      'Merch shop',
+      'Unlimited coach accounts',
+      'API access',
+      'Audit log (compliance)',
+      'Priority support (1-hr response)',
+      'Dedicated onboarding call',
+    ],
   },
 ]
 
@@ -498,7 +531,7 @@ export default function OnboardPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-xl font-bold text-white mb-1">Choose Your Plan</h2>
-                <p className="text-[#888] text-sm">All features included. Pick the plan that saves you the most.</p>
+                <p className="text-[#888] text-sm">Pay less per transaction as you grow. Upgrade or downgrade anytime.</p>
               </div>
 
               {/* Plan Cards */}
@@ -534,7 +567,7 @@ export default function OnboardPage() {
                       <div className="absolute inset-0 rounded-2xl bg-white/[0.03] pointer-events-none" />
 
                       {/* Selected indicator */}
-                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      <div className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
                         isSelected ? 'border-[#4ecde6] bg-[#4ecde6]' : 'border-white/20'
                       }`}>
                         {isSelected && (
@@ -545,44 +578,39 @@ export default function OnboardPage() {
                       </div>
 
                       {/* Plan name */}
-                      <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
+                      <h3 className="relative text-lg font-bold text-white mb-1">{plan.name}</h3>
+                      <p className="relative text-xs text-white/50 mb-3">{plan.tagline}</p>
 
                       {/* Price */}
-                      <div className="flex items-baseline gap-1 mb-1">
+                      <div className="relative flex items-baseline gap-1 mb-1">
                         <span className="text-3xl font-extrabold text-white">&pound;{plan.monthlyPrice}</span>
                         <span className="text-white/40 text-sm">/month</span>
                       </div>
 
                       {/* Transaction fee */}
-                      <p className={`text-sm font-semibold mb-4 ${plan.transactionFee === 1 ? 'text-emerald-400' : 'text-white/50'}`}>
+                      <p className={`relative text-sm font-semibold mb-4 ${plan.transactionFee === 2 ? 'text-emerald-400' : 'text-white/50'}`}>
                         {`${plan.transactionFee}% transaction fee`}
                       </p>
 
-                      {/* All features badge */}
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#4ecde6]/5 border border-[#4ecde6]/10">
-                        <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-xs font-semibold text-[#4ecde6]">All features included</span>
+                      {/* Per-plan features */}
+                      <div className="relative">
+                        <h4 className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">
+                          {plan.featureHeading}
+                        </h4>
+                        <ul className="space-y-1.5">
+                          {plan.features.map((feat) => (
+                            <li key={feat} className="flex items-start gap-2 text-xs text-white/70">
+                              <svg className="w-3.5 h-3.5 text-[#4ecde6] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </button>
                   )
                 })}
-              </div>
-
-              {/* Shared feature list */}
-              <div className="bg-gradient-to-b from-[#111827] to-[#1a2332] border border-white/10 rounded-2xl p-5">
-                <h4 className="text-sm font-bold text-white mb-3">Every plan includes</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {ALL_FEATURES.map((feature) => (
-                    <div key={feature} className="flex items-center gap-2 text-xs text-white/60">
-                      <svg className="w-3.5 h-3.5 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {feature}
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {/* Cost comparison calculator */}

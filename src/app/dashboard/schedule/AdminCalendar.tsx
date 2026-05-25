@@ -83,7 +83,7 @@ export default function AdminCalendar({
                   ? 'bg-primary text-white shadow-md'
                   : isToday
                     ? 'bg-accent/10 text-accent border border-accent/30'
-                    : 'bg-white border border-border hover:bg-surface-dark'
+                    : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5'
               }`}
             >
               <span className="text-xs font-medium">{SHORT_DAYS[i]}</span>
@@ -92,13 +92,13 @@ export default function AdminCalendar({
               </span>
               {daySessions.length > 0 && (
                 <div className="flex flex-col items-center mt-0.5">
-                  <span className={`text-[10px] font-medium ${isSelected ? 'text-white/80' : 'text-text-light'}`}>
+                  <span className={`text-[10px] font-medium ${isSelected ? 'text-white/80' : 'text-white/60'}`}>
                     {daySessions.length} class{daySessions.length !== 1 ? 'es' : ''}
                   </span>
                   {dayPlayerCount > 0 && (
                     <div className="flex gap-0.5 mt-0.5">
                       <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-accent' : 'bg-accent'}`} />
-                      <span className={`text-[10px] ${isSelected ? 'text-white/70' : 'text-text-light'}`}>
+                      <span className={`text-[10px] ${isSelected ? 'text-white/70' : 'text-white/60'}`}>
                         {dayPlayerCount}
                       </span>
                     </div>
@@ -120,7 +120,7 @@ export default function AdminCalendar({
             </span>
           )}
         </h3>
-        <span className="text-xs text-text-light">
+        <span className="text-xs text-white/60">
           {selectedSessions.length} class{selectedSessions.length !== 1 ? 'es' : ''} ·{' '}
           {selectedSessions.reduce((s, ss) => s + ss.playerCount, 0)} players
         </span>
@@ -128,8 +128,8 @@ export default function AdminCalendar({
 
       {/* Selected day's sessions */}
       {selectedSessions.length === 0 ? (
-        <div className="bg-surface rounded-xl p-8 text-center">
-          <p className="text-sm text-text-light">No classes scheduled on {selectedDay}</p>
+        <div className="bg-[#0a0a0a] rounded-xl p-8 text-center">
+          <p className="text-sm text-white/60">No classes scheduled on {selectedDay}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -139,12 +139,12 @@ export default function AdminCalendar({
             return (
               <div
                 key={session.id}
-                className="rounded-xl border border-border bg-white overflow-hidden transition-all"
+                className="rounded-xl border border-[#1e1e1e] bg-[#141414] overflow-hidden transition-all"
               >
                 {/* Session header — clickable to expand */}
                 <button
                   onClick={() => setExpandedGroup(isExpanded ? null : session.id)}
-                  className="w-full p-4 text-left hover:bg-surface/50 transition-colors"
+                  className="w-full p-4 text-left hover:bg-[#0a0a0a]/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -153,12 +153,12 @@ export default function AdminCalendar({
                         <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                           session.playerCount > 0
                             ? 'bg-accent/10 text-accent'
-                            : 'bg-gray-100 text-gray-500'
+                            : 'bg-[#0a0a0a] text-gray-500'
                         }`}>
                           {session.playerCount} player{session.playerCount !== 1 ? 's' : ''}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-text-light">
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
                         {session.location && <span>📍 {session.location}</span>}
                         {session.coachName && <span>👤 {session.coachName}</span>}
                       </div>
@@ -168,7 +168,7 @@ export default function AdminCalendar({
                         <span className="text-lg font-bold text-primary">{session.timeSlot}</span>
                       )}
                       <svg
-                        className={`w-4 h-4 text-text-light transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        className={`w-4 h-4 text-white/60 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -181,12 +181,12 @@ export default function AdminCalendar({
 
                 {/* Expanded player list */}
                 {isExpanded && (
-                  <div className="border-t border-border px-4 py-3 bg-surface/30">
+                  <div className="border-t border-[#1e1e1e] px-4 py-3 bg-[#0a0a0a]/30">
                     {session.players.length === 0 ? (
-                      <p className="text-xs text-text-light text-center py-2">No players enrolled yet</p>
+                      <p className="text-xs text-white/60 text-center py-2">No players enrolled yet</p>
                     ) : (
                       <div className="space-y-2">
-                        <div className="text-xs font-medium text-text-light uppercase tracking-wider mb-2">
+                        <div className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
                           Enrolled Players
                         </div>
                         {session.players.map((player) => (
@@ -200,7 +200,7 @@ export default function AdminCalendar({
                               </div>
                               <div>
                                 <div className="text-sm font-medium">{player.name}</div>
-                                <div className="text-xs text-text-light">{player.parentName}</div>
+                                <div className="text-xs text-white/60">{player.parentName}</div>
                               </div>
                             </div>
                             <span className="w-2 h-2 rounded-full bg-accent" />
@@ -217,7 +217,7 @@ export default function AdminCalendar({
       )}
 
       {/* Week summary */}
-      <div className="flex items-center justify-between text-xs text-text-light border-t border-border pt-3">
+      <div className="flex items-center justify-between text-xs text-white/60 border-t border-[#1e1e1e] pt-3">
         <span>This week: {totalSessionsThisWeek} classes · {totalPlayersThisWeek} total enrolments</span>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">

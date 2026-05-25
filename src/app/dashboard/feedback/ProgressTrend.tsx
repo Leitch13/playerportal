@@ -26,7 +26,8 @@ export default function ProgressTrend({
 
   // Calculate average score per review
   const dataPoints = sorted.map((r) => {
-    const catScores = categories.map((cat) => ((r[cat.key] as number) || 0))
+    const jsonScores = r.scores as Record<string, number> | null | undefined
+    const catScores = categories.map((cat) => ((jsonScores?.[cat.key] ?? r[cat.key] as number) || 0))
     const total = catScores.reduce((sum, v) => sum + v, 0)
     const avg = categories.length > 0 ? total / categories.length : 0
     return {
@@ -37,7 +38,7 @@ export default function ProgressTrend({
       avg: Math.round(avg * 10) / 10,
       scores: categories.map((cat) => ({
         label: cat.label,
-        value: (r[cat.key] as number) || 0,
+        value: (jsonScores?.[cat.key] ?? r[cat.key] as number) || 0,
       })),
     }
   })
@@ -58,7 +59,7 @@ export default function ProgressTrend({
       ? 'text-accent'
       : trend < -0.2
       ? 'text-danger'
-      : 'text-text-light'
+      : 'text-white/60'
 
   return (
     <div className="space-y-4">
@@ -70,7 +71,7 @@ export default function ProgressTrend({
             <span className={`text-sm font-semibold ${trendColor}`}>
               {trendLabel}
             </span>
-            <p className="text-xs text-text-light">
+            <p className="text-xs text-white/60">
               {firstAvg.toFixed(1)} → {lastAvg.toFixed(1)} avg over{' '}
               {dataPoints.length} reviews
             </p>
@@ -82,7 +83,7 @@ export default function ProgressTrend({
           {dataPoints[dataPoints.length - 1].scores.map((s) => (
             <div
               key={s.label}
-              className="flex items-center gap-1 px-2 py-1 rounded-full bg-surface text-xs"
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#0a0a0a] text-xs"
             >
               <span className="font-medium">{s.label}:</span>
               <span
@@ -117,7 +118,7 @@ export default function ProgressTrend({
               >
                 <span
                   className={`text-xs font-bold ${
-                    isLatest ? 'text-accent' : 'text-text-light'
+                    isLatest ? 'text-accent' : 'text-white/60'
                   }`}
                 >
                   {point.avg}
@@ -130,7 +131,7 @@ export default function ProgressTrend({
                   }`}
                   style={{ height: barHeight }}
                 />
-                <span className="text-[10px] text-text-light whitespace-nowrap">
+                <span className="text-[10px] text-white/60 whitespace-nowrap">
                   {point.date}
                 </span>
               </div>

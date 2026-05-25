@@ -51,14 +51,14 @@ export default function SubscribeButton({
   return (
     <div className="space-y-2">
       {/* Billing toggle */}
-      <div className="flex rounded-lg bg-surface overflow-hidden border border-border">
+      <div className="flex rounded-lg bg-[#0a0a0a] overflow-hidden border border-[#1e1e1e]">
         <button
           type="button"
           onClick={() => setBillingOption('monthly')}
           className={`flex-1 py-1.5 text-xs font-semibold transition-all ${
             billingOption === 'monthly'
               ? 'bg-primary text-white'
-              : 'text-text-light hover:text-text'
+              : 'text-white/60 hover:text-white'
           }`}
         >
           Monthly
@@ -69,7 +69,7 @@ export default function SubscribeButton({
           className={`flex-1 py-1.5 text-xs font-semibold transition-all relative ${
             billingOption === 'quarterly'
               ? 'bg-green-600 text-white'
-              : 'text-text-light hover:text-text'
+              : 'text-white/60 hover:text-white'
           }`}
         >
           3 Months

@@ -93,10 +93,10 @@ export default function PhotoUploader({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Upload Photo</h2>
-        <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">Close</button>
+        <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white text-sm">Close</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -107,7 +107,7 @@ export default function PhotoUploader({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Match Day Photos"
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -117,7 +117,7 @@ export default function PhotoUploader({
             accept="image/*"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
           />
         </div>
         <div>
@@ -125,7 +125,7 @@ export default function PhotoUploader({
           <select
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">No group</option>
             {groups.map((g) => (
@@ -139,7 +139,7 @@ export default function PhotoUploader({
             type="date"
             value={sessionDate}
             onChange={(e) => setSessionDate(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -149,7 +149,7 @@ export default function PhotoUploader({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description..."
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div className="flex items-end pb-1">
@@ -158,7 +158,7 @@ export default function PhotoUploader({
               type="checkbox"
               checked={visibleToParents}
               onChange={(e) => setVisibleToParents(e.target.checked)}
-              className="rounded border-border text-primary focus:ring-primary/20"
+              className="rounded border-[#1e1e1e] text-primary focus:ring-primary/20"
             />
             Visible to parents
           </label>
@@ -177,7 +177,7 @@ export default function PhotoUploader({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>

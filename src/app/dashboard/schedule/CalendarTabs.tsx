@@ -124,7 +124,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
               activeTab === tab
                 ? 'bg-accent text-white shadow-md'
-                : 'bg-white border border-border text-text-light hover:bg-surface-dark hover:text-text'
+                : 'bg-[#141414] border border-[#1e1e1e] text-white/60 hover:bg-white/5 hover:text-white'
             }`}
           >
             {tab === 'Week' && '📅 '}
@@ -140,12 +140,12 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
       </div>
 
       {/* Quick stats bar */}
-      <div className="flex items-center gap-4 text-xs text-text-light bg-surface/50 rounded-xl px-4 py-2.5">
-        <span><strong className="text-text">{sessions.length}</strong> classes</span>
-        <span><strong className="text-text">{totalPlayers}</strong> enrolments</span>
-        <span><strong className={todaySessions.length > 0 ? 'text-accent' : 'text-text'}>{todaySessions.length}</strong> today</span>
+      <div className="flex items-center gap-4 text-xs text-white/60 bg-[#0a0a0a]/50 rounded-xl px-4 py-2.5">
+        <span><strong className="text-white">{sessions.length}</strong> classes</span>
+        <span><strong className="text-white">{totalPlayers}</strong> enrolments</span>
+        <span><strong className={todaySessions.length > 0 ? 'text-accent' : 'text-white'}>{todaySessions.length}</strong> today</span>
         {todayPlayers > 0 && <span><strong className="text-accent">{todayPlayers}</strong> players today</span>}
-        <span className="ml-auto"><strong className="text-text">{events.length}</strong> upcoming events</span>
+        <span className="ml-auto"><strong className="text-white">{events.length}</strong> upcoming events</span>
       </div>
 
       {/* ═══ WEEK VIEW ═══ */}
@@ -153,7 +153,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
         <div className="space-y-4">
           {/* Week navigation */}
           <div className="flex items-center justify-between">
-            <button onClick={() => setWeekOffset(o => o - 1)} className="px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-surface-dark transition-colors">
+            <button onClick={() => setWeekOffset(o => o - 1)} className="px-3 py-1.5 rounded-lg border border-[#1e1e1e] text-sm hover:bg-white/5 transition-colors">
               ← Prev
             </button>
             <div className="text-center">
@@ -168,7 +168,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                   Today
                 </button>
               )}
-              <button onClick={() => setWeekOffset(o => o + 1)} className="px-3 py-1.5 rounded-lg border border-border text-sm hover:bg-surface-dark transition-colors">
+              <button onClick={() => setWeekOffset(o => o + 1)} className="px-3 py-1.5 rounded-lg border border-[#1e1e1e] text-sm hover:bg-white/5 transition-colors">
                 Next →
               </button>
             </div>
@@ -192,7 +192,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                       ? 'bg-primary text-white shadow-lg ring-2 ring-primary/30'
                       : isToday
                         ? 'bg-accent/10 text-accent border-2 border-accent/30'
-                        : 'bg-white border border-border hover:bg-surface-dark hover:shadow-sm'
+                        : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5 hover:shadow-sm'
                   }`}
                 >
                   <span className="text-[11px] font-medium uppercase tracking-wide">{SHORT_DAYS[i]}</span>
@@ -204,12 +204,12 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                       <span className={`text-[10px] font-semibold ${isSelected ? 'text-white/80' : 'text-accent'}`}>
                         {daySessions.length} class{daySessions.length !== 1 ? 'es' : ''}
                       </span>
-                      <span className={`text-[10px] ${isSelected ? 'text-white/60' : 'text-text-light'}`}>
+                      <span className={`text-[10px] ${isSelected ? 'text-white/60' : 'text-white/60'}`}>
                         {dayPlayers} player{dayPlayers !== 1 ? 's' : ''}
                       </span>
                     </div>
                   ) : (
-                    <span className={`text-[10px] ${isSelected ? 'text-white/50' : 'text-text-light'}`}>Rest day</span>
+                    <span className={`text-[10px] ${isSelected ? 'text-white/50' : 'text-white/60'}`}>Rest day</span>
                   )}
                 </button>
               )
@@ -223,15 +223,15 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
               {selectedDay === today && weekOffset === 0 && (
                 <span className="px-2.5 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-semibold">Today</span>
               )}
-              <span className="text-sm text-text-light">
+              <span className="text-sm text-white/60">
                 {(byDay[selectedDay] || []).length} class{(byDay[selectedDay] || []).length !== 1 ? 'es' : ''}
               </span>
             </div>
 
             {(byDay[selectedDay] || []).length === 0 ? (
-              <div className="bg-surface/50 rounded-2xl p-10 text-center">
+              <div className="bg-[#0a0a0a]/50 rounded-2xl p-10 text-center">
                 <div className="text-3xl mb-2">😴</div>
-                <p className="text-sm text-text-light">No classes on {selectedDay}</p>
+                <p className="text-sm text-white/60">No classes on {selectedDay}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -261,15 +261,15 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
               const total = groupSessions.reduce((s, ss) => s + ss.playerCount, 0)
 
               return (
-                <div key={name} className="rounded-2xl border border-border overflow-hidden">
+                <div key={name} className="rounded-2xl border border-[#1e1e1e] overflow-hidden">
                   <button
                     onClick={() => setExpandedId(expandedId === `group-${name}` ? null : `group-${name}`)}
-                    className="w-full p-4 text-left bg-white hover:bg-surface/30 transition-colors"
+                    className="w-full p-4 text-left bg-[#141414] hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-bold">{name}</h3>
-                        <div className="flex items-center gap-3 text-xs text-text-light mt-1">
+                        <div className="flex items-center gap-3 text-xs text-white/60 mt-1">
                           {first?.location && <span>📍 {first.location}</span>}
                           {first?.coachName && <span>👤 {first.coachName}</span>}
                           <span>📅 {groupSessions.map(s => s.day).join(', ')}</span>
@@ -278,31 +278,31 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <div className="text-xl font-bold text-accent">{total}</div>
-                          <div className="text-[10px] text-text-light">players</div>
+                          <div className="text-[10px] text-white/60">players</div>
                         </div>
                         <Chevron open={expandedId === `group-${name}`} />
                       </div>
                     </div>
                     {/* Capacity bar */}
                     <div className="mt-3 flex items-center gap-2">
-                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <div className="flex-1 bg-[#0a0a0a] rounded-full h-2">
                         <div
                           className="h-2 rounded-full transition-all bg-accent"
                           style={{ width: `${Math.min(100, (total / (first?.maxCapacity || 20)) * 100)}%` }}
                         />
                       </div>
-                      <span className="text-xs text-text-light">{total}/{first?.maxCapacity || 20}</span>
+                      <span className="text-xs text-white/60">{total}/{first?.maxCapacity || 20}</span>
                     </div>
                   </button>
 
                   {expandedId === `group-${name}` && (
-                    <div className="border-t border-border bg-surface/20 p-4 space-y-3">
+                    <div className="border-t border-[#1e1e1e] bg-[#0a0a0a]/40 p-4 space-y-3">
                       {groupSessions.map(session => (
                         <div key={session.id} className="space-y-2">
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-semibold text-primary">{session.day}</span>
                             {session.timeSlot && <span className="font-bold">{session.timeSlot}</span>}
-                            <span className="text-xs text-text-light">· {session.playerCount} players</span>
+                            <span className="text-xs text-white/60">· {session.playerCount} players</span>
                           </div>
                           <PlayerChips players={session.players} />
                         </div>
@@ -329,10 +329,10 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
               const days = [...new Set(coachSessions.map(s => s.day))]
 
               return (
-                <div key={coach} className="rounded-2xl border border-border overflow-hidden">
+                <div key={coach} className="rounded-2xl border border-[#1e1e1e] overflow-hidden">
                   <button
                     onClick={() => setExpandedId(expandedId === `coach-${coach}` ? null : `coach-${coach}`)}
-                    className="w-full p-4 text-left bg-white hover:bg-surface/30 transition-colors"
+                    className="w-full p-4 text-left bg-[#141414] hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -341,7 +341,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                         </div>
                         <div>
                           <h3 className="font-bold">{coach}</h3>
-                          <div className="flex items-center gap-3 text-xs text-text-light mt-0.5">
+                          <div className="flex items-center gap-3 text-xs text-white/60 mt-0.5">
                             <span>{uniqueGroups} group{uniqueGroups !== 1 ? 's' : ''}</span>
                             <span>{totalPlayers} player{totalPlayers !== 1 ? 's' : ''}</span>
                             <span>{days.length} day{days.length !== 1 ? 's' : ''}/week</span>
@@ -362,19 +362,19 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                   </button>
 
                   {expandedId === `coach-${coach}` && (
-                    <div className="border-t border-border bg-surface/20 divide-y divide-border">
+                    <div className="border-t border-[#1e1e1e] bg-[#0a0a0a]/40 divide-y divide-[#1e1e1e]">
                       {coachSessions.map(session => (
                         <div key={session.id} className="p-4">
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <span className="font-semibold text-sm">{session.groupName}</span>
-                              <span className="text-xs text-text-light ml-2">{session.day} {session.timeSlot}</span>
+                              <span className="text-xs text-white/60 ml-2">{session.day} {session.timeSlot}</span>
                             </div>
                             <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-medium">
                               {session.playerCount} player{session.playerCount !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          {session.location && <div className="text-xs text-text-light mb-2">📍 {session.location}</div>}
+                          {session.location && <div className="text-xs text-white/60 mb-2">📍 {session.location}</div>}
                           <PlayerChips players={session.players} />
                         </div>
                       ))}
@@ -399,10 +399,10 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
               const uniqueGroups = new Set(locSessions.map(s => s.groupName)).size
 
               return (
-                <div key={loc} className="rounded-2xl border border-border overflow-hidden">
+                <div key={loc} className="rounded-2xl border border-[#1e1e1e] overflow-hidden">
                   <button
                     onClick={() => setExpandedId(expandedId === `loc-${loc}` ? null : `loc-${loc}`)}
-                    className="w-full p-4 text-left bg-white hover:bg-surface/30 transition-colors"
+                    className="w-full p-4 text-left bg-[#141414] hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -411,7 +411,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                         </div>
                         <div>
                           <h3 className="font-bold">{loc}</h3>
-                          <div className="text-xs text-text-light mt-0.5">
+                          <div className="text-xs text-white/60 mt-0.5">
                             {uniqueGroups} group{uniqueGroups !== 1 ? 's' : ''} · {totalPlayers} player{totalPlayers !== 1 ? 's' : ''}
                           </div>
                         </div>
@@ -421,14 +421,14 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                   </button>
 
                   {expandedId === `loc-${loc}` && (
-                    <div className="border-t border-border bg-surface/20 divide-y divide-border">
+                    <div className="border-t border-[#1e1e1e] bg-[#0a0a0a]/40 divide-y divide-[#1e1e1e]">
                       {locSessions.map(session => (
                         <div key={session.id} className="p-4">
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-semibold text-sm">{session.groupName}</span>
                             <span className="text-sm font-bold text-primary">{session.timeSlot || 'TBA'}</span>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-text-light mb-2">
+                          <div className="flex items-center gap-3 text-xs text-white/60 mb-2">
                             <span>{session.day}</span>
                             {session.coachName && <span>👤 {session.coachName}</span>}
                             <span>{session.playerCount} players</span>
@@ -484,11 +484,11 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className={`text-sm font-bold ${day === today ? 'text-accent' : ''}`}>{day}</h3>
                   {day === today && <span className="px-2 py-0.5 text-xs rounded-full bg-accent/10 text-accent font-semibold">Today</span>}
-                  <span className="text-xs text-text-light">{(byDay[day] || []).length} classes</span>
+                  <span className="text-xs text-white/60">{(byDay[day] || []).length} classes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(byDay[day] || []).map(session => (
-                    <div key={session.id} className="rounded-xl border border-border p-4 bg-white hover:shadow-md transition-shadow">
+                    <div key={session.id} className="rounded-xl border border-[#1e1e1e] p-4 bg-[#141414] hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="font-semibold text-sm">{session.groupName}</div>
@@ -506,18 +506,18 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-text-light">
+                      <div className="flex items-center gap-3 text-xs text-white/60">
                         {session.location && <span>📍 {session.location}</span>}
                         {session.coachName && <span>👤 {session.coachName}</span>}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                        <div className="flex-1 bg-[#0a0a0a] rounded-full h-1.5">
                           <div
                             className="h-1.5 rounded-full bg-accent transition-all"
                             style={{ width: `${Math.min(100, (session.playerCount / session.maxCapacity) * 100)}%` }}
                           />
                         </div>
-                        <span className="text-[10px] text-text-light">{session.playerCount}/{session.maxCapacity}</span>
+                        <span className="text-[10px] text-white/60">{session.playerCount}/{session.maxCapacity}</span>
                       </div>
                     </div>
                   ))}
@@ -541,17 +541,17 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
               const spotsLeft = event.max_capacity - event.bookingCount
 
               return (
-                <div key={event.id} className="rounded-2xl border border-border bg-white overflow-hidden hover:shadow-md transition-shadow">
+                <div key={event.id} className="rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden hover:shadow-md transition-shadow">
                   <div className="flex">
                     {/* Date badge */}
-                    <div className="w-20 flex-shrink-0 bg-primary/5 flex flex-col items-center justify-center p-3 border-r border-border">
+                    <div className="w-20 flex-shrink-0 bg-[#4ecde6]/10 flex flex-col items-center justify-center p-3 border-r border-[#1e1e1e]">
                       <span className="text-xs font-medium text-primary uppercase">
                         {startDate.toLocaleDateString('en-GB', { month: 'short' })}
                       </span>
                       <span className="text-2xl font-bold text-primary">{startDate.getDate()}</span>
                       {isMultiDay && (
                         <>
-                          <span className="text-[10px] text-text-light">to</span>
+                          <span className="text-[10px] text-white/60">to</span>
                           <span className="text-sm font-bold text-primary">{endDate.getDate()}</span>
                         </>
                       )}
@@ -570,8 +570,8 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                           <span className="text-xl font-bold text-accent">£{event.price.toFixed(0)}</span>
                         )}
                       </div>
-                      {event.description && <p className="text-sm text-text-light mt-1">{event.description}</p>}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-text-light mt-2">
+                      {event.description && <p className="text-sm text-white/60 mt-1">{event.description}</p>}
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-white/60 mt-2">
                         {event.start_time && (
                           <span>🕐 {event.start_time}{event.end_time && ` – ${event.end_time}`}</span>
                         )}
@@ -582,7 +582,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                       </div>
                       {/* Capacity bar */}
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                        <div className="flex-1 bg-[#0a0a0a] rounded-full h-1.5">
                           <div
                             className="h-1.5 rounded-full transition-all"
                             style={{
@@ -591,7 +591,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                             }}
                           />
                         </div>
-                        <span className="text-[10px] text-text-light">{event.bookingCount}/{event.max_capacity}</span>
+                        <span className="text-[10px] text-white/60">{event.bookingCount}/{event.max_capacity}</span>
                       </div>
                     </div>
                   </div>
@@ -617,19 +617,19 @@ function SessionCard({
   onToggle: () => void
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white overflow-hidden transition-all hover:shadow-sm">
-      <button onClick={onToggle} className="w-full p-4 text-left hover:bg-surface/30 transition-colors">
+    <div className="rounded-xl border border-[#1e1e1e] bg-[#141414] overflow-hidden transition-all hover:shadow-sm">
+      <button onClick={onToggle} className="w-full p-4 text-left hover:bg-white/[0.03] transition-colors">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm">{session.groupName}</span>
               <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                session.playerCount > 0 ? 'bg-accent/10 text-accent' : 'bg-gray-100 text-gray-500'
+                session.playerCount > 0 ? 'bg-accent/10 text-accent' : 'bg-[#0a0a0a] text-gray-500'
               }`}>
                 {session.playerCount}/{session.maxCapacity}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-text-light">
+            <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
               {session.location && <span>📍 {session.location}</span>}
               {session.coachName && <span>👤 {session.coachName}</span>}
             </div>
@@ -642,8 +642,8 @@ function SessionCard({
       </button>
 
       {expanded && session.players.length > 0 && (
-        <div className="border-t border-border px-4 py-3 bg-surface/20">
-          <div className="text-[10px] font-medium text-text-light uppercase tracking-wider mb-2">Enrolled Players</div>
+        <div className="border-t border-[#1e1e1e] px-4 py-3 bg-[#0a0a0a]/40">
+          <div className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-2">Enrolled Players</div>
           <div className="space-y-1.5">
             {session.players.map(p => (
               <div key={p.id} className="flex items-center justify-between py-1 px-2 rounded-lg hover:bg-white/60">
@@ -653,7 +653,7 @@ function SessionCard({
                   </div>
                   <div>
                     <div className="text-sm font-medium">{p.name}</div>
-                    <div className="text-[10px] text-text-light">{p.parentName}</div>
+                    <div className="text-[10px] text-white/60">{p.parentName}</div>
                   </div>
                 </div>
                 <span className="w-2 h-2 rounded-full bg-accent" />
@@ -664,8 +664,8 @@ function SessionCard({
       )}
 
       {expanded && session.players.length === 0 && (
-        <div className="border-t border-border px-4 py-4 bg-surface/20 text-center">
-          <p className="text-xs text-text-light">No players enrolled yet</p>
+        <div className="border-t border-[#1e1e1e] px-4 py-4 bg-[#0a0a0a]/40 text-center">
+          <p className="text-xs text-white/60">No players enrolled yet</p>
         </div>
       )}
     </div>
@@ -673,11 +673,11 @@ function SessionCard({
 }
 
 function PlayerChips({ players }: { players: { id: string; name: string; parentName: string }[] }) {
-  if (players.length === 0) return <p className="text-xs text-text-light">No players enrolled</p>
+  if (players.length === 0) return <p className="text-xs text-white/60">No players enrolled</p>
   return (
     <div className="flex flex-wrap gap-1.5">
       {players.map(p => (
-        <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-border rounded-full text-xs" title={p.parentName}>
+        <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 bg-[#141414] border border-[#1e1e1e] rounded-full text-xs" title={p.parentName}>
           <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           {p.name}
         </span>
@@ -688,7 +688,7 @@ function PlayerChips({ players }: { players: { id: string; name: string; parentN
 
 function Chevron({ open }: { open: boolean }) {
   return (
-    <svg className={`w-4 h-4 text-text-light transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className={`w-4 h-4 text-white/60 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   )
@@ -696,9 +696,9 @@ function Chevron({ open }: { open: boolean }) {
 
 function EmptyBox({ message }: { message: string }) {
   return (
-    <div className="bg-surface/50 rounded-2xl p-10 text-center">
+    <div className="bg-[#0a0a0a]/50 rounded-2xl p-10 text-center">
       <div className="text-3xl mb-2">📭</div>
-      <p className="text-sm text-text-light">{message}</p>
+      <p className="text-sm text-white/60">{message}</p>
     </div>
   )
 }

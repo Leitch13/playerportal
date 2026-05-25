@@ -177,7 +177,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
             {isEarlyBird ? (
               <>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold" style={{ color: primaryColor }}>
+                  <span className="text-2xl font-bold text-white">
                     &pound;{Number(camp.early_bird_price).toFixed(0)}
                   </span>
                   <span className="text-sm text-white/40 line-through">
@@ -192,7 +192,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
                 </p>
               </>
             ) : (
-              <span className="text-2xl font-bold" style={{ color: primaryColor }}>
+              <span className="text-2xl font-bold text-white">
                 {currentPrice > 0 ? <>&#163;{currentPrice.toFixed(0)}</> : 'Free'}
               </span>
             )}

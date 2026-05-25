@@ -7,6 +7,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import NotificationDropdown from '@/components/NotificationDropdown'
 import CommandPalette from '@/components/CommandPalette'
 import type { UserRole } from '@/lib/types'
+import type { FeatureKey, PlanTier } from '@/lib/features'
 import { useState, useEffect, useCallback } from 'react'
 
 /* ── Inline SVG icons (Heroicons outline style, 24x24 viewBox) ── */
@@ -179,7 +180,13 @@ const icons: Record<string, React.ReactNode> = {
   ),
 }
 
-type NavItem = { href: string; label: string; icon: string }
+type NavItem = {
+  href: string
+  label: string
+  icon: string
+  /** If set, item is only shown when the org's plan includes this feature. */
+  feature?: FeatureKey
+}
 type NavGroup = { title: string; items: NavItem[] }
 
 const navGroups: Record<UserRole, NavGroup[]> = {
@@ -190,20 +197,20 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'My Family', items: [
       { href: '/dashboard/children', label: 'My Children', icon: 'users' },
       { href: '/dashboard/schedule', label: 'Schedule', icon: 'calendar' },
-      { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar' },
-      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy' },
-      { href: '/dashboard/engagement', label: 'My Score', icon: 'chart-bar-square' },
+      { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar', feature: 'progress_reviews' },
+      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy', feature: 'achievements' },
+      { href: '/dashboard/engagement', label: 'My Score', icon: 'chart-bar-square', feature: 'engagement' },
     ]},
     { title: 'Academy', items: [
       { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar-days' },
-      { href: '/dashboard/events', label: 'Events', icon: 'ticket' },
-      { href: '/dashboard/gallery', label: 'Gallery', icon: 'photo' },
-      { href: '/dashboard/shop', label: 'Shop', icon: 'shopping-bag' },
+      { href: '/dashboard/events', label: 'Events', icon: 'ticket', feature: 'camps' },
+      { href: '/dashboard/gallery', label: 'Gallery', icon: 'photo', feature: 'photo_gallery' },
+      { href: '/dashboard/shop', label: 'Shop', icon: 'shopping-bag', feature: 'shop' },
     ]},
     { title: 'Account', items: [
       { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
-      { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
-      { href: '/dashboard/referrals', label: 'Refer a Friend', icon: 'gift' },
+      { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble', feature: 'messaging' },
+      { href: '/dashboard/referrals', label: 'Refer a Friend', icon: 'gift', feature: 'referrals' },
       { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
     ]},
   ],
@@ -214,15 +221,15 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     ]},
     { title: 'Coaching', items: [
       { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar-days' },
-      { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
-      { href: '/dashboard/drills', label: 'Drills', icon: 'football' },
+      { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document', feature: 'session_plans' },
+      { href: '/dashboard/drills', label: 'Drills', icon: 'football', feature: 'session_plans' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
-      { href: '/dashboard/cpd', label: 'CPD & Certs', icon: 'shield-check' },
+      { href: '/dashboard/cpd', label: 'CPD & Certs', icon: 'shield-check', feature: 'cpd_compliance' },
     ]},
     { title: 'Communication', items: [
-      { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
-      { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square' },
-      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy' },
+      { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble', feature: 'messaging' },
+      { href: '/dashboard/reviews', label: 'Reviews', icon: 'pencil-square', feature: 'progress_reviews' },
+      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy', feature: 'achievements' },
     ]},
     { title: '', items: [
       { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
@@ -235,36 +242,39 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'Academy', items: [
       { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
       { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar' },
-      { href: '/dashboard/camps', label: 'Camps', icon: 'flag' },
+      { href: '/dashboard/camps', label: 'Camps', icon: 'flag', feature: 'camps' },
       { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
       { href: '/dashboard/players', label: 'Players', icon: 'football' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
       { href: '/dashboard/leads', label: 'Leads', icon: 'funnel' },
+      { href: '/dashboard/migration', label: 'Migration', icon: 'arrow-down-tray' },
     ]},
     { title: 'Coaching', items: [
-      { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document' },
-      { href: '/dashboard/drills', label: 'Drill Library', icon: 'football' },
+      { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document', feature: 'session_plans' },
+      { href: '/dashboard/drills', label: 'Drill Library', icon: 'football', feature: 'session_plans' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
+      { href: '/dashboard/reviews', label: 'Player Reports', icon: 'pencil-square', feature: 'progress_reviews' },
     ]},
     { title: 'Communication', items: [
-      { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble' },
+      { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble', feature: 'messaging' },
       { href: '/dashboard/announcements', label: 'Announcements', icon: 'megaphone' },
-      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy' },
+      { href: '/dashboard/awards', label: 'Awards', icon: 'trophy', feature: 'achievements' },
     ]},
     { title: 'Finance', items: [
       { href: '/dashboard/plans', label: 'Plans & Pricing', icon: 'tag' },
       { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
-      { href: '/dashboard/shop/manage', label: 'Shop', icon: 'shopping-bag' },
-      { href: '/dashboard/referrals', label: 'Referrals', icon: 'gift' },
+      { href: '/dashboard/shop/manage', label: 'Shop', icon: 'shopping-bag', feature: 'shop' },
+      { href: '/dashboard/referrals', label: 'Referrals', icon: 'gift', feature: 'referrals' },
     ]},
     { title: 'Reports', items: [
-      { href: '/dashboard/analytics', label: 'Analytics', icon: 'chart-bar-square' },
+      { href: '/dashboard/analytics', label: 'Analytics', icon: 'chart-bar-square', feature: 'analytics' },
       { href: '/dashboard/exports', label: 'Exports', icon: 'arrow-down-tray' },
-      { href: '/dashboard/audit', label: 'Audit Log', icon: 'shield-check' },
-      { href: '/dashboard/cpd', label: 'Compliance', icon: 'shield-check' },
-      { href: '/dashboard/engagement', label: 'Engagement', icon: 'chart-bar' },
+      { href: '/dashboard/audit', label: 'Audit Log', icon: 'shield-check', feature: 'audit_log' },
+      { href: '/dashboard/cpd', label: 'Compliance', icon: 'shield-check', feature: 'cpd_compliance' },
+      { href: '/dashboard/engagement', label: 'Engagement', icon: 'chart-bar', feature: 'engagement' },
     ]},
     { title: '', items: [
+      { href: '/dashboard/billing', label: 'Billing & Plan', icon: 'credit-card' },
       { href: '/dashboard/settings', label: 'Settings', icon: 'cog' },
     ]},
   ],
@@ -286,6 +296,9 @@ export default function Navigation({
   logoUrl,
   isSuperAdmin,
   nextSessionHref,
+  availableFeatures,
+  isPilot,
+  planSlug,
 }: {
   role: UserRole
   userName: string
@@ -296,11 +309,24 @@ export default function Navigation({
   logoUrl?: string
   isSuperAdmin?: boolean
   nextSessionHref?: string
+  availableFeatures?: FeatureKey[]
+  isPilot?: boolean
+  planSlug?: PlanTier | null
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, setTheme, resolved } = useTheme()
-  const groups = navGroups[role] || []
+  const featureSet = new Set<FeatureKey>(availableFeatures || [])
+  // Filter nav items by feature access. Pilot orgs bypass gating entirely.
+  const hasFeature = (item: NavItem): boolean => {
+    if (!item.feature) return true // no feature requirement
+    if (isPilot) return true // pilot bypass
+    return featureSet.has(item.feature)
+  }
+  const rawGroups = navGroups[role] || []
+  const groups = rawGroups
+    .map(g => ({ ...g, items: g.items.filter(hasFeature) }))
+    .filter(g => g.items.length > 0)
   const allItems = groups.flatMap(g => g.items)
   const mobileTabs = mobileTabItems[role] || []
   const mobileItems = allItems.filter((i) => mobileTabs.includes(i.href))
@@ -436,7 +462,7 @@ export default function Navigation({
       {/* ── Sidebar Overlay (mobile) ── */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden animate-in fade-in duration-200"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -486,12 +512,15 @@ export default function Navigation({
                         key={item.href}
                         href={sidebarHref}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                        className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                           active
-                            ? 'bg-accent/10 text-accent'
+                            ? 'bg-accent/10 text-accent shadow-sm shadow-accent/5'
                             : 'text-white/60 hover:bg-white/5 hover:text-white/80'
                         }`}
                       >
+                        {active && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent rounded-r-full" />
+                        )}
                         <span className="w-5 flex items-center justify-center">{icons[item.icon] || item.icon}</span>
                         <span className="flex-1">{item.label}</span>
                         {isMessages && (unreadCount || 0) > 0 && (
@@ -565,10 +594,13 @@ export default function Navigation({
               <Link
                 key={item.href}
                 href={resolvedHref}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-colors ${
-                  active ? 'text-accent' : 'text-white/50'
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-all duration-150 ${
+                  active ? 'text-accent' : 'text-white/50 active:scale-95'
                 }`}
               >
+                {active && (
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-5 h-[3px] bg-accent rounded-b-full" />
+                )}
                 <span className="flex items-center justify-center">{icons[mobileIcon] || mobileIcon}</span>
                 <span className="text-[10px] font-medium leading-tight">{mobileLabel}</span>
                 {item.href === '/dashboard/messages' && (unreadCount || 0) > 0 && (

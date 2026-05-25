@@ -15,6 +15,7 @@ import PaymentLinkGenerator from './PaymentLinkGenerator'
 import Link from 'next/link'
 import CancelSubscriptionButton from './CancelSubscriptionButton'
 import FinancialBreakdown from './FinancialBreakdown'
+import SendReminderButton from './SendReminderButton'
 
 export default async function PaymentsPage({
   searchParams,
@@ -651,7 +652,7 @@ async function AdminPayments({
   const totalLifetimeRevenue = (allPayments || []).reduce((s, p) => s + Number(p.amount_paid || 0), 0)
 
   // Projected annual
-  const projectedAnnual = monthlyRecurring * 12 + totalLifetimeRevenue
+  const projectedAnnual = monthlyRecurring * 12
 
   // Unique parents with players
   const parentsWithPlayers = new Set((allPlayers || []).map((p) => p.parent_id)).size
@@ -821,14 +822,38 @@ async function AdminPayments({
             href={`/dashboard/payments?tab=${tab.key}`}
             className={`flex-1 text-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-white bg-[#4ecde6] text-[#0a0a0a] shadow-sm'
-                : 'text-white/60 hover:text-text'
+                ? 'bg-[#4ecde6] text-[#0a0a0a] shadow-sm'
+                : 'text-white/60 hover:text-white'
             }`}
           >
             {tab.label}
           </a>
         ))}
       </div>
+
+      {/* Overdue summary banner */}
+      {stats.overdueCount > 0 && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <span className="text-sm text-red-400 font-medium">
+              {stats.overdueCount} overdue payment{stats.overdueCount !== 1 ? 's' : ''} totalling&nbsp;
+              &pound;{(allPayments || [])
+                .filter((p) => p.status === 'overdue')
+                .reduce((sum, p) => sum + (Number(p.amount) - Number(p.amount_paid || 0)), 0)
+                .toFixed(2)}
+            </span>
+          </div>
+          <a
+            href="/dashboard/payments?tab=overview&filter=overdue"
+            className="text-xs text-red-400 hover:text-red-300 font-medium whitespace-nowrap ml-3"
+          >
+            View All &rarr;
+          </a>
+        </div>
+      )}
 
       {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
       {activeTab === 'overview' && (
@@ -980,15 +1005,20 @@ async function AdminPayments({
                             />
                           </td>
                           <td className="py-2.5">
-                            <Link
-                              href={`/dashboard/payments/invoice/${p.id}`}
-                              className="text-[#4ecde6] hover:text-[#4ecde6]/80 transition-colors"
-                              title="View Invoice"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            </Link>
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/dashboard/payments/invoice/${p.id}`}
+                                className="text-[#4ecde6] hover:text-[#4ecde6]/80 transition-colors"
+                                title="View Invoice"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </Link>
+                              {p.status === 'overdue' && (
+                                <SendReminderButton paymentId={p.id as string} />
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

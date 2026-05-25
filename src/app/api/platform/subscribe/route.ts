@@ -120,8 +120,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (err) {
-    console.error('Platform subscribe error:', err)
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create platform subscription checkout' },
       { status: 500 }

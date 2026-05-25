@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import ShopItem from './ShopItem'
 import ShopCategoryFilter from './ShopCategoryFilter'
 
@@ -28,6 +29,7 @@ export default async function ShopPage({
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('shop')
 
   const { data: orgId } = await supabase.rpc('get_my_org')
   if (!orgId) redirect('/dashboard')

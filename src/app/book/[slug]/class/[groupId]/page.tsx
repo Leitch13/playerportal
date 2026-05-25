@@ -79,7 +79,7 @@ export default async function ClassBookingPage({
     .from('subscription_plans')
     .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
     .eq('organisation_id', org.id)
-    .eq('is_active', true)
+    .eq('active', true)
     .eq('training_group_id', groupId)
     .order('amount', { ascending: true })
 
@@ -92,7 +92,7 @@ export default async function ClassBookingPage({
       .from('subscription_plans')
       .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
       .eq('organisation_id', org.id)
-      .eq('is_active', true)
+      .eq('active', true)
       .eq('class_type', classType)
       .is('training_group_id', null)
       .order('amount', { ascending: true })
@@ -106,7 +106,7 @@ export default async function ClassBookingPage({
       .from('subscription_plans')
       .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
       .eq('organisation_id', org.id)
-      .eq('is_active', true)
+      .eq('active', true)
       .is('training_group_id', null)
       .is('class_type', null)
       .order('amount', { ascending: true })
@@ -254,7 +254,7 @@ export default async function ClassBookingPage({
           {price != null && Number(price) > 0 && (
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
               <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Price</div>
-              <div className="text-sm font-bold" style={{ color: primaryColor }}>
+              <div className="text-base font-extrabold text-white">
                 &pound;{Number(price).toFixed(2)}
               </div>
               <div className="text-xs text-white/40 mt-0.5">per session</div>
@@ -350,8 +350,11 @@ export default async function ClassBookingPage({
             <div className="grid gap-3">
               {plans.map((plan, i) => {
                 const amount = Number(plan.amount)
-                const quarterlyAmount = Math.round(amount * 3 * 0.9 * 100) / 100
-                const quarterlySaving = Math.round(amount * 3 * 0.1 * 100) / 100
+                const qEnabled = (org as Record<string, unknown>).quarterly_billing_enabled !== false
+                const qPercent = Math.max(0, Math.min(50, Number((org as Record<string, unknown>).quarterly_discount_percent ?? 10)))
+                const showQuarterly = qEnabled && qPercent > 0
+                const quarterlyAmount = Math.round(amount * 3 * (1 - qPercent / 100) * 100) / 100
+                const quarterlySaving = Math.round(amount * 3 * (qPercent / 100) * 100) / 100
                 const isPopular = i === Math.floor(plans.length / 2)
                 return (
                   <div
@@ -380,21 +383,30 @@ export default async function ClassBookingPage({
                       </div>
                       <div className="text-right">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-extrabold" style={{ color: primaryColor }}>&pound;{amount.toFixed(0)}</span>
-                          <span className="text-xs text-white/40">/month</span>
+                          <span className="text-2xl font-extrabold text-white">&pound;{amount.toFixed(0)}</span>
+                          <span className="text-xs text-white/50">/month</span>
                         </div>
-                        <p className="text-[10px] text-green-400 mt-0.5">
-                          or &pound;{quarterlyAmount.toFixed(0)} quarterly (save &pound;{quarterlySaving.toFixed(0)})
-                        </p>
+                        {showQuarterly && (
+                          <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">
+                            or &pound;{quarterlyAmount.toFixed(0)} quarterly (save &pound;{quarterlySaving.toFixed(0)})
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 )
               })}
             </div>
-            <p className="text-center text-xs text-white/30 mt-3">
-              Pay monthly or save 10% with quarterly billing
-            </p>
+            {(() => {
+              const qEnabled = (org as Record<string, unknown>).quarterly_billing_enabled !== false
+              const qPercent = Number((org as Record<string, unknown>).quarterly_discount_percent ?? 10)
+              if (!qEnabled || qPercent <= 0) return null
+              return (
+                <p className="text-center text-xs text-white/30 mt-3">
+                  Pay monthly or save {Math.round(qPercent)}% with quarterly billing
+                </p>
+              )
+            })()}
           </div>
         )}
 

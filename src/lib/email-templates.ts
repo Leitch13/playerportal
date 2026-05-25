@@ -15,7 +15,7 @@ ${content}
 <div style="text-align:center;padding:16px;color:#555;font-size:12px">
 <p style="margin:0">Sent by Player Portal &bull; <a href="${appUrl}" style="color:${accentColor};text-decoration:none">Visit Dashboard</a></p>
 <p style="margin:6px 0 0;color:#333;font-size:11px">You&apos;re receiving this because you have an account on Player Portal.</p>
-<p style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 Play It Love It Ltd. All rights reserved.</p>
+<p style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 JSL Sports Technology Ltd. All rights reserved.</p>
 </div>
 </div></body></html>`
 }
@@ -489,70 +489,84 @@ export function progressReportEmail(params: {
     .map(s => {
       const barWidth = (s.score / 5) * 100
       return `<tr>
-        <td style="padding:6px 0;font-size:13px;color:#333;width:140px">${s.category}</td>
-        <td style="padding:6px 0">
-          <div style="background:#f0f0f0;border-radius:6px;height:8px;width:100%">
+        <td style="padding:8px 0;font-size:13px;color:#ccc;width:140px">${s.category}</td>
+        <td style="padding:8px 0">
+          <div style="background:#1e1e1e;border-radius:6px;height:8px;width:100%">
             <div style="background:#4ecde6;border-radius:6px;height:8px;width:${barWidth}%"></div>
           </div>
         </td>
-        <td style="padding:6px 0;font-size:13px;font-weight:600;color:#333;text-align:right;width:30px">${s.score.toFixed(1)}</td>
+        <td style="padding:8px 0;font-size:13px;font-weight:600;color:#fff;text-align:right;width:30px">${s.score.toFixed(1)}</td>
       </tr>`
     })
     .join('')
 
   const strengthsHtml = params.strengths.length > 0
-    ? params.strengths.map(s => `<li style="margin:4px 0;font-size:13px;color:#333">✅ ${s}</li>`).join('')
-    : '<li style="margin:4px 0;font-size:13px;color:#999">No strengths highlighted yet</li>'
+    ? params.strengths.map(s => `<li style="margin:4px 0;font-size:13px;color:#ccc">&#9989; ${s}</li>`).join('')
+    : '<li style="margin:4px 0;font-size:13px;color:#666">No strengths highlighted yet</li>'
 
   const focusHtml = params.focusAreas.length > 0
-    ? params.focusAreas.map(s => `<li style="margin:4px 0;font-size:13px;color:#333">🎯 ${s}</li>`).join('')
-    : '<li style="margin:4px 0;font-size:13px;color:#999">No focus areas highlighted yet</li>'
+    ? params.focusAreas.map(s => `<li style="margin:4px 0;font-size:13px;color:#ccc">&#127919; ${s}</li>`).join('')
+    : '<li style="margin:4px 0;font-size:13px;color:#666">No focus areas highlighted yet</li>'
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
   return {
     subject: `${params.childName}'s progress report — ${params.academyName}`,
-    html: baseLayout(`
-      <h2 style="margin:0 0 4px;color:#ffffff;font-size:22px">Progress Report</h2>
+    html: `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<div style="max-width:560px;margin:0 auto;padding:20px">
+<div style="background:#4ecde6;border-radius:16px 16px 0 0;padding:24px 32px;text-align:center">
+<h1 style="margin:0;color:#0a0a0a;font-size:20px;font-weight:800;letter-spacing:-0.5px">${params.academyName}</h1>
+<p style="margin:6px 0 0;color:#0a0a0a;opacity:0.7;font-size:12px;letter-spacing:1px;text-transform:uppercase">Progress Report</p>
+</div>
+<div style="background:#141414;padding:32px;border:1px solid #1e1e1e;border-top:none">
       <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
-      <p style="color:#aaa;line-height:1.6">Here's the latest progress update for <strong>${params.childName}</strong> at <strong>${params.academyName}</strong>.</p>
+      <p style="color:#aaa;line-height:1.6">Here's the latest progress update for <strong style="color:#fff">${params.childName}</strong>.</p>
 
       <!-- Overall Score -->
-      <div style="background:#f8f9fa;border-radius:16px;padding:20px;margin:20px 0;text-align:center">
-        <p style="margin:0 0 4px;font-size:13px;color:#999">Overall Rating</p>
-        <p style="margin:0;font-size:32px;font-weight:800;color:#4ecde6">${params.overallScore.toFixed(1)}<span style="font-size:16px;color:#999">/5</span></p>
+      <div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:16px;padding:20px;margin:20px 0;text-align:center">
+        <p style="margin:0 0 4px;font-size:13px;color:#666">Overall Rating</p>
+        <p style="margin:0;font-size:32px;font-weight:800;color:#4ecde6">${params.overallScore.toFixed(1)}<span style="font-size:16px;color:#666">/5</span></p>
         <p style="margin:4px 0 0;font-size:18px;letter-spacing:2px;color:#f59e0b">${starRating}</p>
       </div>
 
       <!-- Attendance -->
-      <div style="background:#eff6ff;border-radius:12px;padding:14px 16px;margin:16px 0">
-        <p style="margin:0;font-size:13px;color:#1e40af">📅 <strong>${params.sessionsAttended} sessions</strong> attended · <strong>${params.attendanceRate}%</strong> attendance rate</p>
+      <div style="background:#0c2d48;border:1px solid #1e4d6e;border-radius:12px;padding:14px 16px;margin:16px 0">
+        <p style="margin:0;font-size:13px;color:#7dd3fc">&#128197; <strong>${params.sessionsAttended} sessions</strong> attended &middot; <strong>${params.attendanceRate}%</strong> attendance rate</p>
       </div>
 
       <!-- Skill Scores -->
-      <p style="font-size:14px;font-weight:600;color:#333;margin:20px 0 8px">Skills Breakdown</p>
+      <p style="font-size:14px;font-weight:600;color:#fff;margin:20px 0 8px">Skills Breakdown</p>
       <table style="width:100%;border-collapse:collapse" cellpadding="0">
         ${scoresHtml}
       </table>
 
       <!-- Strengths -->
-      <p style="font-size:14px;font-weight:600;color:#333;margin:20px 0 8px">Strengths</p>
+      <p style="font-size:14px;font-weight:600;color:#fff;margin:20px 0 8px">Strengths</p>
       <ul style="padding-left:0;list-style:none;margin:0">${strengthsHtml}</ul>
 
       <!-- Focus Areas -->
-      <p style="font-size:14px;font-weight:600;color:#333;margin:20px 0 8px">Areas to Develop</p>
+      <p style="font-size:14px;font-weight:600;color:#fff;margin:20px 0 8px">Areas to Develop</p>
       <ul style="padding-left:0;list-style:none;margin:0">${focusHtml}</ul>
 
       ${params.coachComment ? `
       <!-- Coach Comment -->
-      <div style="border-left:3px solid #4ecde6;padding:12px 16px;background:#f8f9fa;border-radius:0 12px 12px 0;margin:20px 0">
-        <p style="margin:0 0 4px;font-size:12px;color:#999;font-weight:600">Coach's Note</p>
-        <p style="margin:0;font-size:13px;color:#333;line-height:1.5">${params.coachComment}</p>
+      <div style="border-left:3px solid #4ecde6;padding:12px 16px;background:#1a1a1a;border-radius:0 12px 12px 0;margin:20px 0">
+        <p style="margin:0 0 4px;font-size:12px;color:#666;font-weight:600">Coach's Note</p>
+        <p style="margin:0;font-size:13px;color:#ccc;line-height:1.5">${params.coachComment}</p>
       </div>` : ''}
 
       <div style="text-align:center;margin:24px 0">
         <a href="${params.reportUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View Full Report</a>
       </div>
-      <p style="color:#999;font-size:12px;text-align:center">This report was generated by ${params.academyName} on Player Portal.</p>
-    `),
+</div>
+<div style="background:#0f0f0f;border-radius:0 0 16px 16px;border:1px solid #1e1e1e;border-top:none;padding:20px 32px;text-align:center">
+<p style="margin:0;color:#555;font-size:12px">Powered by <a href="${appUrl}" style="color:#4ecde6;text-decoration:none;font-weight:600">Player Portal</a></p>
+<p style="margin:8px 0 0;color:#333;font-size:11px">You received this because your child is enrolled at ${params.academyName}.</p>
+<p style="margin:4px 0 0;color:#333;font-size:11px">To stop receiving progress reports, contact your academy directly.</p>
+</div>
+</div></body></html>`,
   }
 }
 

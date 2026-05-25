@@ -39,7 +39,7 @@ export default function CheckInForm({
         .in('player_id', playerIds)
         .eq('training_group_id', groupId)
         .eq('session_date', sessionDate)
-        .eq('status', 'present')
+        .eq('present', true)
 
       if (data) {
         const existing: Record<string, boolean> = {}
@@ -64,7 +64,7 @@ export default function CheckInForm({
         player_id: playerId,
         training_group_id: groupId,
         session_date: sessionDate,
-        status: 'present',
+        present: true,
         organisation_id: orgId,
       },
       {

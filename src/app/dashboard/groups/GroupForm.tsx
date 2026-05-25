@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import FileUpload from '@/components/FileUpload'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 const AGE_GROUPS = ['U5', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U18', 'Adults', 'Mixed']
@@ -375,27 +376,17 @@ export default function GroupForm({
               />
             </div>
 
-            {/* Image URL */}
+            {/* Cover Image */}
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-1.5">Image URL</label>
-              <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className={inputCls}
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Cover Photo</label>
+              <FileUpload
+                bucketName="coaching"
+                folder="class-covers"
+                accept="image/*"
+                currentUrl={imageUrl}
+                onUpload={(url) => setImageUrl(url)}
+                label="Upload a cover photo for this class"
               />
-              {imageUrl && (
-                <div className="mt-2 rounded-xl overflow-hidden border border-[#1e1e1e] bg-[#1a1a1a]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageUrl}
-                    alt="Class preview"
-                    className="w-full h-32 object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                </div>
-              )}
             </div>
           </div>
         )}

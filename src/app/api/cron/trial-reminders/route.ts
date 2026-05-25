@@ -37,7 +37,6 @@ export async function GET(request: NextRequest) {
     .or('reminder_48h_sent.eq.false,reminder_24h_sent.eq.false,reminder_2h_sent.eq.false')
 
   if (trialsError) {
-    console.error('[TRIAL REMINDERS] Error fetching trials:', trialsError)
     return NextResponse.json({ error: 'Failed to fetch trials' }, { status: 500 })
   }
 

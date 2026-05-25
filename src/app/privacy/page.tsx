@@ -222,6 +222,10 @@ export default function PrivacyPolicyPage() {
         </div>
       </div>
 
+      <div className="flex gap-4 justify-center mt-8 mb-4 text-sm text-text/50">
+        <Link href="/terms" className="hover:text-primary">Terms &amp; Conditions</Link>
+        <Link href="/dpa" className="hover:text-primary">Data Processing Agreement</Link>
+      </div>
       <footer className="border-t border-border py-6 text-center text-xs text-text-light">
         Powered by Player Portal
       </footer>

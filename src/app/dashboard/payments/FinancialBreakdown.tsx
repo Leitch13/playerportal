@@ -95,7 +95,7 @@ export default function FinancialBreakdown({
       </div>
 
       {/* ─── Monthly Income Chart ─── */}
-      <div className="bg-white dark:bg-surface-dark rounded-xl border border-border p-5">
+      <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
         <h3 className="text-sm font-semibold mb-4">Monthly Income Breakdown</h3>
 
         {/* Legend */}
@@ -128,7 +128,7 @@ export default function FinancialBreakdown({
               return (
                 <div key={month.monthKey} className="flex-1 flex flex-col items-center gap-1">
                   {/* Income amount */}
-                  <span className={`text-[10px] font-bold ${isLatest ? 'text-accent' : 'text-text-light'}`}>
+                  <span className={`text-[10px] font-bold ${isLatest ? 'text-accent' : 'text-white/60'}`}>
                     £{month.totalIncome.toFixed(0)}
                   </span>
 
@@ -158,7 +158,7 @@ export default function FinancialBreakdown({
                     )}
                   </div>
 
-                  <span className="text-[10px] text-text-light whitespace-nowrap">{month.label}</span>
+                  <span className="text-[10px] text-white/60 whitespace-nowrap">{month.label}</span>
                   {month.newSignups > 0 && (
                     <span className="text-[9px] text-warning font-medium">+{month.newSignups}</span>
                   )}
@@ -171,10 +171,10 @@ export default function FinancialBreakdown({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ─── Plan Breakdown ─── */}
-        <div className="bg-white dark:bg-surface-dark rounded-xl border border-border p-5">
+        <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
           <h3 className="text-sm font-semibold mb-4">Revenue by Plan</h3>
           {planBreakdown.length === 0 ? (
-            <p className="text-sm text-text-light">No active plans yet.</p>
+            <p className="text-sm text-white/60">No active plans yet.</p>
           ) : (
             <div className="space-y-3">
               {planBreakdown.map((plan) => (
@@ -182,17 +182,17 @@ export default function FinancialBreakdown({
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{plan.name}</span>
-                      <span className="text-xs text-text-light">{plan.activeSubs} subs</span>
+                      <span className="text-xs text-white/60">{plan.activeSubs} subs</span>
                     </div>
                     <span className="text-sm font-bold text-accent">£{plan.monthlyValue.toFixed(0)}/mo</span>
                   </div>
-                  <div className="w-full bg-surface-dark rounded-full h-2.5">
+                  <div className="w-full bg-white/5 rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full bg-accent transition-all"
                       style={{ width: `${plan.percentage}%` }}
                     />
                   </div>
-                  <div className="text-right text-[10px] text-text-light mt-0.5">
+                  <div className="text-right text-[10px] text-white/60 mt-0.5">
                     {plan.percentage.toFixed(0)}% of recurring revenue
                   </div>
                 </div>
@@ -202,20 +202,20 @@ export default function FinancialBreakdown({
         </div>
 
         {/* ─── Revenue by Parent ─── */}
-        <div className="bg-white dark:bg-surface-dark rounded-xl border border-border p-5">
+        <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
           <h3 className="text-sm font-semibold mb-4">Top Parents by Revenue</h3>
           {topParents.length === 0 ? (
-            <p className="text-sm text-text-light">No revenue data yet.</p>
+            <p className="text-sm text-white/60">No revenue data yet.</p>
           ) : (
             <div className="space-y-2">
               {topParents.map((parent, i) => (
                 <div
                   key={parent.name}
-                  className="flex items-center justify-between py-1.5 border-b border-border last:border-0"
+                  className="flex items-center justify-between py-1.5 border-b border-[#1e1e1e] last:border-0"
                 >
                   <div className="flex items-center gap-2">
                     <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      i === 0 ? 'bg-accent/20 text-accent' : 'bg-surface-dark text-text-light'
+                      i === 0 ? 'bg-accent/20 text-accent' : 'bg-white/5 text-white/60'
                     }`}>
                       {i + 1}
                     </span>
@@ -223,7 +223,7 @@ export default function FinancialBreakdown({
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-bold">£{parent.total.toFixed(0)}</span>
-                    <div className="flex gap-2 text-[10px] text-text-light">
+                    <div className="flex gap-2 text-[10px] text-white/60">
                       {parent.subscriptions > 0 && <span>Subs: £{parent.subscriptions.toFixed(0)}</span>}
                       {parent.oneOff > 0 && <span>One-off: £{parent.oneOff.toFixed(0)}</span>}
                     </div>
@@ -236,7 +236,7 @@ export default function FinancialBreakdown({
       </div>
 
       {/* ─── Parent Signup Funnel ─── */}
-      <div className="bg-white dark:bg-surface-dark rounded-xl border border-border p-5">
+      <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
         <h3 className="text-sm font-semibold mb-4">Signup & Conversion Funnel</h3>
         <div className="grid grid-cols-4 gap-2">
           <FunnelStep
@@ -281,10 +281,10 @@ function MetricCard({
   color: string
 }) {
   return (
-    <div className="bg-white dark:bg-surface-dark rounded-xl border border-border p-3 text-center">
+    <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-3 text-center">
       <div className={`text-xl font-bold ${color}`}>{value}</div>
       <div className="text-xs font-medium mt-0.5">{label}</div>
-      <div className="text-[10px] text-text-light">{subtext}</div>
+      <div className="text-[10px] text-white/60">{subtext}</div>
     </div>
   )
 }
@@ -305,7 +305,7 @@ function FunnelStep({
       <div className={`mx-auto rounded-lg py-3 px-2 ${color}`} style={{ width: `${Math.max(60, width)}%` }}>
         <div className="text-lg font-bold">{value}</div>
       </div>
-      <div className="text-[10px] text-text-light mt-1 font-medium">{label}</div>
+      <div className="text-[10px] text-white/60 mt-1 font-medium">{label}</div>
     </div>
   )
 }

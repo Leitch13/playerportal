@@ -53,7 +53,6 @@ export default function BookClassButton({
         if (error.code === '23505') {
           alert(`${playerName} is already on the waitlist`)
         } else {
-          console.error('Waitlist error:', error)
           setResult('error')
         }
       } else {
@@ -76,7 +75,6 @@ export default function BookClassButton({
       if (error.code === '23505') {
         alert(`${playerName} is already enrolled in this class`)
       } else {
-        console.error('Enrol error:', error)
         setResult('error')
       }
     } else {

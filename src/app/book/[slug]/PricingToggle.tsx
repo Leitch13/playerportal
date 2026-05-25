@@ -15,25 +15,40 @@ export default function PricingToggle({
   plans,
   slug,
   primaryColor,
+  quarterlyEnabled = true,
+  quarterlyDiscountPercent = 10,
 }: {
   plans: Plan[]
   slug: string
   primaryColor: string
+  quarterlyEnabled?: boolean
+  quarterlyDiscountPercent?: number
 }) {
   const [billing, setBilling] = useState<'monthly' | 'quarterly'>('monthly')
+  const discountRate = Math.max(0, Math.min(50, quarterlyDiscountPercent)) / 100
+
+  // Find the lowest-priced plan — usually the best starting point
+  const sortedByPrice = [...plans].sort((a, b) => a.amount - b.amount)
+  // "Most Popular" = mid-tier (second cheapest) if there are 3+ plans, otherwise cheapest
+  const popularPlanId = plans.length >= 3 ? sortedByPrice[1]?.id : sortedByPrice[0]?.id
+
+  // If the academy has disabled quarterly or set discount to 0, don't show the toggle
+  const showQuarterlyToggle = quarterlyEnabled && discountRate > 0
 
   return (
     <div>
-      {/* Billing Toggle */}
+      {/* Billing Toggle (only shown if academy enables quarterly + has a discount) */}
+      {showQuarterlyToggle && (
       <div className="flex justify-center mb-8">
-        <div className="bg-gray-100 rounded-full p-1 inline-flex">
+        <div className="bg-[#1a1a1a] rounded-full p-1 inline-flex">
           <button
             onClick={() => setBilling('monthly')}
             className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
               billing === 'monthly'
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-white'
+                : 'text-white/50 hover:text-white/70'
             }`}
+            style={billing === 'monthly' ? { backgroundColor: primaryColor, color: '#0a0a0a' } : undefined}
           >
             Pay Monthly
           </button>
@@ -41,101 +56,124 @@ export default function PricingToggle({
             onClick={() => setBilling('quarterly')}
             className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all relative ${
               billing === 'quarterly'
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'text-white'
+                : 'text-white/50 hover:text-white/70'
             }`}
+            style={billing === 'quarterly' ? { backgroundColor: primaryColor, color: '#0a0a0a' } : undefined}
           >
             Pay 3 Months
-            <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-              Save 10%
+            <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              Save {Math.round(discountRate * 100)}%
             </span>
           </button>
         </div>
       </div>
+      )}
 
       {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan, i) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+        {plans.map((plan) => {
           const monthly = plan.amount
           const quarterlyTotal = monthly * 3
-          const quarterlyDiscounted = quarterlyTotal * 0.9
+          const quarterlyDiscounted = quarterlyTotal * (1 - discountRate)
           const saving = quarterlyTotal - quarterlyDiscounted
+          const isPopular = plan.id === popularPlanId
 
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl border-2 p-6 text-center transition-all ${
-                i === 0 ? 'shadow-lg scale-105' : ''
+              className={`relative rounded-2xl border bg-[#141414] p-6 flex flex-col transition-all ${
+                isPopular
+                  ? 'border-2 shadow-xl'
+                  : 'border-[#1e1e1e] hover:border-[#2a2a2a]'
               }`}
-              style={i === 0 ? { borderColor: primaryColor } : { borderColor: '#e5e7eb' }}
+              style={isPopular ? { borderColor: primaryColor, boxShadow: `0 8px 40px ${primaryColor}20` } : undefined}
             >
-              {i === 0 && (
+              {isPopular && (
                 <span
-                  className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white mb-3"
-                  style={{ backgroundColor: primaryColor }}
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
                 >
                   Most Popular
                 </span>
               )}
-              <h3 className="text-xl font-bold">{plan.name}</h3>
-              {plan.description && (
-                <p className="text-sm text-gray-500 mt-1">{plan.description}</p>
-              )}
 
-              {billing === 'monthly' ? (
-                <div className="my-4">
-                  <span className="text-4xl font-bold">&pound;{monthly.toFixed(0)}</span>
-                  <span className="text-gray-500">/month</span>
-                </div>
-              ) : (
-                <div className="my-4">
-                  <div className="text-4xl font-bold text-green-600">
-                    &pound;{quarterlyDiscounted.toFixed(0)}
-                  </div>
-                  <div className="text-sm text-gray-400 line-through">
-                    &pound;{quarterlyTotal.toFixed(0)}
-                  </div>
-                  <div className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                    Save &pound;{saving.toFixed(0)}
-                  </div>
-                </div>
-              )}
-
-              <div className="text-sm text-gray-600 mb-2">
-                {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week
+              {/* Title + description */}
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-white capitalize">{plan.name}</h3>
+                <p className="text-xs text-white/50 mt-1 min-h-[2.5rem]">
+                  {plan.description || `${plan.sessions_per_week} session${plan.sessions_per_week !== 1 ? 's' : ''} per week`}
+                </p>
               </div>
 
-              {billing === 'monthly' ? (
-                <p className="text-xs text-gray-400 mb-4">
-                  Auto-renews monthly · Pro-rated first month · Cancel anytime
-                </p>
-              ) : (
-                <p className="text-xs text-gray-400 mb-4">
-                  One payment for 3 months · 10% discount · Best value
-                </p>
-              )}
+              {/* Price */}
+              <div className="text-center my-2">
+                {billing === 'monthly' ? (
+                  <>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-4xl font-extrabold text-white">&pound;{monthly.toFixed(0)}</span>
+                      <span className="text-sm text-white/50">/month</span>
+                    </div>
+                    <p className="text-[11px] text-white/40 mt-2">
+                      {showQuarterlyToggle ? <>Or &pound;{quarterlyDiscounted.toFixed(0)} quarterly (save &pound;{saving.toFixed(0)})</> : <>Cancel anytime</>}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-4xl font-extrabold text-emerald-400">&pound;{quarterlyDiscounted.toFixed(0)}</span>
+                      <span className="text-sm text-white/30 line-through">&pound;{quarterlyTotal.toFixed(0)}</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-400 font-semibold mt-2">
+                      Save &pound;{saving.toFixed(0)} · &pound;{(quarterlyDiscounted / 3).toFixed(0)}/month effective
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Details pushed to bottom */}
+              <div className="flex-1" />
+
+              <ul className="space-y-1.5 text-xs text-white/60 mb-5">
+                <li className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {billing === 'monthly' ? 'Auto-renews monthly' : 'One payment for 3 months'}
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Cancel anytime
+                </li>
+              </ul>
 
               <Link
                 href={`/auth/signup?org=${slug}&plan=${plan.id}&billing=${billing}`}
-                className="block w-full py-2.5 rounded-lg font-semibold text-white transition-all hover:opacity-90 hover:scale-[1.02]"
-                style={{ backgroundColor: billing === 'quarterly' ? '#16a34a' : primaryColor }}
+                className="block w-full text-center py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02]"
+                style={{
+                  backgroundColor: isPopular ? primaryColor : 'transparent',
+                  color: isPopular ? '#0a0a0a' : primaryColor,
+                  border: isPopular ? 'none' : `2px solid ${primaryColor}`,
+                }}
               >
-                {billing === 'quarterly' ? 'Get 10% Off' : 'Get Started'}
+                {billing === 'quarterly' ? `Start — save ${Math.round(discountRate * 100)}%` : 'Get started'}
               </Link>
-
-              {billing === 'quarterly' && (
-                <p className="text-[11px] text-green-600 font-medium mt-2">
-                  &pound;{(quarterlyDiscounted / 3).toFixed(2)}/month effective rate
-                </p>
-              )}
             </div>
           )
         })}
       </div>
 
       {billing === 'quarterly' && (
-        <p className="text-center text-sm text-green-600 font-medium mt-6">
-          💰 Pay upfront for 3 months and save 10% on every plan!
+        <p className="text-center text-sm text-emerald-400 font-medium mt-6">
+          💰 Pay upfront for 3 months and save 10% on every plan.
         </p>
       )}
     </div>

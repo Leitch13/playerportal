@@ -14,6 +14,9 @@ import RadarChart from '@/components/RadarChart'
 import PlayerTimeline from '@/components/PlayerTimeline'
 import type { TimelineItem } from '@/components/PlayerTimeline'
 import AttendanceStreak from '@/components/AttendanceStreak'
+import PlayerLevelEditor from './PlayerLevelEditor'
+import DeletePlayerButton from './DeletePlayerButton'
+import AddToGroupButton from './AddToGroupButton'
 
 export default async function PlayerDetailPage({
   params,
@@ -82,7 +85,7 @@ export default async function PlayerDetailPage({
   // Fetch enrolments
   const { data: enrolments } = await supabase
     .from('enrolments')
-    .select('id, status, group:training_groups(name, day_of_week, time_slot, location)')
+    .select('id, status, group_id, group:training_groups(name, day_of_week, time_slot, location)')
     .eq('player_id', id)
 
   // Fetch documents
@@ -119,6 +122,15 @@ export default async function PlayerDetailPage({
 
   const isStaff = role === 'admin' || role === 'coach'
 
+  // Fetch training groups for add-to-group (staff only)
+  const { data: trainingGroups } = isStaff
+    ? await supabase
+        .from('training_groups')
+        .select('id, name, day_of_week, time_slot')
+        .eq('organisation_id', orgId)
+        .order('name')
+    : { data: null }
+
   // Calculate attendance streaks
   const sortedAttendance = [...(attendance || [])].sort(
     (a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime()
@@ -143,10 +155,11 @@ export default async function PlayerDetailPage({
 
   // Build radar chart scores from latest review using custom categories
   const latestReview = (reviews || [])[0]
+  const latestJsonScores = latestReview ? (latestReview as Record<string, unknown>).scores as Record<string, number> | null : null
   const radarScores = latestReview
     ? scoringCategories.map((cat) => ({
         label: cat.label,
-        value: (latestReview[cat.key as keyof typeof latestReview] as number) || 0,
+        value: (latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0,
       }))
     : []
 
@@ -239,16 +252,26 @@ export default async function PlayerDetailPage({
           </Link>
           <h1 className="text-2xl font-bold">{player.first_name} {player.last_name}</h1>
           <div className="flex flex-wrap gap-2 mt-1">
-            {player.playing_level && (() => {
-              const levelColors: Record<string, string> = { beginner: 'bg-green-500/15 text-green-400', development: 'bg-blue-500/15 text-blue-400', intermediate: 'bg-amber-500/15 text-amber-400', advanced: 'bg-purple-500/15 text-purple-400', elite: 'bg-red-500/15 text-red-400' }
-              const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
-              return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[player.playing_level] || 'bg-white/10 text-white'}`}>{levelLabels[player.playing_level] || player.playing_level}</span>
-            })()}
-            {player.league_level && (() => {
-              const leagueColors: Record<string, string> = { recreational: 'bg-gray-500/15 text-gray-400', grassroots: 'bg-lime-500/15 text-lime-400', b_league: 'bg-sky-500/15 text-sky-400', a_league: 'bg-orange-500/15 text-orange-400', academy: 'bg-violet-500/15 text-violet-400', professional: 'bg-rose-500/15 text-rose-400' }
-              const leagueLabels: Record<string, string> = { recreational: 'Recreational', grassroots: 'Grassroots', b_league: 'B League', a_league: 'A League', academy: 'Academy', professional: 'Pro Development' }
-              return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${leagueColors[player.league_level] || 'bg-white/10 text-white'}`}>{leagueLabels[player.league_level] || player.league_level}</span>
-            })()}
+            {isStaff ? (
+              <PlayerLevelEditor
+                playerId={player.id}
+                playingLevel={player.playing_level}
+                leagueLevel={player.league_level}
+              />
+            ) : (
+              <>
+                {player.playing_level && (() => {
+                  const levelColors: Record<string, string> = { beginner: 'bg-green-500/15 text-green-400', development: 'bg-blue-500/15 text-blue-400', intermediate: 'bg-amber-500/15 text-amber-400', advanced: 'bg-purple-500/15 text-purple-400', elite: 'bg-red-500/15 text-red-400' }
+                  const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
+                  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[player.playing_level] || 'bg-white/10 text-white'}`}>{levelLabels[player.playing_level] || player.playing_level}</span>
+                })()}
+                {player.league_level && (() => {
+                  const leagueColors: Record<string, string> = { recreational: 'bg-gray-500/15 text-gray-400', grassroots: 'bg-lime-500/15 text-lime-400', b_league: 'bg-sky-500/15 text-sky-400', a_league: 'bg-orange-500/15 text-orange-400', academy: 'bg-violet-500/15 text-violet-400', professional: 'bg-rose-500/15 text-rose-400' }
+                  const leagueLabels: Record<string, string> = { recreational: 'Recreational', grassroots: 'Grassroots', b_league: 'B League', a_league: 'A League', academy: 'Academy', professional: 'Pro Development' }
+                  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${leagueColors[player.league_level] || 'bg-white/10 text-white'}`}>{leagueLabels[player.league_level] || player.league_level}</span>
+                })()}
+              </>
+            )}
             {player.age_group && <span className="px-2 py-0.5 rounded-full text-xs bg-white/10 text-white font-medium">{player.age_group}</span>}
             {player.position && <span className="px-2 py-0.5 rounded-full text-xs bg-accent/10 text-accent font-medium">{player.position}</span>}
             {player.kit_size && <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.05] text-white/60 font-medium">Kit: {player.kit_size}</span>}
@@ -359,8 +382,14 @@ export default async function PlayerDetailPage({
       </div>
 
       {/* Groups */}
-      {(enrolments || []).length > 0 && (
-        <Card title="Sessions">
+      <Card title="Sessions" action={isStaff ? (
+        <AddToGroupButton
+          playerId={id}
+          groups={(trainingGroups || []).map((g) => ({ id: g.id, name: g.name, day_of_week: g.day_of_week, time_slot: g.time_slot }))}
+          existingGroupIds={(enrolments || []).map((e) => (e as unknown as { group_id: string }).group_id).filter(Boolean)}
+        />
+      ) : undefined}>
+        {(enrolments || []).length > 0 ? (
           <div className="divide-y divide-border">
             {(enrolments || []).map((e) => {
               const enr = e as unknown as { id: string; status: string; group: { name: string; day_of_week: string; time_slot: string; location: string } | null }
@@ -379,8 +408,10 @@ export default async function PlayerDetailPage({
               )
             })}
           </div>
-        </Card>
-      )}
+        ) : (
+          <p className="text-sm text-white/50 py-2">No group enrolments yet.</p>
+        )}
+      </Card>
 
       {/* Achievements */}
       {(achievements || []).length > 0 && (
@@ -419,12 +450,16 @@ export default async function PlayerDetailPage({
                   </span>
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-2">
-                  {scoringCategories.map((cat) => (
-                    <div key={cat.key} className="flex flex-col items-center gap-0.5">
-                      <ScoreBadge score={(r as Record<string, unknown>)[cat.key] as number} />
-                      <span className="text-[10px] text-white/60">{cat.label}</span>
-                    </div>
-                  ))}
+                  {scoringCategories.map((cat) => {
+                    const jsonScores = (r as Record<string, unknown>).scores as Record<string, number> | null
+                    const score = jsonScores?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number
+                    return (
+                      <div key={cat.key} className="flex flex-col items-center gap-0.5">
+                        <ScoreBadge score={score} />
+                        <span className="text-[10px] text-white/60">{cat.label}</span>
+                      </div>
+                    )
+                  })}
                 </div>
                 {r.strengths && <p className="text-sm"><span className="text-accent font-medium">Strengths:</span> {r.strengths}</p>}
                 {r.focus_next && <p className="text-sm"><span className="text-warning font-medium">Focus:</span> {r.focus_next}</p>}
@@ -469,13 +504,13 @@ export default async function PlayerDetailPage({
                     return (
                       <div key={d.id} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-purple-700 hover:underline flex items-center gap-1.5">
+                          <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-purple-400 hover:underline flex items-center gap-1.5">
                             <span>🎨</span> {d.title}
                           </a>
                           <span className="text-xs text-white/60">{new Date(d.created_at).toLocaleDateString()}</span>
                         </div>
                         {embedUrl && (
-                          <div className="rounded-lg overflow-hidden border border-purple-200">
+                          <div className="rounded-lg overflow-hidden border border-purple-500/20">
                             <iframe
                               src={embedUrl}
                               className="w-full"
@@ -490,10 +525,10 @@ export default async function PlayerDetailPage({
                             href={d.url as string}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block bg-purple-50 border border-purple-200 rounded-lg p-6 text-center hover:bg-purple-100 transition-colors"
+                            className="block bg-purple-500/10 border border-purple-500/20 rounded-lg p-6 text-center hover:bg-purple-500/15 transition-colors"
                           >
                             <span className="text-3xl block mb-2">🎨</span>
-                            <span className="text-sm font-medium text-purple-700">Open in Canva</span>
+                            <span className="text-sm font-medium text-purple-400">Open in Canva</span>
                           </a>
                         )}
                       </div>
@@ -563,6 +598,18 @@ export default async function PlayerDetailPage({
             </table>
           </div>
         </Card>
+      )}
+
+      {/* Danger Zone — Admin only */}
+      {role === 'admin' && (
+        <div className="border border-red-500/20 rounded-xl p-5 bg-red-500/[0.03]">
+          <h3 className="text-sm font-semibold text-red-400 mb-1">Danger Zone</h3>
+          <p className="text-xs text-white/50 mb-4">Permanently remove this player and all associated data. This cannot be undone.</p>
+          <DeletePlayerButton
+            playerId={id}
+            playerName={`${player.first_name} ${player.last_name}`}
+          />
+        </div>
       )}
     </div>
   )

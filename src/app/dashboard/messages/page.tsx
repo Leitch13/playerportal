@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireFeature } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
 import MessagingHub from './MessagingHub'
 import type { ConversationItem, Participant } from './MessagingHub'
@@ -10,6 +11,7 @@ export default async function MessagesPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
+  await requireFeature('messaging')
 
   const { data: profile } = await supabase
     .from('profiles')

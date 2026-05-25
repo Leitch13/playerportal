@@ -105,39 +105,39 @@ export default function SubscriptionPlanManager({
             <div
               key={plan.id}
               className={`rounded-xl border p-4 ${
-                plan.active ? 'border-border bg-white' : 'border-border/50 bg-surface/50 opacity-60'
+                plan.active ? 'border-[#1e1e1e] bg-[#141414]' : 'border-[#1e1e1e]/50 bg-[#0a0a0a]/50 opacity-60'
               }`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="font-semibold text-sm">{plan.name}</div>
                   {plan.description && (
-                    <div className="text-xs text-text-light mt-0.5">{plan.description}</div>
+                    <div className="text-xs text-white/60 mt-0.5">{plan.description}</div>
                   )}
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  plan.active ? 'bg-cyan-100 text-cyan-800' : 'bg-gray-100 text-gray-500'
+                  plan.active ? 'bg-cyan-100 text-cyan-800' : 'bg-[#0a0a0a] text-gray-500'
                 }`}>
                   {plan.active ? 'Active' : 'Inactive'}
                 </span>
               </div>
               <div className="flex items-baseline gap-1 mb-1">
                 <span className="text-2xl font-bold">&pound;{Number(plan.amount).toFixed(0)}</span>
-                <span className="text-sm text-text-light">/{plan.interval}</span>
+                <span className="text-sm text-white/60">/{plan.interval}</span>
               </div>
-              <div className="text-xs text-text-light mb-3">
+              <div className="text-xs text-white/60 mb-3">
                 {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''}/week
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => startEdit(plan)}
-                  className="text-xs px-2.5 py-1 border border-border rounded-lg hover:bg-surface-dark transition-colors"
+                  className="text-xs px-2.5 py-1 border border-[#1e1e1e] rounded-lg hover:bg-white/5 transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => toggleActive(plan.id, plan.active)}
-                  className="text-xs px-2.5 py-1 border border-border rounded-lg hover:bg-surface-dark transition-colors"
+                  className="text-xs px-2.5 py-1 border border-[#1e1e1e] rounded-lg hover:bg-white/5 transition-colors"
                 >
                   {plan.active ? 'Deactivate' : 'Activate'}
                 </button>
@@ -149,10 +149,10 @@ export default function SubscriptionPlanManager({
 
       {/* Add/Edit form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-border p-5">
+        <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm">{editing ? 'Edit Plan' : 'New Plan'}</h3>
-            <button onClick={resetForm} className="text-text-light hover:text-text text-sm">Cancel</button>
+            <button onClick={resetForm} className="text-white/60 hover:text-white text-sm">Cancel</button>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -163,7 +163,7 @@ export default function SubscriptionPlanManager({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. 1 Session / Week"
                 required
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
@@ -173,7 +173,7 @@ export default function SubscriptionPlanManager({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g. One training session per week"
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
@@ -186,7 +186,7 @@ export default function SubscriptionPlanManager({
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="40.00"
                 required
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
@@ -194,7 +194,7 @@ export default function SubscriptionPlanManager({
               <select
                 value={sessionsPerWeek}
                 onChange={(e) => setSessionsPerWeek(e.target.value)}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 {[1, 2, 3, 4, 5].map((n) => (
                   <option key={n} value={n}>{n} session{n > 1 ? 's' : ''}</option>

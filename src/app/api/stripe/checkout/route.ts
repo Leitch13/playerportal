@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     const stack = err instanceof Error ? err.stack : ''
-    console.error('Stripe checkout error:', message, stack)
     return NextResponse.json(
       { error: message, detail: stack?.slice(0, 500) },
       { status: 500 }
