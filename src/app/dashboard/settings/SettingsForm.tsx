@@ -275,22 +275,62 @@ export default function SettingsForm({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-[#1e1e1e]">
-                <h3 className="font-semibold text-sm mb-2">Invite Team Members</h3>
-                <p className="text-xs text-[#888] mb-3">Share this signup link. New coaches/admins will join your academy automatically.</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
-                    /auth/signup?org={form.slug}
+              <div className="pt-4 border-t border-[#1e1e1e] space-y-5">
+                <div>
+                  <h3 className="font-semibold text-sm mb-1">Invite a Coach</h3>
+                  <p className="text-xs text-[#888] mb-3">Send this link to your coach via WhatsApp, text or email. When they click it, they&apos;ll create an account and join your academy as a coach automatically.</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
+                      /auth/signup?org={form.slug}&amp;role=coach
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/auth/signup?org=${form.slug}&role=coach`)
+                        showToast('Coach invite link copied!')
+                      }}
+                      className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#4ecde6]/10 text-[#4ecde6] hover:bg-[#4ecde6]/20 transition-colors whitespace-nowrap"
+                    >
+                      Copy Link
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/auth/signup?org=${form.slug}`)
-                      showToast('Link copied!')
-                    }}
-                    className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors whitespace-nowrap"
-                  >
-                    Copy Link
-                  </button>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-sm mb-1">Invite Another Admin</h3>
+                  <p className="text-xs text-[#888] mb-3">Admins can manage everything — payments, settings, billing. Only share with people you fully trust.</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
+                      /auth/signup?org={form.slug}&amp;role=admin
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/auth/signup?org=${form.slug}&role=admin`)
+                        showToast('Admin invite link copied!')
+                      }}
+                      className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors whitespace-nowrap"
+                    >
+                      Copy Link
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-sm mb-1">Parent Booking Link</h3>
+                  <p className="text-xs text-[#888] mb-3">This is the link you give to parents to subscribe their kids to your classes.</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
+                      /book/{form.slug}
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/book/${form.slug}`)
+                        showToast('Parent booking link copied!')
+                      }}
+                      className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors whitespace-nowrap"
+                    >
+                      Copy Link
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

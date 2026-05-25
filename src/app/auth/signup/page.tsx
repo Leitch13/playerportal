@@ -63,6 +63,10 @@ function SignUp() {
   const isTrial = searchParams.get('trial') === '1'
   const preSelectedBilling = searchParams.get('billing')
   const refCode = searchParams.get('ref') || ''
+  // Coach/admin invitation flow: bypass child/subscription steps
+  const roleParam = (searchParams.get('role') || '').toLowerCase()
+  const isStaffInvite = roleParam === 'coach' || roleParam === 'admin'
+  const inviteRole = isStaffInvite ? roleParam : 'parent'
   const [referrerName, setReferrerName] = useState<string | null>(null)
 
   useEffect(() => { if (preSelectedBilling === 'quarterly') setBillingOption('quarterly') }, [preSelectedBilling])
@@ -94,11 +98,17 @@ function SignUp() {
     if (!orgName) { setOrgError('Invalid organisation code'); return }
     setLoading(true); setError('')
     const supabase = createClient()
-    const metadata: Record<string, string> = { full_name: fullName, phone, role: 'parent', org_slug: orgSlug.trim().toLowerCase() }
+    const metadata: Record<string, string> = { full_name: fullName, phone, role: inviteRole, org_slug: orgSlug.trim().toLowerCase() }
     if (refCode) metadata.ref_code = refCode
     const { error: signUpError } = await supabase.auth.signUp({ email, password, options: { data: metadata } })
     if (signUpError) { setError(signUpError.message); setLoading(false) }
     else {
+      // Staff invites (coach/admin) skip the child/subscription steps and go straight to dashboard
+      if (isStaffInvite) {
+        setLoading(false)
+        router.push('/dashboard')
+        return
+      }
       fetch('/api/email/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parentName: fullName, parentEmail: email, academyName: orgName || 'Player Portal' }) }).catch(() => {})
       const parts = fullName.trim().split(' ')
       if (parts.length > 1) setChildLastName(parts[parts.length - 1])
@@ -135,7 +145,7 @@ function SignUp() {
   function getQuarterlyPrice(monthlyAmount: number) { const total = monthlyAmount * 3; const discounted = total * 0.9; return { total, discounted, saving: total - discounted } }
   function handleSkipPlan() { router.push('/dashboard'); router.refresh() }
 
-  const stepLabels = ['Account', 'Child Details', 'Choose Plan']
+  const stepLabels = isStaffInvite ? ['Create Account'] : ['Account', 'Child Details', 'Choose Plan']
   const primaryColor = orgColor
   const inputCls = "w-full px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
 
@@ -150,7 +160,8 @@ function SignUp() {
             <img src={orgLogo} alt={orgName} className="w-14 h-14 rounded-xl object-cover mx-auto mb-3 bg-[#1a1a1a]" />
           )}
           <h1 className="text-2xl font-bold text-white mb-1">{orgName ? orgName : 'Player Portal'}</h1>
-          {orgName && <p className="text-sm text-white/40">Create your account to get started</p>}
+          {orgName && isStaffInvite && <p className="text-sm text-white/40">You&apos;ve been invited to join as {inviteRole === 'admin' ? 'an admin' : 'a coach'}</p>}
+          {orgName && !isStaffInvite && <p className="text-sm text-white/40">Create your account to get started</p>}
           {!orgName && !searchParams.get('org') && <p className="text-sm text-white/40">Sign up to join your academy</p>}
         </div>
 
