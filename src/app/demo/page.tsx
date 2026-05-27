@@ -156,7 +156,7 @@ export default function DemoPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Player Portal" className="h-7 w-auto object-contain" />
-              <span className="text-sm font-semibold text-white/60">by playit loveit</span>
+              <span className="text-sm font-semibold text-white/60">by JSL Sports</span>
             </div>
             <div className="flex gap-8 text-sm text-white/30">
               <Link href="/#features" className="hover:text-white/60 transition-colors">Features</Link>

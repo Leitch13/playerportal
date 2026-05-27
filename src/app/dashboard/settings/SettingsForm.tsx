@@ -321,6 +321,17 @@ export default function SettingsForm({
                     <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
                       /book/{form.slug}
                     </div>
+                    <a
+                      href={`/book/${form.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-white/10 text-white hover:bg-white/15 transition-colors whitespace-nowrap inline-flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                      View
+                    </a>
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(`${window.location.origin}/book/${form.slug}`)

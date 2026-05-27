@@ -50,11 +50,17 @@ export async function updateSession(request: NextRequest) {
     }
 
     // If signed in and on auth routes, redirect to dashboard
-    // BUT allow signout route and signin with query params (switching accounts)
+    // BUT allow:
+    //  - signout route
+    //  - signin with email param (switching accounts)
+    //  - signup with org param (subscribing to a new class from a logged-in
+    //    parent session — the signup page handles this case by skipping the
+    //    account-creation step and jumping straight to child/plan selection)
     const isSignout = request.nextUrl.pathname === '/auth/signout'
     const isSigninWithParams = request.nextUrl.pathname === '/auth/signin' && request.nextUrl.searchParams.has('email')
+    const isSignupWithOrg = request.nextUrl.pathname === '/auth/signup' && request.nextUrl.searchParams.has('org')
 
-    if (user && isAuthRoute && !isSignout && !isSigninWithParams) {
+    if (user && isAuthRoute && !isSignout && !isSigninWithParams && !isSignupWithOrg) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)

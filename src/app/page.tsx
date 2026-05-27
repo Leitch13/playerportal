@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import LandingMobileMenu from '@/components/LandingMobileMenu'
 import PricingCalculator from '@/components/PricingCalculator'
+import HeroAudienceSelector from '@/components/HeroAudienceSelector'
+import FeaturesByAudience from '@/components/FeaturesByAudience'
 
 export const metadata: Metadata = {
-  title: 'Player Portal by playit loveit — The All-in-One Platform for Football Academies',
+  title: 'Player Portal by JSL Sports — The All-in-One Platform for Football Academies',
   description: 'Manage players, track progress, handle payments, and keep parents engaged. Start free today.',
 }
 
@@ -140,33 +142,45 @@ export default function Home() {
             The all-in-one platform for football academies
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-8xl font-extrabold tracking-[-0.03em] leading-[0.95] mb-8 animate-slide-up">
-            Run your academy
+          <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black tracking-[-0.035em] leading-[0.92] mb-8 animate-slide-up">
+            <span
+              style={{
+                background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 60%, #cccccc 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Run your academy
+            </span>
             <br />
-            <span className="gradient-text">like a pro</span>
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #4ecde6 0%, #2ba8c3 50%, #4ecde6 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 8s linear infinite',
+              }}
+            >
+              like a pro
+            </span>
           </h1>
+          <style>{`
+            @keyframes shimmer {
+              0% { background-position: 0% 50%; }
+              100% { background-position: 200% 50%; }
+            }
+          `}</style>
 
-          <p className="max-w-2xl mx-auto text-lg sm:text-xl text-white/40 mb-12 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <p className="max-w-2xl mx-auto text-lg sm:text-2xl text-white/50 mb-12 leading-relaxed font-medium animate-slide-up" style={{ animationDelay: '0.1s' }}>
             Players. Progress. Payments. Parents.
             <br className="hidden sm:block" />
-            One platform that handles it all — so you can focus on coaching.
+            <span className="text-white/35">One platform that handles it all — so you can focus on coaching.</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <Link
-              href="/onboard"
-              className="group relative px-8 py-4 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-lg hover:scale-[1.03] transition-all glow-accent"
-            >
-              Start Free Trial
-              <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">&rarr;</span>
-            </Link>
-            <Link
-              href="/demo"
-              className="px-8 py-4 border border-white/15 text-white/70 rounded-full font-semibold text-lg hover:bg-white/5 hover:text-white hover:border-white/25 transition-all"
-            >
-              Try the Demo
-            </Link>
-          </div>
+          <HeroAudienceSelector />
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto animate-slide-up" style={{ animationDelay: '0.3s' }}>
@@ -256,8 +270,13 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#060606] to-transparent" />
       </section>
 
-      {/* ── Features ── */}
+      {/* ── Features (audience-toggled) ── */}
       <section id="features" className="relative py-24 sm:py-32">
+        <FeaturesByAudience />
+      </section>
+
+      {/* ── (Legacy features section retained below for backup, now hidden) ── */}
+      <section className="hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
@@ -754,7 +773,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Player Portal" className="h-7 w-auto object-contain" />
-              <span className="text-sm font-semibold text-white/60">by playit loveit</span>
+              <span className="text-sm font-semibold text-white/60">by JSL Sports</span>
             </div>
             <div className="flex gap-8 text-sm text-white/30">
               <a href="#features" className="hover:text-white/60 transition-colors">Features</a>

@@ -29,6 +29,7 @@ const CLASS_TYPES = [
   { value: 'girls', label: 'Girls', color: 'bg-rose-500/15 text-rose-400' },
   { value: 'adults', label: 'Adults', color: 'bg-slate-500/15 text-slate-400' },
   { value: 'camp', label: 'Football Camp', color: 'bg-lime-500/15 text-lime-400' },
+  { value: 'intensity', label: 'Intensity Training', color: 'bg-red-500/15 text-red-400' },
 ]
 
 const inputCls = 'w-full px-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'

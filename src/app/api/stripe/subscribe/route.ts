@@ -10,6 +10,31 @@ function getFirstOfNextMonth(): number {
   return Math.floor(nextMonth.getTime() / 1000)
 }
 
+// Returns Unix timestamp for the 1st of the month AFTER the given date.
+// Used when a parent's first session is in a future month — the next billing anchor
+// should be the month after the first session, since the first session's month is
+// already paid for in the upfront charge.
+function getFirstOfMonthAfter(date: Date): number {
+  const nextMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1))
+  return Math.floor(nextMonth.getTime() / 1000)
+}
+
+const DAYS_OF_WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+// Given a day-of-week label (e.g. "Monday"), returns the JS date of the next
+// occurrence of that day from today, in UTC. Returns null if the label is unrecognised.
+function nextOccurrenceOfDayOfWeek(dayOfWeek: string | null | undefined): Date | null {
+  if (!dayOfWeek) return null
+  const targetIdx = DAYS_OF_WEEK.indexOf(dayOfWeek.toLowerCase())
+  if (targetIdx === -1) return null
+  const now = new Date()
+  const todayIdx = now.getUTCDay()
+  let daysAhead = (targetIdx - todayIdx + 7) % 7
+  if (daysAhead === 0) daysAhead = 7 // if today matches the target, schedule a week ahead
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysAhead))
+  return next
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -22,7 +47,11 @@ export async function POST(request: NextRequest) {
     }
 
     // billingOption: 'monthly' (default) or 'quarterly' (3 months, 10% off)
-    const { planId, playerId, billingOption } = await request.json()
+    // classId (optional): if provided, the player will be auto-enrolled in that class on first payment
+    // firstSessionDate (optional, ISO date string): for 1-2-1 / 2-1 / intensity, the parent's chosen
+    //   first session date. If provided and falls in a future month, billing shifts to "pay full
+    //   month upfront, next bill on the month after first session" instead of strict pro-rata.
+    const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput } = await request.json()
     if (!planId) {
       return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
     }
@@ -192,7 +221,7 @@ export async function POST(request: NextRequest) {
         ],
         mode: 'payment',
         payment_method_types: ['card'],
-        success_url: `${origin}/dashboard/payments?sub_success=1&billing=quarterly`,
+        success_url: `${origin}/dashboard/payments/success?billing=quarterly`,
         cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
         ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
         metadata: {
@@ -201,6 +230,7 @@ export async function POST(request: NextRequest) {
           supabase_player_id: playerId || '',
           billing_option: 'quarterly',
           months_covered: '3',
+          ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
       }
@@ -249,19 +279,55 @@ export async function POST(request: NextRequest) {
         .eq('id', plan.id)
     }
 
+    // ─── Determine first session date for fair-billing logic ───
+    // When the parent's first session is in the next month or beyond, strict
+    // pro-rata feels wrong (they pay £X for days where they get no service).
+    // Instead, charge the full month upfront NOW and skip the next anchor —
+    // their first paid month covers the month containing their first session.
+    //
+    // For group classes: use the training_group's day_of_week to compute
+    //   the next occurrence as their first session.
+    // For 1-2-1 / 2-1 / intensity: prefer the explicit firstSessionDate
+    //   parameter if provided, fall back to day_of_week next occurrence.
+    let firstSessionDate: Date | null = null
+    if (classId) {
+      const { data: group } = await supabase
+        .from('training_groups')
+        .select('day_of_week, class_type')
+        .eq('id', classId)
+        .single()
+      const allowsExplicitDate = group?.class_type && ['1-2-1', '2-1', 'intensity'].includes(group.class_type as string)
+      if (allowsExplicitDate && firstSessionDateInput) {
+        const parsed = new Date(firstSessionDateInput)
+        if (!isNaN(parsed.getTime())) firstSessionDate = parsed
+      }
+      if (!firstSessionDate) {
+        firstSessionDate = nextOccurrenceOfDayOfWeek(group?.day_of_week as string | null | undefined)
+      }
+    }
+
+    const standardAnchor = getFirstOfNextMonth()
+    const firstSessionTimestamp = firstSessionDate ? Math.floor(firstSessionDate.getTime() / 1000) : null
+    const useUpfrontMonthModel =
+      firstSessionTimestamp !== null && firstSessionTimestamp >= standardAnchor
+    const shiftedAnchor = useUpfrontMonthModel
+      ? getFirstOfMonthAfter(firstSessionDate!)
+      : standardAnchor
+
+    // Just one recurring line item. Two billing models below decide what
+    // billing_cycle_anchor / proration_behavior settings to apply.
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      { price: stripePriceId, quantity: 1 },
+    ]
+
     // Create Checkout Session in subscription mode
     // Stripe handles proration automatically for mid-month signups
     const monthlySessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
-      line_items: [
-        {
-          price: stripePriceId,
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       mode: 'subscription',
       payment_method_types: ['card'],
-      success_url: `${origin}/dashboard/payments?sub_success=1&billing=monthly`,
+      success_url: `${origin}/dashboard/payments/success?billing=monthly`,
       cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
       ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
       metadata: {
@@ -269,6 +335,9 @@ export async function POST(request: NextRequest) {
         supabase_user_id: user.id,
         supabase_player_id: playerId || '',
         billing_option: 'monthly',
+        billing_model: useUpfrontMonthModel ? 'upfront_month' : 'prorated',
+        ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
+        ...(classId ? { supabase_class_id: classId } : {}),
         ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
       },
       subscription_data: {
@@ -276,12 +345,22 @@ export async function POST(request: NextRequest) {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
+          billing_model: useUpfrontMonthModel ? 'upfront_month' : 'prorated',
+          ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
+          ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
-        // Anchor billing to the 1st of next month so all parents
-        // are charged on the same date — Stripe automatically prorates
-        // the first invoice from signup to anchor date
-        billing_cycle_anchor: getFirstOfNextMonth(),
+        // Two billing models:
+        //  - Upfront-month model (first session is next month or later):
+        //    DON'T set billing_cycle_anchor. Stripe defaults to billing the
+        //    full first month TODAY, then on the join-anniversary monthly.
+        //    Bills aren't aligned to the 1st but parents always pay exactly
+        //    1 month at a time, no proration confusion.
+        //  - Prorated model (first session is this month — standard
+        //    mid-month signup): billing_cycle_anchor at 1st of next month so
+        //    Stripe creates a prorated invoice from signup to anchor, then
+        //    bills the full month on the 1st thereafter.
+        ...(useUpfrontMonthModel ? {} : { billing_cycle_anchor: shiftedAnchor }),
         // For connected accounts, apply the plan-based platform fee on every invoice
         ...(connectedAccountId
           ? {
@@ -298,9 +377,19 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create(monthlySessionParams)
 
+    // In the upfront-month model the next bill is roughly 1 month from today
+    // (Stripe's default anniversary billing). In the prorated model the next
+    // bill is on the shifted anchor (1st of next month).
+    const nextBillEstimate = useUpfrontMonthModel
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      : new Date(shiftedAnchor * 1000).toISOString().split('T')[0]
+
     return NextResponse.json({
       url: session.url,
       billing: 'monthly',
+      billingModel: useUpfrontMonthModel ? 'upfront_month' : 'prorated',
+      firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
+      nextBillingDate: nextBillEstimate,
       siblingDiscountApplied: !!siblingCouponId,
       siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
     })

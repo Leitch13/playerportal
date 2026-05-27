@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
       heroImageUrl,
       plans,
       platformPlan,
+      termsAccepted,
+      dpaAccepted,
+      authorityConfirmed,
     } = await request.json()
 
     if (!name || !slug || !contactEmail) {
@@ -42,6 +45,22 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    if (termsAccepted !== true || dpaAccepted !== true || authorityConfirmed !== true) {
+      return NextResponse.json(
+        { error: 'You must accept the Terms of Service, the Data Processing Agreement, and confirm your authority to bind the academy.' },
+        { status: 400 }
+      )
+    }
+
+    // x-forwarded-for can be a comma-separated list; the first entry is the client.
+    const acceptedIp =
+      (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown'
+    const acceptedUserAgent = request.headers.get('user-agent') || 'unknown'
+    const acceptedAt = new Date().toISOString()
+    const TERMS_VERSION = 'v1.0.0'
 
     // Check if slug is already taken
     const { data: existing } = await supabase
@@ -90,6 +109,11 @@ export async function POST(request: NextRequest) {
         platform_plan_id: platformPlanId,
         platform_subscription_status: 'trial',
         platform_trial_ends_at: trialEndsAt.toISOString(),
+        terms_accepted_at: acceptedAt,
+        dpa_accepted_at: acceptedAt,
+        terms_version: TERMS_VERSION,
+        accepted_ip: acceptedIp,
+        accepted_user_agent: acceptedUserAgent,
       })
       .select('id')
       .single()

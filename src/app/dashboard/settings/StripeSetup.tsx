@@ -14,6 +14,7 @@ export default function StripeSetup() {
   const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
+  const [connectError, setConnectError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchConnectStatus()
@@ -33,14 +34,27 @@ export default function StripeSetup() {
 
   async function startConnect() {
     setConnecting(true)
+    setConnectError(null)
     try {
       const res = await fetch('/api/stripe/connect', { method: 'POST' })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
+        return
       }
-    } catch {
-      // ignore
+      // 409 = stale account, auto-cleared by API → tell user to click again
+      if (res.status === 409) {
+        setConnectError(data.error || 'Stripe account was stale — cleared. Please click Connect with Stripe again.')
+        // Auto-refresh status so they see the cleared state
+        await fetchConnectStatus()
+      } else if (res.status === 403) {
+        setConnectError('Only admins can connect Stripe. Make sure you are signed in as an admin.')
+      } else {
+        setConnectError(data.error || `Unexpected response (status ${res.status}). Try refreshing the page.`)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Network error'
+      setConnectError(`Couldn't reach the server: ${message}. Check your internet and try again.`)
     } finally {
       setConnecting(false)
     }
@@ -95,6 +109,12 @@ export default function StripeSetup() {
                 {connecting ? 'Redirecting...' : 'Complete Onboarding'}
               </button>
             )}
+            {connectError && (
+              <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+                <p className="font-medium">⚠️ Connection failed</p>
+                <p className="mt-1 text-xs">{connectError}</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -112,6 +132,12 @@ export default function StripeSetup() {
             >
               {connecting ? 'Setting up...' : 'Connect with Stripe'}
             </button>
+            {connectError && (
+              <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+                <p className="font-medium">⚠️ Connection failed</p>
+                <p className="mt-1 text-xs">{connectError}</p>
+              </div>
+            )}
           </div>
         )}
       </div>

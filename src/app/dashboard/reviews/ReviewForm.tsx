@@ -41,16 +41,21 @@ export default function ReviewForm({
 
   // Custom fields manager
   const [showFieldManager, setShowFieldManager] = useState(false)
-  const [dbCategories, setDbCategories] = useState<ScoringCategory[]>([])
+  const [dbCategories, setDbCategories] = useState<(ScoringCategory & { class_type?: string | null })[]>([])
   const [newFieldName, setNewFieldName] = useState('')
   const [newFieldDesc, setNewFieldDesc] = useState('')
   const [savingField, setSavingField] = useState(false)
+
+  // Per-class-type scoring: admin picks which class context this review is for.
+  // 'all' = show universal categories only (default — most reviews are generic)
+  const [reviewClassType, setReviewClassType] = useState<string>('all')
 
   useEffect(() => {
     if (autoOpen) setOpen(true)
   }, [autoOpen])
 
-  // Fetch custom scoring categories for this org
+  // Fetch ALL custom scoring categories for this org (we filter client-side
+  // based on the selected class context so admin can switch without re-fetching).
   useEffect(() => {
     if (!orgId) return
     fetchCategories()
@@ -65,13 +70,28 @@ export default function ReviewForm({
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
 
-    setDbCategories((data as ScoringCategory[]) || [])
-    const cats = normalizeCategories(data as ScoringCategory[] | null)
-    setCategories(cats)
-    const newDefaults: Record<string, number> = {}
-    cats.forEach((c) => { newDefaults[c.key] = 3 })
-    setScores(newDefaults)
+    setDbCategories((data as (ScoringCategory & { class_type?: string | null })[]) || [])
   }
+
+  // Whenever the class-type filter or fetched categories change, recompute the
+  // categories shown in the form. Universal (class_type IS NULL) ALWAYS show.
+  useEffect(() => {
+    const filtered = (dbCategories || []).filter((c) => {
+      if (!c.class_type) return true // universal
+      if (reviewClassType === 'all') return false // only universal when 'all'
+      return c.class_type === reviewClassType
+    })
+    const cats = normalizeCategories(filtered as ScoringCategory[] | null)
+    // Fallback to legacy defaults if zero categories match (so the form is never empty)
+    if (cats.length === 0) {
+      setCategories(SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label })))
+    } else {
+      setCategories(cats)
+    }
+    const newDefaults: Record<string, number> = {}
+    ;(cats.length === 0 ? SCORE_CATEGORIES.map((c) => ({ key: c.key })) : cats).forEach((c) => { newDefaults[c.key] = 3 })
+    setScores(newDefaults)
+  }, [dbCategories, reviewClassType])
 
   function setScore(key: string, value: number) {
     setScores((prev) => ({ ...prev, [key]: value }))
@@ -358,15 +378,39 @@ export default function ReviewForm({
 
         {/* Scoring */}
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 gap-3">
             <h3 className="text-sm font-semibold text-white">Scores <span className="text-white/40 font-normal">(tap 1–5)</span></h3>
-            <button
-              type="button"
-              onClick={() => setShowFieldManager(true)}
-              className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-            >
-              Customise fields
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Class-type picker — filters categories. Universal categories always show. */}
+              <select
+                value={reviewClassType}
+                onChange={(e) => setReviewClassType(e.target.value)}
+                className="text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1.5 text-white/80 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
+                title="What class context is this review for?"
+              >
+                <option value="all">Universal scoring</option>
+                <option value="soccer_tots">Soccer Tots</option>
+                <option value="group">Group</option>
+                <option value="small_group">Small Group</option>
+                <option value="1-2-1">1-2-1</option>
+                <option value="2-1">2-1 Pair</option>
+                <option value="gk">Goalkeeper</option>
+                <option value="academy">Academy</option>
+                <option value="accelerator">Accelerator</option>
+                <option value="elite">Elite</option>
+                <option value="intensity">Intensity</option>
+                <option value="girls">Girls</option>
+                <option value="adults">Adults</option>
+                <option value="camp">Camp</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowFieldManager(true)}
+                className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                Customise fields
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {categories.map((cat) => (

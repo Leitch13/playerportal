@@ -142,7 +142,7 @@ export default function ParentWelcomeModal({
         <div className="absolute top-3 right-3 z-10">
           <button
             onClick={handleDismiss}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white flex items-center justify-center transition-colors"
             aria-label="Close welcome"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

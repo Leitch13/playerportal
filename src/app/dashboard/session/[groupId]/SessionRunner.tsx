@@ -17,6 +17,7 @@ interface PlayerInfo {
 interface SessionRunnerProps {
   groupId: string
   groupName: string
+  groupClassType?: string | null
   sessionDate: string
   coachId: string
   players: PlayerInfo[]
@@ -40,6 +41,7 @@ interface PlayerReview {
 export default function SessionRunner({
   groupId,
   groupName,
+  groupClassType,
   sessionDate,
   coachId,
   players,
@@ -50,20 +52,28 @@ export default function SessionRunner({
     SCORE_CATEGORIES.map((c) => ({ key: c.key, label: c.label }))
   )
 
-  // Fetch custom scoring categories
+  // Fetch custom scoring categories — show universal (class_type IS NULL)
+  // PLUS any categories tagged for this session's class_type.
   useEffect(() => {
     if (!orgId) return
     const supabase = createClient()
-    supabase
+    let query = supabase
       .from('scoring_categories')
       .select('*')
       .eq('organisation_id', orgId)
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
-      .then(({ data }) => {
-        setScoringCategories(normalizeCategories(data as ScoringCategory[] | null))
-      })
-  }, [orgId])
+
+    // If we know the class type, only fetch universal + matching ones.
+    // Otherwise show everything (graceful fallback).
+    if (groupClassType) {
+      query = query.or(`class_type.is.null,class_type.eq.${groupClassType}`)
+    }
+
+    query.then(({ data }) => {
+      setScoringCategories(normalizeCategories(data as ScoringCategory[] | null))
+    })
+  }, [orgId, groupClassType])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)

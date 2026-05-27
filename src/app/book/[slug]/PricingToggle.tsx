@@ -102,7 +102,9 @@ export default function PricingToggle({
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-white capitalize">{plan.name}</h3>
                 <p className="text-xs text-white/50 mt-1 min-h-[2.5rem]">
-                  {plan.description || `${plan.sessions_per_week} session${plan.sessions_per_week !== 1 ? 's' : ''} per week`}
+                  {plan.description || ((!plan.sessions_per_week || plan.sessions_per_week >= 7)
+                    ? 'Unlimited sessions per week'
+                    : `${plan.sessions_per_week} session${plan.sessions_per_week !== 1 ? 's' : ''} per week`)}
                 </p>
               </div>
 
@@ -139,7 +141,9 @@ export default function PricingToggle({
                   <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week
+                  {(!plan.sessions_per_week || plan.sessions_per_week >= 7)
+                    ? 'Unlimited sessions'
+                    : `${plan.sessions_per_week} session${plan.sessions_per_week !== 1 ? 's' : ''} per week`}
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
@@ -157,14 +161,16 @@ export default function PricingToggle({
 
               <Link
                 href={`/auth/signup?org=${slug}&plan=${plan.id}&billing=${billing}`}
-                className="block w-full text-center py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02]"
+                className="block w-full text-center py-5 rounded-xl font-extrabold text-lg transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110"
                 style={{
-                  backgroundColor: isPopular ? primaryColor : 'transparent',
-                  color: isPopular ? '#0a0a0a' : primaryColor,
-                  border: isPopular ? 'none' : `2px solid ${primaryColor}`,
+                  background: `linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)`,
+                  color: '#0a0a0a',
+                  boxShadow: isPopular
+                    ? `0 12px 48px ${primaryColor}80, 0 0 0 3px ${primaryColor}, inset 0 -3px 0 rgba(0,0,0,0.08)`
+                    : `0 8px 32px ${primaryColor}50, 0 0 0 2px ${primaryColor}80, inset 0 -3px 0 rgba(0,0,0,0.06)`,
                 }}
               >
-                {billing === 'quarterly' ? `Start — save ${Math.round(discountRate * 100)}%` : 'Get started'}
+                {billing === 'quarterly' ? `Start — Save ${Math.round(discountRate * 100)}% →` : 'Get Started →'}
               </Link>
             </div>
           )

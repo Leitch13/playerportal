@@ -88,8 +88,8 @@ export default function AddChildForm({
             />
             <div className="flex-1">
               <FileUpload
-                bucketName="coaching"
-                folder="player-photos"
+                bucketName="player-photos"
+                folder="players"
                 accept="image/*"
                 currentUrl={photoUrl || ''}
                 onUpload={(url) => setPhotoUrl(url)}

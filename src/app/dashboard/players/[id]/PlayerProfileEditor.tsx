@@ -106,8 +106,8 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-white/80 mb-1">Player photo</p>
           <FileUpload
-            bucketName="coaching"
-            folder="player-photos"
+            bucketName="player-photos"
+            folder="players"
             accept="image/*"
             currentUrl={photoUrl || ''}
             onUpload={(url) => setPhotoUrl(url)}

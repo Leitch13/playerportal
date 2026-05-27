@@ -51,9 +51,25 @@ export async function POST() {
     })
 
     return NextResponse.json({ url: accountLink.url })
-  } catch {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('Stripe Connect error:', message, err)
+    // Auto-recovery: if the stored stripe_account_id is invalid (e.g. test-mode
+    // leftover after switching to live), clear it so the next click creates fresh.
+    const isStaleAccount = message.includes('No such account') || message.includes('resource_missing')
+    if (isStaleAccount) {
+      const supabase = await createClient()
+      const { data: orgId } = await supabase.rpc('get_my_org')
+      if (orgId) {
+        await supabase.from('organisations').update({ stripe_account_id: null }).eq('id', orgId)
+      }
+      return NextResponse.json(
+        { error: 'Stripe account was stale — cleared. Please click "Connect with Stripe" again.' },
+        { status: 409 },
+      )
+    }
     return NextResponse.json(
-      { error: 'Failed to create Connect account' },
+      { error: `Stripe Connect failed: ${message}` },
       { status: 500 },
     )
   }

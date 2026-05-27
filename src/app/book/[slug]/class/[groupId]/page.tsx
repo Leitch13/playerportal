@@ -17,6 +17,7 @@ const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color
   trial: { label: 'Trial Session', gradient: 'from-cyan-600/30 via-cyan-900/20 to-transparent', color: '#06b6d4' },
   girls: { label: 'Girls Only', gradient: 'from-fuchsia-600/30 via-fuchsia-900/20 to-transparent', color: '#d946ef' },
   adults: { label: 'Adult Session', gradient: 'from-slate-600/30 via-slate-900/20 to-transparent', color: '#64748b' },
+  intensity: { label: 'Intensity Training', gradient: 'from-red-600/30 via-red-900/20 to-transparent', color: '#ef4444' },
 }
 
 export default async function ClassBookingPage({
@@ -48,7 +49,7 @@ export default async function ClassBookingPage({
   // Get the specific class with new fields
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, class_type, short_description, long_description, benefits, suitable_for, what_to_bring, image_url, is_featured, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, trial_price, class_type, short_description, long_description, benefits, suitable_for, what_to_bring, image_url, is_featured, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
     .single()
@@ -74,7 +75,14 @@ export default async function ClassBookingPage({
     .eq('group_id', groupId)
     .eq('status', 'active')
 
-  // Get plans specific to this class first, then fall back to class_type plans, then org-wide
+  // STRICT MATCHING — no crossover between plan tiers:
+  // 1. If this class has class-specific plans (training_group_id = this class), use ONLY those.
+  // 2. Else if class has a class_type set, use ONLY plans matching that class_type.
+  // 3. Else (untyped class) fall back to truly org-wide plans (both fields null).
+  // This prevents generic group-session plans showing on a 1-2-1 class etc.
+  const classTypeRaw = group.class_type as string | null
+  const hasClassType = !!classTypeRaw
+
   const { data: classPlans } = await supabase
     .from('subscription_plans')
     .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
@@ -85,23 +93,19 @@ export default async function ClassBookingPage({
 
   let plans = classPlans && classPlans.length > 0 ? classPlans : null
 
-  // If no class-specific plans, try class_type plans
-  if (!plans || plans.length === 0) {
-    const classType = (group.class_type as string) || 'group'
+  if (!plans && hasClassType) {
+    // STRICT: typed class → only matching class_type plans, never fall back
     const { data: typePlans } = await supabase
       .from('subscription_plans')
       .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
       .eq('organisation_id', org.id)
       .eq('active', true)
-      .eq('class_type', classType)
+      .eq('class_type', classTypeRaw)
       .is('training_group_id', null)
       .order('amount', { ascending: true })
-
-    plans = typePlans && typePlans.length > 0 ? typePlans : null
-  }
-
-  // Fall back to org-wide plans (no group or type link)
-  if (!plans || plans.length === 0) {
+    plans = typePlans && typePlans.length > 0 ? typePlans : []
+  } else if (!plans) {
+    // Untyped class — show org-wide defaults (both fields null)
     const { data: orgPlans } = await supabase
       .from('subscription_plans')
       .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
@@ -110,8 +114,7 @@ export default async function ClassBookingPage({
       .is('training_group_id', null)
       .is('class_type', null)
       .order('amount', { ascending: true })
-
-    plans = orgPlans
+    plans = orgPlans || []
   }
 
   const enrolled = count || 0
@@ -121,6 +124,8 @@ export default async function ClassBookingPage({
   const coach = group.coach as unknown as { full_name: string } | null
   const primaryColor = org.primary_color || '#4ecde6'
   const price = group.price_per_session as number | null
+  const trialPrice = group.trial_price as number | null
+  const hasPaidTrial = trialPrice != null && Number(trialPrice) > 0
   const classType = (group.class_type as string) || 'group'
   const typeConfig = CLASS_TYPE_CONFIG[classType] || CLASS_TYPE_CONFIG.group
   const shortDesc = group.short_description as string | null
@@ -372,27 +377,44 @@ export default async function ClassBookingPage({
                         Most Popular
                       </span>
                     )}
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between mb-4 gap-3">
+                      <div className="min-w-0">
                         <h3 className="font-bold text-base">{plan.name}</h3>
-                        {plan.sessions_per_week && (
-                          <p className="text-xs text-white/40 mt-0.5">
-                            {plan.sessions_per_week === 'unlimited' ? 'Unlimited sessions' : `${plan.sessions_per_week} session${plan.sessions_per_week === '1' ? '' : 's'} per week`}
-                          </p>
-                        )}
+                        <p className="text-xs text-white/40 mt-0.5">
+                          {(!plan.sessions_per_week || Number(plan.sessions_per_week) >= 7)
+                            ? 'Unlimited sessions'
+                            : `${plan.sessions_per_week} session${Number(plan.sessions_per_week) === 1 ? '' : 's'} per week`}
+                        </p>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-extrabold text-white">&pound;{amount.toFixed(0)}</span>
+                      <div className="text-right shrink-0">
+                        <div className="flex items-baseline justify-end gap-1">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-white">&pound;{amount.toFixed(0)}</span>
                           <span className="text-xs text-white/50">/month</span>
                         </div>
                         {showQuarterly && (
-                          <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">
-                            or &pound;{quarterlyAmount.toFixed(0)} quarterly (save &pound;{quarterlySaving.toFixed(0)})
-                          </p>
+                          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Save &pound;{quarterlySaving.toFixed(0)}</span>
+                            <span className="text-[10px] opacity-80">· &pound;{quarterlyAmount.toFixed(0)} for 3 months</span>
+                          </div>
                         )}
                       </div>
                     </div>
+                    {/* Prominent Subscribe button — always white for guaranteed contrast,
+                        with brand-color glow for academy branding.
+                        class= param carries the class id through signup → subscribe → webhook → auto-enrol */}
+                    <Link
+                      href={`/auth/signup?org=${slug}&plan=${plan.id}&billing=monthly&class=${groupId}`}
+                      className="relative block w-full text-center py-5 rounded-xl font-extrabold text-lg transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110 overflow-hidden"
+                      style={{
+                        background: `linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)`,
+                        color: '#0a0a0a',
+                        boxShadow: isPopular
+                          ? `0 12px 48px ${primaryColor}80, 0 0 0 3px ${primaryColor}, inset 0 -3px 0 rgba(0,0,0,0.08)`
+                          : `0 8px 32px ${primaryColor}50, 0 0 0 2px ${primaryColor}80, inset 0 -3px 0 rgba(0,0,0,0.06)`,
+                      }}
+                    >
+                      <span className="relative z-10">Subscribe Now &rarr;</span>
+                    </Link>
                   </div>
                 )
               })}
@@ -410,30 +432,42 @@ export default async function ClassBookingPage({
           </div>
         )}
 
-        {/* CTAs */}
+        {/* CTAs — only show "Sign Up & Book" when no plans exist (otherwise per-plan Subscribe buttons handle it)
+            OR when the class is full (so parent can join waitlist). Always show free trial. */}
         <div className="space-y-3 mb-10">
-          <Link
-            href={isFull ? `/auth/signup?org=${slug}&class=${groupId}` : `/book/${slug}/class/${groupId}/quick-book`}
-            className="block w-full text-center py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01] hover:shadow-lg"
-            style={{
-              backgroundColor: isFull ? '#1e293b' : primaryColor,
-              color: isFull ? '#94a3b8' : '#0a0a0a',
-            }}
-          >
-            {isFull ? 'Join Waitlist' : 'Sign Up & Book This Class'} &rarr;
-          </Link>
+          {(isFull || !plans || plans.length === 0) && (
+            <Link
+              href={isFull ? `/auth/signup?org=${slug}&class=${groupId}` : `/book/${slug}/class/${groupId}/quick-book`}
+              className="block w-full text-center py-5 rounded-2xl font-extrabold text-lg sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                backgroundColor: isFull ? '#1e293b' : primaryColor,
+                color: isFull ? '#94a3b8' : '#0a0a0a',
+                boxShadow: isFull
+                  ? 'none'
+                  : `0 10px 40px ${primaryColor}80, 0 0 0 3px ${primaryColor}30`,
+              }}
+            >
+              {isFull ? 'Join Waitlist' : 'Sign Up & Book This Class'} &rarr;
+            </Link>
+          )}
 
           <Link
-            href={`/book/${slug}/trial/quick`}
-            className="group block w-full text-center py-4 rounded-2xl font-semibold text-lg border-2 transition-all hover:scale-[1.01]"
-            style={{ borderColor: '#10b981', color: '#10b981', background: 'rgba(16, 185, 129, 0.06)' }}
+            href={hasPaidTrial ? `/book/${slug}/class/${groupId}/trial/paid` : `/book/${slug}/trial/quick?class=${groupId}`}
+            className="block w-full text-center py-5 rounded-2xl font-extrabold text-lg sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#ffffff',
+              boxShadow: '0 10px 40px rgba(16, 185, 129, 0.5), 0 0 0 3px rgba(16, 185, 129, 0.2)',
+            }}
           >
-            <span className="inline-flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <span className="inline-flex items-center gap-2.5">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Try a Free Session First
-              <span className="text-xs font-normal opacity-70">&mdash; no account needed</span>
+              {hasPaidTrial ? `Try a Session — £${Number(trialPrice).toFixed(2)}` : 'Try a Free Session First'}
+            </span>
+            <span className="block text-xs font-medium text-white/80 mt-1">
+              {hasPaidTrial ? 'One session, no commitment to subscribe' : 'No account needed · 20-second sign-up'}
             </span>
           </Link>
         </div>

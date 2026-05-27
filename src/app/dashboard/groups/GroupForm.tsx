@@ -22,6 +22,7 @@ const CLASS_TYPES = [
   { value: 'trial', label: 'Trial Session' },
   { value: 'girls', label: 'Girls Only' },
   { value: 'adults', label: 'Adult Session' },
+  { value: 'intensity', label: 'Intensity Training' },
 ]
 
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
@@ -65,6 +66,7 @@ export default function GroupForm({
     age_group: string | null
     description: string | null
     price_per_session: number | null
+    trial_price?: number | null
     class_type?: string | null
     short_description?: string | null
     long_description?: string | null
@@ -105,6 +107,7 @@ export default function GroupForm({
   // Pricing & Capacity
   const [maxCapacity, setMaxCapacity] = useState(editGroup?.max_capacity?.toString() || '20')
   const [pricePerSession, setPricePerSession] = useState(editGroup?.price_per_session?.toString() || '')
+  const [trialPrice, setTrialPrice] = useState(editGroup?.trial_price?.toString() || '')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -160,6 +163,7 @@ export default function GroupForm({
       image_url: imageUrl || null,
       is_featured: isFeatured,
       price_per_session: pricePerSession ? parseFloat(pricePerSession) : null,
+      trial_price: trialPrice ? parseFloat(trialPrice) : null,
     }
 
     if (isEdit && editGroup) {
@@ -426,6 +430,26 @@ export default function GroupForm({
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#888]">players</span>
                 </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-white/70 mb-1.5">
+                  Trial Session Price (optional)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#888]">&pound;</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.50"
+                    value={trialPrice}
+                    onChange={(e) => setTrialPrice(e.target.value)}
+                    placeholder="Leave blank for free trial"
+                    className="w-full pl-7 pr-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-white/40">
+                  Set a price to offer a paid one-off trial (good for 1-2-1s). Leave blank for free trials.
+                </p>
               </div>
             </div>
           </div>

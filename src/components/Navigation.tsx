@@ -390,20 +390,31 @@ export default function Navigation({
               {/* Sidebar toggle */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={sidebarOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
                 </svg>
               </button>
 
-              <Link href="/dashboard" className="flex items-center gap-2">
+              <Link href="/dashboard" className="flex items-center gap-2.5 group">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={orgName || 'Logo'} className="h-8 w-auto object-contain" />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={logoUrl}
+                    alt={orgName || 'Logo'}
+                    className="h-10 w-10 sm:h-11 sm:w-11 object-cover rounded-xl shadow-sm border border-white/[0.08] group-hover:border-white/20 transition-colors"
+                  />
                 ) : (
-                  <img src="/logo.png" alt="Player Portal" className="h-8 w-auto object-contain" />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain" />
                 )}
-                <span className="text-accent font-bold text-lg tracking-tight">{orgName || 'Player Portal'}</span>
+                <div className="hidden sm:flex flex-col leading-tight">
+                  <span className="text-white font-extrabold text-base tracking-tight">{orgName || 'Player Portal'}</span>
+                  {orgName && <span className="text-[10px] text-white/30 font-medium">Powered by Player Portal</span>}
+                </div>
+                {/* Mobile: just the org name, no subtitle */}
+                <span className="sm:hidden font-extrabold text-base tracking-tight text-white">{orgName || 'Player Portal'}</span>
               </Link>
             </div>
 
@@ -445,14 +456,24 @@ export default function Navigation({
                 </div>
               </div>
 
+              {/* Expandable signout — icon-only by default, slides open to reveal label on hover.
+                  Premium feel: smooth width transition, door-opening icon animation (translate+rotate),
+                  subtle red glow ring on hover. */}
               <button
                 onClick={handleSignOut}
-                className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg text-white/40 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                className="hidden sm:flex group items-center gap-2 h-10 pl-2.5 pr-2.5 hover:pr-4 rounded-xl text-white/40 hover:text-red-400 hover:bg-red-400/10 active:scale-95 transition-all duration-300 overflow-hidden whitespace-nowrap relative"
+                style={{ boxShadow: 'none' }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 0 1px rgba(248, 113, 113, 0.15), 0 0 20px rgba(248, 113, 113, 0.15)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
                 title="Sign out"
+                aria-label="Sign out"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg className="w-[18px] h-[18px] flex-shrink-0 transition-all duration-500 group-hover:translate-x-1 group-hover:-rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
+                <span className="text-xs font-semibold max-w-0 opacity-0 group-hover:max-w-[80px] group-hover:opacity-100 transition-all duration-300 ease-out">
+                  Sign out
+                </span>
               </button>
             </div>
           </div>
@@ -569,7 +590,13 @@ export default function Navigation({
               </div>
               <span className="text-sm font-medium text-white/80">{firstName}</span>
             </div>
-            <button onClick={handleSignOut} className="text-xs text-red-500 font-medium">
+            <button
+              onClick={handleSignOut}
+              className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all"
+            >
+              <svg className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
               Sign out
             </button>
           </div>

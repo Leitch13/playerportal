@@ -153,11 +153,25 @@ export default async function PlayerDetailPage({
     }
   }
 
-  // Build radar chart scores from latest review using custom categories
+  // Build radar chart scores from latest review using custom categories.
+  // Per-class-type scoring: filter to categories the player has actually been scored on,
+  // otherwise Soccer Tots players show empty bars for "Tactical IQ" etc.
   const latestReview = (reviews || [])[0]
   const latestJsonScores = latestReview ? (latestReview as Record<string, unknown>).scores as Record<string, number> | null : null
+  const LEGACY_KEYS = ['attitude', 'effort', 'technical_quality', 'game_understanding', 'confidence', 'physical_movement']
+  const playerScoredKeys = new Set<string>()
+  for (const review of reviews || []) {
+    const r = review as Record<string, unknown>
+    const rs = r.scores as Record<string, number> | null | undefined
+    if (rs) Object.keys(rs).forEach((k) => playerScoredKeys.add(k))
+    for (const k of LEGACY_KEYS) {
+      if (r[k] != null) playerScoredKeys.add(k)
+    }
+  }
+  const filteredCategoriesForPlayer = scoringCategories.filter((c) => playerScoredKeys.has(c.key))
+  const displayCategories = filteredCategoriesForPlayer.length > 0 ? filteredCategoriesForPlayer : scoringCategories
   const radarScores = latestReview
-    ? scoringCategories.map((cat) => ({
+    ? displayCategories.map((cat) => ({
         label: cat.label,
         value: (latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0,
       }))
@@ -226,31 +240,53 @@ export default async function PlayerDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-4">
+      {/* ═══ CINEMATIC HEADER ═══ */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#0e1518] via-[#0a0a0a] to-[#0a0a0a] p-6 sm:p-8">
+        {/* Ambient brand glow */}
+        <div className="absolute -top-24 -right-20 w-[400px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none bg-[#4ecde6]" />
+        <div className="absolute -bottom-24 -left-20 w-[300px] h-[300px] rounded-full blur-[120px] opacity-10 pointer-events-none bg-purple-500" />
+        <div
+          className="absolute inset-0 opacity-[0.025] pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+
+        <Link href={isStaff ? '/dashboard/players' : '/dashboard/children'} className="relative inline-flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors mb-5">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to {isStaff ? 'players' : 'children'}
+        </Link>
+
+        <div className="relative flex items-start gap-4 sm:gap-5">
         <div className="flex-shrink-0">
-          {isStaff ? (
-            <PhotoUpload
-              playerId={player.id}
-              currentPhotoUrl={player.photo_url}
-              firstName={player.first_name}
-              lastName={player.last_name}
-              size="xl"
-            />
-          ) : (
-            <PlayerAvatar
-              photoUrl={player.photo_url}
-              firstName={player.first_name}
-              lastName={player.last_name}
-              size="xl"
-            />
-          )}
+          <div className="relative">
+            {/* Glow ring around avatar */}
+            <div className="absolute inset-0 rounded-full blur-md opacity-50 bg-gradient-to-br from-[#4ecde6] to-purple-500" />
+            <div className="relative">
+              {isStaff ? (
+                <PhotoUpload
+                  playerId={player.id}
+                  currentPhotoUrl={player.photo_url}
+                  firstName={player.first_name}
+                  lastName={player.last_name}
+                  size="xl"
+                />
+              ) : (
+                <PlayerAvatar
+                  photoUrl={player.photo_url}
+                  firstName={player.first_name}
+                  lastName={player.last_name}
+                  size="xl"
+                />
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex-1 min-w-0">
-          <Link href={isStaff ? '/dashboard/players' : '/dashboard/children'} className="text-sm text-white/60 hover:text-white hover:underline mb-1 inline-block">
-            &larr; Back
-          </Link>
-          <h1 className="text-2xl font-bold">{player.first_name} {player.last_name}</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-1">{player.first_name} {player.last_name}</h1>
           <div className="flex flex-wrap gap-2 mt-1">
             {isStaff ? (
               <PlayerLevelEditor
@@ -307,6 +343,7 @@ export default async function PlayerDetailPage({
           >
             <span>{'\u{2728}'}</span> Monthly Highlights
           </Link>
+        </div>
         </div>
       </div>
 
@@ -450,9 +487,10 @@ export default async function PlayerDetailPage({
                   </span>
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-2">
-                  {scoringCategories.map((cat) => {
+                  {displayCategories.map((cat) => {
                     const jsonScores = (r as Record<string, unknown>).scores as Record<string, number> | null
                     const score = jsonScores?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number
+                    if (score == null) return null
                     return (
                       <div key={cat.key} className="flex flex-col items-center gap-0.5">
                         <ScoreBadge score={score} />

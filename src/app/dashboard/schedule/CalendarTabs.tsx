@@ -35,6 +35,7 @@ interface Props {
   sessions: CalendarSession[]
   events: CalendarEvent[]
   role: 'admin' | 'coach' | 'parent'
+  brandColor?: string
 }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -56,7 +57,7 @@ function formatDate(d: Date) {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-export default function CalendarTabs({ sessions, events, role }: Props) {
+export default function CalendarTabs({ sessions, events, role, brandColor = '#4ecde6' }: Props) {
   const tabs = role === 'parent'
     ? ['Week', 'My Classes', 'Available', 'Events']
     : ['Week', 'By Group', 'By Coach', 'By Location', 'Events']
@@ -115,37 +116,59 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Tab bar */}
-      <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === tab
-                ? 'bg-accent text-white shadow-md'
-                : 'bg-[#141414] border border-[#1e1e1e] text-white/60 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            {tab === 'Week' && '📅 '}
-            {tab === 'By Group' && '⚽ '}
-            {tab === 'By Coach' && '👤 '}
-            {tab === 'By Location' && '📍 '}
-            {tab === 'Events' && '🎪 '}
-            {tab === 'My Classes' && '✅ '}
-            {tab === 'Available' && '➕ '}
-            {tab}
-          </button>
-        ))}
+      {/* Tab bar — segmented control with brand color active state */}
+      <div className="inline-flex p-1 rounded-2xl bg-[#0a0a0a] border border-[#1e1e1e] overflow-x-auto -mx-1 px-1">
+        {tabs.map(tab => {
+          const isActive = activeTab === tab
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
+                isActive ? 'text-[#0a0a0a]' : 'text-white/50 hover:text-white hover:bg-white/[0.04]'
+              }`}
+              style={isActive ? { backgroundColor: brandColor, boxShadow: `0 4px 16px ${brandColor}50` } : undefined}
+            >
+              {tab}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Quick stats bar */}
-      <div className="flex items-center gap-4 text-xs text-white/60 bg-[#0a0a0a]/50 rounded-xl px-4 py-2.5">
-        <span><strong className="text-white">{sessions.length}</strong> classes</span>
-        <span><strong className="text-white">{totalPlayers}</strong> enrolments</span>
-        <span><strong className={todaySessions.length > 0 ? 'text-accent' : 'text-white'}>{todaySessions.length}</strong> today</span>
-        {todayPlayers > 0 && <span><strong className="text-accent">{todayPlayers}</strong> players today</span>}
-        <span className="ml-auto"><strong className="text-white">{events.length}</strong> upcoming events</span>
+      {/* Quick stats bar — icon + number pills */}
+      <div className="flex items-center gap-2 flex-wrap text-xs">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white/80">
+          <svg className="w-3 h-3 text-white/40" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+          <strong className="text-white tabular-nums">{sessions.length}</strong>
+          <span className="text-white/50">classes</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white/80">
+          <svg className="w-3 h-3 text-white/40" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+          <strong className="text-white tabular-nums">{totalPlayers}</strong>
+          <span className="text-white/50">enrolments</span>
+        </span>
+        {todaySessions.length > 0 && (
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+            style={{ backgroundColor: `${brandColor}15`, border: `1px solid ${brandColor}40`, color: brandColor }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: brandColor }} />
+            <strong className="tabular-nums">{todaySessions.length}</strong>
+            <span style={{ color: `${brandColor}b3` }}>today</span>
+          </span>
+        )}
+        {todayPlayers > 0 && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+            <strong className="tabular-nums">{todayPlayers}</strong>
+            <span className="text-emerald-300/70">players today</span>
+          </span>
+        )}
+        {events.length > 0 && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 ml-auto">
+            <strong className="tabular-nums">{events.length}</strong>
+            <span className="text-purple-300/70">events</span>
+          </span>
+        )}
       </div>
 
       {/* ═══ WEEK VIEW ═══ */}
@@ -189,27 +212,37 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                   onClick={() => setSelectedDay(day)}
                   className={`relative flex flex-col items-center py-2.5 px-1 rounded-xl text-center transition-all ${
                     isSelected
-                      ? 'bg-primary text-white shadow-lg ring-2 ring-primary/30'
+                      ? 'text-[#0a0a0a] shadow-lg'
                       : isToday
-                        ? 'bg-accent/10 text-accent border-2 border-accent/30'
+                        ? ''
                         : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5 hover:shadow-sm'
                   }`}
+                  style={
+                    isSelected
+                      ? { backgroundColor: brandColor, boxShadow: `0 8px 20px ${brandColor}40` }
+                      : isToday
+                        ? { backgroundColor: `${brandColor}15`, color: brandColor, border: `2px solid ${brandColor}40` }
+                        : undefined
+                  }
                 >
                   <span className="text-[11px] font-medium uppercase tracking-wide">{SHORT_DAYS[i]}</span>
-                  <span className={`text-xl font-bold my-0.5 ${isSelected ? 'text-white' : ''}`}>
+                  <span className={`text-xl font-bold my-0.5 ${isSelected ? 'text-[#0a0a0a]' : ''}`}>
                     {date.getDate()}
                   </span>
                   {daySessions.length > 0 ? (
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className={`text-[10px] font-semibold ${isSelected ? 'text-white/80' : 'text-accent'}`}>
+                      <span
+                        className="text-[10px] font-semibold"
+                        style={isSelected ? { color: 'rgba(10,10,10,0.7)' } : { color: brandColor }}
+                      >
                         {daySessions.length} class{daySessions.length !== 1 ? 'es' : ''}
                       </span>
-                      <span className={`text-[10px] ${isSelected ? 'text-white/60' : 'text-white/60'}`}>
+                      <span className={`text-[10px] ${isSelected ? 'text-[#0a0a0a]/60' : 'text-white/60'}`}>
                         {dayPlayers} player{dayPlayers !== 1 ? 's' : ''}
                       </span>
                     </div>
                   ) : (
-                    <span className={`text-[10px] ${isSelected ? 'text-white/50' : 'text-white/60'}`}>Rest day</span>
+                    <span className={`text-[10px] ${isSelected ? 'text-[#0a0a0a]/50' : 'text-white/60'}`}>Rest day</span>
                   )}
                 </button>
               )
@@ -241,6 +274,7 @@ export default function CalendarTabs({ sessions, events, role }: Props) {
                     session={session}
                     expanded={expandedId === session.id}
                     onToggle={() => setExpandedId(expandedId === session.id ? null : session.id)}
+                    brandColor={brandColor}
                   />
                 ))}
               </div>
@@ -611,31 +645,90 @@ function SessionCard({
   session,
   expanded,
   onToggle,
+  brandColor = '#4ecde6',
 }: {
   session: CalendarSession
   expanded: boolean
   onToggle: () => void
+  brandColor?: string
 }) {
+  const fillPct = session.maxCapacity > 0
+    ? Math.min(100, Math.round((session.playerCount / session.maxCapacity) * 100))
+    : 0
+  const isFull = session.playerCount >= session.maxCapacity && session.maxCapacity > 0
+  const isAlmostFull = !isFull && session.maxCapacity > 0 && session.maxCapacity - session.playerCount <= 3
+
   return (
-    <div className="rounded-xl border border-[#1e1e1e] bg-[#141414] overflow-hidden transition-all hover:shadow-sm">
-      <button onClick={onToggle} className="w-full p-4 text-left hover:bg-white/[0.03] transition-colors">
-        <div className="flex items-start justify-between">
+    <div
+      className="rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] overflow-hidden transition-all"
+      style={{ ['--brand' as string]: brandColor }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${brandColor}50`; e.currentTarget.style.boxShadow = `0 0 20px ${brandColor}15` }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.boxShadow = '' }}
+    >
+      <button onClick={onToggle} className="w-full p-4 text-left transition-colors">
+        <div className="flex items-center gap-4">
+          {/* Time column — prominent on the left */}
+          {session.timeSlot && (
+            <div
+              className="shrink-0 flex flex-col items-center justify-center min-w-[64px] rounded-xl px-2 py-2.5"
+              style={{ background: `${brandColor}15`, border: `1px solid ${brandColor}30` }}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: `${brandColor}b3` }}>Time</span>
+              <span className="text-sm font-extrabold mt-0.5 leading-tight whitespace-nowrap" style={{ color: brandColor }}>{session.timeSlot}</span>
+            </div>
+          )}
+
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">{session.groupName}</span>
-              <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
-                session.playerCount > 0 ? 'bg-accent/10 text-accent' : 'bg-[#0a0a0a] text-gray-500'
-              }`}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="font-bold text-sm text-white">{session.groupName}</h4>
+              {isFull && (
+                <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                  Full
+                </span>
+              )}
+              {isAlmostFull && (
+                <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 animate-pulse">
+                  Almost full
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3 mt-1 text-[11px] text-white/50">
+              {session.location && (
+                <span className="inline-flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" /></svg>
+                  {session.location}
+                </span>
+              )}
+              {session.coachName && (
+                <span className="inline-flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /></svg>
+                  {session.coachName}
+                </span>
+              )}
+            </div>
+
+            {/* Capacity progress bar */}
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex-1 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${fillPct}%`,
+                    background: isFull
+                      ? 'linear-gradient(90deg, #f43f5e, #be123c)'
+                      : isAlmostFull
+                      ? 'linear-gradient(90deg, #f59e0b, #d97706)'
+                      : `linear-gradient(90deg, ${brandColor}, ${brandColor}99)`,
+                  }}
+                />
+              </div>
+              <span className="text-[10px] font-bold tabular-nums text-white/60 whitespace-nowrap">
                 {session.playerCount}/{session.maxCapacity}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
-              {session.location && <span>📍 {session.location}</span>}
-              {session.coachName && <span>👤 {session.coachName}</span>}
-            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {session.timeSlot && <span className="text-lg font-bold text-primary">{session.timeSlot}</span>}
+
+          <div className="shrink-0">
             <Chevron open={expanded} />
           </div>
         </div>

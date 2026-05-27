@@ -41,9 +41,13 @@ export default function CancelFlow({
   const discountFraction = Math.max(1, Math.min(90, retentionPercent)) / 100
   const discountPrice = (monthlyAmount * (1 - discountFraction)).toFixed(2)
   const savingAmount = (monthlyAmount * discountFraction).toFixed(2)
-  const durationText = retentionMonths && retentionMonths > 0
-    ? `for ${retentionMonths} month${retentionMonths !== 1 ? 's' : ''}`
-    : 'forever'
+  const totalSavingOverDuration = retentionMonths
+    ? (monthlyAmount * discountFraction * retentionMonths).toFixed(2)
+    : null
+  const durationText =
+    retentionMonths && retentionMonths > 0
+      ? `for ${retentionMonths} month${retentionMonths !== 1 ? 's' : ''}`
+      : 'forever'
 
   async function handleAcceptOffer() {
     setLoading(true)
@@ -89,29 +93,40 @@ export default function CancelFlow({
   }
 
   return (
-    <div className="w-full max-w-lg">
+    <div className="w-full max-w-lg mx-auto">
       {/* Progress dots */}
-      <div className="flex justify-center gap-2 mb-8">
-        {['reason', 'offer', 'confirm'].map((s, i) => (
-          <div
-            key={s}
-            className={`w-2.5 h-2.5 rounded-full transition-all ${
-              ['reason', 'offer', 'confirm'].indexOf(step) >= i
-                ? 'bg-accent scale-110'
-                : 'bg-border'
-            }`}
-          />
-        ))}
+      <div className="flex justify-center items-center gap-2 mb-8">
+        {(['reason', 'offer', 'confirm'] as const).map((s, i) => {
+          const currentIdx = (['reason', 'offer', 'confirm'] as const).indexOf(step as 'reason' | 'offer' | 'confirm')
+          const isCurrent = step === s
+          const isPast = currentIdx > i && (step === 'reason' || step === 'offer' || step === 'confirm')
+          return (
+            <div key={s} className="flex items-center gap-2">
+              <div
+                className={`transition-all duration-300 rounded-full ${
+                  isCurrent
+                    ? 'w-3 h-3 bg-[#4ecde6] shadow-[0_0_12px_rgba(78,205,230,0.6)]'
+                    : isPast
+                    ? 'w-2 h-2 bg-[#4ecde6]/60'
+                    : 'w-2 h-2 bg-white/15'
+                }`}
+              />
+              {i < 2 && <div className={`w-6 h-px ${isPast ? 'bg-[#4ecde6]/40' : 'bg-white/10'}`} />}
+            </div>
+          )
+        })}
       </div>
 
       {/* ═══ STEP 1: Reason ═══ */}
       {step === 'reason' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm">
+        <div className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
-            <p className="text-3xl mb-3">😔</p>
-            <h1 className="text-xl font-bold text-primary">We&apos;re sorry to see you go</h1>
-            <p className="text-white/60 text-sm mt-2">
-              Before you cancel, help us understand why so we can improve.
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
+              😔
+            </div>
+            <h1 className="text-2xl font-bold text-white">We&apos;re sorry to see you go</h1>
+            <p className="text-white/50 text-sm mt-2 max-w-sm mx-auto">
+              Before you cancel, help us understand why so we can do better.
             </p>
           </div>
 
@@ -122,12 +137,17 @@ export default function CancelFlow({
                 onClick={() => setReason(r.id)}
                 className={`w-full flex items-center gap-3 p-3.5 rounded-xl text-left text-sm transition-all ${
                   reason === r.id
-                    ? 'bg-accent/10 border-2 border-accent text-primary font-medium'
-                    : 'border-2 border-[#1e1e1e] hover:border-accent/40 text-white'
+                    ? 'bg-[#4ecde6]/10 border-2 border-[#4ecde6] text-white font-semibold shadow-[0_0_24px_rgba(78,205,230,0.15)]'
+                    : 'border-2 border-[#1e1e1e] bg-white/[0.02] hover:border-[#4ecde6]/30 hover:bg-white/[0.04] text-white/80'
                 }`}
               >
-                <span className="text-lg">{r.icon}</span>
-                {r.label}
+                <span className="text-xl">{r.icon}</span>
+                <span>{r.label}</span>
+                {reason === r.id && (
+                  <svg className="ml-auto w-5 h-5 text-[#4ecde6]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </button>
             ))}
           </div>
@@ -136,210 +156,259 @@ export default function CancelFlow({
             <textarea
               value={reasonDetail}
               onChange={(e) => setReasonDetail(e.target.value)}
-              placeholder="Tell us more..."
-              className="w-full p-3 rounded-xl border border-[#1e1e1e] text-sm resize-none h-20 mb-4 focus:outline-none focus:border-accent"
+              placeholder="Tell us more — we read every response."
+              className="w-full p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-white resize-none h-20 mb-4 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
             />
           )}
 
           <div className="flex gap-3">
             <button
               onClick={() => router.push('/dashboard/payments')}
-              className="flex-1 py-3 rounded-xl text-sm font-medium text-white/60 hover:text-white border border-[#1e1e1e] hover:border-primary/20 transition-all"
+              className="flex-1 py-3.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:border-white/20 transition-all"
             >
               Never mind
             </button>
             <button
               onClick={() => reason && setStep(retentionEnabled ? 'offer' : 'confirm')}
               disabled={!reason}
-              className="flex-1 py-3 rounded-xl text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40 transition-all"
+              className="flex-1 py-3.5 rounded-xl text-sm font-semibold bg-white/[0.06] text-white/70 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              Continue
+              Continue →
             </button>
           </div>
         </div>
       )}
 
-      {/* ═══ STEP 2: 25% Off Offer ═══ */}
+      {/* ═══ STEP 2: Retention Offer (the showstopper) ═══ */}
       {step === 'offer' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm">
-          <div className="text-center mb-6">
-            <p className="text-4xl mb-3">🎉</p>
-            <h1 className="text-xl font-bold text-primary">Wait! We have a special offer</h1>
-            <p className="text-white/60 text-sm mt-2">
-              How about <strong className="text-accent">{retentionPercent}% off</strong> your subscription — {durationText}?
-            </p>
-          </div>
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#0a1c1e] via-[#0a1416] to-[#0a0a0a] rounded-3xl border-2 border-[#4ecde6]/30 p-6 sm:p-8 shadow-[0_20px_60px_rgba(78,205,230,0.15)]">
+          {/* Decorative glows */}
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#4ecde6]/10 blur-[80px] pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-emerald-500/8 blur-[80px] pointer-events-none" />
 
-          {/* Pricing comparison */}
-          <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-6 mb-6 border-2 border-accent">
-            <div className="text-center">
-              <p className="text-sm text-white/60 line-through mb-1">
-                £{monthlyAmount.toFixed(2)}/month
+          <div className="relative">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-4">
+                <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
+                Exclusive Offer
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
+                Wait — before you go
+              </h1>
+              <p className="text-white/60 text-sm sm:text-base">
+                Stay and we&apos;ll knock <strong className="text-[#4ecde6]">{retentionPercent}% off</strong> your subscription {durationText}.
               </p>
-              <p className="text-4xl font-extrabold text-accent mb-1">
-                £{discountPrice}/mo
-              </p>
-              <div className="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
-                Save £{savingAmount}/month — {durationText}
+            </div>
+
+            {/* Big pricing card — the hero */}
+            <div className="relative rounded-3xl p-6 mb-6 bg-gradient-to-br from-[#4ecde6]/15 via-[#4ecde6]/5 to-transparent border-2 border-[#4ecde6]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_32px_rgba(78,205,230,0.2)]">
+              <div className="text-center">
+                <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-1">Your current price</p>
+                <p className="text-base text-white/50 line-through font-medium mb-3">
+                  £{monthlyAmount.toFixed(2)}/month
+                </p>
+                <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-1">Your price if you stay</p>
+                <div className="flex items-baseline justify-center gap-1 mb-3">
+                  <span className="text-5xl sm:text-6xl font-extrabold text-[#4ecde6] tabular-nums">
+                    £{discountPrice}
+                  </span>
+                  <span className="text-base text-[#4ecde6]/70 font-semibold">/mo</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17l5-5-5-5M6 17l5-5-5-5" />
+                  </svg>
+                  Save £{savingAmount}/month {durationText}
+                  {totalSavingOverDuration && ` · £${totalSavingOverDuration} total`}
+                </div>
               </div>
             </div>
+
+            <div className="space-y-2.5 mb-6">
+              {[
+                'Keep your child’s spot in class',
+                `${retentionPercent}% off applied automatically — no code needed`,
+                `Discount lasts ${durationText}`,
+                'Cancel any time after — no strings',
+              ].map((line) => (
+                <div key={line} className="flex items-center gap-2.5 text-sm text-white/80">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 shrink-0">
+                    <svg className="w-3 h-3 text-emerald-300" fill="none" stroke="currentColor" strokeWidth={4} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                  {line}
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={handleAcceptOffer}
+              disabled={loading}
+              className="relative w-full py-5 rounded-2xl font-extrabold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110 disabled:opacity-60"
+              style={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)',
+                color: '#0a0a0a',
+                boxShadow: '0 12px 48px rgba(78, 205, 230, 0.4), 0 0 0 3px rgba(78, 205, 230, 0.5), inset 0 -3px 0 rgba(0,0,0,0.06)',
+              }}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
+                  Applying discount...
+                </span>
+              ) : (
+                <>🎁 Stay &amp; Get {retentionPercent}% Off →</>
+              )}
+            </button>
+
+            <button
+              onClick={() => setStep('confirm')}
+              className="block w-full mt-3 py-2.5 text-xs text-white/40 hover:text-white/60 transition-colors text-center"
+            >
+              No thanks, cancel anyway
+            </button>
           </div>
-
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center gap-2 text-sm text-white">
-              <span className="text-green-500">✓</span> Keep your child&apos;s place in class
-            </div>
-            <div className="flex items-center gap-2 text-sm text-white">
-              <span className="text-green-500">✓</span> {retentionPercent}% off applied instantly
-            </div>
-            <div className="flex items-center gap-2 text-sm text-white">
-              <span className="text-green-500">✓</span> Discount lasts {durationText}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-white">
-              <span className="text-green-500">✓</span> Cancel any time in the future
-            </div>
-          </div>
-
-          <button
-            onClick={handleAcceptOffer}
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl text-sm font-bold bg-accent text-primary hover:opacity-90 disabled:opacity-50 transition-all mb-3"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                Applying discount...
-              </span>
-            ) : (
-              <>Stay & Save {retentionPercent}% →</>
-            )}
-          </button>
-
-          <button
-            onClick={() => setStep('confirm')}
-            className="w-full py-3 rounded-xl text-sm font-medium text-white/60 hover:text-red-500 transition-colors"
-          >
-            No thanks, I still want to cancel
-          </button>
         </div>
       )}
 
       {/* ═══ STEP 3: Final Confirmation ═══ */}
       {step === 'confirm' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm">
+        <div className="bg-gradient-to-br from-[#141414] via-[#161010] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
-            <p className="text-3xl mb-3">⚠️</p>
-            <h1 className="text-xl font-bold text-primary">Are you sure?</h1>
-            <p className="text-white/60 text-sm mt-2">
-              Your subscription will remain active until the end of your current billing period.
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-3 text-2xl">
+              ⚠️
+            </div>
+            <h1 className="text-2xl font-bold text-white">Are you sure?</h1>
+            <p className="text-white/50 text-sm mt-2">
+              Your subscription stays active until your current billing period ends.
             </p>
           </div>
 
-          <div className="bg-red-50 rounded-xl p-4 mb-6 border border-red-100">
-            <p className="text-sm text-red-800 font-medium mb-2">What you&apos;ll lose:</p>
-            <ul className="space-y-1.5 text-sm text-red-700">
-              <li className="flex items-center gap-2">
-                <span>✕</span> Your child&apos;s place in class
-              </li>
-              <li className="flex items-center gap-2">
-                <span>✕</span> Access to progress reports
-              </li>
-              <li className="flex items-center gap-2">
-                <span>✕</span> Session attendance tracking
-              </li>
-              <li className="flex items-center gap-2">
-                <span>✕</span> Coach feedback and reviews
-              </li>
+          <div className="rounded-2xl p-5 mb-5 bg-rose-500/5 border border-rose-500/20">
+            <p className="text-xs font-bold uppercase tracking-wider text-rose-300 mb-3">What you&apos;ll lose</p>
+            <ul className="space-y-2 text-sm text-white/80">
+              {[
+                'Your child’s spot in class',
+                'Access to progress reports',
+                'Session attendance tracking',
+                'Coach feedback &amp; reviews',
+              ].map((line) => (
+                <li key={line} className="flex items-center gap-2.5">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-rose-500/20 border border-rose-500/30 shrink-0">
+                    <svg className="w-3 h-3 text-rose-300" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </span>
+                  <span dangerouslySetInnerHTML={{ __html: line }} />
+                </li>
+              ))}
             </ul>
           </div>
 
           {retentionEnabled && (
-            <div className="bg-accent/5 rounded-xl p-4 mb-6 border border-accent/20">
-              <p className="text-sm text-primary">
-                💡 <strong>Last chance:</strong> You can still get{' '}
+            <div className="rounded-2xl p-4 mb-5 bg-[#4ecde6]/8 border border-[#4ecde6]/30">
+              <p className="text-sm text-white/90">
+                💡 <strong className="text-white">Last chance:</strong> Save{' '}
                 <button
                   onClick={() => setStep('offer')}
-                  className="text-accent font-bold underline"
+                  className="text-[#4ecde6] font-bold underline underline-offset-2 hover:text-[#7adeeb] transition-colors"
                 >
                   {retentionPercent}% off {durationText}
                 </button>{' '}
-                instead of cancelling.
+                instead of leaving.
               </p>
             </div>
           )}
 
-          <div className="flex gap-3">
-            {retentionEnabled && (
-              <button
-                onClick={() => setStep('offer')}
-                className="flex-1 py-3 rounded-xl text-sm font-medium bg-accent text-primary hover:opacity-90 transition-all"
-              >
-                Get {retentionPercent}% Off
-              </button>
-            )}
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
             <button
               onClick={handleConfirmCancel}
               disabled={loading}
-              className="flex-1 py-3 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-all"
+              className="flex-1 py-3.5 rounded-xl text-sm font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 disabled:opacity-50 transition-all"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-rose-300/30 border-t-rose-300 rounded-full animate-spin" />
                   Cancelling...
                 </span>
               ) : (
-                'Cancel Subscription'
+                'Yes, cancel subscription'
               )}
             </button>
+            {retentionEnabled && (
+              <button
+                onClick={() => setStep('offer')}
+                className="flex-1 py-3.5 rounded-xl text-sm font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)',
+                  color: '#0a0a0a',
+                  boxShadow: '0 8px 32px rgba(78, 205, 230, 0.3), 0 0 0 2px rgba(78, 205, 230, 0.5)',
+                }}
+              >
+                Get {retentionPercent}% Off →
+              </button>
+            )}
           </div>
         </div>
       )}
 
       {/* ═══ RETAINED: Accepted the offer ═══ */}
       {step === 'retained' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm text-center">
-          <p className="text-5xl mb-4">🎉</p>
-          <h1 className="text-2xl font-bold text-primary mb-2">Welcome back!</h1>
-          <p className="text-white/60 mb-6">
-            Your {retentionPercent}% discount has been applied {durationText}. You now pay{' '}
-            <strong className="text-accent">£{discountedAmount || discountPrice}/month</strong>
-            {saving && <> (saving £{saving}/month)</>}.
-          </p>
-          <div className="bg-green-50 rounded-xl p-4 mb-6 border border-green-200">
-            <p className="text-sm text-green-700 font-medium">
-              ✓ Discount applied — no further action needed
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/10 via-[#0a1614] to-[#0a0a0a] rounded-3xl border-2 border-emerald-500/40 p-6 sm:p-8 shadow-[0_20px_60px_rgba(16,185,129,0.2)] text-center">
+          <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-emerald-500/15 blur-[60px] pointer-events-none" />
+          <div className="relative">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-500/15 border-2 border-emerald-500/40 mb-4 text-4xl">
+              🎉
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Welcome back!</h1>
+            <p className="text-white/70 mb-5 text-sm sm:text-base">
+              Your <strong className="text-emerald-300">{retentionPercent}% discount</strong> is applied {durationText}.
+              <br className="hidden sm:block" /> You now pay{' '}
+              <strong className="text-emerald-300 text-lg">£{discountedAmount || discountPrice}/month</strong>
+              {saving && <> (saving £{saving}/month)</>}.
             </p>
+            <div className="rounded-2xl p-4 mb-6 bg-emerald-500/10 border border-emerald-500/30">
+              <p className="text-sm text-emerald-300 font-semibold">
+                ✓ Discount applied — no further action needed
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/payments')}
+              className="w-full py-4 rounded-2xl text-sm sm:text-base font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)',
+                color: '#0a0a0a',
+                boxShadow: '0 12px 40px rgba(16, 185, 129, 0.3), 0 0 0 2px rgba(16, 185, 129, 0.5)',
+              }}
+            >
+              Back to Dashboard →
+            </button>
           </div>
-          <button
-            onClick={() => router.push('/dashboard/payments')}
-            className="w-full py-3 rounded-xl text-sm font-medium bg-accent text-primary hover:opacity-90 transition-all"
-          >
-            Back to Dashboard
-          </button>
         </div>
       )}
 
       {/* ═══ CANCELLED: Subscription ended ═══ */}
       {step === 'cancelled' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 shadow-sm text-center">
-          <p className="text-3xl mb-4">👋</p>
-          <h1 className="text-xl font-bold text-primary mb-2">Subscription Cancelled</h1>
-          <p className="text-white/60 mb-4">
-            Your {planName} subscription has been cancelled.
-          </p>
+        <div className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
+            👋
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Subscription Cancelled</h1>
+          <p className="text-white/60 mb-4 text-sm">Your {planName} subscription has been cancelled.</p>
           {endDate && (
-            <div className="bg-amber-50 rounded-xl p-4 mb-6 border border-amber-200">
-              <p className="text-sm text-amber-800">
-                📅 You still have access until <strong>{endDate}</strong>
+            <div className="rounded-2xl p-4 mb-6 bg-amber-500/10 border border-amber-500/30">
+              <p className="text-sm text-amber-200">
+                📅 You still have access until <strong className="text-amber-100">{endDate}</strong>
               </p>
             </div>
           )}
-          <p className="text-white/60 text-sm mb-6">
+          <p className="text-white/50 text-sm mb-6">
             Changed your mind? You can re-subscribe any time from the payments page.
           </p>
           <button
             onClick={() => router.push('/dashboard/payments')}
-            className="w-full py-3 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-all"
+            className="w-full py-3.5 rounded-xl text-sm font-semibold bg-white/[0.06] text-white border border-white/[0.1] hover:bg-white/[0.1] transition-all"
           >
             Back to Payments
           </button>

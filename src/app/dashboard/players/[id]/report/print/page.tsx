@@ -317,24 +317,40 @@ export default async function PrintableReportPage({
   const latestReview = (reviews || [])[0]
   const previousReview = (reviews || [])[1]
 
+  // Per-class-type scoring: filter the org's full category list down to only
+  // ones this player has actually been scored on (across their reviews).
+  // Without this, players would see empty bars for categories from other class types.
+  const LEGACY_KEYS = ['attitude', 'effort', 'technical_quality', 'game_understanding', 'confidence', 'physical_movement']
+  const playerScoredKeys = new Set<string>()
+  for (const review of reviews || []) {
+    const r = review as Record<string, unknown>
+    const rs = r.scores as Record<string, number> | null | undefined
+    if (rs) Object.keys(rs).forEach((k) => playerScoredKeys.add(k))
+    for (const k of LEGACY_KEYS) {
+      if (r[k] != null) playerScoredKeys.add(k)
+    }
+  }
+  const filtered = scoringCategories.filter((c) => playerScoredKeys.has(c.key))
+  const displayCategories = filtered.length > 0 ? filtered : scoringCategories
+
   // Radar scores
   const radarScores = latestReview
-    ? scoringCategories.map((cat) => ({
+    ? displayCategories.map((cat) => ({
         label: cat.label,
         value: (latestReview[cat.key as keyof typeof latestReview] as number) || 0,
       }))
     : []
 
   const prevRadarScores = previousReview
-    ? scoringCategories.map((cat) => ({
+    ? displayCategories.map((cat) => ({
         label: cat.label,
         value: (previousReview[cat.key as keyof typeof previousReview] as number) || 0,
       }))
     : undefined
 
   // Overall average
-  const overallAverage = latestReview
-    ? scoringCategories.reduce((sum, cat) => sum + ((latestReview[cat.key as keyof typeof latestReview] as number) || 0), 0) / scoringCategories.length
+  const overallAverage = latestReview && displayCategories.length > 0
+    ? displayCategories.reduce((sum, cat) => sum + ((latestReview[cat.key as keyof typeof latestReview] as number) || 0), 0) / displayCategories.length
     : 0
 
   // Progress over time (last 5 reviews, ascending)
@@ -342,12 +358,14 @@ export default async function PrintableReportPage({
     .slice(0, 5)
     .reverse()
     .map((r) => {
-      const avg = scoringCategories.reduce((sum, cat) => sum + ((r[cat.key as keyof typeof r] as number) || 0), 0) / scoringCategories.length
+      const avg = displayCategories.length > 0
+        ? displayCategories.reduce((sum, cat) => sum + ((r[cat.key as keyof typeof r] as number) || 0), 0) / displayCategories.length
+        : 0
       return { date: r.review_date, avg }
     })
 
   // Score breakdown with trends
-  const scoreBreakdown = scoringCategories.map((cat) => {
+  const scoreBreakdown = displayCategories.map((cat) => {
     const current = latestReview ? ((latestReview[cat.key as keyof typeof latestReview] as number) || 0) : 0
     const previous = previousReview ? ((previousReview[cat.key as keyof typeof previousReview] as number) || 0) : 0
     return { label: cat.label, key: cat.key, current, previous, icon: cat.icon }
@@ -357,7 +375,7 @@ export default async function PrintableReportPage({
   const strengths: string[] = []
   const areasToImprove: string[] = []
   if (latestReview) {
-    for (const cat of scoringCategories) {
+    for (const cat of displayCategories) {
       const score = (latestReview[cat.key as keyof typeof latestReview] as number) || 0
       if (score >= 4) strengths.push(cat.label)
       if (score <= 2) areasToImprove.push(cat.label)

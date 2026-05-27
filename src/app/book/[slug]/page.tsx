@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import PricingToggle from './PricingToggle'
 import EnquiryButton from './EnquiryButton'
+import BookingPageHero from '@/components/BookingPageHero'
 
 export async function generateMetadata({
   params,
@@ -51,6 +52,7 @@ const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color
   trial: { label: 'Trial', gradient: 'from-cyan-600 to-cyan-900', color: '#06b6d4', icon: '&#127919;' },
   girls: { label: 'Girls Only', gradient: 'from-fuchsia-600 to-fuchsia-900', color: '#d946ef', icon: '&#9734;' },
   adults: { label: 'Adults', gradient: 'from-slate-600 to-slate-800', color: '#64748b', icon: '&#127939;' },
+  intensity: { label: 'Intensity', gradient: 'from-red-600 to-red-900', color: '#ef4444', icon: '&#128293;' },
 }
 
 export default async function PublicBookingPage({
@@ -98,25 +100,45 @@ export default async function PublicBookingPage({
     countByGroup.set(e.group_id, (countByGroup.get(e.group_id) || 0) + 1)
   }
 
-  const { data: rawPlans } = await supabase
+  // Fetch ALL active plans for the org (we need them to show prices on class cards too)
+  const { data: allPlans } = await supabase
     .from('subscription_plans')
     .select('*')
     .eq('organisation_id', org.id)
     .eq('active', true)
-    .is('training_group_id', null) // only org-wide plans; class-specific plans live on class pages
     .order('sort_order')
 
+  // Org-wide plans only (for the academy-level PricingToggle section)
+  const rawPlans = (allPlans || []).filter(p => p.training_group_id === null && p.class_type === null)
+
   // Dedupe by (amount + sessions_per_week) to collapse semantic duplicates
-  // (e.g. academies often create two plans at the same price with slightly
-  // different names like "1-2-1 Plan" and "121"). Keep the first match which,
-  // thanks to the sort_order clause above, is the one the academy prioritised.
   const seenKeys = new Set<string>()
-  const plans = (rawPlans || []).filter((p) => {
+  const plans = rawPlans.filter((p) => {
     const key = `${Number(p.amount)}|${p.sessions_per_week ?? ''}`
     if (seenKeys.has(key)) return false
     seenKeys.add(key)
     return true
   })
+
+  // Helper — find the cheapest matching plan for a given class
+  // Uses the same cascade as the class detail page: class-specific → class-type → org-wide
+  function findCheapestPlanFor(classId: string, classType: string | null) {
+    const candidates = allPlans || []
+    const classSpecific = candidates.filter(p => p.training_group_id === classId)
+    if (classSpecific.length > 0) {
+      return classSpecific.reduce((min, p) => Number(p.amount) < Number(min.amount) ? p : min)
+    }
+    if (classType) {
+      const typeMatched = candidates.filter(p => p.class_type === classType && !p.training_group_id)
+      if (typeMatched.length > 0) {
+        return typeMatched.reduce((min, p) => Number(p.amount) < Number(min.amount) ? p : min)
+      }
+    }
+    // No fallback to org-wide / generic plans — those don't apply to specific classes
+    // and showing them on class cards confuses parents (they'd see different prices
+    // for the same class). Class needs its own plan or nothing shows.
+    return null
+  }
 
   const today = new Date().toISOString().split('T')[0]
   const { data: camps } = await supabase
@@ -173,23 +195,17 @@ export default async function PublicBookingPage({
       className="min-h-screen bg-[#0a0a0a] text-white"
       style={{ '--brand-primary': primaryColor, '--brand-primary-rgb': hexToRgb(primaryColor), '--color-accent': primaryColor } as React.CSSProperties}
     >
-      <div className="relative py-16 sm:py-24 px-4 sm:px-6 text-center text-white overflow-hidden" style={{ background: `linear-gradient(160deg, #0a0a0a 0%, #141414 40%, ${primaryColor}30 100%)` }}>
-        {org.hero_image_url && (<div className="absolute inset-0 bg-cover bg-center opacity-15" style={{ backgroundImage: `url(${org.hero_image_url})` }} />)}
-        <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 120%, ${primaryColor}25 0%, transparent 60%)` }} />
-        <div className="relative z-10 max-w-3xl mx-auto">
-          {org.logo_url && (
-            <div className="mb-6 flex justify-center">
-              <img src={org.logo_url} alt={`${org.name} logo`} className="h-20 sm:h-24 w-auto object-contain rounded-2xl" />
-            </div>
-          )}
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold mb-3 tracking-tight">{org.name}</h1>
-          <p className="text-base sm:text-lg text-white/60 mb-8 max-w-xl mx-auto">{org.description || 'Professional football coaching for all ages and abilities'}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href={`/auth/signup?org=${slug}`} className="inline-block px-8 py-3.5 rounded-full text-base sm:text-lg font-bold transition-all hover:scale-105 hover:shadow-lg" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Join Now &rarr;</Link>
-            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-8 py-3.5 rounded-full text-base sm:text-lg font-bold border-2 border-white/20 text-white transition-all hover:scale-105 hover:border-white/40">Free Trial</Link>
-          </div>
-        </div>
-      </div>
+      <BookingPageHero
+        slug={slug}
+        orgName={org.name as string}
+        orgDescription={org.description as string | null}
+        orgLogo={org.logo_url as string | null}
+        orgHeroImage={org.hero_image_url as string | null}
+        primaryColor={primaryColor as string}
+        totalPlayers={parentCount || 0}
+        totalSessions={sessionCount || 0}
+        totalClasses={(groups || []).length}
+      />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-16">
         {/* Stripe-not-connected notice — shown when the academy hasn't finished Stripe Connect yet */}
@@ -256,19 +272,9 @@ export default async function PublicBookingPage({
           </div>
         </section>
 
-        {(plans || []).length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold text-center mb-2 text-white">Our Plans</h2>
-            <p className="text-center text-gray-400 mb-8">Choose the plan that works for your child</p>
-            <PricingToggle
-              plans={(plans || []).map(plan => ({ id: plan.id, name: plan.name, description: plan.description as string | null, amount: Number(plan.amount), sessions_per_week: plan.sessions_per_week }))}
-              slug={slug}
-              primaryColor={primaryColor}
-              quarterlyEnabled={org.quarterly_billing_enabled !== false}
-              quarterlyDiscountPercent={Number(org.quarterly_discount_percent ?? 10)}
-            />
-          </section>
-        )}
+        {/* "Our Plans" generic section removed — each class card now shows its
+            own class-specific pricing. Showing org-wide generic plans here
+            confused parents with prices that didn't match individual classes. */}
 
         <section>
           <h2 className="text-2xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
@@ -287,6 +293,7 @@ export default async function PublicBookingPage({
               const ageGroup = group.age_group as string | null
               const shortDesc = group.short_description as string | null
               const coverImage = group.image_url as string | null
+              const matchedPlan = findCheapestPlanFor(group.id, classType)
 
               return (
                 <div key={group.id} className={`relative rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-[#141414] ${isFeatured ? 'border-2' : 'border-[#1e1e1e] hover:border-[#2a2a2a]'}`} style={isFeatured ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}15` } : undefined}>
@@ -314,9 +321,31 @@ export default async function PublicBookingPage({
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h3 className="font-bold text-base leading-tight text-white">{group.name}</h3>
-                      {price != null && Number(price) > 0 && (
+                      {price != null && Number(price) > 0 ? (
                         <span className="shrink-0 text-lg font-extrabold whitespace-nowrap text-white">&pound;{Number(price).toFixed(0)}<span className="text-xs font-medium text-white/40">/session</span></span>
-                      )}
+                      ) : matchedPlan ? (
+                        (() => {
+                          const monthly = Number(matchedPlan.amount)
+                          const qEnabled = (org as Record<string, unknown>).quarterly_billing_enabled !== false
+                          const qPercent = Math.max(0, Math.min(50, Number((org as Record<string, unknown>).quarterly_discount_percent ?? 10)))
+                          const quarterly = monthly * 3 * (1 - qPercent / 100)
+                          const saving = monthly * 3 * (qPercent / 100)
+                          return (
+                            <div className="shrink-0 text-right whitespace-nowrap">
+                              <div className="flex items-baseline justify-end gap-1">
+                                <span className="text-2xl sm:text-3xl font-extrabold text-white">&pound;{monthly.toFixed(0)}</span>
+                                <span className="text-xs font-medium text-white/40">/mo</span>
+                              </div>
+                              {qEnabled && qPercent > 0 && (
+                                <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider">Save &pound;{saving.toFixed(0)}</span>
+                                  <span className="text-[10px] opacity-80">· &pound;{quarterly.toFixed(0)}/3mo</span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()
+                      ) : null}
                     </div>
                     {shortDesc && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{shortDesc}</p>}
                     <div className="space-y-1.5 text-sm text-gray-400 mb-4">
@@ -353,7 +382,19 @@ export default async function PublicBookingPage({
                         <div className="h-1.5 rounded-full transition-all" style={{ width: `${Math.min(100, (count / capacity) * 100)}%`, backgroundColor: isFull ? '#ef4444' : spotsLeft <= 3 ? '#f97316' : primaryColor }} />
                       </div>
                     </div>
-                    <Link href={`/book/${slug}/class/${group.id}`} className="block w-full text-center py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]" style={{ backgroundColor: isFull ? '#1e1e1e' : primaryColor, color: isFull ? '#9ca3af' : '#0a0a0a' }}>
+                    <Link
+                      href={`/book/${slug}/class/${group.id}`}
+                      className="block w-full text-center py-4 rounded-xl font-extrabold text-base transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110"
+                      style={
+                        isFull
+                          ? { backgroundColor: '#1e1e1e', color: '#9ca3af' }
+                          : {
+                              background: `linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)`,
+                              color: '#0a0a0a',
+                              boxShadow: `0 8px 28px ${primaryColor}50, 0 0 0 2px ${primaryColor}, inset 0 -3px 0 rgba(0,0,0,0.06)`,
+                            }
+                      }
+                    >
                       {isFull ? 'Join Waitlist' : 'Book Now'} &rarr;
                     </Link>
                   </div>

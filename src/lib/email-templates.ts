@@ -1,23 +1,52 @@
-// Base layout wrapper with Player Portal branding
+// Base layout wrapper with Player Portal branding — premium dark theme.
+// Email clients vary wildly in CSS support, so this uses inline styles + tables
+// where needed for maximum compatibility (Gmail, Outlook, iOS Mail, Spark, etc.)
 function baseLayout(content: string, accentColor = '#4ecde6'): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-<div style="max-width:560px;margin:0 auto;padding:20px">
-<div style="background:linear-gradient(135deg, #0a0a0a 0%, #141414 100%);border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;border:1px solid #1e1e1e;border-bottom:none">
-<h1 style="margin:0;color:${accentColor};font-size:22px;font-weight:800;letter-spacing:-0.5px">⚽ Player Portal</h1>
-<p style="margin:6px 0 0;color:#666;font-size:12px;letter-spacing:1px;text-transform:uppercase">by playit loveit</p>
-</div>
-<div style="background:#141414;padding:32px;border-radius:0 0 16px 16px;border:1px solid #1e1e1e;border-top:none">
+<body style="margin:0;padding:0;background:#060606;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e5e5e5">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#060606">
+<tr><td align="center" style="padding:24px 16px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px">
+
+<!-- Header card -->
+<tr><td style="background:linear-gradient(135deg, #0a0a0a 0%, #141414 60%, ${accentColor}15 100%);border-radius:20px 20px 0 0;padding:32px 36px;text-align:center;border:1px solid #1e1e1e;border-bottom:0">
+<div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:${accentColor};margin:0">⚽ Player Portal</div>
+<div style="margin:8px 0 0;color:#666;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">by JSL Sports</div>
+</td></tr>
+
+<!-- Brand accent line -->
+<tr><td style="height:3px;background:linear-gradient(90deg, transparent 0%, ${accentColor} 50%, transparent 100%);font-size:0;line-height:0">&nbsp;</td></tr>
+
+<!-- Main content -->
+<tr><td style="background:#141414;padding:36px;border:1px solid #1e1e1e;border-top:0;border-bottom:0;color:#e5e5e5;line-height:1.6">
 ${content}
-</div>
-<div style="text-align:center;padding:16px;color:#555;font-size:12px">
-<p style="margin:0">Sent by Player Portal &bull; <a href="${appUrl}" style="color:${accentColor};text-decoration:none">Visit Dashboard</a></p>
-<p style="margin:6px 0 0;color:#333;font-size:11px">You&apos;re receiving this because you have an account on Player Portal.</p>
-<p style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 JSL Sports Technology Ltd. All rights reserved.</p>
-</div>
-</div></body></html>`
+</td></tr>
+
+<!-- Bottom rounded corner -->
+<tr><td style="background:#141414;height:20px;border-radius:0 0 20px 20px;border:1px solid #1e1e1e;border-top:0;font-size:0;line-height:0">&nbsp;</td></tr>
+
+<!-- Footer -->
+<tr><td align="center" style="padding:20px 16px 0">
+<div style="color:#777;font-size:13px;font-weight:500">Sent by <a href="${appUrl}" style="color:${accentColor};text-decoration:none;font-weight:600">Player Portal</a></div>
+<div style="margin:8px 0 0;color:#444;font-size:11px;line-height:1.5">You&apos;re receiving this because you have an account on Player Portal.</div>
+<div style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 JSL Sports Technology Ltd. All rights reserved.</div>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`
+}
+
+/**
+ * Helper to render a premium-styled CTA button inside an email.
+ * White background + brand-color glow — matches the in-app button pattern.
+ * Use this instead of inline links for primary CTAs.
+ */
+function ctaButton(text: string, href: string, accentColor = '#4ecde6'): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto"><tr><td style="border-radius:999px;background:#ffffff;box-shadow:0 8px 32px ${accentColor}66"><a href="${href}" style="display:inline-block;padding:14px 32px;color:#0a0a0a;text-decoration:none;font-weight:800;font-size:15px;letter-spacing:-0.2px;border-radius:999px">${text} &rarr;</a></td></tr></table>`
 }
 
 export function trialConfirmationEmail(params: {
@@ -217,22 +246,97 @@ export function welcomeEmail(params: {
   parentName: string
   academyName: string
   dashboardUrl: string
+  academyLogoUrl?: string
+  academyContactEmail?: string
+  firstName?: string  // Just first name for greeting
 }) {
+  const greetingName = params.firstName || params.parentName.split(' ')[0] || params.parentName
   return {
-    subject: `Welcome to ${params.academyName}!`,
+    subject: `Welcome to ${params.academyName} ⚽`,
     html: baseLayout(`
-      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Welcome aboard!</h2>
-      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
-      <p style="color:#aaa;line-height:1.6">You've successfully signed up to <strong>${params.academyName}</strong> on Player Portal.</p>
+      ${params.academyLogoUrl ? `<div style="text-align:center;margin-bottom:24px"><img src="${params.academyLogoUrl}" alt="${params.academyName}" style="max-width:120px;max-height:120px;border-radius:16px" /></div>` : ''}
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:24px">Welcome, ${greetingName}! 👋</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">You're in. Your <strong style="color:#fff">${params.academyName}</strong> account is set up and ready to go.</p>
+
+      <div style="background:linear-gradient(135deg,rgba(78,205,230,0.08),rgba(78,205,230,0.02));border:1px solid rgba(78,205,230,0.2);border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 14px;font-size:14px;color:#4ecde6;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Get started in 3 steps</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr>
+            <td style="width:28px;vertical-align:top;padding-right:8px"><span style="display:inline-block;width:24px;height:24px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:24px;font-weight:700;font-size:12px">1</span></td>
+            <td style="color:#ddd;line-height:1.5"><strong style="color:#fff">Add your child's details</strong><br><span style="color:#999;font-size:13px">Photo, age group, anything the coach should know.</span></td>
+          </tr>
+          <tr>
+            <td style="vertical-align:top;padding-right:8px"><span style="display:inline-block;width:24px;height:24px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:24px;font-weight:700;font-size:12px">2</span></td>
+            <td style="color:#ddd;line-height:1.5"><strong style="color:#fff">Pick a class &amp; subscription</strong><br><span style="color:#999;font-size:13px">Browse the timetable, choose what works for you.</span></td>
+          </tr>
+          <tr>
+            <td style="vertical-align:top;padding-right:8px"><span style="display:inline-block;width:24px;height:24px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:24px;font-weight:700;font-size:12px">3</span></td>
+            <td style="color:#ddd;line-height:1.5"><strong style="color:#fff">Show up &amp; have fun</strong><br><span style="color:#999;font-size:13px">We'll send reminders before every session.</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align:center;margin:28px 0 12px">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 36px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">Open your dashboard →</a>
+      </div>
+
+      <p style="color:#777;font-size:13px;line-height:1.6;margin:24px 0 0;text-align:center">
+        💡 <strong style="color:#aaa">Pro tip:</strong> Add Player Portal to your home screen so it works like an app.
+      </p>
+
+      ${params.academyContactEmail ? `<p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center;padding-top:16px;border-top:1px solid #1e1e1e">Questions? Email the academy direct at <a href="mailto:${params.academyContactEmail}" style="color:#4ecde6">${params.academyContactEmail}</a>.</p>` : ''}
+    `),
+  }
+}
+
+export function subscriptionStartedEmail(params: {
+  parentName: string
+  childName?: string
+  academyName: string
+  planName: string
+  amount: string
+  nextClass?: { name: string; day: string; time: string; location?: string }
+  dashboardUrl: string
+  academyLogoUrl?: string
+  academyContactEmail?: string
+}) {
+  const greetingName = params.parentName.split(' ')[0] || params.parentName
+  return {
+    subject: `${params.childName ? `${params.childName} is in! ` : ''}🎉 Subscription active — ${params.academyName}`,
+    html: baseLayout(`
+      ${params.academyLogoUrl ? `<div style="text-align:center;margin-bottom:20px"><img src="${params.academyLogoUrl}" alt="${params.academyName}" style="max-width:96px;max-height:96px;border-radius:14px" /></div>` : ''}
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:24px">You're in! ⚽🎉</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
+        Hi ${greetingName} — your subscription to <strong style="color:#fff">${params.academyName}</strong> is active.
+        ${params.childName ? `Welcome to the squad, <strong style="color:#fff">${params.childName}</strong>!` : ''}
+      </p>
+
       <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
-        <p style="margin:0 0 12px;font-size:14px;color:#ddd;font-weight:600">What's next?</p>
-        <p style="margin:0 0 8px;font-size:14px;color:#aaa">1. Add your child's profile</p>
-        <p style="margin:0 0 8px;font-size:14px;color:#aaa">2. Browse available classes</p>
-        <p style="margin:0;font-size:14px;color:#aaa">3. Choose a plan and get started</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Charged</td><td style="color:#fff;text-align:right;font-weight:600">${params.amount}</td></tr>
+          ${params.childName ? `<tr><td style="color:#888">Player</td><td style="color:#fff;text-align:right">${params.childName}</td></tr>` : ''}
+          <tr><td style="color:#888">Academy</td><td style="color:#fff;text-align:right">${params.academyName}</td></tr>
+        </table>
       </div>
+
+      ${params.nextClass ? `
+      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.02));border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:12px;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">⚡ Your next session</p>
+        <p style="margin:0 0 4px;font-size:18px;color:#fff;font-weight:700">${params.nextClass.name}</p>
+        <p style="margin:0;font-size:14px;color:#aaa">${params.nextClass.day} at ${params.nextClass.time}${params.nextClass.location ? ` · ${params.nextClass.location}` : ''}</p>
+      </div>
+      ` : ''}
+
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Go to Dashboard</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 36px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">View dashboard →</a>
       </div>
+
+      <p style="color:#777;font-size:13px;line-height:1.6;margin:24px 0 0">
+        🔔 We'll send reminders before every session. You can cancel anytime from your dashboard, no questions asked.
+      </p>
+
+      ${params.academyContactEmail ? `<p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center;padding-top:16px;border-top:1px solid #1e1e1e">Questions? Email <a href="mailto:${params.academyContactEmail}" style="color:#4ecde6">${params.academyContactEmail}</a>.</p>` : ''}
     `),
   }
 }
@@ -623,6 +727,116 @@ export function upsellSiblingEmail(params: { parentName: string; childName: stri
       </div>
       <div style="text-align:center;margin:24px 0">
         <a href="${params.dashboardUrl}" style="display:inline-block;background:#f59e0b;color:#fff;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Add Another Child</a>
+      </div>
+    `),
+  }
+}
+
+export function birthdayParentEmail(params: {
+  parentName: string
+  childName: string
+  turningAge: number
+  academyName: string
+  dashboardUrl: string
+  academyLogoUrl?: string
+  academyContactEmail?: string
+}) {
+  return {
+    subject: `🎂 Happy birthday ${params.childName}!`,
+    html: baseLayout(`
+      ${params.academyLogoUrl ? `<div style="text-align:center;margin-bottom:20px"><img src="${params.academyLogoUrl}" alt="${params.academyName}" style="max-width:96px;max-height:96px;border-radius:14px" /></div>` : ''}
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="display:inline-block;font-size:48px">🎂🎉🎈</div>
+      </div>
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:26px;text-align:center">Happy birthday, ${params.childName}!</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.7;text-align:center;font-size:15px">
+        Everyone at <strong style="color:#fff">${params.academyName}</strong> wants to wish ${params.childName} a fantastic
+        <strong style="color:#a855f7">${params.turningAge}${params.turningAge === 1 ? 'st' : params.turningAge === 2 ? 'nd' : params.turningAge === 3 ? 'rd' : 'th'} birthday</strong>!
+      </p>
+      <div style="background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(236,72,153,0.05));border:1px solid rgba(168,85,247,0.3);border-radius:16px;padding:24px;margin:24px 0;text-align:center">
+        <p style="margin:0 0 4px;font-size:13px;color:#a855f7;text-transform:uppercase;letter-spacing:1px;font-weight:700">${params.childName} is turning</p>
+        <p style="margin:0;font-size:48px;font-weight:800;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${params.turningAge}</p>
+      </div>
+      <p style="color:#888;line-height:1.6;text-align:center;font-size:14px;margin:24px 0">
+        Hi ${params.parentName} — your coach will give ${params.childName} a special mention at the next session. 🏆
+      </p>
+      ${params.academyContactEmail ? `<p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center;padding-top:16px;border-top:1px solid #1e1e1e">From everyone at ${params.academyName} · <a href="mailto:${params.academyContactEmail}" style="color:#4ecde6">${params.academyContactEmail}</a></p>` : ''}
+    `),
+  }
+}
+
+export function paymentFailedAdminEmail(params: {
+  academyName: string
+  parentName: string
+  parentEmail?: string
+  childName?: string
+  planName: string
+  amount: string
+  dashboardUrl: string
+}) {
+  return {
+    subject: `💳 Payment failed — ${params.parentName} at ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">💳 Payment failed</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
+        A parent payment at <strong style="color:#fff">${params.academyName}</strong> just failed.
+        Usually means an expired card. Worth a quick check-in.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Parent</td><td style="color:#fff;font-weight:600">${params.parentName}</td></tr>
+          ${params.parentEmail ? `<tr><td style="color:#888">Email</td><td><a href="mailto:${params.parentEmail}" style="color:#4ecde6">${params.parentEmail}</a></td></tr>` : ''}
+          ${params.childName ? `<tr><td style="color:#888">Child</td><td style="color:#fff">${params.childName}</td></tr>` : ''}
+          <tr><td style="color:#888">Plan</td><td style="color:#fff">${params.planName}</td></tr>
+          <tr><td style="color:#888">Amount</td><td style="color:#f59e0b;font-weight:700">${params.amount}</td></tr>
+        </table>
+      </div>
+      <p style="color:#aaa;line-height:1.6;font-size:14px;margin:0 0 20px">
+        💡 <strong style="color:#ddd">Suggested action:</strong>
+        Reach out personally before the parent notices the charge bounced — feels like service, not a chase.
+      </p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/dashboard/payments" style="display:inline-block;background:#f59e0b;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">View payments dashboard →</a>
+      </div>
+      <p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center">
+        Stripe will automatically retry the payment over the next 5-7 days. The subscription is marked &quot;past_due&quot; in the meantime.
+      </p>
+    `),
+  }
+}
+
+export function firstSaleEmail(params: {
+  academyName: string
+  academySlug: string
+  parentName: string
+  childName?: string
+  planName: string
+  amount: string
+  dashboardUrl: string
+}) {
+  return {
+    subject: `🎉 First sale for ${params.academyName}!`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:24px">🎉 First sale!</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
+        <strong style="color:#fff">${params.academyName}</strong> just received their first paying parent.
+        ${params.childName ? `${params.parentName} signed up <strong style="color:#fff">${params.childName}</strong>` : params.parentName + ' signed up'}
+        on the <strong style="color:#fff">${params.planName}</strong> plan.
+      </p>
+      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.02));border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:20px;margin:20px 0;text-align:center">
+        <p style="margin:0;font-size:28px;font-weight:800;color:#10b981">${params.amount}</p>
+        <p style="margin:4px 0 0;font-size:12px;color:#10b981;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">First revenue · ${params.planName}</p>
+      </div>
+      <p style="color:#aaa;line-height:1.6;margin:24px 0 16px">
+        💡 <strong style="color:#ddd">Next steps for the academy:</strong>
+      </p>
+      <ol style="color:#aaa;line-height:1.8;font-size:14px;margin:0 0 24px;padding-left:20px">
+        <li>Reach out personally — first-customer moment</li>
+        <li>Make sure the kid&apos;s first session is great</li>
+        <li>Ask for a testimonial after 3 weeks</li>
+      </ol>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/platform" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">View in Platform Admin →</a>
       </div>
     `),
   }

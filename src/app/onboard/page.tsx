@@ -327,11 +327,33 @@ export default function OnboardPage() {
       <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <div className="relative py-8 px-4 text-center">
-        <div className="inline-flex items-center gap-2 mb-3">
-          <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain" />
+      <div className="relative py-10 px-4 text-center">
+        <div className="inline-flex items-center gap-2 mb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Player Portal" className="h-11 w-auto object-contain" />
         </div>
-        <p className="text-white/40 text-sm">Set up your academy in minutes</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 tracking-tight">
+          Set up your academy in <span className="text-[#4ecde6]">10 minutes</span>
+        </h1>
+        <p className="text-white/50 text-sm sm:text-base max-w-md mx-auto">
+          Booking page, payments, parent portal — live by the end of this flow. No card needed for the trial.
+        </p>
+
+        {/* Trust bar */}
+        <div className="flex items-center justify-center gap-4 sm:gap-6 mt-6 text-[11px] text-white/40">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            <span>14-day free trial</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            <span>No card required</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            <span>Cancel anytime</span>
+          </div>
+        </div>
       </div>
 
       {/* Progress Steps */}
@@ -387,8 +409,8 @@ export default function OnboardPage() {
           {step === 0 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Academy Details</h2>
-                <p className="text-[#888] text-sm">Tell us about your football academy</p>
+                <h2 className="text-2xl font-extrabold text-white mb-1">Let&apos;s start with the basics</h2>
+                <p className="text-white/50 text-sm">A few details about your academy — this powers your booking page.</p>
               </div>
 
               <div>
@@ -400,7 +422,7 @@ export default function OnboardPage() {
                   value={academyName}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="e.g. Elite Football Academy"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
@@ -413,7 +435,7 @@ export default function OnboardPage() {
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="elite-football-academy"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
                 {slug && (
                   <p className="mt-1.5 text-xs text-[#888]">
@@ -432,7 +454,7 @@ export default function OnboardPage() {
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   placeholder="info@youracademy.com"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
@@ -443,7 +465,7 @@ export default function OnboardPage() {
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                   placeholder="+44 7700 900000"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
@@ -454,7 +476,7 @@ export default function OnboardPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder="Tell parents about your academy..."
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30 resize-none"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30 resize-none"
                 />
               </div>
 
@@ -465,7 +487,7 @@ export default function OnboardPage() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. London, UK"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
             </div>
@@ -475,8 +497,8 @@ export default function OnboardPage() {
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Branding</h2>
-                <p className="text-[#888] text-sm">Customise the look of your booking page</p>
+                <h2 className="text-2xl font-extrabold text-white mb-1">Make it yours</h2>
+                <p className="text-white/50 text-sm">Drop in your logo and pick a brand colour — your booking page will match.</p>
               </div>
 
               <div>
@@ -530,8 +552,8 @@ export default function OnboardPage() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-white mb-1">Choose Your Plan</h2>
-                <p className="text-[#888] text-sm">Pay less per transaction as you grow. Upgrade or downgrade anytime.</p>
+                <h2 className="text-2xl font-extrabold text-white mb-1">Pick your plan</h2>
+                <p className="text-white/50 text-sm">Lower transaction fees as you grow. 14 days free on every tier — no card needed.</p>
               </div>
 
               {/* Plan Cards */}
@@ -682,8 +704,8 @@ export default function OnboardPage() {
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Your Account</h2>
-                <p className="text-[#888] text-sm">Create your admin account to manage everything</p>
+                <h2 className="text-2xl font-extrabold text-white mb-1">Almost there — create your login</h2>
+                <p className="text-white/50 text-sm">This is the email and password you&apos;ll use to manage your academy.</p>
               </div>
 
               <div>
@@ -695,7 +717,7 @@ export default function OnboardPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Smith"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
@@ -708,7 +730,7 @@ export default function OnboardPage() {
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="you@youracademy.com"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
@@ -721,7 +743,7 @@ export default function OnboardPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full px-4 py-2.5 border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
+                  className="w-full px-4 py-2.5 text-base border border-[#2a2a2a] rounded-xl text-white bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition placeholder:text-white/30"
                 />
               </div>
 
@@ -738,8 +760,8 @@ export default function OnboardPage() {
           {step === 4 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Pricing</h2>
-                <p className="text-[#888] text-sm">Set the plans parents will see on your booking page</p>
+                <h2 className="text-2xl font-extrabold text-white mb-1">Set parent pricing</h2>
+                <p className="text-white/50 text-sm">These are the plans parents see on your booking page. We&apos;ve set sensible defaults — tweak now or later.</p>
               </div>
 
               <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4">

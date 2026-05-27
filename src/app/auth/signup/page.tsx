@@ -43,6 +43,9 @@ function SignUp() {
   const [showAcademySearch, setShowAcademySearch] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  // True until we've checked whether the user is already signed in. Prevents the
+  // step-1 form flashing on screen before the useEffect bumps logged-in users to step 2/3.
+  const [detectingSession, setDetectingSession] = useState(true)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [childFirstName, setChildFirstName] = useState('')
   const [childLastName, setChildLastName] = useState('')
@@ -63,6 +66,8 @@ function SignUp() {
   const isTrial = searchParams.get('trial') === '1'
   const preSelectedBilling = searchParams.get('billing')
   const refCode = searchParams.get('ref') || ''
+  // class= carries the class the parent came from; used to auto-enrol after subscribe
+  const preSelectedClassId = searchParams.get('class')
   // Coach/admin invitation flow: bypass child/subscription steps
   const roleParam = (searchParams.get('role') || '').toLowerCase()
   const isStaffInvite = roleParam === 'coach' || roleParam === 'admin'
@@ -70,6 +75,115 @@ function SignUp() {
   const [referrerName, setReferrerName] = useState<string | null>(null)
 
   useEffect(() => { if (preSelectedBilling === 'quarterly') setBillingOption('quarterly') }, [preSelectedBilling])
+
+  // ─── Logged-in parents adding a new subscription ───
+  // If the user is already authenticated and lands on /auth/signup (e.g. clicked
+  // Subscribe Now on a class detail page), skip step 1 entirely. Jump to step 2
+  // if they have no children, or step 3 (plan selection) if they have at least
+  // one child registered.
+  useEffect(() => {
+    let cancelled = false
+    // Hard timeout so a hanging Supabase call never leaves the page frozen
+    const timeout = setTimeout(() => { if (!cancelled) setDetectingSession(false) }, 4000)
+    async function detectExistingSession() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || cancelled) {
+          setDetectingSession(false)
+          return
+        }
+      // Pre-fill name/email from profile so the user isn't asked to repeat themselves.
+      // ALSO fetch profile.organisation_id so we can detect cross-academy signups —
+      // a parent logged in at Academy A who visits Academy B's signup link should
+      // NOT re-use Academy A children for an Academy B enrolment (breaks multi-tenancy).
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, email, organisation_id')
+        .eq('id', user.id)
+        .single()
+      if (cancelled) return
+      if (profile?.full_name) setFullName(profile.full_name)
+      if (profile?.email || user.email) setEmail(profile?.email || user.email || '')
+
+      // Resolve the org-param's org id so we can compare against the parent's home org.
+      const orgSlugParam = searchParams.get('org')
+      let targetOrgId: string | null = null
+      if (orgSlugParam) {
+        const { data: targetOrg } = await supabase
+          .from('organisations')
+          .select('id')
+          .ilike('slug', orgSlugParam)
+          .single()
+        targetOrgId = (targetOrg?.id as string) || null
+      }
+      const isCrossAcademy = !!targetOrgId && !!profile?.organisation_id && targetOrgId !== profile.organisation_id
+
+      // For cross-academy signups, force them to add a fresh child (never reuse one
+      // from a different academy — would create cross-tenant enrolments).
+      // For same-academy, reuse the most recent child to skip step 2.
+      const { data: existingPlayers } = isCrossAcademy
+        ? { data: [] }
+        : await supabase
+            .from('players')
+            .select('id, first_name, last_name')
+            .eq('parent_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+      if (cancelled) return
+
+      if (existingPlayers && existingPlayers.length > 0) {
+        // Reuse the most recent child for the new subscription
+        const child = existingPlayers[0]
+        setAddedChildId(child.id)
+        // Trigger the plan fetch (mirrors handleAddChild's plan-loading logic)
+        const { data: classRow } = preSelectedClassId
+          ? await supabase
+              .from('training_groups')
+              .select('class_type')
+              .eq('id', preSelectedClassId)
+              .single()
+          : { data: null }
+        const classClassType = (classRow?.class_type as string | null) || null
+        type PlanRow = { id: string; name: string; description: string | null; amount: number; sessions_per_week: number; interval: string; class_type: string | null; training_group_id: string | null }
+        const baseSelect = 'id, name, description, amount, sessions_per_week, interval, class_type, training_group_id'
+        const orgId = (await supabase.from('profiles').select('organisation_id').eq('id', user.id).single()).data?.organisation_id
+        let plansData: PlanRow[] = []
+        if (preSelectedClassId) {
+          const { data } = await supabase.from('subscription_plans').select(baseSelect).eq('active', true).eq('organisation_id', orgId).eq('training_group_id', preSelectedClassId).order('sort_order')
+          plansData = (data as PlanRow[] | null) || []
+        }
+        if (plansData.length === 0 && classClassType) {
+          const { data } = await supabase.from('subscription_plans').select(baseSelect).eq('active', true).eq('organisation_id', orgId).eq('class_type', classClassType).is('training_group_id', null).order('sort_order')
+          plansData = (data as PlanRow[] | null) || []
+        }
+        if (plansData.length === 0) {
+          const { data } = await supabase.from('subscription_plans').select(baseSelect).eq('active', true).eq('organisation_id', orgId).is('class_type', null).is('training_group_id', null).order('sort_order')
+          plansData = (data as PlanRow[] | null) || []
+        }
+        if (cancelled) return
+        setPlans(plansData)
+        if (preSelectedPlan) {
+          const match = plansData.find((p) => p.id === preSelectedPlan)
+          if (match) setSelectedPlanId(match.id)
+        }
+        setStep(3)
+      } else {
+        // Logged in but no child yet — skip to step 2 (add child)
+        setStep(2)
+      }
+      } catch { /* non-fatal — fall through to default form */ }
+      finally {
+        if (!cancelled) setDetectingSession(false)
+      }
+    }
+    detectExistingSession()
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (refCode) {
@@ -109,7 +223,31 @@ function SignUp() {
         router.push('/dashboard')
         return
       }
-      fetch('/api/email/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parentName: fullName, parentEmail: email, academyName: orgName || 'Player Portal' }) }).catch(() => {})
+      // Record the parent's acceptance of the academy's T&Cs for legal compliance.
+      // Best-effort — failures here don't block signup. profile_id resolves via auth.uid() in RLS.
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        const { data: orgRow } = await supabase
+          .from('organisations')
+          .select('id, terms_text')
+          .ilike('slug', orgSlug.trim().toLowerCase())
+          .single()
+        if (user && orgRow?.id) {
+          // Tiny hash of the terms content so we know which version they accepted.
+          const txt = (orgRow.terms_text as string | null) || ''
+          let h = 5381
+          for (let i = 0; i < txt.length; i++) h = ((h << 5) + h) ^ txt.charCodeAt(i)
+          const versionHash = (h >>> 0).toString(16) + '-' + txt.length
+          await supabase.from('academy_terms_acceptances').insert({
+            profile_id: user.id,
+            organisation_id: orgRow.id,
+            terms_version_hash: versionHash,
+            user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : null,
+          })
+        }
+      } catch { /* non-fatal */ }
+
+      fetch('/api/email/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parentName: fullName, parentEmail: email, academyName: orgName || 'Player Portal', academySlug: orgSlug.trim().toLowerCase() }) }).catch(() => {})
       const parts = fullName.trim().split(' ')
       if (parts.length > 1) setChildLastName(parts[parts.length - 1])
       setStep(2); setLoading(false)
@@ -125,8 +263,66 @@ function SignUp() {
     const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null, playing_level: childLevel, league_level: childLeague || null }).select('id').single()
     if (childError) { setError(childError.message); setLoading(false); return }
     setAddedChildId(child.id)
-    const { data: plansData } = await supabase.from('subscription_plans').select('id, name, description, amount, sessions_per_week, interval').eq('active', true).eq('organisation_id', profile?.organisation_id).order('sort_order')
-    setPlans(plansData || [])
+
+    // Strict class-plan matching with proper precedence:
+    //   1. Plans directly linked to this class via training_group_id → use ONLY these
+    //   2. Plans tagged with matching class_type (and not linked to other classes) → fallback
+    //   3. Truly org-wide plans (no class_type, no training_group_id) → final fallback
+    // The Mini Ballers £28 plan is linked via training_group_id, not class_type,
+    // so the previous filter was missing it and falling back to org-wide defaults.
+    let classClassType: string | null = null
+    if (preSelectedClassId) {
+      const { data: classRow } = await supabase
+        .from('training_groups')
+        .select('class_type')
+        .eq('id', preSelectedClassId)
+        .single()
+      classClassType = (classRow?.class_type as string | null) || null
+    }
+
+    type PlanRow = { id: string; name: string; description: string | null; amount: number; sessions_per_week: number; interval: string; class_type: string | null; training_group_id: string | null }
+    const baseSelect = 'id, name, description, amount, sessions_per_week, interval, class_type, training_group_id'
+    let plansData: PlanRow[] = []
+
+    // Tier 1: plans directly linked to this class
+    if (preSelectedClassId) {
+      const { data } = await supabase
+        .from('subscription_plans')
+        .select(baseSelect)
+        .eq('active', true)
+        .eq('organisation_id', profile?.organisation_id)
+        .eq('training_group_id', preSelectedClassId)
+        .order('sort_order')
+      plansData = (data as PlanRow[] | null) || []
+    }
+
+    // Tier 2: plans matching this class's class_type (and not linked to other classes)
+    if (plansData.length === 0 && classClassType) {
+      const { data } = await supabase
+        .from('subscription_plans')
+        .select(baseSelect)
+        .eq('active', true)
+        .eq('organisation_id', profile?.organisation_id)
+        .eq('class_type', classClassType)
+        .is('training_group_id', null)
+        .order('sort_order')
+      plansData = (data as PlanRow[] | null) || []
+    }
+
+    // Tier 3: truly org-wide plans (no class_type, no group link)
+    if (plansData.length === 0) {
+      const { data } = await supabase
+        .from('subscription_plans')
+        .select(baseSelect)
+        .eq('active', true)
+        .eq('organisation_id', profile?.organisation_id)
+        .is('class_type', null)
+        .is('training_group_id', null)
+        .order('sort_order')
+      plansData = (data as PlanRow[] | null) || []
+    }
+
+    setPlans(plansData)
     if (preSelectedPlan) { const match = (plansData || []).find(p => p.id === preSelectedPlan); if (match) setSelectedPlanId(match.id) }
     setStep(3); setLoading(false)
   }
@@ -135,7 +331,7 @@ function SignUp() {
     if (!selectedPlanId || !addedChildId) return
     setSubscribing(true)
     try {
-      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption }) })
+      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: preSelectedClassId || null }) })
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else { setError(data.error || 'Failed to start subscription'); setSubscribing(false) }
@@ -169,6 +365,13 @@ function SignUp() {
         {referrerName && <div className="rounded-xl px-4 py-3 mb-4 border border-purple-500/20 bg-purple-500/10 backdrop-blur-xl flex items-center justify-center gap-2"><span className="text-lg">&#127873;</span><p className="text-sm font-medium text-purple-400">Referred by {referrerName}!</p></div>}
 
         <div className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-6 sm:p-8 shadow-2xl">
+          {detectingSession ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Spinner size={32} />
+              <p className="mt-4 text-sm text-white/50">Loading your booking…</p>
+            </div>
+          ) : (
+          <>
           <div className="flex items-center gap-1 mb-6">
             {stepLabels.map((label, i) => (
               <div key={label} className="flex-1">
@@ -223,7 +426,11 @@ function SignUp() {
               <div><label className="block text-xs text-white/50 mb-1.5">Password *</label><div className="relative"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className={inputCls + ' pr-10'} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">{showPassword ? (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9.27-3.11-11-7.5a11.72 11.72 0 013.168-4.477M6.343 6.343A9.97 9.97 0 0112 5c5 0 9.27 3.11 11 7.5a11.7 11.7 0 01-4.373 5.157M6.343 6.343L3 3m3.343 3.343l2.829 2.829M17.657 17.657L21 21m-3.343-3.343l-2.829-2.829M9.878 9.878a3 3 0 104.243 4.243" /></svg>) : (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>)}</button></div></div>
               <div className="flex items-start gap-3">
                 <input type="checkbox" id="terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer" style={{ accentColor: primaryColor }} />
-                <label htmlFor="terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">I agree to the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Terms &amp; Conditions</Link> and confirm I am the parent or legal guardian of the child being registered.</label>
+                <label htmlFor="terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">
+                  I agree to {orgName ? <Link href={`/book/${orgSlug.trim().toLowerCase()}/terms`} target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>{orgName}&apos;s Terms &amp; Conditions</Link> : <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>the Terms &amp; Conditions</Link>}
+                  {orgName && <> and the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Player Portal platform terms</Link></>}
+                  . I confirm I am the parent or legal guardian of the child being registered.
+                </label>
               </div>
               {error && <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
               <button type="submit" disabled={loading || !agreedToTerms} className="w-full py-3.5 rounded-xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
@@ -318,6 +525,8 @@ function SignUp() {
               </button>
               <button onClick={handleSkipPlan} className="w-full py-2 text-sm text-white/40 hover:text-white/60 font-medium transition-colors">Skip for now — I&apos;ll choose later</button>
             </div>
+          )}
+          </>
           )}
         </div>
         <p className="text-center text-xs text-white/20 mt-6">Powered by Player Portal</p>

@@ -17,13 +17,15 @@ interface TrialFormProps {
   primaryColor: string
   slug: string
   academyName: string
+  preselectedGroupId?: string | null
 }
 
-export default function TrialForm({ orgId, groups, primaryColor, slug, academyName }: TrialFormProps) {
+export default function TrialForm({ orgId, groups, primaryColor, slug, academyName, preselectedGroupId }: TrialFormProps) {
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [childName, setChildName] = useState('')
-  const [groupId, setGroupId] = useState('')
+  const [groupId, setGroupId] = useState(preselectedGroupId || '')
+  const [sessionDate, setSessionDate] = useState('')
   const [showMore, setShowMore] = useState(false)
   const [childAge, setChildAge] = useState('')
   const [phone, setPhone] = useState('')
@@ -34,11 +36,38 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
 
   const selectedGroup = groups.find((g) => g.id === groupId)
 
+  // Build the next 6 valid session dates from the selected class's day_of_week.
+  // Parent picks from a dropdown of actual class dates instead of a free-form picker —
+  // impossible to pick a date the class doesn't run.
+  const DAYS_OF_WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  const validDates: { iso: string; label: string }[] = []
+  if (selectedGroup?.day) {
+    const targetIdx = DAYS_OF_WEEK.indexOf(selectedGroup.day.toLowerCase())
+    if (targetIdx >= 0) {
+      const today = new Date()
+      const todayIdx = today.getDay()
+      let daysAhead = (targetIdx - todayIdx + 7) % 7
+      if (daysAhead === 0) daysAhead = 7 // skip today, give them next week
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysAhead + i * 7)
+        validDates.push({
+          iso: d.toISOString().split('T')[0],
+          label: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (selectedGroup.time ? ` · ${selectedGroup.time}` : ''),
+        })
+      }
+    }
+  }
+
   function buildCalendarTitle() {
     return `Free Trial - ${academyName}${selectedGroup ? ` (${selectedGroup.name})` : ''}`
   }
 
   function getNextClassDate(): Date {
+    // Prefer the parent's chosen session date if they picked one from the dropdown.
+    if (sessionDate) {
+      const [y, m, d] = sessionDate.split('-').map(Number)
+      return new Date(y, m - 1, d)
+    }
     if (!selectedGroup?.day) return new Date(Date.now() + 7 * 86400000)
     const dayMap: Record<string, number> = {
       Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
@@ -122,6 +151,7 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       parent_phone: phone || null,
       child_name: childName,
       child_age: childAge ? parseInt(childAge) : null,
+      preferred_date: sessionDate || null,
       notes: notes || null,
     })
 
@@ -271,25 +301,62 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
         />
       </div>
 
-      <div>
-        <label className="text-xs font-medium text-white/50 block mb-1.5">Select a Class</label>
-        <select
-          className={inputClass}
-          style={{ ['--tw-ring-color' as string]: primaryColor }}
-          value={groupId}
-          onChange={(e) => setGroupId(e.target.value)}
-        >
-          <option value="">Any available class</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-              {g.day ? ` - ${g.day}` : ''}
-              {g.time ? ` ${g.time}` : ''}
-              {g.ageGroup ? ` (${g.ageGroup})` : ''}
-            </option>
-          ))}
-        </select>
-      </div>
+      {preselectedGroupId && groups.length === 1 ? (
+        // Class is locked in (parent came from a specific class page) — show as static card
+        <div>
+          <label className="text-xs font-medium text-white/50 block mb-1.5">Booking trial for</label>
+          <div className="px-3 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-sm">
+            <div className="font-semibold text-white">{groups[0].name}</div>
+            <div className="text-xs text-white/50 mt-0.5">
+              {groups[0].day}{groups[0].time ? ` · ${groups[0].time}` : ''}{groups[0].location ? ` · ${groups[0].location}` : ''}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <label className="text-xs font-medium text-white/50 block mb-1.5">Select a Class</label>
+          <select
+            className={inputClass}
+            style={{ ['--tw-ring-color' as string]: primaryColor }}
+            value={groupId}
+            onChange={(e) => setGroupId(e.target.value)}
+          >
+            <option value="">Any available class</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+                {g.day ? ` - ${g.day}` : ''}
+                {g.time ? ` ${g.time}` : ''}
+                {g.ageGroup ? ` (${g.ageGroup})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Pick trial date — dropdown of next 6 valid days for this class */}
+      {validDates.length > 0 && (
+        <div>
+          <label className="text-xs font-medium text-white/50 block mb-1.5">
+            Pick your trial date{selectedGroup?.day ? ` — available ${selectedGroup.day}s` : ''}
+          </label>
+          <select
+            className={inputClass}
+            style={{ ['--tw-ring-color' as string]: primaryColor }}
+            value={sessionDate}
+            onChange={(e) => setSessionDate(e.target.value)}
+            required
+          >
+            <option value="">Select a date…</option>
+            {validDates.map((d) => (
+              <option key={d.iso} value={d.iso}>{d.label}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-white/30 mt-1.5">
+            Class runs {selectedGroup?.day}s{selectedGroup?.time ? ` at ${selectedGroup.time}` : ''}. The coach will confirm via email.
+          </p>
+        </div>
+      )}
 
       {/* Expandable optional fields */}
       {!showMore && (

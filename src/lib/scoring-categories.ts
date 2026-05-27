@@ -84,3 +84,64 @@ export const CUSTOM_SPORT_DEFAULTS = [
   { name: 'Creativity', icon: '\uD83C\uDFA8', description: 'Improvisation and creative play' },
   { name: 'Work Rate', icon: '\uD83D\uDD25', description: 'Effort and intensity' },
 ]
+
+// Age-appropriate scoring sets for very young players (2-5).
+// Tactical IQ doesn't matter; coordination and confidence do.
+export const SOCCER_TOTS_DEFAULTS = [
+  { name: 'Coordination', icon: '\uD83E\uDD38', description: 'Hand-eye and foot-eye coordination' },
+  { name: 'Confidence', icon: '\u2728', description: 'Willingness to try new things' },
+  { name: 'Listening', icon: '\uD83D\uDC42', description: 'Following coach instructions' },
+  { name: 'Sharing', icon: '\uD83E\uDD1D', description: 'Playing nicely with other children' },
+  { name: 'Fun', icon: '\uD83D\uDE03', description: 'Engagement and enjoyment of the session' },
+  { name: 'Effort', icon: '\u26A1', description: 'Trying hard and staying engaged' },
+]
+
+// 1-2-1 and intensity sessions \u2014 these are advanced/high-performance players.
+// Focus on tactical IQ, mental toughness, decision making.
+export const ONE_TO_ONE_DEFAULTS = [
+  { name: 'Tactical IQ', icon: '\uD83E\uDDE0', description: 'Reading the game and decision making' },
+  { name: 'Technical Quality', icon: '\u26BD', description: 'Precision in 1v1, finishing, control' },
+  { name: 'Mental Strength', icon: '\uD83D\uDCAA', description: 'Composure under pressure, focus' },
+  { name: 'Movement', icon: '\uD83C\uDFC3', description: 'Off-ball runs, positioning, awareness' },
+  { name: 'Pressing', icon: '\uD83D\uDD25', description: 'Defensive intensity and recovery' },
+  { name: 'Coachability', icon: '\uD83C\uDFAF', description: 'Applies feedback quickly' },
+]
+
+// Older group sessions \u2014 standard football skills assessment.
+export const GROUP_DEFAULTS = FOOTBALL_DEFAULTS
+
+// Accelerator / Elite \u2014 performance pathway players.
+export const ACCELERATOR_DEFAULTS = [
+  { name: 'Game Intelligence', icon: '\uD83E\uDDE0', description: 'Reading the game, scanning, decisions' },
+  { name: 'Technical Excellence', icon: '\u26BD', description: 'First touch, passing, shooting under pressure' },
+  { name: 'Athletic Profile', icon: '\uD83D\uDCAA', description: 'Speed, agility, strength for age' },
+  { name: 'Mental Edge', icon: '\uD83D\uDD25', description: 'Resilience, composure, leadership' },
+  { name: 'Position-Specific', icon: '\uD83C\uDFAF', description: 'Specialist skills for their role' },
+  { name: 'Coachability', icon: '\uD83C\uDF93', description: 'Applies feedback session-to-session' },
+]
+
+// Soccer camp / one-off camps \u2014 simple, holiday-vibe scoring.
+export const CAMP_DEFAULTS = [
+  { name: 'Effort', icon: '\u26A1', description: 'Worked hard all day' },
+  { name: 'Skills Improvement', icon: '\uD83D\uDCC8', description: 'Visibly improved during the camp' },
+  { name: 'Attitude', icon: '\u2728', description: 'Positive, respectful, supportive of others' },
+  { name: 'Fun Factor', icon: '\uD83D\uDE03', description: 'Engagement and enjoyment' },
+]
+
+// Map class_type \u2192 default template. Used by the admin UI's per-tab "Load Defaults" button.
+export const DEFAULTS_BY_CLASS_TYPE: Record<string, { name: string; icon: string; description: string }[]> = {
+  soccer_tots: SOCCER_TOTS_DEFAULTS,
+  '1-2-1': ONE_TO_ONE_DEFAULTS,
+  '2-1': ONE_TO_ONE_DEFAULTS,
+  intensity: ONE_TO_ONE_DEFAULTS,
+  gk: GOALKEEPER_DEFAULTS,
+  group: GROUP_DEFAULTS,
+  small_group: GROUP_DEFAULTS,
+  academy: ACCELERATOR_DEFAULTS,
+  accelerator: ACCELERATOR_DEFAULTS,
+  elite: ACCELERATOR_DEFAULTS,
+  camp: CAMP_DEFAULTS,
+  girls: GROUP_DEFAULTS,
+  adults: GROUP_DEFAULTS,
+  trial: CAMP_DEFAULTS,
+}

@@ -4,10 +4,13 @@ import TrialForm from './TrialForm'
 
 export default async function QuickTrialPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ class?: string }>
 }) {
   const { slug } = await params
+  const { class: preselectedClassId } = await searchParams
   const supabase = await createClient()
 
   const { data: org } = await supabase
@@ -83,14 +86,20 @@ export default async function QuickTrialPage({
       <div className="max-w-lg mx-auto px-4 -mt-2 pb-16">
         <TrialForm
           orgId={org.id}
-          groups={(groups || []).map((g) => ({
-            id: g.id,
-            name: g.name,
-            day: g.day_of_week,
-            time: g.time_slot,
-            location: g.location,
-            ageGroup: g.age_group as string | null,
-          }))}
+          // When the parent came from a specific class page (?class=...),
+          // scope the trial booking to that class only. They're not browsing,
+          // they've already chosen — showing all classes again is confusing.
+          groups={(groups || [])
+            .filter((g) => !preselectedClassId || g.id === preselectedClassId)
+            .map((g) => ({
+              id: g.id,
+              name: g.name,
+              day: g.day_of_week,
+              time: g.time_slot,
+              location: g.location,
+              ageGroup: g.age_group as string | null,
+            }))}
+          preselectedGroupId={preselectedClassId || null}
           primaryColor={primaryColor}
           slug={slug}
           academyName={org.name}

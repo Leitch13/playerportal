@@ -73,6 +73,7 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.supabase_user_id ?? null
   const planId = session.metadata?.supabase_plan_id ?? null
   const playerId = session.metadata?.supabase_player_id ?? null
+  const classId = session.metadata?.supabase_class_id ?? null
 
   let profile: {
     id: string
@@ -119,7 +120,7 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
     organisationName = data?.name ?? null
   }
 
-  return { userId, planId, playerId, profile, plan, orgId, organisationName }
+  return { userId, planId, playerId, classId, profile, plan, orgId, organisationName }
 }
 
 // ---------------------------------------------------------------------------
@@ -127,6 +128,37 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
 // ---------------------------------------------------------------------------
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // ─── Paid trial flow — record trial_booking + skip subscription/enrolment paths ───
+  // Set by /api/trial-bookings/paid. One-off Checkout, no user account required.
+  if (session.metadata?.type === 'paid_trial') {
+    const m = session.metadata
+    const childName = `${m.child_first_name || ''} ${m.child_last_name || ''}`.trim() || 'Trial child'
+    let childAge: number | null = null
+    if (m.child_dob) {
+      const dob = new Date(m.child_dob)
+      if (!isNaN(dob.getTime())) {
+        const today = new Date()
+        childAge = today.getFullYear() - dob.getFullYear()
+        const monthDiff = today.getMonth() - dob.getMonth()
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) childAge--
+      }
+    }
+    await supabase.from('trial_bookings').insert({
+      organisation_id: m.supabase_org_id,
+      training_group_id: m.supabase_class_id,
+      parent_name: m.parent_name || 'Parent',
+      parent_email: m.parent_email || '',
+      parent_phone: m.parent_phone || null,
+      child_name: childName,
+      child_age: childAge,
+      preferred_date: m.session_date || null,
+      notes: `Paid trial — £${((session.amount_total ?? 0) / 100).toFixed(2)} via Stripe (${session.id})`,
+      status: 'confirmed',
+      confirmed_at: new Date().toISOString(),
+    })
+    return
+  }
+
   const ctx = await resolveSessionContext(session)
   const amountPaid = (session.amount_total ?? 0) / 100
   const now = new Date().toISOString()
@@ -183,6 +215,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       })
     }
 
+    // AUTO-ENROL: if the parent came from a specific class page, enrol their
+    // player in that class straight away so the admin doesn't have to do it manually.
+    if (ctx.classId && ctx.playerId) {
+      const { data: existingEnrolment } = await supabase
+        .from('enrolments')
+        .select('id')
+        .eq('player_id', ctx.playerId)
+        .eq('group_id', ctx.classId)
+        .maybeSingle()
+
+      if (!existingEnrolment) {
+        await supabase.from('enrolments').insert({
+          player_id: ctx.playerId,
+          group_id: ctx.classId,
+          status: 'active',
+        })
+      }
+    }
   }
 
   // 3. In-app notification
@@ -208,6 +258,98 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       receiptId: session.id,
       academyName: ctx.organisationName ?? 'Your Academy',
     })
+  }
+
+  // 5. Subscription-started welcome email \u2014 only on the FIRST subscription event
+  //    for a new subscription, NOT every renewal. Fires once per new subscription.
+  if (session.mode === 'subscription' && ctx.profile?.email && ctx.plan && ctx.orgId) {
+    try {
+      // Fetch child name + next session + academy branding for a personalised email.
+      let childName: string | undefined
+      if (ctx.playerId) {
+        const { data: player } = await supabase
+          .from('players')
+          .select('first_name')
+          .eq('id', ctx.playerId)
+          .maybeSingle()
+        childName = (player?.first_name as string | undefined) || undefined
+      }
+
+      // Find the next session this player could attend
+      let nextClass: { name: string; day: string; time: string; location?: string } | undefined
+      if (ctx.playerId) {
+        const { data: enrol } = await supabase
+          .from('enrolments')
+          .select('group:training_groups(name, day_of_week, time_slot, location)')
+          .eq('player_id', ctx.playerId)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle()
+        const group = (enrol?.group as unknown as { name: string; day_of_week: string | null; time_slot: string | null; location: string | null } | null) || null
+        if (group?.name) {
+          nextClass = {
+            name: group.name,
+            day: group.day_of_week || 'TBA',
+            time: group.time_slot || 'TBA',
+            location: group.location || undefined,
+          }
+        }
+      }
+
+      const { data: orgBranding } = await supabase
+        .from('organisations')
+        .select('logo_url, contact_email')
+        .eq('id', ctx.orgId)
+        .maybeSingle()
+
+      const { subscriptionStartedEmail, firstSaleEmail } = await import('@/lib/email-templates')
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+      const template = subscriptionStartedEmail({
+        parentName: ctx.profile.full_name ?? 'Parent',
+        childName,
+        academyName: ctx.organisationName ?? 'Your Academy',
+        planName: ctx.plan.name,
+        amount: `\u00a3${amountPaid.toFixed(2)}`,
+        nextClass,
+        dashboardUrl: `${appUrl}/dashboard`,
+        academyLogoUrl: (orgBranding?.logo_url as string | undefined) || undefined,
+        academyContactEmail: (orgBranding?.contact_email as string | undefined) || undefined,
+      })
+      const { sendEmail } = await import('@/lib/email')
+      await sendEmail({ to: ctx.profile.email, ...template })
+
+      // \u2500\u2500 PLATFORM ADMIN: notify on this academy's FIRST EVER paid subscription \u2500\u2500
+      // Check if this is the only active subscription for the org. If yes, fire off
+      // a one-time "first sale" email to the platform admin \u2014 celebrate the moment.
+      const { count: priorSubs } = await supabase
+        .from('subscriptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('organisation_id', ctx.orgId)
+        .in('status', ['active', 'trialing'])
+        .neq('stripe_subscription_id', typeof session.subscription === 'string' ? session.subscription : session.subscription?.id ?? '')
+
+      if ((priorSubs || 0) === 0) {
+        const { data: orgInfo } = await supabase
+          .from('organisations')
+          .select('slug')
+          .eq('id', ctx.orgId)
+          .maybeSingle()
+        const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'johnleitch970@gmail.com'
+        const firstSaleTemplate = firstSaleEmail({
+          academyName: ctx.organisationName ?? 'Academy',
+          academySlug: (orgInfo?.slug as string | undefined) || '',
+          parentName: ctx.profile.full_name ?? 'Parent',
+          childName,
+          planName: ctx.plan.name,
+          amount: `\u00a3${amountPaid.toFixed(2)}`,
+          dashboardUrl: appUrl,
+        })
+        await sendEmail({ to: adminEmail, ...firstSaleTemplate })
+      }
+    } catch (err) {
+      // Don't fail the webhook on email errors
+      console.error('Subscription started email failed:', err)
+    }
   }
 }
 
@@ -346,6 +488,58 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       body: `Your payment${plan ? ` for ${plan.name}` : ''} could not be processed. Please update your payment method to avoid losing your place.`,
       link: '/dashboard/payments',
     })
+
+    // ── ALSO: email all org admins so they can intervene before the parent churns ──
+    try {
+      const [{ data: parentProfile }, { data: orgInfo }, { data: admins }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', localSub.parent_id)
+          .maybeSingle(),
+        supabase
+          .from('organisations')
+          .select('name')
+          .eq('id', localSub.organisation_id)
+          .maybeSingle(),
+        supabase
+          .from('profiles')
+          .select('email')
+          .eq('organisation_id', localSub.organisation_id)
+          .eq('role', 'admin')
+      ])
+
+      // Find a child name if the parent only has one player (best-effort context)
+      const { data: kids } = await supabase
+        .from('players')
+        .select('first_name')
+        .eq('parent_id', localSub.parent_id)
+        .limit(2)
+      const childName = (kids || []).length === 1 ? (kids![0].first_name as string) : undefined
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+      const { paymentFailedAdminEmail } = await import('@/lib/email-templates')
+      const { sendEmail } = await import('@/lib/email')
+      const amountFailed = (invoice.amount_due ?? 0) / 100
+      const template = paymentFailedAdminEmail({
+        academyName: (orgInfo?.name as string | undefined) || 'Academy',
+        parentName: (parentProfile?.full_name as string | undefined) || 'Parent',
+        parentEmail: (parentProfile?.email as string | undefined) || undefined,
+        childName,
+        planName: (plan?.name as string | undefined) || 'Subscription',
+        amount: `£${amountFailed.toFixed(2)}`,
+        dashboardUrl: appUrl,
+      })
+
+      for (const admin of admins || []) {
+        const adminEmail = admin.email as string | undefined
+        if (adminEmail) {
+          await sendEmail({ to: adminEmail, ...template })
+        }
+      }
+    } catch (err) {
+      console.error('Payment failed admin email failed:', err)
+    }
   }
 
 }

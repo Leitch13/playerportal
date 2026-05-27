@@ -27,10 +27,10 @@ export default async function RunSessionPage({
   const role = (profile?.role || 'parent') as UserRole
   if (role === 'parent') redirect('/dashboard')
 
-  // Fetch training group details
+  // Fetch training group details (incl class_type so scoring filters work)
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name')
+    .select('id, name, class_type')
     .eq('id', groupId)
     .single()
 
@@ -56,6 +56,7 @@ export default async function RunSessionPage({
       <SessionRunner
         groupId={group.id}
         groupName={group.name}
+        groupClassType={(group as { class_type: string | null }).class_type ?? null}
         sessionDate={today}
         coachId={user.id}
         players={players}

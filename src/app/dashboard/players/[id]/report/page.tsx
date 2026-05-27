@@ -137,6 +137,139 @@ function PrintRadarChart({ scores }: { scores: { label: string; value: number }[
   )
 }
 
+/**
+ * Inline SVG line chart showing average score over time across past reviews.
+ * Print-friendly (no client JS needed), oldest review on the left, newest on the right.
+ * If there's only one review, falls back to a "needs another review to plot a trend" message.
+ */
+function ProgressOverTimeChart({
+  reviewPoints,
+}: {
+  reviewPoints: { date: string; average: number }[]
+}) {
+  if (reviewPoints.length < 2) {
+    return (
+      <div className="text-sm text-text-light text-center py-6 px-4 border border-dashed border-border rounded-lg">
+        A second progress review will unlock the improvement trend chart.
+      </div>
+    )
+  }
+
+  const width = 560
+  const height = 200
+  const padding = { top: 20, right: 30, bottom: 40, left: 36 }
+  const innerW = width - padding.left - padding.right
+  const innerH = height - padding.top - padding.bottom
+
+  const values = reviewPoints.map((p) => p.average)
+  const minVal = 1
+  const maxVal = 5
+
+  const points = reviewPoints.map((p, i) => {
+    const x = padding.left + (i / (reviewPoints.length - 1)) * innerW
+    const y = padding.top + innerH - ((p.average - minVal) / (maxVal - minVal)) * innerH
+    return { x, y, ...p }
+  })
+
+  // Path between dots
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+
+  // Subtle area fill underneath the line
+  const areaPath =
+    points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') +
+    ` L ${points[points.length - 1].x} ${padding.top + innerH}` +
+    ` L ${points[0].x} ${padding.top + innerH} Z`
+
+  const trend = values[values.length - 1] - values[0]
+  const trendLabel =
+    trend > 0.25
+      ? `+${trend.toFixed(1)} since first review`
+      : trend < -0.25
+      ? `${trend.toFixed(1)} since first review`
+      : 'Steady performance'
+  const trendColor = trend > 0.25 ? '#10b981' : trend < -0.25 ? '#ef4444' : '#64748b'
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-text-light">Average score per review</span>
+        <span className="text-xs font-semibold" style={{ color: trendColor }}>
+          {trend > 0.25 ? '↗' : trend < -0.25 ? '↘' : '→'} {trendLabel}
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" className="max-w-full h-auto">
+        {/* Gradient for area fill */}
+        <defs>
+          <linearGradient id="progress-gradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(78, 205, 230, 0.4)" />
+            <stop offset="100%" stopColor="rgba(78, 205, 230, 0)" />
+          </linearGradient>
+        </defs>
+
+        {/* Horizontal grid + Y-axis labels at 1, 2, 3, 4, 5 */}
+        {[1, 2, 3, 4, 5].map((v) => {
+          const y = padding.top + innerH - ((v - minVal) / (maxVal - minVal)) * innerH
+          return (
+            <g key={v}>
+              <line
+                x1={padding.left}
+                y1={y}
+                x2={padding.left + innerW}
+                y2={y}
+                stroke="#e2e8f0"
+                strokeWidth={0.5}
+                strokeDasharray={v === 3 ? '0' : '2,3'}
+                opacity={0.6}
+              />
+              <text
+                x={padding.left - 8}
+                y={y}
+                textAnchor="end"
+                dominantBaseline="central"
+                fill="#94a3b8"
+                style={{ fontSize: '10px' }}
+              >
+                {v}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Area fill */}
+        <path d={areaPath} fill="url(#progress-gradient)" />
+
+        {/* Trend line */}
+        <path d={linePath} fill="none" stroke="rgba(78, 205, 230, 1)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Data points + value labels */}
+        {points.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={5} fill="white" stroke="rgba(78, 205, 230, 1)" strokeWidth={2} />
+            <text
+              x={p.x}
+              y={p.y - 12}
+              textAnchor="middle"
+              fill="#475569"
+              style={{ fontSize: '10px', fontWeight: 600 }}
+            >
+              {p.average.toFixed(1)}
+            </text>
+            <text
+              x={p.x}
+              y={padding.top + innerH + 16}
+              textAnchor="middle"
+              fill="#94a3b8"
+              style={{ fontSize: '9px' }}
+            >
+              {new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  )
+}
+
 function OverallRating({ average }: { average: number }) {
   const fullStars = Math.floor(average)
   const hasHalf = average - fullStars >= 0.25 && average - fullStars < 0.75
@@ -294,24 +427,62 @@ export default async function PlayerReportPage({
   // Latest review + radar scores
   const latestReview = (reviews || [])[0]
   const latestJsonScores = latestReview ? (latestReview as Record<string, unknown>).scores as Record<string, number> | null : null
+
+  // Per-class-type scoring: with different class types each having different categories,
+  // we filter the org's full category list down to only ones this player has actually
+  // been scored on. Prevents Soccer Tots kids showing empty "Tactical IQ" bars etc.
+  const LEGACY_KEYS = ['attitude', 'effort', 'technical_quality', 'game_understanding', 'confidence', 'physical_movement']
+  const playerScoredKeys = new Set<string>()
+  for (const review of reviews || []) {
+    const r = review as Record<string, unknown>
+    const rs = r.scores as Record<string, number> | null | undefined
+    if (rs) Object.keys(rs).forEach((k) => playerScoredKeys.add(k))
+    for (const k of LEGACY_KEYS) {
+      if (r[k] != null) playerScoredKeys.add(k)
+    }
+  }
+  const playerCategories = scoringCategories.length === 0
+    ? scoringCategories
+    : scoringCategories.filter((c) => playerScoredKeys.has(c.key))
+  // If no matches (legacy data with no DB categories, etc.), fall back to all
+  const displayCategories = playerCategories.length > 0 ? playerCategories : scoringCategories
+
   const radarScores = latestReview
-    ? scoringCategories.map((cat) => ({
+    ? displayCategories.map((cat) => ({
         label: cat.label,
         value: (latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0,
       }))
     : []
 
-  // Overall average from latest review
-  const overallAverage = latestReview
-    ? scoringCategories.reduce((sum, cat) => sum + ((latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0), 0) /
-      scoringCategories.length
+  // Overall average from latest review — only over categories the player has been scored on
+  const overallAverage = latestReview && displayCategories.length > 0
+    ? displayCategories.reduce((sum, cat) => sum + ((latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0), 0) /
+      displayCategories.length
     : 0
+
+  // Progress over time — average score per review, oldest first for left-to-right chart
+  const reviewsOldestFirst = [...(reviews || [])].reverse()
+  const progressOverTime = reviewsOldestFirst
+    .map((r) => {
+      const rec = r as Record<string, unknown>
+      const jsonScores = rec.scores as Record<string, number> | null | undefined
+      const scoredCats = displayCategories.length > 0 ? displayCategories : scoringCategories
+      const valid: number[] = []
+      for (const cat of scoredCats) {
+        const v = jsonScores?.[cat.key] ?? (rec[cat.key] as number | undefined)
+        if (typeof v === 'number' && v > 0) valid.push(v)
+      }
+      if (valid.length === 0) return null
+      const avg = valid.reduce((a, b) => a + b, 0) / valid.length
+      return { date: r.review_date as string, average: avg }
+    })
+    .filter((p): p is { date: string; average: number } => p !== null)
 
   // Areas of strength (score >= 4) and areas to develop (score <= 2) from latest review
   const strengths: string[] = []
   const areasToImprove: string[] = []
   if (latestReview) {
-    for (const cat of scoringCategories) {
+    for (const cat of displayCategories) {
       const score = (latestJsonScores?.[cat.key] ?? (latestReview[cat.key as keyof typeof latestReview] as number)) || 0
       if (score >= 4) strengths.push(cat.label)
       if (score <= 2) areasToImprove.push(cat.label)
@@ -433,6 +604,16 @@ export default async function PlayerReportPage({
           </div>
         )}
 
+        {/* Progress Over Time */}
+        {progressOverTime.length > 0 && (
+          <div className="px-8 py-6 border-b border-border">
+            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">
+              Progress Over Time
+            </h3>
+            <ProgressOverTimeChart reviewPoints={progressOverTime} />
+          </div>
+        )}
+
         {/* Attendance Summary */}
         <div className="px-8 py-6 border-b border-border">
           <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">Attendance Summary</h3>
@@ -545,9 +726,10 @@ export default async function PlayerReportPage({
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {scoringCategories.map((cat) => {
+                    {displayCategories.map((cat) => {
                       const jsonScores = (r as Record<string, unknown>).scores as Record<string, number> | null
                       const score = jsonScores?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number
+                      if (score == null) return null
                       return (
                         <span
                           key={cat.key}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import DemoToastLink from './DemoToastLink'
 
 export function generateMetadata({ params }: { params: Promise<{ role: string }> }): Promise<Metadata> {
   // We need to await params but metadata can be async
@@ -65,7 +66,7 @@ const parentChildren = [
     nextSession: 'Tomorrow, 10:30 AM',
     attendance: '92%',
     rating: 4.6,
-    skills: { pace: 7.2, shooting: 6.8, passing: 8.1, dribbling: 7.5, defending: 5.4, teamwork: 8.8 },
+    skills: { pace: 3.6, shooting: 3.4, passing: 4.1, dribbling: 3.8, defending: 2.7, teamwork: 4.4 },
     badges: ['Top Passer', '10 Sessions Streak', 'Most Improved'],
     recentReview: 'Oliver has shown excellent progress in passing and teamwork. His vision on the pitch is developing really well.',
   },
@@ -76,7 +77,7 @@ const parentChildren = [
     nextSession: 'Tomorrow, 09:00 AM',
     attendance: '88%',
     rating: 4.3,
-    skills: { pace: 6.5, shooting: 5.2, passing: 6.8, dribbling: 7.1, defending: 4.8, teamwork: 8.2 },
+    skills: { pace: 3.3, shooting: 2.6, passing: 3.4, dribbling: 3.6, defending: 2.4, teamwork: 4.1 },
     badges: ['Star Player', 'Perfect Week'],
     recentReview: 'Emma is a joy to coach. She brings incredible energy and is starting to show real technical ability with the ball.',
   },
@@ -137,9 +138,10 @@ function DemoBanner() {
 }
 
 function DemoWatermark() {
+  // Subtle background mark — the top banner is the primary "DEMO" signal so this can stay quiet.
   return (
-    <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center overflow-hidden opacity-[0.03]">
-      <div className="text-[200px] font-black text-white tracking-[0.2em] rotate-[-15deg] select-none whitespace-nowrap">
+    <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden opacity-[0.012]">
+      <div className="text-[160px] font-black text-white tracking-[0.2em] rotate-[-15deg] select-none whitespace-nowrap">
         DEMO
       </div>
     </div>
@@ -156,20 +158,9 @@ function StatCard({ label, value, change, color }: { label: string; value: strin
   )
 }
 
-function DemoToastLink({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span
-      className={`cursor-pointer ${className}`}
-      title="Sign up to access this feature"
-    >
-      {children}
-    </span>
-  )
-}
-
 function QuickAction({ label }: { label: string }) {
   return (
-    <DemoToastLink>
+    <DemoToastLink actionLabel={label}>
       <div className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl hover:bg-white/[0.04] hover:border-[#4ecde6]/20 transition-all cursor-pointer">
         <div className="w-9 h-9 rounded-lg bg-[#4ecde6]/10 flex items-center justify-center">
           <svg className="w-4 h-4 text-[#4ecde6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -189,7 +180,7 @@ function SkillBar({ name, value }: { name: string; value: number }) {
       <div className="flex-1 h-2 rounded-full bg-white/[0.06] overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3]"
-          style={{ width: `${(value / 10) * 100}%` }}
+          style={{ width: `${(value / 5) * 100}%` }}
         />
       </div>
       <span className="text-xs text-white/50 font-semibold w-8 text-right">{value}</span>
@@ -463,7 +454,7 @@ function CoachDashboard() {
                 <div className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-white/50">
                   {cls.registered}/{cls.capacity} players
                 </div>
-                <DemoToastLink>
+                <DemoToastLink actionLabel="Start Session">
                   <div className="px-3 py-1.5 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold hover:bg-[#4ecde6]/20 transition-colors cursor-pointer">
                     Start Session
                   </div>
@@ -588,7 +579,6 @@ export default async function DemoRolePage({ params }: { params: Promise<{ role:
               { label: 'Payments', active: false },
               { label: 'Progress', active: false },
               { label: 'Gallery', active: false },
-              { label: 'Refer a Friend', active: false },
             ] : [
               { label: 'Dashboard', active: true },
               { label: 'My Classes', active: false },
@@ -597,7 +587,7 @@ export default async function DemoRolePage({ params }: { params: Promise<{ role:
               { label: 'Attendance', active: false },
               { label: 'Drill Library', active: false },
             ]).map((item) => (
-              <DemoToastLink key={item.label}>
+              <DemoToastLink key={item.label} actionLabel={item.active ? undefined : `view ${item.label}`}>
                 <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                   item.active
                     ? 'bg-[#4ecde6]/10 text-[#4ecde6] border border-[#4ecde6]/20'

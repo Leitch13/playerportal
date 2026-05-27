@@ -1,0 +1,589 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Playit Loveit — Wix Change Pack</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:light dark}body{font:16px/1.6 -apple-system,system-ui,"SF Pro Text",sans-serif;max-width:860px;margin:2em auto;padding:0 1.5em;color:#1a1a1a;background:#fafafa}@media (prefers-color-scheme:dark){body{background:#1a1a1a;color:#e8e8e8}code{background:#2a2a2a!important}pre{background:#0f0f0f!important}table{border-color:#333!important}th,td{border-color:#333!important}th{background:#222!important}blockquote{background:#222!important}}h1{font-size:2em;margin-top:1.5em;padding-bottom:.3em;border-bottom:2px solid #ff6b1a}h2{font-size:1.5em;margin-top:2em;color:#ff6b1a;padding-bottom:.2em;border-bottom:1px solid #ddd}h3{font-size:1.2em;margin-top:1.5em}h4{font-size:1.05em;margin-top:1.2em}code{background:#f0f0f0;padding:2px 6px;border-radius:4px;font:14px/1.4 "SF Mono",Menlo,monospace}pre{background:#f4f4f4;padding:1em;border-radius:8px;overflow-x:auto;border:1px solid #e0e0e0}pre code{background:transparent;padding:0;font-size:13px}table{border-collapse:collapse;width:100%;margin:1em 0;font-size:14px}th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;vertical-align:top}th{background:#f4f4f4;font-weight:600}blockquote{background:#fff8ef;border-left:4px solid #ff6b1a;padding:.8em 1em;margin:1em 0;border-radius:0 6px 6px 0}hr{border:none;border-top:2px dashed #ddd;margin:2.5em 0}a{color:#ff6b1a}ul{padding-left:1.5em}li{margin:.3em 0}input[type=checkbox]{margin-right:.5em;transform:scale(1.1)}@media print{body{background:white;color:black}pre,code{background:#f8f8f8!important}h1,h2{color:black;border-color:black}}</style></head><body><h1>Playit Loveit — Wix Change Pack</h1>
+<p>Single source of truth. Open this in one browser tab, Wix in another, work top-to-bottom. Each card tells you <strong>WHERE</strong> to go in Wix, <strong>WHAT</strong> to paste, and any <strong>SETTINGS</strong> to flip.</p>
+<p><code>[FILL LATER]</code> = waiting on info from you. Everything else is final.</p>
+<p><strong>Login:</strong> <code>manage.wix.com</code> → pick the Playit Loveit site.</p>
+<ul>
+<li><strong>Dashboard</strong> = settings (left sidebar after login)</li>
+<li><strong>Editor</strong> = page layout (top-right blue "Edit Site" button)</li>
+</ul>
+<p>Use a laptop. Have <code>playitloveit.com</code> open in a third tab to spot-check.</p>
+<hr>
+<h2>Sitting 1 — SEO foundations (~25 min)</h2>
+<h3>Card 1 — Business info</h3>
+<p><strong>WHERE:</strong> Dashboard → Settings → Business Info</p>
+<p><strong>SET THESE FIELDS:</strong></p>
+<ul>
+<li>Business name: <code>Playit Loveit</code></li>
+<li>Phone: <code>+44 7876 046014</code></li>
+<li>Email: <code>[FILL LATER]</code></li>
+<li>Address: <code>Aberdeen, [POSTCODE — FILL LATER]</code></li>
+<li>Country: <code>United Kingdom</code></li>
+</ul>
+<p>Click <strong>Save</strong>. ☐</p>
+<hr>
+<h3>Card 2 — JSON-LD structured data (LocalBusiness schema)</h3>
+<p><strong>WHERE:</strong> Dashboard → Settings → Custom Code → <strong>+ Add Custom Code</strong></p>
+<p><strong>FORM FIELDS:</strong></p>
+<ul>
+<li>Name: <code>LocalBusiness Schema</code></li>
+<li>Add code to pages: <code>All pages</code></li>
+<li>Place code in: <code>Head</code></li>
+<li>Load code: <code>Only on first load</code></li>
+</ul>
+<p><strong>PASTE THIS into the code box:</strong></p>
+<pre><code class="language-html">&lt;script type="application/ld+json"&gt;
+{
+  "@context": "https://schema.org",
+  "@type": "SportsActivityLocation",
+  "name": "Playit Loveit",
+  "url": "https://www.playitloveit.com",
+  "telephone": "+447876046014",
+  "email": "[FILL LATER]",
+  "priceRange": "££",
+  "foundingDate": "2018-11",
+  "sport": "Soccer",
+  "areaServed": { "@type": "City", "name": "Aberdeen" },
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Aberdeen",
+    "addressRegion": "Aberdeenshire",
+    "addressCountry": "GB",
+    "postalCode": "[FILL LATER]"
+  },
+  "location": [
+    { "@type": "Place", "name": "Strikers Indoor Football", "address": { "@type": "PostalAddress", "addressLocality": "Aberdeen", "addressCountry": "GB" } },
+    { "@type": "Place", "name": "Balmoral Stadium", "address": { "@type": "PostalAddress", "addressLocality": "Aberdeen", "addressCountry": "GB" } },
+    { "@type": "Place", "name": "Fives Football Aberdeen", "address": { "@type": "PostalAddress", "addressLocality": "Aberdeen", "addressCountry": "GB" } }
+  ],
+  "audience": { "@type": "PeopleAudience", "suggestedMinAge": 3, "suggestedMaxAge": 18 },
+  "sameAs": [ "https://www.instagram.com/playitloveit1" ]
+}
+&lt;/script&gt;</code></pre>
+<p>Click <strong>Apply</strong>. ☐</p>
+<blockquote>If you don't see "Custom Code" in your Wix plan, tell me — there's a workaround.</blockquote>
+<hr>
+<h3>Card 3 — Meta titles &amp; descriptions (per page)</h3>
+<p><strong>WHERE for each page:</strong> Dashboard → SEO → Pages → click the page → <strong>Edit SEO settings</strong> → fill <strong>Title tag</strong> and <strong>Meta description</strong>.</p>
+<h4>Homepage</h4>
+<ul>
+<li><strong>Title:</strong> <code>Football Coaching in Aberdeen | Playit Loveit</code></li>
+<li><strong>Description:</strong> <code>Football coaching for ages 3–18 across Aberdeen — at Strikers Indoor &amp; Balmoral Stadium. Academy, 1-2-1s &amp; holiday camps. Book a free trial.</code></li>
+</ul>
+<p>☐</p>
+<h4>/academy</h4>
+<ul>
+<li><strong>Title:</strong> <code>Football Academy Aberdeen, Ages 3–18 | Playit Loveit</code></li>
+<li><strong>Description:</strong> <code>Weekly football coaching from £42/month at Strikers Indoor &amp; Balmoral. Soccer Tots, Academy &amp; Accelerator tiers. Book a free trial today.</code></li>
+</ul>
+<p>☐</p>
+<h4>/1-2-1</h4>
+<ul>
+<li><strong>Title:</strong> <code>1-2-1 Football Coaching Aberdeen | Playit Loveit</code></li>
+<li><strong>Description:</strong> <code>Private 1-hour football coaching at Strikers Indoor &amp; Balmoral Stadium, Aberdeen. £48/session, ages 6–18. See live availability &amp; book.</code></li>
+</ul>
+<p>☐</p>
+<h4>/soccer-camps</h4>
+<ul>
+<li><strong>Title:</strong> <code>Aberdeen Football Holiday Camps | Playit Loveit</code></li>
+<li><strong>Description:</strong> <code>School-holiday football camps in Aberdeen for ages 5–12. Easter, May, summer &amp; October dates. Limited spots — book early.</code></li>
+</ul>
+<p>☐</p>
+<h4>/general-4 (will rename to /faqs in Card 10)</h4>
+<ul>
+<li><strong>Title:</strong> <code>FAQs &amp; Booking Policies | Playit Loveit</code></li>
+<li><strong>Description:</strong> <code>Trial decision window, refund policy, cancellation terms and what to bring. Everything you need to know before booking.</code></li>
+</ul>
+<p>☐</p>
+<h4>/about-basic</h4>
+<ul>
+<li><strong>Title:</strong> <code>About Playit Loveit | Aberdeen Football Coaching Since 2018</code></li>
+<li><strong>Description:</strong> <code>Aberdeen football coaching since 2018. Meet the coaches, our values, and why parents trust us with their players.</code></li>
+</ul>
+<p>☐</p>
+<hr>
+<h3>Card 4 — Hide junk pages from Google</h3>
+<p><strong>WHERE:</strong> Dashboard → SEO → Pages</p>
+<p>For each of these pages, toggle <strong>"Let search engines index this page"</strong> to <strong>OFF</strong>:</p>
+<ul>
+<li><code>/playitloveitreact</code> ☐</li>
+<li><code>/book-online-1</code> ☐ (we'll rebuild this in Card 11)</li>
+</ul>
+<hr>
+<h2>Sitting 2 — Booking experience (~40 min)</h2>
+<p>Click <strong>Edit Site</strong> (top-right blue button) to open the <strong>Editor</strong>. All cards in this sitting happen here.</p>
+<h3>Card 5 — Sticky "Book a Free Trial" button in the header</h3>
+<p><strong>WHERE:</strong> Editor → click the header strip at the top of any page</p>
+<p><strong>STEPS:</strong> 1. Click <strong>+ Add Elements</strong> (left toolbar) → <strong>Button</strong> → drag into the header (right side, next to existing nav). 2. Click the new button → <strong>Change Text</strong> → type: <code>Book a Free Trial</code> 3. Style: bright orange (matches energy), white text, bold. 4. Click <strong>Link</strong> icon → <strong>Page</strong> → link to <code>/book-online-1</code> for now (we'll rebuild that page in Card 11). 5. Switch to <strong>Mobile view</strong> (phone icon, top toolbar) → drag the button so it shows in the mobile header without overlapping the menu. 6. <strong>Settings on the button</strong> → tick <strong>"Pin to screen"</strong> → choose <strong>Top right</strong> → this makes it sticky as the parent scrolls.</p>
+<p><strong>Publish</strong> when done. ☐</p>
+<hr>
+<h3>Card 6 — Homepage hero rewrite</h3>
+<p><strong>WHERE:</strong> Editor → Pages panel → Home</p>
+<p><strong>A. Replace the headline</strong> "your new home of football":</p>
+<pre><code class="language-">Football coaching kids actually want to come back to.</code></pre>
+<p><strong>B. Replace/add subheadline:</strong></p>
+<pre><code class="language-">Weekly academy, 1-2-1s and holiday camps for ages 3–18 across Aberdeen — at Strikers Indoor and Balmoral Stadium.</code></pre>
+<p><strong>C. Replace the existing CTA with TWO buttons side by side:</strong></p>
+<ul>
+<li>Primary (orange): <code>Book a Free Trial</code> → links to <code>/book-online-1</code></li>
+<li>Secondary (outline): <code>See all classes</code> → links to <code>/academy</code></li>
+</ul>
+<p><strong>D. Hero image performance:</strong></p>
+<ul>
+<li>Click the hero image → <strong>Settings</strong> (gear icon) → <strong>Display</strong> tab → untick <strong>Lazy Load</strong>.</li>
+<li>This makes Google's "Largest Contentful Paint" score better.</li>
+</ul>
+<p>☐</p>
+<hr>
+<h3>Card 7 — Trust strip under the hero</h3>
+<p><strong>WHERE:</strong> Editor → Home page → directly below the hero</p>
+<p><strong>STEPS:</strong> 1. <strong>+ Add Elements</strong> → <strong>Strip</strong> → choose a <strong>4-column</strong> layout → drag below the hero. 2. In each column, paste the text below.</p>
+<p><strong>Column 1 (parent quote):</strong></p>
+<pre><code class="language-">★★★★★
+"[Parent quote — FILL LATER, 1 short sentence]"
+— [Parent name — FILL LATER]</code></pre>
+<p><strong>Column 2:</strong></p>
+<pre><code class="language-">PVG-checked coaches
+[FILL LATER: confirm yes]</code></pre>
+<p><strong>Column 3:</strong></p>
+<pre><code class="language-">SFA / FA-qualified
+[FILL LATER: confirm + which badge]</code></pre>
+<p><strong>Column 4:</strong></p>
+<pre><code class="language-">Coaching in Aberdeen since 2018
+500+ players developed</code></pre>
+<p>Style: light grey background, dark text, evenly spaced. ☐</p>
+<hr>
+<h3>Card 8 — Academy page tier cards</h3>
+<p><strong>WHERE:</strong> Editor → Pages → Academy</p>
+<p>Find the existing 4 tier blocks and replace each with the content below. Use a 2x2 grid on desktop, stacked on mobile.</p>
+<h4>Card A — Soccer Tots</h4>
+<pre><code class="language-">SOCCER TOTS                                         From £42/month
+Best for: First-time players building confidence with a ball
+Ages 3–5  ·  45 min weekly  ·  Strikers Indoor Football, Aberdeen
+When: [Day &amp; time — FILL LATER]
+Same fee year-round — including school holidays.
+
+[ Book a Free Trial ]   [ Join Soccer Tots ]</code></pre>
+<h4>Card B — Academy</h4>
+<pre><code class="language-">ACADEMY                                             From £48/month
+Best for: Players ready for structured training and match prep
+Ages 6–12  ·  1 hour weekly  ·  Strikers Indoor Football, Aberdeen
+When: [Day &amp; time — FILL LATER]
+Same fee year-round — including school holidays.
+
+[ Book a Free Trial ]   [ Join the Academy ]</code></pre>
+<h4>Card C — Accelerator</h4>
+<pre><code class="language-">ACCELERATOR                                         From £48/month
+Best for: Players already in a club team wanting an extra edge
+Ages 9–14  ·  1 hour small-group (max 8)  ·  Balmoral Stadium, Aberdeen
+When: [Day &amp; time — FILL LATER]
+Same fee year-round — including school holidays.
+
+[ Book a Free Trial ]   [ Join the Accelerator ]</code></pre>
+<h4>Card D — Intensity</h4>
+<pre><code class="language-">INTENSITY                                           £24 per session
+Best for: Pre-season fitness or holiday top-ups — no commitment
+Ages 9–18  ·  Drop-in, pay per session  ·  [Venue — FILL LATER]
+When: [Day &amp; time — FILL LATER]
+Pay only for the sessions you book.
+
+[ Book your first session ]</code></pre>
+<p><strong>Button links:</strong></p>
+<ul>
+<li><code>Book a Free Trial</code> → <code>/book-online-1</code></li>
+<li><code>Join the Academy / Soccer Tots / Accelerator</code> → <code>https://playitloveit.classforkids.io/term/217</code></li>
+<li><code>Book your first session</code> → <code>https://playitloveit.classforkids.io/term/217</code></li>
+</ul>
+<p><strong>One-line reassurance row UNDER all four cards (small text, italic):</strong></p>
+<pre><code class="language-">Try it risk-free — 36 hours after the trial to decide. Cancel any monthly membership with 30 days' notice.</code></pre>
+<p>☐</p>
+<hr>
+<h3>Card 9 — 1-2-1 page: live schedule table</h3>
+<p><strong>WHERE:</strong> Editor → Pages → 1-2-1</p>
+<p><strong>A. Delete</strong> the existing "£48 per session" block + the lone "book here" button.</p>
+<p><strong>B. Add a single headline at the top:</strong></p>
+<pre><code class="language-">1-2-1 Coaching — £48 / 1 hour
+Ages 6–18  ·  Strikers Indoor Football &amp; Balmoral Stadium, Aberdeen</code></pre>
+<p><strong>C. Add a Table:</strong> <strong>+ Add Elements</strong> → <strong>Table</strong> → drag onto page. Build with these rows:</p>
+<table>
+<tr><th>Day</th><th>Time</th><th>Venue</th><th>Availability</th><th></th></tr>
+<tr><td>Mon</td><td>4:00 – 5:00pm</td><td>Strikers Indoor</td><td>Trial available</td><td>[Book]</td></tr>
+<tr><td>Mon</td><td>5:00 – 6:00pm</td><td>Strikers Indoor</td><td>Trial available</td><td>[Book]</td></tr>
+<tr><td>Tue</td><td>4:00 – 5:00pm</td><td>Strikers Indoor</td><td>Trial available</td><td>[Book]</td></tr>
+<tr><td>Wed</td><td>4:00 – 5:00pm</td><td>Balmoral Stadium</td><td>Trial available</td><td>[Book]</td></tr>
+<tr><td>Wed</td><td>4:00 – 5:00pm</td><td>Strikers Indoor</td><td>Trial available</td><td>[Book]</td></tr>
+<tr><td>Wed</td><td>5:00 – 6:00pm</td><td>Strikers Indoor</td><td>Trial available</td><td>[Book]</td></tr>
+<tr><td>Wed</td><td>5:00 – 6:00pm</td><td>Balmoral Stadium</td><td>Waitlist</td><td>[Join waitlist]</td></tr>
+<tr><td>Fri</td><td>3:50 – 4:50pm</td><td>Strikers Indoor</td><td>Waitlist</td><td>[Join waitlist]</td></tr>
+<tr><td>Fri</td><td>4:50 – 5:50pm</td><td>Strikers Indoor</td><td>Waitlist</td><td>[Join waitlist]</td></tr>
+</table>
+<p>All <code>[Book]</code> and <code>[Join waitlist]</code> buttons link to: <code>https://playitloveit.classforkids.io/term/217</code></p>
+<p><strong>D. Below the table, add a small text block:</strong></p>
+<pre><code class="language-">Don't see a slot that works? Text 07876 046014 and we'll find one.</code></pre>
+<blockquote>**Maintenance:** Update this table whenever a new term opens on ClassForKids — takes 2 minutes.</blockquote>
+<p>☐</p>
+<hr>
+<h2>Sitting 3 — Cleanup &amp; content (~30 min)</h2>
+<h3>Card 10 — Rename `/general-4` → `/faqs`</h3>
+<p><strong>WHERE:</strong> Editor → Pages panel → right-click <strong>FAQs (general-4)</strong> → <strong>Page Settings</strong> → <strong>SEO Basics</strong> tab</p>
+<ul>
+<li><strong>URL slug:</strong> change <code>general-4</code> to <code>faqs</code></li>
+<li>Save.</li>
+<li>Then check the main site nav (top of every page) — if it links to <code>/general-4</code>, repoint it to <code>/faqs</code>.</li>
+</ul>
+<p>☐</p>
+<hr>
+<h3>Card 11 — Soccer camps page rebuild</h3>
+<p><strong>WHERE:</strong> Editor → Pages → Soccer Camps</p>
+<p><strong>A. Replace the empty page content with this header:</strong></p>
+<pre><code class="language-">Aberdeen Football Holiday Camps
+Ages 5–12  ·  10am – 3pm daily  ·  [Venue — FILL LATER]
+£90–£150 per camp  ·  Limited spots</code></pre>
+<p><strong>B. Add a Table with the 2026 schedule:</strong></p>
+<table>
+<tr><th>Camp</th><th>Dates</th><th>Price</th><th>Spots</th><th></th></tr>
+<tr><td>Easter Camp</td><td>[FILL LATER]</td><td>£[FILL]</td><td>[Spots remaining]</td><td>[Book]</td></tr>
+<tr><td>May Half-Term</td><td>[FILL LATER]</td><td>£[FILL]</td><td>[Spots remaining]</td><td>[Book]</td></tr>
+<tr><td>Summer Week 1</td><td>[FILL LATER]</td><td>£[FILL]</td><td>[Spots remaining]</td><td>[Book]</td></tr>
+<tr><td>Summer Week 2</td><td>[FILL LATER]</td><td>£[FILL]</td><td>[Spots remaining]</td><td>[Book]</td></tr>
+<tr><td>October Camp</td><td>[FILL LATER]</td><td>£[FILL]</td><td>[Spots remaining]</td><td>[Book]</td></tr>
+</table>
+<p><strong>C. Add a "What to bring" side panel (Strip element with bullet list):</strong></p>
+<pre><code class="language-">What to bring
+• Water bottle (lots — they'll need it)
+• Packed lunch + snacks
+• Shin pads
+• Trainers AND astro boots
+• Sun cream (summer) / warm layer (winter)
+• Named kit bag</code></pre>
+<p><strong>D. Add a "3 reasons to book" strip (you have this copy already on the existing page):</strong></p>
+<pre><code class="language-">INTENSE — Real coaching, not babysitting
+FUN — Learning + playing creates the best atmosphere
+EXCLUSIVE — Lower numbers = more time on the ball</code></pre>
+<p>☐</p>
+<hr>
+<h3>Card 12 — `/about-basic`: Meet the coaches</h3>
+<p><strong>WHERE:</strong> Editor → Pages → About</p>
+<p>Add a new strip titled <strong>"Meet the coaches"</strong> with a card per coach. Each card needs:</p>
+<ul>
+<li>Photo (round, 200×200)</li>
+<li>Name + role</li>
+<li>1-line bio</li>
+<li>Qualifications (PVG, FA/SFA badges)</li>
+</ul>
+<p><strong>Template (one per coach):</strong></p>
+<pre><code class="language-">[Photo]
+[COACH NAME — FILL LATER]
+[Role — e.g. Founder &amp; Head Coach]
+[1-line bio — FILL LATER]
+PVG-checked  ·  [Qualifications — FILL LATER]</code></pre>
+<blockquote>This is your single biggest trust upgrade. Parents are leaving their kid with strangers — show them the strangers.</blockquote>
+<p>☐</p>
+<hr>
+<h3>Card 13 — Footer &amp; contact strip (every page)</h3>
+<p><strong>WHERE:</strong> Editor → click the footer strip at the bottom of any page</p>
+<p><strong>Build a 3-column footer:</strong></p>
+<p><strong>Column 1 — Contact:</strong></p>
+<pre><code class="language-">Playit Loveit
+Aberdeen
+Call or text: 07876 046014
+Email: [FILL LATER]
+Instagram: @playitloveit1</code></pre>
+<p><strong>Column 2 — Pages:</strong></p>
+<pre><code class="language-">Academy
+1-2-1 Coaching
+Holiday Camps
+FAQs
+About
+Book a Free Trial</code></pre>
+<p><strong>Column 3 — Venues:</strong></p>
+<pre><code class="language-">Strikers Indoor Football, Aberdeen
+Balmoral Stadium, Aberdeen
+Fives Football Aberdeen</code></pre>
+<p><strong>Bottom strip (small text):</strong></p>
+<pre><code class="language-">© 2026 Playit Loveit. Coaching in Aberdeen since 2018.</code></pre>
+<p>☐</p>
+<hr>
+<h3>Card 14 — Image alt text + renaming (every image)</h3>
+<p><strong>WHERE:</strong> Editor → click each image → <strong>Settings</strong> → <strong>What's in the image?</strong></p>
+<p><strong>Rules:</strong></p>
+<ul>
+<li>Describe what's happening + venue + age group where possible</li>
+<li>Don't keyword-stuff</li>
+<li>One sentence is plenty</li>
+</ul>
+<p><strong>Examples to follow the pattern:</strong></p>
+<table>
+<tr><th>Old filename</th><th>New filename</th><th>Alt text</th></tr>
+<tr><td>IMG_1162.jpg</td><td><code>academy-training-strikers-aberdeen.jpg</code></td><td><code>Academy players training at Strikers Indoor Football, Aberdeen</code></td></tr>
+<tr><td>IMG_8090.jpg</td><td><code>under-9s-drill-strikers.jpg</code></td><td><code>Coach leading dribbling drill with under-9 group at Strikers</code></td></tr>
+<tr><td>IMG_8099.jpg</td><td><code>under-12s-match-balmoral.jpg</code></td><td><code>Under-12 players in a small-sided game at Balmoral Stadium</code></td></tr>
+<tr><td>IMG_8151.jpg</td><td><code>1-2-1-coaching-balmoral.jpg</code></td><td><code>Coach delivering a 1-2-1 session at Balmoral Stadium</code></td></tr>
+<tr><td>IMG_0247.jpg</td><td><code>summer-camp-aberdeen.jpg</code></td><td><code>Players celebrating during summer holiday camp in Aberdeen</code></td></tr>
+<tr><td>IMG_7701.jpg</td><td><code>goalkeeper-coaching-aberdeen.jpg</code></td><td><code>Young goalkeeper training during academy session</code></td></tr>
+<tr><td>2.png</td><td><code>playit-loveit-logo.png</code></td><td><code>Playit Loveit logo</code></td></tr>
+</table>
+<p><strong>To rename:</strong> Editor → <strong>Media Manager</strong> (left toolbar, image icon) → right-click → <strong>Rename</strong>. Then re-insert on the page.</p>
+<p>Do <strong>homepage images first</strong> — that's what Google indexes most.</p>
+<p>☐</p>
+<hr>
+<h2>Sitting 4 — Add the Goalkeeper page (~30 min)</h2>
+<p>A dedicated page for goalkeeper coaching captures a high-intent niche audience. GK parents search specifically for "goalkeeper coaching aberdeen" and convert well when they find a specialist. Currently you have nothing for them.</p>
+<h3>Card 15 — Create the Goalkeeper Coaching page</h3>
+<p><strong>WHERE:</strong> Editor → left toolbar → <strong>Pages</strong> icon → <strong>+ Add Page</strong> → choose <strong>Blank Page</strong></p>
+<p><strong>Page settings:</strong></p>
+<ul>
+<li>Page name: <code>Goalkeeper Coaching</code></li>
+<li>URL slug: <code>goalkeeper-coaching</code></li>
+</ul>
+<p><strong>SEO settings (Page Settings → SEO Basics):</strong></p>
+<ul>
+<li>Title: <code>Goalkeeper Coaching Aberdeen, Ages 6–18 | Playit Loveit</code></li>
+<li>Description: <code>Specialist goalkeeper coaching in Aberdeen with Coach Kyle. 1-2-1 and small-group GK sessions at Fives Football, Tuesdays &amp; Saturdays. Book today.</code></li>
+</ul>
+<h4>A. Hero section</h4>
+<pre><code class="language-">Goalkeeper Coaching in Aberdeen
+Specialist GK sessions with Coach Kyle, for keepers ages 6–18.
+At Fives Football, Aberdeen.
+
+[ Book a GK Session ]</code></pre>
+<p>The button → <code>https://playitloveit.classforkids.io/term/217</code></p>
+<h4>B. "What we cover" section</h4>
+<pre><code class="language-">GK-specific coaching, not outfield with gloves on.
+
+· Handling, catching, parries
+· Footwork, positioning, angles
+· Distribution — throws, kicks, sweeper-keeper play
+· Set-piece defending
+· Agility, reactions, dives
+· Match-day mentality and communication</code></pre>
+<h4>C. Sessions &amp; pricing — two cards</h4>
+<p><strong>Small-group card:</strong></p>
+<pre><code class="language-">SMALL-GROUP GK SESSION                              £16 per session
+Best for: Building keeper-specific skills with other goalkeepers
+Ages 6–18  ·  1 hour  ·  Fives Football, Aberdeen
+When: Tuesdays [TIME — FILL] and Saturdays [TIME — FILL]
+Pay per session — book the ones you want.
+
+[ Book a GK Session ]</code></pre>
+<p><strong>1-2-1 card:</strong></p>
+<pre><code class="language-">1-2-1 GK COACHING                                   £[FILL — assume £48] per session
+Best for: Targeted technical work, position-specific scenarios
+Ages 6–18  ·  1 hour  ·  Fives Football, Aberdeen
+When: By arrangement around weekly sessions
+
+[ Book a 1-2-1 GK Session ]</code></pre>
+<h4>D. Meet Coach Kyle</h4>
+<pre><code class="language-">[Photo of Kyle — round, 200×200]
+
+Coach Kyle [SURNAME — FILL]
+Goalkeeper Coach
+[1-line bio — FILL: e.g. "Former [team] academy keeper" or "FA Goalkeeper Level [X] qualified"]
+PVG-checked  ·  [GK qualifications — FILL]</code></pre>
+<p>This is the highest-trust element on the page. Don't ship without Kyle's photo + credentials.</p>
+<h4>E. GK FAQ</h4>
+<pre><code class="language-">What gloves should my child bring?
+We can advise — for first sessions, any gloves are fine. Coach Kyle can recommend pairs once he's seen your keeper play.
+
+Are sessions grouped by age or ability?
+Mixed ages, drilled and grouped by ability within the session.
+
+Can we do half outfield / half GK in a 1-2-1?
+Yes — 1-2-1s are tailored. Mention it when booking.
+
+What if my child is just trying out goalkeeping?
+Welcome — small-group sessions are perfect for new keepers.</code></pre>
+<h4>F. Sticky CTA at bottom</h4>
+<pre><code class="language-">Ready to book?
+Tuesdays &amp; Saturdays at Fives Football, Aberdeen — £16/session.
+
+[ Book a GK Session ]</code></pre>
+<p>☐</p>
+<hr>
+<h3>Card 16 — Add Goalkeeper to the main navigation</h3>
+<p><strong>WHERE:</strong> Editor → click your top menu strip on any page</p>
+<p>1. Click the menu element → <strong>Manage Menu</strong> 2. Click <strong>+ Add Menu Item</strong> → <strong>Page Link</strong> 3. Label: <code>Goalkeeper</code> 4. Link to: the new <code>/goalkeeper-coaching</code> page 5. Drag its position so it sits between <strong>1-2-1</strong> and <strong>Camps</strong> 6. <strong>Publish</strong></p>
+<p>Switch to mobile view and confirm Goalkeeper shows up in the mobile menu too.</p>
+<p>☐</p>
+<hr>
+<h3>Card 17 — Cross-link from /1-2-1 page</h3>
+<p><strong>WHERE:</strong> Editor → Pages → 1-2-1</p>
+<p>Below the schedule table, add a small text block:</p>
+<pre><code class="language-">Looking for goalkeeper coaching instead? See Goalkeeper Coaching with Coach Kyle →</code></pre>
+<p>The "Goalkeeper Coaching with Coach Kyle →" should be a hyperlink to <code>/goalkeeper-coaching</code>.</p>
+<p>☐</p>
+<hr>
+<h2>Sitting 5 — Page restructure (the big one, ~3 hrs)</h2>
+<p>This collapses the site from 7 pages to 5 and turns it into a conversion-focused funnel. Bigger lift than the previous sittings — but it's the change that takes the site from "Wix template" to "actually drives bookings."</p>
+<p><strong>Before you start:</strong></p>
+<ul>
+<li>Do this in one sitting if possible — easier than restarting half-done</li>
+<li>Back up first: Editor → Site → <strong>Site History</strong> → <strong>Save Now</strong> → label it "Before restructure"</li>
+<li>The order below matters — don't skip ahead, you'll break links</li>
+</ul>
+<h3>New site structure</h3>
+<pre><code class="language-">Home  ·  Weekly Coaching  ·  1-2-1 &amp; GK  ·  Camps  ·  About</code></pre>
+<p>That's it. 5 pages.</p>
+<hr>
+<h3>Card 18 — Set up URL redirects FIRST (10 min)</h3>
+<p>If you delete or rename pages, Google's existing rankings break. Redirects fix that.</p>
+<p><strong>WHERE:</strong> Dashboard → SEO → <strong>URL Redirect Manager</strong> (or <strong>Tools</strong> → <strong>URL Redirects</strong>)</p>
+<p><strong>Add these redirects:</strong></p>
+<table>
+<tr><th>Old URL</th><th>New URL</th><th>Type</th></tr>
+<tr><td><code>/academy</code></td><td><code>/weekly-coaching</code></td><td>301</td></tr>
+<tr><td><code>/1-2-1</code></td><td><code>/1-2-1-and-gk</code></td><td>301</td></tr>
+<tr><td><code>/goalkeeper-coaching</code></td><td><code>/1-2-1-and-gk</code></td><td>301</td></tr>
+<tr><td><code>/general-4</code></td><td><code>/about</code></td><td>301</td></tr>
+<tr><td><code>/about-basic</code></td><td><code>/about</code></td><td>301</td></tr>
+<tr><td><code>/book-online-1</code></td><td><code>/</code></td><td>301</td></tr>
+<tr><td><code>/playitloveitreact</code></td><td><code>/</code></td><td>301</td></tr>
+</table>
+<p>For each: click <strong>+ New Redirect</strong> → paste old path → paste new path → set type to <strong>301 (Permanent)</strong> → Save.</p>
+<p>☐</p>
+<hr>
+<h3>Card 19 — Merge /1-2-1 + /goalkeeper-coaching → /1-2-1-and-gk (45 min)</h3>
+<p><strong>WHERE:</strong> Editor → Pages → <strong>+ Add Page</strong> → Blank Page</p>
+<p><strong>Page settings:</strong></p>
+<ul>
+<li>Page name: <code>1-2-1 &amp; Goalkeeper Coaching</code></li>
+<li>URL slug: <code>1-2-1-and-gk</code></li>
+<li>SEO Title: <code>1-2-1 &amp; Goalkeeper Coaching Aberdeen | Playit Loveit</code></li>
+<li>SEO Description: <code>Private 1-hour football coaching from £48 and specialist GK sessions with Coach Kyle from £16. Strikers Indoor, Balmoral &amp; Fives, Aberdeen.</code></li>
+</ul>
+<p><strong>Page structure — two sections, divider between them:</strong></p>
+<h4>Section 1: 1-2-1 Coaching</h4>
+<pre><code class="language-">1-2-1 Football Coaching
+£48 / 1 hour / Ages 6–18
+Strikers Indoor Football &amp; Balmoral Stadium, Aberdeen</code></pre>
+<p>Then the 9-row schedule table (from Card 9 in Sitting 2). Each row has a <code>[ Book ]</code> button → ClassForKids term URL.</p>
+<p>Below the table:</p>
+<pre><code class="language-">Don't see a slot that works? Text 07876 046014 and we'll find one.</code></pre>
+<h4>Section 2: Goalkeeper Coaching</h4>
+<pre><code class="language-">Goalkeeper Coaching with Coach Kyle
+Specialist GK sessions for keepers ages 6–18 at Fives Football, Aberdeen.</code></pre>
+<p>Then the two GK cards from Card 15 (Small-group £16 / 1-2-1 £48), Coach Kyle bio, GK FAQ.</p>
+<p><strong>Once built:</strong> delete the old <code>/1-2-1</code> and <code>/goalkeeper-coaching</code> pages (after confirming the redirects from Card 18 are live).</p>
+<p>☐</p>
+<hr>
+<h3>Card 20 — Merge /about-basic + /general-4 → /about (30 min)</h3>
+<p><strong>WHERE:</strong> Editor → Pages → <strong>+ Add Page</strong> → Blank Page</p>
+<p><strong>Page settings:</strong></p>
+<ul>
+<li>Page name: <code>About</code></li>
+<li>URL slug: <code>about</code></li>
+<li>SEO Title: <code>About Playit Loveit | Aberdeen Football Coaching Since 2018</code></li>
+<li>SEO Description: <code>Aberdeen football coaching since 2018. Meet our coaches, see our credentials, and find answers to common parent questions.</code></li>
+</ul>
+<p><strong>Page sections (in order):</strong></p>
+<p>1. <strong>Our story</strong> — pull from current /about-basic. Tighten to 2 paragraphs. 2. <strong>Meet the coaches</strong> — Card 12 template, one card per coach with photo + name + bio + qualifications 3. <strong>Trust badges row</strong> — PVG-checked · SFA/FA-qualified · Coaching since 2018 · 500+ players developed 4. <strong>FAQs</strong> — pull from current /general-4. Use Wix's collapsible FAQ element so it's compact:</p>
+<ul>
+<li>Trial decision window (36 hours)</li>
+<li>Refund policy</li>
+<li>Monthly cancellation (30 days notice)</li>
+<li>What to bring</li>
+<li>Payment method (recurring card on the 1st)</li>
+</ul>
+<p>5. <strong>Contact strip</strong> — phone, email, Instagram, venues <strong>Once built:</strong> delete old <code>/about-basic</code> and <code>/general-4</code>.</p>
+<p>☐</p>
+<hr>
+<h3>Card 21 — Rebuild /academy as /weekly-coaching (45 min)</h3>
+<p><strong>WHERE:</strong> Editor → Pages → Academy page → <strong>Page Settings</strong> → URL slug → change to <code>weekly-coaching</code></p>
+<p>Also update:</p>
+<ul>
+<li>Page name: <code>Weekly Coaching</code></li>
+<li>SEO Title: <code>Weekly Football Coaching Aberdeen, Ages 3–18 | Playit Loveit</code></li>
+<li>SEO Description: <code>Weekly football academy at Strikers Indoor &amp; Balmoral, Aberdeen. Intensity, Academy, Accelerator &amp; Soccer Tots — from £42/month. Book a free trial.</code></li>
+</ul>
+<p><strong>Page heading:</strong></p>
+<pre><code class="language-">Weekly Football Coaching
+4 programmes · Ages 3–18 · From £42/month</code></pre>
+<p><strong>Card order (rebuild from Card 8 in Sitting 2):</strong></p>
+<p>1. <strong>★ INTENSITY</strong> — Most Popular — first 2. <strong>ACADEMY</strong> 3. <strong>ACCELERATOR</strong> 4. <strong>SOCCER TOTS</strong></p>
+<p>Visual grouping:</p>
+<ul>
+<li>Heading "<strong>Most Popular</strong>" above Intensity card</li>
+<li>Heading "<strong>Weekly Programmes</strong>" above the other 3</li>
+<li>Reassurance line under all 4: <em>"Try risk-free — 36 hours after trial to decide. Cancel any monthly membership with 30 days' notice."</em></li>
+</ul>
+<p>Cross-link below cards:</p>
+<pre><code class="language-">Looking for 1-2-1 or goalkeeper coaching instead? See 1-2-1 &amp; Goalkeeper Coaching →</code></pre>
+<p>☐</p>
+<hr>
+<h3>Card 22 — Rebuild navigation menu (10 min)</h3>
+<p><strong>WHERE:</strong> Editor → click your top menu strip → <strong>Manage Menu</strong></p>
+<p>Delete all existing items and rebuild this exact list, in this order:</p>
+<p>1. <code>Home</code> → <code>/</code> 2. <code>Weekly Coaching</code> → <code>/weekly-coaching</code> 3. <code>1-2-1 &amp; GK</code> → <code>/1-2-1-and-gk</code> 4. <code>Camps</code> → <code>/soccer-camps</code> 5. <code>About</code> → <code>/about</code></p>
+<p>Then add a separate <strong>Button</strong> element to the right of the menu (not inside it):</p>
+<ul>
+<li>Label: <code>Book a Free Trial</code> (orange, bold)</li>
+<li>Pinned to screen top-right (sticky on scroll)</li>
+<li>Link: scrolls to a trial form OR opens a <code>/book-trial</code> simple form page</li>
+</ul>
+<p>Switch to mobile view → make sure the menu collapses cleanly into a hamburger and the Book button stays visible at the top.</p>
+<p>☐</p>
+<hr>
+<h3>Card 23 — Sticky "Book a Free Trial" CTA across the site (15 min)</h3>
+<p>The single biggest conversion lift. Same button, same colour, on every page, in 3 places:</p>
+<p>1. <strong>Header</strong> (Card 22 already covers this) 2. <strong>Bottom of every page section</strong> — add a Strip element above the footer:    ```    Ready to play?    First trial is free. No commitment.</p>
+<p>   [ Book Your Free Trial ]    ``` 3. <strong>Floating button on mobile</strong> — Wix Editor → Mobile view → <strong>+ Add Element</strong> → <strong>Button</strong> → pin to bottom of screen → set to <strong>show on mobile only</strong></p>
+<p>All buttons link to the same place — either a Wix Form on <code>/book-trial</code> or your ClassForKids URL.</p>
+<p>☐</p>
+<hr>
+<h3>Card 24 — Visual polish (30 min)</h3>
+<p>Three changes that make the site look "boom":</p>
+<p><strong>A. ONE accent colour for CTAs</strong></p>
+<p>Pick one bold colour (recommended: warm orange <code>#FF6B1A</code>). Edit every button across the site to use this colour with white text. NO other element on the site should be this colour. Result: parents' eyes go straight to "Book" buttons.</p>
+<p><strong>WHERE:</strong> Editor → click any button → <strong>Design</strong> → set fill colour, text colour. Save as a "Theme" if Wix offers it (re-use everywhere).</p>
+<p><strong>B. Replace stock images with real photos</strong></p>
+<p>Every page hero should be a full-bleed action shot of YOUR players training. Phone-camera shots are fine if they're sharp. Avoid generic football stock photos.</p>
+<p><strong>WHERE:</strong> Editor → click image → <strong>Change Image</strong> → upload from your phone gallery.</p>
+<p><strong>C. Add breathing room between sections</strong></p>
+<p>Most amateur sites cram everything. Add a Strip with 60-100px of vertical padding between every section (hero → trust strip → cards → reviews → footer). Whitespace = professional.</p>
+<p><strong>WHERE:</strong> Editor → click between sections → <strong>+ Add Strip</strong> → Blank → set height.</p>
+<p>☐</p>
+<hr>
+<h3>Card 25 — Final verification (10 min)</h3>
+<p>Before declaring done, click through the live site (in a private/incognito tab):</p>
+<ul>
+<li><input type="checkbox" disabled> Click <code>Weekly Coaching</code> from menu — opens new page with 4 programmes in correct order</li>
+<li><input type="checkbox" disabled> Click <code>1-2-1 &amp; GK</code> — both sections show, schedule table renders</li>
+<li><input type="checkbox" disabled> Click <code>About</code> — coaches + FAQs + contact all on one scroll</li>
+<li><input type="checkbox" disabled> Click any old URL like <code>playitloveit.com/academy</code> — should redirect to <code>/weekly-coaching</code> (Card 18)</li>
+<li><input type="checkbox" disabled> On mobile: header has Book button, menu opens cleanly, all programmes are tappable</li>
+<li><input type="checkbox" disabled> Every page has a <code>Book a Free Trial</code> button visible without scrolling</li>
+<li><input type="checkbox" disabled> Test booking flow: click Book → does it land on the right ClassForKids page?</li>
+</ul>
+<p>☐</p>
+<hr>
+<h3>Hate editing websites? Three escape routes</h3>
+<p><strong>Option 1 — Hire a Wix freelancer</strong> (~£60-150 one-off) Post on Fiverr or Upwork: "I have a complete change spec. Need someone with Wix experience to execute it. ~3 hours work." Send them this whole change pack. They handle every click. You review the live site at the end.</p>
+<p><strong>Option 2 — Do it in chunks</strong> Sitting 1 (SEO) → wait a week → Sitting 4 (GK page) → wait a week → Sitting 5 (restructure). Spreads the editing pain over a month.</p>
+<p><strong>Option 3 — Skip Wix entirely</strong> (the bigger play) Rebuild the marketing site as Next.js pages alongside your Playerportal codebase. I edit it directly — you stop touching website editors forever. ~1-2 weeks of focused work. Long-term win, short-term effort.</p>
+<p>You picked Wix for now, so Option 1 is probably the smartest move. £100 to never click in Wix again.</p>
+<hr>
+<h2>What's still missing — fill these in later</h2>
+<p>Once you have these, the <code>[FILL LATER]</code> markers in this doc get replaced and we're done:</p>
+<p>1. <strong>Email address</strong> (for contact + JSON-LD) 2. <strong>Postcode</strong> for Strikers Indoor (and Balmoral if different) 3. <strong>Coach names + photos + 1-line bios</strong> (Card 12) 4. <strong>Term schedule</strong> — days &amp; times for Soccer Tots, Academy, Accelerator (Card 8) 5. <strong>Camp dates 2026</strong> + prices + venue (Card 11) 6. <strong>Intensity venue + day/time</strong> (Card 8) 7. <strong>PVG / SFA / FA badge confirmation</strong> (Cards 2, 7, 12) 8. <strong>One parent quote + name</strong> (Card 7) 9. <strong>Other social URLs</strong> (Facebook, TikTok if any) 10. <strong>Coach Kyle's surname + photo + GK credentials</strong> (Card 15) 11. <strong>Tuesday &amp; Saturday GK session times</strong> (Card 15) 12. <strong>1-2-1 GK price</strong> — assumed £48 (Card 15)</p>
+<hr>
+<h2>Verification checklist (after publishing)</h2>
+<ul>
+<li><input type="checkbox" disabled> Open <code>playitloveit.com</code> in a private/incognito tab — does the new hero load?</li>
+<li><input type="checkbox" disabled> On mobile, is the orange "Book a Free Trial" button visible without scrolling?</li>
+<li><input type="checkbox" disabled> Click each tier card on <code>/academy</code> — do the buttons go to the right places?</li>
+<li><input type="checkbox" disabled> On <code>/1-2-1</code>, can you book a slot in 2 clicks?</li>
+<li><input type="checkbox" disabled> Right-click homepage → View Source → search for <code>application/ld+json</code> — schema should be there.</li>
+<li><input type="checkbox" disabled> Paste the homepage URL into <a href="https://search.google.com/test/rich-results">Google's Rich Results Test</a> — should detect SportsActivityLocation.</li>
+<li><input type="checkbox" disabled> Paste into <a href="https://developers.facebook.com/tools/debug/">Facebook's Sharing Debugger</a> — should show a proper preview.</li>
+<li><input type="checkbox" disabled> Open <code>playitloveit.com/sitemap.xml</code> — confirm <code>playitloveitreact</code> is gone.</li>
+</ul>
+<hr>
+<h2>When you're stuck</h2>
+<p>Common Wix gotchas:</p>
+<ul>
+<li><strong>"I changed it but the live site still shows the old version"</strong> → you forgot to click <strong>Publish</strong> (top-right).</li>
+<li><strong>"Mobile view broke after I edited desktop"</strong> → Wix has separate mobile layouts. Always switch to phone icon and re-check.</li>
+<li><strong>"I can't find Custom Code"</strong> → needs a paid Wix plan (Combo or above). Workaround: paste the JSON-LD inside an HTML iframe element on each page header — uglier but works.</li>
+<li><strong>"The 'book here' button on ClassForKids opens in a new tab — is that OK?"</strong> → Yes, keep it that way. Parents like keeping your tab open to come back to.</li>
+</ul>
+<p>Ping me when you've done Sitting 1 and I'll spot-check the live site.</p>
+</body></html>

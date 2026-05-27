@@ -15,12 +15,30 @@ export async function POST(request: NextRequest) {
 
     const { data: orgId } = await supabase.rpc('get_my_org')
 
-    // Cancel at period end (gives them access until end of billing period)
-    const subscription = await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: true,
-    })
+    // Honour the academy's cancellation notice policy. If notice_days > 0,
+    // schedule cancellation for (today + notice_days). Otherwise fall back to
+    // "end of current billing period" (Stripe default).
+    const { data: orgPolicy } = await supabase
+      .from('organisations')
+      .select('cancellation_notice_days')
+      .eq('id', orgId)
+      .single()
+    const noticeDays = Number(orgPolicy?.cancellation_notice_days || 0)
 
-    const endDate = new Date(subscription.current_period_end * 1000).toLocaleDateString('en-GB', {
+    let subscription
+    if (noticeDays > 0) {
+      const cancelAtSec = Math.floor(Date.now() / 1000) + noticeDays * 86400
+      subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at: cancelAtSec,
+      })
+    } else {
+      subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true,
+      })
+    }
+
+    const cancelAtSec = (subscription.cancel_at as number | null) ?? subscription.current_period_end
+    const endDate = new Date(cancelAtSec * 1000).toLocaleDateString('en-GB', {
       day: 'numeric', month: 'long', year: 'numeric',
     })
 

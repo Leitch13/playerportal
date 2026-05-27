@@ -15,9 +15,14 @@ import UpsellBanner from '@/components/UpsellBanner'
 import OnboardingChecklist from '@/components/OnboardingChecklist'
 import ParentOnboardingChecklist from '@/components/ParentOnboardingChecklist'
 import ParentWelcomeModal from '@/components/ParentWelcomeModal'
+import ParentUnlockMilestones from '@/components/ParentUnlockMilestones'
+import AdminHero from '@/components/AdminHero'
 import EngagementScore from '@/components/EngagementScore'
 import ReviewPrompt from '@/components/ReviewPrompt'
 import SmartInsights from '@/components/SmartInsights'
+import RevenueForecast from '@/components/RevenueForecast'
+import PlayersNeedingAttention, { type AttentionPlayer } from '@/components/PlayersNeedingAttention'
+import BirthdaysThisWeek, { type BirthdayPlayer } from '@/components/BirthdaysThisWeek'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -288,6 +293,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
     { count: attendedTrialCount },
     { count: activeEnrolmentCount },
     { count: activeSubscriptionCount },
+    { count: totalAchievementCount },
   ] = await Promise.all([
     supabase
       .from('trial_bookings')
@@ -304,6 +310,14 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
       .select('id', { count: 'exact', head: true })
       .eq('parent_id', userId)
       .eq('status', 'active'),
+    // Total achievements across all this parent's children — drives the
+    // "Earn your first achievement" milestone in ParentUnlockMilestones.
+    playerIds.length > 0
+      ? supabase
+          .from('player_achievements')
+          .select('id', { count: 'exact', head: true })
+          .in('player_id', playerIds)
+      : Promise.resolve({ count: 0 }),
   ])
 
   const childCount = (players || []).length
@@ -503,6 +517,21 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           primaryColor={parentOrgPrimary}
         />
 
+        {/* ═══ UNLOCKING-NEXT MILESTONES — tutorial-mode quest tracker ═══ */}
+        {/* Auto-hides once a parent has unlocked everything, so it only shows */}
+        {/* during the early "ghost town" period before sessions/reviews land. */}
+        {childCount > 0 && (
+          <div className="mb-6">
+            <ParentUnlockMilestones
+              brandColor={parentOrgPrimary}
+              enrolmentCount={activeEnrolmentCount || 0}
+              attendedCount={totalPresent}
+              reviewCount={(latestReviews || []).length}
+              achievementCount={totalAchievementCount || 0}
+            />
+          </div>
+        )}
+
         {/* ═══ WELCOME ONBOARDING CARD (no children) ═══ */}
         {(players || []).length === 0 && (
           <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 mb-6">
@@ -556,7 +585,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
             ))}
             <Link
               href="/dashboard/children"
-              className="flex items-center gap-1.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-3.5 py-1.5 hover:border-[#4ecde6]/40 transition-all flex-shrink-0"
+              className="flex items-center gap-1.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-4 py-2.5 hover:border-[#4ecde6]/40 transition-all flex-shrink-0"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span className="text-xs font-semibold text-[#4ecde6] whitespace-nowrap">Add Child</span>
@@ -1247,6 +1276,36 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
     .eq('organisation_id', orgId)
     .eq('status', 'active')
 
+  // Full subscription detail for MRR forecast — joins plan amounts
+  const { data: subForecastRows } = await supabase
+    .from('subscriptions')
+    .select('status, plan:subscription_plans(amount, interval)')
+    .eq('organisation_id', orgId)
+    .in('status', ['active', 'past_due', 'trialing'])
+
+  let forecastMrr = 0
+  let forecastAtRiskMrr = 0
+  let forecastAtRiskCount = 0
+  let forecastTrialingMrr = 0
+  let forecastTrialingCount = 0
+  for (const row of subForecastRows || []) {
+    const plan = row.plan as unknown as { amount: number | string; interval?: string } | null
+    if (!plan) continue
+    const amount = Number(plan.amount) || 0
+    // Normalise year-interval plans to monthly equivalent.
+    const monthly = plan.interval === 'year' ? amount / 12 : amount
+    if (row.status === 'active') {
+      forecastMrr += monthly
+    } else if (row.status === 'past_due') {
+      forecastAtRiskMrr += monthly
+      forecastAtRiskCount += 1
+    } else if (row.status === 'trialing') {
+      forecastTrialingMrr += monthly
+      forecastTrialingCount += 1
+    }
+  }
+  const forecastArr = forecastMrr * 12
+
   // Monthly revenue (paid payments this month)
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
@@ -1479,7 +1538,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
 
   const { data: orgData } = await supabase
     .from('organisations')
-    .select('stripe_account_id, slug')
+    .select('stripe_account_id, slug, name, logo_url, primary_color')
     .eq('id', orgId)
     .single()
 
@@ -1509,12 +1568,20 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-4xl mx-auto space-y-0">
-        {/* ═══ HEADER ═══ */}
-        <div className="mb-6">
-          <p className="text-xs text-white/30 font-medium tracking-widest uppercase">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mt-2">Hi {name}</h1>
-          <p className="text-sm text-white/40 mt-1">Admin Dashboard</p>
-        </div>
+        {/* ═══ CINEMATIC HERO ═══ */}
+        <AdminHero
+          firstName={name.split(' ')[0] || name}
+          orgName={orgData?.name as string | null}
+          orgLogo={orgData?.logo_url as string | null}
+          orgSlug={bookingSlug || null}
+          brandColor={(orgData?.primary_color as string) || '#4ecde6'}
+          mrr={forecastMrr}
+          monthlyRevenue={monthlyRevenue}
+          revenueTrend={revenueTrend}
+          activePlayers={totalPlayers || 0}
+          todaysSessions={(todaysGroups || []).length}
+          activeSubs={activeSubs || 0}
+        />
 
         {/* ═══ ONBOARDING CHECKLIST ═══ */}
         {showOnboarding && (
@@ -1540,6 +1607,19 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           overdueCount={overdueCount || 0}
           todaysSessionCount={(todaysGroups || []).length}
         />
+
+        <div className="mt-6">
+          <RevenueForecast
+            mrr={forecastMrr}
+            arr={forecastArr}
+            activeSubs={activeSubs || 0}
+            atRiskMrr={forecastAtRiskMrr}
+            atRiskCount={forecastAtRiskCount}
+            trialingCount={forecastTrialingCount}
+            trialingMrr={forecastTrialingMrr}
+            bookingSlug={bookingSlug || undefined}
+          />
+        </div>
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 
@@ -1976,6 +2056,137 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
     .eq('recipient_id', userId)
     .eq('read', false)
 
+  // ─── Players Needing Attention ───
+  // Find players in this coach's groups who are either:
+  //   (a) overdue a review (last review > 30 days ago, or never)
+  //   (b) recent attendance concern (missed >= 2 of last 3 sessions for their group)
+  const attentionPlayers: AttentionPlayer[] = []
+  if (myGroupIds.length > 0) {
+    const { data: coachPlayers } = await supabase
+      .from('enrolments')
+      .select('player_id, group_id, player:players(id, first_name, last_name, photo_url, date_of_birth)')
+      .in('group_id', myGroupIds)
+      .eq('status', 'active')
+
+    const uniquePlayers = new Map<string, { id: string; first_name: string; last_name: string; photo_url: string | null; date_of_birth: string | null; group_ids: string[] }>()
+    for (const e of coachPlayers || []) {
+      const p = e.player as unknown as { id: string; first_name: string; last_name: string; photo_url: string | null; date_of_birth: string | null }
+      if (!p) continue
+      const existing = uniquePlayers.get(p.id)
+      if (existing) existing.group_ids.push(e.group_id)
+      else uniquePlayers.set(p.id, { ...p, group_ids: [e.group_id] })
+    }
+
+    // For each player, find their most recent review across this org
+    const playerIds = [...uniquePlayers.keys()]
+    if (playerIds.length > 0) {
+      const { data: latestReviews } = await supabase
+        .from('progress_reviews')
+        .select('player_id, review_date')
+        .in('player_id', playerIds)
+        .order('review_date', { ascending: false })
+
+      const latestReviewByPlayer = new Map<string, string>()
+      for (const r of latestReviews || []) {
+        if (!latestReviewByPlayer.has(r.player_id)) {
+          latestReviewByPlayer.set(r.player_id, r.review_date as string)
+        }
+      }
+
+      // Find recent attendance per player (last 4 sessions across their groups)
+      const { data: recentAttendance } = await supabase
+        .from('attendance')
+        .select('player_id, group_id, session_date, present')
+        .in('player_id', playerIds)
+        .order('session_date', { ascending: false })
+        .limit(playerIds.length * 8)
+
+      const playerAttendance = new Map<string, { present: boolean; session_date: string }[]>()
+      for (const a of recentAttendance || []) {
+        const list = playerAttendance.get(a.player_id) || []
+        if (list.length < 4) list.push({ present: a.present as boolean, session_date: a.session_date as string })
+        playerAttendance.set(a.player_id, list)
+      }
+
+      const today = new Date()
+      const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+      for (const p of uniquePlayers.values()) {
+        const lastReview = latestReviewByPlayer.get(p.id)
+        let overdueDays: number | null = null
+        if (!lastReview) {
+          overdueDays = -1 // never reviewed
+        } else {
+          const daysSince = Math.floor((today.getTime() - new Date(lastReview).getTime()) / (24 * 60 * 60 * 1000))
+          if (daysSince > 30) overdueDays = daysSince
+        }
+        const recent = playerAttendance.get(p.id) || []
+        const missedRecent = recent.filter((r) => !r.present).length
+
+        if (overdueDays !== null) {
+          attentionPlayers.push({
+            id: p.id,
+            first_name: p.first_name,
+            last_name: p.last_name,
+            photo_url: p.photo_url,
+            reason: 'overdue_review',
+            detail: overdueDays === -1 ? 'Never reviewed' : `Last reviewed ${overdueDays} days ago`,
+          })
+        } else if (recent.length >= 3 && missedRecent >= 2) {
+          attentionPlayers.push({
+            id: p.id,
+            first_name: p.first_name,
+            last_name: p.last_name,
+            photo_url: p.photo_url,
+            reason: 'attendance_drop',
+            detail: `Missed ${missedRecent} of last ${recent.length} sessions`,
+          })
+        }
+      }
+    }
+  }
+  // Cap at 8 — too many = analysis paralysis
+  const attentionPlayersTop = attentionPlayers.slice(0, 8)
+
+  // ─── Birthdays this week ───
+  const birthdayPlayers: BirthdayPlayer[] = []
+  if (myGroupIds.length > 0) {
+    const { data: birthdayCandidates } = await supabase
+      .from('enrolments')
+      .select('player:players(id, first_name, last_name, photo_url, date_of_birth)')
+      .in('group_id', myGroupIds)
+      .eq('status', 'active')
+
+    const todayDate = new Date()
+    const seenIds = new Set<string>()
+    for (const e of birthdayCandidates || []) {
+      const p = e.player as unknown as { id: string; first_name: string; last_name: string; photo_url: string | null; date_of_birth: string | null }
+      if (!p || !p.date_of_birth || seenIds.has(p.id)) continue
+      seenIds.add(p.id)
+      const dob = new Date(p.date_of_birth)
+      // Build "this year's birthday" date
+      const thisYear = new Date(todayDate.getFullYear(), dob.getMonth(), dob.getDate())
+      // If already passed this year, check next year (for end-of-year players)
+      let target = thisYear
+      if (thisYear.getTime() < todayDate.getTime() - 24 * 60 * 60 * 1000) {
+        target = new Date(todayDate.getFullYear() + 1, dob.getMonth(), dob.getDate())
+      }
+      const daysUntil = Math.ceil((target.getTime() - todayDate.getTime()) / (24 * 60 * 60 * 1000))
+      if (daysUntil >= 0 && daysUntil <= 7) {
+        const turningAge = target.getFullYear() - dob.getFullYear()
+        birthdayPlayers.push({
+          id: p.id,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          photo_url: p.photo_url,
+          date_of_birth: p.date_of_birth,
+          daysUntil: daysUntil < 0 ? 0 : daysUntil,
+          turningAge,
+        })
+      }
+    }
+    birthdayPlayers.sort((a, b) => a.daysUntil - b.daysUntil)
+  }
+
   // Attendance streak: count consecutive session dates (most recent first) where the coach marked attendance
   let attendanceStreak = 0
   if (myGroupIds.length > 0) {
@@ -2182,6 +2393,19 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
             )}
           </div>
         </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+
+        {/* ═══ BIRTHDAYS (delight widget — only renders if any) ═══ */}
+        {birthdayPlayers.length > 0 && (
+          <>
+            <BirthdaysThisWeek players={birthdayPlayers} />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+          </>
+        )}
+
+        {/* ═══ PLAYERS NEEDING ATTENTION ═══ */}
+        <PlayersNeedingAttention players={attentionPlayersTop} />
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
 

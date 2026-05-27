@@ -5,7 +5,9 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   await supabase.auth.signOut({ scope: 'global' })
 
-  const redirectTo = request.nextUrl.searchParams.get('redirect') || '/auth/signin'
+  // Default to the friendly "Signed out" page rather than dropping straight
+  // to the signin form. Pass ?redirect=... to override (e.g. back to /).
+  const redirectTo = request.nextUrl.searchParams.get('redirect') || '/auth/signed-out'
 
   const url = request.nextUrl.clone()
   url.pathname = redirectTo.split('?')[0]

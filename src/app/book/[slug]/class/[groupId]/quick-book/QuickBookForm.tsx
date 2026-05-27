@@ -167,33 +167,41 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
         playerId = selectedChildId
       }
 
-      const { error: enrolError } = await supabase.from('enrolments').insert({ player_id: playerId, group_id: groupId, organisation_id: orgId, status: 'active', enrolled_at: new Date().toISOString() })
-      if (enrolError && !enrolError.message.includes('duplicate')) { setGlobalError(enrolError.message); setLoading(false); return }
+      // ─── Don't create the enrolment here ───
+      // The Stripe webhook creates the enrolment AFTER payment succeeds
+      // (using supabase_class_id metadata on the Checkout Session).
+      // This closes a loophole where parents could book a class, abandon
+      // Stripe Checkout, and still have an active enrolment.
+      // See task #77 / migration 058.
 
-      // Send booking confirmation email
-      const parentEmail = isLoggedIn ? (await supabase.auth.getUser()).data.user?.email : email
-      if (parentEmail) {
-        fetch('/api/email/booking-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            parentName: isLoggedIn ? 'there' : fullName.split(' ')[0],
-            parentEmail,
-            childName: childDisplayName,
-            className: groupName,
-            academyName: orgName,
-            planName: selectedPlan?.name || '',
-            amount: selectedPlan ? `£${selectedPlan.amount.toFixed(2)}/month` : '',
-          }),
-        }).catch(() => {})
+      if (!selectedPlanId) {
+        setGlobalError('Please select a plan to continue.')
+        setLoading(false)
+        return
       }
 
-      if (selectedPlanId) {
-        setShowSuccess(true)
-        const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId, billingOption }) })
-        const data = await res.json()
-        if (data.url) { setTimeout(() => { window.location.href = data.url }, 1200); return }
-        else { setShowSuccess(false); setGlobalError(data.error || 'Failed to start payment'); setLoading(false); return }
+      setShowSuccess(true)
+      const res = await fetch('/api/stripe/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: selectedPlanId,
+          playerId,
+          billingOption,
+          classId: groupId, // ← critical: webhook uses this to enrol player on payment success
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        // Booking confirmation email fires from the Stripe webhook after payment,
+        // not here — sending it now would be misleading if Checkout was abandoned.
+        setTimeout(() => { window.location.href = data.url }, 1200)
+        return
+      } else {
+        setShowSuccess(false)
+        setGlobalError(data.error || 'Failed to start payment')
+        setLoading(false)
+        return
       }
     } catch { setShowSuccess(false); setGlobalError('Something went wrong. Please try again.'); setLoading(false) }
   }

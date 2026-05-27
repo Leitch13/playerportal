@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import SettingsForm from './SettingsForm'
+import PoliciesForm from './PoliciesForm'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -39,6 +40,7 @@ export default async function SettingsPage() {
     .eq('organisation_id', orgId)
 
   return (
+    <div className="space-y-6">
     <SettingsForm
       org={org ? {
         id: org.id,
@@ -73,5 +75,17 @@ export default async function SettingsPage() {
         classes: classCount || 0,
       }}
     />
+    {org && (
+      <PoliciesForm
+        orgId={org.id}
+        initial={{
+          cancellation_notice_days: Number(org.cancellation_notice_days ?? 0),
+          refund_policy: (org.refund_policy as string) || '',
+          late_payment_grace_days: Number(org.late_payment_grace_days ?? 0),
+          terms_text: (org.terms_text as string) || '',
+        }}
+      />
+    )}
+    </div>
   )
 }

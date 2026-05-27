@@ -21,6 +21,7 @@ const CLASS_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   trial: { label: 'Trial', color: '#06b6d4' },
   girls: { label: 'Girls Only', color: '#d946ef' },
   adults: { label: 'Adults', color: '#64748b' },
+  intensity: { label: 'Intensity', color: '#ef4444' },
 }
 
 export default async function EmbedBookingPage({
