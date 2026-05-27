@@ -155,8 +155,35 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    // Get or create Stripe customer
+    // Get or create Stripe customer.
+    //
+    // We validate any stored customerId against the current Stripe mode (live vs
+    // test). If a stale test-mode customer ID is sitting on the profile (e.g. from
+    // an earlier dev/staging session), Stripe live API throws "No such customer".
+    // In that case we clear the column and create a fresh live customer rather
+    // than blocking the parent at checkout.
     let customerId = profile?.stripe_customer_id
+
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId)
+        if ((existing as Stripe.DeletedCustomer).deleted) {
+          customerId = null
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (msg.includes('No such customer')) {
+          // Stale ID (most likely test-mode) — drop it and recreate.
+          customerId = null
+          await supabase
+            .from('profiles')
+            .update({ stripe_customer_id: null })
+            .eq('id', user.id)
+        } else {
+          throw err
+        }
+      }
+    }
 
     if (!customerId) {
       const customer = await stripe.customers.create({
