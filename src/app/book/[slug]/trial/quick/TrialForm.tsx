@@ -30,6 +30,7 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
   const [childAge, setChildAge] = useState('')
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -137,6 +138,10 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
     e.preventDefault()
     if (!parentName || !parentEmail || !childName) {
       setError('Please fill in all required fields.')
+      return
+    }
+    if (!agreedToTerms) {
+      setError('Please tick to confirm you’ve read the Terms & Conditions.')
       return
     }
     setLoading(true)
@@ -406,10 +411,28 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
         </div>
       )}
 
+      {/* T&C tickbox */}
+      <label className="flex items-start gap-2.5 text-xs text-white/50 cursor-pointer leading-snug">
+        <input
+          type="checkbox"
+          checked={agreedToTerms}
+          onChange={(e) => setAgreedToTerms(e.target.checked)}
+          className="mt-0.5 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer shrink-0"
+          style={{ accentColor: primaryColor }}
+        />
+        <span>
+          I&apos;ve read and agree to{' '}
+          <Link href={`/book/${slug}/terms`} target="_blank" className="underline hover:text-white" style={{ color: primaryColor }}>
+            {academyName}&apos;s Terms &amp; Conditions
+          </Link>
+          .
+        </span>
+      </label>
+
       {/* Big CTA Button */}
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !agreedToTerms}
         className="w-full py-4 rounded-2xl font-bold text-lg transition-all hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] disabled:opacity-50"
         style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
       >

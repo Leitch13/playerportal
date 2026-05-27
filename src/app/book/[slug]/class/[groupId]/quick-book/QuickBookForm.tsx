@@ -255,7 +255,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
           </div>
           <div className="flex items-start gap-3 mt-4">
             <input type="checkbox" id="quick-terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer" style={{ accentColor: primaryColor }} />
-            <label htmlFor="quick-terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">I agree to the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Terms &amp; Conditions</Link> and confirm I am the parent or legal guardian of the child being registered.</label>
+            <label htmlFor="quick-terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">I&apos;ve read and agree to <Link href={`/book/${orgSlug.trim().toLowerCase()}/terms`} target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>{orgName}&apos;s Terms &amp; Conditions</Link> and confirm I am the parent or legal guardian of the child being registered.</label>
           </div>
           <button type="button" onClick={handleDetailsComplete} disabled={!fullName || !email || !password || !agreedToTerms} className="mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Continue to Child Details &rarr;</button>
         </section>

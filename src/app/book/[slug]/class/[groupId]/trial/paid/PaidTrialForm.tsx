@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 /**
  * Form for booking a paid one-off trial session.
@@ -53,6 +54,7 @@ export default function PaidTrialForm({
   const [childDob, setChildDob] = useState('')
   const [sessionDate, setSessionDate] = useState('')
   const [agreed, setAgreed] = useState(false)
+  const [readTerms, setReadTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -60,7 +62,11 @@ export default function PaidTrialForm({
     e.preventDefault()
     setError('')
     if (!agreed) {
-      setError('Please agree to the terms.')
+      setError('Please confirm the payment agreement.')
+      return
+    }
+    if (!readTerms) {
+      setError(`Please tick to confirm you've read ${groupName ? "the academy's" : 'the'} Terms & Conditions.`)
       return
     }
     setLoading(true)
@@ -167,6 +173,17 @@ export default function PaidTrialForm({
         </span>
       </label>
 
+      <label className="flex items-start gap-2.5 text-xs sm:text-sm text-white/70 cursor-pointer leading-snug px-1">
+        <input type="checkbox" checked={readTerms} onChange={(e) => setReadTerms(e.target.checked)} className="mt-0.5 w-4 h-4 accent-white shrink-0" />
+        <span>
+          I&apos;ve read and agree to{' '}
+          <Link href={`/book/${slug}/terms`} target="_blank" className="underline hover:text-white" style={{ color: primaryColor }}>
+            the Terms &amp; Conditions
+          </Link>
+          .
+        </span>
+      </label>
+
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
           {error}
@@ -175,7 +192,7 @@ export default function PaidTrialForm({
 
       <button
         type="submit"
-        disabled={loading || !agreed}
+        disabled={loading || !agreed || !readTerms}
         className="w-full py-3.5 sm:py-4 rounded-2xl font-extrabold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
           background: loading ? '#444' : `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`,

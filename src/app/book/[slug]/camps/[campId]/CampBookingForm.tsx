@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type Camp = {
   id: string
@@ -310,7 +311,11 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
           />
           <span className="text-sm text-white/70">
             I consent to my child participating in this camp. I confirm the medical information provided
-            is accurate and I agree to the terms and conditions. *
+            is accurate, and I&apos;ve read and agree to{' '}
+            <Link href={`/book/${slug}/terms`} target="_blank" className="underline hover:text-white" style={{ color: primaryColor }}>
+              the Terms &amp; Conditions
+            </Link>
+            . *
           </span>
         </label>
       )}
