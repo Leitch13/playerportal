@@ -157,6 +157,24 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       }
       if (!userId) { setGlobalError('Could not authenticate. Please try again.'); setLoading(false); return }
 
+      // Record T&C acceptance for audit trail — best-effort, never blocks booking.
+      // - New signup (!isLoggedIn): they ticked agreedToTerms in step 1
+      // - Logged-in: they saw the "By booking you confirm..." note above the pay button
+      // Either way, the act of clicking Book & Pay is the acceptance event.
+      try {
+        const { data: orgRow } = await supabase.from('organisations').select('terms_text').eq('id', orgId).single()
+        const txt = (orgRow?.terms_text as string | null) || ''
+        let h = 5381
+        for (let i = 0; i < txt.length; i++) h = ((h << 5) + h) ^ txt.charCodeAt(i)
+        const versionHash = (h >>> 0).toString(16) + '-' + txt.length
+        await supabase.from('academy_terms_acceptances').insert({
+          profile_id: userId,
+          organisation_id: orgId,
+          terms_version_hash: versionHash,
+          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : null,
+        })
+      } catch { /* non-fatal */ }
+
       let playerId: string
       if (isNewChild) {
         const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
@@ -338,6 +356,15 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
             <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
             <div><p className="font-medium">Booking failed</p><p className="text-xs text-red-400/70 mt-0.5">{globalError}</p></div>
           </div>
+        )}
+        {isLoggedIn && (
+          <p className="text-[11px] text-white/40 mb-3 leading-snug">
+            By booking, you confirm you&apos;ve read{' '}
+            <Link href={`/book/${orgSlug.trim().toLowerCase()}/terms`} target="_blank" className="underline hover:text-white/70" style={{ color: primaryColor }}>
+              {orgName}&apos;s Terms &amp; Conditions
+            </Link>
+            .
+          </p>
         )}
         <button type="button" onClick={handleBookAndPay} disabled={!canSubmit || loading} className="w-full py-5 rounded-2xl font-extrabold text-xl transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-3 shadow-lg" style={{ backgroundColor: canSubmit ? primaryColor : 'rgba(255,255,255,0.06)', color: canSubmit ? '#0a0a0a' : 'rgba(255,255,255,0.3)', boxShadow: canSubmit ? `0 8px 30px ${primaryColor}40` : 'none' }}>
           {loading ? <><Spinner size={22} />Setting up your booking...</> : <>Book &amp; Pay {displayPrice} &rarr;</>}

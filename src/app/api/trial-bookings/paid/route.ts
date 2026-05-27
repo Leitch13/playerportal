@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { data: org } = await supabase
       .from('organisations')
-      .select('id, name, slug, stripe_account_id, platform_plan_id')
+      .select('id, name, slug, stripe_account_id, platform_plan_id, terms_text')
       .eq('id', group.organisation_id)
       .single()
 
@@ -87,6 +87,13 @@ export async function POST(request: NextRequest) {
     const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(amountPence * PLATFORM_FEE_RATE) : 0
     const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
+    // Snapshot the academy's terms_text version at booking time so the audit
+    // log can prove which version this parent agreed to (in the tickbox).
+    const termsTxt = (org.terms_text as string | null) || ''
+    let h = 5381
+    for (let i = 0; i < termsTxt.length; i++) h = ((h << 5) + h) ^ termsTxt.charCodeAt(i)
+    const termsVersionHash = (h >>> 0).toString(16) + '-' + termsTxt.length
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
@@ -117,6 +124,8 @@ export async function POST(request: NextRequest) {
         parent_email: parentEmail,
         parent_phone: parentPhone || '',
         session_date: sessionDate || '',
+        terms_accepted_at: new Date().toISOString(),
+        terms_version_hash: termsVersionHash,
       },
       payment_intent_data: {
         ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),

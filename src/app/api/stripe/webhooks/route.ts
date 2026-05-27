@@ -155,6 +155,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       notes: `Paid trial — £${((session.amount_total ?? 0) / 100).toFixed(2)} via Stripe (${session.id})`,
       status: 'confirmed',
       confirmed_at: new Date().toISOString(),
+      terms_accepted_at: m.terms_accepted_at || null,
+      terms_version_hash: m.terms_version_hash || null,
     })
     return
   }

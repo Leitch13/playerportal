@@ -71,6 +71,21 @@ export async function POST(request: NextRequest) {
 
     price = Math.round(price * 100) / 100 // round to 2 decimal places
 
+    // Compute terms_version_hash so we have an audit trail of which version
+    // of the academy's T&Cs the parent agreed to (consent_given tickbox).
+    let termsVersionHash: string | null = null
+    if (consentGiven) {
+      const { data: orgRow } = await supabase
+        .from('organisations')
+        .select('terms_text')
+        .eq('id', organisationId)
+        .single()
+      const txt = (orgRow?.terms_text as string | null) || ''
+      let h = 5381
+      for (let i = 0; i < txt.length; i++) h = ((h << 5) + h) ^ txt.charCodeAt(i)
+      termsVersionHash = (h >>> 0).toString(16) + '-' + txt.length
+    }
+
     // Insert booking record
     const { data: booking, error: bookingError } = await supabase
       .from('camp_bookings')
@@ -86,6 +101,8 @@ export async function POST(request: NextRequest) {
         consent_given: consentGiven || false,
         amount_paid: price,
         payment_status: 'pending',
+        terms_accepted_at: consentGiven ? new Date().toISOString() : null,
+        terms_version_hash: termsVersionHash,
       })
       .select()
       .single()

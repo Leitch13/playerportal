@@ -79,6 +79,7 @@ export default async function PaidTrialPage({
           slug={slug}
           groupId={groupId}
           groupName={group.name as string}
+          orgName={org.name as string}
           trialPrice={trialPrice}
           primaryColor={primaryColor}
           dayOfWeek={(group.day_of_week as string | null) || null}

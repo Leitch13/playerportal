@@ -12,6 +12,7 @@ export default function PaidTrialForm({
   slug,
   groupId,
   groupName,
+  orgName,
   trialPrice,
   primaryColor,
   dayOfWeek,
@@ -20,6 +21,7 @@ export default function PaidTrialForm({
   slug: string
   groupId: string
   groupName: string
+  orgName: string
   trialPrice: number
   primaryColor: string
   dayOfWeek?: string | null
@@ -178,7 +180,7 @@ export default function PaidTrialForm({
         <span>
           I&apos;ve read and agree to{' '}
           <Link href={`/book/${slug}/terms`} target="_blank" className="underline hover:text-white" style={{ color: primaryColor }}>
-            the Terms &amp; Conditions
+            {orgName}&apos;s Terms &amp; Conditions
           </Link>
           .
         </span>

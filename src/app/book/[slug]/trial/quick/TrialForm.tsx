@@ -148,6 +148,22 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
     setError('')
 
     const supabase = createClient()
+
+    // Compute a tiny djb2 hash of the academy's current terms_text so we can prove
+    // which version they accepted if the academy updates their T&Cs later.
+    let versionHash: string | null = null
+    try {
+      const { data: orgRow } = await supabase
+        .from('organisations')
+        .select('terms_text')
+        .eq('id', orgId)
+        .single()
+      const txt = (orgRow?.terms_text as string | null) || ''
+      let h = 5381
+      for (let i = 0; i < txt.length; i++) h = ((h << 5) + h) ^ txt.charCodeAt(i)
+      versionHash = (h >>> 0).toString(16) + '-' + txt.length
+    } catch { /* non-fatal */ }
+
     const { error: insertError } = await supabase.from('trial_bookings').insert({
       organisation_id: orgId,
       training_group_id: groupId || null,
@@ -158,6 +174,8 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       child_age: childAge ? parseInt(childAge) : null,
       preferred_date: sessionDate || null,
       notes: notes || null,
+      terms_accepted_at: new Date().toISOString(),
+      terms_version_hash: versionHash,
     })
 
     if (insertError) {
