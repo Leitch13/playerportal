@@ -133,16 +133,16 @@ export default function Home() {
         {/* Grid pattern */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 sm:pt-32 sm:pb-28 text-center">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-14 sm:pt-32 sm:pb-28 text-center">
           {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.08] text-sm text-white/50 mb-10 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs sm:text-sm text-white/50 mb-6 sm:mb-10 animate-fade-in">
             <span className="relative inline-block w-2 h-2 rounded-full bg-emerald-400">
               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
             </span>
             The all-in-one platform for football academies
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-8xl font-black tracking-[-0.035em] leading-[0.92] mb-8 animate-slide-up">
+          <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black tracking-[-0.035em] leading-[0.92] mb-5 sm:mb-8 animate-slide-up">
             <span
               style={{
                 background: 'linear-gradient(180deg, #ffffff 0%, #ffffff 60%, #cccccc 100%)',
@@ -174,7 +174,7 @@ export default function Home() {
             }
           `}</style>
 
-          <p className="max-w-2xl mx-auto text-lg sm:text-2xl text-white/50 mb-12 leading-relaxed font-medium animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <p className="max-w-2xl mx-auto text-sm sm:text-2xl text-white/50 mb-7 sm:mb-12 leading-relaxed font-medium animate-slide-up" style={{ animationDelay: '0.1s' }}>
             Players. Progress. Payments. Parents.
             <br className="hidden sm:block" />
             <span className="text-white/35">One platform that handles it all — so you can focus on coaching.</span>
@@ -183,21 +183,21 @@ export default function Home() {
           <HeroAudienceSelector />
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 max-w-lg mx-auto animate-slide-up" style={{ animationDelay: '0.3s' }}>
             {[
               { value: '14-day', label: 'Free Trial' },
               { value: 'No card', label: 'Required' },
               { value: 'Cancel', label: 'Anytime' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-2xl sm:text-3xl font-extrabold tracking-tight">{stat.value}</div>
-                <div className="text-xs text-white/30 mt-1 uppercase tracking-wider font-medium">{stat.label}</div>
+                <div className="text-xl sm:text-3xl font-extrabold tracking-tight">{stat.value}</div>
+                <div className="text-[10px] sm:text-xs text-white/30 mt-0.5 sm:mt-1 uppercase tracking-wider font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
 
           {/* Hero Device Mockup */}
-          <div className="mt-20 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <div className="mt-12 sm:mt-20 animate-slide-up" style={{ animationDelay: '0.4s' }}>
             <div className="relative mx-auto max-w-[320px] sm:max-w-[360px] animate-float">
               {/* Phone frame */}
               <div className="relative rounded-[2.5rem] border-[3px] border-white/[0.12] bg-[#0a0a0a] p-3 shadow-2xl shadow-[#4ecde6]/10">
@@ -271,7 +271,7 @@ export default function Home() {
       </section>
 
       {/* ── Features (audience-toggled) ── */}
-      <section id="features" className="relative py-24 sm:py-32">
+      <section id="features" className="relative py-14 sm:py-32">
         <FeaturesByAudience />
       </section>
 
@@ -424,22 +424,22 @@ export default function Home() {
       </section>
 
       {/* ── See It In Action ── */}
-      <section className="relative py-24 sm:py-32">
+      <section className="relative py-14 sm:py-32">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4ecde6]/[0.02] to-transparent" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
+          <div className="text-center mb-8 sm:mb-16">
+            <div className="inline-flex px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4">
               Product Preview
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight mb-3 sm:mb-5">
               See it in action
             </h2>
-            <p className="text-white/40 text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-white/40 text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed">
               Three dashboards, one platform. Every user gets a tailored experience.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
             {/* Admin Dashboard */}
             <div className="text-center group">
               <div className="relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a] p-3 shadow-xl group-hover:border-[#4ecde6]/20 transition-all duration-300">
@@ -619,32 +619,32 @@ export default function Home() {
       </section>
 
       {/* ── How It Works ── */}
-      <section id="how-it-works" className="relative py-24 sm:py-32">
+      <section id="how-it-works" className="relative py-14 sm:py-32">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent" />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
+          <div className="text-center mb-8 sm:mb-16">
+            <div className="inline-flex px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4">
               How it works
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight mb-3 sm:mb-5">
               Live in minutes, not months
             </h2>
-            <p className="text-white/40 text-lg max-w-xl mx-auto">
+            <p className="text-white/40 text-sm sm:text-lg max-w-xl mx-auto">
               No complex setup. No training needed. Three steps and you&apos;re done.
             </p>
           </div>
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
             {/* Connecting line */}
             <div className="hidden md:block absolute top-16 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px">
               <div className="h-full bg-gradient-to-r from-[#4ecde6]/30 via-[#4ecde6]/10 to-[#4ecde6]/30" />
             </div>
             {steps.map((s) => (
               <div key={s.num} className="relative text-center group">
-                <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] mb-6 group-hover:border-[#4ecde6]/30 group-hover:from-[#4ecde6]/10 group-hover:to-[#4ecde6]/5 transition-all duration-300">
-                  <span className="text-2xl font-extrabold gradient-text">{s.num}</span>
+                <div className="relative inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/[0.08] mb-4 sm:mb-6 group-hover:border-[#4ecde6]/30 group-hover:from-[#4ecde6]/10 group-hover:to-[#4ecde6]/5 transition-all duration-300">
+                  <span className="text-xl sm:text-2xl font-extrabold gradient-text">{s.num}</span>
                 </div>
-                <h3 className="text-lg font-bold mb-2">{s.title}</h3>
-                <p className="text-sm text-white/40 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+                <h3 className="text-base sm:text-lg font-bold mb-1.5 sm:mb-2">{s.title}</h3>
+                <p className="text-xs sm:text-sm text-white/40 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -652,58 +652,58 @@ export default function Home() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="relative py-24 sm:py-32">
+      <section id="pricing" className="relative py-14 sm:py-32">
         {/* Background glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-[#4ecde6]/[0.04] rounded-full blur-[150px] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold uppercase tracking-wider mb-4">
+          <div className="text-center mb-8 sm:mb-16">
+            <div className="inline-flex px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4">
               Pricing
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-5">
+            <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight mb-3 sm:mb-5">
               Simple, transparent pricing
             </h2>
-            <p className="text-white/40 text-lg max-w-xl mx-auto">
+            <p className="text-white/40 text-sm sm:text-lg max-w-xl mx-auto">
               Pick your plan. Start your 14-day free trial. No credit card required.
             </p>
           </div>
-          <p className="text-sm text-white/40 mt-4 max-w-xl mx-auto text-center">
+          <p className="text-xs sm:text-sm text-white/40 mt-3 sm:mt-4 max-w-xl mx-auto text-center">
             Pay less per transaction as you grow. Upgrade or downgrade anytime.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start mt-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto items-start mt-6 sm:mt-10">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative rounded-2xl p-8 flex flex-col transition-all duration-300 ${
+                className={`relative rounded-2xl p-5 sm:p-8 flex flex-col transition-all duration-300 ${
                   plan.featured
                     ? 'bg-gradient-to-b from-[#4ecde6]/[0.08] to-[#4ecde6]/[0.02] border-2 border-[#4ecde6]/30 shadow-2xl shadow-[#4ecde6]/10 md:scale-[1.06] md:-my-6 ring-1 ring-[#4ecde6]/20'
                     : 'bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.03]'
                 }`}
               >
                 {plan.featured && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3] text-white text-[11px] font-bold rounded-full uppercase tracking-wider shadow-lg shadow-[#4ecde6]/30">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 sm:px-5 py-1 sm:py-1.5 bg-gradient-to-r from-[#4ecde6] to-[#2ba8c3] text-white text-[10px] sm:text-[11px] font-bold rounded-full uppercase tracking-wider shadow-lg shadow-[#4ecde6]/30">
                     Most Popular
                   </div>
                 )}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">{plan.name}</h3>
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-xs sm:text-sm font-semibold text-white/50 uppercase tracking-wider mb-3 sm:mb-4">{plan.name}</h3>
                   <div className="flex items-baseline gap-1 mb-1">
-                    <span className={`text-5xl font-extrabold tracking-tight ${plan.featured ? 'gradient-text' : ''}`}>{plan.price}</span>
+                    <span className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${plan.featured ? 'gradient-text' : ''}`}>{plan.price}</span>
                     {plan.period && <span className="text-white/30 text-sm font-medium">{plan.period}</span>}
                   </div>
-                  <div className={`text-sm font-semibold mb-3 ${plan.fee === '2% transaction fee' ? 'text-emerald-400' : 'text-white/40'}`}>
+                  <div className={`text-xs sm:text-sm font-semibold mb-2 sm:mb-3 ${plan.fee === '2% transaction fee' ? 'text-emerald-400' : 'text-white/40'}`}>
                     {plan.fee}
                   </div>
-                  <p className="text-sm text-white/30">{plan.desc}</p>
+                  <p className="text-xs sm:text-sm text-white/30">{plan.desc}</p>
                 </div>
-                <div className="mb-6">
-                  <h4 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-3">
+                <div className="mb-4 sm:mb-6">
+                  <h4 className="text-[10px] sm:text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-2 sm:mb-3">
                     {plan.featureHeading}
                   </h4>
-                  <ul className="space-y-2.5">
+                  <ul className="space-y-2 sm:space-y-2.5">
                     {plan.features.map((feat) => (
-                      <li key={feat} className="flex items-start gap-2.5 text-sm text-white/70">
-                        <svg className="w-4 h-4 text-[#4ecde6] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <li key={feat} className="flex items-start gap-2 sm:gap-2.5 text-xs sm:text-sm text-white/70">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#4ecde6] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                         <span>{feat}</span>
@@ -713,7 +713,7 @@ export default function Home() {
                 </div>
                 <Link
                   href="/onboard"
-                  className={`block text-center py-3.5 rounded-full font-semibold text-sm transition-all mt-auto ${
+                  className={`block text-center py-3 sm:py-3.5 rounded-full font-semibold text-sm transition-all mt-auto ${
                     plan.featured
                       ? 'bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] shadow-lg shadow-[#4ecde6]/25 glow-accent hover:shadow-xl hover:shadow-[#4ecde6]/30'
                       : 'border border-white/15 text-white/70 hover:bg-white/5 hover:text-white hover:border-white/25'
@@ -725,13 +725,13 @@ export default function Home() {
             ))}
           </div>
           {/* Cost calculator */}
-          <div className="mt-16">
+          <div className="mt-10 sm:mt-16">
             <PricingCalculator />
           </div>
 
           {/* Notes */}
-          <div className="text-center mt-12">
-            <p className="text-sm text-white/40">
+          <div className="text-center mt-8 sm:mt-12">
+            <p className="text-xs sm:text-sm text-white/40">
               All plans include a 14-day free trial. No credit card required.
             </p>
           </div>
@@ -739,27 +739,27 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="relative py-24 sm:py-32">
+      <section className="relative py-14 sm:py-32">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4ecde6]/[0.03] to-transparent" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-6">
+          <h2 className="text-2xl sm:text-5xl font-extrabold tracking-tight mb-4 sm:mb-6">
             Ready to modernise
             <br />
             <span className="gradient-text">your academy?</span>
           </h2>
-          <p className="text-white/40 text-lg mb-10 max-w-xl mx-auto">
+          <p className="text-white/40 text-sm sm:text-lg mb-6 sm:mb-10 max-w-xl mx-auto">
             Join football academies across the UK who are saving time and growing faster with Player Portal.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link
               href="/onboard"
-              className="inline-flex items-center justify-center px-10 py-5 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-lg hover:scale-[1.03] transition-all glow-accent"
+              className="inline-flex items-center justify-center px-8 py-3.5 sm:px-10 sm:py-5 bg-[#4ecde6] text-[#0a0a0a] rounded-full font-bold text-base sm:text-lg hover:scale-[1.03] transition-all glow-accent"
             >
               Start Free Trial
             </Link>
             <Link
               href="/demo"
-              className="inline-flex items-center justify-center px-10 py-5 border border-white/15 text-white/70 rounded-full font-semibold text-lg hover:bg-white/5 hover:text-white hover:border-white/25 transition-all"
+              className="inline-flex items-center justify-center px-8 py-3.5 sm:px-10 sm:py-5 border border-white/15 text-white/70 rounded-full font-semibold text-base sm:text-lg hover:bg-white/5 hover:text-white hover:border-white/25 transition-all"
             >
               Book a Demo
             </Link>
@@ -768,14 +768,14 @@ export default function Home() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-white/[0.06] py-12">
+      <footer className="border-t border-white/[0.06] py-8 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Player Portal" className="h-7 w-auto object-contain" />
               <span className="text-sm font-semibold text-white/60">by JSL Sports</span>
             </div>
-            <div className="flex gap-8 text-sm text-white/30">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-white/30">
               <a href="#features" className="hover:text-white/60 transition-colors">Features</a>
               <a href="#pricing" className="hover:text-white/60 transition-colors">Pricing</a>
               <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
@@ -783,7 +783,7 @@ export default function Home() {
               <Link href="/cookies" className="hover:text-white/60 transition-colors">Cookies</Link>
               <Link href="/dpa" className="hover:text-white/60 transition-colors">DPA</Link>
             </div>
-            <div className="text-xs text-white/20">
+            <div className="text-[10px] sm:text-xs text-white/20 text-center md:text-right">
               &copy; 2026 JSL Sports Technology Ltd, trading as Player Portal. All rights reserved.
             </div>
           </div>

@@ -480,15 +480,15 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-2xl mx-auto space-y-0">
         {/* ═══ HEADER ═══ */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">{greeting}, {name}</h1>
-            <p className="text-sm text-white/40 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">{greeting}, {name}</h1>
+            <p className="text-xs sm:text-sm text-white/40 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           </div>
-          <Link href="/dashboard/messages" className="relative w-10 h-10 bg-[#141414] border border-[#1e1e1e] rounded-xl flex items-center justify-center hover:border-[#4ecde6]/30 transition-colors">
+          <Link href="/dashboard/messages" className="relative w-9 h-9 sm:w-10 sm:h-10 bg-[#141414] border border-[#1e1e1e] rounded-xl flex items-center justify-center hover:border-[#4ecde6]/30 transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             {(unreadCount || 0) > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
@@ -521,7 +521,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         {/* Auto-hides once a parent has unlocked everything, so it only shows */}
         {/* during the early "ghost town" period before sessions/reviews land. */}
         {childCount > 0 && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <ParentUnlockMilestones
               brandColor={parentOrgPrimary}
               enrolmentCount={activeEnrolmentCount || 0}
@@ -534,31 +534,31 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
         {/* ═══ WELCOME ONBOARDING CARD (no children) ═══ */}
         {(players || []).length === 0 && (
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
+          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6">
+            <div className="flex items-center gap-3 mb-3 sm:mb-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">Welcome! Get started by adding your child</h2>
-                <p className="text-xs text-white/40 mt-0.5">Three quick steps to get up and running</p>
+                <h2 className="text-sm sm:text-base font-bold text-white">Welcome! Get started by adding your child</h2>
+                <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">Three quick steps to get up and running</p>
               </div>
             </div>
-            <div className="space-y-3 mb-4">
+            <div className="space-y-2.5 sm:space-y-3 mb-3 sm:mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6] flex-shrink-0">1</div>
-                <span className="text-sm text-white/70">Add your child</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6] flex-shrink-0">1</div>
+                <span className="text-xs sm:text-sm text-white/70">Add your child</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">2</div>
-                <span className="text-sm text-white/40">Book a session</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">2</div>
+                <span className="text-xs sm:text-sm text-white/40">Book a session</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">3</div>
-                <span className="text-sm text-white/40">Track their progress</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">3</div>
+                <span className="text-xs sm:text-sm text-white/40">Track their progress</span>
               </div>
             </div>
-            <Link href="/dashboard/children" className="inline-block px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+            <Link href="/dashboard/children" className="inline-block px-4 sm:px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
               Add Your Child
             </Link>
           </div>
@@ -566,45 +566,45 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
         {/* ═══ CHILDREN QUICK LINKS ═══ */}
         {(players || []).length > 0 && (
-          <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1 -mx-1 px-1">
             {(players || []).map((p) => (
               <Link
                 key={p.id}
                 href={`/dashboard/players/${p.id}`}
-                className="flex items-center gap-2 bg-[#141414] border border-[#1e1e1e] rounded-full pl-1 pr-3.5 py-1 hover:border-[#4ecde6]/30 transition-all flex-shrink-0 group"
+                className="flex items-center gap-2 bg-[#141414] border border-[#1e1e1e] rounded-full pl-1 pr-3 sm:pr-3.5 py-1 hover:border-[#4ecde6]/30 transition-all flex-shrink-0 group"
               >
                 {p.photo_url ? (
                   <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="xs" />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-[10px] sm:text-xs font-bold flex-shrink-0">
                     {p.first_name.charAt(0)}
                   </div>
                 )}
-                <span className="text-xs font-medium text-white/70 group-hover:text-[#4ecde6] transition-colors whitespace-nowrap">{p.first_name}</span>
+                <span className="text-[11px] sm:text-xs font-medium text-white/70 group-hover:text-[#4ecde6] transition-colors whitespace-nowrap">{p.first_name}</span>
               </Link>
             ))}
             <Link
               href="/dashboard/children"
-              className="flex items-center gap-1.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-4 py-2.5 hover:border-[#4ecde6]/40 transition-all flex-shrink-0"
+              className="flex items-center gap-1.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 hover:border-[#4ecde6]/40 transition-all flex-shrink-0"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span className="text-xs font-semibold text-[#4ecde6] whitespace-nowrap">Add Child</span>
+              <span className="text-[11px] sm:text-xs font-semibold text-[#4ecde6] whitespace-nowrap">Add Child</span>
             </Link>
           </div>
         )}
 
         {/* ═══ ALERT BANNERS ═══ */}
         {((overdueCount || 0) > 0 || (unreadCount || 0) > 0) && (
-          <div className="space-y-3 mb-0">
+          <div className="space-y-2.5 sm:space-y-3 mb-0">
             {(overdueCount || 0) > 0 && (
               <Link href="/dashboard/payments" className="block group">
-                <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-2xl px-5 py-4 flex items-center gap-3 group-hover:border-red-500/40 transition-all">
-                  <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center text-red-400 flex-shrink-0">
+                <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 group-hover:border-red-500/40 transition-all">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-red-500/20 rounded-xl flex items-center justify-center text-red-400 flex-shrink-0">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-red-400">{overdueCount} Overdue Payment{overdueCount !== 1 ? 's' : ''}</p>
-                    <p className="text-xs text-red-400/60">Tap to view and pay</p>
+                    <p className="text-xs sm:text-sm font-bold text-red-400">{overdueCount} Overdue Payment{overdueCount !== 1 ? 's' : ''}</p>
+                    <p className="text-[11px] sm:text-xs text-red-400/60">Tap to view and pay</p>
                   </div>
                   <span className="text-red-400/60">&rarr;</span>
                 </div>
@@ -612,13 +612,13 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
             )}
             {(unreadCount || 0) > 0 && (
               <Link href="/dashboard/messages" className="block group">
-                <div className="bg-[#4ecde6]/10 backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl px-5 py-4 flex items-center gap-3 group-hover:border-[#4ecde6]/40 transition-all">
-                  <div className="w-10 h-10 bg-[#4ecde6]/20 rounded-xl flex items-center justify-center text-[#4ecde6] flex-shrink-0">
+                <div className="bg-[#4ecde6]/10 backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 group-hover:border-[#4ecde6]/40 transition-all">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4ecde6]/20 rounded-xl flex items-center justify-center text-[#4ecde6] flex-shrink-0">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-bold text-[#4ecde6]">{unreadCount} New Message{unreadCount !== 1 ? 's' : ''}</p>
-                    <p className="text-xs text-[#4ecde6]/60">Tap to read</p>
+                    <p className="text-xs sm:text-sm font-bold text-[#4ecde6]">{unreadCount} New Message{unreadCount !== 1 ? 's' : ''}</p>
+                    <p className="text-[11px] sm:text-xs text-[#4ecde6]/60">Tap to read</p>
                   </div>
                   <span className="text-[#4ecde6]/60">&rarr;</span>
                 </div>
@@ -627,23 +627,23 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           </div>
         )}
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
 
         {/* ═══ NEXT SESSION CARD ═══ */}
         {nextSession ? (
           <>
             <Link href="/dashboard/schedule" className="block group">
-              <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-5 shadow-[0_0_20px_rgba(78,205,230,0.1)]">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
+              <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-4 sm:p-5 shadow-[0_0_20px_rgba(78,205,230,0.1)]">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-white/40 font-medium uppercase tracking-wider">Next Session</p>
-                    <p className="text-lg font-bold text-white mt-0.5">{nextSession.day} {nextSession.time}</p>
-                    <p className="text-sm text-white/60">{nextSession.group}</p>
+                    <p className="text-[10px] sm:text-xs text-white/40 font-medium uppercase tracking-wider">Next Session</p>
+                    <p className="text-base sm:text-lg font-bold text-white mt-0.5">{nextSession.day} {nextSession.time}</p>
+                    <p className="text-xs sm:text-sm text-white/60">{nextSession.group}</p>
                     {nextSession.location && (
-                      <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                      <p className="text-[11px] sm:text-xs text-white/40 mt-1 flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         {nextSession.location}
                       </p>
@@ -651,28 +651,28 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   </div>
                   <span className="text-[#4ecde6]/60 text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
                 </div>
-                <p className="text-xs text-[#4ecde6] font-medium mt-3 group-hover:underline">View Details &gt;</p>
+                <p className="text-[11px] sm:text-xs text-[#4ecde6] font-medium mt-3 group-hover:underline">View Details &gt;</p>
               </div>
             </Link>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
           </>
         ) : (players || []).length > 0 ? (
           <>
             <Link href="/dashboard/schedule" className="block group">
-              <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 hover:border-[#4ecde6]/30 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/[0.04] rounded-xl flex items-center justify-center border border-white/[0.08]">
+              <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4 sm:p-5 hover:border-[#4ecde6]/30 transition-all">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/[0.04] rounded-xl flex items-center justify-center border border-white/[0.08]">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-white/60">No sessions today</p>
-                    <p className="text-xs text-white/40 mt-0.5">Check the timetable to book your next one</p>
+                    <p className="text-xs sm:text-sm font-semibold text-white/60">No sessions today</p>
+                    <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">Check the timetable to book your next one</p>
                   </div>
                   <span className="text-[#4ecde6]/60 text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
                 </div>
               </div>
             </Link>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
           </>
         ) : null}
 
@@ -686,7 +686,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               groupId={suggestedGroupId || undefined}
               groupName={suggestedGroupName || undefined}
             />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
           </>
         )}
 
@@ -698,40 +698,40 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               childName={reviewPromptData.childName}
               googleReviewUrl={reviewPromptData.googleReviewUrl}
             />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
           </>
         )}
 
         {/* ═══ MERCH UPSELL ═══ */}
         <Link href="/dashboard/shop" className="block group">
-          <div className="bg-gradient-to-r from-[#4ecde6]/[0.08] to-transparent backdrop-blur-xl border border-[#4ecde6]/[0.15] rounded-2xl p-4 flex items-center gap-4 hover:border-[#4ecde6]/30 transition-all">
-            <div className="w-12 h-12 rounded-xl bg-[#4ecde6]/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">👕</span>
+          <div className="bg-gradient-to-r from-[#4ecde6]/[0.08] to-transparent backdrop-blur-xl border border-[#4ecde6]/[0.15] rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-[#4ecde6]/30 transition-all">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#4ecde6]/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-xl sm:text-2xl">👕</span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white group-hover:text-[#4ecde6] transition-colors">Get your academy kit!</p>
-              <p className="text-xs text-white/40 mt-0.5">Personalised training tops, kits &amp; equipment</p>
+              <p className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#4ecde6] transition-colors">Get your academy kit!</p>
+              <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">Personalised training tops, kits &amp; equipment</p>
             </div>
             <svg className="w-5 h-5 text-white/20 flex-shrink-0 ml-auto group-hover:text-[#4ecde6] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </Link>
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
 
         {/* ═══ QUICK STATS ═══ */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-xs text-white/40 font-medium">Children</p>
-            <p className="text-2xl font-bold text-[#4ecde6] mt-1">{(players || []).length}</p>
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+            <p className="text-[11px] sm:text-xs text-white/40 font-medium">Children</p>
+            <p className="text-xl sm:text-2xl font-bold text-[#4ecde6] mt-1">{(players || []).length}</p>
             <p className="text-[10px] text-white/30 mt-0.5">{(players || []).length === 1 ? 'Registered child' : 'Registered children'}</p>
           </div>
-          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-xs text-white/40 font-medium">Attendance</p>
-            <div className="flex items-center gap-2.5 mt-1">
-              <p className="text-2xl font-bold text-emerald-400">{overallAttendanceRate}%</p>
-              <div className="relative w-10 h-10 flex-shrink-0">
-                <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+            <p className="text-[11px] sm:text-xs text-white/40 font-medium">Attendance</p>
+            <div className="flex items-center gap-2 sm:gap-2.5 mt-1">
+              <p className="text-xl sm:text-2xl font-bold text-emerald-400">{overallAttendanceRate}%</p>
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0">
+                <svg className="w-9 h-9 sm:w-10 sm:h-10 -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
                   <circle cx="18" cy="18" r="15" fill="none" stroke={overallAttendanceRate >= 80 ? '#22c55e' : overallAttendanceRate >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(overallAttendanceRate / 100) * 94.2} 94.2`} />
                 </svg>
@@ -739,14 +739,14 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
             </div>
             <p className="text-[10px] text-white/30 mt-0.5">Overall rate</p>
           </div>
-          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-xs text-white/40 font-medium">Session Streak</p>
-            <p className="text-2xl font-bold text-amber-400 mt-1">{attendanceStreak > 0 ? attendanceStreak : '---'}</p>
+          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+            <p className="text-[11px] sm:text-xs text-white/40 font-medium">Session Streak</p>
+            <p className="text-xl sm:text-2xl font-bold text-amber-400 mt-1">{attendanceStreak > 0 ? attendanceStreak : '---'}</p>
             <p className="text-[10px] text-white/30 mt-0.5">Consecutive</p>
           </div>
-          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-xs text-white/40 font-medium">New Reviews</p>
-            <p className="text-2xl font-bold text-purple-400 mt-1">{newReviewCount || 0}</p>
+          <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+            <p className="text-[11px] sm:text-xs text-white/40 font-medium">New Reviews</p>
+            <p className="text-xl sm:text-2xl font-bold text-purple-400 mt-1">{newReviewCount || 0}</p>
             <p className="text-[10px] text-white/30 mt-0.5">This week</p>
           </div>
         </div>
@@ -764,16 +764,16 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           />
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
 
         {/* ═══ CHILDREN PROGRESS CARDS ═══ */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-white">Your Children</h2>
-            <Link href="/dashboard/children" className="text-xs text-[#4ecde6] hover:underline font-medium">View all &rarr;</Link>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-sm sm:text-base font-bold text-white">Your Children</h2>
+            <Link href="/dashboard/children" className="text-[11px] sm:text-xs text-[#4ecde6] hover:underline font-medium">View all &rarr;</Link>
           </div>
           {(players || []).length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {(players || []).map((p, idx) => {
                 const review = latestReviewMap.get(p.id)
                 const recentAtt = recentAttendanceMap.get(p.id) || []
@@ -788,54 +788,54 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   .map(e => e.group!)
 
                 return (
-                  <div key={p.id} className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+                  <div key={p.id} className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 sm:p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
                     {/* Player header */}
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       <div className="relative flex-shrink-0">
                         {p.photo_url ? (
                           <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="lg" />
                         ) : (
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-lg sm:text-xl font-bold">
                             {p.first_name.charAt(0)}
                           </div>
                         )}
                         {review && (
-                          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#0a0a0a] border-2 border-[#4ecde6] flex items-center justify-center">
-                            <span className="text-xs font-bold text-[#4ecde6]">{review.avgScore}</span>
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#0a0a0a] border-2 border-[#4ecde6] flex items-center justify-center">
+                            <span className="text-[10px] sm:text-xs font-bold text-[#4ecde6]">{review.avgScore}</span>
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-bold text-white">{p.first_name} {p.last_name}</h3>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        <h3 className="text-sm sm:text-base font-bold text-white">{p.first_name} {p.last_name}</h3>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1 sm:mt-1.5">
                           {p.age_group && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#4ecde6]/10 text-[#4ecde6] border border-[#4ecde6]/20">{p.age_group}</span>
+                            <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#4ecde6]/10 text-[#4ecde6] border border-[#4ecde6]/20">{p.age_group}</span>
                           )}
                           {p.position && (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">{p.position}</span>
+                            <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">{p.position}</span>
                           )}
                         </div>
                       </div>
                       {/* Attendance ring */}
                       {recentAtt.length > 0 && (
-                        <div className="flex-shrink-0 relative w-14 h-14">
-                          <svg className="w-14 h-14 -rotate-90" viewBox="0 0 90 90">
+                        <div className="flex-shrink-0 relative w-12 h-12 sm:w-14 sm:h-14">
+                          <svg className="w-12 h-12 sm:w-14 sm:h-14 -rotate-90" viewBox="0 0 90 90">
                             <circle cx="45" cy="45" r="40" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
                             <circle cx="45" cy="45" r="40" fill="none" stroke={attRate >= 80 ? '#22c55e' : attRate >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="5" strokeLinecap="round" strokeDasharray="251.2" strokeDashoffset={251.2 - attStrokeDash} />
                           </svg>
-                          <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${attRate >= 80 ? 'text-emerald-400' : attRate >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{attRate}%</span>
+                          <span className={`absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-bold ${attRate >= 80 ? 'text-emerald-400' : attRate >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{attRate}%</span>
                         </div>
                       )}
                     </div>
 
                     {/* Recent attendance dots */}
                     {recentAtt.length > 0 && (
-                      <div className="mt-4 flex items-center gap-1.5">
+                      <div className="mt-3 sm:mt-4 flex items-center gap-1.5">
                         <span className="text-[10px] text-white/40 font-medium mr-1">Recent:</span>
                         {[...recentAtt].reverse().map((a, i) => (
                           <div
                             key={i}
-                            className={`w-3.5 h-3.5 rounded-full border-2 ${a.present ? 'bg-emerald-400 border-emerald-500/30' : 'bg-red-400 border-red-500/30'}`}
+                            className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 ${a.present ? 'bg-emerald-400 border-emerald-500/30' : 'bg-red-400 border-red-500/30'}`}
                             title={`${a.session_date} - ${a.present ? 'Present' : 'Absent'}`}
                           />
                         ))}
@@ -844,9 +844,9 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
                     {/* Active groups as pill badges */}
                     {activeGroups.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 sm:mt-3 flex flex-wrap gap-1.5">
                         {activeGroups.slice(0, 3).map((g, i) => (
-                          <span key={i} className="text-[10px] bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-2.5 py-1 font-medium text-[#4ecde6]">
+                          <span key={i} className="text-[10px] bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-2 sm:px-2.5 py-1 font-medium text-[#4ecde6]">
                             {g.name} · {g.day_of_week}
                           </span>
                         ))}
@@ -855,19 +855,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
                     {/* Latest review snippet */}
                     {reviewSnippet && (
-                      <div className="mt-3 bg-[#141414]/[0.03] border-l-2 border-[#4ecde6]/40 rounded-r-xl px-3 py-2.5">
-                        <p className="text-xs text-white/60 italic leading-relaxed">
+                      <div className="mt-2.5 sm:mt-3 bg-[#141414]/[0.03] border-l-2 border-[#4ecde6]/40 rounded-r-xl px-3 py-2.5">
+                        <p className="text-[11px] sm:text-xs text-white/60 italic leading-relaxed">
                           &ldquo;{reviewSnippet.length > 100 ? reviewSnippet.substring(0, 100) + '...' : reviewSnippet}&rdquo;
                         </p>
                       </div>
                     )}
 
                     {/* Action buttons */}
-                    <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center gap-2">
-                      <Link href={`/dashboard/players/${p.id}`} className="flex-1 text-center px-3 py-2 bg-[#4ecde6]/10 text-[#4ecde6] rounded-xl text-xs font-semibold hover:bg-[#4ecde6]/20 transition-colors border border-[#4ecde6]/20">
+                    <div className="mt-3 sm:mt-4 pt-3 border-t border-white/[0.06] flex items-center gap-2">
+                      <Link href={`/dashboard/players/${p.id}`} className="flex-1 text-center px-3 py-2 bg-[#4ecde6]/10 text-[#4ecde6] rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-[#4ecde6]/20 transition-colors border border-[#4ecde6]/20">
                         View Profile
                       </Link>
-                      <Link href={`/dashboard/feedback?player=${p.id}`} className="flex-1 text-center px-3 py-2 bg-[#141414]/[0.05] text-white/60 rounded-xl text-xs font-semibold hover:bg-[#141414]/[0.1] transition-colors border border-white/[0.08]">
+                      <Link href={`/dashboard/feedback?player=${p.id}`} className="flex-1 text-center px-3 py-2 bg-[#141414]/[0.05] text-white/60 rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-[#141414]/[0.1] transition-colors border border-white/[0.08]">
                         Progress Report
                       </Link>
                     </div>
@@ -876,19 +876,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               })}
             </div>
           ) : (
-            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-8 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-12 h-12 bg-[#141414]/[0.05] rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 sm:p-8 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#141414]/[0.05] rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
               </div>
-              <p className="text-sm text-white/40">No children registered yet.</p>
-              <Link href="/dashboard/children" className="inline-block mt-3 px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+              <p className="text-xs sm:text-sm text-white/40">No children registered yet.</p>
+              <Link href="/dashboard/children" className="inline-block mt-3 px-4 sm:px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
                 Add Your Child
               </Link>
             </div>
           )}
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
 
         {/* ═══ THIS WEEK DIGEST ═══ */}
         {(players || []).length > 0 && (() => {
@@ -898,19 +898,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           if (!hasAnyActivity) return null
           return (
             <>
-              <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 sm:p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+                <div className="flex items-center gap-3 mb-3 sm:mb-4">
                   <div className="w-8 h-8 bg-[#4ecde6]/10 rounded-lg flex items-center justify-center border border-[#4ecde6]/20">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-white">This Week&apos;s Report</h2>
-                    <p className="text-[11px] text-white/30">
+                    <h2 className="text-xs sm:text-sm font-bold text-white">This Week&apos;s Report</h2>
+                    <p className="text-[10px] sm:text-[11px] text-white/30">
                       Week of {new Date(weekStartStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {(players || []).map((p) => {
                     const data = weekDataByPlayer.get(p.id)
                     const attended = data?.attendance.filter((a) => a.present).length || 0
@@ -921,20 +921,20 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                     if (!hasActivity) return null
 
                     return (
-                      <div key={p.id} className="bg-[#141414]/[0.03] border border-white/[0.06] rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3">
+                      <div key={p.id} className="bg-[#141414]/[0.03] border border-white/[0.06] rounded-xl p-3 sm:p-4">
+                        <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
                           <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="xs" />
-                          <span className="text-sm font-semibold text-white">{p.first_name}</span>
+                          <span className="text-xs sm:text-sm font-semibold text-white">{p.first_name}</span>
                         </div>
-                        <div className="space-y-2.5">
+                        <div className="space-y-2 sm:space-y-2.5">
                           {total > 0 && (
                             <div className={`rounded-lg px-3 py-2 flex items-center justify-between ${attended === total ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-amber-500/10 border border-amber-500/20'}`}>
-                              <span className={`text-sm font-medium ${attended === total ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              <span className={`text-xs sm:text-sm font-medium ${attended === total ? 'text-emerald-400' : 'text-amber-400'}`}>
                                 {attended}/{total} sessions
                               </span>
                               <div className="flex gap-1">
                                 {data?.attendance.map((a, i) => (
-                                  <span key={i} className={`w-2.5 h-2.5 rounded-full ${a.present ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                                  <span key={i} className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${a.present ? 'bg-emerald-400' : 'bg-red-400'}`} />
                                 ))}
                               </div>
                             </div>
@@ -942,15 +942,15 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                           {hasReviews && data?.reviews.map((r, i) => (
                             <div key={i} className="bg-[#141414]/[0.03] border-l-2 border-[#4ecde6]/40 rounded-r-lg px-3 py-2">
                               {r.parent_summary && (
-                                <p className="text-sm text-white/60 italic">&ldquo;{r.parent_summary}&rdquo;</p>
+                                <p className="text-xs sm:text-sm text-white/60 italic">&ldquo;{r.parent_summary}&rdquo;</p>
                               )}
-                              <p className="text-xs text-white/30 mt-1">&mdash; {r.coachName}</p>
+                              <p className="text-[11px] sm:text-xs text-white/30 mt-1">&mdash; {r.coachName}</p>
                             </div>
                           ))}
                           {hasAchievements && (
                             <div className="flex flex-wrap gap-2">
                               {data?.achievements.map((a, i) => (
-                                <span key={i} className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full px-3 py-1 text-xs font-semibold">
+                                <span key={i} className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold">
                                   {a.emoji} {a.name}
                                 </span>
                               ))}
@@ -962,7 +962,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   })}
                 </div>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+              <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
             </>
           )
         })()}
@@ -971,27 +971,27 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         {todaysSessions.length > 0 && (
           <>
             <div>
-              <h2 className="text-base font-bold mb-4 flex items-center gap-2 text-white">
-                <span className="relative w-2.5 h-2.5 bg-emerald-400 rounded-full">
+              <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 flex items-center gap-2 text-white">
+                <span className="relative w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-400 rounded-full">
                   <span className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-75" />
                 </span>
                 Today&apos;s Classes
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 {todaysSessions.map((s, i) => (
                   <Link key={i} href="/dashboard/schedule" className="block group">
-                    <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-5 py-4 flex items-center gap-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-                      <div className="w-10 h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#4ecde6]/20">
+                    <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#4ecde6]/20">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white group-hover:text-[#4ecde6] transition-colors">{s.groupName}</p>
-                        <p className="text-xs text-white/40 mt-0.5">{s.playerName}{s.location ? ` · ${s.location}` : ''}</p>
+                        <p className="text-xs sm:text-sm font-bold text-white group-hover:text-[#4ecde6] transition-colors">{s.groupName}</p>
+                        <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">{s.playerName}{s.location ? ` · ${s.location}` : ''}</p>
                       </div>
                       {s.timeSlot && (
                         <div className="text-right flex-shrink-0">
-                          <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl px-3 py-1.5">
-                            <p className="text-sm font-bold text-[#4ecde6]">{s.timeSlot}</p>
+                          <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl px-2.5 sm:px-3 py-1 sm:py-1.5">
+                            <p className="text-xs sm:text-sm font-bold text-[#4ecde6]">{s.timeSlot}</p>
                           </div>
                         </div>
                       )}
@@ -1000,7 +1000,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                 ))}
               </div>
             </div>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
           </>
         )}
 
@@ -1016,60 +1016,60 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           return (
             <>
               <Link href={`/dashboard/feedback${playerForReview ? `?player=${playerForReview.id}` : ''}`} className="block group">
-                <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 hover:border-purple-500/30 transition-all">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4 sm:p-5 hover:border-purple-500/30 transition-all">
+                  <div className="flex items-center justify-between mb-2.5 sm:mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center border border-purple-500/20">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                       </div>
                       <div>
-                        <h2 className="text-sm font-bold text-white">Latest Progress Review</h2>
+                        <h2 className="text-xs sm:text-sm font-bold text-white">Latest Progress Review</h2>
                         {playerForReview && (
-                          <p className="text-[11px] text-white/40">{playerForReview.first_name} &middot; {new Date(reviewToShow.review_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{isThisWeek ? ' (this week)' : ''}</p>
+                          <p className="text-[10px] sm:text-[11px] text-white/40">{playerForReview.first_name} &middot; {new Date(reviewToShow.review_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{isThisWeek ? ' (this week)' : ''}</p>
                         )}
                       </div>
                     </div>
                     <span className="text-purple-400/60 text-sm group-hover:translate-x-1 transition-transform">&rarr;</span>
                   </div>
                   <div className="bg-purple-500/[0.05] border-l-2 border-purple-400/40 rounded-r-xl px-3 py-2.5">
-                    <p className="text-sm text-white/60 italic leading-relaxed">
+                    <p className="text-xs sm:text-sm text-white/60 italic leading-relaxed">
                       &ldquo;{reviewToShow.parent_summary!.length > 150 ? reviewToShow.parent_summary!.substring(0, 150) + '...' : reviewToShow.parent_summary}&rdquo;
                     </p>
                   </div>
-                  <p className="text-xs text-white/30 mt-2">&mdash; {coachName}</p>
+                  <p className="text-[11px] sm:text-xs text-white/30 mt-2">&mdash; {coachName}</p>
                 </div>
               </Link>
-              <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+              <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
             </>
           )
         })()}
 
         {/* ═══ MESSAGES & PAYMENTS ═══ */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Messages */}
           <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-white/[0.06] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <h2 className="text-sm font-bold text-white">Messages</h2>
+                <h2 className="text-xs sm:text-sm font-bold text-white">Messages</h2>
               </div>
-              <Link href="/dashboard/messages" className="text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
+              <Link href="/dashboard/messages" className="text-[11px] sm:text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
             </div>
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
               {(messages || []).length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {(messages || []).map((m) => (
                     <Link key={m.id} href="/dashboard/messages" className="block group">
                       <div className={`flex items-start gap-3 rounded-xl px-3 py-2.5 -mx-1 hover:bg-[#141414]/[0.03] transition-colors ${!m.read ? 'bg-[#4ecde6]/5' : ''}`}>
-                        <div className="w-9 h-9 bg-gradient-to-br from-purple-500/20 to-[#4ecde6]/10 rounded-full flex items-center justify-center text-sm font-bold text-[#4ecde6] flex-shrink-0 mt-0.5">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-purple-500/20 to-[#4ecde6]/10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-[#4ecde6] flex-shrink-0 mt-0.5">
                           {(m.sender as unknown as { full_name: string })?.full_name?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span className={`text-sm text-white ${!m.read ? 'font-bold' : 'font-medium'}`}>{m.subject || 'Message'}</span>
+                            <span className={`text-xs sm:text-sm text-white ${!m.read ? 'font-bold' : 'font-medium'}`}>{m.subject || 'Message'}</span>
                             <span className="text-[10px] text-white/30 flex-shrink-0 ml-2">{new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
                           </div>
-                          <p className="text-xs text-white/40 truncate mt-0.5">{m.body}</p>
+                          <p className="text-[11px] sm:text-xs text-white/40 truncate mt-0.5">{m.body}</p>
                         </div>
                         {!m.read && <div className="w-2 h-2 bg-[#4ecde6] rounded-full mt-2 flex-shrink-0" />}
                       </div>
@@ -1077,9 +1077,9 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6">
+                <div className="text-center py-5 sm:py-6">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  <p className="text-xs text-white/30">No messages yet</p>
+                  <p className="text-[11px] sm:text-xs text-white/30">No messages yet</p>
                 </div>
               )}
             </div>
@@ -1087,31 +1087,31 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
           {/* Payments */}
           <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-white/[0.06] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                <h2 className="text-sm font-bold text-white">Payments</h2>
+                <h2 className="text-xs sm:text-sm font-bold text-white">Payments</h2>
               </div>
-              <Link href="/dashboard/payments" className="text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
+              <Link href="/dashboard/payments" className="text-[11px] sm:text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
             </div>
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
               {(upcomingPayments || []).length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {(upcomingPayments || []).map((p) => {
                     const owing = Number(p.amount) - Number(p.amount_paid || 0)
                     return (
                       <div key={p.id} className="flex items-center gap-3 rounded-xl">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status === 'overdue' ? 'bg-red-500/10 border border-red-500/20' : 'bg-amber-500/10 border border-amber-500/20'}`}>
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status === 'overdue' ? 'bg-red-500/10 border border-red-500/20' : 'bg-amber-500/10 border border-amber-500/20'}`}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={p.status === 'overdue' ? '#ef4444' : '#f59e0b'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white">{p.description || 'Payment'}</p>
-                          <p className="text-xs text-white/40">
+                          <p className="text-xs sm:text-sm font-medium text-white">{p.description || 'Payment'}</p>
+                          <p className="text-[11px] sm:text-xs text-white/40">
                             {p.due_date ? new Date(p.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'No due date'}
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className={`text-sm font-bold ${p.status === 'overdue' ? 'text-red-400' : 'text-white'}`}>
+                          <p className={`text-xs sm:text-sm font-bold ${p.status === 'overdue' ? 'text-red-400' : 'text-white'}`}>
                             &pound;{owing.toFixed(2)}
                           </p>
                           <Link href="/dashboard/payments" className="text-[10px] text-[#4ecde6] font-semibold hover:underline">
@@ -1123,65 +1123,65 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   })}
                 </div>
               ) : (
-                <div className="text-center py-6">
+                <div className="text-center py-5 sm:py-6">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(34,197,94,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <p className="text-xs text-white/30">All payments up to date</p>
+                  <p className="text-[11px] sm:text-xs text-white/30">All payments up to date</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
 
         {/* ═══ REFER A FRIEND ═══ */}
         {referralCode && (
           <>
             <ReferralLink orgSlug={orgSlug} referralCode={referralCode} compact />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
           </>
         )}
 
         {/* ═══ QUICK ACTIONS GRID ═══ */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
           <Link href="/dashboard/schedule" className="block group">
-            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Schedule</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Schedule</p>
             </div>
           </Link>
           <Link href="/dashboard/payments" className="block group">
-            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Payments</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Payments</p>
             </div>
           </Link>
           <Link href="/dashboard/messages" className="block group">
-            <div className="relative bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+            <div className="relative bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               </div>
               {(unreadCount || 0) > 0 && (
                 <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
               )}
-              <p className="text-xs font-semibold text-white/60">Messages</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Messages</p>
             </div>
           </Link>
           <Link href="/dashboard/feedback" className="block group">
-            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+            <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Progress</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Progress</p>
             </div>
           </Link>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
 
         {/* ═══ MORE ACTIONS ═══ */}
         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
@@ -1244,8 +1244,8 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         </div>
 
         {/* ═══ BOOK SESSION CTA ═══ */}
-        <div className="pt-4">
-          <Link href={`/book/${orgSlug}`} className="block w-full text-center py-3.5 bg-[#4ecde6] text-[#0a0a0a] rounded-2xl text-sm font-bold hover:bg-[#4ecde6]/90 transition-colors shadow-[0_0_20px_rgba(78,205,230,0.3)]">
+        <div className="pt-3 sm:pt-4">
+          <Link href={`/book/${orgSlug}`} className="block w-full text-center py-3.5 sm:py-4 bg-[#4ecde6] text-[#0a0a0a] rounded-2xl text-sm sm:text-base font-bold hover:bg-[#4ecde6]/90 transition-colors shadow-[0_0_20px_rgba(78,205,230,0.3)]">
             Book Next Session
           </Link>
         </div>

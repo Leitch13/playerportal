@@ -89,10 +89,10 @@ function SignInForm() {
     }
   }
 
-  const inputCls = 'w-full px-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-white/20 placeholder:text-white/25 transition-all'
+  const inputCls = 'w-full px-3.5 py-3 sm:px-4 sm:py-3.5 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-white/20 placeholder:text-white/25 transition-all'
 
   return (
-    <div className="min-h-screen bg-[#060606] flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen bg-[#060606] flex items-center justify-center px-4 py-6 sm:py-12 relative overflow-hidden">
       {/* Ambient brand-colour gradient blobs — animate gently for depth */}
       <div
         className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[200px] opacity-20 pointer-events-none animate-blob-1"
@@ -123,7 +123,7 @@ function SignInForm() {
       <div className="relative w-full max-w-md">
         <Link
           href={orgName ? `/book/${searchParams.get('org')}` : '/'}
-          className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors mb-5"
+          className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white/70 transition-colors mb-4 sm:mb-5"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -132,34 +132,34 @@ function SignInForm() {
         </Link>
 
         {/* Header — per-academy branding when available */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-5 sm:mb-6">
           {orgLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={orgLogo} alt={orgName || ''} className="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 bg-[#1a1a1a] border border-white/[0.08]" />
+            <img src={orgLogo} alt={orgName || ''} className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover mx-auto mb-2.5 sm:mb-3 bg-[#1a1a1a] border border-white/[0.08]" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain mx-auto mb-3" />
+            <img src="/logo.png" alt="Player Portal" className="h-9 sm:h-10 w-auto object-contain mx-auto mb-2.5 sm:mb-3" />
           )}
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-1 tracking-tight">
             {orgName ? `Welcome back to ${orgName}` : 'Welcome back'}
           </h1>
-          <p className="text-sm text-white/40">
+          <p className="text-xs sm:text-sm text-white/40">
             {orgName ? 'Sign in to manage your bookings' : 'Sign in to your Player Portal account'}
           </p>
         </div>
 
         {message && (
           <div
-            className="mb-4 px-4 py-3 rounded-xl border text-sm font-medium text-center"
+            className="mb-4 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border text-xs sm:text-sm font-medium text-center"
             style={{ borderColor: `${orgColor}30`, background: `${orgColor}10`, color: orgColor }}
           >
             {message}
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-4 sm:p-8 shadow-2xl">
           {/* Mode toggle */}
-          <div className="grid grid-cols-2 gap-1 mb-6 p-1 bg-white/[0.04] rounded-full">
+          <div className="grid grid-cols-2 gap-1 mb-5 sm:mb-6 p-1 bg-white/[0.04] rounded-full">
             <button
               type="button"
               onClick={() => { setMode('password'); setError(''); setMagicSent(false) }}
@@ -177,31 +177,31 @@ function SignInForm() {
           </div>
 
           {magicSent ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: `${orgColor}15` }}>
-                <svg className="w-8 h-8" fill="none" stroke={orgColor} strokeWidth={2} viewBox="0 0 24 24">
+            <div className="text-center py-6 sm:py-8">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mx-auto mb-3 sm:mb-4 flex items-center justify-center" style={{ background: `${orgColor}15` }}>
+                <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke={orgColor} strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Check your inbox</h2>
-              <p className="text-sm text-white/50 mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Check your inbox</h2>
+              <p className="text-xs sm:text-sm text-white/50 mb-3 sm:mb-4">
                 We&apos;ve sent a sign-in link to <span className="text-white font-medium">{email}</span>
               </p>
-              <p className="text-xs text-white/30">
+              <p className="text-[11px] sm:text-xs text-white/30">
                 The link expires in 1 hour. Check spam if you don&apos;t see it.
               </p>
               <button
                 type="button"
                 onClick={() => { setMagicSent(false); setMode('password') }}
-                className="mt-6 text-xs text-white/40 hover:text-white/70 transition-colors"
+                className="mt-5 sm:mt-6 text-xs text-white/40 hover:text-white/70 transition-colors"
               >
                 Use a password instead
               </button>
             </div>
           ) : mode === 'password' ? (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <form onSubmit={handlePasswordSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Email</label>
+                <label className="block text-xs sm:text-sm font-medium text-white/70 mb-1 sm:mb-1.5">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -213,8 +213,8 @@ function SignInForm() {
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-white/70">Password</label>
+                <div className="flex items-center justify-between mb-1 sm:mb-1.5">
+                  <label className="block text-xs sm:text-sm font-medium text-white/70">Password</label>
                   <Link href="/auth/forgot-password" className="text-xs text-white/40 hover:text-white/70 transition-colors">
                     Forgot password?
                   </Link>
@@ -239,14 +239,14 @@ function SignInForm() {
                 </div>
               </div>
               {error && (
-                <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
                   {error}
                 </div>
               )}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl font-bold text-base transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                 style={{
                   background: 'white',
                   color: '#0a0a0a',
@@ -257,9 +257,9 @@ function SignInForm() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+            <form onSubmit={handleMagicLinkSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1.5">Email</label>
+                <label className="block text-xs sm:text-sm font-medium text-white/70 mb-1 sm:mb-1.5">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -269,19 +269,19 @@ function SignInForm() {
                   className={inputCls}
                   autoComplete="email"
                 />
-                <p className="text-xs text-white/40 mt-2">
+                <p className="text-[11px] sm:text-xs text-white/40 mt-1.5 sm:mt-2">
                   We&apos;ll email you a sign-in link. No password needed.
                 </p>
               </div>
               {error && (
-                <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
                   {error}
                 </div>
               )}
               <button
                 type="submit"
                 disabled={magicLoading}
-                className="w-full py-3.5 rounded-xl font-bold text-base transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                 style={{
                   background: 'white',
                   color: '#0a0a0a',
@@ -293,7 +293,7 @@ function SignInForm() {
             </form>
           )}
 
-          <p className="text-sm text-white/40 mt-6 text-center">
+          <p className="text-xs sm:text-sm text-white/40 mt-5 sm:mt-6 text-center">
             New here?{' '}
             <Link href={`/auth/signup${searchParams.get('org') ? `?org=${searchParams.get('org')}` : ''}`} className="font-semibold hover:underline" style={{ color: orgColor }}>
               Create an account
@@ -302,7 +302,7 @@ function SignInForm() {
         </div>
 
         {!orgName && (
-          <div className="mt-5 text-center">
+          <div className="mt-4 sm:mt-5 text-center">
             <button
               type="button"
               onClick={() => setShowAcademySearch(!showAcademySearch)}
@@ -323,7 +323,7 @@ function SignInForm() {
           </div>
         )}
 
-        <p className="text-center text-xs text-white/20 mt-6">
+        <p className="text-center text-[11px] sm:text-xs text-white/20 mt-5 sm:mt-6">
           Powered by Player Portal {orgName && '· Trusted by academies across the UK'}
         </p>
       </div>

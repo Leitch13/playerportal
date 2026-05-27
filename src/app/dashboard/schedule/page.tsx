@@ -494,13 +494,13 @@ async function ParentSchedule({
 
   return (
     <div
-      className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white"
+      className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white"
       style={{ ['--brand' as string]: brandColor }}
     >
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Branded hero — academy logo + name + personalised greeting */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-[#1e1e1e] p-6 sm:p-8"
+        className="relative overflow-hidden rounded-3xl border border-[#1e1e1e] p-4 sm:p-8"
         style={{
           background: academyHero
             ? `linear-gradient(135deg, ${brandColor}20 0%, rgba(10,10,10,0.7) 50%, #0a0a0a 100%)`
@@ -517,20 +517,20 @@ async function ParentSchedule({
           className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-[80px] pointer-events-none"
           style={{ background: `${brandColor}25` }}
         />
-        <div className="relative flex items-center gap-4 sm:gap-5">
+        <div className="relative flex items-center gap-3 sm:gap-5">
           {academyLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={academyLogo}
               alt={academyName}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-2xl border-2"
+              className="w-12 h-12 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-2xl border-2"
               style={{ borderColor: `${brandColor}40` }}
             />
           ) : (
             // Polished fallback: gradient tile with football icon + initial overlay
             // Looks deliberate (not "we couldn't find a logo") until the academy uploads one.
             <div
-              className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-2xl border-2 overflow-hidden"
+              className="relative w-12 h-12 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center shadow-2xl border-2 overflow-hidden"
               style={{
                 background: `linear-gradient(135deg, ${brandColor}30 0%, ${brandColor}10 100%)`,
                 borderColor: `${brandColor}60`,
@@ -538,7 +538,7 @@ async function ParentSchedule({
             >
               {/* Football icon */}
               <svg
-                className="absolute inset-0 m-auto w-10 h-10 sm:w-12 sm:h-12 opacity-30"
+                className="absolute inset-0 m-auto w-7 h-7 sm:w-12 sm:h-12 opacity-30"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke={brandColor}
@@ -554,7 +554,7 @@ async function ParentSchedule({
               </svg>
               {/* Initial overlay on top, bold */}
               <span
-                className="relative text-2xl sm:text-3xl font-extrabold drop-shadow-md"
+                className="relative text-xl sm:text-3xl font-extrabold drop-shadow-md"
                 style={{ color: brandColor }}
               >
                 {academyName.charAt(0).toUpperCase()}
@@ -565,10 +565,10 @@ async function ParentSchedule({
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-1" style={{ color: `${brandColor}` }}>
               {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white leading-tight">
               {parentFirstName ? `${parentFirstName}'s Schedule` : 'Your Schedule'}
             </h1>
-            <p className="text-sm text-white/60 mt-1 truncate">
+            <p className="text-xs sm:text-sm text-white/60 mt-0.5 sm:mt-1 truncate">
               at <strong className="text-white">{academyName}</strong>
             </p>
           </div>
@@ -576,15 +576,15 @@ async function ParentSchedule({
       </div>
 
       {/* Stat cards — punchier than the old generic boxes */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#4ecde6]/10 via-[#0f1818] to-[#0a0a0a] p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#4ecde6]/10 via-[#0f1818] to-[#0a0a0a] p-3 sm:p-4">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-[#4ecde6]/10 blur-2xl pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div>
               <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{bookedGroups}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#4ecde6]/80 mt-1">Classes Booked</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#4ecde6]/80 mt-1">Classes Booked</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-[#4ecde6]">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-[#4ecde6]">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
@@ -592,13 +592,13 @@ async function ParentSchedule({
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#0a0a0a] p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#0a0a0a] p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{totalClasses}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/50 mt-1">Available</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/50 mt-1">Available</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white/60">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white/60">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
@@ -609,13 +609,13 @@ async function ParentSchedule({
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#0a0a0a] p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#0a0a0a] p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{(myPlayers || []).length}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/50 mt-1">Children</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/50 mt-1">Children</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white/60">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white/60">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
@@ -624,14 +624,14 @@ async function ParentSchedule({
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-purple-500/10 via-[#0f1418] to-[#0a0a0a] p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-purple-500/10 via-[#0f1418] to-[#0a0a0a] p-3 sm:p-4">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-purple-500/10 blur-2xl pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div>
               <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{calendarEvents.length}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80 mt-1">Events</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-purple-300/80 mt-1">Events</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
@@ -641,7 +641,7 @@ async function ParentSchedule({
       </div>
 
       {/* Full Calendar with Tabs */}
-      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-5">
         <CalendarTabs
           sessions={calendarSessions}
           events={calendarEvents}
@@ -654,13 +654,13 @@ async function ParentSchedule({
       <div className="h-px" style={{ background: `linear-gradient(to right, transparent, ${brandColor}40, transparent)` }} />
 
       {/* ═══ ALL CLASSES — single unified list (booked status + book actions on each card) ═══ */}
-      <div className="space-y-5">
-        <div className="flex items-end justify-between flex-wrap gap-3">
+      <div className="space-y-4 sm:space-y-5">
+        <div className="flex items-end justify-between flex-wrap gap-2 sm:gap-3">
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-white">Classes</h2>
-            <p className="text-sm text-white/50 mt-0.5">All weekly sessions — book your child in with one click.</p>
+            <p className="text-xs sm:text-sm text-white/50 mt-0.5">All weekly sessions — book your child in with one click.</p>
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-white/40">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/40">
             {sortedDays.length} day{sortedDays.length !== 1 ? 's' : ''} this week
           </span>
         </div>
@@ -668,15 +668,15 @@ async function ParentSchedule({
         {sortedDays.length === 0 ? (
           <EmptyState message="No classes available yet. Check back soon!" />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {sortedDays.map((day) => {
               const classes = classesByDay[day]
               const isToday = day === new Date().toLocaleDateString('en-GB', { weekday: 'long' })
 
               return (
-                <div key={day} className="space-y-3">
+                <div key={day} className="space-y-2.5 sm:space-y-3">
                   {/* Day header — sticky-feeling with bold day and class count chip */}
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2 sm:gap-2.5">
                     <h3
                       className={`text-base sm:text-lg font-extrabold ${isToday ? '' : 'text-white'}`}
                       style={isToday ? { color: brandColor } : undefined}
@@ -696,12 +696,12 @@ async function ParentSchedule({
                         Today
                       </span>
                     )}
-                    <span className="ml-auto text-[11px] font-bold uppercase tracking-wider text-white/30">
+                    <span className="ml-auto text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white/30">
                       {classes.length} class{classes.length !== 1 ? 'es' : ''}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3">
                     {classes.map((group) => {
                       const enrolledPlayerIds = (myPlayers || [])
                         .filter((p) => enrolmentLookup[`${p.id}:${group.id}`])
@@ -720,7 +720,7 @@ async function ParentSchedule({
                       return (
                         <div
                           key={group.id}
-                          className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] p-4 transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)]"
+                          className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] p-3 sm:p-4 transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)]"
                           style={{
                             borderColor: allBooked ? `${brandColor}55` : '#1e1e1e',
                             boxShadow: allBooked ? `inset 0 0 20px ${brandColor}10` : undefined,
@@ -891,8 +891,8 @@ async function ParentSchedule({
       </div>
 
       {/* Help footer — compact */}
-      <div className="rounded-2xl border border-[#1e1e1e] bg-white/[0.02] p-4 text-center">
-        <p className="text-xs text-white/40">
+      <div className="rounded-2xl border border-[#1e1e1e] bg-white/[0.02] p-3 sm:p-4 text-center">
+        <p className="text-[11px] sm:text-xs text-white/40">
           Need help? Message your coach via{' '}
           <a href="/dashboard/messages" className="font-semibold hover:underline" style={{ color: brandColor }}>Messages</a>
           {' '}· Payment handled through your{' '}
