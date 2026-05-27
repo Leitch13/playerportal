@@ -66,7 +66,7 @@ export default function BookingPageHero({
 
   return (
     <div
-      className="relative py-20 sm:py-28 px-4 sm:px-6 text-center text-white overflow-hidden"
+      className="relative py-12 sm:py-28 px-4 sm:px-6 text-center text-white overflow-hidden"
       style={{ background: `linear-gradient(160deg, #060606 0%, #0a0a0a 35%, ${primaryColor}40 100%)` }}
     >
       {/* Hero image backdrop if set */}
@@ -102,39 +102,39 @@ export default function BookingPageHero({
       <div className="relative z-10 max-w-3xl mx-auto">
         {/* Trust badge above title — adapts to activity level */}
         {showTrust ? (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.12] backdrop-blur-sm mb-6 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/[0.06] border border-white/[0.12] backdrop-blur-sm mb-4 sm:mb-6 animate-fade-in">
             <span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-400">
               <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
             </span>
-            <span className="text-xs font-semibold text-white/80">
+            <span className="text-[11px] sm:text-xs font-semibold text-white/80">
               {totalPlayers > 0
                 ? `Trusted by ${totalPlayers}+ player${totalPlayers === 1 ? '' : 's'}`
                 : `${totalSessions}+ sessions delivered`}
             </span>
           </div>
         ) : (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.12] backdrop-blur-sm mb-6 animate-fade-in">
-            <span className="text-base">✨</span>
-            <span className="text-xs font-semibold text-white/80">
-              Newly launched · Be one of the first to join
+          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/[0.06] border border-white/[0.12] backdrop-blur-sm mb-4 sm:mb-6 animate-fade-in">
+            <span className="text-sm sm:text-base">✨</span>
+            <span className="text-[11px] sm:text-xs font-semibold text-white/80">
+              Newly launched · Be one of the first
             </span>
           </div>
         )}
 
         {orgLogo && (
-          <div className="mb-6 flex justify-center animate-fade-in">
+          <div className="mb-4 sm:mb-6 flex justify-center animate-fade-in">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={orgLogo}
               alt={`${orgName} logo`}
-              className="h-20 sm:h-28 w-auto object-contain rounded-2xl"
+              className="h-16 sm:h-28 w-auto object-contain rounded-2xl"
               style={{ filter: `drop-shadow(0 0 30px ${primaryColor}40)` }}
             />
           </div>
         )}
 
         <h1
-          className="text-4xl sm:text-6xl md:text-7xl font-extrabold mb-4 tracking-tight leading-[1] animate-slide-up"
+          className="text-3xl sm:text-6xl md:text-7xl font-extrabold mb-3 sm:mb-4 tracking-tight leading-[1.05] sm:leading-[1] animate-slide-up"
           style={{
             background: `linear-gradient(180deg, #ffffff 0%, #ffffff 50%, ${primaryColor} 100%)`,
             WebkitBackgroundClip: 'text',
@@ -145,14 +145,14 @@ export default function BookingPageHero({
           {orgName}
         </h1>
 
-        <p className="text-base sm:text-xl text-white/60 mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <p className="text-sm sm:text-xl text-white/60 mb-6 sm:mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
           {orgDescription || 'Professional football coaching for all ages and abilities'}
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 justify-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
           <Link
             href={`/auth/signup?org=${slug}`}
-            className="inline-block px-10 py-4 rounded-full text-base sm:text-lg font-extrabold transition-all hover:scale-[1.05] active:scale-[0.98]"
+            className="inline-block px-7 py-3.5 sm:px-10 sm:py-4 rounded-full text-base sm:text-lg font-extrabold transition-all hover:scale-[1.05] active:scale-[0.98]"
             style={{
               backgroundColor: primaryColor,
               color: '#0a0a0a',
@@ -163,7 +163,7 @@ export default function BookingPageHero({
           </Link>
           <Link
             href={`/book/${slug}/trial/quick`}
-            className="inline-block px-10 py-4 rounded-full text-base sm:text-lg font-extrabold bg-white text-[#0a0a0a] transition-all hover:scale-[1.05] active:scale-[0.98] hover:shadow-2xl"
+            className="inline-block px-7 py-3.5 sm:px-10 sm:py-4 rounded-full text-base sm:text-lg font-extrabold bg-white text-[#0a0a0a] transition-all hover:scale-[1.05] active:scale-[0.98] hover:shadow-2xl"
           >
             Try Free Session
           </Link>
@@ -171,7 +171,7 @@ export default function BookingPageHero({
 
         {/* Animated stats row */}
         {showTrust && (
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto mt-12 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <div className="grid grid-cols-3 gap-3 sm:gap-8 max-w-2xl mx-auto mt-8 sm:mt-12 animate-slide-up" style={{ animationDelay: '0.3s' }}>
             <div className="text-center">
               <div className="text-3xl sm:text-5xl font-black tracking-tight tabular-nums" style={{ color: primaryColor }}>
                 {playersCount.toLocaleString()}

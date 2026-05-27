@@ -207,11 +207,11 @@ export default async function PublicBookingPage({
         totalClasses={(groups || []).length}
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-10 sm:space-y-16">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-16">
         {/* Stripe-not-connected notice — shown when the academy hasn't finished Stripe Connect yet */}
         {!org.stripe_account_id && (
           <section>
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 sm:p-6 text-amber-100">
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-6 text-amber-100">
               <div className="flex items-start gap-3">
                 <div className="text-2xl shrink-0" aria-hidden>⚙️</div>
                 <div>
@@ -229,12 +229,12 @@ export default async function PublicBookingPage({
         <section>
           <Link
             href={`/book/${slug}/trial/quick`}
-            className="group block relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 transition-all hover:scale-[1.01] hover:shadow-xl"
+            className="group block relative overflow-hidden rounded-2xl border-2 p-4 sm:p-6 transition-all hover:scale-[1.01] hover:shadow-xl"
             style={{ borderColor: '#10b981', background: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' }}
           >
             <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] bg-emerald-400/20" />
-            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 text-white">
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm text-3xl shrink-0">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-white">
+              <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-sm text-2xl sm:text-3xl shrink-0">
                 &#9889;
               </div>
               <div className="flex-1 text-center sm:text-left">
@@ -242,10 +242,10 @@ export default async function PublicBookingPage({
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">New</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">Free</span>
                 </div>
-                <h3 className="text-lg sm:text-xl font-extrabold">Book a Free Trial Session</h3>
-                <p className="text-white/70 text-sm mt-0.5">No account needed. No payment. Takes 20 seconds to book.</p>
+                <h3 className="text-base sm:text-xl font-extrabold">Book a Free Trial Session</h3>
+                <p className="text-white/70 text-xs sm:text-sm mt-0.5">No account needed. No payment. Takes 20 seconds to book.</p>
               </div>
-              <div className="shrink-0 px-6 py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
+              <div className="shrink-0 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
                 Try Free &rarr;
               </div>
             </div>
@@ -254,19 +254,19 @@ export default async function PublicBookingPage({
 
         {/* How It Works */}
         <section>
-          <h2 className="text-2xl font-bold text-center mb-2 text-white">How It Works</h2>
-          <p className="text-center text-gray-400 mb-8">Three simple steps to get started</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">How It Works</h2>
+          <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Three simple steps to get started</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
             {[
               { step: 1, title: 'Book a Free Trial', desc: 'Try a session with no commitment', icon: '&#128197;' },
               { step: 2, title: 'Join a Class', desc: 'Pick the sessions that suit your schedule', icon: '&#9917;' },
               { step: 3, title: 'Track Progress', desc: 'Watch your child develop with regular coach reports', icon: '&#128200;' },
             ].map((item) => (
-              <div key={item.step} className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-6 text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full text-sm font-extrabold text-[#0a0a0a]" style={{ backgroundColor: primaryColor }}>{item.step}</div>
-                <div className="text-2xl mb-3" dangerouslySetInnerHTML={{ __html: item.icon }} />
-                <h3 className="font-bold text-white mb-1">{item.title}</h3>
-                <p className="text-sm text-gray-400">{item.desc}</p>
+              <div key={item.step} className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-4 sm:p-6 text-center">
+                <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-sm font-extrabold text-[#0a0a0a]" style={{ backgroundColor: primaryColor }}>{item.step}</div>
+                <div className="text-xl sm:text-2xl mb-2 sm:mb-3" dangerouslySetInnerHTML={{ __html: item.icon }} />
+                <h3 className="font-bold text-sm sm:text-base text-white mb-1">{item.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-400">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -277,9 +277,9 @@ export default async function PublicBookingPage({
             confused parents with prices that didn't match individual classes. */}
 
         <section>
-          <h2 className="text-2xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
-          <p className="text-center text-gray-400 mb-8">Our regular training schedule</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
+          <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Our regular training schedule</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {sortedGroups.map((group) => {
               const count = countByGroup.get(group.id) || 0
               const capacity = (group as unknown as { max_capacity: number }).max_capacity || 20
@@ -297,7 +297,7 @@ export default async function PublicBookingPage({
 
               return (
                 <div key={group.id} className={`relative rounded-2xl overflow-hidden border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-[#141414] ${isFeatured ? 'border-2' : 'border-[#1e1e1e] hover:border-[#2a2a2a]'}`} style={isFeatured ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}15` } : undefined}>
-                  <div className={`relative h-36 bg-gradient-to-br ${typeConfig.gradient} flex items-end p-4`}>
+                  <div className={`relative h-28 sm:h-36 bg-gradient-to-br ${typeConfig.gradient} flex items-end p-3 sm:p-4`}>
                     {coverImage && (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -318,7 +318,7 @@ export default async function PublicBookingPage({
                       {ageGroup && <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/20">{ageGroup}</span>}
                     </div>
                   </div>
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h3 className="font-bold text-base leading-tight text-white">{group.name}</h3>
                       {price != null && Number(price) > 0 ? (
@@ -348,7 +348,7 @@ export default async function PublicBookingPage({
                       ) : null}
                     </div>
                     {shortDesc && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{shortDesc}</p>}
-                    <div className="space-y-1.5 text-sm text-gray-400 mb-4">
+                    <div className="space-y-1.5 text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
                       <div className="flex items-center gap-2">
                         <svg className="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                         <span className="font-semibold text-white">{group.day_of_week || 'TBA'}</span>
@@ -367,7 +367,7 @@ export default async function PublicBookingPage({
                         </div>
                       )}
                     </div>
-                    <div className="mb-4">
+                    <div className="mb-3 sm:mb-4">
                       <div className="flex items-center justify-between mb-1.5">
                         {isFull ? (
                           <span className="inline-flex items-center gap-1 text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">Class Full</span>
@@ -384,7 +384,7 @@ export default async function PublicBookingPage({
                     </div>
                     <Link
                       href={`/book/${slug}/class/${group.id}`}
-                      className="block w-full text-center py-4 rounded-xl font-extrabold text-base transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110"
+                      className="block w-full text-center py-3.5 sm:py-4 rounded-xl font-extrabold text-base transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110"
                       style={
                         isFull
                           ? { backgroundColor: '#1e1e1e', color: '#9ca3af' }
@@ -406,8 +406,8 @@ export default async function PublicBookingPage({
 
         {(events || []).length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold text-center mb-2 text-white">Upcoming Events</h2>
-            <p className="text-center text-gray-400 mb-8">Holiday camps, tournaments & more</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Upcoming Events</h2>
+            <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Holiday camps, tournaments & more</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(events || []).map((event) => (
                 <div key={event.id} className="rounded-xl border border-[#1e1e1e] bg-[#141414] p-5 hover:border-[#2a2a2a] transition-all">
@@ -432,30 +432,30 @@ export default async function PublicBookingPage({
         )}
 
         {hasCamps && (
-          <section className="relative overflow-hidden rounded-2xl p-5 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }}>
+          <section className="relative overflow-hidden rounded-2xl p-4 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }}>
             <div className="relative z-10">
-              <span className="text-3xl block mb-2">&#127945;</span>
-              <h2 className="text-2xl font-bold mb-2">Football Camps</h2>
-              <p className="text-white/70 mb-5 max-w-md mx-auto">Holiday camps with full-day sessions, games, tournaments &amp; more.</p>
-              <Link href={`/book/${slug}/camps`} className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>View Camps &rarr;</Link>
+              <span className="text-2xl sm:text-3xl block mb-2">&#127945;</span>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Football Camps</h2>
+              <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">Holiday camps with full-day sessions, games, tournaments &amp; more.</p>
+              <Link href={`/book/${slug}/camps`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>View Camps &rarr;</Link>
             </div>
           </section>
         )}
 
-        <section className="relative overflow-hidden rounded-2xl p-5 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor} 100%)` }}>
+        <section className="relative overflow-hidden rounded-2xl p-4 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor} 100%)` }}>
           <div className="relative z-10">
-            <span className="text-3xl block mb-2">&#9917;</span>
-            <h2 className="text-2xl font-bold mb-2">Not sure yet? Try a free session!</h2>
-            <p className="text-white/70 mb-5 max-w-md mx-auto">Book a free taster session for your child — no commitment, no payment needed.</p>
-            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-8 py-3 rounded-full font-semibold transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book Free Trial &rarr;</Link>
+            <span className="text-2xl sm:text-3xl block mb-2">&#9917;</span>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Not sure yet? Try a free session!</h2>
+            <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">Book a free taster session for your child — no commitment, no payment needed.</p>
+            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book Free Trial &rarr;</Link>
           </div>
         </section>
 
         {/* Trust Signals */}
         {((parentCount ?? 0) > 5 || (sessionCount ?? 0) > 20) && (
-          <section className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-6 sm:p-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-center mb-8 text-white">Why families choose {org.name}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center">
+          <section className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-4 sm:p-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-center mb-6 sm:mb-8 text-white">Why families choose {org.name}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 text-center">
               {(parentCount ?? 0) > 0 && (
                 <div>
                   <div className="text-3xl sm:text-4xl font-extrabold mb-1 text-white">{parentCount}+</div>
@@ -480,16 +480,16 @@ export default async function PublicBookingPage({
 
         {/* Trust / Qualification Badges */}
         <section>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {[
               { label: 'FA Qualified Coaches', icon: '&#127942;' },
               { label: 'DBS Checked', icon: '&#128274;' },
               { label: 'First Aid Trained', icon: '&#10010;' },
               { label: 'Fun & Safe Environment', icon: '&#128155;' },
             ].map((badge) => (
-              <div key={badge.label} className="flex flex-col items-center gap-2 rounded-2xl border border-[#1e1e1e] bg-[#141414] p-5 text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full text-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }} dangerouslySetInnerHTML={{ __html: badge.icon }} />
-                <span className="text-xs font-semibold text-gray-300">{badge.label}</span>
+              <div key={badge.label} className="flex flex-col items-center gap-2 rounded-2xl border border-[#1e1e1e] bg-[#141414] p-4 sm:p-5 text-center">
+                <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-base sm:text-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }} dangerouslySetInnerHTML={{ __html: badge.icon }} />
+                <span className="text-[11px] sm:text-xs font-semibold text-gray-300">{badge.label}</span>
               </div>
             ))}
           </div>
@@ -497,8 +497,8 @@ export default async function PublicBookingPage({
 
         {/* FAQ Accordion */}
         <section>
-          <h2 className="text-2xl font-bold text-center mb-2 text-white">Frequently Asked Questions</h2>
-          <p className="text-center text-gray-400 mb-8">Everything you need to know</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Frequently Asked Questions</h2>
+          <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Everything you need to know</p>
           <div className="space-y-3 max-w-2xl mx-auto">
             {[
               { q: 'What should my child wear?', a: 'Comfortable sportswear, shin pads, and appropriate footwear for the surface (astroturf trainers or football boots). Please bring a water bottle too.' },
@@ -508,22 +508,22 @@ export default async function PublicBookingPage({
               { q: 'Is there a trial session available?', a: 'Absolutely! We offer a free trial session so your child can experience our coaching before committing. Click the "Book a Free Trial" button to get started.' },
             ].map((faq) => (
               <details key={faq.q} className="group rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden">
-                <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-sm font-semibold text-white select-none list-none [&::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-semibold text-white select-none list-none [&::-webkit-details-marker]:hidden">
                   <span>{faq.q}</span>
                   <span className="ml-4 shrink-0 text-gray-500 transition-transform group-open:rotate-45 text-lg leading-none">+</span>
                 </summary>
-                <div className="px-5 pb-4 text-sm text-gray-400 leading-relaxed">{faq.a}</div>
+                <div className="px-4 sm:px-5 pb-4 text-sm text-gray-400 leading-relaxed">{faq.a}</div>
               </details>
             ))}
           </div>
         </section>
 
-        <section className="text-center py-8 sm:py-12 px-4 rounded-2xl border border-[#1e1e1e]" style={{ backgroundColor: `${primaryColor}08` }}>
-          <h2 className="text-2xl font-bold mb-2 text-white">Ready to get started?</h2>
-          <p className="text-gray-400 mb-6">Sign up today and book your child&apos;s first class</p>
+        <section className="text-center py-6 sm:py-12 px-4 rounded-2xl border border-[#1e1e1e]" style={{ backgroundColor: `${primaryColor}08` }}>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-white">Ready to get started?</h2>
+          <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Sign up today and book your child&apos;s first class</p>
           <div className="flex flex-wrap gap-3 justify-center items-center">
-            <Link href={`/auth/signup?org=${slug}`} className="px-8 py-3 rounded-full font-semibold text-white transition-transform hover:scale-105" style={{ backgroundColor: primaryColor }}>Sign Up Free</Link>
-            <Link href={`/book/${slug}/trial/quick`} className="px-8 py-3 rounded-full font-semibold border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a Free Trial</Link>
+            <Link href={`/auth/signup?org=${slug}`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base text-white transition-transform hover:scale-105" style={{ backgroundColor: primaryColor }}>Sign Up Free</Link>
+            <Link href={`/book/${slug}/trial/quick`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a Free Trial</Link>
             <EnquiryButton orgId={org.id} academyName={org.name} primaryColor={primaryColor} />
           </div>
           {(org.contact_email || org.contact_phone) && (

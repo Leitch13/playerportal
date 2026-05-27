@@ -171,18 +171,18 @@ export default async function ClassBookingPage({
           </>
         )}
 
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-8 sm:pb-12 text-center">
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-8 sm:pt-16 pb-6 sm:pb-12 text-center">
           {/* Class type badge */}
-          <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-3 sm:mb-4">
             <span
-              className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border"
+              className="px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider border"
               style={{ borderColor: `${typeConfig.color}50`, color: typeConfig.color, background: `${typeConfig.color}15` }}
             >
               {typeConfig.label}
             </span>
             {group.age_group && (
               <span
-                className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border"
+                className="px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold uppercase tracking-wider border"
                 style={{ borderColor: `${primaryColor}40`, color: primaryColor, background: `${primaryColor}10` }}
               >
                 {group.age_group as string}
@@ -190,28 +190,28 @@ export default async function ClassBookingPage({
             )}
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-3">{group.name}</h1>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-2 sm:mb-3">{group.name}</h1>
 
           {shortDesc && (
-            <p className="text-lg text-white/60 max-w-xl mx-auto leading-relaxed mb-4">{shortDesc}</p>
+            <p className="text-sm sm:text-lg text-white/60 max-w-xl mx-auto leading-relaxed mb-3 sm:mb-4">{shortDesc}</p>
           )}
 
           {/* Quick info pills */}
-          <div className="flex flex-wrap items-center justify-center gap-3 text-white/50 text-sm">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/50 text-xs sm:text-sm">
             {group.day_of_week && (
-              <span className="flex items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full">
+              <span className="flex items-center gap-1.5 bg-white/[0.06] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                 <span className="font-medium text-white/70">{group.day_of_week}</span>
               </span>
             )}
             {group.time_slot && (
-              <span className="flex items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full">
+              <span className="flex items-center gap-1.5 bg-white/[0.06] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                 <span className="font-medium text-white/70">{group.time_slot}</span>
               </span>
             )}
             {group.location && (
-              <span className="flex items-center gap-1.5 bg-white/[0.06] px-3 py-1.5 rounded-full">
+              <span className="flex items-center gap-1.5 bg-white/[0.06] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 <span className="font-medium text-white/70">{group.location}</span>
               </span>
@@ -223,7 +223,7 @@ export default async function ClassBookingPage({
       {/* Main content */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-20">
         {/* Details Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-6 sm:mb-10">
           {group.day_of_week && (
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
               <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Day &amp; Time</div>
@@ -249,7 +249,7 @@ export default async function ClassBookingPage({
               <div className="text-sm font-bold">{coach.full_name}</div>
             </div>
           )}
-          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+          <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-3 sm:p-4">
             <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Capacity</div>
             <div className="text-sm font-bold" style={{ color: isFull ? '#ef4444' : spotsLeft <= 3 ? '#f97316' : primaryColor }}>
               {isFull ? 'FULL' : `${spotsLeft} spots left`}
@@ -257,7 +257,7 @@ export default async function ClassBookingPage({
             <div className="text-xs text-white/40 mt-0.5">{enrolled}/{capacity} enrolled</div>
           </div>
           {price != null && Number(price) > 0 && (
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-3 sm:p-4">
               <div className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Price</div>
               <div className="text-base font-extrabold text-white">
                 &pound;{Number(price).toFixed(2)}
@@ -268,14 +268,14 @@ export default async function ClassBookingPage({
         </div>
 
         {/* Capacity bar */}
-        <div className="mb-10">
+        <div className="mb-6 sm:mb-10">
           <div className="flex items-center justify-between text-xs text-white/40 mb-2">
             <span>{enrolled} of {capacity} places filled</span>
             <span>{Math.round((enrolled / capacity) * 100)}%</span>
           </div>
-          <div className="w-full bg-white/[0.06] rounded-full h-3">
+          <div className="w-full bg-white/[0.06] rounded-full h-2.5 sm:h-3">
             <div
-              className="h-3 rounded-full transition-all"
+              className="h-2.5 sm:h-3 rounded-full transition-all"
               style={{
                 width: `${Math.min(100, (enrolled / capacity) * 100)}%`,
                 backgroundColor: isFull ? '#ef4444' : spotsLeft <= 3 ? '#f97316' : primaryColor,
@@ -286,32 +286,32 @@ export default async function ClassBookingPage({
 
         {/* Full Description */}
         {description && (
-          <div className="mb-10">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="mb-6 sm:mb-10">
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center gap-2">
               <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               About This Class
             </h2>
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-              <div className="text-white/70 leading-relaxed whitespace-pre-line">{description}</div>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6">
+              <div className="text-sm sm:text-base text-white/70 leading-relaxed whitespace-pre-line">{description}</div>
             </div>
           </div>
         )}
 
         {/* Key Benefits */}
         {benefits && benefits.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="mb-6 sm:mb-10">
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center gap-2">
               <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Key Benefits
             </h2>
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-              <ul className="space-y-3">
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6">
+              <ul className="space-y-2.5 sm:space-y-3">
                 {benefits.map((benefit, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-white/70">{benefit}</span>
+                    <span className="text-sm sm:text-base text-white/70">{benefit}</span>
                   </li>
                 ))}
               </ul>
@@ -321,34 +321,34 @@ export default async function ClassBookingPage({
 
         {/* Suitable For */}
         {suitableFor && (
-          <div className="mb-10">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="mb-6 sm:mb-10">
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center gap-2">
               <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               Suitable For
             </h2>
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-              <p className="text-white/70 leading-relaxed">{suitableFor}</p>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6">
+              <p className="text-sm sm:text-base text-white/70 leading-relaxed">{suitableFor}</p>
             </div>
           </div>
         )}
 
         {/* What to Bring */}
         {whatToBring && (
-          <div className="mb-10">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="mb-6 sm:mb-10">
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center gap-2">
               <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
               What to Bring
             </h2>
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-              <p className="text-white/70 leading-relaxed">{whatToBring}</p>
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6">
+              <p className="text-sm sm:text-base text-white/70 leading-relaxed">{whatToBring}</p>
             </div>
           </div>
         )}
 
         {/* Pricing Plans */}
         {plans && plans.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <div className="mb-6 sm:mb-10">
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 flex items-center gap-2">
               <svg className="w-5 h-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               Pricing Plans
             </h2>
@@ -364,7 +364,7 @@ export default async function ClassBookingPage({
                 return (
                   <div
                     key={plan.id}
-                    className={`relative bg-white/[0.03] border rounded-2xl p-5 transition-all hover:bg-white/[0.05] ${
+                    className={`relative bg-white/[0.03] border rounded-2xl p-4 sm:p-5 transition-all hover:bg-white/[0.05] ${
                       isPopular ? 'border-[color:var(--accent)] ring-1 ring-[color:var(--accent)]/20' : 'border-white/[0.08]'
                     }`}
                     style={isPopular ? { borderColor: `${primaryColor}60`, ['--accent' as string]: primaryColor } : undefined}
@@ -377,9 +377,9 @@ export default async function ClassBookingPage({
                         Most Popular
                       </span>
                     )}
-                    <div className="flex items-center justify-between mb-4 gap-3">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4 gap-3">
                       <div className="min-w-0">
-                        <h3 className="font-bold text-base">{plan.name}</h3>
+                        <h3 className="font-bold text-sm sm:text-base">{plan.name}</h3>
                         <p className="text-xs text-white/40 mt-0.5">
                           {(!plan.sessions_per_week || Number(plan.sessions_per_week) >= 7)
                             ? 'Unlimited sessions'
@@ -388,7 +388,7 @@ export default async function ClassBookingPage({
                       </div>
                       <div className="text-right shrink-0">
                         <div className="flex items-baseline justify-end gap-1">
-                          <span className="text-3xl sm:text-4xl font-extrabold text-white">&pound;{amount.toFixed(0)}</span>
+                          <span className="text-2xl sm:text-4xl font-extrabold text-white">&pound;{amount.toFixed(0)}</span>
                           <span className="text-xs text-white/50">/month</span>
                         </div>
                         {showQuarterly && (
@@ -404,7 +404,7 @@ export default async function ClassBookingPage({
                         class= param carries the class id through signup → subscribe → webhook → auto-enrol */}
                     <Link
                       href={`/auth/signup?org=${slug}&plan=${plan.id}&billing=monthly&class=${groupId}`}
-                      className="relative block w-full text-center py-5 rounded-xl font-extrabold text-lg transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110 overflow-hidden"
+                      className="relative block w-full text-center py-4 sm:py-5 rounded-xl font-extrabold text-base sm:text-lg transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110 overflow-hidden"
                       style={{
                         background: `linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)`,
                         color: '#0a0a0a',
@@ -434,11 +434,11 @@ export default async function ClassBookingPage({
 
         {/* CTAs — only show "Sign Up & Book" when no plans exist (otherwise per-plan Subscribe buttons handle it)
             OR when the class is full (so parent can join waitlist). Always show free trial. */}
-        <div className="space-y-3 mb-10">
+        <div className="space-y-3 mb-6 sm:mb-10">
           {(isFull || !plans || plans.length === 0) && (
             <Link
               href={isFull ? `/auth/signup?org=${slug}&class=${groupId}` : `/book/${slug}/class/${groupId}/quick-book`}
-              className="block w-full text-center py-5 rounded-2xl font-extrabold text-lg sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="block w-full text-center py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{
                 backgroundColor: isFull ? '#1e293b' : primaryColor,
                 color: isFull ? '#94a3b8' : '#0a0a0a',
@@ -453,27 +453,27 @@ export default async function ClassBookingPage({
 
           <Link
             href={hasPaidTrial ? `/book/${slug}/class/${groupId}/trial/paid` : `/book/${slug}/trial/quick?class=${groupId}`}
-            className="block w-full text-center py-5 rounded-2xl font-extrabold text-lg sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110"
+            className="block w-full text-center py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110"
             style={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: '#ffffff',
               boxShadow: '0 10px 40px rgba(16, 185, 129, 0.5), 0 0 0 3px rgba(16, 185, 129, 0.2)',
             }}
           >
-            <span className="inline-flex items-center gap-2.5">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <span className="inline-flex items-center gap-2 sm:gap-2.5">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               {hasPaidTrial ? `Try a Session — £${Number(trialPrice).toFixed(2)}` : 'Try a Free Session First'}
             </span>
-            <span className="block text-xs font-medium text-white/80 mt-1">
+            <span className="block text-[11px] sm:text-xs font-medium text-white/80 mt-1">
               {hasPaidTrial ? 'One session, no commitment to subscribe' : 'No account needed · 20-second sign-up'}
             </span>
           </Link>
         </div>
 
         {/* Academy info */}
-        <div className="pt-8 border-t border-white/[0.06] text-center">
+        <div className="pt-6 sm:pt-8 border-t border-white/[0.06] text-center">
           <p className="text-white/30 text-sm mb-3">Part of</p>
           <Link
             href={`/book/${slug}`}

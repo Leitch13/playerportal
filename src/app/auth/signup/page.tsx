@@ -343,28 +343,28 @@ function SignUp() {
 
   const stepLabels = isStaffInvite ? ['Create Account'] : ['Account', 'Child Details', 'Choose Plan']
   const primaryColor = orgColor
-  const inputCls = "w-full px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
+  const inputCls = "w-full px-3.5 py-3 sm:px-4 sm:py-3.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
 
   return (
-    <div className="min-h-screen bg-[#060606] flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#060606] flex items-center justify-center px-4 py-6 sm:py-8 relative overflow-hidden">
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[200px] opacity-20" style={{ background: primaryColor }} />
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-[150px] opacity-10" style={{ background: primaryColor }} />
 
       <div className="relative w-full max-w-lg">
-        <div className="text-center mb-6">
+        <div className="text-center mb-5 sm:mb-6">
           {orgLogo && orgName && (
-            <img src={orgLogo} alt={orgName} className="w-14 h-14 rounded-xl object-cover mx-auto mb-3 bg-[#1a1a1a]" />
+            <img src={orgLogo} alt={orgName} className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover mx-auto mb-2.5 sm:mb-3 bg-[#1a1a1a]" />
           )}
-          <h1 className="text-2xl font-bold text-white mb-1">{orgName ? orgName : 'Player Portal'}</h1>
-          {orgName && isStaffInvite && <p className="text-sm text-white/40">You&apos;ve been invited to join as {inviteRole === 'admin' ? 'an admin' : 'a coach'}</p>}
-          {orgName && !isStaffInvite && <p className="text-sm text-white/40">Create your account to get started</p>}
-          {!orgName && !searchParams.get('org') && <p className="text-sm text-white/40">Sign up to join your academy</p>}
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">{orgName ? orgName : 'Player Portal'}</h1>
+          {orgName && isStaffInvite && <p className="text-xs sm:text-sm text-white/40">You&apos;ve been invited to join as {inviteRole === 'admin' ? 'an admin' : 'a coach'}</p>}
+          {orgName && !isStaffInvite && <p className="text-xs sm:text-sm text-white/40">Create your account to get started</p>}
+          {!orgName && !searchParams.get('org') && <p className="text-xs sm:text-sm text-white/40">Sign up to join your academy</p>}
         </div>
 
-        {isTrial && <div className="rounded-xl px-4 py-3 mb-4 border border-green-500/20 bg-green-500/10 backdrop-blur-xl"><p className="text-sm font-medium text-green-400 text-center">&#127881; Free Trial — try a class with no commitment!</p></div>}
-        {referrerName && <div className="rounded-xl px-4 py-3 mb-4 border border-purple-500/20 bg-purple-500/10 backdrop-blur-xl flex items-center justify-center gap-2"><span className="text-lg">&#127873;</span><p className="text-sm font-medium text-purple-400">Referred by {referrerName}!</p></div>}
+        {isTrial && <div className="rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 mb-3 sm:mb-4 border border-green-500/20 bg-green-500/10 backdrop-blur-xl"><p className="text-xs sm:text-sm font-medium text-green-400 text-center">&#127881; Free Trial — try a class with no commitment!</p></div>}
+        {referrerName && <div className="rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 mb-3 sm:mb-4 border border-purple-500/20 bg-purple-500/10 backdrop-blur-xl flex items-center justify-center gap-2"><span className="text-lg">&#127873;</span><p className="text-xs sm:text-sm font-medium text-purple-400">Referred by {referrerName}!</p></div>}
 
-        <div className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-4 sm:p-8 shadow-2xl">
           {detectingSession ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Spinner size={32} />
@@ -372,7 +372,7 @@ function SignUp() {
             </div>
           ) : (
           <>
-          <div className="flex items-center gap-1 mb-6">
+          <div className="flex items-center gap-1 mb-5 sm:mb-6">
             {stepLabels.map((label, i) => (
               <div key={label} className="flex-1">
                 <div className="h-1.5 rounded-full transition-all duration-500" style={{ backgroundColor: i + 1 <= step ? primaryColor : 'rgba(255,255,255,0.08)' }} />
@@ -382,9 +382,9 @@ function SignUp() {
           </div>
 
           {step === 1 && showAcademySearch && !orgName && (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs text-white/50 mb-1.5">Find Your Academy *</label>
+                <label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Find Your Academy *</label>
                 <AcademySearch
                   onSelect={(academy) => {
                     setOrgSlug(academy.slug)
@@ -402,7 +402,7 @@ function SignUp() {
                 <div className="flex-1 border-t border-white/10" />
               </div>
               <div>
-                <label className="block text-xs text-white/50 mb-1.5">Organisation Code</label>
+                <label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Organisation Code</label>
                 <input type="text" value={orgSlug} onChange={(e) => { setOrgSlug(e.target.value); setOrgError(''); setOrgName(null) }} onBlur={() => lookupOrg(orgSlug)} placeholder="e.g. jsl" className={inputCls} />
                 {orgError && <p className="text-xs text-red-400 mt-1">{orgError}</p>}
               </div>
@@ -410,7 +410,7 @@ function SignUp() {
           )}
 
           {step === 1 && (!showAcademySearch || orgName) && (
-            <form onSubmit={handleCreateAccount} className="space-y-4">
+            <form onSubmit={handleCreateAccount} className="space-y-3 sm:space-y-4">
               {orgName && !searchParams.get('org') && (
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
                   {orgLogo && <img src={orgLogo} alt="" className="w-8 h-8 rounded-lg object-cover bg-[#2a2a2a]" />}
@@ -420,36 +420,36 @@ function SignUp() {
                   <button type="button" onClick={() => { setOrgName(null); setOrgSlug(''); setOrgLogo(null); setOrgColor('#4ecde6'); setShowAcademySearch(true) }} className="text-xs text-white/30 hover:text-white/60 transition-colors">Change</button>
                 </div>
               )}
-              <div><label className="block text-xs text-white/50 mb-1.5">Your Full Name *</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Smith" className={inputCls} /></div>
-              <div><label className="block text-xs text-white/50 mb-1.5">Email *</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@email.com" className={inputCls} /></div>
-              <div><label className="block text-xs text-white/50 mb-1.5">Phone</label><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07xxx xxxxxx" className={inputCls} /></div>
-              <div><label className="block text-xs text-white/50 mb-1.5">Password *</label><div className="relative"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className={inputCls + ' pr-10'} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">{showPassword ? (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9.27-3.11-11-7.5a11.72 11.72 0 013.168-4.477M6.343 6.343A9.97 9.97 0 0112 5c5 0 9.27 3.11 11 7.5a11.7 11.7 0 01-4.373 5.157M6.343 6.343L3 3m3.343 3.343l2.829 2.829M17.657 17.657L21 21m-3.343-3.343l-2.829-2.829M9.878 9.878a3 3 0 104.243 4.243" /></svg>) : (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>)}</button></div></div>
-              <div className="flex items-start gap-3">
-                <input type="checkbox" id="terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer" style={{ accentColor: primaryColor }} />
-                <label htmlFor="terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">
+              <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Your Full Name *</label><input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required placeholder="John Smith" className={inputCls} /></div>
+              <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Email *</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@email.com" className={inputCls} /></div>
+              <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Phone</label><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07xxx xxxxxx" className={inputCls} /></div>
+              <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Password *</label><div className="relative"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className={inputCls + ' pr-10'} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">{showPassword ? (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9.27-3.11-11-7.5a11.72 11.72 0 013.168-4.477M6.343 6.343A9.97 9.97 0 0112 5c5 0 9.27 3.11 11 7.5a11.7 11.7 0 01-4.373 5.157M6.343 6.343L3 3m3.343 3.343l2.829 2.829M17.657 17.657L21 21m-3.343-3.343l-2.829-2.829M9.878 9.878a3 3 0 104.243 4.243" /></svg>) : (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>)}</button></div></div>
+              <div className="flex items-start gap-2.5 sm:gap-3">
+                <input type="checkbox" id="terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-0.5 sm:mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer shrink-0" style={{ accentColor: primaryColor }} />
+                <label htmlFor="terms" className="text-[11px] sm:text-xs text-white/40 cursor-pointer leading-relaxed">
                   I agree to {orgName ? <Link href={`/book/${orgSlug.trim().toLowerCase()}/terms`} target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>{orgName}&apos;s Terms &amp; Conditions</Link> : <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>the Terms &amp; Conditions</Link>}
                   {orgName && <> and the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Player Portal platform terms</Link></>}
                   . I confirm I am the parent or legal guardian of the child being registered.
                 </label>
               </div>
               {error && <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
-              <button type="submit" disabled={loading || !agreedToTerms} className="w-full py-3.5 rounded-xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
+              <button type="submit" disabled={loading || !agreedToTerms} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
                 {loading ? <><Spinner size={20} />Creating account...</> : 'Next \u2192'}
               </button>
-              <p className="text-sm text-white/40 text-center">Already have an account? <Link href="/auth/signin" className="underline hover:text-white/60" style={{ color: primaryColor }}>Sign in</Link></p>
+              <p className="text-xs sm:text-sm text-white/40 text-center">Already have an account? <Link href="/auth/signin" className="underline hover:text-white/60" style={{ color: primaryColor }}>Sign in</Link></p>
             </form>
           )}
 
           {step === 2 && (
-            <form onSubmit={handleAddChild} className="space-y-4">
-              <div className="rounded-xl px-4 py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}><p className="text-sm font-medium" style={{ color: primaryColor }}>Account created! Now add your child&apos;s details.</p></div>
+            <form onSubmit={handleAddChild} className="space-y-3 sm:space-y-4">
+              <div className="rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}><p className="text-xs sm:text-sm font-medium" style={{ color: primaryColor }}>Account created! Now add your child&apos;s details.</p></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs text-white/50 mb-1.5">Child&apos;s First Name *</label><input type="text" value={childFirstName} onChange={(e) => setChildFirstName(e.target.value)} required placeholder="First name" className={inputCls} /></div>
-                <div><label className="block text-xs text-white/50 mb-1.5">Last Name *</label><input type="text" value={childLastName} onChange={(e) => setChildLastName(e.target.value)} required placeholder="Last name" className={inputCls} /></div>
+                <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Child&apos;s First Name *</label><input type="text" value={childFirstName} onChange={(e) => setChildFirstName(e.target.value)} required placeholder="First name" className={inputCls} /></div>
+                <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Last Name *</label><input type="text" value={childLastName} onChange={(e) => setChildLastName(e.target.value)} required placeholder="Last name" className={inputCls} /></div>
               </div>
-              <div><label className="block text-xs text-white/50 mb-1.5">Date of Birth</label><input type="date" value={childDob} onChange={(e) => setChildDob(e.target.value)} className={`${inputCls} [color-scheme:dark]`} /></div>
+              <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Date of Birth</label><input type="date" value={childDob} onChange={(e) => setChildDob(e.target.value)} className={`${inputCls} [color-scheme:dark]`} /></div>
               <div>
-                <label className="block text-xs text-white/50 mb-1.5">Player Level</label>
+                <label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Player Level</label>
                 <select value={childLevel} onChange={(e) => setChildLevel(e.target.value)} className={inputCls + ' appearance-none'}>
                   <option value="beginner" className="bg-[#1a1a1a]">Beginner — Just starting out</option>
                   <option value="development" className="bg-[#1a1a1a]">Development — Learning the basics</option>
@@ -459,7 +459,7 @@ function SignUp() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-white/50 mb-1.5">League Level</label>
+                <label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">League Level</label>
                 <select value={childLeague} onChange={(e) => setChildLeague(e.target.value)} className={inputCls + ' appearance-none'}>
                   <option value="" className="bg-[#1a1a1a]">Select league level...</option>
                   <option value="recreational" className="bg-[#1a1a1a]">Recreational</option>
@@ -470,13 +470,13 @@ function SignUp() {
                   <option value="professional" className="bg-[#1a1a1a]">Professional Development</option>
                 </select>
               </div>
-              <div><label className="block text-xs text-white/50 mb-1.5">Medical / Allergies</label><input type="text" value={childMedical} onChange={(e) => setChildMedical(e.target.value)} placeholder="Any medical conditions or allergies" className={inputCls} /></div>
+              <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Medical / Allergies</label><input type="text" value={childMedical} onChange={(e) => setChildMedical(e.target.value)} placeholder="Any medical conditions or allergies" className={inputCls} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs text-white/50 mb-1.5">Emergency Contact</label><input type="text" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} placeholder="Contact name" className={inputCls} /></div>
-                <div><label className="block text-xs text-white/50 mb-1.5">Emergency Phone</label><input type="tel" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} placeholder="Phone number" className={inputCls} /></div>
+                <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Emergency Contact</label><input type="text" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} placeholder="Contact name" className={inputCls} /></div>
+                <div><label className="block text-xs sm:text-sm text-white/50 mb-1 sm:mb-1.5">Emergency Phone</label><input type="tel" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} placeholder="Phone number" className={inputCls} /></div>
               </div>
               {error && <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
-              <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
+              <button type="submit" disabled={loading} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
                 {loading ? <><Spinner size={20} />Saving...</> : 'Next \u2192 Choose Plan'}
               </button>
               <button type="button" onClick={() => setStep(1)} className="w-full py-2 text-sm text-white/40 hover:text-white/60 font-medium transition-colors flex items-center justify-center gap-1">
@@ -487,32 +487,32 @@ function SignUp() {
           )}
 
           {step === 3 && (
-            <div className="space-y-4">
-              <div className="rounded-xl px-4 py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
-                <p className="text-sm font-medium" style={{ color: primaryColor }}>{childFirstName} is registered! Choose a subscription plan below.</p>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
+                <p className="text-xs sm:text-sm font-medium" style={{ color: primaryColor }}>{childFirstName} is registered! Choose a subscription plan below.</p>
                 <p className="text-xs text-white/40 mt-1">You&apos;ll only be charged from today — no backdated fees.</p>
               </div>
               {plans.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="bg-[#1a1a1a] rounded-xl p-1 flex">
-                    <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
-                    <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Save 10%</span></button>
+                    <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
+                    <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Save 10%</span></button>
                   </div>
                   {plans.map((plan) => {
                     const monthly = Number(plan.amount)
                     const quarterly = getQuarterlyPrice(monthly)
                     const isSelected = selectedPlanId === plan.id
                     return (
-                      <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full text-left rounded-xl border-2 p-4 transition-all ${isSelected ? 'bg-[#1a1a1a]' : 'border-[#1e1e1e] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 30px ${primaryColor}15, 0 0 60px ${primaryColor}08` } : undefined}>
-                        <div className="flex items-center justify-between">
-                          <div><div className="font-bold text-white">{plan.name}</div>{plan.description && <div className="text-xs text-white/40 mt-0.5">{plan.description}</div>}<div className="text-xs text-white/30 mt-1">{plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week</div></div>
-                          <div className="text-right">{billingOption === 'monthly' ? (<><div className="text-2xl font-bold" style={{ color: isSelected ? primaryColor : 'white' }}>&pound;{monthly.toFixed(0)}</div><div className="text-xs text-white/40">/month</div></>) : (<><div className="text-2xl font-bold text-green-400">&pound;{quarterly.discounted.toFixed(0)}</div><div className="text-xs text-white/30 line-through">&pound;{quarterly.total.toFixed(0)}</div><div className="text-[10px] font-semibold text-green-400 mt-0.5">Save &pound;{quarterly.saving.toFixed(0)}</div></>)}</div>
+                      <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full text-left rounded-xl border-2 p-3.5 sm:p-4 transition-all ${isSelected ? 'bg-[#1a1a1a]' : 'border-[#1e1e1e] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 30px ${primaryColor}15, 0 0 60px ${primaryColor}08` } : undefined}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0"><div className="font-bold text-sm sm:text-base text-white">{plan.name}</div>{plan.description && <div className="text-xs text-white/40 mt-0.5">{plan.description}</div>}<div className="text-xs text-white/30 mt-1">{plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week</div></div>
+                          <div className="text-right shrink-0">{billingOption === 'monthly' ? (<><div className="text-xl sm:text-2xl font-bold" style={{ color: isSelected ? primaryColor : 'white' }}>&pound;{monthly.toFixed(0)}</div><div className="text-xs text-white/40">/month</div></>) : (<><div className="text-xl sm:text-2xl font-bold text-green-400">&pound;{quarterly.discounted.toFixed(0)}</div><div className="text-xs text-white/30 line-through">&pound;{quarterly.total.toFixed(0)}</div><div className="text-[10px] font-semibold text-green-400 mt-0.5">Save &pound;{quarterly.saving.toFixed(0)}</div></>)}</div>
                         </div>
-                        {isSelected && <div className="mt-3 pt-3 border-t text-xs font-medium flex items-center gap-1" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>{billingOption === 'monthly' ? 'Auto-renews monthly, cancel anytime' : '3 months upfront, 10% off! Covers you for the full quarter'}</div>}
+                        {isSelected && <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t text-xs font-medium flex items-center gap-1" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>{billingOption === 'monthly' ? 'Auto-renews monthly, cancel anytime' : '3 months upfront, 10% off! Covers you for the full quarter'}</div>}
                       </button>
                     )
                   })}
-                  <button onClick={handleSubscribe} disabled={!selectedPlanId || subscribing} className="w-full py-3.5 rounded-xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: billingOption === 'quarterly' ? '#22c55e' : primaryColor, color: billingOption === 'quarterly' ? 'white' : '#0a0a0a' }}>
+                  <button onClick={handleSubscribe} disabled={!selectedPlanId || subscribing} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: billingOption === 'quarterly' ? '#22c55e' : primaryColor, color: billingOption === 'quarterly' ? 'white' : '#0a0a0a' }}>
                     {subscribing ? <><Spinner size={20} />Setting up payment...</> : billingOption === 'quarterly' ? 'Pay 3 Months & Save 10% \u2192' : 'Subscribe & Pay \u2192'}
                   </button>
                   {billingOption === 'quarterly' && selectedPlanId && <p className="text-xs text-center text-green-400 font-medium">One payment of &pound;{getQuarterlyPrice(Number(plans.find(p => p.id === selectedPlanId)?.amount || 0)).discounted.toFixed(2)} covers 3 full months</p>}
@@ -529,7 +529,7 @@ function SignUp() {
           </>
           )}
         </div>
-        <p className="text-center text-xs text-white/20 mt-6">Powered by Player Portal</p>
+        <p className="text-center text-xs text-white/20 mt-5 sm:mt-6">Powered by Player Portal</p>
       </div>
     </div>
   )
