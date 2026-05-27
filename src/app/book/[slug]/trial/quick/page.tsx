@@ -58,32 +58,32 @@ export default async function QuickTrialPage({
         </div>
       </nav>
 
-      {/* Compact Hero */}
+      {/* Compact Hero — extra tight on mobile to keep form above the fold */}
       <div
-        className="py-10 px-4 text-center"
+        className="py-6 sm:py-10 px-4 text-center"
         style={{ background: `linear-gradient(135deg, #060606 0%, ${primaryColor}22 100%)` }}
       >
         <div className="max-w-lg mx-auto">
           <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2.5 sm:mb-4"
             style={{ backgroundColor: `${primaryColor}15`, color: primaryColor, border: `1px solid ${primaryColor}30` }}
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
             100% Free &middot; No commitment
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight mb-1 sm:mb-2">
             Book a Free Trial
           </h1>
-          <p className="text-white/50 text-sm">
+          <p className="text-white/50 text-xs sm:text-sm">
             Try a session with {org.name} &mdash; takes 20 seconds
           </p>
         </div>
       </div>
 
       {/* Form */}
-      <div className="max-w-lg mx-auto px-4 -mt-2 pb-16">
+      <div className="max-w-lg mx-auto px-4 -mt-2 pb-12 sm:pb-16">
         <TrialForm
           orgId={org.id}
           // When the parent came from a specific class page (?class=...),

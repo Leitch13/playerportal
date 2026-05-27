@@ -252,10 +252,10 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
   }
 
   const inputClass =
-    'w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-4 py-3.5 text-white placeholder-white/30 text-base focus:outline-none focus:ring-2 transition-all'
+    'w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-3.5 py-3 sm:px-4 sm:py-3.5 text-white placeholder-white/30 text-base focus:outline-none focus:ring-2 transition-all'
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white/[0.04] backdrop-blur rounded-2xl border border-white/[0.08] p-5 sm:p-8 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white/[0.04] backdrop-blur rounded-2xl border border-white/[0.08] p-4 sm:p-8 space-y-3 sm:space-y-4">
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
           {error}
@@ -302,15 +302,36 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       </div>
 
       {preselectedGroupId && groups.length === 1 ? (
-        // Class is locked in (parent came from a specific class page) — show as static card
-        <div>
-          <label className="text-xs font-medium text-white/50 block mb-1.5">Booking trial for</label>
-          <div className="px-3 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] text-sm">
-            <div className="font-semibold text-white">{groups[0].name}</div>
+        // Class is locked in (parent came from a specific class page) — show as static card.
+        // On mobile, merge the class card + date picker into a single visual block so there's
+        // only ONE bordered chunk for "what + when" instead of two separate sections.
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 sm:p-4 space-y-3">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider font-bold text-white/40 mb-1">Booking trial for</div>
+            <div className="font-semibold text-white text-sm leading-tight">{groups[0].name}</div>
             <div className="text-xs text-white/50 mt-0.5">
               {groups[0].day}{groups[0].time ? ` · ${groups[0].time}` : ''}{groups[0].location ? ` · ${groups[0].location}` : ''}
             </div>
           </div>
+          {validDates.length > 0 && (
+            <div>
+              <label className="text-[10px] uppercase tracking-wider font-bold text-white/40 block mb-1.5">
+                Pick your date
+              </label>
+              <select
+                className={inputClass}
+                style={{ ['--tw-ring-color' as string]: primaryColor }}
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+                required
+              >
+                <option value="">Select a date…</option>
+                {validDates.map((d) => (
+                  <option key={d.iso} value={d.iso}>{d.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       ) : (
         <div>
@@ -331,30 +352,6 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
               </option>
             ))}
           </select>
-        </div>
-      )}
-
-      {/* Pick trial date — dropdown of next 6 valid days for this class */}
-      {validDates.length > 0 && (
-        <div>
-          <label className="text-xs font-medium text-white/50 block mb-1.5">
-            Pick your trial date{selectedGroup?.day ? ` — available ${selectedGroup.day}s` : ''}
-          </label>
-          <select
-            className={inputClass}
-            style={{ ['--tw-ring-color' as string]: primaryColor }}
-            value={sessionDate}
-            onChange={(e) => setSessionDate(e.target.value)}
-            required
-          >
-            <option value="">Select a date…</option>
-            {validDates.map((d) => (
-              <option key={d.iso} value={d.iso}>{d.label}</option>
-            ))}
-          </select>
-          <p className="text-[11px] text-white/30 mt-1.5">
-            Class runs {selectedGroup?.day}s{selectedGroup?.time ? ` at ${selectedGroup.time}` : ''}. The coach will confirm via email.
-          </p>
         </div>
       )}
 

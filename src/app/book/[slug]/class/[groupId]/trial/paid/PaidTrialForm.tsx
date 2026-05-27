@@ -92,50 +92,52 @@ export default function PaidTrialForm({
     }
   }
 
-  const inputCls = 'w-full px-4 py-3 text-base bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10'
+  const inputCls = 'w-full px-3.5 py-2.5 sm:px-4 sm:py-3 text-base bg-white/[0.04] border border-white/[0.08] rounded-xl text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10'
+  const sectionHeading = 'text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/40'
+  const fieldLabel = 'block text-xs sm:text-sm text-white/60 mb-1'
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 space-y-4">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white/50">Your details</h3>
+    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5">
+      {/* Your details */}
+      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
+        <h3 className={sectionHeading}>Your details</h3>
         <div>
-          <label className="block text-sm text-white/70 mb-1.5">Your full name *</label>
+          <label className={fieldLabel}>Your full name *</label>
           <input type="text" required value={parentName} onChange={(e) => setParentName(e.target.value)} className={inputCls} placeholder="Jane Smith" />
         </div>
         <div>
-          <label className="block text-sm text-white/70 mb-1.5">Email *</label>
+          <label className={fieldLabel}>Email *</label>
           <input type="email" required value={parentEmail} onChange={(e) => setParentEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
         </div>
         <div>
-          <label className="block text-sm text-white/70 mb-1.5">Phone (optional)</label>
+          <label className={fieldLabel}>Phone (optional)</label>
           <input type="tel" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} className={inputCls} placeholder="+44 7700 900000" />
         </div>
       </div>
 
-      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 space-y-4">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white/50">Child&apos;s details</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Child + date — merged on mobile because they're tightly related */}
+      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
+        <h3 className={sectionHeading}>Child &amp; date</h3>
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm text-white/70 mb-1.5">First name *</label>
+            <label className={fieldLabel}>First name *</label>
             <input type="text" required value={childFirstName} onChange={(e) => setChildFirstName(e.target.value)} className={inputCls} placeholder="Jimmy" />
           </div>
           <div>
-            <label className="block text-sm text-white/70 mb-1.5">Last name *</label>
+            <label className={fieldLabel}>Last name *</label>
             <input type="text" required value={childLastName} onChange={(e) => setChildLastName(e.target.value)} className={inputCls} placeholder="Smith" />
           </div>
         </div>
         <div>
-          <label className="block text-sm text-white/70 mb-1.5">Date of birth (optional)</label>
+          <label className={fieldLabel}>Date of birth (optional)</label>
           <input type="date" value={childDob} onChange={(e) => setChildDob(e.target.value)} className={inputCls} />
         </div>
-      </div>
-
-      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-6 space-y-4">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white/50">Pick your trial date</h3>
         <div>
           {validDates.length > 0 ? (
             <>
-              <label className="block text-sm text-white/70 mb-1.5">Available {dayOfWeek}s for this class:</label>
+              <label className={fieldLabel}>
+                Pick your trial date — available {dayOfWeek}s
+              </label>
               <select
                 value={sessionDate}
                 onChange={(e) => setSessionDate(e.target.value)}
@@ -147,22 +149,18 @@ export default function PaidTrialForm({
                   <option key={d.iso} value={d.iso}>{d.label}</option>
                 ))}
               </select>
-              <p className="text-xs text-white/40 mt-1.5">
-                Class runs {dayOfWeek}s{timeSlot ? ` at ${timeSlot}` : ''}. The coach will confirm via email.
-              </p>
             </>
           ) : (
             <>
-              <label className="block text-sm text-white/70 mb-1.5">When would you like your trial?</label>
+              <label className={fieldLabel}>When would you like your trial?</label>
               <input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} className={inputCls} />
-              <p className="text-xs text-white/40 mt-1.5">The coach will confirm via email once they&apos;ve seen your booking.</p>
             </>
           )}
         </div>
       </div>
 
-      <label className="flex items-start gap-3 text-sm text-white/70 cursor-pointer">
-        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 w-4 h-4 accent-white" />
+      <label className="flex items-start gap-2.5 text-xs sm:text-sm text-white/70 cursor-pointer leading-snug px-1">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 w-4 h-4 accent-white shrink-0" />
         <span>
           I agree to a one-off charge of <strong>£{trialPrice.toFixed(2)}</strong> for one trial session of {groupName}.
           No subscription will be created.
@@ -178,7 +176,7 @@ export default function PaidTrialForm({
       <button
         type="submit"
         disabled={loading || !agreed}
-        className="w-full py-4 rounded-2xl font-extrabold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full py-3.5 sm:py-4 rounded-2xl font-extrabold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
           background: loading ? '#444' : `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`,
           color: '#0a0a0a',
@@ -188,7 +186,7 @@ export default function PaidTrialForm({
         {loading ? 'Redirecting to payment…' : `Pay £${trialPrice.toFixed(2)} & Book Trial`}
       </button>
 
-      <p className="text-xs text-white/40 text-center">
+      <p className="text-[11px] sm:text-xs text-white/40 text-center px-2">
         Secure payment via Stripe. Your card details never touch our servers.
       </p>
     </form>
