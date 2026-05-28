@@ -125,6 +125,38 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // ─── Route the payment to the academy's connected Stripe account ───
+    // Camp fees belong to the academy, not the platform. Same model as
+    // subscriptions + paid trials: transfer to their connected account and
+    // take the platform fee from their plan tier.
+    const { data: payoutOrg } = await supabase
+      .from('organisations')
+      .select('stripe_account_id, platform_plan_id')
+      .eq('id', organisationId)
+      .single()
+
+    if (!payoutOrg?.stripe_account_id) {
+      return NextResponse.json(
+        { error: 'This academy is still finishing their setup. Camp bookings can\'t be paid for just yet.' },
+        { status: 503 }
+      )
+    }
+
+    // Resolve the platform fee rate from the academy's plan tier (default 3.5%)
+    let PLATFORM_FEE_RATE = 0.035
+    if (payoutOrg.platform_plan_id) {
+      const { data: platformPlan } = await supabase
+        .from('platform_plans')
+        .select('transaction_fee_percent')
+        .eq('id', payoutOrg.platform_plan_id)
+        .single()
+      if (platformPlan) {
+        PLATFORM_FEE_RATE = Number(platformPlan.transaction_fee_percent) / 100
+      }
+    }
+    const amountPence = Math.round(price * 100)
+    const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(amountPence * PLATFORM_FEE_RATE) : 0
+
     // Create Stripe Checkout Session
     const origin = request.headers.get('origin') || 'https://theplayerportal.net'
     const successUrl = `${origin}/book/${slug}/camps/${campId}?booked=1&booking=${booking.id}`
@@ -140,12 +172,18 @@ export async function POST(request: NextRequest) {
               name: camp.name,
               description: `${childName} - ${camp.name}`,
             },
-            unit_amount: Math.round(price * 100),
+            unit_amount: amountPence,
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
+      payment_intent_data: {
+        ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
+        transfer_data: {
+          destination: payoutOrg.stripe_account_id,
+        },
+      },
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
