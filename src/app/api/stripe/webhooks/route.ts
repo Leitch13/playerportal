@@ -128,6 +128,30 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
 // ---------------------------------------------------------------------------
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // ─── Platform subscription (academy paying Player Portal) ───
+  // Set by /api/platform/subscribe. Activates the academy's own SaaS plan and
+  // marks them published so their public booking page goes live (hybrid model).
+  if (session.metadata?.type === 'platform_subscription') {
+    const orgId = session.metadata.organisation_id
+    const planId = session.metadata.platform_plan_id
+    const subId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id ?? null
+    if (orgId) {
+      await supabase
+        .from('organisations')
+        .update({
+          platform_subscription_status: 'active',
+          platform_stripe_subscription_id: subId,
+          ...(planId ? { platform_plan_id: planId } : {}),
+          is_published: true, // hybrid: paying = academy goes live
+        })
+        .eq('id', orgId)
+    }
+    return
+  }
+
   // ─── Paid trial flow — record trial_booking + skip subscription/enrolment paths ───
   // Set by /api/trial-bookings/paid. One-off Checkout, no user account required.
   if (session.metadata?.type === 'paid_trial') {

@@ -80,6 +80,48 @@ export default async function PublicBookingPage({
     )
   }
 
+  // ─── Publish gate (hybrid go-live model) ───
+  // Academies set up free during their trial, but their public booking page
+  // isn't bookable until they "go live" (subscribe to a platform plan).
+  // The academy's own admin can still preview it (shown a banner); the public
+  // sees a friendly "coming soon" instead.
+  const isPublished = org.is_published !== false || !!org.pilot
+  let isOwnerPreview = false
+  if (!isPublished) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: viewerProfile } = await supabase
+        .from('profiles')
+        .select('organisation_id, role')
+        .eq('id', user.id)
+        .single()
+      isOwnerPreview =
+        viewerProfile?.organisation_id === org.id &&
+        ['admin', 'coach'].includes((viewerProfile?.role as string) || '')
+    }
+    if (!isOwnerPreview) {
+      const primary = (org.primary_color as string) || '#4ecde6'
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#060606] text-white px-4">
+          <div
+            className="fixed inset-x-0 top-0 h-64 opacity-30 pointer-events-none"
+            style={{ background: `radial-gradient(ellipse at top, ${primary}40 0%, transparent 60%)` }}
+          />
+          <div className="relative text-center max-w-md">
+            {org.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.logo_url as string} alt={org.name as string} className="w-16 h-16 rounded-2xl object-cover mx-auto mb-4 bg-[#1a1a1a]" />
+            ) : null}
+            <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">{org.name}</h1>
+            <p className="text-white/60 text-sm sm:text-base">
+              This academy isn&apos;t taking online bookings just yet. Check back soon!
+            </p>
+          </div>
+        </div>
+      )
+    }
+  }
+
   const { data: groups } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, age_group, short_description, image_url')
@@ -195,6 +237,14 @@ export default async function PublicBookingPage({
       className="min-h-screen bg-[#0a0a0a] text-white"
       style={{ '--brand-primary': primaryColor, '--brand-primary-rgb': hexToRgb(primaryColor), '--color-accent': primaryColor } as React.CSSProperties}
     >
+      {isOwnerPreview && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-3 text-center">
+          <p className="text-sm text-amber-200">
+            <strong>Preview mode</strong> — this page isn&apos;t public yet. Parents can&apos;t see it until you go live.{' '}
+            <a href="/dashboard/billing" className="underline font-semibold hover:text-amber-100">Choose a plan to go live →</a>
+          </p>
+        </div>
+      )}
       <BookingPageHero
         slug={slug}
         orgName={org.name as string}

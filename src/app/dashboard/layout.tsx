@@ -40,11 +40,12 @@ export default async function DashboardLayout({
     platform_subscription_status: string | null
     platform_trial_ends_at: string | null
     platform_stripe_subscription_id: string | null
+    is_published: boolean | null
   } | null = null
   if (profile?.organisation_id) {
     const { data } = await supabase
       .from('organisations')
-      .select('primary_color, logo_url, name, pilot, platform_subscription_status, platform_trial_ends_at, platform_stripe_subscription_id')
+      .select('primary_color, logo_url, name, pilot, platform_subscription_status, platform_trial_ends_at, platform_stripe_subscription_id, is_published')
       .eq('id', profile.organisation_id)
       .single()
     orgBrand = data
@@ -65,6 +66,14 @@ export default async function DashboardLayout({
   const gateApplies = role === 'admin' && !profile?.is_super_admin && !isPilotOrg && onTrial && !hasPaidPlatform
   const trialExpired = gateApplies && msLeft != null && msLeft <= 0
   const showTrialCountdown = gateApplies && trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 3
+  // Hybrid go-live: admins of an unpublished, non-pilot org see a persistent
+  // "go live" prompt (their booking page is in preview until they subscribe).
+  const showGoLive =
+    role === 'admin' &&
+    !profile?.is_super_admin &&
+    !isPilotOrg &&
+    !hasPaidPlatform &&
+    orgTrial?.is_published === false
 
   // Load feature gating context for this org
   const featureCtx = profile?.organisation_id
@@ -151,6 +160,22 @@ export default async function DashboardLayout({
           planSlug={planSlug}
         />
         <main className="lg:ml-64 min-h-[calc(100vh-3.5rem)]">
+          {showGoLive && (
+            <div className="bg-sky-500/10 border-b border-sky-500/20 px-4 py-3">
+              <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <p className="text-sm text-sky-200">
+                  <strong>Your booking page is in preview.</strong>{' '}
+                  Set everything up free — then go live to start taking bookings from parents.
+                </p>
+                <a
+                  href="/dashboard/billing"
+                  className="shrink-0 inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-bold bg-sky-400 text-[#0a0a0a] hover:bg-sky-300 transition-colors"
+                >
+                  Go live →
+                </a>
+              </div>
+            </div>
+          )}
           {showTrialCountdown && (
             <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3">
               <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
