@@ -63,7 +63,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
   const [parentEmail, setParentEmail] = useState('')
   const [parentPhone, setParentPhone] = useState('')
   const [childName, setChildName] = useState('')
-  const [childAge, setChildAge] = useState('')
+  const [childDob, setChildDob] = useState('')
   const [medicalInfo, setMedicalInfo] = useState('')
   const [consentGiven, setConsentGiven] = useState(false)
   const [siblingDiscount, setSiblingDiscount] = useState(false)
@@ -105,7 +105,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
           parentEmail,
           parentPhone,
           childName,
-          childAge,
+          childDob,
           medicalInfo,
           consentGiven,
           siblingDiscount,
@@ -260,15 +260,16 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
             required
             className={inputCls}
           />
-          <input
-            type="number"
-            placeholder="Age"
-            value={childAge}
-            onChange={(e) => setChildAge(e.target.value)}
-            min="3"
-            max="18"
-            className={inputCls}
-          />
+          <div>
+            <label className="block text-[11px] text-white/40 mb-1">Date of birth</label>
+            <input
+              type="date"
+              value={childDob}
+              onChange={(e) => setChildDob(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className={`${inputCls} [color-scheme:dark]`}
+            />
+          </div>
         </div>
 
         {camp.collect_medical_info && (

@@ -20,12 +20,24 @@ export async function POST(request: NextRequest) {
       parentEmail,
       parentPhone,
       childName,
-      childAge,
+      childDob,
       medicalInfo,
       consentGiven,
       siblingDiscount,
       slug,
     } = body
+
+    // Derive age from DOB so existing age-based logic keeps working.
+    let derivedAge: number | null = null
+    if (childDob) {
+      const dob = new Date(childDob)
+      if (!isNaN(dob.getTime())) {
+        const t = new Date()
+        derivedAge = t.getFullYear() - dob.getFullYear()
+        const m = t.getMonth() - dob.getMonth()
+        if (m < 0 || (m === 0 && t.getDate() < dob.getDate())) derivedAge--
+      }
+    }
 
     if (!campId || !parentName || !parentEmail || !childName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -96,7 +108,8 @@ export async function POST(request: NextRequest) {
         parent_email: parentEmail,
         parent_phone: parentPhone || null,
         child_name: childName,
-        child_age: childAge ? parseInt(childAge) : null,
+        child_age: derivedAge,
+        child_dob: childDob || null,
         medical_info: medicalInfo || null,
         consent_given: consentGiven || false,
         amount_paid: price,
