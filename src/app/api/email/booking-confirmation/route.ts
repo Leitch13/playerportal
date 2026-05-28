@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
   // Get org name
   const { data: org } = group?.organisation_id
-    ? await supabase.from('organisations').select('name').eq('id', group.organisation_id).single()
+    ? await supabase.from('organisations').select('name, contact_email').eq('id', group.organisation_id).single()
     : { data: null }
 
   if (!parent?.email || !player || !group) {
@@ -55,7 +55,12 @@ export async function POST(request: NextRequest) {
     dashboardUrl: `${appUrl}/dashboard/schedule`,
   })
 
-  const result = await sendEmail({ to: parent.email, ...template })
+  const result = await sendEmail({
+    to: parent.email,
+    ...template,
+    fromName: org?.name || undefined,
+    replyTo: org?.contact_email || undefined,
+  })
 
   // Also create in-app notification
   await supabase.from('notifications').insert({

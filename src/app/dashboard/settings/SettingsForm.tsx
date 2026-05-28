@@ -352,7 +352,7 @@ export default function SettingsForm({
 
           {tab === 'Scoring' && org && <ScoringCategories orgId={org.id} />}
 
-          {tab === 'Email' && <EmailSetup />}
+          {tab === 'Email' && <EmailSetup academyName={form.name} contactEmail={form.contact_email} />}
 
           {tab === 'Billing' && (
             <div className="space-y-6">

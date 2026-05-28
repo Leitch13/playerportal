@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
     academyContactEmail,
   })
 
-  const result = await sendEmail({ to: parentEmail, ...template })
+  const result = await sendEmail({
+    to: parentEmail,
+    ...template,
+    fromName: academyName || undefined,
+    replyTo: academyContactEmail,
+  })
   return NextResponse.json(result)
 }
