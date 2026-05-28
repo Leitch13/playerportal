@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
   const orgId = profile.organisation_id
 
-  let body: { rows?: ImportRow[]; classMap?: Record<string, ClassMapping>; sendInvitations?: boolean }
+  let body: { rows?: ImportRow[]; classMap?: Record<string, ClassMapping>; sendInvitations?: boolean; billingStartsAt?: string }
   try {
     body = await request.json()
   } catch {
@@ -60,6 +60,14 @@ export async function POST(request: NextRequest) {
   const rows = body.rows || []
   const classMap = body.classMap || {}
   const sendInvitations = body.sendInvitations !== false
+
+  // Optional: defer the first charge to when migrated members' existing
+  // (prepaid) payment runs out, so we don't double-charge them on confirm.
+  let billingStartsAt: string | null = null
+  if (body.billingStartsAt) {
+    const d = new Date(body.billingStartsAt)
+    if (!isNaN(d.getTime()) && d.getTime() > Date.now()) billingStartsAt = d.toISOString()
+  }
 
   if (rows.length === 0) {
     return NextResponse.json({ error: 'No rows to import' }, { status: 400 })
@@ -236,6 +244,7 @@ export async function POST(request: NextRequest) {
               status: 'pending_migration',
               invite_token: token,
               invite_source: 'classforkids',
+              migration_billing_starts_at: billingStartsAt,
             })
 
           if (subErr) {

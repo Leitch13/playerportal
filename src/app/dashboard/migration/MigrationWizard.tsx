@@ -144,6 +144,10 @@ export default function MigrationWizard({
   const [fileName, setFileName] = useState('')
   const [mapping, setMapping] = useState<Record<string, { groupId: string | null; planId: string | null }>>({})
   const [sendInvitations, setSendInvitations] = useState(true)
+  // Optional: if these members have already prepaid (e.g. via ClassForKids),
+  // set the date their existing payment runs out so we don't charge them again
+  // on confirm — Stripe defers the first charge to this date.
+  const [billingStartsAt, setBillingStartsAt] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ imported: number; skipped: number; errors: { row: number; error: string }[]; invitationsQueued: number } | null>(null)
 
@@ -182,7 +186,7 @@ export default function MigrationWizard({
       const res = await fetch('/api/migration/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows, classMap: mapping, sendInvitations }),
+        body: JSON.stringify({ rows, classMap: mapping, sendInvitations, billingStartsAt: billingStartsAt || null }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -373,6 +377,22 @@ export default function MigrationWizard({
                 </p>
               </div>
             </label>
+
+            <div className="mt-3 py-3 px-4 rounded-xl border border-[#1e1e1e] bg-[#0a0a0a]">
+              <p className="text-sm font-semibold text-white mb-1">Already paid you for the current term?</p>
+              <p className="text-[11px] text-white/50 mb-2.5">
+                If these members have already prepaid (e.g. via ClassForKids), set the date their
+                current payment runs out. They&apos;ll be charged £0 on confirm and billed from this
+                date instead — no double-charge. Leave blank to bill from confirmation.
+              </p>
+              <input
+                type="date"
+                value={billingStartsAt}
+                min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                onChange={(e) => setBillingStartsAt(e.target.value)}
+                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#141414] border border-[#1e1e1e] text-white text-sm focus:outline-none focus:border-[#4ecde6]/40 [color-scheme:dark]"
+              />
+            </div>
 
             <div className="mt-5 bg-[#4ecde6]/5 border border-[#4ecde6]/15 rounded-xl p-4 text-xs text-white/70">
               <p className="font-semibold text-[#4ecde6] uppercase tracking-wider text-[10px] mb-1">What happens next</p>

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const { data: sub } = await admin
     .from('subscriptions')
     .select(`
-      id, parent_id, player_id, status, invite_token, invite_confirmed_at,
+      id, parent_id, player_id, status, invite_token, invite_confirmed_at, migration_billing_starts_at,
       plan:subscription_plans(id, name, amount, stripe_product_id, stripe_price_id, interval),
       org:organisations(id, name, stripe_account_id, platform_plan_id, quarterly_billing_enabled, quarterly_discount_percent)
     `)
@@ -55,6 +55,14 @@ export async function POST(request: NextRequest) {
 
   const plan = sub.plan as unknown as { id: string; name: string; amount: number; stripe_product_id: string | null; stripe_price_id: string | null; interval: string }
   const org = sub.org as unknown as { id: string; name: string; stripe_account_id: string | null; platform_plan_id: string | null; quarterly_billing_enabled: boolean | null; quarterly_discount_percent: number | null }
+
+  // Deferred first-charge date (member prepaid elsewhere). Use as Stripe
+  // trial_end if it's still in the future; otherwise ignore (prorate as normal).
+  let migrationBillingStart: number | null = null
+  if (sub.migration_billing_starts_at) {
+    const ts = Math.floor(new Date(sub.migration_billing_starts_at as string).getTime() / 1000)
+    if (ts > Math.floor(Date.now() / 1000) + 3600) migrationBillingStart = ts
+  }
 
   // Fetch parent profile for customer info
   const { data: profile } = await admin
@@ -189,7 +197,13 @@ export async function POST(request: NextRequest) {
         supabase_parent_id: sub.parent_id as string,
         migration: 'true',
       },
-      billing_cycle_anchor: getFirstOfNextMonth(),
+      // If the admin set a deferred first-charge date (member already prepaid
+      // elsewhere), use trial_end so we DON'T charge on confirm — £0 today,
+      // first charge on that date. trial_end ⊥ billing_cycle_anchor, so it's
+      // one or the other. Otherwise fall back to prorating from the 1st.
+      ...(migrationBillingStart
+        ? { trial_end: migrationBillingStart }
+        : { billing_cycle_anchor: getFirstOfNextMonth() }),
       ...(connectedAccountId
         ? {
             ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
