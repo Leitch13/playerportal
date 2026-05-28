@@ -112,12 +112,22 @@ export default async function PlatformPage() {
     totalPaymentsThisMonth += amt
   }
 
-  /* ── MRR from platform subscriptions ── */
-  const activeOrgs = allOrgs.filter(o => o.platform_subscription_status === 'active' || o.platform_subscription_status === 'trial')
+  /* ── MRR from platform subscriptions ──
+     Be honest about what's actually being collected:
+       • mrr            = academies genuinely paying (status 'active')
+       • trialPipelineMrr = projected MRR if current trial academies convert
+     Trials are NOT counted as revenue — they haven't paid yet. */
+  const payingOrgs = allOrgs.filter(o => o.platform_subscription_status === 'active')
+  const trialingOrgs = allOrgs.filter(o => o.platform_subscription_status === 'trial')
   let mrr = 0
-  for (const o of activeOrgs) {
+  for (const o of payingOrgs) {
     const plan = o.platform_plan_id ? planMap[o.platform_plan_id] : null
     if (plan) mrr += plan.monthly_price
+  }
+  let trialPipelineMrr = 0
+  for (const o of trialingOrgs) {
+    const plan = o.platform_plan_id ? planMap[o.platform_plan_id] : null
+    if (plan) trialPipelineMrr += plan.monthly_price
   }
 
   /* ── Transaction fee revenue this month ── */
@@ -206,8 +216,8 @@ export default async function PlatformPage() {
     status: o.platform_subscription_status || 'trial',
   }))
 
-  const avgRevenuePerAcademy = activeOrgs.length > 0
-    ? Math.round((mrr / activeOrgs.length) * 100) / 100
+  const avgRevenuePerAcademy = payingOrgs.length > 0
+    ? Math.round((mrr / payingOrgs.length) * 100) / 100
     : 0
 
   const churnRate = allOrgs.length > 0
@@ -217,6 +227,7 @@ export default async function PlatformPage() {
   return (
     <PlatformDashboard
       mrr={mrr}
+      trialPipelineMrr={trialPipelineMrr}
       totalAcademies={allOrgs.filter(o => o.platform_subscription_status !== 'cancelled').length}
       totalPlayers={totalPlayers}
       totalParents={totalParents}

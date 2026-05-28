@@ -23,6 +23,7 @@ type MonthlyRevenue = { month: string; subscriptions: number; fees: number }
 
 type Props = {
   mrr: number
+  trialPipelineMrr: number
   totalAcademies: number
   totalPlayers: number
   totalParents: number
@@ -60,7 +61,7 @@ const statusColors: Record<string, string> = {
 type SortKey = 'name' | 'plan' | 'status' | 'players' | 'parents' | 'classes' | 'monthlyRevenue' | 'txFees' | 'createdAt'
 
 export default function PlatformDashboard({
-  mrr, totalAcademies, totalPlayers, totalParents, txFeesThisMonth,
+  mrr, trialPipelineMrr, totalAcademies, totalPlayers, totalParents, txFeesThisMonth,
   monthlyRevenue, academyRows, newOrgsThisMonth, newOrgsLastMonth,
   churnRate, avgRevenuePerAcademy, totalPaymentsThisMonth,
   recentSignups, atRisk,
@@ -133,10 +134,20 @@ export default function PlatformDashboard({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* ── Hero Stats ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Monthly Recurring Revenue" value={formatCurrency(mrr)} accent="text-emerald-400" />
+          <StatCard
+            label="Monthly Recurring Revenue"
+            value={formatCurrency(mrr)}
+            accent="text-emerald-400"
+            sub={trialPipelineMrr > 0 ? `+ ${formatCurrency(trialPipelineMrr)} in trials (not yet paying)` : 'From paying academies only'}
+          />
           <StatCard label="Active Academies" value={totalAcademies.toString()} accent="text-[#4ecde6]" />
           <StatCard label="Total Players" value={totalPlayers.toLocaleString()} accent="text-violet-400" />
-          <StatCard label="Tx Fee Revenue (Month)" value={formatCurrency(txFeesThisMonth)} accent="text-amber-400" />
+          <StatCard
+            label="Your Platform Fees (Month)"
+            value={formatCurrency(txFeesThisMonth)}
+            accent="text-amber-400"
+            sub="Your cut of parent payments"
+          />
         </div>
 
         {/* ── Revenue Chart ── */}
@@ -172,7 +183,7 @@ export default function PlatformDashboard({
           </div>
           <div className="flex items-center gap-6 mt-4 justify-center text-xs text-white/50">
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#4ecde6]" /> Subscriptions</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500" /> Transaction Fees</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500" /> Your Platform Fees</span>
           </div>
         </section>
 
@@ -199,7 +210,7 @@ export default function PlatformDashboard({
                   <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden md:table-cell" onClick={() => toggleSort('parents')}>Parents{sortArrow('parents')}</th>
                   <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden lg:table-cell" onClick={() => toggleSort('classes')}>Classes{sortArrow('classes')}</th>
                   <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden md:table-cell" onClick={() => toggleSort('monthlyRevenue')}>Revenue{sortArrow('monthlyRevenue')}</th>
-                  <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden lg:table-cell" onClick={() => toggleSort('txFees')}>Tx Fees{sortArrow('txFees')}</th>
+                  <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden lg:table-cell" onClick={() => toggleSort('txFees')}>Your Fee{sortArrow('txFees')}</th>
                   <th className="pb-2 pr-4 text-right hidden xl:table-cell">Trial Ends</th>
                   <th className="pb-2 cursor-pointer hover:text-white/70 text-right" onClick={() => toggleSort('createdAt')}>Created{sortArrow('createdAt')}</th>
                 </tr>
@@ -324,11 +335,12 @@ export default function PlatformDashboard({
 }
 
 /* ── Sub-components ── */
-function StatCard({ label, value, accent }: { label: string; value: string; accent: string }) {
+function StatCard({ label, value, accent, sub }: { label: string; value: string; accent: string; sub?: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5">
       <p className="text-xs text-white/40 mb-1">{label}</p>
       <p className={`text-2xl font-bold ${accent}`}>{value}</p>
+      {sub && <p className="text-[11px] text-white/30 mt-1 leading-tight">{sub}</p>}
     </div>
   )
 }
