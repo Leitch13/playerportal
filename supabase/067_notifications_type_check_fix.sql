@@ -1,0 +1,17 @@
+-- Fix the notifications.type CHECK constraint, which had drifted badly from
+-- how the app actually uses it.
+--
+-- The original constraint (008_enhancements.sql) only permitted:
+--   'payment_due','payment_overdue','message','review','class_cancelled',
+--   'waitlist_offer','general'
+-- but the app fires 25+ types: booking, payment, subscription, upsell, lead,
+-- discount, payment_reminder, birthday, award, enrolment, attendance,
+-- churn_alert, win_back, retention, sibling_discount, subscription_cancelled,
+-- achievement, progress, note, coach_assessment, ...
+--
+-- Every notification with a non-listed type was rejected at the database, so
+-- in-app notifications silently failed across the platform (the table stayed
+-- empty). The app does its own type handling (icon lookup falls back to a
+-- generic bell), so a hardcoded DB allowlist here is just drift waiting to
+-- recur. Drop the constraint; keep type NOT NULL.
+ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
