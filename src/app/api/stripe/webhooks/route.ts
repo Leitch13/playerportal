@@ -134,10 +134,45 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // confirms it only on a verified Stripe completion.
   if (session.metadata?.camp_booking_id) {
     if (session.payment_status === 'paid' || session.payment_status === 'no_payment_required') {
-      await supabase
+      const { data: booking } = await supabase
         .from('camp_bookings')
         .update({ payment_status: 'paid', stripe_session_id: session.id })
         .eq('id', session.metadata.camp_booking_id)
+        .select('organisation_id, parent_email, child_name, amount_paid, camp_id')
+        .maybeSingle()
+
+      // Record the camp as its own itemised line on the parent's billing page —
+      // separate from any subscription. Only possible if the booker has a parent
+      // account (payments.parent_id is NOT NULL); anonymous campers are skipped.
+      if (booking?.parent_email && booking.organisation_id) {
+        const { data: parentProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('organisation_id', booking.organisation_id)
+          .ilike('email', booking.parent_email as string)
+          .maybeSingle()
+
+        if (parentProfile?.id) {
+          let campName = 'Camp'
+          if (booking.camp_id) {
+            const { data: camp } = await supabase.from('camps').select('name').eq('id', booking.camp_id).maybeSingle()
+            if (camp?.name) campName = camp.name as string
+          }
+          const amt = Number(booking.amount_paid ?? (session.amount_total ?? 0) / 100)
+          await supabase.from('payments').insert({
+            parent_id: parentProfile.id,
+            organisation_id: booking.organisation_id,
+            amount: amt,
+            amount_paid: amt,
+            status: 'paid',
+            stripe_session_id: session.id,
+            description: `Camp: ${campName}${booking.child_name ? ` — ${booking.child_name}` : ''}`,
+            due_date: new Date().toISOString().split('T')[0],
+            paid_date: new Date().toISOString().split('T')[0],
+            created_at: new Date().toISOString(),
+          })
+        }
+      }
     }
     return
   }
@@ -203,15 +238,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const amountPaid = (session.amount_total ?? 0) / 100
   const now = new Date().toISOString()
 
-  // 1. Record / update payment
-  if (ctx.userId && ctx.planId) {
+  // 1. Record / update payment — itemised line on the parent's billing page.
+  // NOTE: the payments table uses parent_id (NOT profile_id) and has no
+  // subscription_plan_id column. The plan is captured in `description`.
+  if (ctx.userId) {
     await supabase.from('payments').insert({
-      profile_id: ctx.userId,
+      parent_id: ctx.userId,
+      player_id: ctx.playerId || null,
       organisation_id: ctx.orgId,
       amount: amountPaid,
+      amount_paid: amountPaid,
       status: 'paid',
       stripe_session_id: session.id,
-      subscription_plan_id: ctx.planId,
+      description: ctx.plan?.name ? `${ctx.plan.name} — subscription` : 'Subscription payment',
+      due_date: now.split('T')[0],
+      paid_date: now.split('T')[0],
       created_at: now,
     })
   }
