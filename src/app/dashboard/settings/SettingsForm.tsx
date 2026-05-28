@@ -9,6 +9,7 @@ import PlatformBilling from './PlatformBilling'
 import ScoringCategories from './ScoringCategories'
 import DataExportButton from '@/components/DataExportButton'
 import EmbedCode from './EmbedCode'
+import FileUpload from '@/components/FileUpload'
 
 interface OrgData {
   id: string
@@ -212,13 +213,15 @@ export default function SettingsForm({
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-white/70 block mb-1.5">Logo URL</label>
-                <input className={inputClass} value={form.logo_url} onChange={e => setForm({...form, logo_url: e.target.value})} placeholder="https://..." />
-                {form.logo_url && (
-                  <div className="mt-2 w-20 h-20 rounded-xl border border-white/[0.08] overflow-hidden bg-surface flex items-center justify-center">
-                    <img src={form.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
-                  </div>
-                )}
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Logo</label>
+                <FileUpload
+                  bucketName="branding"
+                  folder="logos"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  currentUrl={form.logo_url}
+                  onUpload={(url) => setForm({ ...form, logo_url: url })}
+                />
+                <p className="text-[11px] text-white/30 mt-1.5">PNG with a transparent background works best. Max 10MB. Remember to hit Save Branding.</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-white/70 block mb-1.5">Hero Image URL</label>
