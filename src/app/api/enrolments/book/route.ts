@@ -88,7 +88,10 @@ export async function POST(request: NextRequest) {
         .select('slug, name')
         .eq('id', group.organisation_id)
         .single()
-      const bookingUrl = org?.slug ? `/book/${org.slug}` : '/dashboard/payments'
+      // Send them to the SPECIFIC class page (not the academy home) so they land
+      // on the exact class they tried to book and the subscribe carries its
+      // classId — the webhook then auto-enrols them in this class after payment.
+      const bookingUrl = org?.slug ? `/book/${org.slug}/class/${groupId}` : '/dashboard/payments'
       return NextResponse.json(
         {
           error: `You need an active subscription with ${org?.name || 'this academy'} before booking classes.`,
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
           .select('slug, name')
           .eq('id', group.organisation_id)
           .single()
-        const upgradeUrl = org?.slug ? `/book/${org.slug}` : '/dashboard/payments'
+        const upgradeUrl = org?.slug ? `/book/${org.slug}/class/${groupId}` : '/dashboard/payments'
         return NextResponse.json(
           {
             error: `${player.first_name} is already booked in ${used} of ${sessionsAllowed} session${sessionsAllowed === 1 ? '' : 's'} this week on the ${planForLimit?.name || 'current'} plan. Upgrade to add more.`,
