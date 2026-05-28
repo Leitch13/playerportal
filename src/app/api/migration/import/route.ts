@@ -216,7 +216,6 @@ export async function POST(request: NextRequest) {
             organisation_id: orgId,
             player_id: playerId,
             group_id: mapping.groupId,
-            parent_id: parentId,
             status: 'active',
           })
         }

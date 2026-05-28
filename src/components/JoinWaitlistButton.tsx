@@ -36,7 +36,7 @@ export default function JoinWaitlistButton({
     const { data: last } = await supabase
       .from('waitlist')
       .select('position')
-      .eq('training_group_id', groupId)
+      .eq('group_id', groupId)
       .eq('status', 'waiting')
       .order('position', { ascending: false })
       .limit(1)
@@ -46,7 +46,7 @@ export default function JoinWaitlistButton({
 
     const { error } = await supabase.from('waitlist').insert({
       player_id: playerId,
-      training_group_id: groupId,
+      group_id: groupId,
       parent_id: parentId,
       organisation_id: orgId,
       position: nextPosition,
@@ -70,7 +70,7 @@ export default function JoinWaitlistButton({
       .from('waitlist')
       .update({ status: 'cancelled' })
       .eq('player_id', playerId)
-      .eq('training_group_id', groupId)
+      .eq('group_id', groupId)
       .eq('status', 'waiting')
 
     setJoined(false)

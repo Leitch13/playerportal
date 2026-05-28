@@ -41,11 +41,11 @@ export default function BookClassButton({
       const { count } = await supabase
         .from('waitlist')
         .select('id', { count: 'exact', head: true })
-        .eq('training_group_id', groupId)
+        .eq('group_id', groupId)
         .eq('status', 'waiting')
       const { error } = await supabase.from('waitlist').insert({
         player_id: playerId,
-        training_group_id: groupId,
+        group_id: groupId,
         parent_id: user?.id,
         organisation_id: orgId,
         position: (count || 0) + 1,

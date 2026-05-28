@@ -212,13 +212,11 @@ export async function POST(request: NextRequest) {
       }
 
       // Create player
-      const fullName = `${firstName} ${lastName}`
       const { data: newPlayer, error: playerError } = await supabase
         .from('players')
         .insert({
           first_name: firstName,
           last_name: lastName,
-          full_name: fullName,
           date_of_birth: dateOfBirth,
           age_group: (row.age_group || '').trim() || null,
           medical_info: (row.medical_info || '').trim() || null,
@@ -266,7 +264,7 @@ export async function POST(request: NextRequest) {
             .from('enrolments')
             .insert({
               player_id: newPlayer.id,
-              training_group_id: groupId,
+              group_id: groupId,
               status: 'active',
             })
 
