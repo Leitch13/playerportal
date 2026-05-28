@@ -574,6 +574,27 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const stripeSubId = subscription.id
   const now = new Date().toISOString()
 
+  // ─── Platform subscription cancelled (academy stops paying Player Portal) ───
+  // These live on organisations, not the subscriptions table. Mark the org
+  // cancelled and clear the sub id so the dashboard gate re-locks the admin.
+  // We keep is_published = true so existing parents + the booking page stay
+  // live (consistent with trial-expiry: lock the admin, never the families).
+  const { data: platformOrg } = await supabase
+    .from('organisations')
+    .select('id')
+    .eq('platform_stripe_subscription_id', stripeSubId)
+    .maybeSingle()
+  if (platformOrg) {
+    await supabase
+      .from('organisations')
+      .update({
+        platform_subscription_status: 'cancelled',
+        platform_stripe_subscription_id: null,
+      })
+      .eq('id', platformOrg.id)
+    return
+  }
+
   const { data: localSub } = await supabase
     .from('subscriptions')
     .select('id, parent_id, plan_id, organisation_id')
@@ -613,6 +634,31 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const stripeSubId = subscription.id
   const now = new Date().toISOString()
+
+  // ─── Platform subscription status change (renewal, past_due, recovery) ───
+  // Keep the academy's platform_subscription_status in sync with Stripe so the
+  // dashboard gate reflects reality (e.g. failed renewal → past_due → locked,
+  // payment recovers → active → unlocked).
+  const { data: platformOrg } = await supabase
+    .from('organisations')
+    .select('id')
+    .eq('platform_stripe_subscription_id', stripeSubId)
+    .maybeSingle()
+  if (platformOrg) {
+    const mapped =
+      subscription.status === 'active' || subscription.status === 'trialing'
+        ? 'active'
+        : subscription.status === 'past_due' || subscription.status === 'unpaid'
+          ? 'past_due'
+          : subscription.status === 'canceled'
+            ? 'cancelled'
+            : subscription.status
+    await supabase
+      .from('organisations')
+      .update({ platform_subscription_status: mapped })
+      .eq('id', platformOrg.id)
+    return
+  }
 
   // Cast to access period fields that vary by Stripe API version
   const sub = subscription as Stripe.Subscription & {

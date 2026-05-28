@@ -21,9 +21,11 @@ interface PlatformPlan {
 export default function TrialExpiredLock({
   orgName,
   primaryColor,
+  reason = 'trial_ended',
 }: {
   orgName: string
   primaryColor: string
+  reason?: 'trial_ended' | 'lapsed'
 }) {
   const [plans, setPlans] = useState<PlatformPlan[]>([])
   const [loading, setLoading] = useState(true)
@@ -70,13 +72,17 @@ export default function TrialExpiredLock({
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider mb-4"
             style={{ backgroundColor: `${primaryColor}15`, color: primaryColor, border: `1px solid ${primaryColor}30` }}
           >
-            Free trial ended
+            {reason === 'lapsed' ? 'Subscription ended' : 'Free trial ended'}
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold mb-2">
-            Choose a plan to keep {orgName} live
+            {reason === 'lapsed'
+              ? `Reactivate ${orgName} to unlock your dashboard`
+              : `Choose a plan to keep ${orgName} live`}
           </h1>
           <p className="text-sm sm:text-base text-white/50 max-w-xl mx-auto">
-            Your 14-day free trial has finished. Pick a plan to unlock your dashboard again —
+            {reason === 'lapsed'
+              ? 'Your plan has lapsed. Pick a plan to unlock your dashboard again — '
+              : 'Your 14-day free trial has finished. Pick a plan to unlock your dashboard again — '}
             your booking page and parents stay live the whole time.
           </p>
         </div>

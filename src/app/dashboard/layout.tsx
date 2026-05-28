@@ -52,20 +52,25 @@ export default async function DashboardLayout({
     orgTrial = data
   }
 
-  // ─── Platform trial gate (academy admins only) ───
-  // When the 14-day platform trial ends with no active paid plan, lock the
-  // admin's dashboard behind a "choose a plan" screen. Parents/coaches and the
-  // public booking page are unaffected. Pilot orgs always bypass.
+  // ─── Platform access gate (academy admins only) ───
+  // Lock the admin dashboard behind a "choose a plan" screen when the academy
+  // has no valid platform access: trial expired, OR a previously-paid plan that
+  // lapsed (cancelled / past_due). Parents/coaches and the public booking page
+  // are unaffected. Pilot orgs + super-admins always bypass.
+  const status = orgTrial?.platform_subscription_status || 'trial'
   const trialEndsMs = orgTrial?.platform_trial_ends_at ? Date.parse(orgTrial.platform_trial_ends_at) : null
-  const onTrial = orgTrial?.platform_subscription_status === 'trial'
-  const hasPaidPlatform =
-    !!orgTrial?.platform_stripe_subscription_id || orgTrial?.platform_subscription_status === 'active'
+  const onTrial = status === 'trial'
   const isPilotOrg = !!orgTrial?.pilot
+  const hasActiveAccess = status === 'active' || isPilotOrg
   const msLeft = trialEndsMs != null ? trialEndsMs - Date.now() : null
   const trialDaysLeft = msLeft != null ? Math.ceil(msLeft / (1000 * 60 * 60 * 24)) : null
-  const gateApplies = role === 'admin' && !profile?.is_super_admin && !isPilotOrg && onTrial && !hasPaidPlatform
-  const trialExpired = gateApplies && msLeft != null && msLeft <= 0
-  const showTrialCountdown = gateApplies && trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 3
+  const isAdminGateable = role === 'admin' && !profile?.is_super_admin && !isPilotOrg && !hasActiveAccess
+  // Trial ran out with no plan, OR they were paying and the plan lapsed.
+  const trialExpired = isAdminGateable && onTrial && msLeft != null && msLeft <= 0
+  const planLapsed = isAdminGateable && (status === 'cancelled' || status === 'past_due')
+  const dashboardLocked = trialExpired || planLapsed
+  const showTrialCountdown = isAdminGateable && onTrial && trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 3
+  const hasPaidPlatform = hasActiveAccess
   // Hybrid go-live: admins of an unpublished, non-pilot org see a persistent
   // "go live" prompt (their booking page is in preview until they subscribe).
   const showGoLive =
@@ -124,13 +129,15 @@ export default async function DashboardLayout({
     }
   }
 
-  // Trial expired → lock the admin dashboard behind the plan-chooser screen.
-  if (trialExpired) {
+  // No valid platform access (trial expired or plan lapsed) → lock the admin
+  // dashboard behind the plan-chooser screen.
+  if (dashboardLocked) {
     return (
       <ThemeProvider initialTheme={theme}>
         <TrialExpiredLock
           orgName={orgBrand?.name || 'your academy'}
           primaryColor={orgBrand?.primary_color || '#4ecde6'}
+          reason={planLapsed ? 'lapsed' : 'trial_ended'}
         />
       </ThemeProvider>
     )
