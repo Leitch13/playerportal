@@ -201,6 +201,67 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // ─── Bulk-migration confirmation (pending_migration sub completing first payment) ───
+  // Set by /api/migration/confirm-checkout. The existing pending_migration
+  // subscription row must flip to active here — the success page is only a
+  // holding screen and resolveSessionContext can't see it (migration uses
+  // supabase_parent_id, not supabase_user_id). Without this the parent pays
+  // but stays pending_migration forever.
+  if (session.metadata?.migration === 'true' && session.metadata?.supabase_subscription_id) {
+    const subId = session.metadata.supabase_subscription_id
+    const nowIso = new Date().toISOString()
+
+    const { data: migSub } = await supabase
+      .from('subscriptions')
+      .select('id, parent_id, organisation_id, plan_id')
+      .eq('id', subId)
+      .maybeSingle()
+
+    let stripeSub: (Stripe.Subscription & { current_period_start: number; current_period_end: number }) | null = null
+    if (session.subscription) {
+      stripeSub = await stripe.subscriptions.retrieve(
+        typeof session.subscription === 'string' ? session.subscription : session.subscription.id
+      ) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+    }
+
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: stripeSub?.status || 'active',
+        invite_confirmed_at: nowIso,
+        stripe_subscription_id: stripeSub?.id ?? null,
+        stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null,
+        ...(stripeSub?.current_period_start ? { current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString() } : {}),
+        ...(stripeSub?.current_period_end ? { current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString() } : {}),
+        updated_at: nowIso,
+      })
+      .eq('id', subId)
+
+    // Itemised payment row. £0 today (trial_end / prepaid migration) records
+    // nothing now — the first real charge lands later via invoice.payment_succeeded.
+    const amount = (session.amount_total ?? 0) / 100
+    if (migSub?.parent_id && migSub.organisation_id && amount > 0) {
+      let planName = 'Subscription'
+      if (migSub.plan_id) {
+        const { data: pl } = await supabase.from('subscription_plans').select('name').eq('id', migSub.plan_id).maybeSingle()
+        if (pl?.name) planName = pl.name as string
+      }
+      await supabase.from('payments').insert({
+        parent_id: migSub.parent_id,
+        organisation_id: migSub.organisation_id,
+        amount,
+        amount_paid: amount,
+        status: 'paid',
+        stripe_session_id: session.id,
+        description: `${planName} — subscription`,
+        due_date: nowIso.split('T')[0],
+        paid_date: nowIso.split('T')[0],
+        created_at: nowIso,
+      })
+    }
+    return
+  }
+
   // ─── Paid trial flow — record trial_booking + skip subscription/enrolment paths ───
   // Set by /api/trial-bookings/paid. One-off Checkout, no user account required.
   if (session.metadata?.type === 'paid_trial') {
@@ -444,10 +505,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const amountPaid = (invoice.amount_paid ?? 0) / 100
   const now = new Date().toISOString()
 
-  // Look up local subscription to find profile
+  // Look up local subscription to find profile + plan name (for the itemised line)
   const { data: localSub } = await supabase
     .from('subscriptions')
-    .select('id, parent_id, plan_id, organisation_id')
+    .select('id, parent_id, plan_id, organisation_id, plan:subscription_plans(name)')
     .eq('stripe_subscription_id', subscriptionId)
     .maybeSingle()
 
@@ -459,15 +520,20 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       .eq('id', localSub.id)
   }
 
-  // Record payment
+  // Record payment — itemised line on the parent's billing page.
+  // (payments uses parent_id, NOT profile_id, and has no subscription_plan_id.)
   if (localSub?.parent_id) {
+    const renewalPlanName = (localSub.plan as unknown as { name?: string } | null)?.name
     await supabase.from('payments').insert({
-      profile_id: localSub.parent_id,
+      parent_id: localSub.parent_id,
       organisation_id: localSub.organisation_id,
       amount: amountPaid,
+      amount_paid: amountPaid,
       status: 'paid',
       stripe_session_id: invoice.id,
-      subscription_plan_id: localSub.plan_id,
+      description: renewalPlanName ? `${renewalPlanName} — subscription` : 'Subscription payment',
+      due_date: now.split('T')[0],
+      paid_date: now.split('T')[0],
       created_at: now,
     })
 
@@ -543,13 +609,14 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       .eq('id', localSub.id)
   }
 
-  // Mark any pending payment as overdue
-  if (localSub?.parent_id && localSub.plan_id) {
+  // Mark any pending payment for this parent as overdue.
+  // (payments uses parent_id, not profile_id; no subscription_plan_id column.)
+  if (localSub?.parent_id) {
     await supabase
       .from('payments')
       .update({ status: 'overdue', updated_at: now })
-      .eq('profile_id', localSub.parent_id)
-      .eq('subscription_plan_id', localSub.plan_id)
+      .eq('parent_id', localSub.parent_id)
+      .eq('organisation_id', localSub.organisation_id)
       .eq('status', 'pending')
   }
 
