@@ -61,13 +61,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse the migration "first billing date" if provided and in the future.
+    // Cap how far out it can be (anti-tamper): the date rides in the URL, so a
+    // parent could edit it to defer billing indefinitely. A genuine migration
+    // never needs more than ~a term of prepaid runway, so we reject anything
+    // beyond 100 days. Admin-generated links are always well within this.
     let migrationTrialEnd: number | null = null
     if (firstBillingDateInput) {
       const parsed = new Date(firstBillingDateInput)
       if (!isNaN(parsed.getTime())) {
         const ts = Math.floor(parsed.getTime() / 1000)
-        // Stripe requires trial_end to be at least ~48h in the future; guard against past dates.
-        if (ts > Math.floor(Date.now() / 1000) + 3600) migrationTrialEnd = ts
+        const nowSec = Math.floor(Date.now() / 1000)
+        const maxSec = nowSec + 100 * 86400
+        if (ts > maxSec) {
+          return NextResponse.json(
+            { error: 'First billing date is too far in the future (max 100 days).' },
+            { status: 400 }
+          )
+        }
+        // Stripe requires trial_end to be a little in the future; guard past dates.
+        if (ts > nowSec + 3600) migrationTrialEnd = ts
       }
     }
 
