@@ -380,6 +380,23 @@ async function ParentSchedule({
     .eq('organisation_id', orgId)
     .order('name')
 
+  // Upcoming published camps for this academy (shown as a section below classes)
+  const todayStr = new Date().toISOString().split('T')[0]
+  const { data: campRows } = await supabase
+    .from('camps')
+    .select('id, name, start_date, end_date, daily_start_time, daily_end_time, location, age_group, price, early_bird_price, early_bird_deadline, image_url')
+    .eq('organisation_id', orgId)
+    .eq('is_published', true)
+    .gte('end_date', todayStr)
+    .order('start_date')
+  const upcomingCamps = (campRows || []) as {
+    id: string; name: string; start_date: string; end_date: string
+    daily_start_time: string | null; daily_end_time: string | null
+    location: string | null; age_group: string | null
+    price: number | null; early_bird_price: number | null; early_bird_deadline: string | null
+    image_url: string | null
+  }[]
+
   type GroupRow = {
     id: string
     name: string
@@ -889,6 +906,70 @@ async function ParentSchedule({
           </div>
         )}
       </div>
+
+      {/* ═══ CAMPS & EVENTS — upcoming holiday camps the parent can book ═══ */}
+      {upcomingCamps.length > 0 && (
+        <>
+          <div className="h-px" style={{ background: `linear-gradient(to right, transparent, ${brandColor}40, transparent)` }} />
+          <div className="space-y-4 sm:space-y-5">
+            <div className="flex items-end justify-between flex-wrap gap-2">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-white">Camps &amp; Events</h2>
+                <p className="text-xs sm:text-sm text-white/50 mt-0.5">Holiday camps &amp; one-off events — book a place for your child.</p>
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/40">
+                {upcomingCamps.length} upcoming
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {upcomingCamps.map((camp) => {
+                const isEarlyBird = camp.early_bird_price != null && camp.early_bird_deadline != null && todayStr <= camp.early_bird_deadline
+                const price = isEarlyBird ? Number(camp.early_bird_price) : (camp.price != null ? Number(camp.price) : null)
+                const start = new Date(camp.start_date + 'T00:00:00')
+                const end = new Date(camp.end_date + 'T00:00:00')
+                const sameMonth = start.getMonth() === end.getMonth()
+                const dateLabel = sameMonth
+                  ? `${start.getDate()}–${end.getDate()} ${start.toLocaleDateString('en-GB', { month: 'short' })}`
+                  : `${start.getDate()} ${start.toLocaleDateString('en-GB', { month: 'short' })} – ${end.getDate()} ${end.toLocaleDateString('en-GB', { month: 'short' })}`
+                return (
+                  <a
+                    key={camp.id}
+                    href={`/book/${academySlug}/camps/${camp.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex gap-3 rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] to-[#0a0a0a] p-3 transition-all hover:-translate-y-0.5"
+                    style={{ ['--tw-ring-color' as string]: brandColor }}
+                  >
+                    {/* Thumbnail */}
+                    <div
+                      className="shrink-0 w-20 h-20 rounded-xl bg-cover bg-center relative overflow-hidden"
+                      style={camp.image_url
+                        ? { backgroundImage: `url(${camp.image_url})` }
+                        : { background: `linear-gradient(135deg, #060606, ${brandColor}66)` }}
+                    >
+                      {isEarlyBird && (
+                        <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase bg-green-500 text-white">Early</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-white truncate">{camp.name}</h4>
+                      <div className="text-[11px] text-white/50 mt-0.5">📅 {dateLabel}</div>
+                      {camp.location && <div className="text-[11px] text-white/40 truncate">📍 {camp.location}</div>}
+                      <div className="flex items-center justify-between mt-1.5">
+                        {price != null && (
+                          <span className="text-base font-extrabold" style={{ color: brandColor }}>£{price.toFixed(0)}</span>
+                        )}
+                        <span className="text-[11px] font-bold group-hover:underline" style={{ color: brandColor }}>Book →</span>
+                      </div>
+                    </div>
+                  </a>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Help footer — compact */}
       <div className="rounded-2xl border border-[#1e1e1e] bg-white/[0.02] p-3 sm:p-4 text-center">
