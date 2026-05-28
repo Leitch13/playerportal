@@ -68,6 +68,9 @@ function SignUp() {
   const refCode = searchParams.get('ref') || ''
   // class= carries the class the parent came from; used to auto-enrol after subscribe
   const preSelectedClassId = searchParams.get('class')
+  // billedFrom= (YYYY-MM-DD): MIGRATION links for parents who already prepaid the
+  // academy elsewhere. Card captured now, £0 today, first charge on this date.
+  const billedFrom = searchParams.get('billedFrom')
   // Coach/admin invitation flow: bypass child/subscription steps
   const roleParam = (searchParams.get('role') || '').toLowerCase()
   const isStaffInvite = roleParam === 'coach' || roleParam === 'admin'
@@ -331,7 +334,7 @@ function SignUp() {
     if (!selectedPlanId || !addedChildId) return
     setSubscribing(true)
     try {
-      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: preSelectedClassId || null }) })
+      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: preSelectedClassId || null, firstBillingDate: billedFrom || null }) })
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else { setError(data.error || 'Failed to start subscription'); setSubscribing(false) }
@@ -490,14 +493,27 @@ function SignUp() {
             <div className="space-y-3 sm:space-y-4">
               <div className="rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 mb-2 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
                 <p className="text-xs sm:text-sm font-medium" style={{ color: primaryColor }}>{childFirstName} is registered! Choose a subscription plan below.</p>
-                <p className="text-xs text-white/40 mt-1">You&apos;ll only be charged from today — no backdated fees.</p>
+                {billedFrom ? (
+                  <p className="text-xs text-white/40 mt-1">
+                    You won&apos;t be charged today — your first payment is on{' '}
+                    <strong className="text-white/70">
+                      {new Date(billedFrom).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </strong>
+                    . Add your card now to keep your place.
+                  </p>
+                ) : (
+                  <p className="text-xs text-white/40 mt-1">You&apos;ll only be charged from today — no backdated fees.</p>
+                )}
               </div>
               {plans.length > 0 ? (
                 <div className="space-y-3 sm:space-y-4">
+                  {/* Migration links are monthly-only (deferred first charge can't apply to a one-off quarterly payment) */}
+                  {!billedFrom && (
                   <div className="bg-[#1a1a1a] rounded-xl p-1 flex">
                     <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
                     <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Save 10%</span></button>
                   </div>
+                  )}
                   {plans.map((plan) => {
                     const monthly = Number(plan.amount)
                     const quarterly = getQuarterlyPrice(monthly)

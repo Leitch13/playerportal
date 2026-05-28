@@ -51,12 +51,30 @@ export async function POST(request: NextRequest) {
     // firstSessionDate (optional, ISO date string): for 1-2-1 / 2-1 / intensity, the parent's chosen
     //   first session date. If provided and falls in a future month, billing shifts to "pay full
     //   month upfront, next bill on the month after first session" instead of strict pro-rata.
-    const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput } = await request.json()
+    // firstBillingDate (optional, ISO date string): MIGRATION mode — for parents who've already
+    //   prepaid the academy (e.g. paid for June before moving to Player Portal). The card is captured
+    //   now but £0 is charged today; the first real charge lands on this date (Stripe trial_end).
+    //   Takes precedence over the upfront/prorated logic. Monthly only.
+    const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput } = await request.json()
     if (!planId) {
       return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
     }
 
-    const isQuarterly = billingOption === 'quarterly'
+    // Parse the migration "first billing date" if provided and in the future.
+    let migrationTrialEnd: number | null = null
+    if (firstBillingDateInput) {
+      const parsed = new Date(firstBillingDateInput)
+      if (!isNaN(parsed.getTime())) {
+        const ts = Math.floor(parsed.getTime() / 1000)
+        // Stripe requires trial_end to be at least ~48h in the future; guard against past dates.
+        if (ts > Math.floor(Date.now() / 1000) + 3600) migrationTrialEnd = ts
+      }
+    }
+
+    // Migration (deferred first charge) only makes sense as a recurring monthly
+    // sub — quarterly is a one-time upfront payment with no trial_end, so force
+    // monthly when a firstBillingDate is in play.
+    const isQuarterly = billingOption === 'quarterly' && !migrationTrialEnd
 
     // Fetch the plan
     const { data: plan, error: planError } = await supabase
@@ -377,17 +395,23 @@ export async function POST(request: NextRequest) {
           ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
-        // Two billing models:
+        // Three billing models (migration takes precedence):
+        //  - Migration model (firstBillingDate set — parent already prepaid
+        //    elsewhere): trial_end = that date. £0 today, full access now,
+        //    first charge on the date. trial_end ⊥ billing_cycle_anchor, so
+        //    we set ONLY trial_end here.
         //  - Upfront-month model (first session is next month or later):
         //    DON'T set billing_cycle_anchor. Stripe defaults to billing the
         //    full first month TODAY, then on the join-anniversary monthly.
-        //    Bills aren't aligned to the 1st but parents always pay exactly
-        //    1 month at a time, no proration confusion.
         //  - Prorated model (first session is this month — standard
         //    mid-month signup): billing_cycle_anchor at 1st of next month so
         //    Stripe creates a prorated invoice from signup to anchor, then
         //    bills the full month on the 1st thereafter.
-        ...(useUpfrontMonthModel ? {} : { billing_cycle_anchor: shiftedAnchor }),
+        ...(migrationTrialEnd
+          ? { trial_end: migrationTrialEnd }
+          : useUpfrontMonthModel
+            ? {}
+            : { billing_cycle_anchor: shiftedAnchor }),
         // For connected accounts, apply the plan-based platform fee on every invoice
         ...(connectedAccountId
           ? {
