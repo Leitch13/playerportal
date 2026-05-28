@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 
 /**
  * Create a Stripe Checkout Session for a paid one-off trial session.
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
       amount: trialPrice,
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to create trial checkout'
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('Paid trial checkout error:', err)
+    return NextResponse.json({ error: mapStripeCheckoutError(err) }, { status: 500 })
   }
 }

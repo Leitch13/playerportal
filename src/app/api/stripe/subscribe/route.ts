@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 
 // Returns Unix timestamp for the 1st of next month at midnight UTC
 function getFirstOfNextMonth(): number {
@@ -457,9 +458,9 @@ export async function POST(request: NextRequest) {
       siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to create subscription checkout'
+    console.error('Subscribe checkout error:', err)
     return NextResponse.json(
-      { error: message },
+      { error: mapStripeCheckoutError(err) },
       { status: 500 }
     )
   }

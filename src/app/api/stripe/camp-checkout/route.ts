@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
+import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 
 // Use service-role client since public users (no auth) can book camps
 function getServiceClient() {
@@ -214,7 +215,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url, bookingId: booking.id })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    console.error('Camp checkout error:', err)
+    return NextResponse.json({ error: mapStripeCheckoutError(err) }, { status: 500 })
   }
 }
