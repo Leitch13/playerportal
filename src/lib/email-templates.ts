@@ -1174,3 +1174,41 @@ export function monthlyHighlightsEmail(params: {
     `),
   }
 }
+
+export function newLeadEmail(params: {
+  academyName: string
+  leadName: string
+  email?: string
+  phone?: string
+  childName?: string
+  interestedIn?: string
+  source: string
+  dashboardUrl: string
+}) {
+  const sourceLabel = params.source.replace(/_/g, ' ')
+  return {
+    subject: `🎯 New enquiry — ${params.leadName}${params.childName ? ` (${params.childName})` : ''}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">🎯 New enquiry just came in</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
+        Someone's interested in <strong style="color:#fff">${params.academyName}</strong>. The faster you reply, the more likely they book — try to reach out today.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Name</td><td style="color:#fff;font-weight:600">${params.leadName}</td></tr>
+          ${params.email ? `<tr><td style="color:#888">Email</td><td><a href="mailto:${params.email}" style="color:#4ecde6">${params.email}</a></td></tr>` : ''}
+          ${params.phone ? `<tr><td style="color:#888">Phone</td><td><a href="tel:${params.phone}" style="color:#4ecde6">${params.phone}</a></td></tr>` : ''}
+          ${params.childName ? `<tr><td style="color:#888">Child</td><td style="color:#fff">${params.childName}</td></tr>` : ''}
+          ${params.interestedIn ? `<tr><td style="color:#888">Interested in</td><td style="color:#fff">${params.interestedIn}</td></tr>` : ''}
+          <tr><td style="color:#888">Source</td><td style="color:#fff;text-transform:capitalize">${sourceLabel}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/dashboard/leads" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open your leads →</a>
+      </div>
+      <p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center">
+        Tip: academies that reply within the hour convert far more enquiries than those that wait a day.
+      </p>
+    `),
+  }
+}

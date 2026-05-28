@@ -123,6 +123,115 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
   return { userId, planId, playerId, classId, profile, plan, orgId, organisationName }
 }
 
+/**
+ * Auto-convert a lead to 'enrolled' once the parent actually pays. Keeps the
+ * leads pipeline honest (and the conversion-rate stat real) without an admin
+ * having to drag the card across manually. Best-effort — never fails the webhook.
+ */
+async function convertLeadToEnrolled(orgId: string | null, email: string | null | undefined) {
+  if (!orgId || !email) return
+  try {
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('id')
+      .eq('organisation_id', orgId)
+      .ilike('email', email.trim())
+      .not('status', 'in', '(enrolled,lost)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (lead?.id) {
+      await supabase
+        .from('leads')
+        .update({ status: 'enrolled', updated_at: new Date().toISOString() })
+        .eq('id', lead.id)
+    }
+  } catch {
+    // lead bookkeeping is non-critical
+  }
+}
+
+/**
+ * Capture an abandoned checkout as a lead. Fires on checkout.session.expired
+ * (a session that wasn't paid). Turns otherwise-lost intent into a warm
+ * follow-up. Skips platform/camp sessions, existing paying customers, and
+ * duplicates. Best-effort.
+ */
+async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
+  if (session.metadata?.type === 'platform_subscription') return
+  if (session.metadata?.camp_booking_id) return
+
+  let orgId: string | null = session.metadata?.supabase_org_id || null
+  let email: string | null = session.customer_email || session.metadata?.parent_email || null
+  let firstName: string | null = null
+  let lastName: string | null = null
+  let childName: string | null = null
+
+  if (session.metadata?.type === 'paid_trial') {
+    const m = session.metadata
+    const parts = (m.parent_name || '').trim().split(/\s+/).filter(Boolean)
+    firstName = parts[0] || null
+    lastName = parts.slice(1).join(' ') || null
+    email = m.parent_email || email
+    orgId = m.supabase_org_id || orgId
+    childName = `${m.child_first_name || ''} ${m.child_last_name || ''}`.trim() || null
+  } else if (session.metadata?.supabase_user_id) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email, organisation_id')
+      .eq('id', session.metadata.supabase_user_id)
+      .maybeSingle()
+    if (profile) {
+      orgId = orgId || profile.organisation_id
+      email = email || profile.email
+      const parts = (profile.full_name || '').trim().split(/\s+/).filter(Boolean)
+      firstName = parts[0] || null
+      lastName = parts.slice(1).join(' ') || null
+    }
+  }
+
+  if (!orgId || !email) return
+  const emailLc = email.trim().toLowerCase()
+
+  // Don't demote an existing paying customer into a "lead".
+  const { data: payingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('organisation_id', orgId)
+    .ilike('email', emailLc)
+    .maybeSingle()
+  if (payingProfile?.id) {
+    const { count: activeSubs } = await supabase
+      .from('subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('parent_id', payingProfile.id)
+      .in('status', ['active', 'trialing'])
+    if ((activeSubs || 0) > 0) return
+  }
+
+  // Dedup against an existing open lead.
+  const { data: existingLead } = await supabase
+    .from('leads')
+    .select('id')
+    .eq('organisation_id', orgId)
+    .ilike('email', emailLc)
+    .not('status', 'in', '(enrolled,lost)')
+    .limit(1)
+    .maybeSingle()
+  if (existingLead?.id) return
+
+  await supabase.from('leads').insert({
+    organisation_id: orgId,
+    first_name: firstName || 'Prospect',
+    last_name: lastName,
+    email: emailLc,
+    child_name: childName,
+    source: 'abandoned_checkout',
+    status: 'new',
+    notes: "Started checkout but didn't complete payment — worth a friendly follow-up.",
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Event handlers
 // ---------------------------------------------------------------------------
@@ -375,6 +484,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         })
       }
     }
+  }
+
+  // 2b. Auto-convert the matching lead now that they've actually paid.
+  if (session.mode === 'subscription') {
+    await convertLeadToEnrolled(ctx.orgId, ctx.profile?.email)
   }
 
   // 3. In-app notification
@@ -838,6 +952,10 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed':
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+        break
+
+      case 'checkout.session.expired':
+        await handleCheckoutExpired(event.data.object as Stripe.Checkout.Session)
         break
 
       case 'invoice.payment_succeeded':

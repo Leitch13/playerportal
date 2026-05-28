@@ -113,5 +113,60 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create lead' }, { status: 500 })
   }
 
+  // ── Speed-to-lead alert ──────────────────────────────────────────────────
+  // The single biggest driver of conversion is replying fast. Notify staff the
+  // instant an inbound enquiry lands — in-app + email — so they can reach out
+  // while interest is hot. Skipped for 'manual' (an admin typing in a lead
+  // doesn't need to be alerted about their own entry). Best-effort: never block
+  // or fail the lead creation on a notification error.
+  if (source !== 'manual') {
+    try {
+      const [{ data: orgInfo }, { data: admins }] = await Promise.all([
+        supabase.from('organisations').select('name, contact_email').eq('id', organisation_id).maybeSingle(),
+        supabase.from('profiles').select('id, email').eq('organisation_id', organisation_id).eq('role', 'admin'),
+      ])
+
+      const leadName = [first_name, body.last_name as string | undefined].filter(Boolean).join(' ').trim() || first_name
+      const childName = (body.child_name as string | undefined)?.trim() || undefined
+      const interestedIn = (body.interested_in as string | undefined)?.trim() || undefined
+
+      // In-app notification to every admin
+      for (const a of (admins || []) as { id: string; email: string | null }[]) {
+        await supabase.from('notifications').insert({
+          profile_id: a.id,
+          organisation_id,
+          type: 'lead',
+          title: `New enquiry: ${leadName}`,
+          body: `${childName ? `${childName} — ` : ''}${interestedIn || 'General enquiry'}. Reply fast to win the booking.`,
+          link: '/dashboard/leads',
+          is_read: false,
+        })
+      }
+
+      // Email the academy (contact email if set, else each admin)
+      const { newLeadEmail } = await import('@/lib/email-templates')
+      const { sendEmail } = await import('@/lib/email')
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+      const template = newLeadEmail({
+        academyName: (orgInfo?.name as string | undefined) || 'your academy',
+        leadName,
+        email: email || undefined,
+        phone: phone || undefined,
+        childName,
+        interestedIn,
+        source,
+        dashboardUrl: appUrl,
+      })
+      const recipients = orgInfo?.contact_email
+        ? [orgInfo.contact_email as string]
+        : ((admins || []) as { email: string | null }[]).map(a => a.email).filter(Boolean) as string[]
+      for (const to of recipients) {
+        await sendEmail({ to, ...template, fromName: (orgInfo?.name as string | undefined) || undefined })
+      }
+    } catch (e) {
+      console.error('New-lead alert failed (non-critical):', e)
+    }
+  }
+
   return NextResponse.json({ ok: true, id: inserted.id })
 }
