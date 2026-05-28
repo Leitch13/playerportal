@@ -23,7 +23,26 @@ export async function POST() {
 
     let accountId = org.stripe_account_id
 
-    // Create a Standard Connect account if one does not already exist
+    // Validate any stored account against the CURRENT Stripe mode. An account
+    // connected while the platform was in test mode won't exist under live keys
+    // (test/live are isolated). Retrieve it first; if it's missing/wrong-mode,
+    // drop it so we create a fresh one in THIS mode — single click, no "stale,
+    // try again" round-trip.
+    if (accountId) {
+      try {
+        await stripe.accounts.retrieve(accountId)
+      } catch (e) {
+        const m = e instanceof Error ? e.message : String(e)
+        if (m.includes('No such account') || m.includes('resource_missing') || m.includes('similar object exists')) {
+          accountId = null
+          await supabase.from('organisations').update({ stripe_account_id: null }).eq('id', org.id)
+        } else {
+          throw e
+        }
+      }
+    }
+
+    // Create a Standard Connect account if one does not already exist (or was just cleared)
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: 'standard',
