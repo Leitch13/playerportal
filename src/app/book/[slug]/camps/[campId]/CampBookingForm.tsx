@@ -28,6 +28,9 @@ type Props = {
   spotsLeft: number | null
   primaryColor: string
   bookingId?: string | null
+  loggedInParent?: { name: string; email: string } | null
+  existingChildren?: { id: string; firstName: string; lastName: string; dob: string | null }[]
+  signInUrl?: string
 }
 
 function getCalendarLinks(camp: Camp) {
@@ -58,10 +61,12 @@ function getCalendarLinks(camp: Camp) {
   return { googleUrl, icsUrl }
 }
 
-export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, bookingId }: Props) {
-  const [parentName, setParentName] = useState('')
-  const [parentEmail, setParentEmail] = useState('')
+export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, bookingId, loggedInParent, existingChildren = [], signInUrl }: Props) {
+  const [parentName, setParentName] = useState(loggedInParent?.name || '')
+  const [parentEmail, setParentEmail] = useState(loggedInParent?.email || '')
   const [parentPhone, setParentPhone] = useState('')
+  // '' = add a new child; otherwise the id of an existing child.
+  const [selectedChildId, setSelectedChildId] = useState('')
   const [childName, setChildName] = useState('')
   const [childDob, setChildDob] = useState('')
   const [medicalInfo, setMedicalInfo] = useState('')
@@ -69,6 +74,19 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
   const [siblingDiscount, setSiblingDiscount] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // When an existing child is picked, fill name + DOB from their record.
+  function handleSelectChild(id: string) {
+    setSelectedChildId(id)
+    const kid = existingChildren.find((k) => k.id === id)
+    if (kid) {
+      setChildName(`${kid.firstName} ${kid.lastName}`.trim())
+      setChildDob(kid.dob || '')
+    } else {
+      setChildName('')
+      setChildDob('')
+    }
+  }
   const [booked, setBooked] = useState(!!bookingId)
 
   const today = new Date().toISOString().split('T')[0]
@@ -218,6 +236,22 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
         </div>
       )}
 
+      {/* Returning parent? Offer sign-in to reuse their details + child. */}
+      {!loggedInParent && signInUrl && (
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm text-white/60">
+          Already registered with this academy?{' '}
+          <a href={signInUrl} className="font-semibold underline hover:text-white" style={{ color: primaryColor }}>
+            Sign in
+          </a>{' '}
+          to book with your child&apos;s saved details.
+        </div>
+      )}
+      {loggedInParent && (
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm text-white/60">
+          Signed in as <span className="text-white font-medium">{loggedInParent.name || loggedInParent.email}</span>.
+        </div>
+      )}
+
       {/* Parent details */}
       <fieldset disabled={isFull} className="space-y-4">
         <h4 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Parent / Guardian</h4>
@@ -251,6 +285,24 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
       {/* Child details */}
       <fieldset disabled={isFull} className="space-y-4">
         <h4 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Child Details</h4>
+
+        {/* Signed-in parents with saved children can pick one instead of retyping */}
+        {existingChildren.length > 0 && (
+          <div>
+            <label className="block text-[11px] text-white/40 mb-1">Select a child</label>
+            <select
+              value={selectedChildId}
+              onChange={(e) => handleSelectChild(e.target.value)}
+              className={`${inputCls} appearance-none`}
+            >
+              <option value="">＋ Add a new child</option>
+              {existingChildren.map((k) => (
+                <option key={k.id} value={k.id}>{`${k.firstName} ${k.lastName}`.trim()}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input
             type="text"
@@ -258,7 +310,8 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
             value={childName}
             onChange={(e) => setChildName(e.target.value)}
             required
-            className={inputCls}
+            readOnly={!!selectedChildId}
+            className={`${inputCls}${selectedChildId ? ' opacity-70' : ''}`}
           />
           <div>
             <label className="block text-[11px] text-white/40 mb-1">Date of birth</label>
@@ -267,7 +320,8 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
               value={childDob}
               onChange={(e) => setChildDob(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
-              className={`${inputCls} [color-scheme:dark]`}
+              readOnly={!!selectedChildId}
+              className={`${inputCls} [color-scheme:dark]${selectedChildId ? ' opacity-70' : ''}`}
             />
           </div>
         </div>

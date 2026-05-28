@@ -129,6 +129,36 @@ export default async function CampDetailPage({
 
   const spotsLeft = c.max_capacity ? c.max_capacity - (bookingCount || 0) : null
 
+  // If a parent is signed in (to THIS academy), let them reuse their details +
+  // pick an existing child instead of retyping everything.
+  let loggedInParent: { name: string; email: string } | null = null
+  let existingChildren: { id: string; firstName: string; lastName: string; dob: string | null }[] = []
+  const { data: { user: campUser } } = await supabase.auth.getUser()
+  if (campUser) {
+    const { data: viewerProfile } = await supabase
+      .from('profiles')
+      .select('full_name, email, organisation_id, role')
+      .eq('id', campUser.id)
+      .single()
+    if (viewerProfile?.organisation_id === org.id && viewerProfile?.role === 'parent') {
+      loggedInParent = {
+        name: (viewerProfile.full_name as string) || '',
+        email: (viewerProfile.email as string) || campUser.email || '',
+      }
+      const { data: kids } = await supabase
+        .from('players')
+        .select('id, first_name, last_name, date_of_birth')
+        .eq('parent_id', campUser.id)
+      existingChildren = (kids || []).map((k) => ({
+        id: k.id as string,
+        firstName: (k.first_name as string) || '',
+        lastName: (k.last_name as string) || '',
+        dob: (k.date_of_birth as string | null) || null,
+      }))
+    }
+  }
+  const signInUrl = `/auth/signin?redirect=${encodeURIComponent(`/book/${slug}/camps/${campId}`)}`
+
   // NOTE: we do NOT mark the booking paid here. The success-page redirect is
   // not proof of payment (anyone could hit ?booked=1). The Stripe webhook
   // (checkout.session.completed → metadata.camp_booking_id) is the source of
@@ -289,6 +319,9 @@ export default async function CampDetailPage({
                 spotsLeft={spotsLeft}
                 primaryColor={primaryColor}
                 bookingId={bookedParam ? bookingIdParam : null}
+                loggedInParent={loggedInParent}
+                existingChildren={existingChildren}
+                signInUrl={signInUrl}
               />
             </div>
           </div>
