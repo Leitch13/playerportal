@@ -26,6 +26,10 @@ export default function BookClassButton({
   const [result, setResult] = useState<'booked' | 'waitlisted' | 'error' | 'needs_sub' | 'needs_upgrade' | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [subscribeUrl, setSubscribeUrl] = useState<string>('')
+  // One-tap upgrade data (when they've hit their session cap but a higher plan exists)
+  const [upgradePlan, setUpgradePlan] = useState<{ id: string; name: string; amount: number } | null>(null)
+  const [currentPlan, setCurrentPlan] = useState<{ name?: string; amount?: number } | null>(null)
+  const [upgrading, setUpgrading] = useState(false)
 
   async function handleBook() {
     setLoading(true)
@@ -81,6 +85,8 @@ export default function BookClassButton({
         setResult('needs_upgrade')
         setErrorMsg(data.error || `${playerName} has reached the session limit on your current plan.`)
         setSubscribeUrl(data.upgradeUrl || '/dashboard/payments')
+        setUpgradePlan(data.upgradePlan || null)
+        setCurrentPlan(data.currentPlan || null)
       } else if (res.status === 409) {
         alert(data.error || `${playerName} is already enrolled in this class`)
       } else {
@@ -92,6 +98,29 @@ export default function BookClassButton({
       setErrorMsg('Network error — please try again')
     }
     setLoading(false)
+  }
+
+  async function handleUpgrade() {
+    if (!upgradePlan) return
+    setUpgrading(true)
+    setErrorMsg('')
+    try {
+      const res = await fetch('/api/stripe/change-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, groupId, newPlanId: upgradePlan.id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setResult('booked')
+        router.refresh()
+      } else {
+        setErrorMsg(data.error || 'Upgrade failed — please try again')
+      }
+    } catch {
+      setErrorMsg('Network error — please try again')
+    }
+    setUpgrading(false)
   }
 
   if (result === 'booked') {
@@ -126,8 +155,44 @@ export default function BookClassButton({
     )
   }
 
-  // Needs-upgrade state — they have a plan but hit the session cap
+  // Needs-upgrade state — they have a plan but hit the session cap.
+  // If a higher plan exists, offer a one-tap in-place upgrade (no 2nd sub).
+  // Otherwise fall back to the class-page link.
   if (result === 'needs_upgrade') {
+    if (upgradePlan) {
+      return (
+        <div className="inline-flex flex-col gap-2 max-w-[240px] p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 animate-fade-in">
+          <p className="text-[11px] text-white/70 leading-snug">
+            Add a session for <strong className="text-white">{playerName}</strong>?
+            {currentPlan?.amount != null && (
+              <> Your plan moves to <strong className="text-white">{upgradePlan.name}</strong> (£{upgradePlan.amount.toFixed(0)}/mo).</>
+            )}{' '}
+            You&apos;ll pay the difference for the rest of this month.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleUpgrade}
+              disabled={upgrading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-extrabold rounded-lg bg-purple-400 text-[#0a0a0a] hover:bg-purple-300 transition-colors disabled:opacity-50"
+            >
+              {upgrading ? (
+                <><span className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />Upgrading…</>
+              ) : (
+                <>⬆️ Upgrade &amp; Book</>
+              )}
+            </button>
+            <button
+              onClick={() => { setResult(null); setUpgradePlan(null) }}
+              disabled={upgrading}
+              className="text-[11px] text-white/40 hover:text-white/70 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+          {errorMsg && <p className="text-[10px] text-rose-300">{errorMsg}</p>}
+        </div>
+      )
+    }
     return (
       <a
         href={subscribeUrl}

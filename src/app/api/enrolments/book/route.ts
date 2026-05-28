@@ -53,9 +53,11 @@ export async function POST(request: NextRequest) {
     // GATE 1: require active/trialing subscription in this org for THIS PLAYER
     // (subscriptions are per-child, so a parent paying for child A can't sneak
     // child B into a class).
+    const planSelect = 'id, plan_id, status, plan:subscription_plans(id, name, amount, sessions_per_week, class_type)'
+    type SubPlan = { id?: string; name?: string; amount?: number; sessions_per_week?: number | null; class_type?: string | null }
     const { data: playerSubs } = await supabase
       .from('subscriptions')
-      .select('id, plan_id, status, plan:subscription_plans(name, sessions_per_week)')
+      .select(planSelect)
       .eq('parent_id', user.id)
       .eq('organisation_id', group.organisation_id)
       .eq('player_id', playerId)
@@ -65,12 +67,13 @@ export async function POST(request: NextRequest) {
     // Fallback: legacy subs may not have player_id set — check parent-level subs
     // in that case (one sub covering whichever children).
     let activeSubsForPlayer = (playerSubs || []).length
-    let planForLimit = (playerSubs || [])[0]?.plan as unknown as { name?: string; sessions_per_week?: number | null } | undefined
+    let currentSubId = (playerSubs || [])[0]?.id as string | undefined
+    let planForLimit = (playerSubs || [])[0]?.plan as unknown as SubPlan | undefined
 
     if (activeSubsForPlayer === 0) {
       const { data: anyParentSubs } = await supabase
         .from('subscriptions')
-        .select('id, plan_id, status, plan:subscription_plans(name, sessions_per_week)')
+        .select(planSelect)
         .eq('parent_id', user.id)
         .eq('organisation_id', group.organisation_id)
         .in('status', ['active', 'trialing'])
@@ -78,7 +81,8 @@ export async function POST(request: NextRequest) {
         .limit(1)
       activeSubsForPlayer = (anyParentSubs || []).length
       if (activeSubsForPlayer > 0) {
-        planForLimit = (anyParentSubs || [])[0]?.plan as unknown as { name?: string; sessions_per_week?: number | null } | undefined
+        currentSubId = (anyParentSubs || [])[0]?.id as string | undefined
+        planForLimit = (anyParentSubs || [])[0]?.plan as unknown as SubPlan | undefined
       }
     }
 
@@ -122,6 +126,34 @@ export async function POST(request: NextRequest) {
           .eq('id', group.organisation_id)
           .single()
         const upgradeUrl = org?.slug ? `/book/${org.slug}/class/${groupId}` : '/dashboard/payments'
+
+        // Find the cheapest "next tier up" in the SAME family (same class_type,
+        // or generic if current is generic) that covers used+1 sessions and
+        // costs more. If found, the button offers a one-tap in-place upgrade
+        // (no second subscription). If not (already top tier), it falls back
+        // to the class-page link.
+        const neededSessions = used + 1
+        let upgradePlan: { id: string; name: string; amount: number; sessions_per_week: number | null } | null = null
+        if (currentSubId && planForLimit?.amount != null) {
+          const { data: candidates } = await supabase
+            .from('subscription_plans')
+            .select('id, name, amount, sessions_per_week, class_type, training_group_id')
+            .eq('organisation_id', group.organisation_id)
+            .eq('active', true)
+            .is('training_group_id', null)
+            .gt('amount', planForLimit.amount)
+            .order('amount', { ascending: true })
+          const match = (candidates || []).find((p) => {
+            const sameFamily = (p.class_type ?? null) === (planForLimit?.class_type ?? null)
+            const spw = p.sessions_per_week
+            const enough = spw == null || Number(spw) >= neededSessions
+            return sameFamily && enough
+          })
+          if (match) {
+            upgradePlan = { id: match.id as string, name: match.name as string, amount: Number(match.amount), sessions_per_week: match.sessions_per_week as number | null }
+          }
+        }
+
         return NextResponse.json(
           {
             error: `${player.first_name} is already booked in ${used} of ${sessionsAllowed} session${sessionsAllowed === 1 ? '' : 's'} this week on the ${planForLimit?.name || 'current'} plan. Upgrade to add more.`,
@@ -129,6 +161,10 @@ export async function POST(request: NextRequest) {
             upgradeUrl,
             sessionsAllowed: Number(sessionsAllowed),
             sessionsUsed: used,
+            // For the one-tap upgrade confirm:
+            subscriptionId: currentSubId || null,
+            currentPlan: planForLimit ? { name: planForLimit.name, amount: planForLimit.amount } : null,
+            upgradePlan,
           },
           { status: 403 }
         )
