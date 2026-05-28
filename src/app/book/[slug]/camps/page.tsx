@@ -12,6 +12,8 @@ type Camp = {
   location: string | null
   age_group: string | null
   price: number | null
+  early_bird_price: number | null
+  early_bird_deadline: string | null
   max_capacity: number | null
   image_url: string | null
   is_published: boolean
@@ -77,18 +79,35 @@ export default async function CampsListingPage({
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Hero */}
       <div
-        className="relative py-16 px-6 text-center text-white"
-        style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor}40 100%)` }}
+        className="relative overflow-hidden py-12 sm:py-20 px-5 sm:px-6 text-center text-white"
+        style={{ background: `linear-gradient(160deg, #060606 0%, #0a0a0a 40%, ${primaryColor}40 100%)` }}
       >
+        {/* Brand glow */}
+        <div
+          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] rounded-full blur-[140px] opacity-25 pointer-events-none"
+          style={{ background: primaryColor }}
+        />
         <div className="relative z-10 max-w-3xl mx-auto">
           <Link
             href={`/book/${slug}`}
-            className="inline-block mb-6 text-sm text-white/60 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 mb-5 sm:mb-7 text-sm text-white/60 hover:text-white transition-colors"
           >
             &larr; Back to {org.name}
           </Link>
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">Football Camps</h1>
-          <p className="text-lg text-white/70">
+          {org.logo_url ? (
+            <div className="flex justify-center mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={org.logo_url as string} alt={org.name as string} className="w-14 h-14 rounded-2xl object-cover bg-white/10 ring-1 ring-white/15" />
+            </div>
+          ) : null}
+          <span
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-3 backdrop-blur-sm"
+            style={{ backgroundColor: `${primaryColor}22`, color: '#fff', border: `1px solid ${primaryColor}55` }}
+          >
+            Camps &amp; Events
+          </span>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-2 sm:mb-3 leading-[1.05]">Football Camps</h1>
+          <p className="text-sm sm:text-lg text-white/60">
             Holiday camps, intensive training weeks &amp; more
           </p>
         </div>
@@ -108,68 +127,80 @@ export default async function CampsListingPage({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             {(camps as Camp[]).map((camp) => {
               const days = getDurationDays(camp.start_date, camp.end_date)
+              const isEarlyBird = camp.early_bird_price != null && camp.early_bird_deadline != null && today <= camp.early_bird_deadline
+              const displayPrice = isEarlyBird ? Number(camp.early_bird_price) : (camp.price != null ? Number(camp.price) : null)
               return (
                 <Link
                   key={camp.id}
                   href={`/book/${slug}/camps/${camp.id}`}
-                  className="group block rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm hover:border-white/20 transition-all hover:-translate-y-1"
+                  className="group block rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1.5"
+                  style={{ ['--tw-ring-color' as string]: primaryColor }}
                 >
-                  {/* Image / Gradient */}
+                  {/* Image / Gradient with bottom scrim */}
                   <div
-                    className="h-48 relative"
+                    className="h-44 sm:h-52 relative"
                     style={
                       camp.image_url
                         ? { backgroundImage: `url(${camp.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                        : { background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }
+                        : { background: `linear-gradient(135deg, #060606 0%, ${primaryColor}66 100%)` }
                     }
                   >
-                    <div className="absolute inset-0 bg-black/30" />
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <h3 className="text-xl font-bold text-white drop-shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                    {/* Top badges */}
+                    <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+                      {isEarlyBird ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500 text-white shadow-lg">
+                          Early Bird
+                        </span>
+                      ) : <span />}
+                      {camp.age_group && (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-black/50 text-white backdrop-blur-sm">
+                          Ages {camp.age_group}
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute bottom-3.5 left-4 right-4">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-white drop-shadow-lg leading-tight">
                         {camp.name}
                       </h3>
                     </div>
-                    {camp.age_group && (
-                      <div className="absolute top-4 right-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-black/50 text-white backdrop-blur-sm">
-                          {camp.age_group}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Details */}
-                  <div className="p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/80 text-sm">
+                  <div className="p-4 sm:p-5 space-y-2.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/80 font-medium">
                         {formatDateRange(camp.start_date, camp.end_date)}
                       </span>
-                      <span className="text-xs text-white/50">
+                      <span className="text-xs text-white/40">
                         {days} day{days !== 1 ? 's' : ''}
                       </span>
                     </div>
 
                     {camp.location && (
-                      <div className="text-sm text-white/50">
-                        {camp.location}
-                      </div>
+                      <div className="text-sm text-white/45">📍 {camp.location}</div>
                     )}
 
-                    <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                      {camp.price != null && (
-                        <span className="text-2xl font-bold text-white">
-                          &pound;{Number(camp.price).toFixed(0)}
-                          <span className="text-sm font-normal text-white/40 ml-1">per week</span>
+                    <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
+                      {displayPrice != null && (
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-extrabold" style={{ color: primaryColor }}>
+                            &pound;{displayPrice.toFixed(0)}
+                          </span>
+                          {isEarlyBird && camp.price != null && (
+                            <span className="text-sm text-white/30 line-through">&pound;{Number(camp.price).toFixed(0)}</span>
+                          )}
+                          <span className="text-xs font-normal text-white/40">/ week</span>
                         </span>
                       )}
                       <span
-                        className="px-4 py-2 rounded-full text-sm font-semibold transition-transform group-hover:scale-105"
+                        className="px-4 py-2 rounded-full text-sm font-bold transition-transform group-hover:scale-105"
                         style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
                       >
-                        Book Now
+                        Book Now &rarr;
                       </span>
                     </div>
                   </div>
