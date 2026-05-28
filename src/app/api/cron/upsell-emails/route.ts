@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import {
   upsellAddClassEmail,
   upsellSubscriptionEmail,
@@ -8,6 +8,7 @@ import {
   trialFollowUpEmail,
 } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 // Runs daily — sends context-aware upsell emails at the right time
@@ -24,6 +25,10 @@ export async function GET(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
   const stats = { trial_followup: 0, add_class: 0, subscription: 0, sibling: 0 }
+  const trialFollowupJobs: Parameters<typeof sendEmail>[0][] = []
+  const addClassJobs: Parameters<typeof sendEmail>[0][] = []
+  const subscriptionJobs: Parameters<typeof sendEmail>[0][] = []
+  const siblingJobs: Parameters<typeof sendEmail>[0][] = []
 
   // ═══ 1. TRIAL → CLASS: 3 days after attended trial ═══
   const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0]
@@ -56,8 +61,7 @@ export async function GET(request: NextRequest) {
       signupUrl: `${appUrl}/book/${org.slug}`,
       className: '',
     })
-    await sendEmail({ to: trial.parent_email, ...template })
-    stats.trial_followup++
+    trialFollowupJobs.push({ to: trial.parent_email, ...template })
   }
 
   // ═══ 2. ADD CLASS: 2 days after first booking (if only in 1 class) ═══
@@ -107,8 +111,7 @@ export async function GET(request: NextRequest) {
       academyName: org.name,
       bookingUrl: `${appUrl}/book/${org.slug}`,
     })
-    await sendEmail({ to: parent.email, ...template })
-    stats.add_class++
+    addClassJobs.push({ to: parent.email, ...template })
   }
 
   // ═══ 3. SUBSCRIPTION UPGRADE: 30 days after first enrolment, no subscription ═══
@@ -168,8 +171,7 @@ export async function GET(request: NextRequest) {
       monthlyPrice: `£${Number(plan?.amount || 0).toFixed(2)}`,
       dashboardUrl: `${appUrl}/dashboard/payments`,
     })
-    await sendEmail({ to: parent.email, ...template })
-    stats.subscription++
+    subscriptionJobs.push({ to: parent.email, ...template })
   }
 
   // ═══ 4. SIBLING DISCOUNT: 14 days after enrolment, parent has 1 child ═══
@@ -214,9 +216,13 @@ export async function GET(request: NextRequest) {
       academyName: org.name,
       dashboardUrl: `${appUrl}/dashboard/children?add=1`,
     })
-    await sendEmail({ to: parent.email, ...template })
-    stats.sibling++
+    siblingJobs.push({ to: parent.email, ...template })
   }
+
+  stats.trial_followup = (await sendEmailBatch(trialFollowupJobs)).sent
+  stats.add_class = (await sendEmailBatch(addClassJobs)).sent
+  stats.subscription = (await sendEmailBatch(subscriptionJobs)).sent
+  stats.sibling = (await sendEmailBatch(siblingJobs)).sent
 
   return NextResponse.json(stats)
 }

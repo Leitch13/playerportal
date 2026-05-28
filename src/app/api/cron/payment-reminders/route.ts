@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { paymentReminderEmail } from '@/lib/email-templates'
+
+export const maxDuration = 300
+export const dynamic = 'force-dynamic'
 
 // This runs as a cron job - uses service role key
 export async function GET(request: NextRequest) {
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
     .eq('status', 'overdue')
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
-  let sent = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const payment of overdue || []) {
     const profile = payment.profile as unknown as { full_name: string; email: string } | null
@@ -42,9 +45,10 @@ export async function GET(request: NextRequest) {
       dashboardUrl: `${appUrl}/dashboard/payments`,
     })
 
-    await sendEmail({ to: profile.email, ...template })
-    sent++
+    jobs.push({ to: profile.email, ...template })
   }
+
+  const { sent } = await sendEmailBatch(jobs)
 
   return NextResponse.json({ sent, checked: (overdue || []).length })
 }

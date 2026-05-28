@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { reviewPromptEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 const SESSION_THRESHOLD = 10
@@ -76,8 +77,8 @@ export async function GET(request: NextRequest) {
   const orgMap = new Map((orgs || []).map((o) => [o.id, o.name]))
 
   let created = 0
-  let emailsSent = 0
   let errors = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const player of players) {
     const parent = player.parent as unknown as { id: string; full_name: string; email: string } | null
@@ -115,13 +116,12 @@ export async function GET(request: NextRequest) {
       dashboardUrl: `${appUrl}/dashboard`,
     })
 
-    const result = await sendEmail({ to: parent.email, subject, html })
-    if (result.success) {
-      emailsSent++
-    } else {
-      errors++
-    }
+    jobs.push({ to: parent.email, subject, html })
   }
+
+  const batch = await sendEmailBatch(jobs)
+  const emailsSent = batch.sent
+  errors += batch.failed
 
   return NextResponse.json({
     message: 'Review prompts processed',

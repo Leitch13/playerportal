@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import {
   trialReminder48hEmail,
   trialReminder24hEmail,
   trialReminder2hEmail,
 } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -21,10 +22,9 @@ export async function GET(request: NextRequest) {
   )
 
   const now = new Date()
-  let sent48 = 0
-  let sent24 = 0
-  let sent2 = 0
-  let errors = 0
+  const jobs48: Parameters<typeof sendEmail>[0][] = []
+  const jobs24: Parameters<typeof sendEmail>[0][] = []
+  const jobs2: Parameters<typeof sendEmail>[0][] = []
 
   // Fetch all confirmed trials with a future preferred_date that still have reminders to send
   const { data: trials, error: trialsError } = await supabase
@@ -70,13 +70,8 @@ export async function GET(request: NextRequest) {
         date: dateStr,
         location,
       })
-      const result = await sendEmail({ to: trial.parent_email, ...template })
-      if (result.success) {
-        await supabase.from('trial_bookings').update({ reminder_48h_sent: true }).eq('id', trial.id)
-        sent48++
-      } else {
-        errors++
-      }
+      jobs48.push({ to: trial.parent_email, ...template })
+      await supabase.from('trial_bookings').update({ reminder_48h_sent: true }).eq('id', trial.id)
     }
 
     // 24h reminder: send when 2-24 hours away
@@ -93,13 +88,8 @@ export async function GET(request: NextRequest) {
         location,
         mapUrl,
       })
-      const result = await sendEmail({ to: trial.parent_email, ...template })
-      if (result.success) {
-        await supabase.from('trial_bookings').update({ reminder_24h_sent: true }).eq('id', trial.id)
-        sent24++
-      } else {
-        errors++
-      }
+      jobs24.push({ to: trial.parent_email, ...template })
+      await supabase.from('trial_bookings').update({ reminder_24h_sent: true }).eq('id', trial.id)
     }
 
     // 2h reminder: send when 0-2 hours away
@@ -111,15 +101,18 @@ export async function GET(request: NextRequest) {
         className,
         location,
       })
-      const result = await sendEmail({ to: trial.parent_email, ...template })
-      if (result.success) {
-        await supabase.from('trial_bookings').update({ reminder_2h_sent: true }).eq('id', trial.id)
-        sent2++
-      } else {
-        errors++
-      }
+      jobs2.push({ to: trial.parent_email, ...template })
+      await supabase.from('trial_bookings').update({ reminder_2h_sent: true }).eq('id', trial.id)
     }
   }
+
+  const batch48 = await sendEmailBatch(jobs48)
+  const batch24 = await sendEmailBatch(jobs24)
+  const batch2 = await sendEmailBatch(jobs2)
+  const sent48 = batch48.sent
+  const sent24 = batch24.sent
+  const sent2 = batch2.sent
+  const errors = batch48.failed + batch24.failed + batch2.failed
 
   return NextResponse.json({
     sent48,

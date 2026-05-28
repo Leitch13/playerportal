@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { progressReportEmail } from '@/lib/email-templates'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 const FALLBACK_SCORE_CATEGORIES = [
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
     return cats
   }
 
-  let sent = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const review of reviews || []) {
     const player = review.player as unknown as {
@@ -130,9 +131,10 @@ export async function GET(request: NextRequest) {
       reportUrl: `${appUrl}/dashboard/players/${player.id}/report`,
     })
 
-    await sendEmail({ to: player.parent.email, ...template })
-    sent++
+    jobs.push({ to: player.parent.email, ...template })
   }
+
+  const { sent } = await sendEmailBatch(jobs)
 
   return NextResponse.json({ checked: (reviews || []).length, sent })
 }

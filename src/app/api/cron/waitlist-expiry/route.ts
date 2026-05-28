@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { waitlistExpiredEmail, waitlistSpotAvailableEmail } from '@/lib/email-templates'
+
+export const maxDuration = 300
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
   let expired = 0
   let promoted = 0
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const entry of expiredEntries || []) {
     // Mark as expired
@@ -48,7 +52,7 @@ export async function GET(request: NextRequest) {
         childName,
         className,
       })
-      await sendEmail({ to: parent.email, ...template })
+      jobs.push({ to: parent.email, ...template })
     }
 
     // Promote next person in this group
@@ -105,12 +109,14 @@ export async function GET(request: NextRequest) {
             minute: '2-digit',
           }),
         })
-        await sendEmail({ to: nextParent.email, ...template })
+        jobs.push({ to: nextParent.email, ...template })
       }
 
       promoted++
     }
   }
+
+  await sendEmailBatch(jobs)
 
   return NextResponse.json({ expired, promoted, checked: (expiredEntries || []).length })
 }

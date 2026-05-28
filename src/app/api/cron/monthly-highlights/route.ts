@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { monthlyHighlightsEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 // Runs on the 1st of each month — sends highlight reel notifications
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  let sent = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const player of players || []) {
     const parent = player.parent as unknown as { full_name: string; email: string } | null
@@ -106,9 +107,10 @@ export async function GET(request: NextRequest) {
       highlightsUrl: `${appUrl}/dashboard/players/${player.id}/highlights`,
     })
 
-    await sendEmail({ to: parent.email, ...template })
-    sent++
+    jobs.push({ to: parent.email, ...template })
   }
+
+  const { sent } = await sendEmailBatch(jobs)
 
   return NextResponse.json({
     month: monthLabel,

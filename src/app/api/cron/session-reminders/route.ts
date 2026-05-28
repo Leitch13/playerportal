@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { sessionReminderEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -32,8 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
   }
 
-  let sent = 0
-  let errors = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const group of groups || []) {
     // Find all enrolled players and their parents
@@ -64,14 +64,11 @@ export async function GET(request: NextRequest) {
         academyName: org?.name || 'your academy',
       })
 
-      const result = await sendEmail({ to: player.parent.email, ...template })
-      if (result.success) {
-        sent++
-      } else {
-        errors++
-      }
+      jobs.push({ to: player.parent.email, ...template })
     }
   }
+
+  const { sent, failed: errors } = await sendEmailBatch(jobs)
 
   return NextResponse.json({
     sent,

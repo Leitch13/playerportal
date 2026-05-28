@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { postSessionFollowUpEmail, missedSessionEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -33,9 +34,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
   }
 
-  let followUpsSent = 0
-  let missedSent = 0
-  let errors = 0
+  const followUpJobs: Parameters<typeof sendEmail>[0][] = []
+  const missedJobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const group of groups || []) {
     // Get all enrolled players for this group
@@ -81,9 +81,7 @@ export async function GET(request: NextRequest) {
           dashboardUrl: `${appUrl}/dashboard`,
         })
 
-        const result = await sendEmail({ to: player.parent.email, ...template })
-        if (result.success) followUpsSent++
-        else errors++
+        followUpJobs.push({ to: player.parent.email, ...template })
       } else if (attendanceStatus === 'absent') {
         // Send missed session email
         const template = missedSessionEmail({
@@ -94,12 +92,16 @@ export async function GET(request: NextRequest) {
           dashboardUrl: `${appUrl}/dashboard`,
         })
 
-        const result = await sendEmail({ to: player.parent.email, ...template })
-        if (result.success) missedSent++
-        else errors++
+        missedJobs.push({ to: player.parent.email, ...template })
       }
     }
   }
+
+  const followUpBatch = await sendEmailBatch(followUpJobs)
+  const missedBatch = await sendEmailBatch(missedJobs)
+  const followUpsSent = followUpBatch.sent
+  const missedSent = missedBatch.sent
+  const errors = followUpBatch.failed + missedBatch.failed
 
   return NextResponse.json({
     followUpsSent,

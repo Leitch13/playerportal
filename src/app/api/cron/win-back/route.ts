@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { winBackEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     .gte('cancelled_at', eightDaysAgo.toISOString())
     .lte('cancelled_at', sevenDaysAgo.toISOString())
 
-  let sent = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const sub of cancelledSubs || []) {
     const parent = sub.parent as unknown as { id: string; full_name: string; email: string } | null
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
     template.subject = `We miss you! Here's 25% off to come back — ${org?.name || 'Your Academy'}`
     template.html = template.html.replace(/Your Academy/g, org?.name || 'Your Academy')
 
-    await sendEmail({ to: parent.email, ...template })
+    jobs.push({ to: parent.email, ...template })
 
     // Record notification to prevent duplicates
     await supabase.from('notifications').insert({
@@ -88,9 +89,9 @@ export async function GET(request: NextRequest) {
       body: `Get ${plan.name} for just ${discountedAmount}/month — 25% off forever.`,
       link: '/dashboard/payments',
     })
-
-    sent++
   }
+
+  const { sent } = await sendEmailBatch(jobs)
 
   return NextResponse.json({ checked: (cancelledSubs || []).length, sent })
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { trialConversionEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 function generateDiscountCode(): string {
@@ -48,8 +49,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch trials' }, { status: 500 })
   }
 
-  let sent = 0
-  let errors = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const trial of trials || []) {
     if (!trial.parent_email) continue
@@ -70,21 +70,19 @@ export async function GET(request: NextRequest) {
       signupUrl,
     })
 
-    const result = await sendEmail({ to: trial.parent_email, ...template })
-    if (result.success) {
-      await supabase
-        .from('trial_bookings')
-        .update({
-          followup_sent: true,
-          conversion_offer_sent: true,
-          discount_code: discountCode,
-        })
-        .eq('id', trial.id)
-      sent++
-    } else {
-      errors++
-    }
+    jobs.push({ to: trial.parent_email, ...template })
+
+    await supabase
+      .from('trial_bookings')
+      .update({
+        followup_sent: true,
+        conversion_offer_sent: true,
+        discount_code: discountCode,
+      })
+      .eq('id', trial.id)
   }
+
+  const { sent, failed: errors } = await sendEmailBatch(jobs)
 
   return NextResponse.json({
     sent,

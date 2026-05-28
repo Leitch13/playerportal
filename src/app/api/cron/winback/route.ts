@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { winBackEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     .gte('cancelled_at', eightDaysAgo)
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
-  let sent = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const c of cancellations || []) {
     const profile = c.profiles as unknown as { full_name: string; email: string } | null
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
       dashboardUrl: `${appUrl}/dashboard/payments`,
     })
 
-    await sendEmail({ to: profile.email, ...template })
+    jobs.push({ to: profile.email, ...template })
 
     // Mark winback as sent
     await supabase
@@ -71,9 +72,9 @@ export async function GET(request: NextRequest) {
         final_status: 'winback_sent',
       })
       .eq('id', c.id)
-
-    sent++
   }
+
+  const { sent } = await sendEmailBatch(jobs)
 
   return NextResponse.json({ checked: (cancellations || []).length, winback_sent: sent })
 }

@@ -48,3 +48,40 @@ export async function sendEmail({ to, subject, html, fromName, replyTo }: EmailO
     return { success: false, error: err }
   }
 }
+
+/**
+ * Send many emails with bounded concurrency. Used by the daily cron jobs so a
+ * run that fans out to hundreds/thousands of families finishes in seconds
+ * instead of sending one-at-a-time and timing out mid-loop (which silently
+ * drops whoever hadn't been reached yet).
+ *
+ * A fixed-size worker pool pulls from the job list, so at most `concurrency`
+ * sends are in flight at once — fast, but gentle enough not to trip Resend's
+ * rate limits. Failures are counted, never thrown, so one bad address can't
+ * abort the whole batch.
+ */
+export async function sendEmailBatch(
+  jobs: EmailOptions[],
+  concurrency = 8,
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0
+  let failed = 0
+  let cursor = 0
+
+  async function worker() {
+    while (cursor < jobs.length) {
+      const job = jobs[cursor++]
+      try {
+        const result = await sendEmail(job)
+        if (result.success) sent++
+        else failed++
+      } catch {
+        failed++
+      }
+    }
+  }
+
+  const workers = Math.min(concurrency, jobs.length)
+  await Promise.all(Array.from({ length: workers }, () => worker()))
+  return { sent, failed }
+}

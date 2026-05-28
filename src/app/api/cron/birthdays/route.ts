@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 
 /**
  * Daily birthday cron — runs at 8am.
@@ -9,6 +9,7 @@ import { sendEmail } from '@/lib/email'
  *   2. An in-app notification to coaches/admins so they can acknowledge it at the next session.
  */
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 function isBirthdayToday(dob: string, today: Date): boolean {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
-  let emailsSent = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
   let notificationsSent = 0
 
   for (const p of players) {
@@ -77,8 +78,7 @@ export async function GET(request: NextRequest) {
         academyContactEmail: org?.contact_email || undefined,
         dashboardUrl: `${appUrl}/dashboard`,
       })
-      await sendEmail({ to: parent.email, ...template })
-      emailsSent++
+      jobs.push({ to: parent.email, ...template })
     } catch (err) {
       console.error(`Birthday email failed for player ${p.id}:`, err)
     }
@@ -107,8 +107,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  const { sent } = await sendEmailBatch(jobs)
+
   return NextResponse.json({
-    sent: emailsSent,
+    sent,
     notifications: notificationsSent,
     birthdaysToday: players.length,
   })

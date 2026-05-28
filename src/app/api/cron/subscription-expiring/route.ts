@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { subscriptionExpiringEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -35,8 +36,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 })
   }
 
-  let sent = 0
-  let errors = 0
+  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const sub of subscriptions || []) {
     const profile = sub.profile as unknown as { full_name: string; email: string } | null
@@ -59,13 +59,10 @@ export async function GET(request: NextRequest) {
       dashboardUrl: `${appUrl}/dashboard/payments`,
     })
 
-    const result = await sendEmail({ to: profile.email, ...template })
-    if (result.success) {
-      sent++
-    } else {
-      errors++
-    }
+    jobs.push({ to: profile.email, ...template })
   }
+
+  const { sent, failed: errors } = await sendEmailBatch(jobs)
 
   return NextResponse.json({
     sent,

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
+import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { certExpiryEmail, certExpiryAdminEmail } from '@/lib/email-templates'
 
+export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
 const CERT_TYPES: Record<string, string> = {
@@ -44,9 +45,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch certifications' }, { status: 500 })
   }
 
-  let coachEmails = 0
-  let adminEmails = 0
-  let errors = 0
+  const coachJobs: Parameters<typeof sendEmail>[0][] = []
+  const adminJobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const cert of certs || []) {
     const expiryDate = new Date(cert.expiry_date)
@@ -77,9 +77,7 @@ export async function GET(request: NextRequest) {
       dashboardUrl: `${appUrl}/dashboard/cpd`,
     })
 
-    const coachResult = await sendEmail({ to: coach.email, ...coachTemplate })
-    if (coachResult.success) coachEmails++
-    else errors++
+    coachJobs.push({ to: coach.email, ...coachTemplate })
 
     // Email the org admin
     if (cert.organisation_id) {
@@ -102,9 +100,7 @@ export async function GET(request: NextRequest) {
           dashboardUrl: `${appUrl}/dashboard/cpd`,
         })
 
-        const adminResult = await sendEmail({ to: admin.email, ...adminTemplate })
-        if (adminResult.success) adminEmails++
-        else errors++
+        adminJobs.push({ to: admin.email, ...adminTemplate })
       }
     }
 
@@ -115,6 +111,12 @@ export async function GET(request: NextRequest) {
       .update({ status: newStatus })
       .eq('id', cert.id)
   }
+
+  const coachBatch = await sendEmailBatch(coachJobs)
+  const adminBatch = await sendEmailBatch(adminJobs)
+  const coachEmails = coachBatch.sent
+  const adminEmails = adminBatch.sent
+  const errors = coachBatch.failed + adminBatch.failed
 
   return NextResponse.json({
     certsChecked: (certs || []).length,
