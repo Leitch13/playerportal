@@ -16,10 +16,13 @@ export default async function SettingsPage() {
     .eq('id', orgId)
     .single()
 
+  // Team = staff only (admins + coaches). Parents are customers, not team
+  // members, so they must never appear in this list.
   const { data: teamMembers } = await supabase
     .from('profiles')
     .select('id, full_name, email, role, created_at')
     .eq('organisation_id', orgId)
+    .in('role', ['admin', 'coach'])
     .order('role')
 
   // Usage stats
