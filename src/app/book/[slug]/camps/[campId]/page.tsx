@@ -129,14 +129,11 @@ export default async function CampDetailPage({
 
   const spotsLeft = c.max_capacity ? c.max_capacity - (bookingCount || 0) : null
 
-  // If booked=1, mark booking as paid (Stripe redirect back)
-  if (bookedParam && bookingIdParam) {
-    // We trust the redirect — webhook will also confirm
-    await supabase
-      .from('camp_bookings')
-      .update({ payment_status: 'paid' })
-      .eq('id', bookingIdParam)
-  }
+  // NOTE: we do NOT mark the booking paid here. The success-page redirect is
+  // not proof of payment (anyone could hit ?booked=1). The Stripe webhook
+  // (checkout.session.completed → metadata.camp_booking_id) is the source of
+  // truth and flips payment_status to 'paid' on a verified completion.
+  // bookedParam is used only to show the friendly confirmation UI.
 
   const today = new Date().toISOString().split('T')[0]
   const isEarlyBird = c.early_bird_price && c.early_bird_deadline && today <= c.early_bird_deadline

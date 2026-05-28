@@ -128,6 +128,20 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
 // ---------------------------------------------------------------------------
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // ─── Camp booking paid (one-off Connect payment) ───
+  // Source of truth for camp payment. Previously the booking was marked paid
+  // on the success-page redirect, which anyone could hit without paying — this
+  // confirms it only on a verified Stripe completion.
+  if (session.metadata?.camp_booking_id) {
+    if (session.payment_status === 'paid' || session.payment_status === 'no_payment_required') {
+      await supabase
+        .from('camp_bookings')
+        .update({ payment_status: 'paid', stripe_session_id: session.id })
+        .eq('id', session.metadata.camp_booking_id)
+    }
+    return
+  }
+
   // ─── Platform subscription (academy paying Player Portal) ───
   // Set by /api/platform/subscribe. Activates the academy's own SaaS plan and
   // marks them published so their public booking page goes live (hybrid model).
