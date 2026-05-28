@@ -94,7 +94,7 @@ export default async function ClassBookingPage({
   let plans = classPlans && classPlans.length > 0 ? classPlans : null
 
   if (!plans && hasClassType) {
-    // STRICT: typed class → only matching class_type plans, never fall back
+    // Typed class → prefer plans matching that class_type.
     const { data: typePlans } = await supabase
       .from('subscription_plans')
       .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
@@ -103,9 +103,14 @@ export default async function ClassBookingPage({
       .eq('class_type', classTypeRaw)
       .is('training_group_id', null)
       .order('amount', { ascending: true })
-    plans = typePlans && typePlans.length > 0 ? typePlans : []
-  } else if (!plans) {
-    // Untyped class — show org-wide defaults (both fields null)
+    plans = typePlans && typePlans.length > 0 ? typePlans : null
+  }
+
+  if (!plans) {
+    // Fallback: generic org-wide plans (both fields null). Fires for untyped
+    // classes AND typed classes that have no dedicated plan yet — so a class is
+    // never left unbookable. A class-specific or class-type plan always wins
+    // over this when one exists.
     const { data: orgPlans } = await supabase
       .from('subscription_plans')
       .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')

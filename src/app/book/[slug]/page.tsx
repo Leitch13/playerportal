@@ -162,8 +162,16 @@ export default async function PublicBookingPage({
     return true
   })
 
-  // Helper — find the cheapest matching plan for a given class
-  // Uses the same cascade as the class detail page: class-specific → class-type → org-wide
+  // Helper — find the cheapest matching plan for a given class.
+  // Cascade: class-specific → class-type → generic (org-wide) fallback.
+  //
+  // The generic fallback ONLY fires when there's no specific/type plan. This
+  // keeps academies that built type-specific plans clean (no generic noise —
+  // the original complaint), while ensuring a class is NEVER unbookable: a
+  // brand-new academy using only the default generic plans, or a one-off class
+  // type with no dedicated plan, still gets a bookable price. Academies can
+  // always add a class-type plan later to override the generic price.
+  const genericPlans = (allPlans || []).filter(p => p.training_group_id === null && p.class_type === null)
   function findCheapestPlanFor(classId: string, classType: string | null) {
     const candidates = allPlans || []
     const classSpecific = candidates.filter(p => p.training_group_id === classId)
@@ -176,9 +184,10 @@ export default async function PublicBookingPage({
         return typeMatched.reduce((min, p) => Number(p.amount) < Number(min.amount) ? p : min)
       }
     }
-    // No fallback to org-wide / generic plans — those don't apply to specific classes
-    // and showing them on class cards confuses parents (they'd see different prices
-    // for the same class). Class needs its own plan or nothing shows.
+    // Fallback: cheapest generic plan, so the class is still bookable.
+    if (genericPlans.length > 0) {
+      return genericPlans.reduce((min, p) => Number(p.amount) < Number(min.amount) ? p : min)
+    }
     return null
   }
 
