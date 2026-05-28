@@ -168,31 +168,66 @@ export default async function CampDetailPage({
   const today = new Date().toISOString().split('T')[0]
   const isEarlyBird = c.early_bird_price && c.early_bird_deadline && today <= c.early_bird_deadline
 
+  const metaPill = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-white/[0.08] border border-white/[0.12] backdrop-blur-sm text-white/85'
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Hero */}
-      <div
-        className="relative py-20 px-6 text-white"
-        style={
-          c.image_url
-            ? { backgroundImage: `url(${c.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-            : { background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }
-        }
-      >
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 max-w-4xl mx-auto">
+      {/* Cinematic hero */}
+      <div className="relative overflow-hidden text-white min-h-[340px] sm:min-h-[440px] flex items-end">
+        {/* Background: cover photo (slightly zoomed) or branded gradient */}
+        {c.image_url ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-105"
+            style={{ backgroundImage: `url(${c.image_url})` }}
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(135deg, #060606 0%, ${primaryColor}55 100%)` }}
+          />
+        )}
+        {/* Bottom-up scrim so text is always legible over any photo */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/75 to-[#0a0a0a]/25" />
+        {/* Brand glow */}
+        <div
+          className="absolute -top-24 left-1/3 w-[28rem] h-[28rem] rounded-full blur-[140px] opacity-25 pointer-events-none"
+          style={{ background: primaryColor }}
+        />
+
+        <div className="relative z-10 w-full max-w-4xl mx-auto px-5 sm:px-6 pt-8 pb-8 sm:pb-12">
           <Link
             href={`/book/${slug}/camps`}
-            className="inline-block mb-6 text-sm text-white/60 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 mb-5 sm:mb-7 text-sm text-white/60 hover:text-white transition-colors"
           >
             &larr; All Camps
           </Link>
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">{c.name}</h1>
-          <div className="flex flex-wrap gap-4 text-white/80">
-            <span>{formatDateRange(c.start_date, c.end_date)}</span>
-            <span>{days} day{days !== 1 ? 's' : ''}</span>
-            {c.age_group && <span>{c.age_group}</span>}
+
+          {/* Academy badge row */}
+          <div className="flex items-center gap-3 mb-3 sm:mb-4">
+            {org.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={org.logo_url as string} alt={org.name as string} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover bg-white/10 ring-1 ring-white/15" />
+            ) : null}
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider backdrop-blur-sm"
+              style={{ backgroundColor: `${primaryColor}22`, color: '#fff', border: `1px solid ${primaryColor}55` }}
+            >
+              Holiday Camp
+            </span>
           </div>
+
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 sm:mb-5 leading-[1.05]">
+            {c.name}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <span className={metaPill}>📅 {formatDateRange(c.start_date, c.end_date)}</span>
+            <span className={metaPill}>{days} day{days !== 1 ? 's' : ''}</span>
+            {c.daily_start_time && <span className={metaPill}>⏰ {c.daily_start_time}{c.daily_end_time ? `–${c.daily_end_time}` : ''}</span>}
+            {c.age_group && <span className={metaPill}>Ages {c.age_group}</span>}
+            {c.location && <span className={metaPill}>📍 {c.location}</span>}
+          </div>
+
           {/* Urgency banner */}
           {spotsLeft !== null && spotsLeft > 0 && spotsLeft <= 10 && (
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 text-sm">
@@ -203,12 +238,12 @@ export default async function CampDetailPage({
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+      <div className="max-w-4xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
           {/* Left column - details */}
           <div className="lg:col-span-3 space-y-10">
             {/* Key Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <DetailCard label="Dates" value={formatDateRange(c.start_date, c.end_date)} />
               <DetailCard
                 label="Times"
@@ -220,10 +255,11 @@ export default async function CampDetailPage({
                 <DetailCard
                   label="Price"
                   value={isEarlyBird ? `\u00A3${Number(c.early_bird_price).toFixed(0)}` : `\u00A3${Number(c.price).toFixed(0)}`}
+                  accentColor={primaryColor}
                 />
               )}
               {c.max_capacity && (
-                <DetailCard label="Spots Left" value={spotsLeft !== null ? `${spotsLeft} / ${c.max_capacity}` : `${c.max_capacity} places`} />
+                <DetailCard label="Spots Left" value={spotsLeft !== null ? `${spotsLeft} / ${c.max_capacity}` : `${c.max_capacity} places`} accentColor={primaryColor} />
               )}
             </div>
 
@@ -294,8 +330,12 @@ export default async function CampDetailPage({
 
           {/* Right column - booking form */}
           <div className="lg:col-span-2">
-            <div className="sticky top-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6">
-              <h3 className="text-lg font-bold text-white mb-5">Book Your Place</h3>
+            <div
+              className="sticky top-6 rounded-2xl border bg-white/[0.04] backdrop-blur-sm p-5 sm:p-6"
+              style={{ borderColor: `${primaryColor}25`, boxShadow: `0 10px 40px ${primaryColor}10` }}
+            >
+              <h3 className="text-lg font-bold text-white mb-1">Book Your Place</h3>
+              <div className="h-0.5 w-10 rounded-full mb-4" style={{ backgroundColor: primaryColor }} />
               <CampBookingForm
                 camp={{
                   id: c.id,
@@ -336,11 +376,14 @@ export default async function CampDetailPage({
   )
 }
 
-function DetailCard({ label, value }: { label: string; value: string }) {
+function DetailCard({ label, value, accentColor }: { label: string; value: string; accentColor?: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="text-xs text-white/40 uppercase tracking-wide mb-1">{label}</div>
-      <div className="text-white font-semibold text-sm">{value}</div>
+    <div
+      className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3.5 sm:p-4 transition-colors hover:bg-white/[0.05]"
+      style={accentColor ? { borderColor: `${accentColor}30` } : undefined}
+    >
+      <div className="text-[10px] sm:text-xs text-white/40 uppercase tracking-wider mb-1">{label}</div>
+      <div className="font-bold text-sm sm:text-base" style={{ color: accentColor || '#fff' }}>{value}</div>
     </div>
   )
 }

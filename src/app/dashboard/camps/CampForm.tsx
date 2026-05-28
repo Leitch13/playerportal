@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import FileUpload from '@/components/FileUpload'
 
 type ScheduleDay = {
   day: string
@@ -511,29 +512,17 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
               </div>
             )}
 
-            {/* Image URL */}
+            {/* Cover Photo */}
             <div>
-              <label className="block text-sm font-medium text-white mb-1">Image URL</label>
-              <input
-                type="text"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
-                className={inputCls}
+              <label className="block text-sm font-medium text-white mb-1.5">Cover Photo</label>
+              <FileUpload
+                bucketName="coaching"
+                folder="camp-covers"
+                accept="image/*"
+                currentUrl={imageUrl}
+                onUpload={(url) => setImageUrl(url)}
+                label="Upload a cover photo for this camp"
               />
-              {imageUrl && (
-                <div className="mt-2 rounded-lg overflow-hidden h-32 bg-[#1a1a1a]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                </div>
-              )}
             </div>
 
             {/* What to Bring */}
