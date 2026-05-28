@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Create notification
     await supabase.from('notifications').insert({
-      profile_id: nextEntry.parent_id,
+      user_id: nextEntry.parent_id,
       organisation_id: nextEntry.organisation_id,
       type: 'waitlist_offer',
       title: 'A spot has opened up!',

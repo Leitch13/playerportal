@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
   // Also create in-app notification
   await supabase.from('notifications').insert({
-    profile_id: user.id,
+    user_id: user.id,
     organisation_id: group.organisation_id,
     type: 'booking',
     title: `${player.first_name} booked into ${group.name}`,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   if ((enrolCount || 0) === 1) {
     // Only in 1 class — create upsell notification for 2 days from now
     await supabase.from('notifications').insert({
-      profile_id: user.id,
+      user_id: user.id,
       organisation_id: group.organisation_id,
       type: 'upsell',
       title: `Add another class for ${player.first_name}?`,

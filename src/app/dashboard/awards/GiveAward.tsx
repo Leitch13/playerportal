@@ -91,7 +91,7 @@ export default function GiveAward({
     if (player?.parent_id) {
       const awardLabel = awardType === 'custom' ? customTitle : AWARD_TYPES.find((a) => a.value === awardType)?.label || awardType
       await supabase.from('notifications').insert({
-        profile_id: player.parent_id,
+        user_id: player.parent_id,
         title: 'New Award!',
         body: `${player.first_name} has been awarded "${awardLabel}"!`,
         type: 'award',

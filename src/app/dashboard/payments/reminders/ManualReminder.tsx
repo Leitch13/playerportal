@@ -37,7 +37,7 @@ export default function ManualReminder({ orgId, overdueParents }: { orgId: strin
 
     // Create notification
     await supabase.from('notifications').insert({
-      profile_id: selected.profileId,
+      user_id: selected.profileId,
       organisation_id: orgId,
       type: 'payment_reminder',
       title: 'Payment reminder',

@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     if (lead.assigned_to) {
       // Notify the assigned user
       const { error: insertError } = await supabase.from('notifications').insert({
-        profile_id: lead.assigned_to,
+        user_id: lead.assigned_to,
         ...notificationPayload,
       })
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
       for (const admin of admins || []) {
         const { error: insertError } = await supabase.from('notifications').insert({
-          profile_id: admin.id,
+          user_id: admin.id,
           ...notificationPayload,
         })
 

@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
 
       for (const s of staff || []) {
         await supabase.from('notifications').insert({
-          profile_id: s.id,
+          user_id: s.id,
           organisation_id: p.organisation_id,
           type: 'birthday',
           title: `🎂 It's ${p.first_name}'s birthday!`,

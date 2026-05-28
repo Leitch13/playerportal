@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       }).eq('id', nextEntry.id)
 
       await supabase.from('notifications').insert({
-        profile_id: nextEntry.parent_id,
+        user_id: nextEntry.parent_id,
         organisation_id: nextEntry.organisation_id,
         type: 'waitlist_offer',
         title: 'A spot has opened up!',

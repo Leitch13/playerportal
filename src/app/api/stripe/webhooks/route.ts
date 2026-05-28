@@ -28,13 +28,13 @@ async function createNotification(params: {
   link?: string
 }) {
   const { error } = await supabase.from('notifications').insert({
-    profile_id: params.profileId,
+    user_id: params.profileId,
     organisation_id: params.organisationId,
     type: params.type,
     title: params.title,
     body: params.body,
     link: params.link ?? null,
-    is_read: false,
+    read: false,
   })
   if (error) {
     // notification insert failed — non-critical, continue

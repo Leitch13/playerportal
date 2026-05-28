@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Create notification for the parent
     await supabase.from('notifications').insert({
-      profile_id: user.id,
+      user_id: user.id,
       organisation_id: subscription.organisation_id,
       type: 'subscription_cancelled',
       title: 'Subscription cancelled',
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     for (const admin of admins || []) {
       await supabase.from('notifications').insert({
-        profile_id: admin.id,
+        user_id: admin.id,
         organisation_id: subscription.organisation_id,
         type: 'churn_alert',
         title: 'A parent cancelled their subscription',

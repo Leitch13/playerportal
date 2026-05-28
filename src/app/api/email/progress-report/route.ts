@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
 
   // Also create a notification
   await supabase.from('notifications').insert({
-    profile_id: player.parent_id,
+    user_id: player.parent_id,
     organisation_id: orgId,
     type: 'progress',
     title: `New progress report for ${player.first_name}`,

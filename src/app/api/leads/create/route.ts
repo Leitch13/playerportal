@@ -133,13 +133,13 @@ export async function POST(request: NextRequest) {
       // In-app notification to every admin
       for (const a of (admins || []) as { id: string; email: string | null }[]) {
         await supabase.from('notifications').insert({
-          profile_id: a.id,
+          user_id: a.id,
           organisation_id,
           type: 'lead',
           title: `New enquiry: ${leadName}`,
           body: `${childName ? `${childName} — ` : ''}${interestedIn || 'General enquiry'}. Reply fast to win the booking.`,
           link: '/dashboard/leads',
-          is_read: false,
+          read: false,
         })
       }
 

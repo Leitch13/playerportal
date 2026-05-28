@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Create notification
     await supabase.from('notifications').insert({
-      profile_id: user.id,
+      user_id: user.id,
       organisation_id: orgId,
       type: 'subscription',
       title: 'Subscription cancelled',

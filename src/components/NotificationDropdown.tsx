@@ -6,10 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 
 type Notification = {
   id: string
-  profile_id: string
+  user_id: string
   type: string
   title: string
-  message: string
+  body: string
   link: string | null
   read: boolean
   created_at: string
@@ -97,7 +97,7 @@ export default function NotificationDropdown({
     const { data } = await supabase
       .from('notifications')
       .select('*')
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -122,7 +122,7 @@ export default function NotificationDropdown({
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .eq('profile_id', userId)
+        .eq('user_id', userId)
         .eq('read', false)
 
       if (typeof count === 'number') {
@@ -285,11 +285,11 @@ export default function NotificationDropdown({
                           {relativeTime(notification.created_at)}
                         </span>
                       </div>
-                      {notification.message && (
+                      {notification.body && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
-                          {notification.message.length > 100
-                            ? notification.message.slice(0, 100) + '...'
-                            : notification.message}
+                          {notification.body.length > 100
+                            ? notification.body.slice(0, 100) + '...'
+                            : notification.body}
                         </p>
                       )}
                     </div>

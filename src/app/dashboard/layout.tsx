@@ -99,7 +99,7 @@ export default async function DashboardLayout({
   const { count: notifCount } = await supabase
     .from('notifications')
     .select('id', { count: 'exact', head: true })
-    .eq('profile_id', user.id)
+    .eq('user_id', user.id)
     .eq('read', false)
   const notificationCount = notifCount || 0
 

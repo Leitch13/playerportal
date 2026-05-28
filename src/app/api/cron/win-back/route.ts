@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const { data: existingNotif } = await supabase
       .from('notifications')
       .select('id')
-      .eq('profile_id', parent.id)
+      .eq('user_id', parent.id)
       .eq('type', 'win_back')
       .limit(1)
 
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     // Record notification to prevent duplicates
     await supabase.from('notifications').insert({
-      profile_id: parent.id,
+      user_id: parent.id,
       organisation_id: sub.organisation_id,
       type: 'win_back',
       title: 'We miss you! Come back with 25% off',

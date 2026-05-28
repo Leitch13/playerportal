@@ -120,7 +120,7 @@ export default function CancelBookingButton({
 
     try {
       await supabase.from('notifications').insert({
-        profile_id: user.id,
+        user_id: user.id,
         organisation_id: orgId,
         type: 'discount',
         title: '50% discount applied',

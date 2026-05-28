@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Friendly notification copy that reflects the actual offer
     const durationText = months ? `for ${months} month${months !== 1 ? 's' : ''}` : 'forever'
     await supabase.from('notifications').insert({
-      profile_id: user.id,
+      user_id: user.id,
       organisation_id: orgId,
       type: 'subscription',
       title: `${percent}% discount applied!`,
