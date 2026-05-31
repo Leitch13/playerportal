@@ -42,6 +42,28 @@ export default async function ParentsPage() {
     if (pay.status === 'overdue') paymentsByParent[pay.parent_id].hasOverdue = true
   }
 
+  // Subscription status per parent — so Jamie can tell at a glance which
+  // signups are paying vs which created an account but never finished.
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('parent_id, status, plan:subscription_plans(name, amount)')
+  type SubPlanRow = { name?: string; amount?: number }
+  const subByParent: Record<string, { active: boolean; plan?: string; amount?: number; status: string }> = {}
+  for (const s of subs || []) {
+    const planRow = (s.plan as unknown as SubPlanRow) || {}
+    const isActive = s.status === 'active' || s.status === 'trialing'
+    const existing = subByParent[s.parent_id]
+    // Prefer the active one if there's a mix
+    if (!existing || (isActive && !existing.active)) {
+      subByParent[s.parent_id] = {
+        active: isActive,
+        plan: planRow.name,
+        amount: planRow.amount,
+        status: s.status as string,
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Parents</h1>
@@ -54,6 +76,7 @@ export default async function ParentsPage() {
             const children = childrenByParent[p.id] || []
             const payInfo = paymentsByParent[p.id]
             const outstanding = payInfo ? payInfo.due - payInfo.paid : 0
+            const sub = subByParent[p.id]
 
             return (
               <Card key={p.id}>
@@ -88,12 +111,30 @@ export default async function ParentsPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      {payInfo && (
-                        <div className={`text-sm font-medium ${outstanding > 0 ? (payInfo.hasOverdue ? 'text-danger' : 'text-warning') : 'text-accent'}`}>
-                          {outstanding > 0 ? `£${outstanding.toFixed(0)} owed` : 'Paid up'}
+                      {/* Subscription status: top-line truth on who's paying */}
+                      {sub?.active ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Active subscriber
+                        </span>
+                      ) : sub ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                          Sub {sub.status.replace('_', ' ')}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/[0.06] text-white/50 border border-white/[0.1]" title="Signed up but never completed payment">
+                          Not paid yet
+                        </span>
+                      )}
+                      {sub?.active && sub.plan && (
+                        <div className="text-[11px] text-white/50 mt-1">{sub.plan}{sub.amount ? ` · £${Number(sub.amount).toFixed(0)}/mo` : ''}</div>
+                      )}
+                      {payInfo && outstanding > 0 && (
+                        <div className={`text-xs font-medium mt-1 ${payInfo.hasOverdue ? 'text-danger' : 'text-warning'}`}>
+                          £{outstanding.toFixed(0)} owed
                         </div>
                       )}
-                      <div className="text-xs text-text-light">Joined {new Date(p.created_at).toLocaleDateString()}</div>
+                      <div className="text-[10px] text-white/30 mt-1">Joined {new Date(p.created_at).toLocaleDateString()}</div>
                     </div>
                   </div>
 
