@@ -19,9 +19,13 @@ export async function POST(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
-  // Enrich with academy branding/contact if we can find the org (best effort)
+  // Enrich with academy branding/contact if we can find the org (best effort).
+  // We also collect ALL admin profile emails so the signup alert goes to every
+  // admin on the academy — defends against the case where the org's
+  // contact_email isn't filled in, or where a co-admin needs to be looped in.
   let academyLogoUrl: string | undefined
   let academyContactEmail: string | undefined
+  let adminAlertRecipients: string[] = []
   if (academySlug) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -32,11 +36,28 @@ export async function POST(request: NextRequest) {
         })
         const { data: org } = await supabase
           .from('organisations')
-          .select('logo_url, contact_email')
+          .select('id, logo_url, contact_email')
           .ilike('slug', academySlug)
           .single()
         academyLogoUrl = (org?.logo_url as string | undefined) || undefined
         academyContactEmail = (org?.contact_email as string | undefined) || undefined
+
+        if (org?.id) {
+          const { data: admins } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('organisation_id', org.id)
+            .eq('role', 'admin')
+          // Lower-case + dedupe; include the org's customer-facing contact_email
+          // so a shared inbox still gets the alert even if no admin profile uses it.
+          const set = new Set<string>()
+          for (const a of admins || []) {
+            const e = (a.email as string | null)?.trim().toLowerCase()
+            if (e) set.add(e)
+          }
+          if (academyContactEmail) set.add(academyContactEmail.trim().toLowerCase())
+          adminAlertRecipients = Array.from(set)
+        }
       } catch {
         // best effort — fall back to plain template
       }
@@ -58,10 +79,11 @@ export async function POST(request: NextRequest) {
     replyTo: academyContactEmail,
   })
 
-  // ── Also notify the academy so Jamie sees every signup as it happens ──
+  // ── Also notify the academy so the admin(s) see every signup as it happens ──
   // Sent FROM Player Portal (not the academy itself) so it doesn't get tangled
-  // up with the academy's own outbound mail; lands in their contact inbox.
-  if (academyContactEmail) {
+  // up with the academy's own outbound mail. Goes to every admin profile on
+  // the org + the org's customer-facing contact email (deduped).
+  if (adminAlertRecipients.length > 0) {
     try {
       const adminAlertHtml = `
         <div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px;margin:0 auto;background:#0a0a0a;color:#fff;border-radius:16px;padding:24px;border:1px solid #1f1f1f">
@@ -81,11 +103,14 @@ export async function POST(request: NextRequest) {
           </div>
           <p style="color:#666;font-size:11px;text-align:center;margin:16px 0 0">Player Portal — your real-time signup feed</p>
         </div>`
-      await sendEmail({
-        to: academyContactEmail,
-        subject: `👋 New signup — ${parentName}`,
-        html: adminAlertHtml,
-      })
+      // One email per recipient so deliverability stays clean (no bcc/cc).
+      for (const to of adminAlertRecipients) {
+        await sendEmail({
+          to,
+          subject: `👋 New signup — ${parentName}`,
+          html: adminAlertHtml,
+        })
+      }
     } catch {
       // never block the parent's welcome on the admin alert
     }
