@@ -28,13 +28,18 @@ export default async function TrialBookingPage({
 
   const { data: allGroups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, trial_price')
+    .select('id, name, day_of_week, time_slot, trial_price, class_type')
     .eq('organisation_id', org.id)
     .order('name')
 
-  // This page is the FREE-trial form — paid-trial classes (e.g. £15 1-2-1s)
-  // must never appear in the picker. They live on their own /trial/paid page.
-  const groups = (allGroups || []).filter(g => !(Number(g.trial_price ?? 0) > 0))
+  // This page is the FREE-trial form — paid-trial classes (£15 1-2-1s) and
+  // inherently-paid class types (1-2-1 / 2-1 / intensity) must never appear,
+  // even if the academy forgot to set a trial_price.
+  const PAID_ONLY_TYPES = ['1-2-1', '2-1', 'intensity']
+  const groups = (allGroups || []).filter(g =>
+    Number(g.trial_price ?? 0) <= 0 &&
+    !PAID_ONLY_TYPES.includes((g.class_type as string) || '')
+  )
 
   const primaryColor = org.primary_color || '#4ecde6'
 

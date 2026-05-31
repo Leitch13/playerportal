@@ -37,19 +37,32 @@ export default async function QuickTrialPage({
     .eq('organisation_id', org.id)
     .order('name')
 
-  // If the parent landed here with a specific class preselected AND that class
-  // charges for trials, redirect them straight to the paid-trial flow — never
-  // let a £15 trial get given away through the free-trial form.
+  // 1-2-1 / 2-1 / intensity are inherently paid sessions — they belong on
+  // their own paid-trial flow (or no trial at all), never on the free form.
+  const PAID_ONLY_TYPES = ['1-2-1', '2-1', 'intensity']
+  const isPaidOnlyType = (g: { class_type?: string | null }) =>
+    PAID_ONLY_TYPES.includes((g.class_type as string) || '')
+
+  // If the parent landed here with a specific class preselected, route them to
+  // the right place: paid trial if a price is set; otherwise back to the class
+  // page (no free trial available for paid-only types).
   if (preselectedClassId) {
     const preset = (allGroups || []).find(g => g.id === preselectedClassId)
-    if (preset && Number(preset.trial_price ?? 0) > 0) {
-      redirect(`/book/${slug}/class/${preselectedClassId}/trial/paid`)
+    if (preset) {
+      if (Number(preset.trial_price ?? 0) > 0) {
+        redirect(`/book/${slug}/class/${preselectedClassId}/trial/paid`)
+      } else if (isPaidOnlyType(preset)) {
+        // No free trial for this class type — send them back to the class
+        // page where they can subscribe.
+        redirect(`/book/${slug}/class/${preselectedClassId}`)
+      }
     }
   }
 
-  // Only show classes that ACTUALLY offer a free trial in the picker. Classes
-  // with a paid trial price belong on their own /trial/paid page.
-  const groups = (allGroups || []).filter(g => !(Number(g.trial_price ?? 0) > 0))
+  // Picker only shows classes that genuinely offer a free trial.
+  const groups = (allGroups || []).filter(
+    g => Number(g.trial_price ?? 0) <= 0 && !isPaidOnlyType(g)
+  )
 
   const primaryColor = org.primary_color || '#4ecde6'
 

@@ -132,6 +132,13 @@ export default async function ClassBookingPage({
   const trialPrice = group.trial_price as number | null
   const hasPaidTrial = trialPrice != null && Number(trialPrice) > 0
   const classType = (group.class_type as string) || 'group'
+  // 1-2-1 / 2-1 / intensity are inherently paid sessions — they must never
+  // advertise a free trial even if trial_price was left blank by the academy.
+  const paidOnlyClass = ['1-2-1', '2-1', 'intensity'].includes(classType)
+  // Show the trial CTA only when it's a paid trial we can present, or when
+  // this class type is allowed to offer a free trial. Skip it entirely for a
+  // 1-2-1 with no price set — better no CTA than a misleading "free" one.
+  const showTrialCta = hasPaidTrial || !paidOnlyClass
   const typeConfig = CLASS_TYPE_CONFIG[classType] || CLASS_TYPE_CONFIG.group
   const shortDesc = group.short_description as string | null
   const longDesc = group.long_description as string | null
@@ -456,25 +463,27 @@ export default async function ClassBookingPage({
             </Link>
           )}
 
-          <Link
-            href={hasPaidTrial ? `/book/${slug}/class/${groupId}/trial/paid` : `/book/${slug}/trial/quick?class=${groupId}`}
-            className="block w-full text-center py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110"
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: '#ffffff',
-              boxShadow: '0 10px 40px rgba(16, 185, 129, 0.5), 0 0 0 3px rgba(16, 185, 129, 0.2)',
-            }}
-          >
-            <span className="inline-flex items-center gap-2 sm:gap-2.5">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              {hasPaidTrial ? `Try a Session — £${Number(trialPrice).toFixed(2)}` : 'Try a Free Session First'}
-            </span>
-            <span className="block text-[11px] sm:text-xs font-medium text-white/80 mt-1">
-              {hasPaidTrial ? 'One session, no commitment to subscribe' : 'No account needed · 20-second sign-up'}
-            </span>
-          </Link>
+          {showTrialCta && (
+            <Link
+              href={hasPaidTrial ? `/book/${slug}/class/${groupId}/trial/paid` : `/book/${slug}/trial/quick?class=${groupId}`}
+              className="block w-full text-center py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110"
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                boxShadow: '0 10px 40px rgba(16, 185, 129, 0.5), 0 0 0 3px rgba(16, 185, 129, 0.2)',
+              }}
+            >
+              <span className="inline-flex items-center gap-2 sm:gap-2.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                {hasPaidTrial ? `Try a Session — £${Number(trialPrice).toFixed(2)}` : 'Try a Free Session First'}
+              </span>
+              <span className="block text-[11px] sm:text-xs font-medium text-white/80 mt-1">
+                {hasPaidTrial ? 'One session, no commitment to subscribe' : 'No account needed · 20-second sign-up'}
+              </span>
+            </Link>
+          )}
         </div>
 
         {/* Academy info */}
