@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 interface Parent {
   id: string
@@ -61,72 +60,43 @@ export default function QuickAddPlayer({
     setError('')
     setSuccess('')
 
-    const supabase = createClient()
-    let resolvedParentId = parentId
-
-    if (mode === 'new') {
-      const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
-      const { data: authData, error: authErr } = await supabase.auth.signUp({
-        email: parentEmail,
-        password: tempPassword,
-        options: {
-          data: {
-            full_name: parentName,
-            phone: parentPhone,
-            role: 'parent',
-          },
-        },
+    // Server-side route so the admin's session is never replaced by a
+    // client-side auth.signUp() of the new parent. The route uses the service
+    // role to create the parent account, ensure the profile, insert the
+    // player, and optionally auto-enrol — all in one trip.
+    let data: { success?: boolean; error?: string; warning?: string } = {}
+    try {
+      const res = await fetch('/api/admin/players', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          firstName,
+          lastName,
+          dob,
+          ageGroup,
+          playingLevel,
+          leagueLevel,
+          parentId,
+          parentName,
+          parentEmail,
+          parentPhone,
+          groupId,
+        }),
       })
-
-      if (authErr || !authData.user) {
-        setError(authErr?.message || 'Failed to create parent account')
+      data = await res.json()
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Failed to add player. Please try again.')
         setLoading(false)
         return
       }
-
-      resolvedParentId = authData.user.id
-      await new Promise((r) => setTimeout(r, 500))
-    }
-
-    const { error: playerErr } = await supabase.from('players').insert({
-      organisation_id: orgId,
-      parent_id: resolvedParentId,
-      first_name: firstName,
-      last_name: lastName,
-      date_of_birth: dob || null,
-      age_group: ageGroup || null,
-      playing_level: playingLevel,
-      league_level: leagueLevel || null,
-    })
-
-    if (playerErr) {
-      setError(playerErr.message)
+    } catch {
+      setError('Network error — please try again.')
       setLoading(false)
       return
     }
 
-    if (groupId) {
-      const { data: newPlayer } = await supabase
-        .from('players')
-        .select('id')
-        .eq('parent_id', resolvedParentId)
-        .eq('first_name', firstName)
-        .eq('last_name', lastName)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (newPlayer) {
-        await supabase.from('enrolments').insert({
-          organisation_id: orgId,
-          player_id: newPlayer.id,
-          group_id: groupId,
-          status: 'active',
-        })
-      }
-    }
-
-    setSuccess(`${firstName} ${lastName} added!`)
+    setSuccess(`${firstName} ${lastName} added!${data.warning ? ` (${data.warning})` : ''}`)
     setFirstName('')
     setLastName('')
     setDob('')
