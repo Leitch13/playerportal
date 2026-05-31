@@ -124,9 +124,17 @@ export default async function PublicBookingPage({
 
   const { data: groups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, age_group, short_description, image_url')
+    .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, trial_price, age_group, short_description, image_url')
     .eq('organisation_id', org.id)
     .order('name')
+
+  // Don't advertise "Free Trial" prominently if any of this academy's classes
+  // actually charge for a trial (e.g. Jamie's £15 1-2-1s). For mixed academies
+  // we keep the trial CTAs but drop the "Free" word so parents aren't misled
+  // when they're really interested in a paid-trial class.
+  const hasAnyPaidTrial = (groups || []).some(g => Number(g.trial_price ?? 0) > 0)
+  const trialWord = hasAnyPaidTrial ? 'Trial' : 'Free Trial'
+  const trialCtaShort = hasAnyPaidTrial ? 'Book Trial' : 'Try Free'
 
   const groupIds = (groups || []).map((g) => g.id)
   const { data: enrolments } = groupIds.length > 0
@@ -276,7 +284,7 @@ export default async function PublicBookingPage({
                 <div>
                   <h3 className="font-bold text-base sm:text-lg text-amber-200 mb-1">Payments coming soon</h3>
                   <p className="text-sm text-amber-100/80">
-                    {org.name} is finishing setup. You can still browse classes and book a <strong>free trial</strong> below — paid subscriptions will be available shortly.
+                    {org.name} is finishing setup. You can still browse classes and book a <strong>{trialWord.toLowerCase()}</strong> below — paid subscriptions will be available shortly.
                   </p>
                 </div>
               </div>
@@ -299,13 +307,13 @@ export default async function PublicBookingPage({
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">New</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">Free</span>
+                  {!hasAnyPaidTrial && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">Free</span>}
                 </div>
-                <h3 className="text-base sm:text-xl font-extrabold">Book a Free Trial Session</h3>
+                <h3 className="text-base sm:text-xl font-extrabold">Book a {trialWord} Session</h3>
                 <p className="text-white/70 text-xs sm:text-sm mt-0.5">No account needed. No payment. Takes 20 seconds to book.</p>
               </div>
               <div className="shrink-0 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
-                Try Free &rarr;
+                {trialCtaShort} &rarr;
               </div>
             </div>
           </Link>
@@ -317,7 +325,7 @@ export default async function PublicBookingPage({
           <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Three simple steps to get started</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
             {[
-              { step: 1, title: 'Book a Free Trial', desc: 'Try a session with no commitment', icon: '&#128197;' },
+              { step: 1, title: `Book a ${trialWord}`, desc: 'Try a session with no commitment', icon: '&#128197;' },
               { step: 2, title: 'Join a Class', desc: 'Pick the sessions that suit your schedule', icon: '&#9917;' },
               { step: 3, title: 'Track Progress', desc: 'Watch your child develop with regular coach reports', icon: '&#128200;' },
             ].map((item) => (
@@ -506,7 +514,7 @@ export default async function PublicBookingPage({
             <span className="text-2xl sm:text-3xl block mb-2">&#9917;</span>
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">Not sure yet? Try a free session!</h2>
             <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">Book a free taster session for your child — no commitment, no payment needed.</p>
-            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book Free Trial &rarr;</Link>
+            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book a {trialWord} &rarr;</Link>
           </div>
         </section>
 
@@ -564,7 +572,7 @@ export default async function PublicBookingPage({
               { q: 'What happens if it rains?', a: 'Sessions run in all weather unless conditions are unsafe. If a session is cancelled due to extreme weather, we will notify you in advance and offer a make-up session.' },
               { q: 'Can I change sessions?', a: 'Yes! You can switch between available sessions at any time by contacting us or through your parent portal. Subject to availability.' },
               { q: 'What age groups do you cater for?', a: 'We offer classes for children of all ages, from toddlers through to teens. Check our weekly schedule above to find the right group for your child.' },
-              { q: 'Is there a trial session available?', a: 'Absolutely! We offer a free trial session so your child can experience our coaching before committing. Click the "Book a Free Trial" button to get started.' },
+              { q: 'Is there a trial session available?', a: hasAnyPaidTrial ? 'Yes — most classes offer a trial session so your child can experience our coaching before committing. Some 1-to-1s and specialist sessions are paid trials; the price (if any) will be shown on the class page. Tap "Book a Trial" to get started.' : 'Absolutely! We offer a free trial session so your child can experience our coaching before committing. Click the "Book a Free Trial" button to get started.' },
             ].map((faq) => (
               <details key={faq.q} className="group rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden">
                 <summary className="flex cursor-pointer items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-semibold text-white select-none list-none [&::-webkit-details-marker]:hidden">
@@ -582,7 +590,7 @@ export default async function PublicBookingPage({
           <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Sign up today and book your child&apos;s first class</p>
           <div className="flex flex-wrap gap-3 justify-center items-center">
             <Link href={`/auth/signup?org=${slug}`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base text-white transition-transform hover:scale-105" style={{ backgroundColor: primaryColor }}>Sign Up Free</Link>
-            <Link href={`/book/${slug}/trial/quick`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a Free Trial</Link>
+            <Link href={`/book/${slug}/trial/quick`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a {trialWord}</Link>
             <EnquiryButton orgId={org.id} academyName={org.name} primaryColor={primaryColor} />
           </div>
           {(org.contact_email || org.contact_phone) && (
