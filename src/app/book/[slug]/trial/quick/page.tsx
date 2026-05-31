@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import TrialForm from './TrialForm'
 
@@ -30,11 +31,25 @@ export default async function QuickTrialPage({
     )
   }
 
-  const { data: groups } = await supabase
+  const { data: allGroups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, age_group, class_type')
+    .select('id, name, day_of_week, time_slot, location, age_group, class_type, trial_price')
     .eq('organisation_id', org.id)
     .order('name')
+
+  // If the parent landed here with a specific class preselected AND that class
+  // charges for trials, redirect them straight to the paid-trial flow — never
+  // let a £15 trial get given away through the free-trial form.
+  if (preselectedClassId) {
+    const preset = (allGroups || []).find(g => g.id === preselectedClassId)
+    if (preset && Number(preset.trial_price ?? 0) > 0) {
+      redirect(`/book/${slug}/class/${preselectedClassId}/trial/paid`)
+    }
+  }
+
+  // Only show classes that ACTUALLY offer a free trial in the picker. Classes
+  // with a paid trial price belong on their own /trial/paid page.
+  const groups = (allGroups || []).filter(g => !(Number(g.trial_price ?? 0) > 0))
 
   const primaryColor = org.primary_color || '#4ecde6'
 
