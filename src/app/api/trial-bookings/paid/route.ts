@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Look up the class + academy + trial price + connected stripe account
     const { data: group } = await supabase
       .from('training_groups')
-      .select('id, name, trial_price, organisation_id, day_of_week, time_slot, location, class_type')
+      .select('id, name, trial_price, price_per_session, organisation_id, day_of_week, time_slot, location, class_type')
       .eq('id', groupId)
       .single()
 
@@ -46,7 +46,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 })
     }
 
-    const trialPrice = Number(group.trial_price || 0)
+    // For paid-only class types (1-2-1, 2-1, intensity) without an explicit
+    // trial price, fall back to price_per_session — keeps a sensible trial
+    // CTA available instead of silently hiding it.
+    const classType = group.class_type as string | null
+    const paidOnlyClass = classType ? ['1-2-1', '2-1', 'intensity'].includes(classType) : false
+    const rawTrialPrice = Number(group.trial_price || 0)
+    const sessionPrice = Number(group.price_per_session || 0)
+    const trialPrice =
+      rawTrialPrice > 0 ? rawTrialPrice : paidOnlyClass && sessionPrice > 0 ? sessionPrice : 0
     if (trialPrice <= 0) {
       return NextResponse.json(
         { error: 'This class offers free trials — use the free trial flow instead.' },

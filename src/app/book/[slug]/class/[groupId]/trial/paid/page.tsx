@@ -20,16 +20,22 @@ export default async function PaidTrialPage({
 
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, trial_price, age_group, class_type')
+    .select('id, name, day_of_week, time_slot, location, trial_price, price_per_session, age_group, class_type')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
     .single()
 
   if (!group) notFound()
 
-  const trialPrice = Number(group.trial_price || 0)
+  const classType = (group.class_type as string) || 'group'
+  const paidOnlyClass = ['1-2-1', '2-1', 'intensity'].includes(classType)
+  const rawTrialPrice = Number(group.trial_price || 0)
+  const sessionPrice = Number(group.price_per_session || 0)
+  // For paid-only types, fall back to the per-session price if no explicit
+  // trial price is set — same rule as the class page.
+  const trialPrice =
+    rawTrialPrice > 0 ? rawTrialPrice : paidOnlyClass && sessionPrice > 0 ? sessionPrice : 0
   if (trialPrice <= 0) {
-    // Class doesn't offer a paid trial — bounce them to the free trial flow
     return notFound()
   }
 

@@ -33,7 +33,7 @@ export default async function QuickTrialPage({
 
   const { data: allGroups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, age_group, class_type, trial_price')
+    .select('id, name, day_of_week, time_slot, location, age_group, class_type, trial_price, price_per_session')
     .eq('organisation_id', org.id)
     .order('name')
 
@@ -44,16 +44,18 @@ export default async function QuickTrialPage({
     PAID_ONLY_TYPES.includes((g.class_type as string) || '')
 
   // If the parent landed here with a specific class preselected, route them to
-  // the right place: paid trial if a price is set; otherwise back to the class
-  // page (no free trial available for paid-only types).
+  // the right place. For paid-only types we also fall back to price_per_session
+  // when trial_price isn't explicitly set — so a £30 1-2-1 still routes to
+  // the paid trial flow rather than being dumped back on the class page.
   if (preselectedClassId) {
     const preset = (allGroups || []).find(g => g.id === preselectedClassId)
     if (preset) {
-      if (Number(preset.trial_price ?? 0) > 0) {
+      const rawTrial = Number(preset.trial_price ?? 0)
+      const sessionPx = Number(preset.price_per_session ?? 0)
+      const effectiveTrial = rawTrial > 0 ? rawTrial : isPaidOnlyType(preset) && sessionPx > 0 ? sessionPx : 0
+      if (effectiveTrial > 0) {
         redirect(`/book/${slug}/class/${preselectedClassId}/trial/paid`)
       } else if (isPaidOnlyType(preset)) {
-        // No free trial for this class type — send them back to the class
-        // page where they can subscribe.
         redirect(`/book/${slug}/class/${preselectedClassId}`)
       }
     }

@@ -129,15 +129,23 @@ export default async function ClassBookingPage({
   const coach = group.coach as unknown as { full_name: string } | null
   const primaryColor = org.primary_color || '#4ecde6'
   const price = group.price_per_session as number | null
-  const trialPrice = group.trial_price as number | null
-  const hasPaidTrial = trialPrice != null && Number(trialPrice) > 0
+  const rawTrialPrice = group.trial_price as number | null
   const classType = (group.class_type as string) || 'group'
   // 1-2-1 / 2-1 / intensity are inherently paid sessions — they must never
   // advertise a free trial even if trial_price was left blank by the academy.
   const paidOnlyClass = ['1-2-1', '2-1', 'intensity'].includes(classType)
-  // Show the trial CTA only when it's a paid trial we can present, or when
-  // this class type is allowed to offer a free trial. Skip it entirely for a
-  // 1-2-1 with no price set — better no CTA than a misleading "free" one.
+  // If a paid-only class has no explicit trial_price but DOES have a
+  // per-session price, use that as the trial price — a £30 single 1-2-1 is
+  // a fair trial fee. Beats hiding the CTA entirely.
+  const effectiveTrialPrice =
+    rawTrialPrice != null && Number(rawTrialPrice) > 0
+      ? Number(rawTrialPrice)
+      : paidOnlyClass && price != null && Number(price) > 0
+        ? Number(price)
+        : null
+  const trialPrice = effectiveTrialPrice
+  const hasPaidTrial = trialPrice != null && trialPrice > 0
+  // Trial CTA hidden only when paid-only and we couldn't even derive a price.
   const showTrialCta = hasPaidTrial || !paidOnlyClass
   const typeConfig = CLASS_TYPE_CONFIG[classType] || CLASS_TYPE_CONFIG.group
   const shortDesc = group.short_description as string | null
