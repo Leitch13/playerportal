@@ -5,6 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { SubscriptionPlan } from '@/lib/types'
 
+/**
+ * Admin-side per-subscription quick actions on the Payments page.
+ *
+ * IMPORTANT: every status change here also propagates to Stripe via
+ * /api/stripe/cancel (which schedules cancel-at-period-end and writes the
+ * cancellations audit row). Previously this component only updated the DB
+ * row, which let Stripe keep charging the customer even though the admin
+ * thought they'd cancelled. The `confirm()` prompt is intentional — Cancel
+ * is destructive enough that a misclick on a small button shouldn't drop
+ * a paying customer.
+ */
 export default function SubscriptionActions({
   subscriptionId,
   currentStatus,
@@ -19,19 +30,44 @@ export default function SubscriptionActions({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  async function updateStatus(newStatus: string) {
+  async function cancelInStripe() {
+    const ok = window.confirm(
+      'Cancel this subscription? This schedules cancellation in Stripe so the customer keeps access until the end of their current billing period, then it stops charging. Continue?'
+    )
+    if (!ok) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/stripe/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId, reason: 'admin_cancelled' }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert('Could not cancel: ' + (data.error || res.statusText))
+      }
+    } catch (err) {
+      alert('Network error cancelling: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      router.refresh()
+      setLoading(false)
+    }
+  }
+
+  async function setLocalStatus(newStatus: 'paused' | 'active') {
+    // Pause / Activate stay local-only — Stripe has no native "pause" concept
+    // matching ours and "active" here just clears local-side flags. Cancel is
+    // the only destructive transition that needs to call Stripe.
     setLoading(true)
     const supabase = createClient()
-
     await supabase
       .from('subscriptions')
       .update({
         status: newStatus,
-        canceled_at: newStatus === 'canceled' ? new Date().toISOString() : null,
+        canceled_at: null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', subscriptionId)
-
     router.refresh()
     setLoading(false)
   }
@@ -70,14 +106,14 @@ export default function SubscriptionActions({
       {currentStatus === 'active' && (
         <>
           <button
-            onClick={() => updateStatus('paused')}
+            onClick={() => setLocalStatus('paused')}
             disabled={loading}
             className="px-2 py-1 text-xs border border-yellow-300 text-yellow-700 rounded hover:bg-yellow-50 transition-colors"
           >
             Pause
           </button>
           <button
-            onClick={() => updateStatus('canceled')}
+            onClick={cancelInStripe}
             disabled={loading}
             className="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors"
           >
@@ -88,14 +124,14 @@ export default function SubscriptionActions({
       {currentStatus === 'paused' && (
         <>
           <button
-            onClick={() => updateStatus('active')}
+            onClick={() => setLocalStatus('active')}
             disabled={loading}
             className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
           >
             Resume
           </button>
           <button
-            onClick={() => updateStatus('canceled')}
+            onClick={cancelInStripe}
             disabled={loading}
             className="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors"
           >
@@ -106,14 +142,14 @@ export default function SubscriptionActions({
       {currentStatus === 'incomplete' && (
         <>
           <button
-            onClick={() => updateStatus('active')}
+            onClick={() => setLocalStatus('active')}
             disabled={loading}
             className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
           >
             Activate
           </button>
           <button
-            onClick={() => updateStatus('canceled')}
+            onClick={cancelInStripe}
             disabled={loading}
             className="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors"
           >
@@ -123,7 +159,7 @@ export default function SubscriptionActions({
       )}
       {currentStatus === 'past_due' && (
         <button
-          onClick={() => updateStatus('active')}
+          onClick={() => setLocalStatus('active')}
           disabled={loading}
           className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
         >

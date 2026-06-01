@@ -234,26 +234,35 @@ export default async function AnalyticsPage() {
     .from('attendance')
     .select('group_id, present')
     .eq('organisation_id', orgId)
-    .eq('present', true)
     .gte('session_date', sixMonthsAgo.toISOString().split('T')[0])
 
+  // Build BOTH present and total maps so the rate is mathematically clean.
+  // The previous code only fetched present=true rows then divided by an
+  // arbitrary "~6 months" constant — which mangled the percentage so a
+  // class with 100% attendance showed 16% on the admin dashboard.
   const attendanceCountMap = new Map<string, number>()
+  const totalMarksMap = new Map<string, number>()
   for (const a of attendanceByGroup || []) {
     const gid = a.group_id
-    if (gid) attendanceCountMap.set(gid, (attendanceCountMap.get(gid) || 0) + 1)
+    if (!gid) continue
+    totalMarksMap.set(gid, (totalMarksMap.get(gid) || 0) + 1)
+    if (a.present) {
+      attendanceCountMap.set(gid, (attendanceCountMap.get(gid) || 0) + 1)
+    }
   }
 
   const classAttendanceStats = (groups || [])
     .map((g) => {
       const enrolled = enrolCountMap.get(g.id) || 0
       const attended = attendanceCountMap.get(g.id) || 0
-      // Attendance rate: total present marks / enrolled players (normalised)
-      const attendanceRate = enrolled > 0 ? Math.round((attended / enrolled) * 100 / 6) : 0 // divided by ~6 months
+      const totalMarks = totalMarksMap.get(g.id) || 0
+      // Attendance rate = present marks / total marks recorded.
+      const attendanceRate = totalMarks > 0 ? Math.round((attended / totalMarks) * 100) : 0
       return {
         name: g.name,
         enrolled,
         attended,
-        attendanceRate: Math.min(attendanceRate, 100),
+        attendanceRate,
       }
     })
     .sort((a, b) => b.attendanceRate - a.attendanceRate)

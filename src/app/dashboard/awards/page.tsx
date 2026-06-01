@@ -48,6 +48,7 @@ export default async function AwardsPage() {
     const { data: players } = await supabase
       .from('players')
       .select('id, first_name, last_name')
+      .eq('organisation_id', orgId)
       .order('first_name')
 
     const { data: terms } = await supabase

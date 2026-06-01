@@ -24,16 +24,22 @@ export default async function SessionPlansPage() {
   if (!isStaff) redirect('/dashboard')
 
   const orgId = profile?.organisation_id || ''
+  if (!orgId) redirect('/dashboard')
 
+  // CRITICAL: org-scoped. Without these filters, super-admins would see
+  // every academy's session plans + training groups (same RLS-bypass class
+  // as the Parents page leak).
   const { data: plans } = await supabase
     .from('session_plans')
     .select('*, group:training_groups(name)')
+    .eq('organisation_id', orgId)
     .order('session_date', { ascending: false })
     .limit(50)
 
   const { data: groups } = await supabase
     .from('training_groups')
     .select('id, name')
+    .eq('organisation_id', orgId)
     .order('name')
 
   // Group plans by date

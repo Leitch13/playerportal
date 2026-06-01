@@ -103,17 +103,15 @@ export default async function ReportsPage() {
     const collected = monthPayments.reduce((s, p) => s + Number(p.amount_paid || 0), 0)
     const due = monthPayments.reduce((s, p) => s + Number(p.amount), 0)
 
-    // Add subscription revenue
-    const activeSubs = (subscriptions || []).filter((s) => s.status === 'active')
-    const subRevenue = activeSubs.reduce((sum, s) => {
-      const plan = s.plan as unknown as { amount: number } | null
-      return sum + (plan ? Number(plan.amount) : 0)
-    }, 0)
-
+    // The previous code only added current-month subscription revenue when
+    // i === 0, so the historical revenue chart understated every month
+    // before this one. We just show actual collected payments per month;
+    // subscription "expected" amounts already arrive via webhook → payments
+    // table on each renewal, so summing payments by month is correct.
     monthlyRevenue.push({
       label: monthLabel,
-      collected: collected + (i === 0 ? subRevenue : 0), // Only add sub revenue to current month
-      due: due + (i === 0 ? subRevenue : 0),
+      collected,
+      due,
     })
   }
 

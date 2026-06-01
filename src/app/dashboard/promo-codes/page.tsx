@@ -37,6 +37,20 @@ export default async function PromoCodesPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Promo Codes</h1>
 
+      {/* Honesty banner: codes can be CREATED here but the checkout flow
+         doesn't read them yet, so a parent typing the code at signup won't
+         see any discount applied. This prevents an admin from configuring
+         a code, thinking it works, and being surprised when parents are
+         charged full price. Remove this banner when the checkout
+         integration ships. */}
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <strong className="font-semibold">Beta — not yet wired into checkout.</strong>{' '}
+        You can create and manage codes here, but parents typing them at
+        checkout won't see a discount applied yet. Use the per-class
+        sibling discount and the cancel-flow 50% retention offer for now —
+        both apply through Stripe correctly.
+      </div>
+
       <PromoCodeManager orgId={orgId} />
 
       <Card title="All Promo Codes">

@@ -23,10 +23,14 @@ export default async function DrillsPage() {
   if (!isStaff) redirect('/dashboard')
 
   const orgId = profile?.organisation_id || ''
+  if (!orgId) redirect('/dashboard')
 
+  // CRITICAL: org-scoped. Super-admins bypass RLS — without this filter the
+  // drills library leaks every academy's drill IP into a single view.
   const { data: drills } = await supabase
     .from('drills')
     .select('*')
+    .eq('organisation_id', orgId)
     .order('name')
 
   return (

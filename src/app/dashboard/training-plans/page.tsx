@@ -22,16 +22,21 @@ export default async function TrainingPlansPage() {
 
   const role = (profile?.role || 'parent') as UserRole
   const orgId = profile?.organisation_id || ''
+  if (!orgId) redirect('/dashboard')
 
+  // CRITICAL: org-scoped reads. Super-admins bypass RLS so without these
+  // filters the page surfaces every academy's training plans.
   const { data: plans } = await supabase
     .from('training_plans')
     .select('*, group:training_groups(name)')
+    .eq('organisation_id', orgId)
     .order('week_starting', { ascending: false })
     .limit(20)
 
   const { data: groups } = await supabase
     .from('training_groups')
     .select('id, name')
+    .eq('organisation_id', orgId)
     .order('name')
 
   const isStaff = role === 'admin' || role === 'coach'
