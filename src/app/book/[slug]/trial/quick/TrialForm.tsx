@@ -164,6 +164,27 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       versionHash = (h >>> 0).toString(16) + '-' + txt.length
     } catch { /* non-fatal */ }
 
+    // Stop the same parent+child booking the same class trial repeatedly.
+    // Without this, one parent could spam-create bookings (and the admin
+    // notifications + emails attached to each).
+    if (groupId && parentEmail) {
+      const { data: existing } = await supabase
+        .from('trial_bookings')
+        .select('id')
+        .eq('organisation_id', orgId)
+        .eq('training_group_id', groupId)
+        .ilike('parent_email', parentEmail.trim())
+        .ilike('child_name', (childName || '').trim())
+        .in('status', ['confirmed', 'pending', 'attended'])
+        .limit(1)
+        .maybeSingle()
+      if (existing) {
+        setError("You've already booked this trial — check your email for the confirmation.")
+        setLoading(false)
+        return
+      }
+    }
+
     const { error: insertError } = await supabase.from('trial_bookings').insert({
       organisation_id: orgId,
       training_group_id: groupId || null,

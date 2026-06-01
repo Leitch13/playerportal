@@ -26,11 +26,15 @@ export default async function SessionNotesPage({
   const role = (profile?.role || 'parent') as UserRole
   const isStaff = role === 'admin' || role === 'coach'
   const orgId = profile?.organisation_id || ''
+  if (!orgId) redirect('/dashboard')
 
-  // Fetch session notes
+  // Fetch session notes. CRITICAL: scope to the user's own org. RLS bypass
+  // for super-admins (which we hit on the Parents page) would otherwise
+  // surface every academy's coaching notes here.
   let query = supabase
     .from('session_notes')
     .select('*, group:training_groups(name), coach:profiles!session_notes_coach_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('session_date', { ascending: false })
     .limit(50)
 
@@ -40,10 +44,11 @@ export default async function SessionNotesPage({
 
   const { data: notes } = await query
 
-  // Get groups for filter + form
+  // Get groups for filter + form — same org scope.
   const { data: groups } = await supabase
     .from('training_groups')
     .select('id, name')
+    .eq('organisation_id', orgId)
     .order('name')
 
   return (

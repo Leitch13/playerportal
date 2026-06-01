@@ -37,7 +37,7 @@ export default function CheckInForm({
         .from('attendance')
         .select('player_id')
         .in('player_id', playerIds)
-        .eq('training_group_id', groupId)
+        .eq('group_id', groupId)
         .eq('session_date', sessionDate)
         .eq('present', true)
 
@@ -62,13 +62,13 @@ export default function CheckInForm({
     const { error } = await supabase.from('attendance').upsert(
       {
         player_id: playerId,
-        training_group_id: groupId,
+        group_id: groupId,
         session_date: sessionDate,
         present: true,
         organisation_id: orgId,
       },
       {
-        onConflict: 'player_id,training_group_id,session_date',
+        onConflict: 'player_id,group_id,session_date',
       }
     )
 

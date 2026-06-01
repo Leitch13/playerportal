@@ -89,6 +89,10 @@ export default function MessageThread({
       .from('messages')
       .update({ read: true })
       .in('id', unreadIds)
+      // Belt-and-braces: only flip read on messages addressed to ME. RLS
+      // should already enforce this but a stray service-role caller could
+      // otherwise mark any user's messages read by id.
+      .eq('recipient_id', currentUserId)
       .then(() => {
         onThreadRead(thread.threadId)
       })

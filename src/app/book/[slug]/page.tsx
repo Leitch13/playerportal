@@ -122,10 +122,14 @@ export default async function PublicBookingPage({
     }
   }
 
+  // is_published gate so unpublished/draft classes don't surface on the
+  // public academy home. Camps + trials already filter this way; classes
+  // were inconsistent so drafts leaked into the schedule.
   const { data: groups } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, trial_price, age_group, short_description, image_url')
     .eq('organisation_id', org.id)
+    .neq('is_published', false)
     .order('name')
 
   // Don't advertise "Free Trial" prominently if any of this academy's classes

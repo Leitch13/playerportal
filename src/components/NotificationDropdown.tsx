@@ -176,9 +176,26 @@ export default function NotificationDropdown({
     }
 
     setOpen(false)
-    if (notification.link) {
+    if (notification.link && isSafeLink(notification.link)) {
       router.push(notification.link)
     }
+  }
+
+  /**
+   * Notifications are typed-up server-side, but `link` is a TEXT column with
+   * no DB-level constraint — a compromised cron, a future regex bug, or
+   * worst case a malicious service-role caller could write a `link` of
+   * `https://attacker.com/...` or `javascript:...`. The bell dropdown is a
+   * trusted surface, so we hard-restrict to same-origin relative paths only.
+   */
+  function isSafeLink(link: string): boolean {
+    if (typeof link !== 'string') return false
+    const trimmed = link.trim()
+    if (!trimmed.startsWith('/')) return false
+    // Disallow protocol-relative URLs like "//evil.com" which Next.js will
+    // happily push.
+    if (trimmed.startsWith('//')) return false
+    return true
   }
 
   const grouped = groupNotifications(notifications)

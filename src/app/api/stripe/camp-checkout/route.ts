@@ -57,6 +57,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Camp not found' }, { status: 404 })
     }
 
+    // Refuse to take payment for an unpublished camp. Front-end pages already
+    // hide unpublished camps, but the checkout API is a separate surface — a
+    // parent with a stale link (e.g. one Jamie shared, then un-published)
+    // could otherwise sail past the gate and pay for something not running.
+    if (camp.is_published === false) {
+      return NextResponse.json({ error: 'This camp isn’t open for bookings.' }, { status: 404 })
+    }
+
+    // Refuse to book a camp whose start date has already passed.
+    if (camp.start_date) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const startDate = new Date(`${camp.start_date}T00:00:00`)
+      if (!isNaN(startDate.getTime()) && startDate < today) {
+        return NextResponse.json({ error: 'This camp has already started.' }, { status: 400 })
+      }
+    }
+
     // Check capacity
     const { count: bookingCount } = await supabase
       .from('camp_bookings')
