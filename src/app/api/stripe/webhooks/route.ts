@@ -294,7 +294,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             paid_date: new Date().toISOString().split('T')[0],
             created_at: new Date().toISOString(),
           })
-          if (campPayErr) throw new Error(`camp payments.insert failed: ${campPayErr.message}`)
+          // 23505 = unique violation on stripe_session_id (partial unique
+          // index from migration 069). Means a prior delivery of this same
+          // Stripe event already inserted the camp payment row; treat as
+          // success and continue so Stripe stops retrying. Camps remain
+          // one-off `mode='payment'` charges — no subscription is involved
+          // here. Same pattern as the tonight_then_sub guard.
+          if (campPayErr && (campPayErr as { code?: string }).code !== '23505') {
+            throw new Error(`camp payments.insert failed: ${campPayErr.message}`)
+          }
         }
       }
     }
