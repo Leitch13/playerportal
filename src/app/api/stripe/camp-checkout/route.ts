@@ -211,6 +211,10 @@ export async function POST(request: NextRequest) {
       ],
       mode: 'payment',
       payment_intent_data: {
+        // on_behalf_of brands the camp Checkout with the academy's Stripe
+        // account name instead of the platform's, matching the subscribe +
+        // trial flows for consistency.
+        on_behalf_of: payoutOrg.stripe_account_id,
         ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
         transfer_data: {
           destination: payoutOrg.stripe_account_id,

@@ -150,7 +150,10 @@ export async function POST(request: NextRequest) {
 
     if (connectedAccountId) {
       const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(discountedTotal * PLATFORM_FEE_RATE) : 0
+      // on_behalf_of brands the migration Checkout with the academy's Stripe
+      // account name instead of the platform's.
       params.payment_intent_data = {
+        on_behalf_of: connectedAccountId,
         ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
         transfer_data: { destination: connectedAccountId },
       }
@@ -204,8 +207,11 @@ export async function POST(request: NextRequest) {
       ...(migrationBillingStart
         ? { trial_end: migrationBillingStart }
         : { billing_cycle_anchor: getFirstOfNextMonth() }),
+      // on_behalf_of brands the migration subscription with the academy's
+      // Stripe account name so renewals stay academy-branded too.
       ...(connectedAccountId
         ? {
+            on_behalf_of: connectedAccountId,
             ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
             transfer_data: { destination: connectedAccountId },
           }

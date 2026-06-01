@@ -375,8 +375,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         trial_end: trialEndUnix,
         ...(savedPaymentMethod ? { default_payment_method: savedPaymentMethod } : {}),
         ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+        // on_behalf_of brands future renewals with the academy's Stripe
+        // account name (matches the tonight payment's Checkout branding,
+        // so receipts stay consistent month-to-month).
         ...(connectedAcct
           ? {
+              on_behalf_of: connectedAcct,
               ...(platformFeePercent > 0 ? { application_fee_percent: platformFeePercent } : {}),
               transfer_data: { destination: connectedAcct },
             }

@@ -293,10 +293,15 @@ export async function POST(request: NextRequest) {
         },
       }
 
-      // Route payment through the connected account with the plan's platform fee
+      // Route payment through the connected account with the plan's platform fee.
+      // `on_behalf_of` makes the connected account the SETTLEMENT MERCHANT, so
+      // Stripe Checkout renders the academy's business name (e.g. "Jamie Allan
+      // Football Academy") in the mandate text and on the receipt — not the
+      // platform's Stripe account name. Required for any parent-facing Checkout.
       if (connectedAccountId) {
         const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(discountedTotal * PLATFORM_FEE_RATE) : 0
         quarterlySessionParams.payment_intent_data = {
+          on_behalf_of: connectedAccountId,
           ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
           transfer_data: {
             destination: connectedAccountId,
@@ -421,10 +426,16 @@ export async function POST(request: NextRequest) {
           },
         ],
         // Save the card so the post-checkout subscription can charge off-session.
+        // `on_behalf_of` brands the Checkout + receipt with the academy's
+        // Stripe account name (e.g. "Jamie Allan Football Academy") instead of
+        // the platform account name. The follow-up subscription created in the
+        // webhook handler picks up the same on_behalf_of so renewals stay
+        // academy-branded too.
         payment_intent_data: {
           setup_future_usage: 'off_session',
           ...(connectedAccountId
             ? {
+                on_behalf_of: connectedAccountId,
                 ...(platformFeePence > 0 ? { application_fee_amount: platformFeePence } : {}),
                 transfer_data: { destination: connectedAccountId },
               }
@@ -502,8 +513,11 @@ export async function POST(request: NextRequest) {
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
         trial_end: trialEnd,
+        // on_behalf_of pins the academy as settlement merchant so Stripe renders
+        // the academy's business name on Checkout, mandate copy, and receipts.
         ...(connectedAccountId
           ? {
+              on_behalf_of: connectedAccountId,
               ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
               transfer_data: { destination: connectedAccountId },
             }

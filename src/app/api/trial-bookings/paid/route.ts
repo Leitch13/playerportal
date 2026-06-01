@@ -137,6 +137,10 @@ export async function POST(request: NextRequest) {
         terms_version_hash: termsVersionHash,
       },
       payment_intent_data: {
+        // on_behalf_of brands the paid-trial Checkout with the academy's
+        // Stripe account name instead of the platform's, matching the
+        // subscribe + camp flows for consistency.
+        on_behalf_of: org.stripe_account_id,
         ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
         transfer_data: {
           destination: org.stripe_account_id,
