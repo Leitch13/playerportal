@@ -68,6 +68,11 @@ function SignUp() {
   const refCode = searchParams.get('ref') || ''
   // class= carries the class the parent came from; used to auto-enrol after subscribe
   const preSelectedClassId = searchParams.get('class')
+  // intent=waitlist means the parent landed here from a FULL class page wanting
+  // to join its waitlist. After we create their account + child, we skip the
+  // subscribe step entirely and POST to /api/waitlist/join, then drop them on
+  // the dashboard with a toast.
+  const signupIntent = searchParams.get('intent') // 'waitlist' | null
   // billedFrom= (YYYY-MM-DD): MIGRATION links for parents who already prepaid the
   // academy elsewhere. Card captured now, £0 today, first charge on this date.
   const billedFrom = searchParams.get('billedFrom')
@@ -323,6 +328,24 @@ function SignUp() {
         .is('training_group_id', null)
         .order('sort_order')
       plansData = (data as PlanRow[] | null) || []
+    }
+
+    // ── Waitlist intent: skip the subscribe step entirely. Parent came here
+    // from a full class page so we just need to add them to the waitlist
+    // and drop them on the dashboard. No Stripe in this path.
+    if (signupIntent === 'waitlist' && preSelectedClassId) {
+      try {
+        await fetch('/api/waitlist/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ groupId: preSelectedClassId, playerId: child.id }),
+        })
+      } catch {
+        // Non-fatal — they can still rejoin from the class page or dashboard.
+      }
+      router.push('/dashboard?welcome=waitlist')
+      router.refresh()
+      return
     }
 
     setPlans(plansData)

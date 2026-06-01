@@ -1085,6 +1085,74 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       body: `Your subscription${plan ? ` to ${plan.name}` : ''} has been cancelled. You can resubscribe at any time from your dashboard.`,
       link: '/dashboard/payments',
     })
+
+    // ─── Cascade: deactivate child enrolments if this was the parent's
+    // last active subscription. Without this, the child stays in the
+    // attendance register and the class fill heatmap forever — but they've
+    // stopped paying. We PAUSE rather than hard-cancel so the admin can
+    // re-activate without losing history, and we alert every org admin
+    // so they can chase / confirm.
+    const { data: otherSubs } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('parent_id', localSub.parent_id)
+      .in('status', ['active', 'trialing', 'past_due'])
+      .neq('id', localSub.id)
+
+    const hasOtherActiveSubs = (otherSubs?.length || 0) > 0
+
+    if (!hasOtherActiveSubs && localSub.organisation_id) {
+      const { data: kids } = await supabase
+        .from('players')
+        .select('id, first_name, last_name')
+        .eq('parent_id', localSub.parent_id)
+        .eq('organisation_id', localSub.organisation_id)
+
+      type KidRow = { id: string; first_name: string; last_name: string }
+      const kidRows = (kids as unknown as KidRow[] | null) || []
+      const kidIds = kidRows.map((k) => k.id)
+      if (kidIds.length > 0) {
+        const { data: liveEnrolments } = await supabase
+          .from('enrolments')
+          .select('id, player_id, group:training_groups(name)')
+          .in('player_id', kidIds)
+          .eq('status', 'active')
+
+        if ((liveEnrolments || []).length > 0) {
+          await supabase
+            .from('enrolments')
+            .update({ status: 'paused' })
+            .in('player_id', kidIds)
+            .eq('status', 'active')
+
+          const { data: admins } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('organisation_id', localSub.organisation_id)
+            .eq('role', 'admin')
+
+          const kidsByName: Record<string, string> = {}
+          for (const k of kidRows) {
+            kidsByName[k.id] = `${k.first_name} ${k.last_name}`.trim()
+          }
+          type EnrRow = { player_id: string; group: { name?: string } | null }
+          const enrolmentSummary = (liveEnrolments as unknown as EnrRow[])
+            .map(e => `${kidsByName[e.player_id] || 'Child'} — ${e.group?.name || 'class'}`)
+            .join('; ')
+
+          for (const a of admins || []) {
+            await createNotification({
+              profileId: a.id as string,
+              organisationId: localSub.organisation_id,
+              type: 'subscription',
+              title: 'Subscription ended — enrolments paused',
+              body: `A parent's subscription ended so we paused their enrolments: ${enrolmentSummary}. Review in Enrolments to confirm.`,
+              link: '/dashboard/enrolments',
+            })
+          }
+        }
+      }
+    }
   }
 
 }

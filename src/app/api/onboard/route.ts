@@ -169,11 +169,18 @@ async function notifyNewAcademy(info: {
   platformPlan: string
 }) {
   const apiKey = process.env.RESEND_API_KEY
-  const to = process.env.ADMIN_NOTIFICATION_EMAIL || 'johnleitch970@gmail.com'
+  const to = process.env.ADMIN_NOTIFICATION_EMAIL
   const from = process.env.RESEND_FROM_EMAIL || 'onboarding@theplayerportal.net'
 
   if (!apiKey) {
     console.warn('RESEND_API_KEY not set — skipping admin notification')
+    return
+  }
+  if (!to) {
+    // No ADMIN_NOTIFICATION_EMAIL configured. We intentionally don't fall
+    // back to a hard-coded address — that's how a personal inbox ends up
+    // receiving prod traffic when the env var goes missing during a deploy.
+    console.warn('ADMIN_NOTIFICATION_EMAIL not set — skipping new-academy notification')
     return
   }
 

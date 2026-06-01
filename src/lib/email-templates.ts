@@ -1,8 +1,16 @@
-// Base layout wrapper with Player Portal branding — premium dark theme.
+// Base layout wrapper — premium dark theme.
 // Email clients vary wildly in CSS support, so this uses inline styles + tables
 // where needed for maximum compatibility (Gmail, Outlook, iOS Mail, Spark, etc.)
-function baseLayout(content: string, accentColor = '#4ecde6'): string {
+//
+// `academyName` lets transactional emails branded for a specific academy
+// show that academy's name in the header + footer instead of generic
+// "Player Portal". The platform tag ("by JSL Sports") stays on the header
+// for trust, and the footer always carries the legal entity for compliance.
+function baseLayout(content: string, accentColor = '#4ecde6', academyName?: string): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  const heroName = academyName ? escapeHtml(academyName) : 'Player Portal'
+  const footerName = academyName ? escapeHtml(academyName) : 'Player Portal'
+  const platformTag = academyName ? 'Powered by Player Portal' : 'by JSL Sports'
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#060606;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e5e5e5">
@@ -12,8 +20,8 @@ function baseLayout(content: string, accentColor = '#4ecde6'): string {
 
 <!-- Header card -->
 <tr><td style="background:linear-gradient(135deg, #0a0a0a 0%, #141414 60%, ${accentColor}15 100%);border-radius:20px 20px 0 0;padding:32px 36px;text-align:center;border:1px solid #1e1e1e;border-bottom:0">
-<div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:${accentColor};margin:0">⚽ Player Portal</div>
-<div style="margin:8px 0 0;color:#666;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">by JSL Sports</div>
+<div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:${accentColor};margin:0">⚽ ${heroName}</div>
+<div style="margin:8px 0 0;color:#666;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">${platformTag}</div>
 </td></tr>
 
 <!-- Brand accent line -->
@@ -29,8 +37,8 @@ ${content}
 
 <!-- Footer -->
 <tr><td align="center" style="padding:20px 16px 0">
-<div style="color:#777;font-size:13px;font-weight:500">Sent by <a href="${appUrl}" style="color:${accentColor};text-decoration:none;font-weight:600">Player Portal</a></div>
-<div style="margin:8px 0 0;color:#444;font-size:11px;line-height:1.5">You&apos;re receiving this because you have an account on Player Portal.</div>
+<div style="color:#777;font-size:13px;font-weight:500">Sent by <a href="${appUrl}" style="color:${accentColor};text-decoration:none;font-weight:600">${footerName}</a></div>
+<div style="margin:8px 0 0;color:#444;font-size:11px;line-height:1.5">You&apos;re receiving this because you have an account with ${footerName}.</div>
 <div style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 JSL Sports Technology Ltd. All rights reserved.</div>
 </td></tr>
 
@@ -38,6 +46,17 @@ ${content}
 </td></tr>
 </table>
 </body></html>`
+}
+
+// Minimal HTML escape so academy names with <, >, &, ", ' don't break the
+// markup or open injection holes via the (admin-set) academy name.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 /**
