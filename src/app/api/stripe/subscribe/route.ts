@@ -366,20 +366,113 @@ export async function POST(request: NextRequest) {
 
     const standardAnchor = getFirstOfNextMonth()
     const firstSessionTimestamp = firstSessionDate ? Math.floor(firstSessionDate.getTime() / 1000) : null
-    const useUpfrontMonthModel =
-      firstSessionTimestamp !== null && firstSessionTimestamp >= standardAnchor
-    const shiftedAnchor = useUpfrontMonthModel
-      ? getFirstOfMonthAfter(firstSessionDate!)
-      : standardAnchor
 
-    // Just one recurring line item. Two billing models below decide what
-    // billing_cycle_anchor / proration_behavior settings to apply.
+    // ── BILLING MODEL: "Pay for tonight's session + monthly term from the 1st" ──
+    //
+    // Aim: parents joining mid-month see one clean, understandable amount today
+    // (the price of a single session — monthly ÷ 4), then their proper monthly
+    // term kicks in on the 1st of next month with the full £X and recurs from
+    // there. No mystery prorated pennies, no surprise £62 bills.
+    //
+    // Implementation under the hood (because Stripe Checkout can't bill a
+    // one-off today AND defer the subscription to a future date in a single
+    // session): we run Checkout in PAYMENT mode for tonight's session amount
+    // with `setup_future_usage: 'off_session'` to save the card. The webhook
+    // then creates the actual recurring subscription via the Stripe API with
+    // `trial_end` set to the 1st of next month — so £0 sub charge today, full
+    // £X charged on the 1st, recurs monthly thereafter.
+    //
+    // Migration mode (admin pre-set firstBillingDate because the parent already
+    // paid the academy elsewhere) takes precedence and uses the legacy
+    // trial_end subscription flow — no one-time charge for them.
+    //
+    // If first session is in NEXT month already (no session this month at all),
+    // skip the one-time and let the trial_end carry the subscription cleanly.
+    const today = new Date()
+    const sessionIsThisCalendarMonth =
+      firstSessionDate !== null &&
+      firstSessionDate.getUTCFullYear() === today.getUTCFullYear() &&
+      firstSessionDate.getUTCMonth() === today.getUTCMonth()
+
+    const perSessionPence = Math.max(0, Math.round((Number(plan.amount) / 4) * 100))
+    const useTonightPlusSub = !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
+    const useTrialEndOnly = !migrationTrialEnd && !useTonightPlusSub
+
+    if (useTonightPlusSub) {
+      // ─── New flow: charge tonight's session as a one-off, then create the
+      //     subscription via webhook with trial_end = 1st of next month ───
+      const platformFeePence = PLATFORM_FEE_RATE > 0 ? Math.round(perSessionPence * PLATFORM_FEE_RATE) : 0
+
+      const tonightSession = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'gbp',
+              unit_amount: perSessionPence,
+              product_data: {
+                name: `Your first session — ${plan.name}`,
+                description: `One session today. Your £${Number(plan.amount).toFixed(2)}/month membership starts ${new Date(standardAnchor * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`,
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        // Save the card so the post-checkout subscription can charge off-session.
+        payment_intent_data: {
+          setup_future_usage: 'off_session',
+          ...(connectedAccountId
+            ? {
+                ...(platformFeePence > 0 ? { application_fee_amount: platformFeePence } : {}),
+                transfer_data: { destination: connectedAccountId },
+              }
+            : {}),
+        },
+        success_url: `${origin}/dashboard/payments/success?billing=monthly&model=tonight_then_sub`,
+        cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
+        ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+        metadata: {
+          // The webhook reads these to build the subscription after payment.
+          pp_flow: 'tonight_then_sub',
+          supabase_plan_id: planId,
+          supabase_user_id: user.id,
+          supabase_player_id: playerId || '',
+          supabase_class_id: classId || '',
+          stripe_recurring_price_id: stripePriceId,
+          stripe_connected_account: connectedAccountId || '',
+          platform_fee_percent: String(PLATFORM_FEE_RATE * 100),
+          sub_trial_end_unix: String(standardAnchor),
+          first_session_date: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : '',
+          ...(siblingCouponId ? { sibling_coupon_id: siblingCouponId } : {}),
+          billing_option: 'monthly',
+          billing_model: 'tonight_then_sub',
+        },
+      })
+
+      return NextResponse.json({
+        url: tonightSession.url,
+        billing: 'monthly',
+        billingModel: 'tonight_then_sub',
+        firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
+        tonightAmount: (perSessionPence / 100).toFixed(2),
+        nextBillingDate: new Date(standardAnchor * 1000).toISOString().split('T')[0],
+        nextBillingAmount: Number(plan.amount).toFixed(2),
+        siblingDiscountApplied: !!siblingCouponId,
+        siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
+      })
+    }
+
+    // ─── Legacy / fallback flow: subscription mode with trial_end ───
+    // Used for (a) migration billing and (b) no-session-this-month signups,
+    // where there's nothing to charge for tonight — sub starts on the 1st.
+    const trialEnd = migrationTrialEnd || standardAnchor
+
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       { price: stripePriceId, quantity: 1 },
     ]
 
-    // Create Checkout Session in subscription mode
-    // Stripe handles proration automatically for mid-month signups
     const monthlySessionParams: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       line_items: lineItems,
@@ -393,7 +486,7 @@ export async function POST(request: NextRequest) {
         supabase_user_id: user.id,
         supabase_player_id: playerId || '',
         billing_option: 'monthly',
-        billing_model: useUpfrontMonthModel ? 'upfront_month' : 'prorated',
+        billing_model: migrationTrialEnd ? 'migration' : 'sub_from_1st',
         ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
         ...(classId ? { supabase_class_id: classId } : {}),
         ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
@@ -403,37 +496,16 @@ export async function POST(request: NextRequest) {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
-          billing_model: useUpfrontMonthModel ? 'upfront_month' : 'prorated',
+          billing_model: migrationTrialEnd ? 'migration' : 'sub_from_1st',
           ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
           ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
-        // Three billing models (migration takes precedence):
-        //  - Migration model (firstBillingDate set — parent already prepaid
-        //    elsewhere): trial_end = that date. £0 today, full access now,
-        //    first charge on the date. trial_end ⊥ billing_cycle_anchor, so
-        //    we set ONLY trial_end here.
-        //  - Upfront-month model (first session is next month or later):
-        //    DON'T set billing_cycle_anchor. Stripe defaults to billing the
-        //    full first month TODAY, then on the join-anniversary monthly.
-        //  - Prorated model (first session is this month — standard
-        //    mid-month signup): billing_cycle_anchor at 1st of next month so
-        //    Stripe creates a prorated invoice from signup to anchor, then
-        //    bills the full month on the 1st thereafter.
-        ...(migrationTrialEnd
-          ? { trial_end: migrationTrialEnd }
-          : useUpfrontMonthModel
-            ? {}
-            : { billing_cycle_anchor: shiftedAnchor }),
-        // For connected accounts, apply the plan-based platform fee on every invoice
+        trial_end: trialEnd,
         ...(connectedAccountId
           ? {
-              ...(PLATFORM_FEE_RATE > 0
-                ? { application_fee_percent: PLATFORM_FEE_RATE * 100 }
-                : {}),
-              transfer_data: {
-                destination: connectedAccountId,
-              },
+              ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
+              transfer_data: { destination: connectedAccountId },
             }
           : {}),
       },
@@ -441,21 +513,18 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create(monthlySessionParams)
 
-    // In the upfront-month model the next bill is roughly 1 month from today
-    // (Stripe's default anniversary billing). In the prorated model the next
-    // bill is on the shifted anchor (1st of next month).
-    const nextBillEstimate = useUpfrontMonthModel
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      : new Date(shiftedAnchor * 1000).toISOString().split('T')[0]
-
     return NextResponse.json({
       url: session.url,
       billing: 'monthly',
-      billingModel: useUpfrontMonthModel ? 'upfront_month' : 'prorated',
+      billingModel: migrationTrialEnd ? 'migration' : 'sub_from_1st',
       firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
-      nextBillingDate: nextBillEstimate,
+      nextBillingDate: new Date(trialEnd * 1000).toISOString().split('T')[0],
+      nextBillingAmount: Number(plan.amount).toFixed(2),
+      tonightAmount: '0.00',
       siblingDiscountApplied: !!siblingCouponId,
       siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
+      // suppress unused-var warning while keeping the flag visible for future logic
+      _useTrialEndOnly: useTrialEndOnly,
     })
   } catch (err) {
     console.error('Subscribe checkout error:', err)

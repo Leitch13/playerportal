@@ -286,6 +286,227 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // ─── "Pay tonight + sub from 1st" — TWO-STEP MONTHLY FLOW ───
+  // The subscribe route ran Checkout in PAYMENT mode for tonight's session
+  // (the one-off) and saved the card via setup_future_usage. We now create
+  // the recurring subscription via API with trial_end = 1st of next month so
+  // the first £X charge lands then. This is the "pay tonight, term from
+  // next month" model the user picked.
+  if (session.metadata?.pp_flow === 'tonight_then_sub') {
+    const m = session.metadata
+    const userId = m.supabase_user_id
+    const planId = m.supabase_plan_id
+    const playerId = m.supabase_player_id || null
+    const classId = m.supabase_class_id || null
+    const recurringPriceId = m.stripe_recurring_price_id
+    const connectedAcct = m.stripe_connected_account || null
+    const platformFeePercent = Number(m.platform_fee_percent || 0)
+    const trialEndUnix = Number(m.sub_trial_end_unix || 0)
+    const siblingCouponId = m.sibling_coupon_id || null
+    const tonightAmount = (session.amount_total ?? 0) / 100
+    const nowIso = new Date().toISOString()
+
+    if (!userId || !planId || !recurringPriceId || !trialEndUnix) {
+      console.error('tonight_then_sub: missing required metadata')
+      return
+    }
+
+    // Get profile + plan + org for downstream emails & sub creation
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, organisation_id, stripe_customer_id')
+      .eq('id', userId)
+      .single()
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('id, name, organisation_id')
+      .eq('id', planId)
+      .single()
+    const orgId = profile?.organisation_id || plan?.organisation_id || null
+    const { data: org } = orgId
+      ? await supabase.from('organisations').select('name, slug, logo_url, contact_email').eq('id', orgId).single()
+      : { data: null }
+    const organisationName = (org?.name as string | undefined) || 'Your Academy'
+
+    // 1. Record tonight's one-off payment
+    if (tonightAmount > 0) {
+      await supabase.from('payments').insert({
+        parent_id: userId,
+        player_id: playerId,
+        organisation_id: orgId,
+        amount: tonightAmount,
+        amount_paid: tonightAmount,
+        status: 'paid',
+        stripe_session_id: session.id,
+        description: plan?.name ? `First session — ${plan.name}` : 'First session',
+        due_date: nowIso.split('T')[0],
+        paid_date: nowIso.split('T')[0],
+        created_at: nowIso,
+      })
+    }
+
+    // 2. Pull the saved payment method off the PaymentIntent so the upcoming
+    //    subscription can charge off-session on the 1st.
+    let savedPaymentMethod: string | null = null
+    if (session.payment_intent) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(
+          typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent.id
+        )
+        savedPaymentMethod = (pi.payment_method as string | null) || null
+      } catch (e) {
+        console.error('tonight_then_sub: could not retrieve PI for saved PM:', e)
+      }
+    }
+
+    // 3. Create the actual recurring subscription with trial_end = 1st of next month
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : session.customer?.id || profile?.stripe_customer_id
+    if (!customerId) {
+      console.error('tonight_then_sub: no customer id; aborting subscription create')
+      return
+    }
+
+    let createdSub: Stripe.Subscription | null = null
+    try {
+      createdSub = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: recurringPriceId }],
+        trial_end: trialEndUnix,
+        ...(savedPaymentMethod ? { default_payment_method: savedPaymentMethod } : {}),
+        ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+        ...(connectedAcct
+          ? {
+              ...(platformFeePercent > 0 ? { application_fee_percent: platformFeePercent } : {}),
+              transfer_data: { destination: connectedAcct },
+            }
+          : {}),
+        metadata: {
+          supabase_plan_id: planId,
+          supabase_user_id: userId,
+          supabase_player_id: playerId || '',
+          billing_model: 'tonight_then_sub',
+          ...(classId ? { supabase_class_id: classId } : {}),
+        },
+      })
+    } catch (e) {
+      // The tonight payment IS in the bank — just the recurring couldn't be
+      // created. Record the failure so we can intervene; don't crash the webhook.
+      console.error('tonight_then_sub: subscription create failed:', e)
+    }
+
+    // 4. Save subscription to our DB
+    if (createdSub) {
+      const sub = createdSub as Stripe.Subscription & { current_period_start?: number; current_period_end?: number }
+      await supabase.from('subscriptions').insert({
+        parent_id: userId,
+        player_id: playerId,
+        plan_id: planId,
+        status: sub.status || 'trialing',
+        stripe_subscription_id: sub.id,
+        stripe_customer_id: customerId,
+        organisation_id: orgId,
+        ...(sub.current_period_start ? { current_period_start: new Date(sub.current_period_start * 1000).toISOString() } : {}),
+        ...(sub.current_period_end ? { current_period_end: new Date(sub.current_period_end * 1000).toISOString() } : {}),
+      })
+
+      // Auto-enrol player in the class
+      if (classId && playerId) {
+        const { data: existing } = await supabase
+          .from('enrolments')
+          .select('id')
+          .eq('player_id', playerId)
+          .eq('group_id', classId)
+          .maybeSingle()
+        if (!existing) {
+          await supabase.from('enrolments').insert({
+            player_id: playerId,
+            group_id: classId,
+            status: 'active',
+            organisation_id: orgId,
+          })
+        }
+      }
+
+      // Auto-convert any matching lead to 'enrolled'
+      await convertLeadToEnrolled(orgId, profile?.email)
+    }
+
+    // 5. Send emails — receipt for tonight + "you're in" + first sale alert if applicable
+    if (profile?.email) {
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+        const dateLabel = new Date().toLocaleDateString('en-GB')
+
+        // Receipt for tonight's session
+        if (tonightAmount > 0) {
+          await trySendReceiptEmail({
+            email: profile.email,
+            parentName: profile.full_name ?? 'Parent',
+            amount: `£${tonightAmount.toFixed(2)}`,
+            planName: plan?.name ? `First session — ${plan.name}` : 'First session',
+            date: dateLabel,
+            receiptId: session.id,
+            academyName: organisationName,
+          })
+        }
+
+        // Subscription-started welcome — sets expectations for the 1st-of-month charge
+        let childName: string | undefined
+        if (playerId) {
+          const { data: player } = await supabase.from('players').select('first_name').eq('id', playerId).maybeSingle()
+          childName = (player?.first_name as string | undefined) || undefined
+        }
+
+        const { subscriptionStartedEmail, firstSaleEmail } = await import('@/lib/email-templates')
+        const { sendEmail } = await import('@/lib/email')
+        const subStartedTemplate = subscriptionStartedEmail({
+          parentName: profile.full_name ?? 'Parent',
+          childName,
+          academyName: organisationName,
+          planName: plan?.name ?? 'Subscription',
+          amount: `£${Number(((plan as unknown as { amount?: number })?.amount) ?? 0).toFixed(2)}`,
+          dashboardUrl: `${appUrl}/dashboard`,
+          academyLogoUrl: (org?.logo_url as string | undefined) || undefined,
+          academyContactEmail: (org?.contact_email as string | undefined) || undefined,
+        })
+        await sendEmail({
+          to: profile.email,
+          ...subStartedTemplate,
+          fromName: organisationName,
+          replyTo: (org?.contact_email as string | undefined) || undefined,
+        })
+
+        // First-sale celebration to the platform admin if this was the org's
+        // first paid subscription
+        if (orgId) {
+          const { count: priorSubs } = await supabase
+            .from('subscriptions')
+            .select('id', { count: 'exact', head: true })
+            .eq('organisation_id', orgId)
+            .in('status', ['active', 'trialing'])
+            .neq('stripe_subscription_id', createdSub?.id ?? '')
+          if ((priorSubs || 0) === 0) {
+            const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'johnleitch970@gmail.com'
+            const firstSaleTemplate = firstSaleEmail({
+              academyName: organisationName,
+              academySlug: (org?.slug as string | undefined) || '',
+              parentName: profile.full_name ?? 'Parent',
+              childName,
+              planName: plan?.name ?? 'Subscription',
+              amount: `£${Number(((plan as unknown as { amount?: number })?.amount) ?? 0).toFixed(2)}`,
+              dashboardUrl: appUrl,
+            })
+            await sendEmail({ to: adminEmail, ...firstSaleTemplate })
+          }
+        }
+      } catch (err) {
+        console.error('tonight_then_sub: post-payment emails failed:', err)
+      }
+    }
+    return
+  }
+
   // ─── Platform subscription (academy paying Player Portal) ───
   // Set by /api/platform/subscribe. Activates the academy's own SaaS plan and
   // marks them published so their public booking page goes live (hybrid model).
