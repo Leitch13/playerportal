@@ -19,6 +19,11 @@ export default async function AttendanceInsightsPage() {
   const role = (profile?.role || 'parent') as UserRole
   if (role === 'parent') redirect('/dashboard')
 
+  // CRITICAL: scope to admin's own org. Super-admins bypass RLS, so without
+  // an explicit org filter every academy's attendance leaks into the view.
+  const orgId = profile?.organisation_id as string | undefined
+  if (!orgId) redirect('/dashboard')
+
   // ─── Date boundaries ───
   const now = new Date()
   const ninetyDaysAgo = new Date(now)
@@ -41,17 +46,21 @@ export default async function AttendanceInsightsPage() {
     supabase
       .from('attendance')
       .select('id, player_id, group_id, session_date, present')
+      .eq('organisation_id', orgId)
       .gte('session_date', fmt(ninetyDaysAgo))
       .order('session_date', { ascending: false }),
     supabase
       .from('players')
-      .select('id, first_name, last_name, parent_id'),
+      .select('id, first_name, last_name, parent_id')
+      .eq('organisation_id', orgId),
     supabase
       .from('training_groups')
-      .select('id, name, day_of_week'),
+      .select('id, name, day_of_week')
+      .eq('organisation_id', orgId),
     supabase
       .from('enrolments')
       .select('player_id, group_id, status')
+      .eq('organisation_id', orgId)
       .eq('status', 'active'),
   ])
 
@@ -71,6 +80,7 @@ export default async function AttendanceInsightsPage() {
   const { data: prevAttendance } = await supabase
     .from('attendance')
     .select('id, present')
+    .eq('organisation_id', orgId)
     .gte('session_date', fmt(oneEightyDaysAgo))
     .lt('session_date', fmt(ninetyDaysAgo))
 

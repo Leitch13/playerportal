@@ -14,47 +14,62 @@ export default async function ReportsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, organisation_id')
     .eq('id', user.id)
     .single()
 
   const role = (profile?.role || 'parent') as UserRole
   if (role === 'parent') redirect('/dashboard')
 
+  // CRITICAL: scope every aggregate to the admin's own org. Without these
+  // explicit filters, super-admins (who bypass RLS) see every academy's
+  // players, payments, attendance, subscriptions etc rolled into their
+  // reports — a major cross-tenant data leak.
+  const orgId = profile?.organisation_id as string | undefined
+  if (!orgId) redirect('/dashboard')
+
   // ─── Gather all stats ───
   const { data: players } = await supabase
     .from('players')
     .select('id, first_name, last_name, age_group, parent_id, position, created_at')
+    .eq('organisation_id', orgId)
 
   const { data: attendance } = await supabase
     .from('attendance')
     .select('player_id, present, session_date')
+    .eq('organisation_id', orgId)
 
   const { data: payments } = await supabase
     .from('payments')
     .select('parent_id, amount, amount_paid, status, created_at, paid_date, due_date')
+    .eq('organisation_id', orgId)
 
   const { data: reviews } = await supabase
     .from('progress_reviews')
     .select('player_id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement, review_date')
+    .eq('organisation_id', orgId)
 
   const { data: groups } = await supabase
     .from('training_groups')
     .select('id, name')
+    .eq('organisation_id', orgId)
 
   const { data: enrolments } = await supabase
     .from('enrolments')
     .select('player_id, group_id, status, enrolled_at')
+    .eq('organisation_id', orgId)
     .eq('status', 'active')
 
   const { data: parents } = await supabase
     .from('profiles')
     .select('id, full_name, created_at')
+    .eq('organisation_id', orgId)
     .eq('role', 'parent')
 
   const { data: subscriptions } = await supabase
     .from('subscriptions')
     .select('id, status, created_at, plan:subscription_plans(amount)')
+    .eq('organisation_id', orgId)
 
   // ─── Attendance Report ───
   const playerAttendance = (players || []).map((p) => {
