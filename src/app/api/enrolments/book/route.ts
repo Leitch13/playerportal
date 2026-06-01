@@ -174,13 +174,29 @@ export async function POST(request: NextRequest) {
     // Check duplicate
     const { data: existing } = await supabase
       .from('enrolments')
-      .select('id, status')
+      .select('id, status, activates_on')
       .eq('player_id', playerId)
       .eq('group_id', groupId)
       .maybeSingle()
 
     if (existing) {
       if (existing.status === 'active') {
+        // GATE 3: enrolment exists but its activates_on is in the future.
+        // The parent picked a future start date; they can't attend earlier.
+        // Returns 403 + the date so the UI can render a friendly explanation.
+        if (existing.activates_on) {
+          const todayIso = new Date().toISOString().split('T')[0]
+          if (existing.activates_on > todayIso) {
+            return NextResponse.json(
+              {
+                error: `${player.first_name}'s enrolment starts on ${existing.activates_on}. Bookings open from that date.`,
+                enrolmentNotStarted: true,
+                activatesOn: existing.activates_on,
+              },
+              { status: 403 }
+            )
+          }
+        }
         return NextResponse.json({ error: `${player.first_name} is already enrolled in this class.` }, { status: 409 })
       }
       // Re-activate previously-cancelled enrolment
@@ -191,7 +207,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, reactivated: true })
     }
 
-    // Create enrolment
+    // Create enrolment — activates_on defaults to today so self-booking via
+    // the schedule page (no start-date picker) yields immediately-bookable
+    // enrolments, matching pre-Stage-1 behaviour.
+    const todayIso = new Date().toISOString().split('T')[0]
     const { error: enrolError } = await supabase
       .from('enrolments')
       .insert({
@@ -199,6 +218,7 @@ export async function POST(request: NextRequest) {
         group_id: groupId,
         status: 'active',
         organisation_id: group.organisation_id,
+        activates_on: todayIso,
       })
 
     if (enrolError) {

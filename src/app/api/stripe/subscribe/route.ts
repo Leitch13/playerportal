@@ -3,6 +3,12 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
+import { isStartDateBillingEnabled } from '@/lib/billing/flag'
+import {
+  firstOfNextMonthUnix,
+  isStartInCurrentMonth,
+  isStartTodayOrEarlier,
+} from '@/lib/billing/anchor'
 
 // Returns Unix timestamp for the 1st of next month at midnight UTC
 function getFirstOfNextMonth(): number {
@@ -56,10 +62,36 @@ export async function POST(request: NextRequest) {
     //   prepaid the academy (e.g. paid for June before moving to Player Portal). The card is captured
     //   now but £0 is charged today; the first real charge lands on this date (Stripe trial_end).
     //   Takes precedence over the upfront/prorated logic. Monthly only.
-    const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput } = await request.json()
+    // activatesOn (optional, ISO date string): parent's chosen start date from the StartDatePicker.
+    //   Stage 1 ALWAYS captures it in metadata (so it's available before Stage 2 flips on).
+    //   Stage 2 (behind BILLING_FLOW_STARTDATE_ENABLED flag) uses it for the new immediate_prorated
+    //   billing branch. Cap matches the picker UI: today through today+28 days. Bad input → defaults
+    //   to today (the picker's safe default).
+    const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput, activatesOn: activatesOnInput } = await request.json()
     if (!planId) {
       return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
     }
+
+    // Parse activatesOn defensively. Anything we can't make sense of falls back to today.
+    let activatesOnDate: Date | null = null
+    if (typeof activatesOnInput === 'string' && activatesOnInput.length > 0) {
+      const parsed = new Date(activatesOnInput + 'T00:00:00Z')
+      if (!isNaN(parsed.getTime())) {
+        const todayMidnight = new Date()
+        todayMidnight.setUTCHours(0, 0, 0, 0)
+        const maxMs = todayMidnight.getTime() + 28 * 86400000
+        // Floor to today if earlier than today; cap at today+28d.
+        const ms = parsed.getTime()
+        if (ms < todayMidnight.getTime()) activatesOnDate = todayMidnight
+        else if (ms > maxMs) activatesOnDate = new Date(maxMs)
+        else activatesOnDate = parsed
+      }
+    }
+    if (!activatesOnDate) {
+      activatesOnDate = new Date()
+      activatesOnDate.setUTCHours(0, 0, 0, 0)
+    }
+    const activatesOnIso = activatesOnDate.toISOString().split('T')[0]
 
     // Parse the migration "first billing date" if provided and in the future.
     // Cap how far out it can be (anti-tamper): the date rides in the URL, so a
@@ -400,8 +432,118 @@ export async function POST(request: NextRequest) {
       firstSessionDate.getUTCMonth() === today.getUTCMonth()
 
     const perSessionPence = Math.max(0, Math.round((Number(plan.amount) / 4) * 100))
-    const useTonightPlusSub = !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
-    const useTrialEndOnly = !migrationTrialEnd && !useTonightPlusSub
+
+    // ─── BILLING FLOW SELECTION ───
+    // Four branches in production simultaneously, dispatched by:
+    //   1. migration (admin-set firstBillingDate) → trial_end mechanism (unchanged)
+    //   2. immediate_prorated (NEW, feature-flagged) → Stripe-native proration
+    //   3. tonight_then_sub (legacy default) → monthly÷4 + webhook subscription
+    //   4. sub_from_1st (fallback) → trial_end at standardAnchor
+    //
+    // Stage 2 introduces #2. The flag check below means the legacy #3 path stays
+    // active for ALL orgs until BILLING_FLOW_STARTDATE_ENABLED includes them.
+    const startDateBillingFlag = isStartDateBillingEnabled(plan.organisation_id as string)
+    const startsThisCalendarMonth = isStartInCurrentMonth(activatesOnDate)
+    const startsTodayOrEarlier = isStartTodayOrEarlier(activatesOnDate)
+
+    // Use the new immediate_prorated path when ALL of:
+    //   - flag is on for this org
+    //   - no migration override
+    //   - parent picked a date in the current calendar month (i.e. proration is meaningful)
+    //   - parent picked today or earlier (future-start = Stage 3, not yet built)
+    const useImmediateProrated =
+      startDateBillingFlag && !migrationTrialEnd && startsThisCalendarMonth && startsTodayOrEarlier
+
+    const useTonightPlusSub = !useImmediateProrated && !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
+    const useTrialEndOnly = !useImmediateProrated && !migrationTrialEnd && !useTonightPlusSub
+
+    if (useImmediateProrated) {
+      // ═══ Stage 2: Stripe-native proration ═══
+      // Direct subscription in Checkout subscription mode. Stripe calendar-day
+      // proration handles "from activates_on to 1st of next month" maths and
+      // bills the prorated amount NOW. Every subsequent renewal is on the 1st.
+      //
+      // Verified end-to-end in Probe 7 (Stripe test mode with Test Clock):
+      //   Jun 15 signup → £15.62 prorated  →  Jul 1 £30  →  Aug 1 £30.
+      //
+      // Connect routing identical to existing branches:
+      //   - on_behalf_of = academy (brands Checkout + receipts)
+      //   - transfer_data.destination = academy (money lands on their balance)
+      //   - application_fee_percent = platform fee
+      const billingAnchor = firstOfNextMonthUnix(activatesOnDate)
+
+      const monthlySessionParams: Stripe.Checkout.SessionCreateParams = {
+        customer: customerId,
+        line_items: [{ price: stripePriceId, quantity: 1 }],
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        success_url: `${origin}/dashboard/payments/success?billing=monthly&model=immediate_prorated`,
+        cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
+        ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+        metadata: {
+          supabase_plan_id: planId,
+          supabase_user_id: user.id,
+          supabase_player_id: playerId || '',
+          billing_option: 'monthly',
+          billing_model: 'immediate_prorated',
+          pp_flow: 'immediate_prorated',
+          activates_on: activatesOnIso,
+          ...(classId ? { supabase_class_id: classId } : {}),
+          ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+        },
+        subscription_data: {
+          metadata: {
+            supabase_plan_id: planId,
+            supabase_user_id: user.id,
+            supabase_player_id: playerId || '',
+            billing_model: 'immediate_prorated',
+            activates_on: activatesOnIso,
+            ...(classId ? { supabase_class_id: classId } : {}),
+            ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+          },
+          // The KEY mechanism: future billing_cycle_anchor + create_prorations.
+          // Stripe issues a prorated invoice covering (today → anchor) NOW, and
+          // bills the full monthly amount on each anchor afterward.
+          billing_cycle_anchor: billingAnchor,
+          proration_behavior: 'create_prorations',
+          // No trial_end here. trial_end + billing_cycle_anchor must match
+          // (Stripe constraint, root of task #76). With anchor in the future and
+          // no trial, Stripe prorates immediately — exactly what we want.
+          ...(connectedAccountId
+            ? {
+                on_behalf_of: connectedAccountId,
+                ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
+                transfer_data: { destination: connectedAccountId },
+              }
+            : {}),
+        },
+      }
+
+      const session = await stripe.checkout.sessions.create(monthlySessionParams)
+
+      // Estimate the prorated charge for the UI / response. Stripe's actual
+      // amount is calendar-day computed at finalize time; this matches within
+      // pence for the standard plan amounts.
+      const anchorDate = new Date(billingAnchor * 1000)
+      const startMs = activatesOnDate.getTime()
+      const endMs = anchorDate.getTime()
+      const monthMs = new Date(Date.UTC(activatesOnDate.getUTCFullYear(), activatesOnDate.getUTCMonth() + 1, 0)).getUTCDate() * 86400000
+      const daysToAnchor = Math.max(0, Math.round((endMs - startMs) / 86400000))
+      const proratedPence = Math.round((Number(plan.amount) * 100 * daysToAnchor * 86400000) / monthMs)
+
+      return NextResponse.json({
+        url: session.url,
+        billing: 'monthly',
+        billingModel: 'immediate_prorated',
+        firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
+        nextBillingDate: anchorDate.toISOString().split('T')[0],
+        nextBillingAmount: Number(plan.amount).toFixed(2),
+        tonightAmount: (proratedPence / 100).toFixed(2),
+        activatesOn: activatesOnIso,
+        siblingDiscountApplied: !!siblingCouponId,
+        siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
+      })
+    }
 
     if (useTonightPlusSub) {
       // ─── New flow: charge tonight's session as a one-off, then create the
@@ -459,6 +601,10 @@ export async function POST(request: NextRequest) {
           ...(siblingCouponId ? { sibling_coupon_id: siblingCouponId } : {}),
           billing_option: 'monthly',
           billing_model: 'tonight_then_sub',
+          // Always captured (Stage 1) — webhook writes this to enrolments.activates_on
+          // regardless of which billing flow ran. Booking gate enforces it
+          // whether flag is on or off.
+          activates_on: activatesOnIso,
         },
       })
 
@@ -501,6 +647,7 @@ export async function POST(request: NextRequest) {
         ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
         ...(classId ? { supabase_class_id: classId } : {}),
         ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+        activates_on: activatesOnIso,
       },
       subscription_data: {
         metadata: {
@@ -511,6 +658,7 @@ export async function POST(request: NextRequest) {
           ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
           ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+          activates_on: activatesOnIso,
         },
         trial_end: trialEnd,
         // on_behalf_of pins the academy as settlement merchant so Stripe renders

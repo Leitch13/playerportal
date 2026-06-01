@@ -74,6 +74,14 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
   const planId = session.metadata?.supabase_plan_id ?? null
   const playerId = session.metadata?.supabase_player_id ?? null
   const classId = session.metadata?.supabase_class_id ?? null
+  // Stage 1: chosen start date carried in metadata. Written to enrolments.activates_on
+  // on insert, regardless of which billing branch fired. Defaults to today
+  // if not present (legacy signups before Stage 1 deploys).
+  const rawActivates = session.metadata?.activates_on ?? null
+  const activatesOn: string = (() => {
+    if (typeof rawActivates === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawActivates)) return rawActivates
+    return new Date().toISOString().split('T')[0]
+  })()
 
   let profile: {
     id: string
@@ -120,7 +128,7 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
     organisationName = data?.name ?? null
   }
 
-  return { userId, planId, playerId, classId, profile, plan, orgId, organisationName }
+  return { userId, planId, playerId, classId, profile, plan, orgId, organisationName, activatesOn }
 }
 
 /**
@@ -447,11 +455,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           .eq('group_id', classId)
           .maybeSingle()
         if (!existing) {
+          // Stage 1: capture activates_on from session metadata so the booking
+          // gate can enforce it. Falls back to today if the picker wasn't on
+          // the form yet (defensive — never NULL after migration 070).
+          const tonightActivatesOn =
+            typeof session.metadata?.activates_on === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(session.metadata.activates_on)
+              ? session.metadata.activates_on
+              : new Date().toISOString().split('T')[0]
           const { error: tonightEnrolErr } = await supabase.from('enrolments').insert({
             player_id: playerId,
             group_id: classId,
             status: 'active',
             organisation_id: orgId,
+            activates_on: tonightActivatesOn,
           })
           if (tonightEnrolErr && (tonightEnrolErr as { code?: string }).code !== '23505') {
             throw new Error(`tonight enrolments.insert failed: ${tonightEnrolErr.message}`)
@@ -747,6 +764,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           group_id: ctx.classId,
           status: 'active',
           organisation_id: ctx.orgId,
+          // Stage 1: parent's chosen start date. Booking gate enforces this is
+          // <= the session date being booked. For immediate-prorated signups
+          // this equals today; for sub_from_1st (no session this month) this
+          // is also today; for future-start signups (Stage 3) this is in the
+          // future and the parent cannot book anything before this date.
+          activates_on: ctx.activatesOn,
         })
         if (genEnrolErr && (genEnrolErr as { code?: string }).code !== '23505') {
           throw new Error(`generic enrolments.insert failed: ${genEnrolErr.message}`)

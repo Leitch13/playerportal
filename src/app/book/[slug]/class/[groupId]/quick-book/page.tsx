@@ -221,6 +221,8 @@ export default async function QuickBookPage({
         groupId={groupId}
         groupName={group.name}
         primaryColor={primaryColor}
+        classDayOfWeek={group.day_of_week as string | null}
+        classTimeSlot={group.time_slot as string | null}
       />
 
       {/* Footer */}

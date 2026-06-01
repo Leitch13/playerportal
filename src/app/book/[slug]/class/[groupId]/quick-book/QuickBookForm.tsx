@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { StartDatePicker } from '@/components/billing/StartDatePicker'
+import { isoDate, nextSessionDate } from '@/lib/billing/next-session'
 
 interface Plan {
   id: string
@@ -23,6 +25,9 @@ interface QuickBookFormProps {
   groupId: string
   groupName: string
   primaryColor: string
+  /** Class day/time so the picker can default to the next upcoming session. */
+  classDayOfWeek?: string | null
+  classTimeSlot?: string | null
 }
 
 function getQuarterlyPrice(monthlyAmount: number) {
@@ -75,7 +80,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -90,6 +95,13 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
   const [childLeague, setChildLeague] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans.length === 1 ? plans[0].id : null)
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
+  // Chosen start date (ISO YYYY-MM-DD). Defaults to the class's next session.
+  // Captured by Stage 1 + read by Stage 2's billing logic when the flag is on.
+  const defaultStartIso = useMemo(() => {
+    const next = nextSessionDate({ day_of_week: classDayOfWeek ?? null, time_slot: classTimeSlot ?? null })
+    return next ? isoDate(next) : isoDate(new Date())
+  }, [classDayOfWeek, classTimeSlot])
+  const [startDate, setStartDate] = useState<string>(defaultStartIso)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -207,6 +219,11 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
           playerId,
           billingOption,
           classId: groupId, // ← critical: webhook uses this to enrol player on payment success
+          // Stage 1: chosen start date for the enrolment. Captured in metadata so
+          // Stage 2 can read it for the prorated billing branch. Sent on every
+          // signup — the subscribe route + webhook decide what to do with it
+          // based on the feature flag.
+          activatesOn: startDate || defaultStartIso,
         }),
       })
       const data = await res.json()
@@ -336,6 +353,24 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
                 )
               })}
             </div>
+
+            {/* Start-date picker — only shown for monthly subscriptions.
+                Quarterly is upfront-and-done, so a start date doesn't change
+                the billing math. Captured in metadata regardless of feature
+                flag state so it's available the moment Stage 2 activates. */}
+            {billingOption === 'monthly' && selectedPlan && (
+              <div className="mt-5 pt-5 border-t border-white/[0.06]">
+                <StartDatePicker
+                  value={startDate}
+                  onChange={setStartDate}
+                  classDayOfWeek={classDayOfWeek ?? null}
+                  classTimeSlot={classTimeSlot ?? null}
+                  classLabel={groupName}
+                  monthlyAmount={selectedPlan.amount}
+                  primaryColor={primaryColor}
+                />
+              </div>
+            )}
           </>
         )}
       </section>
