@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
                 player_id: newPlayer.id,
                 group_id: groupId,
                 status: 'active',
+                organisation_id: orgId,
               })
 
             if (enrolmentError) {

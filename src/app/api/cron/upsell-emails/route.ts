@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
     const { count: subCount } = await supabase
       .from('subscriptions')
       .select('id', { count: 'exact', head: true })
-      .eq('profile_id', player.parent_id)
+      .eq('parent_id', player.parent_id)
       .eq('status', 'active')
 
     if ((subCount || 0) > 0) continue // Already subscribed

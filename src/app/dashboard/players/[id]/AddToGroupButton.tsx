@@ -27,9 +27,25 @@ export default function AddToGroupButton({ playerId, groups, existingGroupIds }:
   async function handleAdd(groupId: string) {
     setSaving(true)
     const supabase = createClient()
+
+    // enrolments.organisation_id is NOT NULL — without this the insert
+    // silently fails (RLS rejects rows missing required cols). We resolve
+    // the org from the current admin's session via get_my_org().
+    const { data: orgId } = await supabase.rpc('get_my_org')
+    if (!orgId) {
+      alert('Could not determine your organisation. Please refresh and try again.')
+      setSaving(false)
+      return
+    }
+
     const { error } = await supabase
       .from('enrolments')
-      .insert({ player_id: playerId, group_id: groupId, status: 'active' })
+      .insert({
+        player_id: playerId,
+        group_id: groupId,
+        status: 'active',
+        organisation_id: orgId,
+      })
 
     if (error) {
       alert(error.message)
