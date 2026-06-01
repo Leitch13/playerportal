@@ -702,6 +702,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           player_id: ctx.playerId,
           group_id: ctx.classId,
           status: 'active',
+          organisation_id: ctx.orgId,
         })
       }
     }
