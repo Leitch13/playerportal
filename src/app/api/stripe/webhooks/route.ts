@@ -358,7 +358,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         paid_date: nowIso.split('T')[0],
         created_at: nowIso,
       })
-      if (tonightPayErr) throw new Error(`tonight payments.insert failed: ${tonightPayErr.message}`)
+      // 23505 = unique violation on stripe_session_id (partial unique index
+      // added by migration 069). Means another delivery of this same Stripe
+      // event already wrote the payment row; safe to treat as success and
+      // continue. Without this guard, Stripe retries of any event whose
+      // payment row was previously inserted (by an earlier successful
+      // delivery, a manual replay, or a partial-success retry) throw 500
+      // forever, blocking the handler from ever completing.
+      if (tonightPayErr && (tonightPayErr as { code?: string }).code !== '23505') {
+        throw new Error(`tonight payments.insert failed: ${tonightPayErr.message}`)
+      }
     }
 
     // 2. Pull the saved payment method off the PaymentIntent so the upcoming
