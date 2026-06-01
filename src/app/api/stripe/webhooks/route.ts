@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stripe-events'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +19,8 @@ function ensureClients() {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Insert a row into the notifications table */
+/** Insert a row into the notifications table.
+ *  Throws on failure so the top-level handler returns 500 and Stripe retries. */
 async function createNotification(params: {
   profileId: string
   organisationId: string | null
@@ -36,9 +38,7 @@ async function createNotification(params: {
     link: params.link ?? null,
     read: false,
   })
-  if (error) {
-    // notification insert failed — non-critical, continue
-  }
+  if (error) throw new Error(`notifications.insert failed: ${error.message}`)
 }
 
 /** Attempt to send a payment receipt email. Email module is optional. */
@@ -141,13 +141,17 @@ async function convertLeadToEnrolled(orgId: string | null, email: string | null 
       .limit(1)
       .maybeSingle()
     if (lead?.id) {
-      await supabase
+      const { error: leadErr } = await supabase
         .from('leads')
         .update({ status: 'enrolled', updated_at: new Date().toISOString() })
         .eq('id', lead.id)
+      if (leadErr) throw new Error(`leads.update failed: ${leadErr.message}`)
     }
-  } catch {
-    // lead bookkeeping is non-critical
+  } catch (e) {
+    // Lead bookkeeping is best-effort but should surface so we can fix it.
+    // Re-throw if it's a hard error; tolerate transient lookups.
+    if (e instanceof Error && e.message.startsWith('leads.update failed')) throw e
+    // otherwise: profile lookup failed etc — non-critical, continue
   }
 }
 
@@ -220,7 +224,7 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
     .maybeSingle()
   if (existingLead?.id) return
 
-  await supabase.from('leads').insert({
+  const { error: leadInsErr } = await supabase.from('leads').insert({
     organisation_id: orgId,
     first_name: firstName || 'Prospect',
     last_name: lastName,
@@ -230,6 +234,7 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
     status: 'new',
     notes: "Started checkout but didn't complete payment — worth a friendly follow-up.",
   })
+  if (leadInsErr) throw new Error(`leads.insert failed: ${leadInsErr.message}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -243,12 +248,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // confirms it only on a verified Stripe completion.
   if (session.metadata?.camp_booking_id) {
     if (session.payment_status === 'paid' || session.payment_status === 'no_payment_required') {
-      const { data: booking } = await supabase
+      const { data: booking, error: campUpdErr } = await supabase
         .from('camp_bookings')
         .update({ payment_status: 'paid', stripe_session_id: session.id })
         .eq('id', session.metadata.camp_booking_id)
         .select('organisation_id, parent_email, child_name, amount_paid, camp_id')
         .maybeSingle()
+      if (campUpdErr) throw new Error(`camp_bookings.update failed: ${campUpdErr.message}`)
 
       // Record the camp as its own itemised line on the parent's billing page —
       // separate from any subscription. Only possible if the booker has a parent
@@ -268,7 +274,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             if (camp?.name) campName = camp.name as string
           }
           const amt = Number(booking.amount_paid ?? (session.amount_total ?? 0) / 100)
-          await supabase.from('payments').insert({
+          const { error: campPayErr } = await supabase.from('payments').insert({
             parent_id: parentProfile.id,
             organisation_id: booking.organisation_id,
             amount: amt,
@@ -280,6 +286,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             paid_date: new Date().toISOString().split('T')[0],
             created_at: new Date().toISOString(),
           })
+          if (campPayErr) throw new Error(`camp payments.insert failed: ${campPayErr.message}`)
         }
       }
     }
@@ -330,7 +337,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     // 1. Record tonight's one-off payment
     if (tonightAmount > 0) {
-      await supabase.from('payments').insert({
+      const { error: tonightPayErr } = await supabase.from('payments').insert({
         parent_id: userId,
         player_id: playerId,
         organisation_id: orgId,
@@ -343,6 +350,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         paid_date: nowIso.split('T')[0],
         created_at: nowIso,
       })
+      if (tonightPayErr) throw new Error(`tonight payments.insert failed: ${tonightPayErr.message}`)
     }
 
     // 2. Pull the saved payment method off the PaymentIntent so the upcoming
@@ -369,40 +377,52 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     let createdSub: Stripe.Subscription | null = null
     try {
-      createdSub = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: recurringPriceId }],
-        trial_end: trialEndUnix,
-        ...(savedPaymentMethod ? { default_payment_method: savedPaymentMethod } : {}),
-        ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
-        // on_behalf_of brands future renewals with the academy's Stripe
-        // account name (matches the tonight payment's Checkout branding,
-        // so receipts stay consistent month-to-month).
-        ...(connectedAcct
-          ? {
-              on_behalf_of: connectedAcct,
-              ...(platformFeePercent > 0 ? { application_fee_percent: platformFeePercent } : {}),
-              transfer_data: { destination: connectedAcct },
-            }
-          : {}),
-        metadata: {
-          supabase_plan_id: planId,
-          supabase_user_id: userId,
-          supabase_player_id: playerId || '',
-          billing_model: 'tonight_then_sub',
-          ...(classId ? { supabase_class_id: classId } : {}),
+      createdSub = await stripe.subscriptions.create(
+        {
+          customer: customerId,
+          items: [{ price: recurringPriceId }],
+          trial_end: trialEndUnix,
+          ...(savedPaymentMethod ? { default_payment_method: savedPaymentMethod } : {}),
+          ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+          // on_behalf_of brands future renewals with the academy's Stripe
+          // account name (matches the tonight payment's Checkout branding,
+          // so receipts stay consistent month-to-month).
+          ...(connectedAcct
+            ? {
+                on_behalf_of: connectedAcct,
+                ...(platformFeePercent > 0 ? { application_fee_percent: platformFeePercent } : {}),
+                transfer_data: { destination: connectedAcct },
+              }
+            : {}),
+          metadata: {
+            supabase_plan_id: planId,
+            supabase_user_id: userId,
+            supabase_player_id: playerId || '',
+            billing_model: 'tonight_then_sub',
+            ...(classId ? { supabase_class_id: classId } : {}),
+          },
         },
-      })
+        {
+          // Stripe stores this key for 24h. If the same checkout.session.completed
+          // event is re-delivered (Stripe retry, or our own retry-on-500), Stripe
+          // returns the EXISTING subscription instead of creating a second one
+          // and double-charging the parent. Single biggest defence against
+          // duplicate-charge customer harm.
+          idempotencyKey: `sub_create_${session.id}`,
+        }
+      )
     } catch (e) {
       // The tonight payment IS in the bank — just the recurring couldn't be
-      // created. Record the failure so we can intervene; don't crash the webhook.
+      // created. Re-throw so the top-level handler returns 500 and Stripe
+      // retries (idempotency key above means the retry is safe).
       console.error('tonight_then_sub: subscription create failed:', e)
+      throw e
     }
 
     // 4. Save subscription to our DB
     if (createdSub) {
       const sub = createdSub as Stripe.Subscription & { current_period_start?: number; current_period_end?: number }
-      await supabase.from('subscriptions').insert({
+      const { error: tonightSubErr } = await supabase.from('subscriptions').insert({
         parent_id: userId,
         player_id: playerId,
         plan_id: planId,
@@ -413,6 +433,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         ...(sub.current_period_start ? { current_period_start: new Date(sub.current_period_start * 1000).toISOString() } : {}),
         ...(sub.current_period_end ? { current_period_end: new Date(sub.current_period_end * 1000).toISOString() } : {}),
       })
+      // 23505 = unique violation. Means another delivery beat us. Safe to ignore.
+      if (tonightSubErr && (tonightSubErr as { code?: string }).code !== '23505') {
+        throw new Error(`tonight subscriptions.insert failed: ${tonightSubErr.message}`)
+      }
 
       // Auto-enrol player in the class
       if (classId && playerId) {
@@ -423,12 +447,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           .eq('group_id', classId)
           .maybeSingle()
         if (!existing) {
-          await supabase.from('enrolments').insert({
+          const { error: tonightEnrolErr } = await supabase.from('enrolments').insert({
             player_id: playerId,
             group_id: classId,
             status: 'active',
             organisation_id: orgId,
           })
+          if (tonightEnrolErr && (tonightEnrolErr as { code?: string }).code !== '23505') {
+            throw new Error(`tonight enrolments.insert failed: ${tonightEnrolErr.message}`)
+          }
         }
       }
 
@@ -522,7 +549,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         ? session.subscription
         : session.subscription?.id ?? null
     if (orgId) {
-      await supabase
+      const { error: platformOrgErr } = await supabase
         .from('organisations')
         .update({
           platform_subscription_status: 'active',
@@ -531,6 +558,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           is_published: true, // hybrid: paying = academy goes live
         })
         .eq('id', orgId)
+      if (platformOrgErr) throw new Error(`platform organisations.update failed: ${platformOrgErr.message}`)
     }
     return
   }
@@ -558,7 +586,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
     }
 
-    await supabase
+    const { error: migSubErr } = await supabase
       .from('subscriptions')
       .update({
         status: stripeSub?.status || 'active',
@@ -570,6 +598,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         updated_at: nowIso,
       })
       .eq('id', subId)
+    if (migSubErr) throw new Error(`migration subscriptions.update failed: ${migSubErr.message}`)
 
     // Itemised payment row. £0 today (trial_end / prepaid migration) records
     // nothing now — the first real charge lands later via invoice.payment_succeeded.
@@ -580,7 +609,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         const { data: pl } = await supabase.from('subscription_plans').select('name').eq('id', migSub.plan_id).maybeSingle()
         if (pl?.name) planName = pl.name as string
       }
-      await supabase.from('payments').insert({
+      const { error: migPayErr } = await supabase.from('payments').insert({
         parent_id: migSub.parent_id,
         organisation_id: migSub.organisation_id,
         amount,
@@ -592,6 +621,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         paid_date: nowIso.split('T')[0],
         created_at: nowIso,
       })
+      if (migPayErr && (migPayErr as { code?: string }).code !== '23505') {
+        throw new Error(`migration payments.insert failed: ${migPayErr.message}`)
+      }
     }
     return
   }
@@ -611,7 +643,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) childAge--
       }
     }
-    await supabase.from('trial_bookings').insert({
+    const { error: trialBookingErr } = await supabase.from('trial_bookings').insert({
       organisation_id: m.supabase_org_id,
       training_group_id: m.supabase_class_id,
       parent_name: m.parent_name || 'Parent',
@@ -626,6 +658,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       terms_accepted_at: m.terms_accepted_at || null,
       terms_version_hash: m.terms_version_hash || null,
     })
+    if (trialBookingErr) throw new Error(`trial_bookings.insert failed: ${trialBookingErr.message}`)
     return
   }
 
@@ -637,7 +670,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // NOTE: the payments table uses parent_id (NOT profile_id) and has no
   // subscription_plan_id column. The plan is captured in `description`.
   if (ctx.userId) {
-    await supabase.from('payments').insert({
+    const { error: genPayErr } = await supabase.from('payments').insert({
       parent_id: ctx.userId,
       player_id: ctx.playerId || null,
       organisation_id: ctx.orgId,
@@ -650,6 +683,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       paid_date: now.split('T')[0],
       created_at: now,
     })
+    if (genPayErr && (genPayErr as { code?: string }).code !== '23505') {
+      throw new Error(`generic payments.insert failed: ${genPayErr.message}`)
+    }
   }
 
   // 2. Create / update enrolment for subscription checkouts
@@ -668,7 +704,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .maybeSingle()
 
     if (existing) {
-      await supabase
+      const { error: genSubUpdErr } = await supabase
         .from('subscriptions')
         .update({
           status: stripeSub.status,
@@ -677,8 +713,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           updated_at: now,
         })
         .eq('id', existing.id)
+      if (genSubUpdErr) throw new Error(`generic subscriptions.update failed: ${genSubUpdErr.message}`)
     } else {
-      await supabase.from('subscriptions').insert({
+      const { error: genSubInsErr } = await supabase.from('subscriptions').insert({
         parent_id: ctx.userId,
         player_id: ctx.playerId || null,
         plan_id: ctx.planId,
@@ -689,6 +726,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString(),
         current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
       })
+      if (genSubInsErr && (genSubInsErr as { code?: string }).code !== '23505') {
+        throw new Error(`generic subscriptions.insert failed: ${genSubInsErr.message}`)
+      }
     }
 
     // AUTO-ENROL: if the parent came from a specific class page, enrol their
@@ -702,12 +742,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .maybeSingle()
 
       if (!existingEnrolment) {
-        await supabase.from('enrolments').insert({
+        const { error: genEnrolErr } = await supabase.from('enrolments').insert({
           player_id: ctx.playerId,
           group_id: ctx.classId,
           status: 'active',
           organisation_id: ctx.orgId,
         })
+        if (genEnrolErr && (genEnrolErr as { code?: string }).code !== '23505') {
+          throw new Error(`generic enrolments.insert failed: ${genEnrolErr.message}`)
+        }
       }
     }
   }
@@ -854,17 +897,18 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 
   // Update subscription status to active
   if (localSub) {
-    await supabase
+    const { error: renewalSubErr } = await supabase
       .from('subscriptions')
       .update({ status: 'active', updated_at: now })
       .eq('id', localSub.id)
+    if (renewalSubErr) throw new Error(`renewal subscriptions.update failed: ${renewalSubErr.message}`)
   }
 
   // Record payment — itemised line on the parent's billing page.
   // (payments uses parent_id, NOT profile_id, and has no subscription_plan_id.)
   if (localSub?.parent_id) {
     const renewalPlanName = (localSub.plan as unknown as { name?: string } | null)?.name
-    await supabase.from('payments').insert({
+    const { error: renewalPayErr } = await supabase.from('payments').insert({
       parent_id: localSub.parent_id,
       organisation_id: localSub.organisation_id,
       amount: amountPaid,
@@ -876,6 +920,9 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       paid_date: now.split('T')[0],
       created_at: now,
     })
+    if (renewalPayErr && (renewalPayErr as { code?: string }).code !== '23505') {
+      throw new Error(`renewal payments.insert failed: ${renewalPayErr.message}`)
+    }
 
     // Fetch profile + plan for notification and email
     const { data: profile } = await supabase
@@ -943,21 +990,23 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     .maybeSingle()
 
   if (localSub) {
-    await supabase
+    const { error: pdSubErr } = await supabase
       .from('subscriptions')
       .update({ status: 'past_due', updated_at: now })
       .eq('id', localSub.id)
+    if (pdSubErr) throw new Error(`past_due subscriptions.update failed: ${pdSubErr.message}`)
   }
 
   // Mark any pending payment for this parent as overdue.
   // (payments uses parent_id, not profile_id; no subscription_plan_id column.)
   if (localSub?.parent_id) {
-    await supabase
+    const { error: odPayErr } = await supabase
       .from('payments')
       .update({ status: 'overdue', updated_at: now })
       .eq('parent_id', localSub.parent_id)
       .eq('organisation_id', localSub.organisation_id)
       .eq('status', 'pending')
+    if (odPayErr) throw new Error(`overdue payments.update failed: ${odPayErr.message}`)
   }
 
   // Notify parent
@@ -1047,13 +1096,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .eq('platform_stripe_subscription_id', stripeSubId)
     .maybeSingle()
   if (platformOrg) {
-    await supabase
+    const { error: platCancelErr } = await supabase
       .from('organisations')
       .update({
         platform_subscription_status: 'cancelled',
         platform_stripe_subscription_id: null,
       })
       .eq('id', platformOrg.id)
+    if (platCancelErr) throw new Error(`platform cancel organisations.update failed: ${platCancelErr.message}`)
     return
   }
 
@@ -1064,7 +1114,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .maybeSingle()
 
   // Mark as cancelled
-  await supabase
+  const { error: cancelSubErr } = await supabase
     .from('subscriptions')
     .update({
       status: 'canceled',
@@ -1072,6 +1122,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       updated_at: now,
     })
     .eq('stripe_subscription_id', stripeSubId)
+  if (cancelSubErr) throw new Error(`cancel subscriptions.update failed: ${cancelSubErr.message}`)
 
   // Notify parent
   if (localSub?.parent_id) {
@@ -1123,11 +1174,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
           .eq('status', 'active')
 
         if ((liveEnrolments || []).length > 0) {
-          await supabase
+          const { error: pauseEnrolErr } = await supabase
             .from('enrolments')
             .update({ status: 'paused' })
             .in('player_id', kidIds)
             .eq('status', 'active')
+          if (pauseEnrolErr) throw new Error(`pause enrolments.update failed: ${pauseEnrolErr.message}`)
 
           const { data: admins } = await supabase
             .from('profiles')
@@ -1183,10 +1235,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
           : subscription.status === 'canceled'
             ? 'cancelled'
             : subscription.status
-    await supabase
+    const { error: platUpdErr } = await supabase
       .from('organisations')
       .update({ platform_subscription_status: mapped })
       .eq('id', platformOrg.id)
+    if (platUpdErr) throw new Error(`platform organisations.update failed: ${platUpdErr.message}`)
     return
   }
 
@@ -1196,7 +1249,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     current_period_end: number
   }
 
-  await supabase
+  const { error: updSubErr } = await supabase
     .from('subscriptions')
     .update({
       status: sub.status,
@@ -1213,6 +1266,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       updated_at: now,
     })
     .eq('stripe_subscription_id', stripeSubId)
+  if (updSubErr) throw new Error(`update subscriptions.update failed: ${updSubErr.message}`)
 
 }
 
@@ -1220,8 +1274,30 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 // Route handler
 // ---------------------------------------------------------------------------
 
+function handlerFor(eventType: string): string {
+  return ({
+    'checkout.session.completed': 'handleCheckoutCompleted',
+    'checkout.session.expired': 'handleCheckoutExpired',
+    'invoice.payment_succeeded': 'handleInvoicePaymentSucceeded',
+    'invoice.payment_failed': 'handleInvoicePaymentFailed',
+    'customer.subscription.deleted': 'handleSubscriptionDeleted',
+    'customer.subscription.updated': 'handleSubscriptionUpdated',
+  } as Record<string, string>)[eventType] || 'unhandled'
+}
+
 export async function POST(request: NextRequest) {
   ensureClients()
+
+  // ─── KILL SWITCH ───
+  // Emergency hatch — set STRIPE_WEBHOOK_DISABLED=true in Vercel env to make
+  // the handler return 200 + skip processing. Use only to break a Stripe
+  // retry loop while deploying a fix. Stripe will mark events delivered and
+  // NOT retry; failures during this window must be reconciled manually.
+  if (process.env.STRIPE_WEBHOOK_DISABLED === 'true') {
+    console.warn('[webhook] disabled via STRIPE_WEBHOOK_DISABLED env var')
+    return NextResponse.json({ received: true, disabled: true })
+  }
+
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
@@ -1242,6 +1318,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Invalid signature: ${message}` }, { status: 400 })
   }
 
+  // ─── IDEMPOTENCY: short-circuit on already-processed event ───
+  const handlerName = handlerFor(event.type)
+  const decision = await shouldProcessEvent(supabase, event, handlerName)
+  if (!decision.proceed) {
+    if (decision.retryStripe) {
+      // The check itself failed (transient DB issue). Return 500 so Stripe
+      // retries — by the time it retries, the DB blip should be resolved
+      // and the event will process normally.
+      console.error(`[webhook] shouldProcessEvent failed for ${event.id} (${event.type}); returning 500 to trigger retry`)
+      return NextResponse.json(
+        { error: 'Idempotency check failed; will retry' },
+        { status: 500 }
+      )
+    }
+    // Already-success or race-lost. Return 200 — no processing needed.
+    return NextResponse.json({
+      received: true,
+      idempotent: true,
+      reason: decision.reason,
+    })
+  }
+
+  // ─── DISPATCH ───
   try {
     switch (event.type) {
       case 'checkout.session.completed':
@@ -1269,14 +1368,22 @@ export async function POST(request: NextRequest) {
         break
 
       default:
+        // Unhandled event type — still mark success so Stripe doesn't retry
+        // forever for events we explicitly don't care about.
         break
     }
+    await markEventSuccess(supabase, event.id)
+    return NextResponse.json({ received: true })
   } catch (err) {
+    await markEventError(supabase, event.id, err)
     const message = err instanceof Error ? err.message : 'Unknown error'
-    // Return 200 to prevent Stripe from retrying on application errors
-    // The event was received and signature verified; the processing error is ours
-    return NextResponse.json({ received: true, error: message }, { status: 200 })
+    console.error(`[webhook] ${event.type} (${event.id}) failed:`, message)
+    // ─── KEY CHANGE FROM OLD BEHAVIOUR ───
+    // Return 500 so Stripe retries with exponential backoff. Previously we
+    // returned 200 here, which permanently lost every silently-failing event.
+    return NextResponse.json(
+      { error: 'Processing failed; will retry' },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json({ received: true })
 }
