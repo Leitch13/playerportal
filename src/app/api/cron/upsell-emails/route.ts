@@ -34,12 +34,16 @@ export async function GET(request: NextRequest) {
   const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0]
   const fourDaysAgo = new Date(Date.now() - 4 * 86400000).toISOString().split('T')[0]
 
-  const { data: trialBookings } = await supabase
+  const { data: trialBookings, error: trialsErr } = await supabase
     .from('trial_bookings')
     .select('id, parent_name, parent_email, child_name, organisation_id, training_group_id, organisations!trial_bookings_organisation_id_fkey(name, slug)')
     .eq('status', 'attended')
     .gte('confirmed_at', fourDaysAgo)
     .lte('confirmed_at', threeDaysAgo)
+
+  if (trialsErr) {
+    return NextResponse.json({ error: 'Failed to fetch trial bookings', detail: trialsErr.message }, { status: 500 })
+  }
 
   for (const trial of trialBookings || []) {
     const org = trial.organisations as unknown as { name: string; slug: string } | null

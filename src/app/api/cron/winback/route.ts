@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
   const eightDaysAgo = new Date(Date.now() - 8 * 86400000).toISOString()
 
-  const { data: cancellations } = await supabase
+  const { data: cancellations, error: cancellationsErr } = await supabase
     .from('cancellations')
     .select(`
       id, profile_id, organisation_id, subscription_id,
@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
     .is('winback_sent_at', null)
     .lte('cancelled_at', sevenDaysAgo)
     .gte('cancelled_at', eightDaysAgo)
+
+  if (cancellationsErr) {
+    return NextResponse.json({ error: 'Failed to fetch cancellations', detail: cancellationsErr.message }, { status: 500 })
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
   const jobs: Parameters<typeof sendEmail>[0][] = []

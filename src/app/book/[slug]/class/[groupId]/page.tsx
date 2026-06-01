@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ShareButton from './ShareButton'
 import StickyBookBar from './StickyBookBar'
+import ClassWaitlistCTA from './ClassWaitlistCTA'
 
 const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color: string }> = {
   group: { label: 'Group Session', gradient: 'from-blue-600/30 via-blue-900/20 to-transparent', color: '#3b82f6' },
@@ -455,21 +456,24 @@ export default async function ClassBookingPage({
         {/* CTAs — only show "Sign Up & Book" when no plans exist (otherwise per-plan Subscribe buttons handle it)
             OR when the class is full (so parent can join waitlist). Always show free trial. */}
         <div className="space-y-3 mb-6 sm:mb-10">
-          {(isFull || !plans || plans.length === 0) && (
+          {isFull ? (
+            /* Real Join Waitlist flow — checks auth, inserts a waitlist row,
+               shows current position. Replaces the old "fake" link that
+               just dropped people in signup with no waitlist outcome. */
+            <ClassWaitlistCTA groupId={groupId} slug={slug} primaryColor={primaryColor} />
+          ) : (!plans || plans.length === 0) ? (
             <Link
-              href={isFull ? `/auth/signup?org=${slug}&class=${groupId}` : `/book/${slug}/class/${groupId}/quick-book`}
+              href={`/book/${slug}/class/${groupId}/quick-book`}
               className="block w-full text-center py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{
-                backgroundColor: isFull ? '#1e293b' : primaryColor,
-                color: isFull ? '#94a3b8' : '#0a0a0a',
-                boxShadow: isFull
-                  ? 'none'
-                  : `0 10px 40px ${primaryColor}80, 0 0 0 3px ${primaryColor}30`,
+                backgroundColor: primaryColor,
+                color: '#0a0a0a',
+                boxShadow: `0 10px 40px ${primaryColor}80, 0 0 0 3px ${primaryColor}30`,
               }}
             >
-              {isFull ? 'Join Waitlist' : 'Sign Up & Book This Class'} &rarr;
+              Sign Up &amp; Book This Class &rarr;
             </Link>
-          )}
+          ) : null}
 
           {showTrialCta && (
             <Link

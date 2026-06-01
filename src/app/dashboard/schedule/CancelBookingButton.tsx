@@ -36,6 +36,13 @@ export default function CancelBookingButton({
     setLoading(true)
     const supabase = createClient()
 
+    // Capture group_id so we can promote next-on-waitlist after the cancel.
+    const { data: enrolmentRow } = await supabase
+      .from('enrolments')
+      .select('group_id')
+      .eq('id', enrolmentId)
+      .single()
+
     const { error } = await supabase
       .from('enrolments')
       .update({ status: 'cancelled' })
@@ -45,6 +52,16 @@ export default function CancelBookingButton({
       alert('Failed to cancel — please try again')
       setLoading(false)
       return
+    }
+
+    // Vacated a seat — auto-offer to the next person on the waitlist.
+    // Fire-and-forget; the daily expiry cron is a fallback.
+    if (enrolmentRow?.group_id) {
+      void fetch('/api/waitlist/promote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: enrolmentRow.group_id }),
+      }).catch(() => undefined)
     }
 
     // Check if this was their last active enrolment — if so, offer to cancel sub too

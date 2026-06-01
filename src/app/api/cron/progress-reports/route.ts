@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   // Find reviews from the last 24 hours that haven't been emailed
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-  const { data: reviews } = await supabase
+  const { data: reviews, error: reviewsErr } = await supabase
     .from('progress_reviews')
     .select(`
       id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement,
@@ -46,6 +46,10 @@ export async function GET(request: NextRequest) {
       organisation:organisations!progress_reviews_organisation_id_fkey(name)
     `)
     .gte('created_at', since)
+
+  if (reviewsErr) {
+    return NextResponse.json({ error: 'Failed to fetch reviews', detail: reviewsErr.message }, { status: 500 })
+  }
 
   // Cache scoring categories per org to avoid repeated queries
   const orgCategoriesCache: Record<string, { key: string; label: string }[]> = {}

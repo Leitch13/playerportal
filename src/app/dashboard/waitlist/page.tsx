@@ -17,7 +17,7 @@ export default async function WaitlistPage() {
       id, position, status, created_at, offered_at, expires_at,
       player:players(id, full_name, first_name, last_name),
       parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_training_group_id_fkey(id, name)
+      group:training_groups!waitlist_group_id_fkey(id, name)
     `)
     .eq('organisation_id', orgId)
     .in('status', ['waiting', 'offered', 'accepted', 'declined', 'expired'])

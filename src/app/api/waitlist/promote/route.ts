@@ -16,16 +16,19 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Find the next waiting entry for this group
+    // Find the next waiting entry for this group.
+    // NOTE: column is `group_id` — historically this code referenced a
+    // non-existent `training_group_id` and silently 500'd whenever an
+    // enrolment cancellation tried to promote the next person.
     const { data: nextEntry, error: fetchError } = await supabase
       .from('waitlist')
       .select(`
-        id, player_id, parent_id, training_group_id, organisation_id, position,
+        id, player_id, parent_id, group_id, organisation_id, position,
         player:players(id, full_name, first_name, last_name),
         parent:profiles!waitlist_parent_id_fkey(full_name, email),
-        group:training_groups!waitlist_training_group_id_fkey(id, name)
+        group:training_groups!waitlist_group_id_fkey(id, name)
       `)
-      .eq('training_group_id', group_id)
+      .eq('group_id', group_id)
       .eq('status', 'waiting')
       .order('position', { ascending: true })
       .order('created_at', { ascending: true })

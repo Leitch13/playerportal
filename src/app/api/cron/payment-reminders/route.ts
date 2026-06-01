@@ -18,18 +18,30 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Find overdue payments
-  const { data: overdue } = await supabase
+  // Find overdue payments. Pull each payment's parent contact and academy
+  // info so we can send the reminder branded as the academy (not generic
+  // Player Portal) and let the parent reply directly to their coach.
+  const { data: overdue, error: overdueErr } = await supabase
     .from('payments')
-    .select('id, amount, created_at, status, profile:profiles(full_name, email), plan:subscription_plans(name)')
+    .select(`
+      id, amount, created_at, status,
+      parent:profiles!payments_parent_id_fkey(full_name, email),
+      plan:subscription_plans(name),
+      organisation:organisations(name, contact_email)
+    `)
     .eq('status', 'overdue')
+
+  if (overdueErr) {
+    return NextResponse.json({ error: 'Failed to fetch overdue payments', detail: overdueErr.message }, { status: 500 })
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
   const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const payment of overdue || []) {
-    const profile = payment.profile as unknown as { full_name: string; email: string } | null
+    const profile = payment.parent as unknown as { full_name: string; email: string } | null
     const plan = payment.plan as unknown as { name: string } | null
+    const org = payment.organisation as unknown as { name: string; contact_email: string | null } | null
     if (!profile?.email) continue
 
     const daysOverdue = Math.floor((Date.now() - new Date(payment.created_at).getTime()) / 86400000)
@@ -45,7 +57,15 @@ export async function GET(request: NextRequest) {
       dashboardUrl: `${appUrl}/dashboard/payments`,
     })
 
-    jobs.push({ to: profile.email, ...template })
+    jobs.push({
+      to: profile.email,
+      ...template,
+      // Brand the From: line as the academy so the parent sees a familiar
+      // name in their inbox, and Reply-To: routes their reply straight
+      // to the coach instead of into a Player Portal black hole.
+      fromName: org?.name || undefined,
+      replyTo: org?.contact_email || undefined,
+    })
   }
 
   const { sent } = await sendEmailBatch(jobs)

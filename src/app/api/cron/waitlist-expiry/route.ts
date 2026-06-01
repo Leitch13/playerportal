@@ -17,17 +17,23 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Find expired offers
-  const { data: expiredEntries } = await supabase
+  // Find expired offers.
+  // NOTE: column is `group_id`, NOT `training_group_id` — that earlier
+  // name was a typo and the cron silently returned zero rows.
+  const { data: expiredEntries, error: expiredErr } = await supabase
     .from('waitlist')
     .select(`
-      id, training_group_id, parent_id, organisation_id,
+      id, group_id, parent_id, organisation_id,
       player:players(id, full_name, first_name, last_name),
       parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_training_group_id_fkey(id, name)
+      group:training_groups!waitlist_group_id_fkey(id, name)
     `)
     .eq('status', 'offered')
     .lt('expires_at', new Date().toISOString())
+
+  if (expiredErr) {
+    return NextResponse.json({ error: 'Failed to fetch expired offers', detail: expiredErr.message }, { status: 500 })
+  }
 
   let expired = 0
   let promoted = 0
@@ -62,9 +68,9 @@ export async function GET(request: NextRequest) {
         id, parent_id, organisation_id,
         player:players(id, full_name, first_name, last_name),
         parent:profiles!waitlist_parent_id_fkey(full_name, email),
-        group:training_groups!waitlist_training_group_id_fkey(id, name)
+        group:training_groups!waitlist_group_id_fkey(id, name)
       `)
-      .eq('training_group_id', entry.training_group_id)
+      .eq('group_id', entry.group_id)
       .eq('status', 'waiting')
       .order('position', { ascending: true })
       .order('created_at', { ascending: true })

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   const monthDay = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   // Fetch players with birthdays today (filtered in Postgres for efficiency)
-  const { data: players } = await supabase
+  const { data: players, error: playersErr } = await supabase
     .from('players')
     .select(`
       id, first_name, last_name, date_of_birth, organisation_id, parent_id,
@@ -50,6 +50,9 @@ export async function GET(request: NextRequest) {
     .not('date_of_birth', 'is', null)
     .filter('date_of_birth', 'like', `%-${monthDay}`)
 
+  if (playersErr) {
+    return NextResponse.json({ error: 'Failed to fetch players', detail: playersErr.message }, { status: 500 })
+  }
   if (!players || players.length === 0) {
     return NextResponse.json({ sent: 0, message: 'No birthdays today' })
   }

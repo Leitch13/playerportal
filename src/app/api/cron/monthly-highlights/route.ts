@@ -34,12 +34,15 @@ export async function GET(request: NextRequest) {
   })
 
   // Get all attendance records for last month, grouped by player
-  const { data: attendanceRows } = await supabase
+  const { data: attendanceRows, error: attendanceErr } = await supabase
     .from('attendance')
     .select('player_id, present')
     .gte('session_date', monthStart)
     .lte('session_date', monthEnd)
 
+  if (attendanceErr) {
+    return NextResponse.json({ error: 'Failed to fetch attendance', detail: attendanceErr.message }, { status: 500 })
+  }
   if (!attendanceRows || attendanceRows.length === 0) {
     return NextResponse.json({ message: 'No attendance records for last month', sent: 0 })
   }
