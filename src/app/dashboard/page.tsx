@@ -23,6 +23,114 @@ import SmartInsights from '@/components/SmartInsights'
 import RevenueForecast from '@/components/RevenueForecast'
 import PlayersNeedingAttention, { type AttentionPlayer } from '@/components/PlayersNeedingAttention'
 import BirthdaysThisWeek, { type BirthdayPlayer } from '@/components/BirthdaysThisWeek'
+import ActionQueueCard from '@/components/ActionQueueCard'
+import { loadActionQueueCounts } from '@/lib/dashboard-action-queue'
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type SupabaseAny = any
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * Org-wide PlayersNeedingAttention loader for the admin dashboard.
+ * Mirrors the coach-side per-group computation in CoachDashboard but
+ * scopes to ALL active enrolments for the org. Caps the result at 8 so
+ * the widget can't explode for very large academies.
+ */
+async function loadAdminAttentionPlayers(
+  supabase: SupabaseAny,
+  orgId: string,
+): Promise<AttentionPlayer[]> {
+  const out: AttentionPlayer[] = []
+  try {
+    const { data: activeEnrolments } = await supabase
+      .from('enrolments')
+      .select('player_id, player:players(id, first_name, last_name, photo_url)')
+      .eq('organisation_id', orgId)
+      .eq('status', 'active')
+
+    const players = new Map<string, { id: string; first_name: string; last_name: string; photo_url: string | null }>()
+    for (const e of activeEnrolments || []) {
+      const p = (e as { player: { id: string; first_name: string; last_name: string; photo_url: string | null } | null }).player
+      if (!p) continue
+      if (!players.has(p.id)) players.set(p.id, p)
+    }
+    const playerIds = [...players.keys()]
+    if (playerIds.length === 0) return out
+
+    const { data: latestReviews } = await supabase
+      .from('progress_reviews')
+      .select('player_id, review_date')
+      .in('player_id', playerIds)
+      .order('review_date', { ascending: false })
+
+    const latestByPlayer = new Map<string, string>()
+    for (const r of latestReviews || []) {
+      const pid = (r as { player_id: string }).player_id
+      if (!latestByPlayer.has(pid)) latestByPlayer.set(pid, (r as { review_date: string }).review_date)
+    }
+
+    const today = Date.now()
+    for (const p of players.values()) {
+      const last = latestByPlayer.get(p.id)
+      if (!last) {
+        out.push({ ...p, reason: 'overdue_review', detail: 'Never reviewed' })
+      } else {
+        const days = Math.floor((today - new Date(last).getTime()) / (24 * 60 * 60 * 1000))
+        if (days > 30) {
+          out.push({ ...p, reason: 'overdue_review', detail: `Last reviewed ${days} days ago` })
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[admin-attention] failed:', err)
+  }
+  return out.slice(0, 8)
+}
+
+/**
+ * Org-wide BirthdaysThisWeek loader for the admin dashboard.
+ * Returns players with a DOB within the next 7 days.
+ */
+async function loadAdminBirthdayPlayers(
+  supabase: SupabaseAny,
+  orgId: string,
+): Promise<BirthdayPlayer[]> {
+  const out: BirthdayPlayer[] = []
+  try {
+    const { data: players } = await supabase
+      .from('players')
+      .select('id, first_name, last_name, photo_url, date_of_birth')
+      .eq('organisation_id', orgId)
+    const todayDate = new Date()
+    const seen = new Set<string>()
+    for (const p of (players || []) as Array<{ id: string; first_name: string; last_name: string; photo_url: string | null; date_of_birth: string | null }>) {
+      if (!p.date_of_birth || seen.has(p.id)) continue
+      seen.add(p.id)
+      const dob = new Date(p.date_of_birth)
+      const thisYear = new Date(todayDate.getFullYear(), dob.getMonth(), dob.getDate())
+      let target = thisYear
+      if (thisYear.getTime() < todayDate.getTime() - 24 * 60 * 60 * 1000) {
+        target = new Date(todayDate.getFullYear() + 1, dob.getMonth(), dob.getDate())
+      }
+      const daysUntil = Math.ceil((target.getTime() - todayDate.getTime()) / (24 * 60 * 60 * 1000))
+      if (daysUntil >= 0 && daysUntil <= 7) {
+        out.push({
+          id: p.id,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          photo_url: p.photo_url,
+          date_of_birth: p.date_of_birth,
+          daysUntil: daysUntil < 0 ? 0 : daysUntil,
+          turningAge: target.getFullYear() - dob.getFullYear(),
+        })
+      }
+    }
+    out.sort((a, b) => a.daysUntil - b.daysUntil)
+  } catch (err) {
+    console.error('[admin-birthdays] failed:', err)
+  }
+  return out
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -1565,6 +1673,14 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
     return `${days}d ago`
   }
 
+  // ─── Phase 1: Action Queue + admin-scoped attention/birthdays widgets ───
+  // ActionQueueCard surfaces the 4 cohorts owners triage most. Birthdays +
+  // PlayersNeedingAttention reuse the existing components but compute their
+  // data org-wide (not coach-scoped).
+  const actionQueueCounts = await loadActionQueueCounts(supabase, orgId)
+  const adminAttention = await loadAdminAttentionPlayers(supabase, orgId)
+  const adminBirthdays = await loadAdminBirthdayPlayers(supabase, orgId)
+
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-4xl mx-auto space-y-0">
@@ -1582,6 +1698,28 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           todaysSessions={(todaysGroups || []).length}
           activeSubs={activeSubs || 0}
         />
+
+        {/* ═══ ACTION QUEUE (Phase 1) ═══ */}
+        {/* Top of the dashboard so triage takes 30s on login. Each row
+            collapses to "All clear" when count=0; the card never shows
+            scary zeros. Unsigned waivers row appears only when relevant. */}
+        <div className="mt-6">
+          <ActionQueueCard counts={actionQueueCounts} />
+        </div>
+
+        {/* ═══ BIRTHDAYS THIS WEEK (admin-scoped) ═══ */}
+        {adminBirthdays.length > 0 && (
+          <div className="mt-6">
+            <BirthdaysThisWeek players={adminBirthdays} />
+          </div>
+        )}
+
+        {/* ═══ PLAYERS NEEDING ATTENTION (admin-scoped) ═══ */}
+        {adminAttention.length > 0 && (
+          <div className="mt-6">
+            <PlayersNeedingAttention players={adminAttention} />
+          </div>
+        )}
 
         {/* ═══ ONBOARDING CHECKLIST ═══ */}
         {showOnboarding && (

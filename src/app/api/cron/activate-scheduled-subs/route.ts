@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-import { firstOfNextMonthUnix } from '@/lib/billing/anchor'
+import {
+  activateScheduledSubRow,
+  type ScheduledSubRow,
+  type ActivationResult,
+} from '@/lib/billing/activate-scheduled-sub'
 
 /**
  * Stage 3 — daily activation cron for scheduled subscriptions.
@@ -28,18 +32,6 @@ import { firstOfNextMonthUnix } from '@/lib/billing/anchor'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
-
-interface ScheduledSubRow {
-  id: string
-  parent_id: string
-  player_id: string | null
-  plan_id: string
-  organisation_id: string
-  start_date: string
-  stripe_setup_intent_id: string | null
-  stripe_customer_id: string | null
-  training_group_id: string | null
-}
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -82,155 +74,15 @@ export async function GET(request: NextRequest) {
   }
 
   const candidates = (rows ?? []) as ScheduledSubRow[]
-  const results: Array<{
-    sub_id: string
-    start_date: string
-    ok: boolean
-    stripe_subscription_id?: string
-    error?: string
-  }> = []
+  const results: ActivationResult[] = []
 
+  // Per-row activation logic lives in src/lib/billing/activate-scheduled-sub.ts
+  // so the same code path serves both this cron and the admin "Activate now"
+  // action on the Enrolments page. Byte-identical behaviour — only the
+  // selection criteria differ (cron: all rows ≤ today; admin: one row).
   for (const row of candidates) {
-    try {
-      // Resolve the plan + org for Stripe params
-      const { data: plan, error: planErr } = await supabase
-        .from('subscription_plans')
-        .select('stripe_price_id, organisation_id, amount')
-        .eq('id', row.plan_id)
-        .single()
-      if (planErr || !plan?.stripe_price_id) {
-        throw new Error(`plan ${row.plan_id} has no stripe_price_id`)
-      }
-
-      const { data: org } = await supabase
-        .from('organisations')
-        .select('stripe_account_id, platform_plan_id')
-        .eq('id', row.organisation_id)
-        .single()
-      if (!org?.stripe_account_id) {
-        throw new Error(`org ${row.organisation_id} has no stripe_account_id`)
-      }
-
-      // Resolve platform fee rate
-      let feePercent = 3.5
-      if (org.platform_plan_id) {
-        const { data: pp } = await supabase
-          .from('platform_plans')
-          .select('transaction_fee_percent')
-          .eq('id', org.platform_plan_id)
-          .single()
-        if (pp?.transaction_fee_percent != null) {
-          feePercent = Number(pp.transaction_fee_percent)
-        }
-      }
-
-      // Resolve the SetupIntent's payment method (saved at signup)
-      let defaultPm: string | null = null
-      if (row.stripe_setup_intent_id) {
-        try {
-          const si = await stripe.setupIntents.retrieve(row.stripe_setup_intent_id)
-          defaultPm = typeof si.payment_method === 'string'
-            ? si.payment_method
-            : si.payment_method?.id ?? null
-        } catch (e) {
-          // SetupIntent may have expired (>30 days). Surface clearly.
-          throw new Error(`setup_intent ${row.stripe_setup_intent_id} unreadable: ${e instanceof Error ? e.message : String(e)}`)
-        }
-      }
-      if (!defaultPm) {
-        throw new Error(`no payment method on SetupIntent for sub ${row.id}`)
-      }
-      if (!row.stripe_customer_id) {
-        throw new Error(`no stripe_customer_id on sub ${row.id}`)
-      }
-
-      // Compute billing_cycle_anchor = 1st of next month from TODAY
-      // (not from start_date — start_date is already <= today, and Stripe
-      // requires anchor strictly in the future).
-      const anchor = firstOfNextMonthUnix(new Date())
-
-      // Create the Stripe subscription. Same primitive as Stage 2's
-      // immediate_prorated branch — verified end-to-end in Probe 7.
-      const stripeSub = await stripe.subscriptions.create(
-        {
-          customer: row.stripe_customer_id,
-          items: [{ price: plan.stripe_price_id }],
-          default_payment_method: defaultPm,
-          billing_cycle_anchor: anchor,
-          proration_behavior: 'create_prorations',
-          collection_method: 'charge_automatically',
-          on_behalf_of: org.stripe_account_id,
-          application_fee_percent: feePercent,
-          transfer_data: { destination: org.stripe_account_id },
-          metadata: {
-            supabase_subscription_id: row.id,
-            supabase_user_id: row.parent_id,
-            supabase_plan_id: row.plan_id,
-            ...(row.player_id ? { supabase_player_id: row.player_id } : {}),
-            billing_model: 'future_prorated',
-            activates_on: row.start_date,
-            pp_flow: 'future_prorated_activation',
-          },
-        },
-        {
-          // Idempotency: re-running the cron for the same row cannot create
-          // a second Stripe sub. Key includes start_date so a manual edit
-          // of start_date (admin action) would allow re-activation.
-          idempotencyKey: `sub_activate_${row.id}_${row.start_date}`,
-        }
-      )
-
-      // Update DB row immediately so subsequent webhook deliveries find it
-      // by stripe_subscription_id. The webhook will further mark active +
-      // record the prorated invoice via the normal renewal flow.
-      const { error: updErr } = await supabase
-        .from('subscriptions')
-        .update({
-          stripe_subscription_id: stripeSub.id,
-          status: stripeSub.status,
-        })
-        .eq('id', row.id)
-      if (updErr) {
-        // Stripe sub was created successfully; DB update failed. Log and
-        // continue — the next webhook delivery will correct it.
-        console.error(`[cron-activate] DB update failed for sub ${row.id} (Stripe sub ${stripeSub.id}):`, updErr.message)
-      }
-
-      // Flip the matching pending enrolment to active. Uses training_group_id
-      // persisted on the subscription row at signup so the match is
-      // unambiguous (avoids guessing if the parent has multiple pending
-      // enrolments with the same activates_on). If training_group_id is null
-      // (legacy / non-class signup), skip silently.
-      if (row.training_group_id && row.player_id) {
-        const { error: enrolErr } = await supabase
-          .from('enrolments')
-          .update({ status: 'active' })
-          .eq('player_id', row.player_id)
-          .eq('group_id', row.training_group_id)
-          .eq('status', 'pending')
-        if (enrolErr) {
-          // Sub activated successfully but enrolment flip failed. Log so
-          // ops can fix manually; don't fail the whole cron run.
-          console.error(`[cron-activate] enrolment activation failed for sub ${row.id} (player ${row.player_id}, group ${row.training_group_id}):`, enrolErr.message)
-        }
-      }
-
-      results.push({
-        sub_id: row.id,
-        start_date: row.start_date,
-        ok: true,
-        stripe_subscription_id: stripeSub.id,
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      console.error(`[cron-activate] failed for sub ${row.id}:`, message)
-      results.push({
-        sub_id: row.id,
-        start_date: row.start_date,
-        ok: false,
-        error: message,
-      })
-    }
+    const result = await activateScheduledSubRow(supabase, stripe, row)
+    results.push(result)
   }
 
   const successCount = results.filter((r) => r.ok).length
