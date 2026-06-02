@@ -28,7 +28,7 @@
  * Purely presentational. Lifts state up — the parent form owns the date.
  */
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   estimateProratedPence,
   firstOfNextMonthLabel,
@@ -222,6 +222,24 @@ export function StartDatePicker({
   // "Next session" label). Suppress unused-var noise.
   void anchorIso
   void nextClassIso
+
+  // Auto-select the first valid class-day pill when:
+  //   1. We're in the day-constrained branch (pills will render), AND
+  //   2. The parent form's value is currently empty OR not in the valid
+  //      class-day set (e.g. defaulted to today, but today isn't a class day)
+  // This keeps the cost preview accurate from first render — otherwise the
+  // parent sees today's prorated math even though today isn't selectable.
+  useEffect(() => {
+    if (!allowFutureStart) return
+    if (sessionDateOptions.length === 0) return
+    if (value && sessionDateOptions.includes(value)) return
+    onChange(sessionDateOptions[0])
+    // sessionDateOptions is a derived array, but it's stable per (today, classDay)
+    // and we want this effect to re-run if those change. `value` is read but
+    // not in deps to avoid clobbering a user pick mid-flight; the includes()
+    // guard above handles the "already valid" case.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowFutureStart, sessionDateOptions.join('|'), classDayOfWeek])
 
   return (
     <div>
