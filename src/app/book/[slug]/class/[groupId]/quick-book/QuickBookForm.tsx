@@ -337,7 +337,17 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
                 const quarterly = getQuarterlyPrice(monthly)
                 const isSelected = selectedPlanId === plan.id
                 return (
-                  <button key={plan.id} type="button" onClick={() => { setSelectedPlanId(plan.id); setTimeout(() => scrollToSection(isLoggedIn ? 2 : 3), 300) }} className={`w-full text-left rounded-xl border-2 p-4 transition-all ${isSelected ? 'bg-white/[0.04]' : 'border-white/[0.06] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}10` } : undefined}>
+                  <button key={plan.id} type="button" onClick={() => {
+                    setSelectedPlanId(plan.id)
+                    // For quarterly: no start-date picker → scroll straight to Confirm.
+                    // For monthly: let the parent see the StartDatePicker that just
+                    // rendered below the plan list (it's the next required step).
+                    // Previously this auto-scrolled past the picker, leaving parents
+                    // unable to choose a future start date.
+                    if (billingOption === 'quarterly') {
+                      setTimeout(() => scrollToSection(isLoggedIn ? 2 : 3), 300)
+                    }
+                  }} className={`w-full text-left rounded-xl border-2 p-4 transition-all ${isSelected ? 'bg-white/[0.04]' : 'border-white/[0.06] hover:border-white/[0.12]'}`} style={isSelected ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}10` } : undefined}>
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-bold text-white">{plan.name}</div>
