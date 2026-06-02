@@ -31,6 +31,49 @@ type SupabaseAny = any
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
+ * Per-widget isolation wrapper for Phase 1 dashboard sections.
+ *
+ * Goal: a thrown exception inside ANY single widget's data loader must NOT
+ * crash the dashboard render. The wrapper:
+ *   1. Awaits the loader inside try/catch
+ *   2. Logs a structured error to stderr with the prefix
+ *        [phase1:<widget>] threw org=<orgId>: <message>\n<stack>
+ *      so a `vercel logs … | grep phase1:` filters straight to the cause
+ *   3. Returns a tagged union the JSX can render against:
+ *        { ok: true,  data }    — render the widget
+ *        { ok: false, error }   — render an inline error placeholder
+ *
+ * The dashboard always proceeds to the rest of the JSX regardless of which
+ * widgets succeeded.
+ */
+type WidgetResult<T> = { ok: true; data: T } | { ok: false; error: string }
+async function safeLoadWidget<T>(
+  name: string,
+  orgId: string,
+  loader: () => Promise<T>,
+): Promise<WidgetResult<T>> {
+  try {
+    const data = await loader()
+    return { ok: true, data }
+  } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err))
+    console.error(`[phase1:${name}] threw org=${orgId}: ${e.message}\n${e.stack}`)
+    return { ok: false, error: e.message }
+  }
+}
+
+// Inline placeholder shown when a Phase 1 widget's loader threw. Keeps the
+// dashboard chrome consistent and gives the operator a single one-line clue.
+function WidgetErrorPlaceholder({ name, error }: { name: string; error: string }) {
+  return (
+    <div className="bg-rose-500/[0.04] border border-rose-500/[0.20] rounded-2xl p-4 text-xs text-rose-200/80">
+      <span className="font-bold">{name}</span> couldn&apos;t load. The rest of your dashboard is unaffected — engineering has been notified.
+      <span className="block mt-1 text-rose-200/40 truncate" title={error}>({error})</span>
+    </div>
+  )
+}
+
+/**
  * Org-wide PlayersNeedingAttention loader for the admin dashboard.
  * Mirrors the coach-side per-group computation in CoachDashboard but
  * scopes to ALL active enrolments for the org. Caps the result at 8 so
@@ -42,14 +85,18 @@ async function loadAdminAttentionPlayers(
 ): Promise<AttentionPlayer[]> {
   const out: AttentionPlayer[] = []
   try {
-    const { data: activeEnrolments } = await supabase
+    const enrolRes = await supabase
       .from('enrolments')
       .select('player_id, player:players(id, first_name, last_name, photo_url)')
       .eq('organisation_id', orgId)
       .eq('status', 'active')
+    if (enrolRes.error) {
+      console.error(`[phase1:attention:enrolments] postgrest org=${orgId}: code=${enrolRes.error.code} msg=${enrolRes.error.message}`)
+      return out
+    }
 
     const players = new Map<string, { id: string; first_name: string; last_name: string; photo_url: string | null }>()
-    for (const e of activeEnrolments || []) {
+    for (const e of enrolRes.data || []) {
       const p = (e as { player: { id: string; first_name: string; last_name: string; photo_url: string | null } | null }).player
       if (!p) continue
       if (!players.has(p.id)) players.set(p.id, p)
@@ -57,14 +104,18 @@ async function loadAdminAttentionPlayers(
     const playerIds = [...players.keys()]
     if (playerIds.length === 0) return out
 
-    const { data: latestReviews } = await supabase
+    const reviewRes = await supabase
       .from('progress_reviews')
       .select('player_id, review_date')
       .in('player_id', playerIds)
       .order('review_date', { ascending: false })
+    if (reviewRes.error) {
+      console.error(`[phase1:attention:reviews] postgrest org=${orgId}: code=${reviewRes.error.code} msg=${reviewRes.error.message}`)
+      return out
+    }
 
     const latestByPlayer = new Map<string, string>()
-    for (const r of latestReviews || []) {
+    for (const r of reviewRes.data || []) {
       const pid = (r as { player_id: string }).player_id
       if (!latestByPlayer.has(pid)) latestByPlayer.set(pid, (r as { review_date: string }).review_date)
     }
@@ -82,7 +133,13 @@ async function loadAdminAttentionPlayers(
       }
     }
   } catch (err) {
-    console.error('[admin-attention] failed:', err)
+    const e = err instanceof Error ? err : new Error(String(err))
+    console.error(`[phase1:attention] threw org=${orgId}: ${e.message}\n${e.stack}`)
+    // Re-throw so safeLoadWidget categorises this as a hard failure and
+    // renders the placeholder. (The Postgrest-error paths above already
+    // returned [] without re-throwing — those represent "no data" rather
+    // than "crash".)
+    throw e
   }
   return out.slice(0, 8)
 }
@@ -97,10 +154,15 @@ async function loadAdminBirthdayPlayers(
 ): Promise<BirthdayPlayer[]> {
   const out: BirthdayPlayer[] = []
   try {
-    const { data: players } = await supabase
+    const playersRes = await supabase
       .from('players')
       .select('id, first_name, last_name, photo_url, date_of_birth')
       .eq('organisation_id', orgId)
+    if (playersRes.error) {
+      console.error(`[phase1:birthdays:players] postgrest org=${orgId}: code=${playersRes.error.code} msg=${playersRes.error.message}`)
+      return out
+    }
+    const players = playersRes.data
     const todayDate = new Date()
     const seen = new Set<string>()
     for (const p of (players || []) as Array<{ id: string; first_name: string; last_name: string; photo_url: string | null; date_of_birth: string | null }>) {
@@ -127,7 +189,10 @@ async function loadAdminBirthdayPlayers(
     }
     out.sort((a, b) => a.daysUntil - b.daysUntil)
   } catch (err) {
-    console.error('[admin-birthdays] failed:', err)
+    const e = err instanceof Error ? err : new Error(String(err))
+    console.error(`[phase1:birthdays] threw org=${orgId}: ${e.message}\n${e.stack}`)
+    // Re-throw — let safeLoadWidget render the placeholder.
+    throw e
   }
   return out
 }
@@ -1674,12 +1739,19 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   }
 
   // ─── Phase 1: Action Queue + admin-scoped attention/birthdays widgets ───
-  // ActionQueueCard surfaces the 4 cohorts owners triage most. Birthdays +
-  // PlayersNeedingAttention reuse the existing components but compute their
-  // data org-wide (not coach-scoped).
-  const actionQueueCounts = await loadActionQueueCounts(supabase, orgId)
-  const adminAttention = await loadAdminAttentionPlayers(supabase, orgId)
-  const adminBirthdays = await loadAdminBirthdayPlayers(supabase, orgId)
+  // ISOLATION CONTRACT: each widget loads through safeLoadWidget below so a
+  // single failing query (e.g. a missing column on a specific org's schema)
+  // cannot crash the entire dashboard. Each widget result is one of:
+  //   { ok: true,  data }   → render the widget normally
+  //   { ok: false, error }  → render a tiny inline error placeholder
+  // and the rest of the dashboard renders regardless.
+  //
+  // Structured logging: every failure is logged to stderr with the prefix
+  //   [phase1:<widget-name>]
+  // so a quick `vercel logs … | grep phase1:` will surface the root cause.
+  const aqResult        = await safeLoadWidget('action-queue', orgId, () => loadActionQueueCounts(supabase, orgId))
+  const attentionResult = await safeLoadWidget('attention',    orgId, () => loadAdminAttentionPlayers(supabase, orgId))
+  const birthdaysResult = await safeLoadWidget('birthdays',    orgId, () => loadAdminBirthdayPlayers(supabase, orgId))
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
@@ -1699,27 +1771,40 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           activeSubs={activeSubs || 0}
         />
 
-        {/* ═══ ACTION QUEUE (Phase 1) ═══ */}
-        {/* Top of the dashboard so triage takes 30s on login. Each row
-            collapses to "All clear" when count=0; the card never shows
-            scary zeros. Unsigned waivers row appears only when relevant. */}
+        {/* ═══ ACTION QUEUE (Phase 1, isolated) ═══ */}
+        {/* If the loader threw, render a one-line error placeholder instead
+            of the card — the rest of the dashboard continues. */}
         <div className="mt-6">
-          <ActionQueueCard counts={actionQueueCounts} />
+          {aqResult.ok
+            ? <ActionQueueCard counts={aqResult.data} />
+            : <WidgetErrorPlaceholder name="Action queue" error={aqResult.error} />}
         </div>
 
-        {/* ═══ BIRTHDAYS THIS WEEK (admin-scoped) ═══ */}
-        {adminBirthdays.length > 0 && (
-          <div className="mt-6">
-            <BirthdaysThisWeek players={adminBirthdays} />
-          </div>
-        )}
+        {/* ═══ BIRTHDAYS THIS WEEK (admin-scoped, isolated) ═══ */}
+        {birthdaysResult.ok
+          ? birthdaysResult.data.length > 0 && (
+              <div className="mt-6">
+                <BirthdaysThisWeek players={birthdaysResult.data} />
+              </div>
+            )
+          : (
+              <div className="mt-6">
+                <WidgetErrorPlaceholder name="Birthdays this week" error={birthdaysResult.error} />
+              </div>
+            )}
 
-        {/* ═══ PLAYERS NEEDING ATTENTION (admin-scoped) ═══ */}
-        {adminAttention.length > 0 && (
-          <div className="mt-6">
-            <PlayersNeedingAttention players={adminAttention} />
-          </div>
-        )}
+        {/* ═══ PLAYERS NEEDING ATTENTION (admin-scoped, isolated) ═══ */}
+        {attentionResult.ok
+          ? attentionResult.data.length > 0 && (
+              <div className="mt-6">
+                <PlayersNeedingAttention players={attentionResult.data} />
+              </div>
+            )
+          : (
+              <div className="mt-6">
+                <WidgetErrorPlaceholder name="Players needing attention" error={attentionResult.error} />
+              </div>
+            )}
 
         {/* ═══ ONBOARDING CHECKLIST ═══ */}
         {showOnboarding && (

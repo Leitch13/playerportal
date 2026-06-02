@@ -36,11 +36,26 @@ export async function loadActionQueueCounts(
   // awaited failures (network error during fetch). The fn-based signature
   // is what makes construction-time errors catchable — passing a Promise
   // would already have triggered the throw.
-  const safeCount = async (fn: () => Promise<{ count: number | null }>): Promise<number> => {
+  // Per-query try/catch wrapper. Logs to stderr with a structured tag so a
+  // failing field can be grepped out of Vercel runtime logs by name.
+  // Returns 0 on ANY failure — never throws — so a missing column on one
+  // org cannot bubble up and crash the dashboard render.
+  const safeCount = async (
+    label: string,
+    fn: () => Promise<{ count: number | null; error?: { message?: string; code?: string; details?: string } | null }>,
+  ): Promise<number> => {
     try {
-      const { count } = await fn()
-      return count ?? 0
-    } catch {
+      const result = await fn()
+      // Supabase Postgrest returns { error: {...} } rather than throwing on
+      // most DB errors (unknown column, RLS denial, etc.). Surface those.
+      if (result.error) {
+        console.error(`[phase1:action-queue:${label}] postgrest error org=${orgId}: code=${result.error.code} msg=${result.error.message} details=${result.error.details}`)
+        return 0
+      }
+      return result.count ?? 0
+    } catch (err) {
+      const e = err instanceof Error ? err : new Error(String(err))
+      console.error(`[phase1:action-queue:${label}] threw org=${orgId}: ${e.message}`, e.stack)
       return 0
     }
   }
@@ -49,7 +64,7 @@ export async function loadActionQueueCounts(
   const [pendingStarts, pastDuePayments, trialsExpiring7d, attentionCount, waivers] =
     await Promise.all([
       // Stage 3: subscriptions waiting to be activated.
-      safeCount(() =>
+      safeCount('pending-starts', () =>
         supabase
           .from('subscriptions')
           .select('id', { count: 'exact', head: true })
@@ -57,7 +72,7 @@ export async function loadActionQueueCounts(
           .eq('status', 'scheduled'),
       ),
       // Recurring charge failed and is in dunning.
-      safeCount(() =>
+      safeCount('past-due', () =>
         supabase
           .from('subscriptions')
           .select('id', { count: 'exact', head: true })
@@ -65,7 +80,7 @@ export async function loadActionQueueCounts(
           .eq('status', 'past_due'),
       ),
       // Trial enrolments with an expiry within the next 7 days.
-      safeCount(() =>
+      safeCount('trials-7d', () =>
         supabase
           .from('enrolments')
           .select('id', { count: 'exact', head: true })
@@ -102,24 +117,33 @@ export async function loadActionQueueCounts(
  */
 async function loadAttentionCount(supabase: SupabaseLike, orgId: string): Promise<number> {
   try {
-    const { data: enrolments } = await supabase
+    const enrolRes = await supabase
       .from('enrolments')
       .select('player_id')
       .eq('organisation_id', orgId)
       .eq('status', 'active')
+    if (enrolRes.error) {
+      console.error(`[phase1:action-queue:attention:enrolments] postgrest error org=${orgId}: code=${enrolRes.error.code} msg=${enrolRes.error.message}`)
+      return 0
+    }
+    const enrolments = enrolRes.data
     if (!enrolments?.length) return 0
 
     const playerIds = [...new Set(enrolments.map((e: { player_id: string }) => e.player_id).filter(Boolean))]
     if (playerIds.length === 0) return 0
 
-    const { data: latestReviews } = await supabase
+    const reviewRes = await supabase
       .from('progress_reviews')
       .select('player_id, review_date')
       .in('player_id', playerIds)
       .order('review_date', { ascending: false })
+    if (reviewRes.error) {
+      console.error(`[phase1:action-queue:attention:reviews] postgrest error org=${orgId}: code=${reviewRes.error.code} msg=${reviewRes.error.message}`)
+      return 0
+    }
 
     const latestByPlayer = new Map<string, string>()
-    for (const r of latestReviews || []) {
+    for (const r of reviewRes.data || []) {
       const pid = (r as { player_id: string }).player_id
       if (!latestByPlayer.has(pid)) latestByPlayer.set(pid, (r as { review_date: string }).review_date)
     }
@@ -131,7 +155,9 @@ async function loadAttentionCount(supabase: SupabaseLike, orgId: string): Promis
       if (!last || new Date(last).getTime() < cutoffMs) count++
     }
     return count
-  } catch {
+  } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err))
+    console.error(`[phase1:action-queue:attention] threw org=${orgId}: ${e.message}`, e.stack)
     return 0
   }
 }
@@ -142,23 +168,41 @@ async function loadAttentionCount(supabase: SupabaseLike, orgId: string): Promis
  */
 async function loadUnsignedWaiverCount(supabase: SupabaseLike, orgId: string): Promise<number> {
   try {
-    const { data: activeWaivers } = await supabase
+    const wRes = await supabase
       .from('waivers')
       .select('id')
       .eq('organisation_id', orgId)
       .eq('is_active', true)
+    if (wRes.error) {
+      // Common case: an org without the waivers feature enabled or a schema
+      // mismatch on `is_active`. Log once and treat as 0 — the Action Queue
+      // row collapses to "All clear" and the dashboard continues to render.
+      console.error(`[phase1:action-queue:waivers:active] postgrest error org=${orgId}: code=${wRes.error.code} msg=${wRes.error.message}`)
+      return 0
+    }
+    const activeWaivers = wRes.data
     if (!activeWaivers?.length) return 0
 
-    const { data: players } = await supabase
+    const pRes = await supabase
       .from('players')
       .select('id, parent_id')
       .eq('organisation_id', orgId)
+    if (pRes.error) {
+      console.error(`[phase1:action-queue:waivers:players] postgrest error org=${orgId}: code=${pRes.error.code} msg=${pRes.error.message}`)
+      return 0
+    }
+    const players = pRes.data
     if (!players?.length) return 0
 
-    const { data: signatures } = await supabase
+    const sRes = await supabase
       .from('waiver_signatures')
       .select('waiver_id, player_id')
       .in('waiver_id', activeWaivers.map((w: { id: string }) => w.id))
+    if (sRes.error) {
+      console.error(`[phase1:action-queue:waivers:signatures] postgrest error org=${orgId}: code=${sRes.error.code} msg=${sRes.error.message}`)
+      return 0
+    }
+    const signatures = sRes.data
 
     const signedKey = new Set(
       (signatures || []).map((s: { waiver_id: string; player_id: string }) => `${s.waiver_id}|${s.player_id}`),
@@ -170,7 +214,9 @@ async function loadUnsignedWaiverCount(supabase: SupabaseLike, orgId: string): P
       }
     }
     return missing
-  } catch {
+  } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err))
+    console.error(`[phase1:action-queue:waivers] threw org=${orgId}: ${e.message}`, e.stack)
     return 0
   }
 }
