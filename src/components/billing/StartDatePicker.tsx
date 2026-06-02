@@ -26,6 +26,7 @@ import {
   isStartInCurrentMonth,
 } from '@/lib/billing/anchor'
 import { isoDate, latestAllowedStartDate, nextSessionDate } from '@/lib/billing/next-session'
+import { estimateBridgePence } from '@/lib/billing/sessions'
 
 interface Props {
   /** ISO date "YYYY-MM-DD". Empty string = no selection yet. */
@@ -44,6 +45,17 @@ interface Props {
    * Default false → today-only behaviour (Option B clamp).
    */
   allowFutureStart?: boolean
+  /**
+   * Per-org bridge billing mode. 'calendar' = current calendar-day proration
+   * (default). 'session' = per-session × remaining sessions formula, with
+   * checkout-time charge. Falls back to calendar when sessionsPerMonth is null.
+   */
+  bridgeMode?: 'calendar' | 'session'
+  /**
+   * Per-plan sessions covered per calendar month. NULL → bridge always uses
+   * calendar-day proration for this plan even when bridgeMode='session'.
+   */
+  sessionsPerMonth?: number | null
 }
 
 function formatLabel(iso: string): string {
@@ -61,6 +73,8 @@ export function StartDatePicker({
   monthlyAmount,
   primaryColor,
   allowFutureStart = false,
+  bridgeMode = 'calendar',
+  sessionsPerMonth = null,
 }: Props) {
   // All hooks must run on every render, regardless of which branch we
   // render below. React's rules of hooks forbid conditional/early-return
@@ -228,7 +242,26 @@ export function StartDatePicker({
         />
       </div>
 
-      {/* Cost preview — branches on startsToday */}
+      {/* Cost preview — branches on (startsToday, bridgeMode) */}
+      {(() => {
+        const monthlyPence = Math.round(monthlyAmount * 100)
+        // Session-mode bridge estimate for the future-date case. Only used
+        // when bridgeMode='session' AND plan has sessionsPerMonth AND class
+        // has a day-of-week. Returns null otherwise → falls back to calendar.
+        const sessionEstimate = !startsToday
+          ? estimateBridgePence({
+              monthlyPence,
+              sessionsPerMonth,
+              classDayOfWeek,
+              startDate: selectedDate,
+            })
+          : null
+        const useSessionPreview =
+          !startsToday &&
+          bridgeMode === 'session' &&
+          sessionEstimate !== null &&
+          sessionEstimate.bridgePence > 0
+        return (
       <div
         className="rounded-xl p-3 text-sm"
         style={{
@@ -254,6 +287,30 @@ export function StartDatePicker({
             </div>
             <div className="text-[11px] text-white/50 mt-0.5">
               Full month, and every 1st after that
+            </div>
+          </>
+        ) : useSessionPreview ? (
+          // Session-bridge preview — Option 3: pay bridge now at checkout,
+          // then full monthly from the anchor. No "Card saved" / no "First
+          // charge on start_date" language — those belong to calendar mode.
+          <>
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Pay today</span>
+              <span className="font-bold text-white">
+                &pound;{((sessionEstimate!.bridgePence) / 100).toFixed(2)}
+              </span>
+            </div>
+            <div className="text-[11px] text-white/50 mt-0.5">
+              Covers {sessionEstimate!.sessionsRemaining} remaining session
+              {sessionEstimate!.sessionsRemaining === 1 ? '' : 's'} before {anchorLabel}.
+            </div>
+            <div className="border-t border-white/[0.08] my-2" />
+            <div className="flex items-center justify-between">
+              <span className="text-white/70">Then on {anchorLabel}</span>
+              <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}/month</span>
+            </div>
+            <div className="text-[11px] text-white/50 mt-0.5">
+              Monthly membership, every 1st thereafter.
             </div>
           </>
         ) : (
@@ -291,6 +348,8 @@ export function StartDatePicker({
           </>
         )}
       </div>
+        )
+      })()}
     </div>
   )
 }

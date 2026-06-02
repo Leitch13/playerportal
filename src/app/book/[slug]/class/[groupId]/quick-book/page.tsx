@@ -11,10 +11,12 @@ export default async function QuickBookPage({
   const { slug, groupId } = await params
   const supabase = await createClient()
 
-  // Get org
+  // Get org. bridge_billing_mode is a Stage 3-session enhancement — when
+  // set to 'session', plans with sessions_per_month populated use the
+  // per-session bridge formula instead of calendar-day proration.
   const { data: org } = await supabase
     .from('organisations')
-    .select('id, name, slug, primary_color, contact_email, contact_phone')
+    .select('id, name, slug, primary_color, contact_email, contact_phone, bridge_billing_mode')
     .ilike('slug', slug)
     .single()
 
@@ -113,7 +115,7 @@ export default async function QuickBookPage({
   // Fetch plans: class-specific first, then class_type, then org-wide
   const { data: classPlans } = await supabase
     .from('subscription_plans')
-    .select('id, name, description, amount, sessions_per_week, interval')
+    .select('id, name, description, amount, sessions_per_week, interval, sessions_per_month')
     .eq('organisation_id', org.id)
     .eq('active', true)
     .eq('training_group_id', groupId)
@@ -125,7 +127,7 @@ export default async function QuickBookPage({
     const classType = (group as Record<string, unknown>).class_type as string || 'group'
     const { data: typePlans } = await supabase
       .from('subscription_plans')
-      .select('id, name, description, amount, sessions_per_week, interval')
+      .select('id, name, description, amount, sessions_per_week, interval, sessions_per_month')
       .eq('organisation_id', org.id)
       .eq('active', true)
       .eq('class_type', classType)
@@ -137,7 +139,7 @@ export default async function QuickBookPage({
   if (!plans || plans.length === 0) {
     const { data: orgPlans } = await supabase
       .from('subscription_plans')
-      .select('id, name, description, amount, sessions_per_week, interval')
+      .select('id, name, description, amount, sessions_per_week, interval, sessions_per_month')
       .eq('organisation_id', org.id)
       .eq('active', true)
       .is('training_group_id', null)
@@ -223,6 +225,7 @@ export default async function QuickBookPage({
             amount: Number(p.amount),
             sessions_per_week: p.sessions_per_week,
             interval: p.interval,
+            sessions_per_month: (p as { sessions_per_month?: number | null }).sessions_per_month ?? null,
           }))
         }
         orgSlug={slug}
@@ -234,6 +237,7 @@ export default async function QuickBookPage({
         classDayOfWeek={group.day_of_week as string | null}
         classTimeSlot={group.time_slot as string | null}
         allowFutureStart={allowFutureStart}
+        bridgeMode={(org as { bridge_billing_mode?: string }).bridge_billing_mode === 'session' ? 'session' : 'calendar'}
       />
 
       {/* Footer */}

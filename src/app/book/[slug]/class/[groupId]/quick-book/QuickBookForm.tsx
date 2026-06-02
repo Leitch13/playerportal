@@ -13,6 +13,8 @@ interface Plan {
   amount: number
   sessions_per_week: number
   interval: string
+  /** Session-bridge support (migration 072). NULL = falls back to calendar. */
+  sessions_per_month?: number | null
 }
 
 interface QuickBookFormProps {
@@ -34,6 +36,13 @@ interface QuickBookFormProps {
    * false it's clamped to today-only (Option B). Default false for safety.
    */
   allowFutureStart?: boolean
+  /**
+   * Per-org bridge billing mode (server-resolved from
+   * organisations.bridge_billing_mode). 'calendar' = current calendar-day
+   * proration (default). 'session' = checkout-time bridge for plans with
+   * sessions_per_month set.
+   */
+  bridgeMode?: 'calendar' | 'session'
 }
 
 function getQuarterlyPrice(monthlyAmount: number) {
@@ -86,7 +95,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false, bridgeMode = 'calendar' }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -404,6 +413,8 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
                   monthlyAmount={selectedPlan.amount}
                   primaryColor={primaryColor}
                   allowFutureStart={allowFutureStart}
+                  bridgeMode={bridgeMode}
+                  sessionsPerMonth={selectedPlan.sessions_per_month ?? null}
                 />
               </div>
             )}

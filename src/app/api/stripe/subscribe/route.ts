@@ -134,9 +134,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Look up the organisation's Stripe Connect account, platform plan, discounts, etc.
+    // bridge_billing_mode: 'calendar' (default) or 'session' — gates the new
+    // session-bridge dispatch below. Plans without sessions_per_month always
+    // fall back to calendar regardless of this column.
     const { data: planOrg } = await supabase
       .from('organisations')
-      .select('stripe_account_id, platform_plan_id, sibling_discount_enabled, sibling_discount_percent, stripe_sibling_coupon_id, quarterly_billing_enabled, quarterly_discount_percent')
+      .select('stripe_account_id, platform_plan_id, sibling_discount_enabled, sibling_discount_percent, stripe_sibling_coupon_id, quarterly_billing_enabled, quarterly_discount_percent, bridge_billing_mode')
       .eq('id', plan.organisation_id)
       .single()
 
@@ -385,12 +388,16 @@ export async function POST(request: NextRequest) {
     // For 1-2-1 / 2-1 / intensity: prefer the explicit firstSessionDate
     //   parameter if provided, fall back to day_of_week next occurrence.
     let firstSessionDate: Date | null = null
+    // Captured for session-bridge: needed to count class-day occurrences
+    // in [activatesOn, anchor). NULL when no class is linked or no class day.
+    let classDayOfWeek: string | null = null
     if (classId) {
       const { data: group } = await supabase
         .from('training_groups')
         .select('day_of_week, class_type')
         .eq('id', classId)
         .single()
+      classDayOfWeek = (group?.day_of_week as string | null) ?? null
       const allowsExplicitDate = group?.class_type && ['1-2-1', '2-1', 'intensity'].includes(group.class_type as string)
       if (allowsExplicitDate && firstSessionDateInput) {
         const parsed = new Date(firstSessionDateInput)
@@ -459,14 +466,154 @@ export async function POST(request: NextRequest) {
     // no migration override. The Stripe Checkout runs in SETUP mode (£0 today)
     // and the activation cron creates the real subscription on start_date.
     const futureStartBillingFlag = isFutureStartBillingEnabled(plan.organisation_id as string)
-    const useFutureProrated =
+    const useFutureProratedBase =
       startDateBillingFlag &&
       futureStartBillingFlag &&
       !migrationTrialEnd &&
       !startsTodayOrEarlier
 
-    const useTonightPlusSub = !useImmediateProrated && !useFutureProrated && !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
-    const useTrialEndOnly = !useImmediateProrated && !useFutureProrated && !migrationTrialEnd && !useTonightPlusSub
+    // Session-bridge variant: same gate as useFutureProratedBase PLUS the org
+    // must be in session mode AND this plan must have sessions_per_month set
+    // AND the class must have a day_of_week (needed to count sessions).
+    // If any condition fails, dispatch falls back to calendar (useFutureProrated).
+    const orgBridgeMode = (planOrg as { bridge_billing_mode?: string } | null)?.bridge_billing_mode ?? 'calendar'
+    const planSessionsPerMonth = (plan as { sessions_per_month?: number | null }).sessions_per_month ?? null
+    const killSwitchOn = process.env.BILLING_BRIDGE_MODE_KILL === 'true'
+    const useSessionBridge =
+      useFutureProratedBase &&
+      !killSwitchOn &&
+      orgBridgeMode === 'session' &&
+      planSessionsPerMonth !== null &&
+      planSessionsPerMonth > 0 &&
+      classDayOfWeek !== null &&
+      !isQuarterly
+
+    const useFutureProrated = useFutureProratedBase && !useSessionBridge
+
+    const useTonightPlusSub = !useImmediateProrated && !useFutureProrated && !useSessionBridge && !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
+    const useTrialEndOnly = !useImmediateProrated && !useFutureProrated && !useSessionBridge && !migrationTrialEnd && !useTonightPlusSub
+
+    if (useSessionBridge) {
+      // ═══ Stage 3 session-bridge: charge bridge NOW + sub trials until anchor ═══
+      // Parent is charged the bridge amount immediately at Stripe Checkout.
+      // The subscription is created with trial_end=anchor — the recurring £X
+      // first cycle fires automatically on the 1st. No cron needed.
+      // (Test Clock probe confirmed: Stripe transitions trialing → active on
+      // anchor and the full monthly invoice fires with no proration.)
+      const { estimateBridgePence, bridgeDescriptionFor } = await import('@/lib/billing/sessions')
+      const estimate = estimateBridgePence({
+        monthlyPence: Math.round(Number(plan.amount) * 100),
+        sessionsPerMonth: planSessionsPerMonth,
+        classDayOfWeek,
+        startDate: activatesOnDate,
+      })
+
+      // Defensive: if math fails (shouldn't happen since useSessionBridge
+      // gate already validated all inputs), fall through to calendar mode.
+      if (!estimate || estimate.bridgePence <= 0) {
+        // No bridge to charge → parent gets pure trial-to-anchor.
+        // Hand off to useFutureProrated (calendar) path below.
+      } else {
+        const anchorUnix = firstOfNextMonthUnix(activatesOnDate)
+        const anchorIso = new Date(anchorUnix * 1000).toISOString().slice(0, 10)
+
+        const bridgeDescription = bridgeDescriptionFor(activatesOnDate)
+
+        // Resolve a Stripe priceId for the monthly recurring leg. Reuse the
+        // existing one set on the plan if present, else create via price_data
+        // (the existing immediate_prorated path already handles either).
+        const stripePriceId = (plan as { stripe_price_id?: string | null }).stripe_price_id ?? null
+
+        const sessionBridgeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
+        if (stripePriceId) {
+          sessionBridgeLineItems.push({ price: stripePriceId, quantity: 1 })
+        } else {
+          sessionBridgeLineItems.push({
+            price_data: {
+              currency: 'gbp',
+              product_data: { name: String(plan.name) },
+              unit_amount: Math.round(Number(plan.amount) * 100),
+              recurring: { interval: 'month' },
+            },
+            quantity: 1,
+          })
+        }
+        // One-time bridge line item — billed at checkout
+        sessionBridgeLineItems.push({
+          price_data: {
+            currency: 'gbp',
+            product_data: { name: bridgeDescription },
+            unit_amount: estimate.bridgePence,
+          },
+          quantity: 1,
+        })
+
+        const sessionBridgeParams: Stripe.Checkout.SessionCreateParams = {
+          customer: customerId,
+          mode: 'subscription',
+          payment_method_types: ['card'],
+          success_url: `${origin}/dashboard/payments/success?billing=monthly&model=future_session_bridge`,
+          cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
+          line_items: sessionBridgeLineItems,
+          subscription_data: {
+            trial_end: anchorUnix,
+            // NOTE: billing_cycle_anchor intentionally omitted. Stripe forbids
+            // combining it with trial_end. trial_end alone produces the
+            // desired calendar: first cycle billed on trial_end.
+            on_behalf_of: connectedAccountId,
+            application_fee_percent: PLATFORM_FEE_RATE * 100,
+            transfer_data: { destination: connectedAccountId },
+            metadata: {
+              supabase_plan_id: planId,
+              supabase_user_id: user.id,
+              ...(playerId ? { supabase_player_id: playerId } : {}),
+              ...(classId ? { supabase_class_id: classId } : {}),
+              billing_model: 'future_session_bridge',
+              pp_flow: 'future_session_bridge',
+              activates_on: activatesOnIso,
+              bridge_sessions_remaining: String(estimate.sessionsRemaining),
+              bridge_per_session_pence: String(estimate.perSessionPence),
+              bridge_pence: String(estimate.bridgePence),
+            },
+          },
+          metadata: {
+            supabase_plan_id: planId,
+            supabase_user_id: user.id,
+            supabase_player_id: playerId || '',
+            billing_option: 'monthly',
+            billing_model: 'future_session_bridge',
+            pp_flow: 'future_session_bridge',
+            activates_on: activatesOnIso,
+            bridge_pence: String(estimate.bridgePence),
+            bridge_sessions_remaining: String(estimate.sessionsRemaining),
+            ...(classId ? { supabase_class_id: classId } : {}),
+            ...(siblingCouponId ? { sibling_coupon_id: siblingCouponId } : {}),
+          },
+          ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionBridgeParams)
+
+        return NextResponse.json({
+          url: session.url,
+          billing: 'monthly',
+          billingModel: 'future_session_bridge',
+          activatesOn: activatesOnIso,
+          nextBillingDate: anchorIso,
+          nextBillingAmount: Number(plan.amount).toFixed(2),
+          tonightAmount: (estimate.bridgePence / 100).toFixed(2),
+          firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
+          siblingDiscountApplied: !!siblingCouponId,
+          siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
+          bridge: {
+            sessionsRemaining: estimate.sessionsRemaining,
+            perSessionPence: estimate.perSessionPence,
+            bridgePence: estimate.bridgePence,
+            capApplied: estimate.capApplied,
+          },
+        })
+      }
+    }
 
     if (useFutureProrated) {
       // ═══ Stage 3: SetupIntent-mode Checkout, charge happens later via cron ═══

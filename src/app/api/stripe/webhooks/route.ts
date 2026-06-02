@@ -309,6 +309,96 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // ─── Stage 3 session-bridge: bridge charged + sub trials until anchor ───
+  // The subscribe route ran Checkout in mode=subscription with a one-time
+  // bridge line item + trial_end=anchor. Bridge already charged at checkout.
+  // Stripe will auto-transition the sub from trialing → active on the anchor
+  // and fire the first full monthly invoice. We just need to insert the local
+  // sub + enrolment rows; existing invoice.payment_succeeded handler picks up
+  // the renewal automatically.
+  if (session.metadata?.pp_flow === 'future_session_bridge' && session.mode === 'subscription') {
+    const m = session.metadata
+    const userId = m.supabase_user_id
+    const planId = m.supabase_plan_id
+    const playerId = m.supabase_player_id || null
+    const classId = m.supabase_class_id || null
+    const activatesOn = m.activates_on
+    if (!userId || !planId || !activatesOn) {
+      console.error('future_session_bridge: missing required metadata')
+      return
+    }
+
+    const stripeSubId = typeof session.subscription === 'string'
+      ? session.subscription
+      : session.subscription?.id || null
+    const customerId = typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id || null
+
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('organisation_id')
+      .eq('id', planId)
+      .single()
+    const orgId = plan?.organisation_id || null
+    if (!orgId) {
+      console.error(`future_session_bridge: plan ${planId} has no organisation_id`)
+      return
+    }
+
+    // Read the actual subscription to get its true status (trialing/active).
+    let stripeSubStatus = 'trialing'
+    if (stripeSubId) {
+      try {
+        const sub = await stripe.subscriptions.retrieve(stripeSubId)
+        stripeSubStatus = sub.status
+      } catch (e) {
+        console.error(`future_session_bridge: could not retrieve sub ${stripeSubId}`, e instanceof Error ? e.message : e)
+      }
+    }
+
+    const { error: subInsErr } = await supabase.from('subscriptions').insert({
+      parent_id: userId,
+      player_id: playerId,
+      plan_id: planId,
+      organisation_id: orgId,
+      status: stripeSubStatus,
+      start_date: activatesOn,
+      stripe_subscription_id: stripeSubId,
+      stripe_customer_id: customerId,
+      ...(classId ? { training_group_id: classId } : {}),
+    })
+    if (subInsErr && (subInsErr as { code?: string }).code !== '23505') {
+      throw new Error(`future_session_bridge subscriptions.insert failed: ${subInsErr.message}`)
+    }
+
+    // Auto-enrol with status='active'. The booking gate at
+    // api/enrolments/book/route.ts enforces activates_on > today as the gate;
+    // status='active' is correct here because the parent has paid the bridge
+    // and made a commitment.
+    if (classId && playerId) {
+      const { data: existingEnrolment } = await supabase
+        .from('enrolments')
+        .select('id')
+        .eq('player_id', playerId)
+        .eq('group_id', classId)
+        .maybeSingle()
+      if (!existingEnrolment) {
+        const { error: enrolErr } = await supabase.from('enrolments').insert({
+          player_id: playerId,
+          group_id: classId,
+          status: 'active',
+          organisation_id: orgId,
+          activates_on: activatesOn,
+        })
+        if (enrolErr && (enrolErr as { code?: string }).code !== '23505') {
+          throw new Error(`future_session_bridge enrolments.insert failed: ${enrolErr.message}`)
+        }
+      }
+    }
+    return
+  }
+
   // ─── Stage 3: future-start (SetupIntent mode) ───
   // The subscribe route ran Checkout in SETUP mode (£0 today, card saved).
   // We write a subscriptions row with status='scheduled' + start_date +
