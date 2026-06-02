@@ -134,14 +134,37 @@ export async function POST(request: NextRequest) {
     }
 
     // Look up the organisation's Stripe Connect account, platform plan, discounts, etc.
-    // bridge_billing_mode: 'calendar' (default) or 'session' — gates the new
-    // session-bridge dispatch below. Plans without sessions_per_month always
-    // fall back to calendar regardless of this column.
     const { data: planOrg } = await supabase
       .from('organisations')
-      .select('stripe_account_id, platform_plan_id, sibling_discount_enabled, sibling_discount_percent, stripe_sibling_coupon_id, quarterly_billing_enabled, quarterly_discount_percent, bridge_billing_mode')
+      .select('stripe_account_id, platform_plan_id, sibling_discount_enabled, sibling_discount_percent, stripe_sibling_coupon_id, quarterly_billing_enabled, quarterly_discount_percent')
       .eq('id', plan.organisation_id)
       .single()
+
+    // bridge_billing_mode (Stage 3 session enhancement) read separately
+    // so this route works whether or not migration 072 has been applied.
+    // If the column doesn't exist yet, we fall back to 'calendar'.
+    let bridgeBillingMode = 'calendar'
+    try {
+      const { data: orgBridge } = await supabase
+        .from('organisations')
+        .select('bridge_billing_mode')
+        .eq('id', plan.organisation_id)
+        .single()
+      if ((orgBridge as { bridge_billing_mode?: string } | null)?.bridge_billing_mode === 'session') {
+        bridgeBillingMode = 'session'
+      }
+    } catch { /* migration 072 not applied */ }
+
+    // sessions_per_month (Stage 3 session enhancement) read separately.
+    let planSessionsPerMonth: number | null = null
+    try {
+      const { data: planSpm } = await supabase
+        .from('subscription_plans')
+        .select('sessions_per_month')
+        .eq('id', planId)
+        .single()
+      planSessionsPerMonth = (planSpm as { sessions_per_month?: number | null } | null)?.sessions_per_month ?? null
+    } catch { /* migration 072 not applied */ }
 
     // Respect the academy's quarterly-billing settings
     const quarterlyEnabled = planOrg?.quarterly_billing_enabled !== false // default true
@@ -475,14 +498,14 @@ export async function POST(request: NextRequest) {
     // Session-bridge variant: same gate as useFutureProratedBase PLUS the org
     // must be in session mode AND this plan must have sessions_per_month set
     // AND the class must have a day_of_week (needed to count sessions).
-    // If any condition fails, dispatch falls back to calendar (useFutureProrated).
-    const orgBridgeMode = (planOrg as { bridge_billing_mode?: string } | null)?.bridge_billing_mode ?? 'calendar'
-    const planSessionsPerMonth = (plan as { sessions_per_month?: number | null }).sessions_per_month ?? null
+    // bridgeBillingMode + planSessionsPerMonth are resolved earlier (separate
+    // queries that tolerate migration 072 not yet being applied).
+    // If any condition fails, dispatch falls back to calendar.
     const killSwitchOn = process.env.BILLING_BRIDGE_MODE_KILL === 'true'
     const useSessionBridge =
       useFutureProratedBase &&
       !killSwitchOn &&
-      orgBridgeMode === 'session' &&
+      bridgeBillingMode === 'session' &&
       planSessionsPerMonth !== null &&
       planSessionsPerMonth > 0 &&
       classDayOfWeek !== null &&

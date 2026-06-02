@@ -11,12 +11,12 @@ export default async function QuickBookPage({
   const { slug, groupId } = await params
   const supabase = await createClient()
 
-  // Get org. bridge_billing_mode is a Stage 3-session enhancement — when
-  // set to 'session', plans with sessions_per_month populated use the
-  // per-session bridge formula instead of calendar-day proration.
+  // Get org. bridge_billing_mode (Stage 3 session enhancement) is fetched
+  // separately below — it can be null if migration 072 hasn't been applied
+  // yet, in which case we fall back to calendar mode safely.
   const { data: org } = await supabase
     .from('organisations')
-    .select('id, name, slug, primary_color, contact_email, contact_phone, bridge_billing_mode')
+    .select('id, name, slug, primary_color, contact_email, contact_phone')
     .ilike('slug', slug)
     .single()
 
@@ -115,7 +115,7 @@ export default async function QuickBookPage({
   // Fetch plans: class-specific first, then class_type, then org-wide
   const { data: classPlans } = await supabase
     .from('subscription_plans')
-    .select('id, name, description, amount, sessions_per_week, interval, sessions_per_month')
+    .select('id, name, description, amount, sessions_per_week, interval')
     .eq('organisation_id', org.id)
     .eq('active', true)
     .eq('training_group_id', groupId)
@@ -127,7 +127,7 @@ export default async function QuickBookPage({
     const classType = (group as Record<string, unknown>).class_type as string || 'group'
     const { data: typePlans } = await supabase
       .from('subscription_plans')
-      .select('id, name, description, amount, sessions_per_week, interval, sessions_per_month')
+      .select('id, name, description, amount, sessions_per_week, interval')
       .eq('organisation_id', org.id)
       .eq('active', true)
       .eq('class_type', classType)
@@ -139,7 +139,7 @@ export default async function QuickBookPage({
   if (!plans || plans.length === 0) {
     const { data: orgPlans } = await supabase
       .from('subscription_plans')
-      .select('id, name, description, amount, sessions_per_week, interval, sessions_per_month')
+      .select('id, name, description, amount, sessions_per_week, interval')
       .eq('organisation_id', org.id)
       .eq('active', true)
       .is('training_group_id', null)
@@ -155,6 +155,38 @@ export default async function QuickBookPage({
   // between today-only (Option B clamp) and full today+future modes. Flag
   // currently OFF for all orgs in production until Stage 3 ships.
   const allowFutureStart = isFutureStartBillingEnabled(org.id)
+
+  // Separately probe bridge_billing_mode and sessions_per_month so the page
+  // renders correctly whether or not migration 072 has been applied. If
+  // either query errors (column doesn't exist yet), we fall back to
+  // calendar mode and treat all plans as session-mode-ineligible. Once
+  // migration 072 is applied, both columns are read and session mode
+  // becomes possible for orgs that opt in.
+  let bridgeMode: 'calendar' | 'session' = 'calendar'
+  let plansSessionMap = new Map<string, number | null>()
+  try {
+    const { data: orgBridge, error: bridgeErr } = await supabase
+      .from('organisations')
+      .select('bridge_billing_mode')
+      .eq('id', org.id)
+      .single()
+    if (!bridgeErr && orgBridge && (orgBridge as { bridge_billing_mode?: string }).bridge_billing_mode === 'session') {
+      bridgeMode = 'session'
+    }
+  } catch { /* migration 072 not applied — keep calendar default */ }
+  try {
+    const { data: planSessionsData, error: spmErr } = await supabase
+      .from('subscription_plans')
+      .select('id, sessions_per_month')
+      .eq('organisation_id', org.id)
+      .eq('active', true)
+    if (!spmErr && planSessionsData) {
+      plansSessionMap = new Map(
+        (planSessionsData as Array<{ id: string; sessions_per_month: number | null }>)
+          .map((p) => [p.id, p.sessions_per_month ?? null])
+      )
+    }
+  } catch { /* migration 072 not applied — keep all-null fallback */ }
 
   return (
     <div className="min-h-screen bg-[#060606] text-white">
@@ -225,7 +257,7 @@ export default async function QuickBookPage({
             amount: Number(p.amount),
             sessions_per_week: p.sessions_per_week,
             interval: p.interval,
-            sessions_per_month: (p as { sessions_per_month?: number | null }).sessions_per_month ?? null,
+            sessions_per_month: plansSessionMap.get(p.id) ?? null,
           }))
         }
         orgSlug={slug}
@@ -237,7 +269,7 @@ export default async function QuickBookPage({
         classDayOfWeek={group.day_of_week as string | null}
         classTimeSlot={group.time_slot as string | null}
         allowFutureStart={allowFutureStart}
-        bridgeMode={(org as { bridge_billing_mode?: string }).bridge_billing_mode === 'session' ? 'session' : 'calendar'}
+        bridgeMode={bridgeMode}
       />
 
       {/* Footer */}
