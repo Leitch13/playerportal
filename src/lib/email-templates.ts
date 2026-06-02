@@ -308,6 +308,31 @@ export function welcomeEmail(params: {
   }
 }
 
+/**
+ * Billing context for subscriptionStartedEmail.
+ *
+ * - 'bridge': parent paid an upfront bridge charge at Checkout (session-bridge
+ *   plans). Body explains the bridge covers N sessions until the anchor and
+ *   the recurring monthly amount kicks in on the 1st.
+ * - 'prorated': parent paid a calendar-day prorated charge today (Stage 2
+ *   immediate_prorated path). Body explains the proration and the £X/month
+ *   anchor on the 1st.
+ * - undefined: legacy behaviour — just shows "Charged: £X".
+ */
+export type SubscriptionStartedBillingContext =
+  | {
+      kind: 'bridge'
+      sessionsRemaining: number
+      bridgeUntilLabel: string  // e.g. "30 June 2026" (day BEFORE anchor)
+      anchorLabel: string       // e.g. "1 July 2026"
+      monthlyAmount: string     // e.g. "£120.00"
+    }
+  | {
+      kind: 'prorated'
+      anchorLabel: string       // e.g. "1 July 2026"
+      monthlyAmount: string
+    }
+
 export function subscriptionStartedEmail(params: {
   parentName: string
   childName?: string
@@ -318,8 +343,54 @@ export function subscriptionStartedEmail(params: {
   dashboardUrl: string
   academyLogoUrl?: string
   academyContactEmail?: string
+  billingContext?: SubscriptionStartedBillingContext
 }) {
   const greetingName = params.parentName.split(' ')[0] || params.parentName
+  const bc = params.billingContext
+
+  // Billing-context-aware breakdown panel. Renders one of three variants:
+  //   - bridge: "Today £X covers N sessions before <anchor>, then £Y/mo"
+  //   - prorated: "Today £X is a pro-rata charge until <anchor>, then £Y/mo"
+  //   - undefined: legacy "Charged: £X" single-row table
+  const breakdownPanel = (() => {
+    if (bc?.kind === 'bridge') {
+      const s = bc.sessionsRemaining === 1 ? 'session' : 'sessions'
+      return `
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:12px;color:#4ecde6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">💳 Your billing</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Paid today</td><td style="color:#fff;text-align:right;font-weight:600">${params.amount}</td></tr>
+          <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ covers your ${bc.sessionsRemaining} remaining ${s} until ${bc.bridgeUntilLabel}</td></tr>
+          <tr><td style="color:#888;border-top:1px solid #2a2a2a;padding-top:12px">From ${bc.anchorLabel}</td><td style="color:#fff;text-align:right;font-weight:600;border-top:1px solid #2a2a2a;padding-top:12px">${bc.monthlyAmount}/month</td></tr>
+          <tr><td colspan="2" style="color:#aaa;padding-top:0;font-size:13px">↳ then ${bc.monthlyAmount} on the 1st of every month after that</td></tr>
+        </table>
+      </div>`
+    }
+    if (bc?.kind === 'prorated') {
+      return `
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:12px;color:#4ecde6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">💳 Your billing</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Paid today</td><td style="color:#fff;text-align:right;font-weight:600">${params.amount}</td></tr>
+          <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ pro-rata for today through ${bc.anchorLabel}</td></tr>
+          <tr><td style="color:#888;border-top:1px solid #2a2a2a;padding-top:12px">From ${bc.anchorLabel}</td><td style="color:#fff;text-align:right;font-weight:600;border-top:1px solid #2a2a2a;padding-top:12px">${bc.monthlyAmount}/month</td></tr>
+          <tr><td colspan="2" style="color:#aaa;padding-top:0;font-size:13px">↳ then ${bc.monthlyAmount} on the 1st of every month after that</td></tr>
+        </table>
+      </div>`
+    }
+    return `
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Charged</td><td style="color:#fff;text-align:right;font-weight:600">${params.amount}</td></tr>
+          ${params.childName ? `<tr><td style="color:#888">Player</td><td style="color:#fff;text-align:right">${params.childName}</td></tr>` : ''}
+          <tr><td style="color:#888">Academy</td><td style="color:#fff;text-align:right">${params.academyName}</td></tr>
+        </table>
+      </div>`
+  })()
+
   return {
     subject: `${params.childName ? `${params.childName} is in! ` : ''}🎉 Subscription active — ${params.academyName}`,
     html: baseLayout(`
@@ -330,14 +401,7 @@ export function subscriptionStartedEmail(params: {
         ${params.childName ? `Welcome to the squad, <strong style="color:#fff">${params.childName}</strong>!` : ''}
       </p>
 
-      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
-        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
-          <tr><td style="color:#888;width:120px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
-          <tr><td style="color:#888">Charged</td><td style="color:#fff;text-align:right;font-weight:600">${params.amount}</td></tr>
-          ${params.childName ? `<tr><td style="color:#888">Player</td><td style="color:#fff;text-align:right">${params.childName}</td></tr>` : ''}
-          <tr><td style="color:#888">Academy</td><td style="color:#fff;text-align:right">${params.academyName}</td></tr>
-        </table>
-      </div>
+      ${breakdownPanel}
 
       ${params.nextClass ? `
       <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.02));border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:20px;margin:20px 0">
@@ -1228,6 +1292,119 @@ export function newLeadEmail(params: {
       <p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center">
         Tip: academies that reply within the hour convert far more enquiries than those that wait a day.
       </p>
+    `),
+  }
+}
+
+/**
+ * Parent-facing email sent at Checkout for FUTURE-START CALENDAR-MODE signups
+ * (Stage 3 useFutureProrated branch — setup mode / SetupIntent only).
+ *
+ * The session-bridge path uses subscriptionStartedEmail (with the bridge
+ * billingContext variant) because Stripe has actually charged the bridge.
+ * Setup-mode signups have NO charge today — Stripe never sends a receipt, so
+ * without this email the parent gets nothing between checkout and the cron's
+ * activation on start_date.
+ *
+ * The activation cron will eventually trigger a regular subscriptionStartedEmail
+ * via the customer.subscription.created webhook chain. This template fills the
+ * gap.
+ */
+export function scheduledSignupConfirmationEmail(params: {
+  parentName: string
+  childName?: string
+  academyName: string
+  planName: string
+  className?: string
+  activatesOnLabel: string   // e.g. "Thu 4 June 2026"
+  monthlyAmount: string       // e.g. "£28.00"
+  estimatedFirstCharge?: string // optional, the cron will charge the prorated amount; if known, show it
+  anchorLabel?: string         // first of month AFTER activatesOn, e.g. "1 July 2026"
+  dashboardUrl: string
+  academyLogoUrl?: string
+  academyContactEmail?: string
+}) {
+  const greetingName = params.parentName.split(' ')[0] || params.parentName
+  const firstChargeLine = params.estimatedFirstCharge
+    ? `<tr><td style="color:#888;width:140px">First charge</td><td style="color:#fff;text-align:right;font-weight:600">${params.estimatedFirstCharge}</td></tr>
+       <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ billed on ${params.activatesOnLabel}, pro-rata to ${params.anchorLabel ?? 'the 1st of next month'}</td></tr>`
+    : `<tr><td style="color:#888;width:140px">First charge</td><td style="color:#fff;text-align:right;font-weight:600">${params.activatesOnLabel}</td></tr>
+       <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ pro-rata for the days until ${params.anchorLabel ?? 'the 1st of next month'}</td></tr>`
+
+  return {
+    subject: `Your start date is confirmed — ${params.className ?? params.planName} on ${params.activatesOnLabel}`,
+    html: baseLayout(`
+      ${params.academyLogoUrl ? `<div style="text-align:center;margin-bottom:20px"><img src="${params.academyLogoUrl}" alt="${params.academyName}" style="max-width:96px;max-height:96px;border-radius:14px" /></div>` : ''}
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:24px">Start date locked in 📅</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
+        Hi ${greetingName} — we've saved your card for <strong style="color:#fff">${params.academyName}</strong>.
+        ${params.childName ? `<strong style="color:#fff">${params.childName}</strong>'s` : 'Your'} first session is <strong style="color:#fff">${params.activatesOnLabel}</strong>.
+        <strong style="color:#fff">No charge today</strong> — your subscription kicks off on your start date.
+      </p>
+
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:12px;color:#4ecde6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">💳 Your billing</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
+          ${params.className ? `<tr><td style="color:#888">Class</td><td style="color:#fff;text-align:right">${params.className}</td></tr>` : ''}
+          <tr><td style="color:#888">Start date</td><td style="color:#fff;text-align:right;font-weight:600">${params.activatesOnLabel}</td></tr>
+          ${firstChargeLine}
+          <tr><td style="color:#888;border-top:1px solid #2a2a2a;padding-top:12px">From ${params.anchorLabel ?? 'the 1st of next month'}</td><td style="color:#fff;text-align:right;font-weight:600;border-top:1px solid #2a2a2a;padding-top:12px">${params.monthlyAmount}/month</td></tr>
+          <tr><td colspan="2" style="color:#aaa;padding-top:0;font-size:13px">↳ then ${params.monthlyAmount} on the 1st of every month after that</td></tr>
+        </table>
+      </div>
+
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 36px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">View dashboard →</a>
+      </div>
+
+      <p style="color:#777;font-size:13px;line-height:1.6;margin:24px 0 0">
+        🔔 We'll send a reminder before your first session. You can cancel anytime from your dashboard, no questions asked.
+      </p>
+
+      ${params.academyContactEmail ? `<p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center;padding-top:16px;border-top:1px solid #1e1e1e">Questions? Email <a href="mailto:${params.academyContactEmail}" style="color:#4ecde6">${params.academyContactEmail}</a>.</p>` : ''}
+    `),
+  }
+}
+
+/**
+ * Org-admin notification fired on EVERY new parent signup (any billing model).
+ *
+ * Distinct from firstSaleEmail (which is a one-time celebration to the
+ * PLATFORM admin on the org's first paid signup). This goes to the academy's
+ * own admins so they see each new parent come through.
+ */
+export function newSignupAdminEmail(params: {
+  academyName: string
+  parentName: string
+  parentEmail?: string
+  childName?: string
+  planName: string
+  amount: string
+  billingModelLabel: string  // human-readable, e.g. "Starts today (pro-rata)", "Bridge — £90 today, £120/mo from 1 July", "Scheduled — first charge on Thu 4 June"
+  activatesOnLabel?: string
+  dashboardUrl: string
+}) {
+  return {
+    subject: `New signup: ${params.childName ?? params.parentName} — ${params.planName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">🎉 New signup at ${params.academyName}</h2>
+      <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
+        ${params.parentName}${params.childName ? ` signed <strong style="color:#fff">${params.childName}</strong> up for` : ' just signed up for'} <strong style="color:#fff">${params.planName}</strong>.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Parent</td><td style="color:#fff;font-weight:600">${params.parentName}</td></tr>
+          ${params.parentEmail ? `<tr><td style="color:#888">Email</td><td><a href="mailto:${params.parentEmail}" style="color:#4ecde6">${params.parentEmail}</a></td></tr>` : ''}
+          ${params.childName ? `<tr><td style="color:#888">Child</td><td style="color:#fff">${params.childName}</td></tr>` : ''}
+          <tr><td style="color:#888">Plan</td><td style="color:#fff">${params.planName} (${params.amount}/month)</td></tr>
+          ${params.activatesOnLabel ? `<tr><td style="color:#888">Start date</td><td style="color:#fff">${params.activatesOnLabel}</td></tr>` : ''}
+          <tr><td style="color:#888">Billing</td><td style="color:#fff">${params.billingModelLabel}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/dashboard/players" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
+      </div>
     `),
   }
 }

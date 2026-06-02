@@ -68,6 +68,190 @@ async function trySendReceiptEmail(params: {
   }
 }
 
+/**
+ * Format a date in the style "Thu 4 June 2026". Used by parent + admin
+ * billing emails so dates are unambiguous across the parent's day-week-month.
+ */
+function formatLongDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z')
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  })
+}
+
+/**
+ * Returns the first day of the calendar month AFTER `iso`, formatted
+ * "1 July 2026". Used as the recurring-charge anchor in billing emails.
+ */
+function anchorLabelFor(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z')
+  if (isNaN(d.getTime())) return ''
+  const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))
+  return next.toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  })
+}
+
+/**
+ * Returns the day BEFORE the next-month anchor, formatted "30 June 2026".
+ * Used to describe the END of the bridge coverage period in parent emails.
+ */
+function bridgeUntilLabelFor(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z')
+  if (isNaN(d.getTime())) return ''
+  const lastDayOfMonth = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0))
+  return lastDayOfMonth.toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  })
+}
+
+/**
+ * Shared "new signup landed" email sender. Sends:
+ *   • parent — bridge / scheduled / prorated variant of subscriptionStartedEmail
+ *               OR scheduledSignupConfirmationEmail (for setup-mode signups)
+ *   • org admins — newSignupAdminEmail (every signup, P1 requirement)
+ *
+ * Branches on `billingModel`:
+ *   - 'future_session_bridge' — bridge variant (parent paid £X bridge today)
+ *   - 'future_prorated'        — scheduledSignupConfirmationEmail (card saved, no charge today)
+ *   - 'immediate_prorated'     — prorated variant (parent paid today, recurring from 1st)
+ *
+ * Idempotent at the caller layer (each webhook branch calls once after DB write).
+ * Wrapped in try/catch by callers so an email failure never breaks the webhook.
+ */
+async function sendSignupEmails(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sb: any,
+  args: {
+    userId: string
+    playerId: string | null
+    classId: string | null
+    orgId: string
+    planId: string
+    activatesOn: string
+    billingModel: 'future_session_bridge' | 'future_prorated' | 'immediate_prorated'
+    /** Bridge variant only — pence charged at checkout (used for parent email math) */
+    bridgePence?: number
+    bridgeSessionsRemaining?: number
+    /** Prorated variant only — what Stripe charged today (in pounds) */
+    amountPaidToday?: number
+  },
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+
+  // Parallel-load all the context we need
+  const [{ data: profile }, { data: plan }, { data: org }, { data: group }] = await Promise.all([
+    sb.from('profiles').select('full_name, email').eq('id', args.userId).maybeSingle(),
+    sb.from('subscription_plans').select('name, amount').eq('id', args.planId).maybeSingle(),
+    sb.from('organisations').select('name, logo_url, contact_email').eq('id', args.orgId).maybeSingle(),
+    args.classId
+      ? sb.from('training_groups').select('name').eq('id', args.classId).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
+
+  if (!profile?.email) return
+
+  let childName: string | undefined
+  if (args.playerId) {
+    const { data: player } = await sb.from('players').select('first_name').eq('id', args.playerId).maybeSingle()
+    childName = (player?.first_name as string | undefined) || undefined
+  }
+
+  const parentName = (profile.full_name as string | undefined) ?? 'Parent'
+  const academyName = (org?.name as string | undefined) ?? 'Your Academy'
+  const planName = (plan?.name as string | undefined) ?? 'Subscription'
+  const monthlyAmountNum = Number((plan as { amount?: number } | null)?.amount ?? 0)
+  const monthlyAmount = `£${monthlyAmountNum.toFixed(2)}`
+  const className = (group as { name?: string } | null)?.name as string | undefined
+  const activatesOnLabel = formatLongDate(args.activatesOn)
+  const anchorLabel = anchorLabelFor(args.activatesOn)
+
+  const { sendEmail } = await import('@/lib/email')
+  const {
+    subscriptionStartedEmail,
+    scheduledSignupConfirmationEmail,
+    newSignupAdminEmail,
+  } = await import('@/lib/email-templates')
+
+  // ── Parent email ──
+  let parentEmailTpl: { subject: string; html: string } | null = null
+  let billingModelLabel = ''
+
+  if (args.billingModel === 'future_session_bridge') {
+    const bridgeAmount = `£${((args.bridgePence ?? 0) / 100).toFixed(2)}`
+    parentEmailTpl = subscriptionStartedEmail({
+      parentName, childName, academyName, planName,
+      amount: bridgeAmount,
+      dashboardUrl: `${appUrl}/dashboard`,
+      academyLogoUrl: (org?.logo_url as string | undefined) || undefined,
+      academyContactEmail: (org?.contact_email as string | undefined) || undefined,
+      billingContext: {
+        kind: 'bridge',
+        sessionsRemaining: args.bridgeSessionsRemaining ?? 0,
+        bridgeUntilLabel: bridgeUntilLabelFor(args.activatesOn),
+        anchorLabel,
+        monthlyAmount,
+      },
+    })
+    billingModelLabel = `Bridge — ${bridgeAmount} today covers ${args.bridgeSessionsRemaining ?? 0} session(s); ${monthlyAmount}/mo from ${anchorLabel}`
+  } else if (args.billingModel === 'future_prorated') {
+    parentEmailTpl = scheduledSignupConfirmationEmail({
+      parentName, childName, academyName, planName, className,
+      activatesOnLabel,
+      monthlyAmount,
+      anchorLabel,
+      dashboardUrl: `${appUrl}/dashboard`,
+      academyLogoUrl: (org?.logo_url as string | undefined) || undefined,
+      academyContactEmail: (org?.contact_email as string | undefined) || undefined,
+    })
+    billingModelLabel = `Scheduled — card saved, first charge on ${activatesOnLabel}, ${monthlyAmount}/mo from ${anchorLabel}`
+  } else if (args.billingModel === 'immediate_prorated') {
+    const today = `£${(args.amountPaidToday ?? 0).toFixed(2)}`
+    parentEmailTpl = subscriptionStartedEmail({
+      parentName, childName, academyName, planName,
+      amount: today,
+      dashboardUrl: `${appUrl}/dashboard`,
+      academyLogoUrl: (org?.logo_url as string | undefined) || undefined,
+      academyContactEmail: (org?.contact_email as string | undefined) || undefined,
+      billingContext: { kind: 'prorated', anchorLabel, monthlyAmount },
+    })
+    billingModelLabel = `Today — ${today} pro-rata to ${anchorLabel}, then ${monthlyAmount}/mo`
+  }
+
+  if (parentEmailTpl) {
+    await sendEmail({
+      to: profile.email,
+      ...parentEmailTpl,
+      fromName: academyName,
+      replyTo: (org?.contact_email as string | undefined) || undefined,
+    })
+  }
+
+  // ── Org-admin notifications (P1: every signup, not just first) ──
+  const { data: admins } = await sb
+    .from('profiles')
+    .select('email')
+    .eq('organisation_id', args.orgId)
+    .eq('role', 'admin')
+  const adminTpl = newSignupAdminEmail({
+    academyName,
+    parentName,
+    parentEmail: profile.email as string,
+    childName,
+    planName,
+    amount: monthlyAmount,
+    billingModelLabel,
+    activatesOnLabel,
+    dashboardUrl: appUrl,
+  })
+  for (const a of (admins || []) as { email: string | null }[]) {
+    if (a.email) {
+      await sendEmail({ to: a.email, ...adminTpl, fromName: academyName })
+    }
+  }
+}
+
 /** Resolve profile + plan metadata from a Stripe checkout session */
 async function resolveSessionContext(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.supabase_user_id ?? null
@@ -396,6 +580,28 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         }
       }
     }
+
+    // ─── Emails: parent + org admins ───
+    // Parent gets bridge-aware subscriptionStartedEmail (explains "Today you
+    // paid £X for N sessions / £Y/month from the 1st"). Org admins get
+    // newSignupAdminEmail. Both wrapped in try/catch so email failures
+    // never break the webhook.
+    try {
+      await sendSignupEmails(supabase, {
+        userId,
+        playerId,
+        classId,
+        orgId,
+        planId,
+        activatesOn,
+        billingModel: 'future_session_bridge',
+        bridgePence: Number(m.bridge_pence) || 0,
+        bridgeSessionsRemaining: Number(m.bridge_sessions_remaining) || 0,
+      })
+    } catch (e) {
+      console.error('future_session_bridge: post-signup emails failed:', e instanceof Error ? e.message : e)
+    }
+
     return
   }
 
@@ -498,6 +704,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         }
       }
     }
+
+    // ─── Emails: parent + org admins ───
+    // Parent gets scheduledSignupConfirmationEmail (the new "card saved /
+    // first charge on <date>" template). Stripe sends no receipt for setup
+    // mode so this is the only confirmation the parent gets between checkout
+    // and the cron's activation. Org admins get newSignupAdminEmail.
+    try {
+      await sendSignupEmails(supabase, {
+        userId,
+        playerId,
+        classId,
+        orgId,
+        planId,
+        activatesOn,
+        billingModel: 'future_prorated',
+      })
+    } catch (e) {
+      console.error('future_prorated: post-signup emails failed:', e instanceof Error ? e.message : e)
+    }
+
     return
   }
 
@@ -1059,8 +1285,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .eq('id', ctx.orgId)
         .maybeSingle()
 
-      const { subscriptionStartedEmail, firstSaleEmail } = await import('@/lib/email-templates')
+      const { subscriptionStartedEmail, firstSaleEmail, newSignupAdminEmail } = await import('@/lib/email-templates')
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+
+      // \u2500\u2500 Bridge-aware billing context for the parent email \u2500\u2500
+      // immediate_prorated => "prorated" variant ("Today you paid \u00a3X pro-rata
+      // to <anchor>, then \u00a3Y/month from the 1st").
+      // Other monthly subscription_modes fall through to the legacy panel.
+      const billingModel = session.metadata?.billing_model
+      const monthlyAmountNum = Number((ctx.plan as unknown as { amount?: number })?.amount ?? amountPaid)
+      const monthlyAmount = `\u00a3${monthlyAmountNum.toFixed(2)}`
+      const activatesOnIso = (session.metadata?.activates_on as string | undefined)
+        || new Date().toISOString().slice(0, 10)
+      const anchorLabel = anchorLabelFor(activatesOnIso)
+      const billingContext = billingModel === 'immediate_prorated'
+        ? { kind: 'prorated' as const, anchorLabel, monthlyAmount }
+        : undefined
+
       const template = subscriptionStartedEmail({
         parentName: ctx.profile.full_name ?? 'Parent',
         childName,
@@ -1071,9 +1312,44 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         dashboardUrl: `${appUrl}/dashboard`,
         academyLogoUrl: (orgBranding?.logo_url as string | undefined) || undefined,
         academyContactEmail: (orgBranding?.contact_email as string | undefined) || undefined,
+        billingContext,
       })
       const { sendEmail } = await import('@/lib/email')
       await sendEmail({ to: ctx.profile.email, ...template })
+
+      // \u2500\u2500 ORG ADMINS: notify on EVERY signup (P1 \u2014 every signup, not just first) \u2500\u2500
+      // Distinct from firstSaleEmail below, which still fires once on the
+      // org's very first paid sub but goes to the PLATFORM admin.
+      try {
+        const { data: orgAdmins } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('organisation_id', ctx.orgId)
+          .eq('role', 'admin')
+        if (orgAdmins && orgAdmins.length > 0) {
+          const billingModelLabel = billingModel === 'immediate_prorated'
+            ? `Today \u2014 \u00a3${amountPaid.toFixed(2)} pro-rata to ${anchorLabel}, then ${monthlyAmount}/mo`
+            : `${monthlyAmount}/month subscription started`
+          const adminTpl = newSignupAdminEmail({
+            academyName: ctx.organisationName ?? 'Academy',
+            parentName: ctx.profile.full_name ?? 'Parent',
+            parentEmail: ctx.profile.email,
+            childName,
+            planName: ctx.plan.name,
+            amount: monthlyAmount,
+            billingModelLabel,
+            activatesOnLabel: formatLongDate(activatesOnIso),
+            dashboardUrl: appUrl,
+          })
+          for (const a of orgAdmins as { email: string | null }[]) {
+            if (a.email) {
+              await sendEmail({ to: a.email, ...adminTpl, fromName: ctx.organisationName ?? 'Player Portal' })
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Org-admin new-signup email failed:', e instanceof Error ? e.message : e)
+      }
 
       // \u2500\u2500 PLATFORM ADMIN: notify on this academy's FIRST EVER paid subscription \u2500\u2500
       // Check if this is the only active subscription for the org. If yes, fire off
