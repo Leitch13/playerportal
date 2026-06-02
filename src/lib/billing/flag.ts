@@ -31,3 +31,33 @@ export function isStartDateBillingEnabled(orgId: string | null | undefined): boo
     .filter(Boolean)
     .includes(orgId)
 }
+
+/**
+ * Stage 3 — future-start (deferred charging via SetupIntent + activation cron).
+ *
+ * Independent of isStartDateBillingEnabled. Stage 3 requires Stage 2 to also
+ * be enabled for the same org (the dispatch logic in subscribe/route.ts
+ * checks both — Stage 3 is strictly additive to Stage 2's immediate-start path).
+ *
+ *   BILLING_FUTURE_START_ENABLED
+ *     - empty / unset → Stage 3 disabled. Parents picking a future date fall
+ *       through to legacy behaviour (Option B picker clamps to today, so
+ *       this is the de facto default until this flag is set).
+ *     - "*" → all orgs (whose Stage 2 flag is also on) get future-start.
+ *     - "<uuid>,<uuid>" → comma-separated list of org UUIDs.
+ *
+ *   BILLING_FUTURE_START_KILL
+ *     - "true" → emergency disable, ignores ENABLED flag.
+ */
+export function isFutureStartBillingEnabled(orgId: string | null | undefined): boolean {
+  if (!orgId) return false
+  if (process.env.BILLING_FUTURE_START_KILL === 'true') return false
+  const flag = (process.env.BILLING_FUTURE_START_ENABLED || '').trim()
+  if (!flag) return false
+  if (flag === '*') return true
+  return flag
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .includes(orgId)
+}

@@ -53,6 +53,10 @@
     {
       "path": "/api/cron/birthdays",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/activate-scheduled-subs",
+      "schedule": "0 2 * * *"
     }
   ]
 }

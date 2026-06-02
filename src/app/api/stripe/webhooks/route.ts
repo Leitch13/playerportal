@@ -309,6 +309,102 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // ─── Stage 3: future-start (SetupIntent mode) ───
+  // The subscribe route ran Checkout in SETUP mode (£0 today, card saved).
+  // We write a subscriptions row with status='scheduled' + start_date +
+  // stripe_setup_intent_id. The activation cron at
+  // /api/cron/activate-scheduled-subs runs daily and creates the real Stripe
+  // subscription when start_date <= today.
+  if (session.metadata?.pp_flow === 'future_prorated' && session.mode === 'setup') {
+    const m = session.metadata
+    const userId = m.supabase_user_id
+    const planId = m.supabase_plan_id
+    const playerId = m.supabase_player_id || null
+    const classId = m.supabase_class_id || null
+    const activatesOn = m.activates_on
+    if (!userId || !planId || !activatesOn) {
+      console.error('future_prorated: missing required metadata')
+      return
+    }
+
+    const setupIntentId = typeof session.setup_intent === 'string'
+      ? session.setup_intent
+      : session.setup_intent?.id || null
+    const customerId = typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id || null
+
+    // Plan + org for organisation_id
+    const { data: plan } = await supabase
+      .from('subscription_plans')
+      .select('organisation_id')
+      .eq('id', planId)
+      .single()
+    const orgId = plan?.organisation_id || null
+    if (!orgId) {
+      console.error(`future_prorated: plan ${planId} has no organisation_id`)
+      return
+    }
+
+    // Subscription row in 'scheduled' state. The activation cron picks this up.
+    // Idempotency: if a row already exists for this stripe_setup_intent_id
+    // (e.g. Stripe retry), the partial unique index on stripe_subscription_id
+    // doesn't apply (column is null), so we rely on stripe_setup_intent_id
+    // uniqueness check at the DB layer (added in migration 071 if needed).
+    // For now, check existing row by setup_intent_id before insert.
+    if (setupIntentId) {
+      const { data: existing } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('stripe_setup_intent_id', setupIntentId)
+        .maybeSingle()
+      if (existing) {
+        // Idempotent: already recorded this signup
+        return
+      }
+    }
+
+    const { error: subInsErr } = await supabase.from('subscriptions').insert({
+      parent_id: userId,
+      player_id: playerId,
+      plan_id: planId,
+      organisation_id: orgId,
+      status: 'scheduled',
+      start_date: activatesOn,
+      stripe_setup_intent_id: setupIntentId,
+      stripe_customer_id: customerId,
+    })
+    if (subInsErr && (subInsErr as { code?: string }).code !== '23505') {
+      throw new Error(`future_prorated subscriptions.insert failed: ${subInsErr.message}`)
+    }
+
+    // Auto-enrol the player at the chosen class, with status='active' but
+    // activates_on = future date. The booking gate already enforces
+    // activates_on <= session date, so the parent can't book a session
+    // before their start date.
+    if (classId && playerId) {
+      const { data: existingEnrolment } = await supabase
+        .from('enrolments')
+        .select('id')
+        .eq('player_id', playerId)
+        .eq('group_id', classId)
+        .maybeSingle()
+      if (!existingEnrolment) {
+        const { error: enrolErr } = await supabase.from('enrolments').insert({
+          player_id: playerId,
+          group_id: classId,
+          status: 'active',
+          organisation_id: orgId,
+          activates_on: activatesOn,
+        })
+        if (enrolErr && (enrolErr as { code?: string }).code !== '23505') {
+          throw new Error(`future_prorated enrolments.insert failed: ${enrolErr.message}`)
+        }
+      }
+    }
+    return
+  }
+
   // ─── "Pay tonight + sub from 1st" — TWO-STEP MONTHLY FLOW ───
   // The subscribe route ran Checkout in PAYMENT mode for tonight's session
   // (the one-off) and saved the card via setup_future_usage. We now create

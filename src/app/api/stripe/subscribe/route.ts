@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
-import { isStartDateBillingEnabled } from '@/lib/billing/flag'
+import { isStartDateBillingEnabled, isFutureStartBillingEnabled } from '@/lib/billing/flag'
 import {
   firstOfNextMonthUnix,
   isStartInCurrentMonth,
@@ -450,12 +450,80 @@ export async function POST(request: NextRequest) {
     //   - flag is on for this org
     //   - no migration override
     //   - parent picked a date in the current calendar month (i.e. proration is meaningful)
-    //   - parent picked today or earlier (future-start = Stage 3, not yet built)
+    //   - parent picked today or earlier (immediate-start case)
     const useImmediateProrated =
       startDateBillingFlag && !migrationTrialEnd && startsThisCalendarMonth && startsTodayOrEarlier
 
-    const useTonightPlusSub = !useImmediateProrated && !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
-    const useTrialEndOnly = !useImmediateProrated && !migrationTrialEnd && !useTonightPlusSub
+    // Stage 3: future-start path. Activates when both Stage 2 + Stage 3 flags
+    // are on for this org, parent picked a date strictly in the future, and
+    // no migration override. The Stripe Checkout runs in SETUP mode (£0 today)
+    // and the activation cron creates the real subscription on start_date.
+    const futureStartBillingFlag = isFutureStartBillingEnabled(plan.organisation_id as string)
+    const useFutureProrated =
+      startDateBillingFlag &&
+      futureStartBillingFlag &&
+      !migrationTrialEnd &&
+      !startsTodayOrEarlier
+
+    const useTonightPlusSub = !useImmediateProrated && !useFutureProrated && !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
+    const useTrialEndOnly = !useImmediateProrated && !useFutureProrated && !migrationTrialEnd && !useTonightPlusSub
+
+    if (useFutureProrated) {
+      // ═══ Stage 3: SetupIntent-mode Checkout, charge happens later via cron ═══
+      // Parent saves card now (£0 today). A `subscriptions` row with
+      // status='scheduled' + start_date + stripe_setup_intent_id is written by
+      // the webhook on checkout.session.completed (setup mode). The activation
+      // cron at /api/cron/activate-scheduled-subs runs daily at 02:00 UTC and
+      // creates the real Stripe subscription when start_date <= today.
+      //
+      // No application_fee / on_behalf_of / transfer_data on the SetupIntent
+      // itself — those apply only to charges. They're attached when the cron
+      // creates the actual subscription.
+      const setupParams: Stripe.Checkout.SessionCreateParams = {
+        customer: customerId,
+        mode: 'setup',
+        payment_method_types: ['card'],
+        success_url: `${origin}/dashboard/payments/success?billing=monthly&model=future_prorated`,
+        cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
+        setup_intent_data: {
+          metadata: {
+            supabase_plan_id: planId,
+            supabase_user_id: user.id,
+            ...(playerId ? { supabase_player_id: playerId } : {}),
+            ...(classId ? { supabase_class_id: classId } : {}),
+            billing_model: 'future_prorated',
+            pp_flow: 'future_prorated',
+            activates_on: activatesOnIso,
+          },
+        },
+        metadata: {
+          supabase_plan_id: planId,
+          supabase_user_id: user.id,
+          supabase_player_id: playerId || '',
+          billing_option: 'monthly',
+          billing_model: 'future_prorated',
+          pp_flow: 'future_prorated',
+          activates_on: activatesOnIso,
+          ...(classId ? { supabase_class_id: classId } : {}),
+          ...(siblingCouponId ? { sibling_coupon_id: siblingCouponId } : {}),
+        },
+      }
+
+      const session = await stripe.checkout.sessions.create(setupParams)
+
+      return NextResponse.json({
+        url: session.url,
+        billing: 'monthly',
+        billingModel: 'future_prorated',
+        activatesOn: activatesOnIso,
+        nextBillingDate: activatesOnIso,
+        nextBillingAmount: Number(plan.amount).toFixed(2),
+        tonightAmount: '0.00',
+        firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
+        siblingDiscountApplied: !!siblingCouponId,
+        siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
+      })
+    }
 
     if (useImmediateProrated) {
       // ═══ Stage 2: Stripe-native proration ═══
