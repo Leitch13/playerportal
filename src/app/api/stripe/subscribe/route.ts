@@ -670,9 +670,15 @@ export async function POST(request: NextRequest) {
       // cron at /api/cron/activate-scheduled-subs runs daily at 02:00 UTC and
       // creates the real Stripe subscription when start_date <= today.
       //
-      // No application_fee / on_behalf_of / transfer_data on the SetupIntent
-      // itself — those apply only to charges. They're attached when the cron
-      // creates the actual subscription.
+      // BRANDING: `setup_intent_data.on_behalf_of` attributes the SetupIntent
+      // to the academy's Connect account. Without it, Stripe falls back to
+      // rendering the PLATFORM account's business name on the Checkout page
+      // (e.g. parents saw "Gold and Gray Soccer Academy ltd" — the platform
+      // account's legacy `business_profile.name` — instead of the academy
+      // name). Stripe DOES support on_behalf_of on SetupIntents; the prior
+      // comment about "those apply only to charges" was wrong.
+      // application_fee / transfer_data still don't apply here — there's no
+      // charge — those are set when the cron creates the real subscription.
       const setupParams: Stripe.Checkout.SessionCreateParams = {
         customer: customerId,
         mode: 'setup',
@@ -680,6 +686,7 @@ export async function POST(request: NextRequest) {
         success_url: `${origin}/dashboard/payments/success?billing=monthly&model=future_prorated`,
         cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
         setup_intent_data: {
+          ...(connectedAccountId ? { on_behalf_of: connectedAccountId } : {}),
           metadata: {
             supabase_plan_id: planId,
             supabase_user_id: user.id,
