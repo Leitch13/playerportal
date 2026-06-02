@@ -516,6 +516,27 @@ export async function POST(request: NextRequest) {
     const useTonightPlusSub = !useImmediateProrated && !useFutureProrated && !useSessionBridge && !migrationTrialEnd && sessionIsThisCalendarMonth && perSessionPence > 0
     const useTrialEndOnly = !useImmediateProrated && !useFutureProrated && !useSessionBridge && !migrationTrialEnd && !useTonightPlusSub
 
+    // ─── Class-day validation (Stage 3 future-start only) ───
+    // The picker (allowFutureStart=true) only emits class-day dates. Reject
+    // any tampered submission that breaks the rule — applies to BOTH the
+    // session-bridge branch and the calendar-mode future-prorated branch,
+    // so a Wednesday submission for a Monday class is rejected uniformly.
+    //
+    // Scoped to useFutureProratedBase so it doesn't surprise legacy paths
+    // (today-only mode, where today may or may not be a class day and the
+    // picker has no choice anyway).
+    //
+    // Skipped when classDayOfWeek is null (unknown-schedule fallback path).
+    if (useFutureProratedBase && classDayOfWeek) {
+      const { isClassDay } = await import('@/lib/billing/sessions')
+      if (!isClassDay(activatesOnIso, classDayOfWeek)) {
+        return NextResponse.json(
+          { error: `Selected start date is not a ${classDayOfWeek} class session.` },
+          { status: 400 },
+        )
+      }
+    }
+
     if (useSessionBridge) {
       // ═══ Stage 3 session-bridge: charge bridge NOW + sub trials until anchor ═══
       // Parent is charged the bridge amount immediately at Stripe Checkout.
@@ -523,30 +544,9 @@ export async function POST(request: NextRequest) {
       // first cycle fires automatically on the 1st. No cron needed.
       // (Test Clock probe confirmed: Stripe transitions trialing → active on
       // anchor and the full monthly invoice fires with no proration.)
-      const { estimateBridgePence, bridgeDescriptionFor, generateSessionDates } = await import('@/lib/billing/sessions')
-
-      // Defense in depth: even if the client tampered with the picker and
-      // submitted an arbitrary date (e.g. Wed for a Monday class), reject
-      // it server-side. The picker UI only emits valid class-day dates,
-      // but this guards a malformed/manual client.
-      const todayIsoForValidate = new Date()
-      todayIsoForValidate.setUTCHours(0, 0, 0, 0)
-      const anchorIsoForValidate = new Date(firstOfNextMonthUnix(activatesOnDate) * 1000)
-        .toISOString().slice(0, 10)
-      const validSessionDates = generateSessionDates(
-        todayIsoForValidate.toISOString().slice(0, 10),
-        anchorIsoForValidate,
-        classDayOfWeek,
-      )
-      // Allow if either: (a) the chosen date is in the valid set, or
-      // (b) the set is empty (Branch B fallback — parent gets today via
-      // Stage 2 immediate-prorated, won't reach this branch anyway).
-      if (validSessionDates.length > 0 && !validSessionDates.includes(activatesOnIso)) {
-        return NextResponse.json(
-          { error: `Selected start date is not a ${classDayOfWeek} class session.` },
-          { status: 400 },
-        )
-      }
+      // (Class-day validation already enforced above for all
+      //  useFutureProratedBase branches — no per-branch re-check needed.)
+      const { estimateBridgePence, bridgeDescriptionFor } = await import('@/lib/billing/sessions')
 
       const estimate = estimateBridgePence({
         monthlyPence: Math.round(Number(plan.amount) * 100),

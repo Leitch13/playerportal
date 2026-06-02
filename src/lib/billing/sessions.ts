@@ -103,6 +103,30 @@ export function generateSessionDates(
 }
 
 /**
+ * Returns true iff the given ISO date (YYYY-MM-DD) falls on the class's
+ * day-of-week. Used by the subscribe route to reject tampered client
+ * submissions that pick a non-class-day date.
+ *
+ * Returns true for any of these defensive cases (so unrelated paths don't
+ * accidentally reject):
+ *   - classDayOfWeek is null/empty  (unknown-schedule plans — fallback path)
+ *   - classDayOfWeek is unrecognised (e.g. typo'd "Funday" in DB)
+ *   - iso is not a parseable date    (let other validation reject it)
+ *
+ *   isClassDay('2026-06-01', 'Monday')  // true  (Jun 1 2026 is a Monday)
+ *   isClassDay('2026-06-02', 'Monday')  // false (Jun 2 2026 is a Tuesday)
+ *   isClassDay('2026-06-02', null)      // true  (unknown class day → accept)
+ */
+export function isClassDay(iso: string, classDayOfWeek: string | null): boolean {
+  if (!classDayOfWeek) return true
+  const targetDow = DOW.indexOf(classDayOfWeek)
+  if (targetDow < 0) return true
+  const d = new Date(iso + 'T00:00:00Z')
+  if (isNaN(d.getTime())) return true
+  return d.getUTCDay() === targetDow
+}
+
+/**
  * Format a Stripe Checkout line-item description for the bridge charge.
  * "Remaining {Month} sessions" — used both server-side (Checkout line item)
  * and client-side (picker preview text).

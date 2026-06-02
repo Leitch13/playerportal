@@ -30,6 +30,15 @@ function firstOfNextMonthUnix(d) {
   return Math.floor(Date.UTC(m === 11 ? y + 1 : y, m === 11 ? 0 : m + 1, 1) / 1000)
 }
 
+function isClassDay(iso, classDayOfWeek) {
+  if (!classDayOfWeek) return true
+  const targetDow = DOW.indexOf(classDayOfWeek)
+  if (targetDow < 0) return true
+  const d = new Date(iso + 'T00:00:00Z')
+  if (isNaN(d.getTime())) return true
+  return d.getUTCDay() === targetDow
+}
+
 function generateSessionDates(todayISO, anchorISO, classDayOfWeek) {
   if (!classDayOfWeek) return []
   const targetDow = DOW.indexOf(classDayOfWeek)
@@ -148,6 +157,21 @@ eq('Wednesday class through July (5 Weds in window)',
   ['2026-07-01', '2026-07-08', '2026-07-15', '2026-07-22', '2026-07-29'])
 eq('null day-of-week → empty', generateSessionDates('2026-06-01', '2026-07-01', null), [])
 eq('Empty window → empty', generateSessionDates('2026-07-01', '2026-07-01', 'Monday'), [])
+
+// ─── PHASE 7: isClassDay (server-side validation) ────────────────
+phase('PHASE 7 — isClassDay (Stage 3 unified validation)')
+// Calendar facts: Jun 1 2026 = Mon; Jun 2 = Tue; Jun 4 = Thu; Jun 5 = Fri
+eq('Mon date + Monday → true', isClassDay('2026-06-01', 'Monday'), true)
+eq('Tue date + Monday → false', isClassDay('2026-06-02', 'Monday'), false)
+eq('Tue date + Tuesday → true', isClassDay('2026-06-02', 'Tuesday'), true)
+eq('Thu date + Thursday → true (Mini Ballers shape)', isClassDay('2026-06-04', 'Thursday'), true)
+eq('Wed date + Monday → false (tampered tamper)', isClassDay('2026-06-03', 'Monday'), false)
+eq('Fri date + Friday → true', isClassDay('2026-06-05', 'Friday'), true)
+// Defensive defaults — return true so other validation handles these.
+eq('null classDayOfWeek → true (unknown-schedule fallback)', isClassDay('2026-06-03', null), true)
+eq('empty classDayOfWeek → true', isClassDay('2026-06-03', ''), true)
+eq('Invalid day name → true (DB typo doesn\'t block signup)', isClassDay('2026-06-03', 'Funday'), true)
+eq('Unparseable date → true (let other validation reject)', isClassDay('not-a-date', 'Monday'), true)
 
 // ─── SUMMARY ──────────────────────────────────────────────────────
 phase('SUMMARY')

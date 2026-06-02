@@ -11,10 +11,19 @@
  *   the immediate-prorated case. This is the Option B state used while
  *   Stage 3 is in build / awaiting activation.
  *
- * - `allowFutureStart=true` (Stage 3 enabled for this org): renders the
- *   "Next session" pill + native date input + range hint. Cost preview
- *   switches between "you pay today" (immediate) and "card saved; first
- *   charge on chosen date" (future) based on selection.
+ * - `allowFutureStart=true` (Stage 3 enabled for this org): renders a list
+ *   of selectable class-day pills (today + the upcoming class sessions in
+ *   the picker window). "Start today" only appears when today actually is
+ *   a class day. NO free date input for scheduled classes.
+ *
+ *   Fallback: if classDayOfWeek is unknown (e.g. plan with no training
+ *   group attached), renders the legacy date input with "your coach will
+ *   confirm session times" copy.
+ *
+ * Cost preview switches between three layouts:
+ *   - Today (immediate): "You'll pay today £X / Then on 1st £Y"
+ *   - Session-bridge: "Pay today £X / Covers N sessions / Then £Y/month"
+ *   - Calendar-mode future: "Card saved / On {date} £X / Then £Y"
  *
  * Purely presentational. Lifts state up — the parent form owns the date.
  */
@@ -183,31 +192,52 @@ export function StartDatePicker({
   const todayChargePence = startsToday ? estimateProratedPence(monthlyAmount, selectedDate) : 0
   const anchorLabel = firstOfNextMonthLabel(selectedDate)
 
-  // Session-mode constrained dates: only class-day occurrences in [today, anchor).
-  // Computed once per render; used in Branch A below to render pills (no free
-  // date input). If the org is on calendar mode OR the plan lacks
-  // sessions_per_month OR the class has no day_of_week, this is empty and the
-  // existing calendar-mode picker (today/next-session/date-input) renders.
-  const sessionConstrainedEnabled =
-    bridgeMode === 'session' && !!sessionsPerMonth && sessionsPerMonth > 0 && !!classDayOfWeek
+  // Class-day-constrained dates: every class-day occurrence inside the
+  // picker's selectable window [today, today+29) (today+28 inclusive). This
+  // is the SINGLE source of truth for what pills render — applied uniformly
+  // in both session-mode and calendar-mode. Free date input only renders
+  // when the class has no day_of_week (unknown-schedule fallback).
+  //
+  // `anchorIso` is kept for the session-bridge math/preview logic below
+  // (the cap is still based on the calendar billing anchor).
   const anchorIso = useMemo(
     () => new Date(firstOfNextMonthUnix(today) * 1000).toISOString().slice(0, 10),
     [today],
   )
-  const sessionDateOptions: string[] = sessionConstrainedEnabled
-    ? generateSessionDates(todayIso, anchorIso, classDayOfWeek)
+  const pickerWindowEndIso = useMemo(() => {
+    const d = new Date(todayIso + 'T00:00:00Z')
+    d.setUTCDate(d.getUTCDate() + 29) // today+28 inclusive ⇒ [today, today+29)
+    return d.toISOString().slice(0, 10)
+  }, [todayIso])
+  const sessionDateOptions: string[] = classDayOfWeek
+    ? generateSessionDates(todayIso, pickerWindowEndIso, classDayOfWeek)
     : []
+  // True iff we know the class day AND there's ≥1 class date in window.
+  // (A 28-day window always covers ≥4 of any given weekday, so this is
+  // false only when classDayOfWeek itself is null/invalid.)
+  const dayConstrainedEnabled = sessionDateOptions.length > 0
+  // anchorIso is unused by the day-constrained branch but kept for
+  // future preview-math hooks; nextClassIso is no longer rendered by
+  // either branch (the next-class hint is implicit in the first pill's
+  // "Next session" label). Suppress unused-var noise.
+  void anchorIso
+  void nextClassIso
 
   return (
     <div>
       <label className="block text-xs text-white/50 mb-2">When does it start?</label>
 
-      {sessionConstrainedEnabled && sessionDateOptions.length > 0 ? (
+      {dayConstrainedEnabled ? (
         /* ───────────────────────────────────────────────────────────
-         * Branch A — session mode, ≥1 class day in window.
-         * Render selectable pills for each valid class day. NO free
-         * date input. NO "Start today" unless today is itself a class
-         * day (handled naturally: sessionDateOptions[0] === todayIso).
+         * BRANCH A — class day known. Render pills only.
+         *
+         * Applies to BOTH session-mode and calendar-mode plans. The
+         * Stripe math (preview + checkout dispatch) still branches
+         * downstream — only the date selection is unified here.
+         *
+         * "Start today" is rendered as the first pill iff today is
+         * itself a class day (sessionDateOptions[0] === todayIso).
+         * Otherwise the first pill is labelled "Next session".
          * ─────────────────────────────────────────────────────────── */
         <>
           <div className="text-[11px] text-white/50 mb-2">
@@ -236,48 +266,14 @@ export function StartDatePicker({
             </button>
           ))}
         </>
-      ) : sessionConstrainedEnabled && sessionDateOptions.length === 0 ? (
-        /* ───────────────────────────────────────────────────────────
-         * Branch B — session mode, ZERO class days in window.
-         * Parent landed too late in the month for any session-bridge
-         * to apply (e.g., today=Tue 30 Jun for a Monday class).
-         * Fall back to "Start today" only (Stage 2 immediate-prorated
-         * via existing today branch in the cost preview).
-         * ─────────────────────────────────────────────────────────── */
-        <>
-          <button
-            type="button"
-            onClick={() => onChange(todayIso)}
-            className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
-            style={{
-              borderColor: `${primaryColor}`,
-              boxShadow: `0 0 16px ${primaryColor}25`,
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-bold text-white text-sm">Start today</div>
-                <div className="text-[11px] text-white/40 mt-0.5">
-                  {classLabel} — no remaining sessions this month
-                </div>
-              </div>
-              <div className="text-xs font-semibold text-white">{formatLabel(todayIso)}</div>
-            </div>
-          </button>
-          <div className="rounded-xl p-3 mb-3 border border-white/[0.06] bg-white/[0.02]">
-            <p className="text-[11px] text-white/50 leading-relaxed">
-              All {classDayOfWeek} sessions have passed in this billing period.
-              Your subscription begins {anchorLabel} and your first session is in {anchorLabel}.
-            </p>
-          </div>
-        </>
       ) : (
         /* ───────────────────────────────────────────────────────────
-         * Branch C — calendar mode (default). Existing UI unchanged:
-         * today pill + next-session pill + free date input.
+         * BRANCH B — class day unknown (no training_group attached,
+         * or no day_of_week recorded). Fall back to the legacy date
+         * input so the parent can still sign up. Coach-confirmation
+         * copy makes it clear we don't yet have a fixed schedule.
          * ─────────────────────────────────────────────────────────── */
         <>
-          {/* Quick pick: Start today */}
           <button
             type="button"
             onClick={() => onChange(todayIso)}
@@ -296,31 +292,9 @@ export function StartDatePicker({
             </div>
           </button>
 
-          {/* Quick pick: Next class session (if known and != today) */}
-          {nextClassIso && nextClassIso !== todayIso && (
-            <button
-              type="button"
-              onClick={() => onChange(nextClassIso)}
-              className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
-              style={{
-                borderColor: effectiveValue === nextClassIso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
-                boxShadow: effectiveValue === nextClassIso ? `0 0 16px ${primaryColor}25` : undefined,
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-white text-sm">Next session</div>
-                  <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
-                </div>
-                <div className="text-xs font-semibold text-white">{formatLabel(nextClassIso)}</div>
-              </div>
-            </button>
-          )}
-
-          {/* Custom date input — calendar mode only */}
           <div className="rounded-xl border border-white/[0.06] p-3 mb-3 bg-white/[0.02]">
             <label className="block text-[11px] text-white/50 mb-1.5">
-              Or pick another date (up to {formatLabel(maxIso)})
+              Pick a start date — your coach will confirm session times.
             </label>
             <input
               type="date"
@@ -331,6 +305,9 @@ export function StartDatePicker({
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
               style={{ colorScheme: 'dark' }}
             />
+            <div className="text-[11px] text-white/40 mt-1.5">
+              Up to {formatLabel(maxIso)}.
+            </div>
           </div>
         </>
       )}
