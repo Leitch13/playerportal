@@ -3,22 +3,21 @@
 /**
  * Start-date picker for the subscribe flow.
  *
- * - Renders a single section in the booking funnel between "Choose Plan" and "Confirm & Pay"
- * - Default selection = the class's next upcoming session
- * - Parent can pick a different date (today through +28 days)
- * - Shows a tiny cost-preview ("You'll pay £X today, then £Y on 1 Jul")
+ * OPTION B (current state): renders today as the only selectable start
+ * date because Stage 3 (future-start via SetupIntent + activation cron)
+ * is not yet built. The picker still surfaces the next class session
+ * for context and shows the cost preview that matches today's billing.
+ *
+ * When Stage 3 ships, restore the date input + "Next session" pill +
+ * remove the "coming soon" notice. Most of the cost-preview logic
+ * already handles both today and future cases.
  *
  * Purely presentational. Lifts state up — the parent form owns the date.
  */
 
 import { useMemo } from 'react'
-import {
-  estimateProratedPence,
-  firstOfNextMonthLabel,
-  isStartInCurrentMonth,
-  isStartTodayOrEarlier,
-} from '@/lib/billing/anchor'
-import { isoDate, latestAllowedStartDate, nextSessionDate } from '@/lib/billing/next-session'
+import { estimateProratedPence, firstOfNextMonthLabel } from '@/lib/billing/anchor'
+import { isoDate, nextSessionDate } from '@/lib/billing/next-session'
 
 interface Props {
   /** ISO date "YYYY-MM-DD". Empty string = no selection yet. */
@@ -49,82 +48,62 @@ export function StartDatePicker({
   monthlyAmount,
   primaryColor,
 }: Props) {
+  // Suppress unused-prop warnings: `value` is intentionally ignored in
+  // Option B (parent always submits today via defaultStartIso); reinstated
+  // when Stage 3 ships.
+  void value
+
   const today = useMemo(() => new Date(), [])
   const todayIso = useMemo(() => isoDate(today), [today])
-  const latestIso = useMemo(() => isoDate(latestAllowedStartDate(today)), [today])
 
-  // Suggested default: next session of THIS class. Fall back to today if
-  // we can't compute it (no day_of_week, etc.).
-  const suggested = useMemo(() => {
-    const next = nextSessionDate({ day_of_week: classDayOfWeek, time_slot: classTimeSlot }, today)
-    return next ? isoDate(next) : todayIso
-  }, [classDayOfWeek, classTimeSlot, today, todayIso])
+  // Informational only — surfaces when the parent's first class session
+  // falls so they know what they're committing to. Not a selectable date.
+  const nextClass = useMemo(
+    () => nextSessionDate({ day_of_week: classDayOfWeek, time_slot: classTimeSlot }, today),
+    [classDayOfWeek, classTimeSlot, today],
+  )
 
-  // If the field is empty, default to the suggested session
-  const effective = value || suggested
-
-  const startDate = useMemo(() => new Date(effective + 'T00:00:00Z'), [effective])
-
-  // Compute the "you'll pay" preview. Three cases:
-  //   1. start today/earlier + this month → prorated charge now
-  //   2. start in future month, on the 1st → full month charged on start_date
-  //   3. start in future, mid-next-month → £0 today, prorated charge on start_date
-  const isToday = isStartTodayOrEarlier(startDate, today)
-  const isThisMonth = isStartInCurrentMonth(startDate, today)
-  const proratedPenceFromStart = estimateProratedPence(monthlyAmount, startDate)
-  const todayChargePence = isToday && isThisMonth ? proratedPenceFromStart : 0
-
+  const startDate = useMemo(() => new Date(todayIso + 'T00:00:00Z'), [todayIso])
+  const todayChargePence = estimateProratedPence(monthlyAmount, startDate)
   const anchorLabel = firstOfNextMonthLabel(startDate)
-
-  const isSuggested = effective === suggested
 
   return (
     <div>
-      <label className="block text-xs text-white/50 mb-2">
-        When does it start? <span className="text-white/30">(you can change this)</span>
-      </label>
+      <label className="block text-xs text-white/50 mb-2">When does it start?</label>
 
-      {/* Suggested "Next session" pill */}
+      {/* "Start today" — sole selectable start date until Stage 3 ships.
+          Surfaces the next class session as informational subtext so the
+          parent knows exactly when their child's first session is. */}
       <button
         type="button"
-        onClick={() => onChange(suggested)}
-        className={`w-full text-left rounded-xl border-2 p-4 mb-2 transition-all ${
-          isSuggested ? 'bg-white/[0.04]' : 'border-white/[0.06] hover:border-white/[0.12]'
-        }`}
-        style={
-          isSuggested
-            ? { borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}10` }
-            : undefined
-        }
+        onClick={() => onChange(todayIso)}
+        className="w-full text-left rounded-xl border-2 p-4 mb-3 bg-white/[0.04]"
+        style={{ borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}10` }}
       >
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-bold text-white text-sm">Next session</div>
-            <div className="text-xs text-white/40 mt-0.5">{classLabel}</div>
+            <div className="font-bold text-white text-sm">Start today</div>
+            <div className="text-xs text-white/40 mt-0.5">
+              {classLabel}
+              {nextClass ? ` — first session ${formatLabel(isoDate(nextClass))}` : ''}
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-sm font-semibold text-white">{formatLabel(suggested)}</div>
+            <div className="text-sm font-semibold text-white">{formatLabel(todayIso)}</div>
           </div>
         </div>
       </button>
 
-      {/* Manual date picker */}
-      <div className="rounded-xl border-2 border-white/[0.06] p-3">
-        <label className="block text-xs text-white/40 mb-1.5">Or pick a different date</label>
-        <input
-          type="date"
-          value={effective}
-          min={todayIso}
-          max={latestIso}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all [color-scheme:dark]"
-        />
-        <p className="text-[10px] text-white/30 mt-2">
-          Earliest: today &middot; latest: {formatLabel(latestIso)}
+      {/* Notice — explains why no future-date selection is offered. */}
+      <div className="rounded-xl p-3 mb-3 border border-white/[0.06] bg-white/[0.02]">
+        <p className="text-[11px] text-white/50 leading-relaxed">
+          Scheduling a future start date is coming soon. For now, your child starts today and can attend their next class session.
         </p>
       </div>
 
-      {/* Cost preview */}
+      {/* Cost preview — always shows the "start today" case since that's the
+          only selectable option in Option B. Restore the future-date branch
+          (kept in git history at commit a519b67) when Stage 3 ships. */}
       <div
         className="mt-3 rounded-xl p-3 text-sm"
         style={{
@@ -134,51 +113,21 @@ export function StartDatePicker({
           borderStyle: 'solid',
         }}
       >
-        {todayChargePence > 0 ? (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">You&apos;ll pay today</span>
-              <span className="font-bold text-white">&pound;{(todayChargePence / 100).toFixed(2)}</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Covers {formatLabel(effective)} &rarr; {anchorLabel}
-            </div>
-            <div className="border-t border-white/[0.08] my-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">Then on {anchorLabel}</span>
-              <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Full month, and every 1st after that
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">You&apos;ll pay today</span>
-              <span className="font-bold text-white">&pound;0.00</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Card saved now &mdash; first charge on {formatLabel(effective)}
-            </div>
-            <div className="border-t border-white/[0.08] my-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">On {formatLabel(effective)}</span>
-              <span className="font-bold text-white">
-                {/* If start is the 1st → full month; if mid-month → prorated from start to next 1st */}
-                &pound;
-                {((isStartInCurrentMonth(startDate, startDate)
-                  ? estimateProratedPence(monthlyAmount, startDate)
-                  : Math.round(monthlyAmount * 100)) /
-                  100
-                ).toFixed(2)}
-              </span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Then £{monthlyAmount.toFixed(2)} on the 1st of every month after
-            </div>
-          </>
-        )}
+        <div className="flex items-center justify-between">
+          <span className="text-white/70">You&apos;ll pay today</span>
+          <span className="font-bold text-white">&pound;{(todayChargePence / 100).toFixed(2)}</span>
+        </div>
+        <div className="text-[11px] text-white/50 mt-0.5">
+          Covers {formatLabel(todayIso)} &rarr; {anchorLabel}
+        </div>
+        <div className="border-t border-white/[0.08] my-2" />
+        <div className="flex items-center justify-between">
+          <span className="text-white/70">Then on {anchorLabel}</span>
+          <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}</span>
+        </div>
+        <div className="text-[11px] text-white/50 mt-0.5">
+          Full month, and every 1st after that
+        </div>
       </div>
     </div>
   )

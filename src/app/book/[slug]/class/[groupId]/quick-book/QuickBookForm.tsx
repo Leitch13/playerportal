@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { StartDatePicker } from '@/components/billing/StartDatePicker'
-import { isoDate, nextSessionDate } from '@/lib/billing/next-session'
+import { isoDate } from '@/lib/billing/next-session'
 
 interface Plan {
   id: string
@@ -95,12 +95,14 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
   const [childLeague, setChildLeague] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans.length === 1 ? plans[0].id : null)
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
-  // Chosen start date (ISO YYYY-MM-DD). Defaults to the class's next session.
-  // Captured by Stage 1 + read by Stage 2's billing logic when the flag is on.
-  const defaultStartIso = useMemo(() => {
-    const next = nextSessionDate({ day_of_week: classDayOfWeek ?? null, time_slot: classTimeSlot ?? null })
-    return next ? isoDate(next) : isoDate(new Date())
-  }, [classDayOfWeek, classTimeSlot])
+  // Chosen start date (ISO YYYY-MM-DD).
+  // OPTION B: hard-defaulted to today until Stage 3 (future-start cron)
+  // ships. When Stage 3 lands, restore the next-session default by
+  // re-importing nextSessionDate from '@/lib/billing/next-session' and
+  // computing as: nextSessionDate({ day_of_week, time_slot }) ?? new Date().
+  // classDayOfWeek + classTimeSlot are still passed to StartDatePicker so
+  // it can show the parent when their next class actually is.
+  const defaultStartIso = useMemo(() => isoDate(new Date()), [])
   const [startDate, setStartDate] = useState<string>(defaultStartIso)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState('')

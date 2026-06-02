@@ -99,12 +99,22 @@ function hasStartTimePassed(timeSlot: string | null | undefined, today: Date): b
 }
 
 /**
- * Latest allowed start date — 28 days from today. Caps how far parents can
- * defer enrolment so we don't accumulate stale pending enrolments.
+ * Latest allowed start date.
+ *
+ * UNTIL STAGE 3 (SetupIntent + activation cron) SHIPS: clamped to TODAY.
+ * The picker preview shows what the future-start flow WOULD do (£0 today,
+ * prorated charge on the chosen date) but Stage 2 only dispatches
+ * immediate_prorated when start_date === today; future dates fall through
+ * to the legacy tonight_then_sub flow, creating a price mismatch between
+ * picker preview and actual Stripe charge. Until Stage 3 lands, only
+ * today is selectable so the preview always matches reality.
+ *
+ * When Stage 3 ships, restore this to today + 28 days:
+ *   Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 28, ...)
  */
 export function latestAllowedStartDate(today: Date = new Date()): Date {
   return new Date(
-    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 28, 0, 0, 0, 0),
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0),
   )
 }
 
