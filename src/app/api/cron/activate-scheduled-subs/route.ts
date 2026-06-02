@@ -38,6 +38,7 @@ interface ScheduledSubRow {
   start_date: string
   stripe_setup_intent_id: string | null
   stripe_customer_id: string | null
+  training_group_id: string | null
 }
 
 export async function GET(request: NextRequest) {
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
   // per day). If we ever queue 100+ activations, we have a bigger ops issue.
   const { data: rows, error: queryErr } = await supabase
     .from('subscriptions')
-    .select('id, parent_id, player_id, plan_id, organisation_id, start_date, stripe_setup_intent_id, stripe_customer_id')
+    .select('id, parent_id, player_id, plan_id, organisation_id, start_date, stripe_setup_intent_id, stripe_customer_id, training_group_id')
     .eq('status', 'scheduled')
     .lte('start_date', todayIso)
     .limit(100)
@@ -193,6 +194,25 @@ export async function GET(request: NextRequest) {
         // Stripe sub was created successfully; DB update failed. Log and
         // continue — the next webhook delivery will correct it.
         console.error(`[cron-activate] DB update failed for sub ${row.id} (Stripe sub ${stripeSub.id}):`, updErr.message)
+      }
+
+      // Flip the matching pending enrolment to active. Uses training_group_id
+      // persisted on the subscription row at signup so the match is
+      // unambiguous (avoids guessing if the parent has multiple pending
+      // enrolments with the same activates_on). If training_group_id is null
+      // (legacy / non-class signup), skip silently.
+      if (row.training_group_id && row.player_id) {
+        const { error: enrolErr } = await supabase
+          .from('enrolments')
+          .update({ status: 'active' })
+          .eq('player_id', row.player_id)
+          .eq('group_id', row.training_group_id)
+          .eq('status', 'pending')
+        if (enrolErr) {
+          // Sub activated successfully but enrolment flip failed. Log so
+          // ops can fix manually; don't fail the whole cron run.
+          console.error(`[cron-activate] enrolment activation failed for sub ${row.id} (player ${row.player_id}, group ${row.training_group_id}):`, enrolErr.message)
+        }
       }
 
       results.push({

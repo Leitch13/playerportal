@@ -28,6 +28,12 @@ interface QuickBookFormProps {
   /** Class day/time so the picker can default to the next upcoming session. */
   classDayOfWeek?: string | null
   classTimeSlot?: string | null
+  /**
+   * Stage 3 flag, resolved server-side from BILLING_FUTURE_START_ENABLED.
+   * When true the picker offers today + future dates (up to today+28); when
+   * false it's clamped to today-only (Option B). Default false for safety.
+   */
+  allowFutureStart?: boolean
 }
 
 function getQuarterlyPrice(monthlyAmount: number) {
@@ -80,7 +86,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -380,6 +386,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
                   classLabel={groupName}
                   monthlyAmount={selectedPlan.amount}
                   primaryColor={primaryColor}
+                  allowFutureStart={allowFutureStart}
                 />
               </div>
             )}

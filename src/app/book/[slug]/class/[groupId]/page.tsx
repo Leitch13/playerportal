@@ -69,12 +69,15 @@ export default async function ClassBookingPage({
     )
   }
 
-  // Get enrolment count
+  // Get enrolment count for capacity. Includes 'pending' (Stage 3 future-start
+  // enrolments that haven't activated yet) — the seat IS reserved at signup
+  // even if billing is deferred. Booking gate separately blocks bookings
+  // before activates_on so spotsLeft stays honest without over-granting access.
   const { count } = await supabase
     .from('enrolments')
     .select('id', { count: 'exact', head: true })
     .eq('group_id', groupId)
-    .eq('status', 'active')
+    .in('status', ['active', 'pending'])
 
   // STRICT MATCHING — no crossover between plan tiers:
   // 1. If this class has class-specific plans (training_group_id = this class), use ONLY those.

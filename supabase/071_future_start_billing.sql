@@ -41,10 +41,28 @@ alter table public.subscriptions
     'incomplete_expired'
   ));
 
+-- ─── Step 1b: extend enrolment_status enum to include 'pending' ───
+-- Stage 3 future-start enrolments are written as 'pending' at signup and
+-- flipped to 'active' by the activation cron on start_date. This keeps
+-- all existing `WHERE status = 'active'` queries (active-member counts,
+-- coach metrics, MRR widgets) correctly excluding future-start customers
+-- until they actually start paying.
+--
+-- The booking gate at /api/enrolments/book/route.ts already handles
+-- 'pending' rows via the activates_on check (and the existing duplicate
+-- detection logic ignores cancelled/paused). class capacity counts
+-- intentionally include 'pending' so the seat is reserved.
+alter type public.enrolment_status add value if not exists 'pending';
+
 -- ─── Step 2: add columns for future-start metadata ───
+-- training_group_id links the scheduled subscription to the class it was
+-- created for, so the activation cron can flip the matching enrolment from
+-- 'pending' to 'active' unambiguously. NULL for legacy/immediate signups
+-- (the cron only acts on rows with status='scheduled').
 alter table public.subscriptions
   add column if not exists start_date date,
-  add column if not exists stripe_setup_intent_id text;
+  add column if not exists stripe_setup_intent_id text,
+  add column if not exists training_group_id uuid references public.training_groups(id);
 
 comment on column public.subscriptions.start_date is
   'Date the subscription should be activated (Stage 3). NULL for immediate-start subs. Cron at /api/cron/activate-scheduled-subs runs daily at 02:00 UTC and creates the Stripe subscription for any row where status=scheduled AND start_date <= today.';

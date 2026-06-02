@@ -373,15 +373,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       start_date: activatesOn,
       stripe_setup_intent_id: setupIntentId,
       stripe_customer_id: customerId,
+      // Persist the class id on the sub so the activation cron can find
+      // the matching pending enrolment unambiguously (a parent could have
+      // multiple pending enrolments with the same activates_on).
+      ...(classId ? { training_group_id: classId } : {}),
     })
     if (subInsErr && (subInsErr as { code?: string }).code !== '23505') {
       throw new Error(`future_prorated subscriptions.insert failed: ${subInsErr.message}`)
     }
 
-    // Auto-enrol the player at the chosen class, with status='active' but
-    // activates_on = future date. The booking gate already enforces
-    // activates_on <= session date, so the parent can't book a session
-    // before their start date.
+    // Auto-enrol the player at the chosen class. Stage 3 writes 'pending'
+    // (not 'active') so existing WHERE status='active' queries (admin
+    // active-member counts, coach activity metrics, MRR widgets) correctly
+    // exclude future-start customers until the cron flips them to 'active'
+    // on start_date. The booking gate (/api/enrolments/book/route.ts) also
+    // enforces activates_on as defense in depth.
     if (classId && playerId) {
       const { data: existingEnrolment } = await supabase
         .from('enrolments')
@@ -393,7 +399,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         const { error: enrolErr } = await supabase.from('enrolments').insert({
           player_id: playerId,
           group_id: classId,
-          status: 'active',
+          status: 'pending',
           organisation_id: orgId,
           activates_on: activatesOn,
         })

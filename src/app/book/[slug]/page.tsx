@@ -142,13 +142,16 @@ export default async function PublicBookingPage({
   const trialWord = hasAnyPaidTrial ? 'Trial' : 'Free Trial'
   const trialCtaShort = hasAnyPaidTrial ? 'Book Trial' : 'Try Free'
 
+  // Class-card capacity counts include 'pending' (Stage 3 future-start) so
+  // the seat is reserved at signup even before billing activates. Booking
+  // gate enforces activates_on separately so this doesn't over-grant access.
   const groupIds = (groups || []).map((g) => g.id)
   const { data: enrolments } = groupIds.length > 0
     ? await supabase
         .from('enrolments')
         .select('group_id')
         .in('group_id', groupIds)
-        .eq('status', 'active')
+        .in('status', ['active', 'pending'])
     : { data: [] as { group_id: string }[] }
 
   const countByGroup = new Map<string, number>()

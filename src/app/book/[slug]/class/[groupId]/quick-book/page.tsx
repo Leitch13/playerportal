@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { QuickBookForm } from './QuickBookForm'
+import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
 
 export default async function QuickBookPage({
   params,
@@ -57,12 +58,16 @@ export default async function QuickBookPage({
     )
   }
 
-  // Get enrolment count
+  // Get enrolment count for capacity. Includes 'pending' (Stage 3 future-start
+  // enrolments that haven't activated yet) — the seat IS reserved from the
+  // moment the parent commits, even if billing is deferred. The booking gate
+  // separately blocks bookings before activates_on so this doesn't over-grant
+  // access; it just keeps the spotsLeft count honest.
   const { count } = await supabase
     .from('enrolments')
     .select('id', { count: 'exact', head: true })
     .eq('group_id', groupId)
-    .eq('status', 'active')
+    .in('status', ['active', 'pending'])
 
   const enrolled = count || 0
   const capacity = group.max_capacity || 20
@@ -144,6 +149,11 @@ export default async function QuickBookPage({
   const primaryColor = org.primary_color || '#4ecde6'
   const coach = group.coach as unknown as { full_name: string } | null
 
+  // Stage 3 flag — server-side check, passed down so the picker can decide
+  // between today-only (Option B clamp) and full today+future modes. Flag
+  // currently OFF for all orgs in production until Stage 3 ships.
+  const allowFutureStart = isFutureStartBillingEnabled(org.id)
+
   return (
     <div className="min-h-screen bg-[#060606] text-white">
       {/* Nav */}
@@ -223,6 +233,7 @@ export default async function QuickBookPage({
         primaryColor={primaryColor}
         classDayOfWeek={group.day_of_week as string | null}
         classTimeSlot={group.time_slot as string | null}
+        allowFutureStart={allowFutureStart}
       />
 
       {/* Footer */}
