@@ -425,9 +425,12 @@ export default async function ClassBookingPage({
                     </div>
                     {/* Prominent Subscribe button — always white for guaranteed contrast,
                         with brand-color glow for academy branding.
-                        class= param carries the class id through signup → subscribe → webhook → auto-enrol */}
+                        Routes through the quick-book flow so the StartDatePicker
+                        is reachable on the primary parent journey. The picker
+                        determines whether the dispatch lands on Stage 2
+                        (immediate prorated) or Stage 3 (future setup mode). */}
                     <Link
-                      href={`/auth/signup?org=${slug}&plan=${plan.id}&billing=monthly&class=${groupId}`}
+                      href={`/book/${slug}/class/${groupId}/quick-book?plan=${plan.id}&billing=monthly`}
                       className="relative block w-full text-center py-4 sm:py-5 rounded-xl font-extrabold text-base sm:text-lg transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110 overflow-hidden"
                       style={{
                         background: `linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)`,

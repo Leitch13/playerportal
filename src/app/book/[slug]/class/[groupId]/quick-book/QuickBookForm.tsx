@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { StartDatePicker } from '@/components/billing/StartDatePicker'
 import { isoDate } from '@/lib/billing/next-session'
@@ -99,8 +100,21 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
   const [childDob, setChildDob] = useState('')
   const [childLevel, setChildLevel] = useState('development')
   const [childLeague, setChildLeague] = useState('')
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans.length === 1 ? plans[0].id : null)
-  const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
+  // URL preselection: when the parent clicks "Subscribe Now" on the class
+  // detail page, they arrive with ?plan=<id>&billing=monthly|quarterly so
+  // the form preselects the plan they tapped. Falls back gracefully if
+  // the URL param doesn't match a plan in this class.
+  const searchParams = useSearchParams()
+  const urlPlanId = searchParams?.get('plan') ?? null
+  const urlBilling = searchParams?.get('billing') ?? null
+  const initialSelectedPlanId = useMemo(() => {
+    if (urlPlanId && plans.some((p) => p.id === urlPlanId)) return urlPlanId
+    return plans.length === 1 ? plans[0].id : null
+  }, [urlPlanId, plans])
+  const initialBillingOption: 'monthly' | 'quarterly' =
+    urlBilling === 'quarterly' ? 'quarterly' : 'monthly'
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(initialSelectedPlanId)
+  const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>(initialBillingOption)
   // Chosen start date (ISO YYYY-MM-DD).
   // OPTION B: hard-defaulted to today until Stage 3 (future-start cron)
   // ships. When Stage 3 lands, restore the next-session default by
