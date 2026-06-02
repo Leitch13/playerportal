@@ -30,6 +30,22 @@ function firstOfNextMonthUnix(d) {
   return Math.floor(Date.UTC(m === 11 ? y + 1 : y, m === 11 ? 0 : m + 1, 1) / 1000)
 }
 
+function generateSessionDates(todayISO, anchorISO, classDayOfWeek) {
+  if (!classDayOfWeek) return []
+  const targetDow = DOW.indexOf(classDayOfWeek)
+  if (targetDow < 0) return []
+  const cur = new Date(todayISO + 'T00:00:00Z')
+  const anchor = new Date(anchorISO + 'T00:00:00Z')
+  if (!(cur < anchor)) return []
+  if (isNaN(cur.getTime()) || isNaN(anchor.getTime())) return []
+  const dates = []
+  for (let i = 0; i < 40 && cur < anchor; i++) {
+    if (cur.getUTCDay() === targetDow) dates.push(cur.toISOString().slice(0, 10))
+    cur.setUTCDate(cur.getUTCDate() + 1)
+  }
+  return dates
+}
+
 function estimateBridgePence(args) {
   const { monthlyPence, sessionsPerMonth, classDayOfWeek, startDate } = args
   if (!sessionsPerMonth || sessionsPerMonth <= 0) return null
@@ -109,6 +125,29 @@ phase('PHASE 5 — zero-session windows')
 eq('Tuesday-only window: Mon class, start Tue, anchor next Mon → 0 sessions, £0',
   estimateBridgePence({ monthlyPence: 12000, sessionsPerMonth: 4, classDayOfWeek: 'Monday', startDate: new Date('2026-06-30T00:00:00Z') }),
   { sessionsRemaining: 0, perSessionPence: 3000, uncappedPence: 0, bridgePence: 0, capApplied: false })
+
+// ─── PHASE 6: generateSessionDates ─────────────────────────────────
+phase('PHASE 6 — generateSessionDates (class-day enumeration)')
+eq('Monday class, full June window (start Mon 1 Jun)',
+  generateSessionDates('2026-06-01', '2026-07-01', 'Monday'),
+  ['2026-06-01', '2026-06-08', '2026-06-15', '2026-06-22', '2026-06-29'])
+eq('Monday class, today is Tue (not Mon)',
+  generateSessionDates('2026-06-02', '2026-07-01', 'Monday'),
+  ['2026-06-08', '2026-06-15', '2026-06-22', '2026-06-29'])
+eq('Tuesday class, today is Tue (today included)',
+  generateSessionDates('2026-06-02', '2026-07-01', 'Tuesday'),
+  ['2026-06-02', '2026-06-09', '2026-06-16', '2026-06-23', '2026-06-30'])
+eq('Monday class, late month start → 1 session',
+  generateSessionDates('2026-06-29', '2026-07-01', 'Monday'),
+  ['2026-06-29'])
+eq('Monday class, start day after last Mon → 0 sessions',
+  generateSessionDates('2026-06-30', '2026-07-01', 'Monday'),
+  [])
+eq('Wednesday class through July (5 Weds in window)',
+  generateSessionDates('2026-07-01', '2026-08-01', 'Wednesday'),
+  ['2026-07-01', '2026-07-08', '2026-07-15', '2026-07-22', '2026-07-29'])
+eq('null day-of-week → empty', generateSessionDates('2026-06-01', '2026-07-01', null), [])
+eq('Empty window → empty', generateSessionDates('2026-07-01', '2026-07-01', 'Monday'), [])
 
 // ─── SUMMARY ──────────────────────────────────────────────────────
 phase('SUMMARY')

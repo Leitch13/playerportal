@@ -62,6 +62,47 @@ export function countSessionsBetween(
 }
 
 /**
+ * Returns ISO-date strings (YYYY-MM-DD) for every class-day occurrence in
+ * the half-open window [todayISO, anchorISO), inclusive of todayISO and
+ * exclusive of anchorISO. Used by the session-mode picker to constrain
+ * parents to dates they can actually attend.
+ *
+ *   generateSessionDates('2026-06-02', '2026-07-01', 'Monday')
+ *     → ['2026-06-08', '2026-06-15', '2026-06-22', '2026-06-29']
+ *
+ *   generateSessionDates('2026-06-08', '2026-07-01', 'Monday')
+ *     → ['2026-06-08', '2026-06-15', '2026-06-22', '2026-06-29']
+ *
+ *   generateSessionDates('2026-06-30', '2026-07-01', 'Monday')
+ *     → []     (no Monday in this 1-day window)
+ */
+export function generateSessionDates(
+  todayISO: string,
+  anchorISO: string,
+  classDayOfWeek: string | null,
+): string[] {
+  if (!classDayOfWeek) return []
+  const targetDow = DOW.indexOf(classDayOfWeek)
+  if (targetDow < 0) return []
+
+  const cur = new Date(todayISO + 'T00:00:00Z')
+  const anchor = new Date(anchorISO + 'T00:00:00Z')
+
+  if (!(cur < anchor)) return []
+  if (isNaN(cur.getTime()) || isNaN(anchor.getTime())) return []
+
+  const dates: string[] = []
+  // Same safety cap as countSessionsBetween.
+  for (let i = 0; i < 40 && cur < anchor; i++) {
+    if (cur.getUTCDay() === targetDow) {
+      dates.push(cur.toISOString().slice(0, 10))
+    }
+    cur.setUTCDate(cur.getUTCDate() + 1)
+  }
+  return dates
+}
+
+/**
  * Format a Stripe Checkout line-item description for the bridge charge.
  * "Remaining {Month} sessions" — used both server-side (Checkout line item)
  * and client-side (picker preview text).

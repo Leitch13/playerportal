@@ -523,7 +523,31 @@ export async function POST(request: NextRequest) {
       // first cycle fires automatically on the 1st. No cron needed.
       // (Test Clock probe confirmed: Stripe transitions trialing → active on
       // anchor and the full monthly invoice fires with no proration.)
-      const { estimateBridgePence, bridgeDescriptionFor } = await import('@/lib/billing/sessions')
+      const { estimateBridgePence, bridgeDescriptionFor, generateSessionDates } = await import('@/lib/billing/sessions')
+
+      // Defense in depth: even if the client tampered with the picker and
+      // submitted an arbitrary date (e.g. Wed for a Monday class), reject
+      // it server-side. The picker UI only emits valid class-day dates,
+      // but this guards a malformed/manual client.
+      const todayIsoForValidate = new Date()
+      todayIsoForValidate.setUTCHours(0, 0, 0, 0)
+      const anchorIsoForValidate = new Date(firstOfNextMonthUnix(activatesOnDate) * 1000)
+        .toISOString().slice(0, 10)
+      const validSessionDates = generateSessionDates(
+        todayIsoForValidate.toISOString().slice(0, 10),
+        anchorIsoForValidate,
+        classDayOfWeek,
+      )
+      // Allow if either: (a) the chosen date is in the valid set, or
+      // (b) the set is empty (Branch B fallback — parent gets today via
+      // Stage 2 immediate-prorated, won't reach this branch anyway).
+      if (validSessionDates.length > 0 && !validSessionDates.includes(activatesOnIso)) {
+        return NextResponse.json(
+          { error: `Selected start date is not a ${classDayOfWeek} class session.` },
+          { status: 400 },
+        )
+      }
+
       const estimate = estimateBridgePence({
         monthlyPence: Math.round(Number(plan.amount) * 100),
         sessionsPerMonth: planSessionsPerMonth,

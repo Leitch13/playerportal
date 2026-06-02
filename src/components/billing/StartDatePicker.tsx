@@ -23,10 +23,11 @@ import { useMemo } from 'react'
 import {
   estimateProratedPence,
   firstOfNextMonthLabel,
+  firstOfNextMonthUnix,
   isStartInCurrentMonth,
 } from '@/lib/billing/anchor'
 import { isoDate, latestAllowedStartDate, nextSessionDate } from '@/lib/billing/next-session'
-import { estimateBridgePence } from '@/lib/billing/sessions'
+import { estimateBridgePence, generateSessionDates } from '@/lib/billing/sessions'
 
 interface Props {
   /** ISO date "YYYY-MM-DD". Empty string = no selection yet. */
@@ -182,65 +183,157 @@ export function StartDatePicker({
   const todayChargePence = startsToday ? estimateProratedPence(monthlyAmount, selectedDate) : 0
   const anchorLabel = firstOfNextMonthLabel(selectedDate)
 
+  // Session-mode constrained dates: only class-day occurrences in [today, anchor).
+  // Computed once per render; used in Branch A below to render pills (no free
+  // date input). If the org is on calendar mode OR the plan lacks
+  // sessions_per_month OR the class has no day_of_week, this is empty and the
+  // existing calendar-mode picker (today/next-session/date-input) renders.
+  const sessionConstrainedEnabled =
+    bridgeMode === 'session' && !!sessionsPerMonth && sessionsPerMonth > 0 && !!classDayOfWeek
+  const anchorIso = useMemo(
+    () => new Date(firstOfNextMonthUnix(today) * 1000).toISOString().slice(0, 10),
+    [today],
+  )
+  const sessionDateOptions: string[] = sessionConstrainedEnabled
+    ? generateSessionDates(todayIso, anchorIso, classDayOfWeek)
+    : []
+
   return (
     <div>
       <label className="block text-xs text-white/50 mb-2">When does it start?</label>
 
-      {/* Quick pick: Start today */}
-      <button
-        type="button"
-        onClick={() => onChange(todayIso)}
-        className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
-        style={{
-          borderColor: effectiveValue === todayIso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
-          boxShadow: effectiveValue === todayIso ? `0 0 16px ${primaryColor}25` : undefined,
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-bold text-white text-sm">Start today</div>
-            <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
+      {sessionConstrainedEnabled && sessionDateOptions.length > 0 ? (
+        /* ───────────────────────────────────────────────────────────
+         * Branch A — session mode, ≥1 class day in window.
+         * Render selectable pills for each valid class day. NO free
+         * date input. NO "Start today" unless today is itself a class
+         * day (handled naturally: sessionDateOptions[0] === todayIso).
+         * ─────────────────────────────────────────────────────────── */
+        <>
+          <div className="text-[11px] text-white/50 mb-2">
+            {classLabel} meets on {classDayOfWeek}s — pick your first session:
           </div>
-          <div className="text-xs font-semibold text-white">{formatLabel(todayIso)}</div>
-        </div>
-      </button>
-
-      {/* Quick pick: Next class session (if known and != today) */}
-      {nextClassIso && nextClassIso !== todayIso && (
-        <button
-          type="button"
-          onClick={() => onChange(nextClassIso)}
-          className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
-          style={{
-            borderColor: effectiveValue === nextClassIso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
-            boxShadow: effectiveValue === nextClassIso ? `0 0 16px ${primaryColor}25` : undefined,
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-bold text-white text-sm">Next session</div>
-              <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
+          {sessionDateOptions.map((iso, idx) => (
+            <button
+              key={iso}
+              type="button"
+              onClick={() => onChange(iso)}
+              className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
+              style={{
+                borderColor: effectiveValue === iso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
+                boxShadow: effectiveValue === iso ? `0 0 16px ${primaryColor}25` : undefined,
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-white text-sm">
+                    {iso === todayIso ? 'Start today' : (idx === 0 ? 'Next session' : 'Session')}
+                  </div>
+                  <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
+                </div>
+                <div className="text-xs font-semibold text-white">{formatLabel(iso)}</div>
+              </div>
+            </button>
+          ))}
+        </>
+      ) : sessionConstrainedEnabled && sessionDateOptions.length === 0 ? (
+        /* ───────────────────────────────────────────────────────────
+         * Branch B — session mode, ZERO class days in window.
+         * Parent landed too late in the month for any session-bridge
+         * to apply (e.g., today=Tue 30 Jun for a Monday class).
+         * Fall back to "Start today" only (Stage 2 immediate-prorated
+         * via existing today branch in the cost preview).
+         * ─────────────────────────────────────────────────────────── */
+        <>
+          <button
+            type="button"
+            onClick={() => onChange(todayIso)}
+            className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
+            style={{
+              borderColor: `${primaryColor}`,
+              boxShadow: `0 0 16px ${primaryColor}25`,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-bold text-white text-sm">Start today</div>
+                <div className="text-[11px] text-white/40 mt-0.5">
+                  {classLabel} — no remaining sessions this month
+                </div>
+              </div>
+              <div className="text-xs font-semibold text-white">{formatLabel(todayIso)}</div>
             </div>
-            <div className="text-xs font-semibold text-white">{formatLabel(nextClassIso)}</div>
+          </button>
+          <div className="rounded-xl p-3 mb-3 border border-white/[0.06] bg-white/[0.02]">
+            <p className="text-[11px] text-white/50 leading-relaxed">
+              All {classDayOfWeek} sessions have passed in this billing period.
+              Your subscription begins {anchorLabel} and your first session is in {anchorLabel}.
+            </p>
           </div>
-        </button>
-      )}
+        </>
+      ) : (
+        /* ───────────────────────────────────────────────────────────
+         * Branch C — calendar mode (default). Existing UI unchanged:
+         * today pill + next-session pill + free date input.
+         * ─────────────────────────────────────────────────────────── */
+        <>
+          {/* Quick pick: Start today */}
+          <button
+            type="button"
+            onClick={() => onChange(todayIso)}
+            className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
+            style={{
+              borderColor: effectiveValue === todayIso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
+              boxShadow: effectiveValue === todayIso ? `0 0 16px ${primaryColor}25` : undefined,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-bold text-white text-sm">Start today</div>
+                <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
+              </div>
+              <div className="text-xs font-semibold text-white">{formatLabel(todayIso)}</div>
+            </div>
+          </button>
 
-      {/* Custom date input */}
-      <div className="rounded-xl border border-white/[0.06] p-3 mb-3 bg-white/[0.02]">
-        <label className="block text-[11px] text-white/50 mb-1.5">
-          Or pick another date (up to {formatLabel(maxIso)})
-        </label>
-        <input
-          type="date"
-          value={effectiveValue}
-          min={todayIso}
-          max={maxIso}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
-          style={{ colorScheme: 'dark' }}
-        />
-      </div>
+          {/* Quick pick: Next class session (if known and != today) */}
+          {nextClassIso && nextClassIso !== todayIso && (
+            <button
+              type="button"
+              onClick={() => onChange(nextClassIso)}
+              className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
+              style={{
+                borderColor: effectiveValue === nextClassIso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
+                boxShadow: effectiveValue === nextClassIso ? `0 0 16px ${primaryColor}25` : undefined,
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-white text-sm">Next session</div>
+                  <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
+                </div>
+                <div className="text-xs font-semibold text-white">{formatLabel(nextClassIso)}</div>
+              </div>
+            </button>
+          )}
+
+          {/* Custom date input — calendar mode only */}
+          <div className="rounded-xl border border-white/[0.06] p-3 mb-3 bg-white/[0.02]">
+            <label className="block text-[11px] text-white/50 mb-1.5">
+              Or pick another date (up to {formatLabel(maxIso)})
+            </label>
+            <input
+              type="date"
+              value={effectiveValue}
+              min={todayIso}
+              max={maxIso}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
+              style={{ colorScheme: 'dark' }}
+            />
+          </div>
+        </>
+      )}
 
       {/* Cost preview — branches on (startsToday, bridgeMode) */}
       {(() => {
