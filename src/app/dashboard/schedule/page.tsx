@@ -345,9 +345,11 @@ async function ParentSchedule({
 
   // Get academy branding so the schedule feels like the academy's own product,
   // not a generic Player Portal page. Falls back to platform cyan if missing.
+  // Also pulls retention-offer config so the per-class Cancel modal can match
+  // academy settings (P1 alignment with the polished subscription-cancel flow).
   const { data: orgBrand } = await supabase
     .from('organisations')
-    .select('name, slug, logo_url, primary_color, hero_image_url')
+    .select('name, slug, logo_url, primary_color, hero_image_url, retention_offer_enabled, retention_offer_percent, retention_offer_months')
     .eq('id', orgId)
     .maybeSingle()
   const academyName = (orgBrand?.name as string | undefined) || 'Your Academy'
@@ -355,6 +357,10 @@ async function ParentSchedule({
   const academyLogo = (orgBrand?.logo_url as string | undefined) || null
   const academyHero = (orgBrand?.hero_image_url as string | undefined) || null
   const brandColor = (orgBrand?.primary_color as string | undefined) || '#4ecde6'
+  const retentionEnabled = (orgBrand as { retention_offer_enabled?: boolean } | null)?.retention_offer_enabled !== false
+  const retentionPercent = Number((orgBrand as { retention_offer_percent?: number } | null)?.retention_offer_percent ?? 50)
+  const retentionMonthsRaw = (orgBrand as { retention_offer_months?: number | null } | null)?.retention_offer_months
+  const retentionMonths: number | null = retentionMonthsRaw == null ? 1 : Number(retentionMonthsRaw)
 
   // Get parent's profile for personalised greeting
   const { data: parentProfile } = await supabase
@@ -828,6 +834,9 @@ async function ParentSchedule({
                                       enrolmentId={enrolmentId}
                                       playerId={player.id}
                                       className={group.name}
+                                      retentionEnabled={retentionEnabled}
+                                      retentionPercent={retentionPercent}
+                                      retentionMonths={retentionMonths}
                                     />
                                   ) : (
                                     <BookClassButton

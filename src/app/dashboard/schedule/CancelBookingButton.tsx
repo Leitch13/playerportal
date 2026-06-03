@@ -14,57 +14,91 @@ const REASONS = [
 
 type Step = 'idle' | 'reason' | 'offer' | 'confirm' | 'cancelled' | 'retained'
 
+/**
+ * Class-cancel button. P1+P2 alignment:
+ *   - Retention offer now READS the academy's settings (retention_offer_enabled,
+ *     _percent, _months) instead of hardcoded 50/2.
+ *   - If retention is disabled, the offer step is skipped entirely.
+ *   - On accept, calls /api/stripe/retain so the discount actually applies to
+ *     billing (Stripe coupon at duration='once'/'forever'/'repeating' per
+ *     retention_offer_months). One source of truth with the subscription flow.
+ *   - On confirm-cancel, calls /api/enrolments/cancel so the reason persists
+ *     to the cancellations table (cancellation_type='class') for academy
+ *     analytics. Pre-P2 the reason was discarded on cancel.
+ *
+ * Does NOT change the subscription cancellation flow.
+ */
 export default function CancelBookingButton({
   enrolmentId,
   playerId,
   className,
+  retentionEnabled = true,
+  retentionPercent = 50,
+  retentionMonths = 1,
 }: {
   enrolmentId: string
   playerId?: string
   className?: string
+  retentionEnabled?: boolean
+  retentionPercent?: number
+  retentionMonths?: number | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('idle')
   const [loading, setLoading] = useState(false)
   const [reason, setReason] = useState('')
+  const [reasonDetail, setReasonDetail] = useState('')
   // After successful class cancel — if this was their last enrolment, prompt
   // them to consider cancelling the subscription so they don't keep paying for nothing.
   const [showSubPrompt, setShowSubPrompt] = useState(false)
   const [parentSubscriptionId, setParentSubscriptionId] = useState<string | null>(null)
+  // Honest duration label matching what /api/stripe/retain will actually do.
+  // months===1 → 'once' (Stripe coupon next-charge-only),
+  // null → 'forever', else 'repeating' N months.
+  const durationLabel = retentionMonths === null
+    ? 'every month for as long as you stay'
+    : retentionMonths === 1
+      ? 'on your next charge'
+      : `for the next ${retentionMonths} months`
+  const durationShort = retentionMonths === null
+    ? 'every month'
+    : retentionMonths === 1
+      ? 'next month'
+      : `for ${retentionMonths} months`
 
   async function handleCancel() {
     setLoading(true)
-    const supabase = createClient()
 
-    // Capture group_id so we can promote next-on-waitlist after the cancel.
-    const { data: enrolmentRow } = await supabase
-      .from('enrolments')
-      .select('group_id')
-      .eq('id', enrolmentId)
-      .single()
-
-    const { error } = await supabase
-      .from('enrolments')
-      .update({ status: 'cancelled' })
-      .eq('id', enrolmentId)
-
-    if (error) {
+    // P2: route through the API so the reason persists into cancellations
+    // (alongside subscription cancellations — single retention analytics).
+    let cancelSucceeded = false
+    try {
+      const res = await fetch('/api/enrolments/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enrolmentId,
+          reason,
+          reasonDetail: reasonDetail || null,
+          offerWasShown: retentionEnabled,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      cancelSucceeded = !!data?.ok
+      if (!cancelSucceeded) {
+        alert(data?.error || 'Failed to cancel — please try again')
+        setLoading(false)
+        return
+      }
+    } catch (e) {
       alert('Failed to cancel — please try again')
       setLoading(false)
       return
     }
 
-    // Vacated a seat — auto-offer to the next person on the waitlist.
-    // Fire-and-forget; the daily expiry cron is a fallback.
-    if (enrolmentRow?.group_id) {
-      void fetch('/api/waitlist/promote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group_id: enrolmentRow.group_id }),
-      }).catch(() => undefined)
-    }
-
-    // Check if this was their last active enrolment — if so, offer to cancel sub too
+    // Check if this was their last active enrolment — if so, offer to cancel sub too.
+    // This lookup remains client-side (RLS-safe, parent's own data).
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: myKids } = await supabase
@@ -83,7 +117,6 @@ export default function CancelBookingButton({
         otherActiveCount = count || 0
       }
 
-      // Find their active subscription (if any) so we can deep-link to its cancel page
       const { data: activeSub } = await supabase
         .from('subscriptions')
         .select('id')
@@ -107,45 +140,48 @@ export default function CancelBookingButton({
     setLoading(true)
     const supabase = createClient()
 
+    // Resolve the parent's active subscription so we can apply the Stripe
+    // coupon at the SUBSCRIPTION level (Stripe coupons attach to subs, not
+    // enrolments — same model as the subscription-cancel retention path).
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: orgId } = await supabase.rpc('get_my_org')
-
-    if (!user || !orgId) {
+    if (!user) {
       alert('Something went wrong — please try again')
       setLoading(false)
       return
     }
-
-    const expiresAt = new Date()
-    expiresAt.setMonth(expiresAt.getMonth() + 2)
-
-    const { error } = await supabase.from('enrolment_discounts').insert({
-      enrolment_id: enrolmentId,
-      player_id: playerId || null,
-      profile_id: user.id,
-      organisation_id: orgId,
-      discount_percent: 50,
-      months_remaining: 2,
-      reason: reason || 'retention_offer',
-      status: 'active',
-      expires_at: expiresAt.toISOString(),
-    })
-
-    if (error) {
-      // best-effort — still treat as retained for the user
+    const { data: activeSub } = await supabase
+      .from('subscriptions')
+      .select('stripe_subscription_id')
+      .eq('parent_id', user.id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle()
+    const stripeSubId = (activeSub as { stripe_subscription_id?: string } | null)?.stripe_subscription_id
+    if (!stripeSubId) {
+      alert("We couldn't find an active subscription to apply the discount to. Please contact your academy.")
+      setLoading(false)
+      return
     }
 
+    // P1: call the same Stripe retain endpoint the subscription-cancel flow
+    // uses. Reads org config, creates/reuses the appropriate Stripe coupon,
+    // applies to the subscription. Connect math untouched.
     try {
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        organisation_id: orgId,
-        type: 'discount',
-        title: '50% discount applied',
-        body: `Retention offer accepted — 50% off for 2 months on ${className || 'class'}`,
-        link: '/dashboard/payments',
+      const res = await fetch('/api/stripe/retain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId: stripeSubId }),
       })
-    } catch {
-      // ignore
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || data?.error) {
+        alert(data?.error || 'Could not apply the discount. Please try again.')
+        setLoading(false)
+        return
+      }
+    } catch (e) {
+      alert('Failed to apply discount — please try again')
+      setLoading(false)
+      return
     }
 
     setStep('retained')
@@ -242,7 +278,7 @@ export default function CancelBookingButton({
   if (step === 'retained') {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 animate-fade-in">
-        🎉 50% off for 2 months!
+        🎉 {retentionPercent}% off {durationShort}!
       </span>
     )
   }
@@ -297,16 +333,35 @@ export default function CancelBookingButton({
                 ))}
               </div>
 
+              {reason && (
+                <div className="mb-4">
+                  <label className="block text-xs text-white/50 mb-2">
+                    {reason === 'other' ? 'Tell us more (required for "Other")' : 'Anything else you’d like to share? (optional)'}
+                  </label>
+                  <textarea
+                    value={reasonDetail}
+                    onChange={(e) => setReasonDetail(e.target.value)}
+                    placeholder={reason === 'other' ? 'Help us understand — we read every response.' : 'Optional. Helps your academy improve.'}
+                    className="w-full p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-white resize-none h-16 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
+                  />
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setStep('idle'); setReason('') }}
+                  onClick={() => { setStep('idle'); setReason(''); setReasonDetail('') }}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold text-white/70 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:border-white/20 transition-all"
                 >
                   Never mind
                 </button>
                 <button
-                  onClick={() => reason && setStep('offer')}
-                  disabled={!reason}
+                  onClick={() => {
+                    if (!reason) return
+                    if (reason === 'other' && !reasonDetail.trim()) return
+                    // Skip the offer step when the academy has retention disabled.
+                    setStep(retentionEnabled ? 'offer' : 'confirm')
+                  }}
+                  disabled={!reason || (reason === 'other' && !reasonDetail.trim())}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold bg-white/[0.06] text-white/70 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   Continue →
@@ -315,7 +370,7 @@ export default function CancelBookingButton({
             </div>
           )}
 
-          {/* ── Step 2: 50% off retention offer (the showstopper) ── */}
+          {/* ── Step 2: Retention offer — reads academy config; only shown when retention_offer_enabled ── */}
           {step === 'offer' && (
             <div className="relative overflow-hidden p-6 sm:p-8">
               <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#4ecde6]/10 blur-[60px] pointer-events-none" />
@@ -328,19 +383,23 @@ export default function CancelBookingButton({
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">Wait — before you go</h3>
                 <p className="text-sm text-white/60 mb-5">
-                  Stay in {className ? <strong className="text-white">{className}</strong> : 'this class'} and get <strong className="text-[#4ecde6]">50% off</strong> for the next 2 months.
+                  Stay subscribed and get <strong className="text-[#4ecde6]">{retentionPercent}% off</strong> {durationLabel}.
                 </p>
 
                 <div className="relative rounded-3xl p-6 mb-5 bg-gradient-to-br from-[#4ecde6]/15 via-[#4ecde6]/5 to-transparent border-2 border-[#4ecde6]/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_32px_rgba(78,205,230,0.2)]">
-                  <p className="text-5xl sm:text-6xl font-extrabold text-[#4ecde6] tabular-nums mb-1">50% OFF</p>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#4ecde6]/70">for 2 months · applied automatically</p>
+                  <p className="text-5xl sm:text-6xl font-extrabold text-[#4ecde6] tabular-nums mb-1">{retentionPercent}% OFF</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#4ecde6]/70">{durationShort} · applied automatically</p>
                 </div>
 
                 <div className="space-y-2 text-left mb-5">
                   {[
                     `Keep your child’s place in ${className || 'class'}`,
-                    '50% off next 2 payments — no code needed',
-                    'Cancel any time after — no strings',
+                    `${retentionPercent}% off applied automatically — no code needed`,
+                    retentionMonths === 1
+                      ? 'Discount applies to your next charge only'
+                      : retentionMonths === null
+                        ? 'Discount applies every month for as long as you stay'
+                        : `Discount applies for ${retentionMonths} months`,
                   ].map((line) => (
                     <div key={line} className="flex items-center gap-2.5 text-sm text-white/85">
                       <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 shrink-0">
@@ -369,7 +428,7 @@ export default function CancelBookingButton({
                       Applying discount...
                     </span>
                   ) : (
-                    <>🎁 Stay &amp; Get 50% Off →</>
+                    <>🎁 Stay &amp; Get {retentionPercent}% Off →</>
                   )}
                 </button>
 
@@ -400,7 +459,11 @@ export default function CancelBookingButton({
               <div className="rounded-2xl p-4 mb-3 bg-rose-500/5 border border-rose-500/20">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-rose-300 mb-2">What you&apos;ll lose</p>
                 <ul className="space-y-2 text-sm text-white/80">
-                  {['Place in class', 'May need to rejoin waitlist', 'The 50% off deal'].map((line) => (
+                  {[
+                    'Place in class',
+                    'May need to rejoin waitlist',
+                    ...(retentionEnabled ? [`The ${retentionPercent}% off deal`] : []),
+                  ].map((line) => (
                     <li key={line} className="flex items-center gap-2.5">
                       <span className="flex items-center justify-center w-5 h-5 rounded-full bg-rose-500/20 border border-rose-500/30 shrink-0">
                         <svg className="w-3 h-3 text-rose-300" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
@@ -420,15 +483,17 @@ export default function CancelBookingButton({
                 </p>
               </div>
 
-              <div className="rounded-2xl p-3.5 mb-5 bg-[#4ecde6]/8 border border-[#4ecde6]/30">
-                <p className="text-sm text-white/90">
-                  💡 <strong className="text-white">Last chance:</strong> Save{' '}
-                  <button onClick={() => setStep('offer')} className="text-[#4ecde6] font-bold underline underline-offset-2 hover:text-[#7adeeb] transition-colors">
-                    50% off for 2 months
-                  </button>{' '}
-                  instead.
-                </p>
-              </div>
+              {retentionEnabled && (
+                <div className="rounded-2xl p-3.5 mb-5 bg-[#4ecde6]/8 border border-[#4ecde6]/30">
+                  <p className="text-sm text-white/90">
+                    💡 <strong className="text-white">Last chance:</strong> Get{' '}
+                    <button onClick={() => setStep('offer')} className="text-[#4ecde6] font-bold underline underline-offset-2 hover:text-[#7adeeb] transition-colors">
+                      {retentionPercent}% off {durationShort}
+                    </button>{' '}
+                    instead.
+                  </p>
+                </div>
+              )}
 
               <div className="flex flex-col-reverse sm:flex-row gap-2">
                 <button
@@ -445,17 +510,19 @@ export default function CancelBookingButton({
                     'Yes, cancel class'
                   )}
                 </button>
-                <button
-                  onClick={() => setStep('offer')}
-                  className="flex-1 py-3 rounded-xl text-sm font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    background: 'linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)',
-                    color: '#0a0a0a',
-                    boxShadow: '0 8px 32px rgba(78, 205, 230, 0.3), 0 0 0 2px rgba(78, 205, 230, 0.5)',
-                  }}
-                >
-                  Get 50% Off →
-                </button>
+                {retentionEnabled && (
+                  <button
+                    onClick={() => setStep('offer')}
+                    className="flex-1 py-3 rounded-xl text-sm font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    style={{
+                      background: 'linear-gradient(135deg, #ffffff 0%, #e8f9fc 100%)',
+                      color: '#0a0a0a',
+                      boxShadow: '0 8px 32px rgba(78, 205, 230, 0.3), 0 0 0 2px rgba(78, 205, 230, 0.5)',
+                    }}
+                  >
+                    Get {retentionPercent}% Off →
+                  </button>
+                )}
               </div>
             </div>
           )}
