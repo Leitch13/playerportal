@@ -4,7 +4,7 @@
  * Phase 2.3a transforms the page into the academy owner's family
  * management hub. Three new components compose the body:
  *   - ParentsInsightsBar      (4 tiles, no MRR surfaced per spec)
- *   - AtRiskSection           (only when filter=all AND ≥1 at-risk family)
+ *   - FamiliesRequiringAttention (Phase 2.6 — grouped High/Medium)
  *   - ParentsTable            (client — search / filter / sort / actions)
  *
  * Read-only across the board. Subscriptions, payments, attendance,
@@ -20,7 +20,9 @@ import { createClient } from '@/lib/supabase/server'
 import EmptyState from '@/components/EmptyState'
 import ParentsInsightsBar from './ParentsInsightsBar'
 import ParentsTable, { type ParentsTableRow } from './ParentsTable'
-import AtRiskSection from './AtRiskSection'
+// Phase 2.6 — Families Requiring Attention (grouped High/Medium). Replaces
+// the prior single-tone AtRiskSection.
+import FamiliesRequiringAttention from './FamiliesRequiringAttention'
 import {
   deriveFamilyValue,
   deriveFamilyBillingStatus,
@@ -40,6 +42,9 @@ import { deriveTrialFollowUpBadge, pickMoreUrgentStage, type TrialStage } from '
 // Phase 2.5 — Last Contacted signal. Same loader/derive split as Phase 2.4:
 // I/O lives in contact-loader; the derive layer never queries.
 import { loadLastContactedMap } from '@/lib/contact-loader'
+// Phase 2.6 — At-Risk family rollup. Pure derive layer that consumes the
+// existing trial / contact / family-badge derive modules' outputs.
+import { deriveRisk } from '@/lib/at-risk-derive'
 
 // Cap defensively at 500 families per render. Above this → Phase 2.3b paginates.
 const ROW_CAP = 500
@@ -267,6 +272,15 @@ export default async function ParentsPage({
       if (badge) badges.push(badge)
     }
 
+    // ── Phase 2.6 — At-Risk rollup for THIS family ──
+    // Pure derive over the already-computed signals. No DB call here.
+    const contactSignal = contactSignalByParent.get(p.id) || null
+    const riskAssessment = deriveRisk({
+      trialStage: trialFollowUpStage,
+      badges,
+      contactSignal,
+    })
+
     return {
       id: p.id,
       parentName: p.full_name || '(unnamed)',
@@ -280,7 +294,11 @@ export default async function ParentsPage({
       joinedAtIso: p.created_at,
       // Phase 2.5 — attach the rolled-up contact signal. null when the
       // parent has no record in either messaging system.
-      contactSignal: contactSignalByParent.get(p.id) || null,
+      contactSignal,
+      // Phase 2.6 — At-Risk rollup. Derived above from trial / contact /
+      // badge signals; consumed by the new chip filters + the Families
+      // Requiring Attention section.
+      riskAssessment,
       editor: {
         id: p.id,
         // ParentProfileEditor's existing prop contract expects a non-null
@@ -305,9 +323,11 @@ export default async function ParentsPage({
   }
 
   // ─── 8. At-risk subset for the inline section ─────────────────────────
-  // Renders only when the current filter is "all" AND there's something
-  // actionable to surface (otherwise the chips already isolate the cohort).
-  const atRiskAll = tableRows.filter(r => needsAttention(r))
+  // Renders only when the current filter is "all" AND there's at least one
+  // High or Medium risk family to surface. Phase 2.6 grouped by tier.
+  const atRiskAll = tableRows.filter(r =>
+    r.riskAssessment && r.riskAssessment.riskLevel !== 'healthy',
+  )
   const filterIsAll = !params.filter || params.filter === 'all'
   const showAtRiskSection = filterIsAll && atRiskAll.length > 0
 
@@ -323,7 +343,7 @@ export default async function ParentsPage({
         ) : (
           <>
             {showAtRiskSection && (
-              <AtRiskSection families={atRiskAll} totalCount={atRiskAll.length} />
+              <FamiliesRequiringAttention families={atRiskAll} />
             )}
             <ParentsTable rows={tableRows} />
           </>

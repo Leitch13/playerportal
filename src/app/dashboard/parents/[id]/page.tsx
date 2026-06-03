@@ -41,6 +41,9 @@ import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
 import { deriveTrialFollowUpBadge, pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
 // Phase 2.5 — Last Contacted signal for the CommunicationPanel stats.
 import { loadLastContactedMap } from '@/lib/contact-loader'
+// Phase 2.6 — At-Risk rollup + banner. Display-only.
+import { deriveRisk } from '@/lib/at-risk-derive'
+import AtRiskBanner from './AtRiskBanner'
 
 export default async function ParentDetailPage({
   params,
@@ -236,6 +239,14 @@ export default async function ParentDetailPage({
   // ── Phase 2.5 — Last Contacted signal for THIS parent ──
   const contactMap = await loadLastContactedMap(supabase, [parentId]).catch(() => new Map())
   const contactSignal = contactMap.get(parentId) || null
+
+  // ── Phase 2.6 — At-Risk rollup for THIS family ──
+  // Pure derive — no DB call. Same inputs the Parents-list page computes.
+  const riskAssessment = deriveRisk({
+    trialStage: myFollowUpStage,
+    badges,
+    contactSignal,
+  })
   const activeSubsCount = (subsRows || []).filter(s => s.status === 'active' || s.status === 'trialing').length
 
   // ── 11. Compute display strings ──
@@ -257,6 +268,10 @@ export default async function ParentDetailPage({
           <span className="mx-1.5">/</span>
           <span className="text-white/60">{parentProfile.full_name || 'Family'}</span>
         </div>
+
+        {/* ── Phase 2.6 — At-Risk banner (display only). Renders nothing
+              for healthy families so the page chrome doesn't shift. ── */}
+        <AtRiskBanner assessment={riskAssessment} />
 
         {/* ── Family Summary ── */}
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 space-y-3">

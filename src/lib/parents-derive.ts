@@ -17,6 +17,14 @@ import {
   contactNeedsAttention,
   type LastContactSignal,
 } from './contact-derive'
+// Phase 2.6 — the at-risk rollup. Chip routing for needs_attention /
+// high_risk / no_contact / attendance_risk lives here so the matcher
+// composes cleanly with the existing parent-filter map.
+import {
+  matchesAtRiskFilter,
+  type RiskAssessment,
+  type AtRiskFilterKey,
+} from './at-risk-derive'
 
 // ─── Row contract used by the Parents table ────────────────────────────
 // Shape the client component receives. The server-rendered loader fully
@@ -36,6 +44,12 @@ export interface ParentRowFacts {
   // messaging system. Loader pre-computes this and attaches it once per
   // row; the client never re-queries.
   contactSignal?: LastContactSignal | null
+  // Phase 2.6 — server-computed risk assessment. Attached once per row by
+  // the page loader (calls `deriveRisk` from at-risk-derive). The filter
+  // matcher + Families Requiring Attention section both consume this.
+  // Optional for forward-compat — older tests can omit and rows degrade
+  // to riskLevel='healthy' for routing purposes.
+  riskAssessment?: RiskAssessment | null
 }
 
 // ─── Search-hay ────────────────────────────────────────────────────────
@@ -66,6 +80,9 @@ export type ParentFilterKey =
   | 'trial_followup'
   // Phase 2.5 — Last Contacted chips.
   | 'contacted_recently' | 'not_contacted_30d' | 'never_contacted'
+  // Phase 2.6 — At-Risk chips. Reuses matchesAtRiskFilter so the chip
+  // semantics live in exactly one place (at-risk-derive).
+  | 'needs_attention' | 'high_risk' | 'no_contact' | 'attendance_risk'
 
 /**
  * Returns true iff the row matches the active filter. Pure reduction
@@ -91,18 +108,29 @@ export function parentMatchesFilter(r: ParentRowFacts, filter: ParentFilterKey):
   if (filter === 'contacted_recently') return matchesContactFilter(r.contactSignal ?? null, 'contacted_recently')
   if (filter === 'not_contacted_30d')  return matchesContactFilter(r.contactSignal ?? null, 'not_contacted_30d')
   if (filter === 'never_contacted')    return matchesContactFilter(r.contactSignal ?? null, 'never_contacted')
+  // Phase 2.6 — At-Risk chips. If no riskAssessment was attached (e.g. a
+  // call site that hasn't loaded the new derive layer yet), default to
+  // healthy so the matcher returns false rather than throwing.
+  const filtersInAtRisk: AtRiskFilterKey[] = ['needs_attention', 'high_risk', 'no_contact', 'attendance_risk']
+  if (filtersInAtRisk.includes(filter as AtRiskFilterKey)) {
+    if (!r.riskAssessment) return false
+    return matchesAtRiskFilter(r.riskAssessment, filter as AtRiskFilterKey)
+  }
   return true
 }
 
 /**
- * A row "needs attention" if it has at least one actionable badge OR
- * its contact signal is `never_contacted` / `not_contacted_30d`. Per the
- * Phase 2.5 user decision: `contacted_recently` is a POSITIVE signal and
- * does NOT contribute here.
+ * A row "needs attention" if it falls into HIGH or MEDIUM risk per the
+ * Phase 2.6 rollup. We prefer the at-risk assessment when available
+ * because it's the canonical "does this need work" answer used by every
+ * surface. Falls back to the pre-2.6 badge + contact checks when no
+ * assessment is attached (e.g. legacy call sites or tests).
  *
- * 'sibling_eligible' is excluded — also a positive marker.
+ * 'sibling_eligible' is a positive marker and is excluded from the
+ * legacy fallback.
  */
 export function needsAttention(r: ParentRowFacts): boolean {
+  if (r.riskAssessment) return r.riskAssessment.riskLevel !== 'healthy'
   if (r.badges.some(b => b.key !== 'sibling_eligible')) return true
   return contactNeedsAttention(r.contactSignal ?? null)
 }

@@ -44,6 +44,12 @@ const FILTER_CHIPS: Array<{ key: ParentFilterKey; label: string }> = [
   { key: 'contacted_recently', label: 'Contacted recently' },
   { key: 'not_contacted_30d', label: 'Not contacted 30+ days' },
   { key: 'never_contacted', label: 'Never contacted' },
+  // Phase 2.6 — At-Risk chips. Tier / no-contact / attendance breakouts route
+  // through at-risk-derive so all surfaces agree on what counts as risk.
+  { key: 'needs_attention', label: 'Needs attention' },
+  { key: 'high_risk', label: 'High risk' },
+  { key: 'no_contact', label: 'No contact' },
+  { key: 'attendance_risk', label: 'Attendance risk' },
 ]
 
 const SORT_OPTIONS: Array<{ key: ParentSortKey; label: string }> = [
