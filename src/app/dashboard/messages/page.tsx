@@ -30,6 +30,7 @@ import { requireFeature } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
 import BulkMessageForm from './BulkMessageForm'
 import MessagesList from './MessagesList'
+import ComposeButton from './ComposeButton'
 import { deriveThreads, type MessageRow, type ProfileLite } from '@/lib/messages-derive'
 import { validateRecipientsParam } from '@/lib/recipients-validate'
 
@@ -144,13 +145,15 @@ export default async function MessagesPage({
         </p>
       </div>
 
-      {showBulkPanel && (
+      {showBulkPanel ? (
         <BulkMessageForm
           orgId={orgId}
           customRecipientIds={validation.ids}
           customRecipientLabels={validation.labels}
           autoOpen
         />
+      ) : (
+        <ComposeButton recipients={recipients} />
       )}
 
       <MessagesList currentUserId={user.id} threads={threads} />

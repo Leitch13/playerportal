@@ -51,7 +51,11 @@ export default function MessagesList({
             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
           })
           return (
-            <div key={t.threadId} className="p-4 hover:bg-white/[0.02] transition-colors">
+            <Link
+              key={t.threadId}
+              href={`/dashboard/messages/${t.threadId}`}
+              className="block p-4 hover:bg-white/[0.04] transition-colors cursor-pointer focus:outline-none focus:bg-white/[0.05]"
+            >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -75,13 +79,12 @@ export default function MessagesList({
                 </div>
                 <div className="text-[10px] text-white/40 tabular-nums shrink-0 whitespace-nowrap">{when}</div>
               </div>
-            </div>
+            </Link>
           )
         })}
       </div>
       <p className="text-[10px] text-white/30 px-1">
-        Conversations are grouped by thread. Clicking a row opens the thread view (full thread UI coming soon).
-        <Link href="/dashboard/parents" className="ml-1 text-[#4ecde6]/70 hover:text-[#4ecde6]"> Send a message via Parents →</Link>
+        Conversations are grouped by thread. Click any row to open the full thread.
       </p>
     </div>
   )

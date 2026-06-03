@@ -78,19 +78,29 @@ export async function POST(req: NextRequest) {
     .eq('id', user.id)
     .single()
   if (!senderProfile) return NextResponse.json({ ok: false, error: 'sender profile not found' }, { status: 404 })
-  // Sender must be admin or coach to use this endpoint (parents reply via
-  // a different surface that will be wired in a later phase if needed).
-  if (!['admin', 'coach'].includes(senderProfile.role)) {
+  // Sender must be admin, coach, or parent. Parents are allowed but
+  // restricted to messaging staff (admin/coach) within their own org.
+  // Cross-tenant sends are blocked by the org-scoped recipient resolution
+  // below regardless of sender role.
+  const senderRole = senderProfile.role as 'admin' | 'coach' | 'parent' | string
+  if (!['admin', 'coach', 'parent'].includes(senderRole)) {
     return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
   }
   const orgId = senderProfile.organisation_id as string
 
   // ─── 2. Resolve recipients (defence-in-depth org match) ─────────────
-  const { data: recipientProfiles } = await supabase
+  // Parents may only message admin/coach roles. Admin/coach may message anyone
+  // in the org. This is enforced server-side so a parent posting an arbitrary
+  // recipientIds list cannot reach another parent.
+  let recipientQuery = supabase
     .from('profiles')
-    .select('id, full_name, email, organisation_id')
+    .select('id, full_name, email, organisation_id, role')
     .in('id', recipientIds)
     .eq('organisation_id', orgId)
+  if (senderRole === 'parent') {
+    recipientQuery = recipientQuery.in('role', ['admin', 'coach'])
+  }
+  const { data: recipientProfiles } = await recipientQuery
   const recipientMap = new Map<string, { id: string; full_name: string | null; email: string | null }>()
   for (const p of (recipientProfiles || [])) {
     recipientMap.set(p.id as string, { id: p.id as string, full_name: (p as { full_name?: string }).full_name ?? null, email: (p as { email?: string }).email ?? null })
@@ -161,6 +171,7 @@ export async function POST(req: NextRequest) {
     // Step B — attempt to send the notification email.
     let deliveryStatus: 'sent' | 'failed' | 'skipped' = 'skipped'
     let deliveryFailureReason: string | null = null
+    let providerMessageId: string | null = null
 
     if (!recipient.email) {
       deliveryStatus = 'skipped'
@@ -188,6 +199,7 @@ export async function POST(req: NextRequest) {
           deliveryFailureReason = ((res as { error?: { message?: string } }).error?.message || 'send failed').slice(0, 300)
         } else {
           deliveryStatus = 'sent'
+          providerMessageId = (res as { id?: string }).id ?? null
           emailedCount++
         }
       } catch (e) {
@@ -210,6 +222,7 @@ export async function POST(req: NextRequest) {
           delivery_completed_at: new Date().toISOString(),
           delivery_failure_reason: deliveryFailureReason,
           recipient_email_snapshot: recipient.email,
+          provider_message_id: providerMessageId,
         })
         .eq('id', messageId)
     } catch {
@@ -224,5 +237,6 @@ export async function POST(req: NextRequest) {
     failed: failedCount,
     skipped: sentCount - emailedCount,
     messageIds,
+    threadId,   // surfaced so ComposeButton can navigate into the new thread
   })
 }
