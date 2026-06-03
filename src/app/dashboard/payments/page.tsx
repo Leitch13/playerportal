@@ -15,6 +15,13 @@ import PaymentLinkGenerator from './PaymentLinkGenerator'
 import Link from 'next/link'
 import FinancialBreakdown from './FinancialBreakdown'
 import SendReminderButton from './SendReminderButton'
+// Parent Subscription Hub section components (built in this PR)
+import MembershipOverview from './MembershipOverview'
+import MyChildrenList, { type ChildSummary } from './MyChildrenList'
+import ActiveClassesList, { type ActiveClass } from './ActiveClassesList'
+import BillingPanel, { type BillingFacts } from './BillingPanel'
+import MembershipManagement from './MembershipManagement'
+import AvailableUpgrades from './AvailableUpgrades'
 
 export default async function PaymentsPage({
   searchParams,
@@ -102,7 +109,7 @@ async function ParentPayments({
 
   const { data: myPlayers } = await supabase
     .from('players')
-    .select('id, first_name, last_name')
+    .select('id, first_name, last_name, date_of_birth')
     .eq('parent_id', userId)
 
   const playerIds = (myPlayers || []).map((p) => p.id)
@@ -152,6 +159,103 @@ async function ParentPayments({
     return sum + (plan ? Number(plan.amount) : 0)
   }, 0)
 
+  // ─── HUB: extra fetches for the new sections (org policy + retention + payment dates) ───
+  // Try the post-075 column set first; gracefully fall back if migration not yet applied.
+  // Mirrors the cancel-page pattern from earlier this session.
+  type OrgRow = {
+    name?: string
+    cancellation_notice_days?: number
+    cancellation_policy?: string | null
+    retention_offer_enabled?: boolean
+    retention_offer_percent?: number
+    retention_offer_months?: number | null
+  }
+  let orgRow: OrgRow | null = null
+  if (orgId) {
+    const full = 'name, cancellation_notice_days, cancellation_policy, retention_offer_enabled, retention_offer_percent, retention_offer_months'
+    const legacy = 'name, cancellation_notice_days, retention_offer_enabled, retention_offer_percent, retention_offer_months'
+    const first = await supabase.from('organisations').select(full).eq('id', orgId).single()
+    if (first.error && first.error.code === '42703') {
+      const fallback = await supabase.from('organisations').select(legacy).eq('id', orgId).single()
+      orgRow = (fallback.data ?? null) as unknown as OrgRow | null
+    } else {
+      orgRow = (first.data ?? null) as unknown as OrgRow | null
+    }
+  }
+  const academyName = orgRow?.name || 'your academy'
+  const cancellationNoticeDays = Number(orgRow?.cancellation_notice_days ?? 0)
+  const cancellationPolicy = orgRow?.cancellation_policy ?? null
+  const retentionEnabled = orgRow?.retention_offer_enabled !== false
+  const retentionPercent = Number(orgRow?.retention_offer_percent ?? 50)
+  const retentionMonths: number | null = orgRow?.retention_offer_months === undefined
+    ? 1
+    : orgRow.retention_offer_months == null ? null : Number(orgRow.retention_offer_months)
+
+  // ─── HUB: derive per-child summary (count of active enrolments + sessions/week) ───
+  const enrolByPlayer = new Map<string, number>()
+  for (const e of bookedClasses) {
+    enrolByPlayer.set(e.player_id, (enrolByPlayer.get(e.player_id) || 0) + 1)
+  }
+  // sessions_per_week comes from the parent's ACTIVE subs (plan-level field).
+  const sessionsByPlayer = new Map<string, number>()
+  for (const s of activeSubs) {
+    const plan = s.plan as unknown as SubscriptionPlan & { sessions_per_week?: number | null }
+    const pid = (s as { player_id?: string }).player_id
+    if (!pid || !plan) continue
+    sessionsByPlayer.set(pid, (sessionsByPlayer.get(pid) || 0) + Number(plan.sessions_per_week ?? 0))
+  }
+  const childSummaries: ChildSummary[] = (myPlayers || []).map((p) => ({
+    id: p.id as string,
+    first_name: (p as { first_name?: string }).first_name || '',
+    last_name: (p as { last_name?: string }).last_name || '',
+    date_of_birth: (p as { date_of_birth?: string | null }).date_of_birth ?? null,
+    activeClassCount: enrolByPlayer.get(p.id as string) || 0,
+    sessionsPerWeek: sessionsByPlayer.get(p.id as string) || 0,
+  }))
+
+  // ─── HUB: enrich enrolments with the child's name (one extra denormalised join) ───
+  const playerById = new Map<string, { first_name: string; last_name: string }>()
+  for (const p of myPlayers || []) playerById.set(p.id as string, {
+    first_name: (p as { first_name?: string }).first_name || '',
+    last_name: (p as { last_name?: string }).last_name || '',
+  })
+  const activeClassesEnriched: ActiveClass[] = bookedClasses.map(b => ({
+    id: b.id,
+    player_id: b.player_id,
+    group_id: b.group_id,
+    group: b.group,
+    child: playerById.get(b.player_id) || null,
+  }))
+
+  // ─── HUB: derive billing facts ───
+  const paidPayments = (payments || []).filter(p => Number(p.amount_paid || 0) > 0).sort((a, b) => {
+    const ad = a.paid_date || a.created_at || a.due_date
+    const bd = b.paid_date || b.created_at || b.due_date
+    return String(bd).localeCompare(String(ad))
+  })
+  const lastPaid = paidPayments[0] || null
+  // Next payment = earliest current_period_end across active subs
+  let nextPaymentIso: string | null = null
+  let nextPaymentAmount: number | null = null
+  for (const s of activeSubs) {
+    const ts = (s as { current_period_end?: string | null }).current_period_end
+    if (!ts) continue
+    if (!nextPaymentIso || String(ts) < String(nextPaymentIso)) {
+      nextPaymentIso = String(ts)
+      nextPaymentAmount = Number((s.plan as unknown as SubscriptionPlan)?.amount ?? 0)
+    }
+  }
+  const billingFacts: BillingFacts = {
+    hasStripeCustomer,
+    outstanding,
+    totalPaid,
+    overdueCount,
+    lastPaymentDate: lastPaid?.paid_date || lastPaid?.created_at || null,
+    lastPaymentAmount: lastPaid ? Number(lastPaid.amount_paid || 0) : null,
+    nextPaymentDate: nextPaymentIso,
+    nextPaymentAmount,
+  }
+
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
@@ -181,86 +285,35 @@ async function ParentPayments({
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-          <div className="text-center">
-            <div className="text-xl font-bold text-[#4ecde6]">&pound;{monthlyTotal.toFixed(0)}</div>
-            <div className="text-xs text-white/60 mt-0.5">Monthly</div>
-          </div>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-          <div className="text-center">
-            <div className={`text-xl font-bold ${outstanding > 0 ? 'text-orange-400' : 'text-[#4ecde6]'}`}>
-              &pound;{outstanding.toFixed(2)}
-            </div>
-            <div className="text-xs text-white/60 mt-0.5">Outstanding</div>
-          </div>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-          <div className="text-center">
-            <div className="text-xl font-bold text-accent">&pound;{totalPaid.toFixed(2)}</div>
-            <div className="text-xs text-white/60 mt-0.5">Total Paid</div>
-          </div>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-          <div className="text-center">
-            <div className={`text-xl font-bold ${overdueCount > 0 ? 'text-red-400' : 'text-[#4ecde6]'}`}>
-              {overdueCount}
-            </div>
-            <div className="text-xs text-white/60 mt-0.5">Overdue</div>
-          </div>
-        </div>
-      </div>
+      {/* ═══════════════════════════════════════════════════════════
+          PARENT SUBSCRIPTION HUB — 6 composed sections per approved plan.
+          Order: Membership · Children · Classes · Billing · Management · Upgrades
+          Sections are pure presentation; all Stripe/cancel/messaging flows
+          are reused unchanged through deep links + the existing components.
+          ═══════════════════════════════════════════════════════════ */}
 
-      {activeSubs.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Your Subscriptions</h2>
-          {activeSubs.map((sub) => {
-            const plan = sub.plan as unknown as SubscriptionPlan
-            const player = sub.player as unknown as { first_name: string; last_name: string } | null
-            const periodEnd = sub.current_period_end
-              ? new Date(sub.current_period_end).toLocaleDateString()
-              : null
+      <MembershipOverview activeSubs={activeSubs as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />
 
-            return (
-              <div key={sub.id} className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-semibold text-sm">
-                      {plan?.name || 'Subscription'}
-                      {player && (
-                        <span className="text-white/60 font-normal">
-                          {' '}&mdash; {player.first_name} {player.last_name}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-white/60 mt-1 space-y-0.5">
-                      <div>&pound;{plan ? Number(plan.amount).toFixed(2) : '—'}/month</div>
-                      {periodEnd && <div>Next payment: {periodEnd}</div>}
-                      {sub.cancel_at_period_end && (
-                        <div className="text-orange-400 font-medium">Cancels at end of period</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <StatusBadge status={sub.status} />
-                    {!sub.cancel_at_period_end && (
-                      <Link
-                        href="/dashboard/payments/cancel"
-                        className="text-xs text-rose-300/80 hover:text-rose-200 underline underline-offset-2 transition-colors"
-                        data-testid="cancel-subscription-link"
-                      >
-                        Cancel subscription
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      <MyChildrenList children={childSummaries} />
 
+      <ActiveClassesList
+        classes={activeClassesEnriched}
+        retentionEnabled={retentionEnabled}
+        retentionPercent={retentionPercent}
+        retentionMonths={retentionMonths}
+      />
+
+      <BillingPanel facts={billingFacts} />
+
+      <MembershipManagement
+        hasActiveSub={activeSubs.length > 0}
+        noticeDays={cancellationNoticeDays}
+        policyText={cancellationPolicy}
+        academyName={academyName}
+      />
+
+      {/* Pending subs (incomplete checkouts) — only show when present.
+          Uses the existing SubscribeButton to complete activation. */}
       {otherSubs.filter((s) => s.status === 'incomplete').length > 0 && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Pending Subscriptions</h2>
@@ -305,256 +358,8 @@ async function ParentPayments({
         </div>
       )}
 
-      {bookedClasses.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Your Booked Classes</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {bookedClasses.map((bc) => {
-              const player = (myPlayers || []).find((p) => p.id === bc.player_id)
-              const group = bc.group
-              const isToday =
-                group?.day_of_week ===
-                new Date().toLocaleDateString('en-GB', { weekday: 'long' })
+      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} />
 
-              return (
-                <div
-                  key={bc.id}
-                  className={`rounded-xl border p-4 ${
-                    isToday ? 'border-[#4ecde6] bg-[#4ecde6]/5 ring-1 ring-[#4ecde6]/20' : 'border-white/[0.08] bg-white/[0.05]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <div className="font-semibold text-sm">{group?.name || 'Class'}</div>
-                    {isToday && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
-                        Today
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-bold text-[#4ecde6]">{group?.day_of_week || '—'}</span>
-                      {group?.time_slot && (
-                        <span className="text-primary font-medium">{group.time_slot}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-white/60">
-                      {group?.location && <span>{group.location}</span>}
-                      {group?.coach?.full_name && <span>{group.coach.full_name}</span>}
-                    </div>
-                    {player && (
-                      <div className="flex items-center gap-1.5 text-xs pt-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
-                        <span className="text-[#4ecde6] font-medium">
-                          {player.first_name} {player.last_name}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className="text-center">
-            <a
-              href="/dashboard/schedule"
-              className="text-xs text-[#4ecde6] hover:underline font-medium"
-            >
-              View full schedule & book more classes &rarr;
-            </a>
-          </div>
-        </div>
-      )}
-
-      {bookedClasses.length === 0 && (
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-          <div className="text-center py-4 space-y-2">
-            <p className="text-sm text-white/60">No classes booked yet.</p>
-            <a
-              href="/dashboard/schedule"
-              className="inline-block px-4 py-2 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-medium hover:bg-[#4ecde6]/90 transition-colors"
-            >
-              Browse & Book Classes
-            </a>
-          </div>
-        </div>
-      )}
-
-      {(plans || []).length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">
-            {activeSubs.length > 0 ? 'Change or Add Plan' : 'Choose a Plan'}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {(plans || []).map((plan) => {
-              const existingForPlan = activeSubs.filter((s) => s.plan_id === plan.id)
-              const subscribedPlayerIds = existingForPlan.map((s) => s.player_id)
-              const unsubscribedPlayers = (myPlayers || []).filter(
-                (p) => !subscribedPlayerIds.includes(p.id)
-              )
-              const isFullySubscribed = unsubscribedPlayers.length === 0 && existingForPlan.length > 0
-
-              return (
-                <div
-                  key={plan.id}
-                  className={`rounded-xl border p-4 ${
-                    isFullySubscribed
-                      ? 'border-[#4ecde6]/30 bg-[#4ecde6]/5'
-                      : 'border-white/[0.08] bg-white/[0.05]'
-                  }`}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="font-semibold">{plan.name}</div>
-                        {plan.description && (
-                          <div className="text-xs text-white/60 mt-0.5">{plan.description}</div>
-                        )}
-                      </div>
-                      {isFullySubscribed && (
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-[#4ecde6]/10 text-[#4ecde6] font-medium">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-white">&pound;{Number(plan.amount).toFixed(0)}</span>
-                      <span className="text-sm text-white/60">/month</span>
-                    </div>
-                    <div className="text-xs text-white/60">
-                      {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} per week
-                    </div>
-
-                    {existingForPlan.length > 0 && (
-                      <div className="space-y-1">
-                        {existingForPlan.map((sub) => {
-                          const player = sub.player as unknown as { first_name: string; last_name: string } | null
-                          return (
-                            <div key={sub.id} className="flex items-center gap-1.5 text-xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#4ecde6]" />
-                              <span className="text-[#4ecde6] font-medium">
-                                {player ? `${player.first_name} ${player.last_name}` : 'Subscribed'}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {!isFullySubscribed && unsubscribedPlayers.length > 0 && (
-                      <div className="space-y-2">
-                        {unsubscribedPlayers.map((player) => (
-                          <SubscribeButton
-                            key={player.id}
-                            planId={plan.id}
-                            planName={plan.name}
-                            amount={plan.amount}
-                            interval={plan.interval}
-                            playerId={player.id}
-                            label={`Subscribe ${player.first_name}`}
-                          />
-                        ))}
-                      </div>
-                    )}
-
-                    {!isFullySubscribed && unsubscribedPlayers.length === 0 && existingForPlan.length === 0 && (
-                      <SubscribeButton
-                        planId={plan.id}
-                        planName={plan.name}
-                        amount={plan.amount}
-                        interval={plan.interval}
-                      />
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Payment History</h2>
-          {(payments || []).length > 0 && (
-            <Link
-              href="/dashboard/payments/statement"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-xs font-medium text-white/80 hover:bg-white/[0.1] transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              View Statement
-            </Link>
-          )}
-        </div>
-        {(payments || []).length === 0 ? (
-          <EmptyState message="No payment records found." />
-        ) : (
-          <div className="space-y-2">
-            {(payments || []).map((p) => {
-              const due = Number(p.amount)
-              const paid = Number(p.amount_paid || 0)
-              const remaining = due - paid
-              const pct = due > 0 ? Math.min(100, Math.round((paid / due) * 100)) : 0
-              const canPay = remaining > 0 && p.status !== 'paid'
-
-              return (
-                <div key={p.id} className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="font-medium text-sm">{p.description || 'Payment'}</div>
-                        <div className="text-xs text-white/60">
-                          {(p.player as unknown as { first_name: string; last_name: string })
-                            ? `${(p.player as unknown as { first_name: string; last_name: string }).first_name} ${(p.player as unknown as { first_name: string; last_name: string }).last_name}`
-                            : ''}
-                          {p.due_date && ` · Due ${new Date(p.due_date).toLocaleDateString()}`}
-                        </div>
-                      </div>
-                      <StatusBadge status={p.status} />
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-white/60">
-                        &pound;{paid.toFixed(2)} of &pound;{due.toFixed(2)}
-                      </span>
-                      <span className="font-medium">
-                        {p.status === 'paid' ? 'Paid in full' : `${pct}% paid`}
-                      </span>
-                    </div>
-                    <div className="w-full bg-white/[0.05] rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          p.status === 'paid'
-                            ? 'bg-[#4ecde6]'
-                            : p.status === 'overdue'
-                              ? 'bg-red-400'
-                              : 'bg-[#4ecde6]'
-                        }`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 pt-1">
-                      {canPay && (
-                        <PayNowButton paymentId={p.id as string} remaining={remaining} />
-                      )}
-                      <Link
-                        href={`/dashboard/payments/invoice/${p.id}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#4ecde6] hover:text-[#4ecde6]/80 transition-colors"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        {p.status === 'paid' ? 'View Receipt' : 'View Invoice'}
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
     </div>
     </div>
   )
