@@ -23,6 +23,11 @@ import SmartInsights from '@/components/SmartInsights'
 import RevenueForecast from '@/components/RevenueForecast'
 import PlayersNeedingAttention, { type AttentionPlayer } from '@/components/PlayersNeedingAttention'
 import BirthdaysThisWeek, { type BirthdayPlayer } from '@/components/BirthdaysThisWeek'
+// Phase 2.9 — Dashboard Action Queue (presentation only). Consumes the
+// existing Phase 2.4-2.8 derive layers via the loader; no new business
+// logic on the dashboard.
+import DashboardActionQueue from '@/components/DashboardActionQueue'
+import { loadDashboardActionQueue } from '@/lib/dashboard-action-queue-loader'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -1258,6 +1263,17 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) {
   const supabase = await createClient()
 
+  // Phase 2.9 — Dashboard Action Queue counts. Fully guarded inside the
+  // loader (returns zeros on failure) so this CANNOT crash the dashboard
+  // the way the Phase 1 widgets did. We deliberately await it eagerly
+  // rather than in Promise.all because the loader is small + the
+  // dashboard is already deeply sequential; a parallel race here is more
+  // complex than the latency saving warrants.
+  const actionQueueCounts = await loadDashboardActionQueue(supabase, orgId).catch(() => ({
+    trialFollowUps: 0, paymentIssues: 0, atRiskFamilies: 0,
+    attendanceRisks: 0, reviewsDue: 0, total: 0,
+  }))
+
   // Key stats
   const { count: totalPlayers } = await supabase
     .from('players')
@@ -1582,6 +1598,15 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           todaysSessions={(todaysGroups || []).length}
           activeSubs={activeSubs || 0}
         />
+
+        {/* ═══ PHASE 2.9 — ACTION QUEUE ═══
+            Sits between AdminHero and Onboarding/SmartInsights so the
+            academy owner sees "what should I do today?" before they scan
+            the wider analytics. Pure presentation; the loader does the
+            I/O. Renders an "All clear" empty state when total === 0. */}
+        <div className="mt-6">
+          <DashboardActionQueue counts={actionQueueCounts} />
+        </div>
 
         {/* ═══ ONBOARDING CHECKLIST ═══ */}
         {showOnboarding && (
