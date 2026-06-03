@@ -40,6 +40,11 @@ import {
 // rows stay surfaced on /dashboard/enrolments and /dashboard/trials.
 import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
 import { pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
+// Phase 2.5 — optional "No contact 30+ days" badge per player. Keyed by
+// the player's parent_id since contact is captured per parent profile,
+// not per child.
+import { loadLastContactedMap } from '@/lib/contact-loader'
+import { contactBucket } from '@/lib/contact-derive'
 
 // Cap defensively at 500 rows per render. Jamie has ~30; the largest org
 // we serve has well under 500. Above this, we'd paginate (Phase 2.2).
@@ -136,6 +141,26 @@ export default async function PlayersPage({
     }
   }
 
+  // ── 4a. Phase 2.5 — Last Contacted, scoped to the parent_ids referenced
+  //         by these players. We don't need the full signal here — just a
+  //         boolean per player: "is this child's parent stale_30plus OR
+  //         never_contacted?". The badge is purely informational, no chip
+  //         filter, no action.
+  const parentIdsForContact = [...new Set(players.map(p => p.parent_id).filter(Boolean) as string[])]
+  const contactByParent = parentIdsForContact.length > 0
+    ? await loadLastContactedMap(supabase, parentIdsForContact).catch(() => new Map())
+    : new Map()
+  const noContact30dByPlayer = new Map<string, boolean>()
+  for (const p of players) {
+    if (!p.parent_id) continue
+    const sig = contactByParent.get(p.parent_id) || null
+    const bucket = contactBucket(sig)
+    // Only flag stale OR never — recent contacts get no badge.
+    if (bucket === 'stale_30plus' || bucket === 'never') {
+      noContact30dByPlayer.set(p.id, true)
+    }
+  }
+
   // ── 4b. Phase 2.4 — trial follow-up cohort, scoped to playerId only ──
   // Booking-source rows have no FK to a player; they continue to surface
   // on the Enrolments + Trials pages but NEVER produce a player-row badge
@@ -174,6 +199,9 @@ export default async function PlayersPage({
       joinedAt: p.created_at,
       // null when this player is not in the follow-up cohort.
       trialFollowUpStage: followUpStageByPlayerId.get(p.id) ?? null,
+      // Phase 2.5 — true when the player's parent has not been contacted
+      // in 30+ days OR has never been contacted. False/undefined otherwise.
+      noContact30dPlus: noContact30dByPlayer.get(p.id) ?? false,
     }
   })
 

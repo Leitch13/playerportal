@@ -9,6 +9,14 @@
  */
 
 import type { FamilyBadge } from './family-derive'
+// Phase 2.5 — contact-signal filter routing. Same pattern as the trial-
+// follow-up filter added in Phase 2.4: derive-layer lives in its own
+// module; this file just routes the filter chip key to the matcher.
+import {
+  matchesContactFilter,
+  contactNeedsAttention,
+  type LastContactSignal,
+} from './contact-derive'
 
 // ─── Row contract used by the Parents table ────────────────────────────
 // Shape the client component receives. The server-rendered loader fully
@@ -24,6 +32,10 @@ export interface ParentRowFacts {
   billingStatus: 'healthy' | 'payment_issue' | 'pending_start' | 'none'
   badges: FamilyBadge[]
   joinedAtIso: string
+  // Phase 2.5 — null when the parent has no contact record in either
+  // messaging system. Loader pre-computes this and attaches it once per
+  // row; the client never re-queries.
+  contactSignal?: LastContactSignal | null
 }
 
 // ─── Search-hay ────────────────────────────────────────────────────────
@@ -42,12 +54,18 @@ export function parentSearchHay(r: ParentRowFacts): string {
   ].join(' ').toLowerCase()
 }
 
+// Note: Phase 2.5 intentionally does NOT add 'never' / 'stale' tokens to the
+// search hay — those are filter-chip semantics. Search stays scoped to
+// parent + child identifying strings.
+
 // ─── Filter routing ────────────────────────────────────────────────────
 
 export type ParentFilterKey =
   | 'all' | 'healthy' | 'payment_issues' | 'pending_starts'
   | 'trials' | 'no_attendance_30d' | 'review_due' | 'attention'
   | 'trial_followup'
+  // Phase 2.5 — Last Contacted chips.
+  | 'contacted_recently' | 'not_contacted_30d' | 'never_contacted'
 
 /**
  * Returns true iff the row matches the active filter. Pure reduction
@@ -68,15 +86,25 @@ export function parentMatchesFilter(r: ParentRowFacts, filter: ParentFilterKey):
   if (filter === 'attention')       return needsAttention(r)
   // Phase 2.4 — match BOTH badge variants for the trial follow-up filter.
   if (filter === 'trial_followup')  return r.badges.some(b => b.key === 'trial_followup_due' || b.key === 'trial_stale_followup')
+  // Phase 2.5 — Last Contacted chips. Routed through contact-derive so the
+  // 30-day threshold lives in exactly one place.
+  if (filter === 'contacted_recently') return matchesContactFilter(r.contactSignal ?? null, 'contacted_recently')
+  if (filter === 'not_contacted_30d')  return matchesContactFilter(r.contactSignal ?? null, 'not_contacted_30d')
+  if (filter === 'never_contacted')    return matchesContactFilter(r.contactSignal ?? null, 'never_contacted')
   return true
 }
 
 /**
- * A row "needs attention" if it has at least one actionable badge.
- * 'sibling_eligible' is a positive marker, not an attention signal.
+ * A row "needs attention" if it has at least one actionable badge OR
+ * its contact signal is `never_contacted` / `not_contacted_30d`. Per the
+ * Phase 2.5 user decision: `contacted_recently` is a POSITIVE signal and
+ * does NOT contribute here.
+ *
+ * 'sibling_eligible' is excluded — also a positive marker.
  */
 export function needsAttention(r: ParentRowFacts): boolean {
-  return r.badges.some(b => b.key !== 'sibling_eligible')
+  if (r.badges.some(b => b.key !== 'sibling_eligible')) return true
+  return contactNeedsAttention(r.contactSignal ?? null)
 }
 
 // ─── Sort routing ──────────────────────────────────────────────────────

@@ -39,6 +39,8 @@ import {
 // appended to the existing FamilyInsightsBar — no new section.
 import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
 import { deriveTrialFollowUpBadge, pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
+// Phase 2.5 — Last Contacted signal for the CommunicationPanel stats.
+import { loadLastContactedMap } from '@/lib/contact-loader'
 
 export default async function ParentDetailPage({
   params,
@@ -230,6 +232,10 @@ export default async function ParentDetailPage({
     const fbadge = deriveTrialFollowUpBadge(myFollowUpStage)
     if (fbadge) badges.push(fbadge)
   }
+
+  // ── Phase 2.5 — Last Contacted signal for THIS parent ──
+  const contactMap = await loadLastContactedMap(supabase, [parentId]).catch(() => new Map())
+  const contactSignal = contactMap.get(parentId) || null
   const activeSubsCount = (subsRows || []).filter(s => s.status === 'active' || s.status === 'trialing').length
 
   // ── 11. Compute display strings ──
@@ -328,6 +334,7 @@ export default async function ParentDetailPage({
           parentEmail={parentProfile.email}
           parentPhone={parentProfile.phone}
           messageCount={messageCount}
+          contactSignal={contactSignal}
         />
       </div>
     </div>

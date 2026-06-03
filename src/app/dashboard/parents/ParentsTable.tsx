@@ -25,6 +25,8 @@ import {
   type ParentFilterKey,
   type ParentSortKey,
 } from '@/lib/parents-derive'
+// Phase 2.5 — Last Contacted column. Pure helpers, no I/O.
+import { formatContactAge, contactBucket } from '@/lib/contact-derive'
 
 const FILTER_CHIPS: Array<{ key: ParentFilterKey; label: string }> = [
   { key: 'all', label: 'All' },
@@ -37,6 +39,11 @@ const FILTER_CHIPS: Array<{ key: ParentFilterKey; label: string }> = [
   { key: 'trial_followup', label: 'Trial follow-up due' },
   { key: 'no_attendance_30d', label: 'No attendance (30d)' },
   { key: 'review_due', label: 'Review due' },
+  // Phase 2.5 — Last Contacted chips. Routed via matchesContactFilter so the
+  // 30-day boundary stays in exactly one place (contact-derive.ts).
+  { key: 'contacted_recently', label: 'Contacted recently' },
+  { key: 'not_contacted_30d', label: 'Not contacted 30+ days' },
+  { key: 'never_contacted', label: 'Never contacted' },
 ]
 
 const SORT_OPTIONS: Array<{ key: ParentSortKey; label: string }> = [
@@ -189,12 +196,14 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Monthly value</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Billing health</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Attention</th>
+                {/* Phase 2.5 — Last contact column, hidden below lg to avoid horizontal overflow on tablets. */}
+                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden lg:table-cell">Last contact</th>
                 <th className="text-right py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {visibleRows.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-white/40 text-sm">No families match this filter.</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-white/40 text-sm">No families match this filter.</td></tr>
               ) : visibleRows.map(r => <ParentRow key={r.id} r={r} />)}
             </tbody>
           </table>
@@ -257,6 +266,23 @@ function ParentRow({ r }: { r: ParentsTableRow }) {
             {actionableBadges.length > 3 && <span className="text-[10px] text-white/40">+{actionableBadges.length - 3}</span>}
           </div>
         )}
+      </td>
+      {/* Phase 2.5 — Last contact cell. Three-state colour:
+            • Today/recent_7d/recent_30d → muted (no signal needed)
+            • stale_30plus               → amber (mild warning)
+            • never                      → rose  (loudest — needs first contact)
+          Pure render from the pre-attached signal; no client-side fetch. */}
+      <td className="py-2.5 px-3 hidden lg:table-cell">
+        {(() => {
+          const sig = r.contactSignal ?? null
+          const bucket = contactBucket(sig)
+          const label = formatContactAge(sig)
+          const cls =
+            bucket === 'never'        ? 'text-rose-300'
+            : bucket === 'stale_30plus' ? 'text-amber-300'
+            : 'text-white/70'
+          return <span className={`text-xs tabular-nums ${cls}`}>{label}</span>
+        })()}
       </td>
       <td className="py-2.5 px-3 text-right">
         <div className="inline-flex items-center gap-1 whitespace-nowrap">

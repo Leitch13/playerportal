@@ -37,6 +37,9 @@ import { needsAttention } from '@/lib/parents-derive'
 // Reused verbatim — derivation logic lives in trial-derive.ts.
 import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
 import { deriveTrialFollowUpBadge, pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
+// Phase 2.5 — Last Contacted signal. Same loader/derive split as Phase 2.4:
+// I/O lives in contact-loader; the derive layer never queries.
+import { loadLastContactedMap } from '@/lib/contact-loader'
 
 // Cap defensively at 500 families per render. Above this → Phase 2.3b paginates.
 const ROW_CAP = 500
@@ -170,6 +173,13 @@ export default async function ParentsPage({
     }
   }
 
+  // ─── 5a. Phase 2.5 — Last Contacted signal per parent ────────────────
+  // Reads BOTH messaging systems (legacy public.messages + new
+  // public.conversation_messages) in parallel and maxes the latest. Failure
+  // swallowed inside the loader → empty map; the page never crashes.
+  // READ-ONLY. No writes. No Stripe / cron / email touched.
+  const contactSignalByParent = await loadLastContactedMap(supabase, parentIds).catch(() => new Map())
+
   // ─── 5b. Phase 2.4 — Trial follow-up cohort + parent lookup maps ─────
   // Reuses the same loader as the Enrolments page. READ-ONLY. Failure is
   // swallowed (returns []) so a Postgrest hiccup never blocks the table.
@@ -268,6 +278,9 @@ export default async function ParentsPage({
       billingStatus,
       badges,
       joinedAtIso: p.created_at,
+      // Phase 2.5 — attach the rolled-up contact signal. null when the
+      // parent has no record in either messaging system.
+      contactSignal: contactSignalByParent.get(p.id) || null,
       editor: {
         id: p.id,
         // ParentProfileEditor's existing prop contract expects a non-null

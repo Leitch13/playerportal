@@ -48,6 +48,10 @@ export interface PlayersTableRow {
   // computes this from the SAME derive layer the Enrolments / Parents pages
   // use; we do NOT re-derive in the client.
   trialFollowUpStage: TrialStage | null
+  // Phase 2.5 — true when the player's parent has not been contacted in
+  // 30+ days OR has never been contacted. Optional badge only, NO filter
+  // chip, NO action.
+  noContact30dPlus?: boolean
 }
 
 type FilterKey =
@@ -311,6 +315,17 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
               </span>
             )
           })()}
+          {/* Phase 2.5 — Optional "No contact 30+ days" badge. Rose tone so
+              it lines up visually with the existing trial stale follow-up
+              cue. No filter chip, no action — purely informational. */}
+          {r.noContact30dPlus && (
+            <span
+              title="Parent has not been contacted in 30+ days"
+              className="px-1.5 py-0.5 rounded-full text-[9px] font-medium border bg-rose-500/15 text-rose-300 border-rose-500/30"
+            >
+              📭
+            </span>
+          )}
         </Link>
         {r.parent_name && (
           <div className="text-[11px] text-white/40 mt-0.5 truncate max-w-[260px]">↳ {r.parent_name}</div>
