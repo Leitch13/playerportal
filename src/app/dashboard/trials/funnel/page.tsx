@@ -2,6 +2,14 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import FunnelDashboard from './FunnelDashboard'
+// Phase 2.7 — server-rendered conversion metrics. Booking-side only;
+// sample-size caveats baked into the derive layer.
+import ConversionMetrics from './ConversionMetrics'
+import { loadTrialConversionData } from '@/lib/trial-conversion-loader'
+// Phase 2.7 — reuse the EXISTING Phase 2.4 follow-up loader so the
+// Pending Follow-Up count stays in lockstep with the Enrolments page
+// section and the Parents-list filter.
+import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
 
 export default async function TrialFunnelPage() {
   const supabase = await createClient()
@@ -10,11 +18,21 @@ export default async function TrialFunnelPage() {
 
   const { data: orgId } = await supabase.rpc('get_my_org')
 
-  const { data: trials } = await supabase
-    .from('trial_bookings')
-    .select('*')
-    .eq('organisation_id', orgId)
-    .order('created_at', { ascending: false })
+  // Phase 2.7 — load conversion counts + pending follow-up cohort in
+  // parallel with the existing trials pull. Both loaders swallow their
+  // own errors so a Postgrest hiccup never breaks the page.
+  const [{ data: trials }, conversion, followUpRows] = await Promise.all([
+    supabase
+      .from('trial_bookings')
+      .select('*')
+      .eq('organisation_id', orgId)
+      .order('created_at', { ascending: false }),
+    loadTrialConversionData(supabase, orgId).catch(() => ({
+      counts: { booked: 0, attended: 0, converted: 0, lost: 0, pending: 0 },
+      daysToConvertSamples: [],
+    })),
+    loadTrialFollowUpRows(supabase, orgId).catch(() => []),
+  ])
 
   const mapped = (trials || []).map((t) => ({
     id: t.id,
@@ -59,6 +77,18 @@ export default async function TrialFunnelPage() {
           Back to Trials
         </Link>
       </div>
+
+      {/* Phase 2.7 — server-rendered metrics block above the existing
+          client-side funnel visualization. Sample-size caveats live in
+          the derive layer; this component only renders.
+          The EXISTING FunnelDashboard below is unchanged — it owns the
+          interactive funnel + Nudge action (which sends emails; we are
+          explicitly leaving that protected surface alone). */}
+      <ConversionMetrics
+        counts={conversion.counts}
+        daysToConvertSamples={conversion.daysToConvertSamples}
+        pendingFollowUpCount={followUpRows.length}
+      />
 
       <FunnelDashboard trials={mapped} />
     </div>
