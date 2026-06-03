@@ -3,9 +3,16 @@ import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
 import MessagingHub from './MessagingHub'
+import BulkMessageForm from './BulkMessageForm'
 import type { ConversationItem, Participant } from './MessagingHub'
+import { validateRecipientsParam } from '@/lib/recipients-validate'
 
-export default async function MessagesPage() {
+export default async function MessagesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ recipients?: string; to?: string }>
+}) {
+  const params = (await searchParams) || {}
   const supabase = await createClient()
   const {
     data: { user },
@@ -140,14 +147,38 @@ export default async function MessagesPage() {
     recipients = (data || []) as Participant[]
   }
 
+  // ─── Phase 2.3b: deep-link recipient cohort ─────────────────────────
+  // `recipients=id1,id2,...` validates each ID against the org's allowed
+  // recipient list (built above per role) and surfaces BulkMessageForm
+  // in custom mode with the validated subset. Cross-org / unknown / mis-
+  // cased IDs are silently dropped — see validateRecipientsParam.
+  //
+  // `to=` continues to navigate here without pre-populating anything
+  // (pre-existing behaviour; preserved to avoid regressions on existing
+  // links emitted by the Players / Parents / Parent-Detail pages).
+  const validation = validateRecipientsParam(params.recipients, recipients)
+  const showBulkPanel = validation.ids.length > 0
+
   return (
-    <MessagingHub
-      currentUserId={user.id}
-      currentUserName={fullName}
-      role={role}
-      orgId={orgId}
-      initialConversations={conversations}
-      recipients={recipients}
-    />
+    <div className={showBulkPanel ? 'space-y-6' : ''}>
+      {showBulkPanel && (
+        <div className="p-6 lg:p-8 pb-0">
+          <BulkMessageForm
+            orgId={orgId}
+            customRecipientIds={validation.ids}
+            customRecipientLabels={validation.labels}
+            autoOpen
+          />
+        </div>
+      )}
+      <MessagingHub
+        currentUserId={user.id}
+        currentUserName={fullName}
+        role={role}
+        orgId={orgId}
+        initialConversations={conversations}
+        recipients={recipients}
+      />
+    </div>
   )
 }

@@ -157,8 +157,22 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
         })}
       </div>
 
-      <div className="text-[11px] text-white/40">
-        Showing {visibleRows.length} of {rows.length} {rows.length === 1 ? 'family' : 'families'}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-[11px] text-white/40">
+          Showing {visibleRows.length} of {rows.length} {rows.length === 1 ? 'family' : 'families'}
+        </div>
+        {/* Phase 2.3b: surface a deep-link to BulkMessageForm whenever the
+            admin has actively filtered (filter != all) AND the visible cohort
+            has 2+ recipients. URL state is the source of truth — the link
+            carries the visible IDs into /dashboard/messages?recipients=... */}
+        {filterParam !== 'all' && visibleRows.length >= 2 && (
+          <Link
+            href={`/dashboard/messages?recipients=${encodeURIComponent(visibleRows.map(r => r.id).join(','))}`}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-semibold bg-[#4ecde6]/15 text-[#4ecde6] border border-[#4ecde6]/40 hover:bg-[#4ecde6]/25 transition-colors"
+          >
+            ✉ Message {visibleRows.length} families
+          </Link>
+        )}
       </div>
 
       {/* ── Table ── */}

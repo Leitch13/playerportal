@@ -29,14 +29,25 @@ export default function AtRiskSection({
 }) {
   if (families.length === 0) return null
   const top = families.slice(0, 5)
+  const allIds = families.map(f => f.id).join(',')
 
   return (
     <section className="bg-rose-500/[0.04] border border-rose-500/[0.20] rounded-2xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-xs font-bold uppercase tracking-wider text-rose-300">
           ⚠ Families requiring attention
         </h2>
-        <span className="text-xs text-white/40">{totalCount} {totalCount === 1 ? 'family' : 'families'}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/40">{totalCount} {totalCount === 1 ? 'family' : 'families'}</span>
+          {/* Phase 2.3b: deep-link into the existing BulkMessageForm via
+              the validated ?recipients= URL param. No new messaging code. */}
+          <Link
+            href={`/dashboard/messages?recipients=${encodeURIComponent(allIds)}`}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-200 border border-rose-500/30 hover:bg-rose-500/25 transition-colors"
+          >
+            ✉ Message all {totalCount}
+          </Link>
+        </div>
       </div>
 
       <div className="divide-y divide-white/[0.04]">
