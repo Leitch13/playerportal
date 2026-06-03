@@ -32,6 +32,9 @@ const FILTER_CHIPS: Array<{ key: ParentFilterKey; label: string }> = [
   { key: 'payment_issues', label: 'Payment issues' },
   { key: 'pending_starts', label: 'Pending starts' },
   { key: 'trials', label: 'Trials' },
+  // Phase 2.4 — matches rows with the trial_followup_due / trial_stale_followup
+  // badge attached server-side. Same cohort surfaced on the Enrolments page.
+  { key: 'trial_followup', label: 'Trial follow-up due' },
   { key: 'no_attendance_30d', label: 'No attendance (30d)' },
   { key: 'review_due', label: 'Review due' },
 ]

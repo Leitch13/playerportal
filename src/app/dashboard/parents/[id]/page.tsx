@@ -33,6 +33,12 @@ import {
   deriveLastPaidPayment,
   type FamilyChild,
 } from '@/lib/family-derive'
+// Phase 2.4 — trial follow-up surfaces. Match THIS parent against the org's
+// follow-up cohort. FK first (enrolment-source), email-exact second (booking-
+// source, only when the email matches THIS parent's email). The badge is
+// appended to the existing FamilyInsightsBar — no new section.
+import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
+import { deriveTrialFollowUpBadge, pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
 
 export default async function ParentDetailPage({
   params,
@@ -200,6 +206,30 @@ export default async function ParentDetailPage({
     childCount: children.length,
     siblingDiscountEnabled,
   })
+
+  // ── Phase 2.4 — Trial follow-up badge for THIS family ──
+  // Loader runs against the WHOLE org and we filter to rows belonging to
+  // this parent. We accept either match:
+  //   • parentId match (enrolment-source)
+  //   • parent_email exact match (booking-source) ONLY if the email matches
+  //     THIS parent's profile email — never fuzzy.
+  // pickMoreUrgentStage keeps the rose 'stale' tone when both sources exist.
+  const followUpRows = await loadTrialFollowUpRows(supabase, orgId).catch(() => [])
+  const myEmail = (parentProfile.email || '').trim().toLowerCase()
+  let myFollowUpStage: TrialStage | null = null
+  for (const f of followUpRows) {
+    let match = false
+    if (f.parentId && f.parentId === parentId) match = true
+    else if (!f.parentId && f.parentEmail && myEmail && f.parentEmail.trim().toLowerCase() === myEmail) match = true
+    if (!match) continue
+    myFollowUpStage = myFollowUpStage
+      ? pickMoreUrgentStage(myFollowUpStage, f.stage)
+      : f.stage
+  }
+  if (myFollowUpStage) {
+    const fbadge = deriveTrialFollowUpBadge(myFollowUpStage)
+    if (fbadge) badges.push(fbadge)
+  }
   const activeSubsCount = (subsRows || []).filter(s => s.status === 'active' || s.status === 'trialing').length
 
   // ── 11. Compute display strings ──

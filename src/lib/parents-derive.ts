@@ -47,6 +47,7 @@ export function parentSearchHay(r: ParentRowFacts): string {
 export type ParentFilterKey =
   | 'all' | 'healthy' | 'payment_issues' | 'pending_starts'
   | 'trials' | 'no_attendance_30d' | 'review_due' | 'attention'
+  | 'trial_followup'
 
 /**
  * Returns true iff the row matches the active filter. Pure reduction
@@ -65,6 +66,8 @@ export function parentMatchesFilter(r: ParentRowFacts, filter: ParentFilterKey):
   if (filter === 'no_attendance_30d') return r.badges.some(b => b.key === 'no_attendance_30d')
   if (filter === 'review_due')      return r.badges.some(b => b.key === 'review_due')
   if (filter === 'attention')       return needsAttention(r)
+  // Phase 2.4 — match BOTH badge variants for the trial follow-up filter.
+  if (filter === 'trial_followup')  return r.badges.some(b => b.key === 'trial_followup_due' || b.key === 'trial_stale_followup')
   return true
 }
 

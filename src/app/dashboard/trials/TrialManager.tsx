@@ -3,6 +3,16 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+// Phase 2.4 — reuse the SAME derive layer as Enrolments / Parents / Players.
+// No re-implementation; trial-derive is the source of truth.
+import {
+  deriveTrialStageFromBooking,
+  needsFollowUp,
+  STAGE_LABEL,
+  type TrialStage,
+} from '@/lib/trial-derive'
+// Phase 2.4 step 5 — DB-only admin actions for the follow-up cohort.
+import TrialFollowUpActions from '@/app/dashboard/enrolments/TrialFollowUpActions'
 
 interface Trial {
   id: string
@@ -16,6 +26,9 @@ interface Trial {
   notes: string | null
   status: string
   createdAt: string
+  // Phase 2.4 — added so the client can derive stale_followup from the
+  // same fields the loader uses on the server. null when never updated.
+  updatedAt?: string | null
   reminder48h: boolean
   reminder24h: boolean
   reminder2h: boolean
@@ -31,7 +44,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   cancelled: { label: 'Cancelled', color: 'text-white/40', bg: 'bg-white/5' },
 }
 
-function getReminderBadge(t: Trial): { label: string; color: string } | null {
+function getReminderBadge(t: Trial, stage: TrialStage): { label: string; color: string } | null {
+  // Phase 2.4 — Trial-derive stages take priority for the action-cued cohorts.
+  // Stale and awaiting follow-ups are the ones the academy owner needs to
+  // see first; they override "Followed up" / reminder chips below.
+  if (stage === 'stale_followup')    return { label: STAGE_LABEL.stale_followup,    color: 'text-rose-300 bg-rose-500/15 border border-rose-500/30' }
+  if (stage === 'awaiting_followup') return { label: STAGE_LABEL.awaiting_followup, color: 'text-amber-300 bg-amber-500/15 border border-amber-500/30' }
   if (t.converted) return { label: 'Converted', color: 'text-[#4ecde6] bg-[#4ecde6]/10' }
   if (t.followupSent) return { label: 'Followed up', color: 'text-amber-400 bg-amber-500/10' }
   if (t.reminder2h) return { label: '2h sent', color: 'text-emerald-400 bg-emerald-500/10' }
@@ -40,12 +58,44 @@ function getReminderBadge(t: Trial): { label: string; color: string } | null {
   return null
 }
 
+// Map a Trial row (the client shape used by this component) to the input
+// shape expected by `deriveTrialStageFromBooking`. Pure helper kept local
+// so the derive layer stays I/O-free.
+function trialToBookingInput(t: Trial) {
+  return {
+    id: t.id,
+    status: t.status,
+    preferred_date: t.preferredDate,
+    followup_sent: t.followupSent,
+    converted: t.converted,
+    updated_at: t.updatedAt ?? null,
+  }
+}
+
 export default function TrialManager({ trials }: { trials: Trial[] }) {
   const router = useRouter()
   const [filter, setFilter] = useState<string>('all')
   const [loading, setLoading] = useState<string | null>(null)
 
-  const filtered = filter === 'all' ? trials : trials.filter(t => t.status === filter)
+  // Phase 2.4 — derive each trial's stage ONCE for the whole component. The
+  // `followup` tab filters by needsFollowUp(stage); the funnel column reads
+  // the same map so the chip + tab agree.
+  const stageById = new Map<string, TrialStage>()
+  for (const t of trials) {
+    stageById.set(t.id, deriveTrialStageFromBooking(trialToBookingInput(t)))
+  }
+
+  // Filter rules:
+  //   filter='followup'  → trials where stage is awaiting_followup OR stale_followup
+  //   filter='<status>'  → existing literal-status match (pending, confirmed, attended)
+  //   filter='all'       → no filter
+  const filtered = filter === 'all'
+    ? trials
+    : filter === 'followup'
+      ? trials.filter(t => needsFollowUp(stageById.get(t.id) ?? 'upcoming'))
+      : trials.filter(t => t.status === filter)
+
+  const followupCount = trials.filter(t => needsFollowUp(stageById.get(t.id) ?? 'upcoming')).length
 
   async function updateStatus(id: string, status: string) {
     setLoading(id)
@@ -62,6 +112,10 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
     { key: 'pending', label: 'Pending' },
     { key: 'confirmed', label: 'Confirmed' },
     { key: 'attended', label: 'Attended' },
+    // Phase 2.4 — needs-follow-up cohort. Surfaced inline so the academy
+    // owner can switch to it without leaving the page. Read-only — uses
+    // the existing per-row "Cancel"/"Attended"/"No Show" actions only.
+    { key: 'followup', label: `Follow-up due${followupCount > 0 ? ` (${followupCount})` : ''}` },
   ]
 
   return (
@@ -103,7 +157,8 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
               <tbody>
                 {filtered.map((t) => {
                   const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending
-                  const badge = getReminderBadge(t)
+                  const stage = stageById.get(t.id) ?? 'upcoming'
+                  const badge = getReminderBadge(t, stage)
                   return (
                     <tr key={t.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/[0.02]">
                       <td className="px-4 py-3">
@@ -137,7 +192,7 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center gap-1 justify-end">
+                        <div className="flex items-center gap-1 justify-end flex-wrap">
                           {t.status === 'pending' && (
                             <button
                               onClick={() => updateStatus(t.id, 'confirmed')}
@@ -173,6 +228,18 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
                             >
                               Cancel
                             </button>
+                          )}
+                          {/* Phase 2.4 step 5 — Convert / Extend / Mark lost.
+                              Only shown for the needsFollowUp() cohort so the
+                              existing pending/confirmed action cluster stays
+                              uncluttered for those rows. */}
+                          {needsFollowUp(stage) && (
+                            <TrialFollowUpActions
+                              source="booking"
+                              id={t.id}
+                              signupHref="/dashboard/groups"
+                              layout="inline"
+                            />
                           )}
                         </div>
                       </td>

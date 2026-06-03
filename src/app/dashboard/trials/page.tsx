@@ -83,6 +83,9 @@ export default async function TrialsPage() {
         notes: t.notes,
         status: t.status,
         createdAt: t.created_at,
+        // Phase 2.4 — exposes `updated_at` so the client can derive
+        // stale_followup (>7d since the follow-up was marked sent).
+        updatedAt: t.updated_at ?? null,
         reminder48h: t.reminder_48h_sent ?? false,
         reminder24h: t.reminder_24h_sent ?? false,
         reminder2h: t.reminder_2h_sent ?? false,

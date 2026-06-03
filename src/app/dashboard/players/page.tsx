@@ -34,6 +34,12 @@ import {
   daysSinceIso,
   type AttendanceRow,
 } from '@/lib/players-derive'
+// Phase 2.4: trial follow-up cohort. We match ONLY by playerId here —
+// booking-source rows lack a player FK and would require fuzzy joins
+// (parent_email → profile → players), which the spec forbids. Those
+// rows stay surfaced on /dashboard/enrolments and /dashboard/trials.
+import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
+import { pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
 
 // Cap defensively at 500 rows per render. Jamie has ~30; the largest org
 // we serve has well under 500. Above this, we'd paginate (Phase 2.2).
@@ -130,6 +136,21 @@ export default async function PlayersPage({
     }
   }
 
+  // ── 4b. Phase 2.4 — trial follow-up cohort, scoped to playerId only ──
+  // Booking-source rows have no FK to a player; they continue to surface
+  // on the Enrolments + Trials pages but NEVER produce a player-row badge
+  // here. Same loader as Enrolments / Parents pages — no duplication.
+  const followUpRows = await loadTrialFollowUpRows(supabase, orgId).catch(() => [])
+  const followUpStageByPlayerId = new Map<string, TrialStage>()
+  for (const f of followUpRows) {
+    if (!f.playerId) continue
+    const prev = followUpStageByPlayerId.get(f.playerId)
+    followUpStageByPlayerId.set(
+      f.playerId,
+      prev ? pickMoreUrgentStage(prev, f.stage) : f.stage,
+    )
+  }
+
   // ── 5. Reduce to flat row contract for the client table ──
   const tableRows: PlayersTableRow[] = players.map(p => {
     const subs = subsByPlayer.get(p.id) || null
@@ -151,6 +172,8 @@ export default async function PlayersPage({
       rowStatus: deriveRowStatus(p.enrolments),
       reviewDue: deriveReviewDue(latestReviewByPlayer.get(p.id) || null),
       joinedAt: p.created_at,
+      // null when this player is not in the follow-up cohort.
+      trialFollowUpStage: followUpStageByPlayerId.get(p.id) ?? null,
     }
   })
 

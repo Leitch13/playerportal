@@ -33,6 +33,10 @@ import {
   type AttendanceRow,
 } from '@/lib/players-derive'
 import { needsAttention } from '@/lib/parents-derive'
+// Phase 2.4: trial follow-up loader (same contract as the Enrolments page).
+// Reused verbatim — derivation logic lives in trial-derive.ts.
+import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
+import { deriveTrialFollowUpBadge, pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
 
 // Cap defensively at 500 families per render. Above this → Phase 2.3b paginates.
 const ROW_CAP = 500
@@ -166,6 +170,45 @@ export default async function ParentsPage({
     }
   }
 
+  // ─── 5b. Phase 2.4 — Trial follow-up cohort + parent lookup maps ─────
+  // Reuses the same loader as the Enrolments page. READ-ONLY. Failure is
+  // swallowed (returns []) so a Postgrest hiccup never blocks the table.
+  //
+  // Two lookup paths:
+  //   1. parentId       — for enrolment-source follow-up rows (have FK)
+  //   2. parent email   — for booking-source rows (no FK; user-approved
+  //                       email match where safe)
+  //
+  // Booking rows that don't match any parent profile by either path are
+  // DROPPED here — they continue to surface in /dashboard/enrolments and
+  // /dashboard/trials but never become a fuzzy family-row link.
+  const trialFollowUps = await loadTrialFollowUpRows(supabase, orgId).catch(() => [])
+
+  const followUpStageByParentId = new Map<string, TrialStage>()
+  const followUpStageByEmail   = new Map<string, TrialStage>()
+
+  for (const f of trialFollowUps) {
+    if (f.parentId) {
+      // Enrolment-source row — match on FK.
+      const prev = followUpStageByParentId.get(f.parentId)
+      followUpStageByParentId.set(
+        f.parentId,
+        prev ? pickMoreUrgentStage(prev, f.stage) : f.stage,
+      )
+    } else if (f.parentEmail) {
+      // Booking-source row — exact lower-cased email match. If no parent
+      // profile owns this email, the row is silently dropped on this page
+      // (it remains visible on the Enrolments / Trials pages).
+      const key = f.parentEmail.trim().toLowerCase()
+      if (key) {
+        const prev = followUpStageByEmail.get(key)
+        followUpStageByEmail.set(key, prev ? pickMoreUrgentStage(prev, f.stage) : f.stage)
+      }
+    }
+    // else: no FK + no email — booking row has no identifying handle; it
+    // can only be triaged via the Enrolments / Trials surfaces.
+  }
+
   // ─── 6. Per-family row construction ──────────────────────────────────
   const tableRows: ParentsTableRow[] = parentList.map(p => {
     const kids = childrenByParent.get(p.id) || []
@@ -190,6 +233,29 @@ export default async function ParentsPage({
       childCount: kids.length,
       siblingDiscountEnabled,
     })
+
+    // ─── Phase 2.4 — attach trial follow-up badge if the family matches ──
+    //   Match priority:
+    //     1. parentId match (enrolment-source follow-up rows)
+    //     2. email match    (booking-source — exact, case-insensitive)
+    //   The badge reflects the MORE URGENT stage across both sources for
+    //   this family. Booking rows that don't match any profile here are
+    //   simply not surfaced on this page — they remain visible on the
+    //   Enrolments / Trials pages (per spec rule 4).
+    const followUpFromFk = followUpStageByParentId.get(p.id) ?? null
+    const followUpFromEmail = p.email
+      ? followUpStageByEmail.get(p.email.trim().toLowerCase()) ?? null
+      : null
+    let trialFollowUpStage: TrialStage | null = null
+    if (followUpFromFk && followUpFromEmail) {
+      trialFollowUpStage = pickMoreUrgentStage(followUpFromFk, followUpFromEmail)
+    } else {
+      trialFollowUpStage = followUpFromFk ?? followUpFromEmail
+    }
+    if (trialFollowUpStage) {
+      const badge = deriveTrialFollowUpBadge(trialFollowUpStage)
+      if (badge) badges.push(badge)
+    }
 
     return {
       id: p.id,

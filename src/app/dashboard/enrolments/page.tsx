@@ -6,6 +6,10 @@ import EnrolmentForm from './EnrolmentForm'
 import EnrolmentStatusToggle from './EnrolmentStatusToggle'
 import PendingEnrolmentActions from './PendingEnrolmentActions'
 import TrialEnrolmentActions from './TrialEnrolmentActions'
+import TrialFollowUpSection from './TrialFollowUpSection'
+// Phase 2.4: trial follow-up loader. Pulls both trial_bookings + enrolments.is_trial
+// and returns the unified `needsFollowUp` cohort. Read-only — no mutations.
+import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
 
 type EnrolmentRow = {
   id: string
@@ -31,7 +35,15 @@ export default async function EnrolmentsPage() {
   const { data: orgId } = await supabase.rpc('get_my_org')
   if (!orgId) redirect('/dashboard')
 
-  const [{ data: enrolments }, { data: players }, { data: groups }] = await Promise.all([
+  // Phase 2.4: trial follow-up cohort loaded in parallel with the existing
+  // enrolments/players/groups pulls. Failure is swallowed inside the loader
+  // (returns []) so a Postgrest hiccup never blocks the rest of the page.
+  const [
+    { data: enrolments },
+    { data: players },
+    { data: groups },
+    trialFollowUps,
+  ] = await Promise.all([
     supabase
       .from('enrolments')
       .select(`
@@ -52,6 +64,7 @@ export default async function EnrolmentsPage() {
       .select('id, name, day_of_week')
       .eq('organisation_id', orgId)
       .order('name'),
+    loadTrialFollowUpRows(supabase, orgId).catch(() => []),
   ])
 
   const rows = (enrolments || []) as unknown as EnrolmentRow[]
@@ -100,17 +113,25 @@ export default async function EnrolmentsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Enrolments</h1>
-        {/* ─── Phase 1: five-state chip row ─── */}
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
-          <Chip href="#active"    label="Active"     value={active.length}    tone="emerald" />
-          <Chip href="#pending"   label="Pending"    value={pending.length}   tone="amber" />
-          <Chip href="#trial"     label="Trial"      value={trials.length}    tone="sky" />
-          <Chip href="#paused"    label="Paused"     value={paused.length}    tone="violet" />
-          <Chip href="#cancelled" label="Cancelled"  value={cancelled.length} tone="muted" />
+        {/* ─── Phase 1: five-state chip row + Phase 2.4 follow-up chip ─── */}
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          <Chip href="#active"          label="Active"           value={active.length}          tone="emerald" />
+          <Chip href="#pending"         label="Pending"          value={pending.length}         tone="amber" />
+          <Chip href="#trial"           label="Trial"            value={trials.length}          tone="sky" />
+          <Chip href="#trial-followup"  label="Follow-up due"    value={trialFollowUps.length}  tone="rose" />
+          <Chip href="#paused"          label="Paused"           value={paused.length}          tone="violet" />
+          <Chip href="#cancelled"       label="Cancelled"        value={cancelled.length}       tone="muted" />
         </div>
       </div>
 
       <EnrolmentForm players={players || []} groups={groups || []} orgId={orgId} />
+
+      {/* ─── Phase 2.4: TRIAL FOLLOW-UP DUE ─────────────────────────────
+          Rendered OUTSIDE the empty-state branch so brand-new orgs that
+          only have trial_bookings (no enrolments yet) still see their
+          follow-up queue. Renders nothing when the cohort is empty.
+      ─────────────────────────────────────────────────────────────────── */}
+      <TrialFollowUpSection rows={trialFollowUps} />
 
       {rows.length === 0 ? (
         <EmptyState message="No enrolments yet." />
@@ -233,11 +254,12 @@ export default async function EnrolmentsPage() {
 // ─────────────────────────────────────────────────────────────────────────
 
 const TONE_CLASS: Record<string, { value: string; chip: string; section: string }> = {
-  emerald: { value: 'text-emerald-400', chip: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30', section: 'text-emerald-300' },
-  amber:   { value: 'text-amber-400',   chip: 'bg-amber-500/10 text-amber-300 border-amber-500/30',         section: 'text-amber-300' },
-  sky:     { value: 'text-sky-400',     chip: 'bg-sky-500/10 text-sky-300 border-sky-500/30',                section: 'text-sky-300' },
-  violet:  { value: 'text-violet-400',  chip: 'bg-violet-500/10 text-violet-300 border-violet-500/30',       section: 'text-violet-300' },
-  muted:   { value: 'text-white/40',    chip: 'bg-white/[0.04] text-white/60 border-white/[0.08]',           section: 'text-white/60' },
+  emerald: { value: 'text-emerald-400', chip: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',     section: 'text-emerald-300' },
+  amber:   { value: 'text-amber-400',   chip: 'bg-amber-500/10 text-amber-300 border-amber-500/30',           section: 'text-amber-300' },
+  sky:     { value: 'text-sky-400',     chip: 'bg-sky-500/10 text-sky-300 border-sky-500/30',                  section: 'text-sky-300' },
+  violet:  { value: 'text-violet-400',  chip: 'bg-violet-500/10 text-violet-300 border-violet-500/30',         section: 'text-violet-300' },
+  rose:    { value: 'text-rose-400',    chip: 'bg-rose-500/10 text-rose-300 border-rose-500/30',               section: 'text-rose-300' },
+  muted:   { value: 'text-white/40',    chip: 'bg-white/[0.04] text-white/60 border-white/[0.08]',             section: 'text-white/60' },
 }
 
 function Chip({ href, label, value, tone }: { href: string; label: string; value: number; tone: keyof typeof TONE_CLASS }) {

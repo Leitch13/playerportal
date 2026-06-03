@@ -20,6 +20,8 @@ import { useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import type { DerivedRowStatus, DerivedSubStatus } from '@/lib/players-derive'
+// Phase 2.4 — same enum + badge factory as the other visibility surfaces.
+import { deriveTrialFollowUpBadge, type TrialStage } from '@/lib/trial-derive'
 
 // ─── Row contract ──────────────────────────────────────────────────────
 // The page-level loader computes these per player and hands the list to
@@ -42,11 +44,16 @@ export interface PlayersTableRow {
   rowStatus: DerivedRowStatus
   reviewDue: boolean
   joinedAt: string  // ISO — for sort
+  // Phase 2.4 — null when this player has no trial follow-up due. The page
+  // computes this from the SAME derive layer the Enrolments / Parents pages
+  // use; we do NOT re-derive in the client.
+  trialFollowUpStage: TrialStage | null
 }
 
 type FilterKey =
   | 'all' | 'active' | 'pending' | 'trial' | 'paused'
   | 'payment_issue' | 'no_attendance_30d' | 'review_due'
+  | 'trial_followup'
 
 type SortKey = 'name' | 'age' | 'last_attended' | 'attendance_pct' | 'joined'
 
@@ -55,6 +62,11 @@ const FILTER_CHIPS: Array<{ key: FilterKey; label: string }> = [
   { key: 'active', label: 'Active' },
   { key: 'pending', label: 'Pending start' },
   { key: 'trial', label: 'Trial' },
+  // Phase 2.4 — matches players in awaiting_followup OR stale_followup
+  // (i.e. needsFollowUp(stage) === true). Booking-only follow-ups (no FK)
+  // are not in this filter; they remain visible on /dashboard/enrolments
+  // and /dashboard/trials.
+  { key: 'trial_followup', label: 'Trial follow-up due' },
   { key: 'paused', label: 'Paused' },
   { key: 'payment_issue', label: 'Payment issue' },
   { key: 'no_attendance_30d', label: 'No attendance (30d)' },
@@ -138,6 +150,7 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
       if (filterParam === 'payment_issue' && r.subStatus  !== 'past_due')      return false
       if (filterParam === 'no_attendance_30d' && r.lastAttendanceDays !== null && r.lastAttendanceDays <= 30) return false
       if (filterParam === 'review_due'    && !r.reviewDue)                     return false
+      if (filterParam === 'trial_followup' && !r.trialFollowUpStage)            return false
 
       // Search — name or parent name
       if (q.length > 0) {
@@ -281,6 +294,23 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
           {r.reviewDue && (
             <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Review due">📋</span>
           )}
+          {/* Phase 2.4 — Trial follow-up badge. Tone shifts to rose when stale.
+              Title text spells out the stage for the hover tooltip. */}
+          {r.trialFollowUpStage && (() => {
+            const badge = deriveTrialFollowUpBadge(r.trialFollowUpStage)
+            if (!badge) return null
+            const cls = badge.tone === 'rose'
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+            return (
+              <span
+                title={badge.label}
+                className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium border ${cls}`}
+              >
+                {badge.emoji}
+              </span>
+            )
+          })()}
         </Link>
         {r.parent_name && (
           <div className="text-[11px] text-white/40 mt-0.5 truncate max-w-[260px]">↳ {r.parent_name}</div>
