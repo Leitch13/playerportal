@@ -247,6 +247,10 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/players', label: 'Players', icon: 'football' },
       { href: '/dashboard/parents', label: 'Parents', icon: 'users' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
+      // Phase 2.7 placement fix — surface the trial booking management
+      // surface in the sidebar so academy owners can reach conversion
+      // metrics without going via the dashboard activity feed.
+      { href: '/dashboard/trials', label: 'Trials', icon: 'funnel' },
       { href: '/dashboard/leads', label: 'Leads', icon: 'funnel' },
       { href: '/dashboard/migration', label: 'Migration', icon: 'arrow-down-tray' },
       { href: '/dashboard/migrate-member', label: 'Migrate Member', icon: 'arrow-down-tray' },
