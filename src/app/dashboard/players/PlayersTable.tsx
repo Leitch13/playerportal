@@ -22,6 +22,14 @@ import PlayerAvatar from '@/components/PlayerAvatar'
 import type { DerivedRowStatus, DerivedSubStatus } from '@/lib/players-derive'
 // Phase 2.4 — same enum + badge factory as the other visibility surfaces.
 import { deriveTrialFollowUpBadge, type TrialStage } from '@/lib/trial-derive'
+// Phase 2.8 — Attendance Risk. Pure helpers consumed for filter routing
+// and the "Last attended" column formatter.
+import {
+  matchesAttendanceFilter,
+  formatLastAttended,
+  type AttendanceRiskAssessment,
+  type AttendanceFilterKey,
+} from '@/lib/attendance-risk-derive'
 
 // ─── Row contract ──────────────────────────────────────────────────────
 // The page-level loader computes these per player and hands the list to
@@ -52,12 +60,18 @@ export interface PlayersTableRow {
   // 30+ days OR has never been contacted. Optional badge only, NO filter
   // chip, NO action.
   noContact30dPlus?: boolean
+  // Phase 2.8 — server-computed Attendance Risk assessment. UI renders
+  // fields directly; no client-side derivation. Optional for forward-
+  // compat — old call sites can omit and the row degrades to no badge.
+  attendanceRisk?: AttendanceRiskAssessment
 }
 
 type FilterKey =
   | 'all' | 'active' | 'pending' | 'trial' | 'paused'
   | 'payment_issue' | 'no_attendance_30d' | 'review_due'
   | 'trial_followup'
+  // Phase 2.8 — Attendance Risk chips.
+  | 'attendance_risk' | 'no_attendance_14d'
 
 type SortKey = 'name' | 'age' | 'last_attended' | 'attendance_pct' | 'joined'
 
@@ -73,8 +87,16 @@ const FILTER_CHIPS: Array<{ key: FilterKey; label: string }> = [
   { key: 'trial_followup', label: 'Trial follow-up due' },
   { key: 'paused', label: 'Paused' },
   { key: 'payment_issue', label: 'Payment issue' },
-  { key: 'no_attendance_30d', label: 'No attendance (30d)' },
   { key: 'review_due', label: 'Review due' },
+  // Phase 2.8 — Attendance Risk filters. Routed through
+  // matchesAttendanceFilter so the 14d/30d thresholds live in exactly
+  // one place (attendance-risk-derive.ts). 'no_attendance_30d' was
+  // previously an alias for the same threshold via the old summarised-
+  // attendance signal; the new route reuses the same chip key so any
+  // existing deep-links keep working.
+  { key: 'attendance_risk', label: 'Attendance risk' },
+  { key: 'no_attendance_14d', label: 'No attendance (14d)' },
+  { key: 'no_attendance_30d', label: 'No attendance (30d)' },
 ]
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
@@ -152,9 +174,19 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
       if (filterParam === 'trial'         && r.rowStatus !== 'trial')          return false
       if (filterParam === 'paused'        && r.rowStatus !== 'paused')         return false
       if (filterParam === 'payment_issue' && r.subStatus  !== 'past_due')      return false
-      if (filterParam === 'no_attendance_30d' && r.lastAttendanceDays !== null && r.lastAttendanceDays <= 30) return false
       if (filterParam === 'review_due'    && !r.reviewDue)                     return false
       if (filterParam === 'trial_followup' && !r.trialFollowUpStage)            return false
+      // Phase 2.8 — Attendance Risk routing through the derive layer.
+      // Reuses the SAME chip key 'no_attendance_30d' that existed in
+      // Phase 2.4 but with stricter semantics: tenure-gated, never_
+      // attended distinguished from drifted. Old behaviour was an
+      // approximation using a 30-day summary window; this is the
+      // canonical check.
+      const attendanceFilters: AttendanceFilterKey[] = ['attendance_risk', 'no_attendance_14d', 'no_attendance_30d']
+      if (attendanceFilters.includes(filterParam as AttendanceFilterKey)) {
+        if (!r.attendanceRisk) return false
+        if (!matchesAttendanceFilter(r.attendanceRisk, filterParam as AttendanceFilterKey)) return false
+      }
 
       // Search — name or parent name
       if (q.length > 0) {
@@ -262,6 +294,11 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden sm:table-cell">Age</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Class</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Attendance</th>
+                {/* Phase 2.8 — "Last attended" column. Hidden below lg
+                    to preserve mobile layout. The badge cell inside
+                    Player still shows the inline risk label so mobile
+                    users see something. */}
+                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden lg:table-cell">Last attended</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Sub</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Status</th>
                 <th className="text-right py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Actions</th>
@@ -269,7 +306,7 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
             </thead>
             <tbody>
               {visibleRows.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-white/40 text-sm">No players match this filter.</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-white/40 text-sm">No players match this filter.</td></tr>
               ) : visibleRows.map(r => (
                 <PlayerRow key={r.id} r={r} />
               ))}
@@ -327,6 +364,24 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
             </span>
           )}
         </Link>
+        {/* Phase 2.8 — Attendance risk label. Reason-first wording per spec
+            ("Never attended (Nd enrolled)" / "Drifted away (Nd since
+            attendance)") — NO generic "High"/"Medium" labels. Tone follows
+            the derive layer's level. Renders nothing for healthy /
+            new_player / not_applicable. */}
+        {r.attendanceRisk && (r.attendanceRisk.riskLevel === 'high' || r.attendanceRisk.riskLevel === 'medium') && (
+          <div className="text-[11px] mt-1">
+            <span
+              className={
+                r.attendanceRisk.riskLevel === 'high'
+                  ? 'text-rose-300'
+                  : 'text-amber-300'
+              }
+            >
+              ⚠ {r.attendanceRisk.riskReason.label}
+            </span>
+          </div>
+        )}
         {r.parent_name && (
           <div className="text-[11px] text-white/40 mt-0.5 truncate max-w-[260px]">↳ {r.parent_name}</div>
         )}
@@ -344,6 +399,22 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
             )}
           </div>
         )}
+      </td>
+      {/* Phase 2.8 — Last attended column. Pure render from the derive
+          layer; formatter handles 'Today' / 'Yesterday' / 'N days ago'
+          / 'Never'. Tone shifts to rose when high-risk, amber when
+          medium, muted otherwise — same palette as the inline label. */}
+      <td className="py-2.5 px-3 hidden lg:table-cell">
+        {r.attendanceRisk ? (() => {
+          const label = formatLastAttended(r.attendanceRisk)
+          const level = r.attendanceRisk.riskLevel
+          const cls =
+            level === 'high'   ? 'text-rose-300 font-medium'
+            : level === 'medium' ? 'text-amber-300 font-medium'
+            : level === 'not_applicable' ? 'text-white/40'
+            : 'text-white/70'
+          return <span className={`text-xs tabular-nums ${cls}`}>{label}</span>
+        })() : <span className="text-white/40">—</span>}
       </td>
       <td className="py-2.5 px-3">
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${sub.cls}`}>

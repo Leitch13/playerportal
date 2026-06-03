@@ -45,6 +45,13 @@ import { pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
 // not per child.
 import { loadLastContactedMap } from '@/lib/contact-loader'
 import { contactBucket } from '@/lib/contact-derive'
+// Phase 2.8 — Attendance Risk derive. Pure helpers consume the same
+// attendance rows the existing summariseAttendance already reads —
+// this is purely additive on the read side.
+import {
+  deriveAttendanceRisk,
+  type AttendanceRiskAssessment,
+} from '@/lib/attendance-risk-derive'
 
 // Cap defensively at 500 rows per render. Jamie has ~30; the largest org
 // we serve has well under 500. Above this, we'd paginate (Phase 2.2).
@@ -77,7 +84,7 @@ export default async function PlayersPage({
       id, first_name, last_name, photo_url, playing_level, parent_id,
       date_of_birth, created_at, organisation_id,
       parent:profiles!players_parent_id_fkey(full_name, email, phone),
-      enrolments(status, is_trial, trial_expires_at, activates_on, group:training_groups(name))
+      enrolments(status, is_trial, trial_expires_at, activates_on, enrolled_at, group:training_groups(name))
     `)
     .eq('organisation_id', orgId)
     .order('first_name')
@@ -93,7 +100,7 @@ export default async function PlayersPage({
     date_of_birth: string | null
     created_at: string
     parent: { full_name: string | null; email: string | null; phone: string | null } | null
-    enrolments: Array<{ status: string | null; is_trial: boolean | null; trial_expires_at: string | null; activates_on: string | null; group: { name: string } | null }> | null
+    enrolments: Array<{ status: string | null; is_trial: boolean | null; trial_expires_at: string | null; activates_on: string | null; enrolled_at: string | null; group: { name: string } | null }> | null
   }>
 
   const playerIds = players.map(p => p.id)
@@ -114,16 +121,35 @@ export default async function PlayersPage({
     }
   }
 
-  // ── 3. 30-day attendance window aggregated per player ──
+  // ── 3. Attendance — 365-day window aggregated per player.
+  // Phase 2.8 widens the window from 30 to 365 days so the
+  // attendance-risk derive can detect "drifted away N>30d" cases
+  // (the 30-day window would have made them indistinguishable from
+  // never-attended). At Jamie's scale this is ~3 rows today; at full
+  // coverage scale (~5000 rows for ~100 active × 52 sessions) it
+  // remains a single indexed query.
+  const yearAgoIso = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)
   const thirtyDaysAgoIso = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
   let attendanceSummary = new Map<string, ReturnType<typeof summariseAttendance> extends Map<string, infer V> ? V : never>()
+  // Phase 2.8 — per-player attendance history for the derive layer.
+  const attendanceByPlayer = new Map<string, Array<{ session_date: string; present: boolean }>>()
   if (playerIds.length > 0) {
     const { data: attRows } = await supabase
       .from('attendance')
       .select('player_id, session_date, present')
       .in('player_id', playerIds)
-      .gte('session_date', thirtyDaysAgoIso)
-    attendanceSummary = summariseAttendance((attRows || []) as AttendanceRow[])
+      .gte('session_date', yearAgoIso)
+    const all = (attRows || []) as Array<AttendanceRow & { present: boolean }>
+    for (const r of all) {
+      const arr = attendanceByPlayer.get(r.player_id) || []
+      arr.push({ session_date: r.session_date, present: r.present })
+      attendanceByPlayer.set(r.player_id, arr)
+    }
+    // The existing summariseAttendance keeps its current 30-day semantics
+    // (used by the existing Attendance % column). Filter the row set
+    // before passing it in so we don't change that column's meaning.
+    const last30 = all.filter(r => r.session_date >= thirtyDaysAgoIso) as AttendanceRow[]
+    attendanceSummary = summariseAttendance(last30)
   }
 
   // ── 4. Latest progress_review per player ──
@@ -180,6 +206,24 @@ export default async function PlayersPage({
   const tableRows: PlayersTableRow[] = players.map(p => {
     const subs = subsByPlayer.get(p.id) || null
     const att = attendanceSummary.get(p.id)
+
+    // Phase 2.8 — pick the most recent active enrolment to feed the
+    // attendance-risk derive. We deliberately use 'active' only — paused/
+    // cancelled enrolments degrade to riskLevel='not_applicable' by the
+    // derive layer's contract. Multiple active enrolments → use the
+    // earliest enrolled_at so we count tenure from when the family first
+    // committed to the academy.
+    const activeEnrolments = (p.enrolments || []).filter(e => (e.status || '') === 'active')
+    const earliestActiveEnrolledAt = activeEnrolments
+      .map(e => e.enrolled_at)
+      .filter((v): v is string => !!v)
+      .sort()[0] || null
+    const attendanceRisk: AttendanceRiskAssessment = deriveAttendanceRisk({
+      attendanceHistory: attendanceByPlayer.get(p.id) || [],
+      enrolmentStatus: activeEnrolments.length > 0 ? 'active' : (p.enrolments?.[0]?.status || null),
+      enrolledAt: earliestActiveEnrolledAt,
+    })
+
     return {
       id: p.id,
       first_name: p.first_name,
@@ -202,6 +246,9 @@ export default async function PlayersPage({
       // Phase 2.5 — true when the player's parent has not been contacted
       // in 30+ days OR has never been contacted. False/undefined otherwise.
       noContact30dPlus: noContact30dByPlayer.get(p.id) ?? false,
+      // Phase 2.8 — server-computed attendance risk assessment. UI consumes
+      // the fields directly; no client-side derivation.
+      attendanceRisk,
     }
   })
 

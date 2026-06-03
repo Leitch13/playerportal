@@ -44,6 +44,12 @@ import { loadLastContactedMap } from '@/lib/contact-loader'
 // Phase 2.6 — At-Risk rollup + banner. Display-only.
 import { deriveRisk } from '@/lib/at-risk-derive'
 import AtRiskBanner from './AtRiskBanner'
+// Phase 2.8 — Attendance Risk derive + banner. Display-only.
+import {
+  deriveAttendanceRisk,
+  type AttendanceRiskAssessment,
+} from '@/lib/attendance-risk-derive'
+import AttendanceBanner from './AttendanceBanner'
 
 export default async function ParentDetailPage({
   params,
@@ -74,11 +80,13 @@ export default async function ParentDetailPage({
   if (!parentProfile) notFound()
 
   // ── 2. Children belonging to this parent + their enrolments + groups ──
+  // Phase 2.8 adds `enrolled_at` so the attendance-risk derive can
+  // compute tenure for never-attended players.
   const { data: childrenRaw } = await supabase
     .from('players')
     .select(`
       id, first_name, last_name, photo_url, date_of_birth, created_at,
-      enrolments(status, is_trial, trial_expires_at, activates_on, group:training_groups(name))
+      enrolments(status, is_trial, trial_expires_at, activates_on, enrolled_at, group:training_groups(name))
     `)
     .eq('organisation_id', orgId)
     .eq('parent_id', parentId)
@@ -91,7 +99,7 @@ export default async function ParentDetailPage({
     photo_url: string | null
     date_of_birth: string | null
     created_at: string
-    enrolments: Array<{ status: string | null; is_trial: boolean | null; trial_expires_at: string | null; activates_on: string | null; group: { name: string } | null }> | null
+    enrolments: Array<{ status: string | null; is_trial: boolean | null; trial_expires_at: string | null; activates_on: string | null; enrolled_at: string | null; group: { name: string } | null }> | null
   }>
   const childIds = children.map(c => c.id)
 
@@ -111,16 +119,29 @@ export default async function ParentDetailPage({
     .order('paid_date', { ascending: false, nullsFirst: false })
     .limit(50)
 
-  // ── 5. Attendance window (30d) for children ──
+  // ── 5. Attendance window for children ──
+  // Phase 2.8 widens this window from 30 to 365 days so the attendance-
+  // risk derive can detect "drifted away N>30d" players. The existing
+  // 30-day summary semantics for the family-level badges are preserved
+  // by filtering down before passing to summariseAttendance.
   let attendanceSummary = new Map<string, ReturnType<typeof summariseAttendance> extends Map<string, infer V> ? V : never>()
+  const attendanceByChild = new Map<string, Array<{ session_date: string; present: boolean }>>()
   if (childIds.length > 0) {
+    const yearAgoIso = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)
     const thirtyDaysAgoIso = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
     const { data: attRows } = await supabase
       .from('attendance')
       .select('player_id, session_date, present')
       .in('player_id', childIds)
-      .gte('session_date', thirtyDaysAgoIso)
-    attendanceSummary = summariseAttendance((attRows || []) as AttendanceRow[])
+      .gte('session_date', yearAgoIso)
+    const all = (attRows || []) as Array<AttendanceRow & { present: boolean }>
+    for (const r of all) {
+      const arr = attendanceByChild.get(r.player_id) || []
+      arr.push({ session_date: r.session_date, present: r.present })
+      attendanceByChild.set(r.player_id, arr)
+    }
+    const last30 = all.filter(r => r.session_date >= thirtyDaysAgoIso) as AttendanceRow[]
+    attendanceSummary = summariseAttendance(last30)
   }
 
   // ── 6. Latest review per child ──
@@ -247,6 +268,32 @@ export default async function ParentDetailPage({
     badges,
     contactSignal,
   })
+
+  // ── Phase 2.8 — Attendance Risk per child, then pick the MOST URGENT
+  //                for the family-level banner.
+  // We deliberately roll up to the highest-priority child so the banner
+  // surfaces the worst case ("⚠ Drifted away 41d" beats "⚠ Never 18d"
+  // beats "new_player"). The banner is display-only.
+  function tier(a: AttendanceRiskAssessment | null): number {
+    if (!a) return 0
+    if (a.riskLevel === 'high')   return 3
+    if (a.riskLevel === 'medium') return 2
+    return 0  // healthy / new_player / not_applicable
+  }
+  let mostUrgentAttendance: AttendanceRiskAssessment | null = null
+  for (const c of children) {
+    const activeEnrolments = (c.enrolments || []).filter(e => (e.status || '') === 'active')
+    const earliestActiveEnrolledAt = activeEnrolments
+      .map(e => e.enrolled_at)
+      .filter((v): v is string => !!v)
+      .sort()[0] || null
+    const assessment = deriveAttendanceRisk({
+      attendanceHistory: attendanceByChild.get(c.id) || [],
+      enrolmentStatus: activeEnrolments.length > 0 ? 'active' : (c.enrolments?.[0]?.status || null),
+      enrolledAt: earliestActiveEnrolledAt,
+    })
+    if (tier(assessment) > tier(mostUrgentAttendance)) mostUrgentAttendance = assessment
+  }
   const activeSubsCount = (subsRows || []).filter(s => s.status === 'active' || s.status === 'trialing').length
 
   // ── 11. Compute display strings ──
@@ -272,6 +319,11 @@ export default async function ParentDetailPage({
         {/* ── Phase 2.6 — At-Risk banner (display only). Renders nothing
               for healthy families so the page chrome doesn't shift. ── */}
         <AtRiskBanner assessment={riskAssessment} />
+
+        {/* ── Phase 2.8 — Attendance Risk banner (display only). One reason
+              per family; picks the most-urgent child. Renders nothing for
+              healthy / new_player / not_applicable. ── */}
+        <AttendanceBanner assessment={mostUrgentAttendance} />
 
         {/* ── Family Summary ── */}
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 space-y-3">
