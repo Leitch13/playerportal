@@ -83,6 +83,7 @@ export default async function SettingsPage() {
         orgId={org.id}
         initial={{
           cancellation_notice_days: Number(org.cancellation_notice_days ?? 0),
+          cancellation_policy: (org.cancellation_policy as string) || '',
           refund_policy: (org.refund_policy as string) || '',
           late_payment_grace_days: Number(org.late_payment_grace_days ?? 0),
           terms_text: (org.terms_text as string) || '',

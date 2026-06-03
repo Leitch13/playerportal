@@ -529,6 +529,101 @@ export function cancellationConfirmEmail(params: { parentName: string; planName:
   }
 }
 
+/**
+ * Cancellation retention flow — admin notification.
+ *
+ * Sent when a parent completes the cancel flow (either after declining the
+ * save-offer, or when no offer was shown). Tells the academy: who left,
+ * why, whether a save-offer was attempted, and when their access ends.
+ *
+ * Pairs with cancellationConfirmEmail (which goes to the parent).
+ */
+export function cancellationAdminNotifyEmail(params: {
+  academyName: string
+  parentName: string
+  parentEmail: string | null
+  reasonLabel: string
+  reasonDetail: string | null
+  offerOutcome: 'declined' | 'not_shown' | 'accepted'
+  endDate: string
+  orphaned?: boolean
+  dashboardUrl: string
+}) {
+  const offerLine = (() => {
+    if (params.offerOutcome === 'accepted') return '<span style="color:#10b981;font-weight:600">Accepted</span> the save-offer'
+    if (params.offerOutcome === 'declined') return '<span style="color:#fca5a5;font-weight:600">Declined</span> the save-offer'
+    return '<span style="color:#aaa">Save-offer not shown</span>'
+  })()
+  const orphanNote = params.orphaned
+    ? `<p style="background:#451a03;border:1px solid #f59e0b40;border-radius:10px;padding:12px;margin:18px 0;color:#fcd34d;font-size:13px;line-height:1.5">
+        ⚠ The parent's Stripe subscription was already unreachable. Their dashboard subscription has been cleared locally. No further Stripe action is needed but you may want to follow up if billing seemed off.
+       </p>`
+    : ''
+  return {
+    subject: `Cancellation: ${params.parentName} at ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">A family cancelled</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        <strong style="color:#fff">${params.parentName}</strong> just cancelled their subscription at <strong style="color:#fff">${params.academyName}</strong>.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Parent</td><td style="color:#fff;font-weight:600">${params.parentName}</td></tr>
+          ${params.parentEmail ? `<tr><td style="color:#888">Email</td><td><a href="mailto:${params.parentEmail}" style="color:#4ecde6">${params.parentEmail}</a></td></tr>` : ''}
+          <tr><td style="color:#888">Reason</td><td style="color:#fff">${params.reasonLabel}</td></tr>
+          ${params.reasonDetail ? `<tr><td style="color:#888">Detail</td><td style="color:#ddd;font-style:italic">"${params.reasonDetail}"</td></tr>` : ''}
+          <tr><td style="color:#888">Save-offer</td><td>${offerLine}</td></tr>
+          <tr><td style="color:#888">Access ends</td><td style="color:#fff">${params.endDate}</td></tr>
+        </table>
+      </div>
+      ${orphanNote}
+      <p style="color:#aaa;line-height:1.6;font-size:14px;margin:0 0 18px">
+        💡 <strong style="color:#ddd">Worth a quick check-in?</strong> A short, kind follow-up message often surfaces a fixable problem — and sometimes wins the family back.
+      </p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open billing dashboard →</a>
+      </div>
+    `),
+  }
+}
+
+/**
+ * Cancellation retention flow — admin notification when the parent
+ * ACCEPTED the save-offer. Tells the academy they retained the family.
+ */
+export function retentionAcceptedAdminNotifyEmail(params: {
+  academyName: string
+  parentName: string
+  parentEmail: string | null
+  discountPercent: number
+  durationLabel: string  // e.g. "one month", "3 months", "forever"
+  dashboardUrl: string
+}) {
+  return {
+    subject: `Retained: ${params.parentName} accepted ${params.discountPercent}% save-offer`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">A family stayed 🎉</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        <strong style="color:#fff">${params.parentName}</strong> was about to cancel at <strong style="color:#fff">${params.academyName}</strong> but accepted your save-offer instead.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Parent</td><td style="color:#fff;font-weight:600">${params.parentName}</td></tr>
+          ${params.parentEmail ? `<tr><td style="color:#888">Email</td><td><a href="mailto:${params.parentEmail}" style="color:#4ecde6">${params.parentEmail}</a></td></tr>` : ''}
+          <tr><td style="color:#888">Discount applied</td><td style="color:#10b981;font-weight:700">${params.discountPercent}% off</td></tr>
+          <tr><td style="color:#888">Duration</td><td style="color:#fff">${params.durationLabel}</td></tr>
+        </table>
+      </div>
+      <p style="color:#aaa;line-height:1.6;font-size:14px;margin:0 0 18px">
+        Their subscription continues uninterrupted. The discount applies automatically on their next invoice; no action needed from you.
+      </p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#10b981;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open billing dashboard →</a>
+      </div>
+    `),
+  }
+}
+
 export function bookingConfirmationEmail(params: {
   parentName: string
   childName: string

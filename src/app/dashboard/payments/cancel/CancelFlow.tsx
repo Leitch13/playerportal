@@ -19,8 +19,11 @@ export default function CancelFlow({
   planName,
   monthlyAmount,
   retentionEnabled = true,
-  retentionPercent = 25,
-  retentionMonths = null,
+  retentionPercent = 50,
+  retentionMonths = 1,
+  cancellationPolicy = null,
+  cancellationNoticeDays = 0,
+  academyName = 'your academy',
 }: {
   subscriptionId: string
   planName: string
@@ -28,6 +31,9 @@ export default function CancelFlow({
   retentionEnabled?: boolean
   retentionPercent?: number
   retentionMonths?: number | null
+  cancellationPolicy?: string | null
+  cancellationNoticeDays?: number
+  academyName?: string
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('reason')
@@ -77,7 +83,15 @@ export default function CancelFlow({
       const res = await fetch('/api/stripe/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscriptionId, reason, reasonDetail }),
+        body: JSON.stringify({
+          subscriptionId,
+          reason,
+          reasonDetail,
+          // Tell the server whether the save-offer was shown but declined.
+          // Drives the cancellations.offered_discount column + the admin-notify
+          // email's "Declined" vs "Not shown" copy.
+          offerWasShown: retentionEnabled,
+        }),
       })
       const data = await res.json()
       if (data.success) {
@@ -283,6 +297,25 @@ export default function CancelFlow({
             <p className="text-white/50 text-sm mt-2">
               Your subscription stays active until your current billing period ends.
             </p>
+          </div>
+
+          {/* ─── Academy cancellation policy (always shown on confirm step) ─── */}
+          <div className="rounded-2xl p-4 mb-4 bg-white/[0.03] border border-white/[0.08]" data-testid="cancellation-policy">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/60 mb-2">
+              {academyName}&apos;s cancellation policy
+            </p>
+            <p className="text-sm text-white/85 leading-relaxed">
+              {cancellationNoticeDays > 0 ? (
+                <>Your cancellation will take effect <strong className="text-white">{cancellationNoticeDays} day{cancellationNoticeDays === 1 ? '' : 's'}</strong> after you confirm. You&apos;ll continue to have access — and be billed for any sessions in that notice period — until then.</>
+              ) : (
+                <>Your cancellation takes effect at the end of your current billing period. No further charges will be made.</>
+              )}
+            </p>
+            {cancellationPolicy && (
+              <p className="text-xs text-white/55 leading-relaxed mt-3 whitespace-pre-wrap border-t border-white/[0.06] pt-3">
+                {cancellationPolicy}
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl p-5 mb-5 bg-rose-500/5 border border-rose-500/20">

@@ -29,13 +29,38 @@ export default async function CancelPage() {
   const plan = sub.subscription_plans as unknown as { name: string; amount: number } | null
 
   const orgIdForRetention = (sub as { organisation_id?: string }).organisation_id || profile?.organisation_id
-  const { data: org } = orgIdForRetention
-    ? await supabase
+
+  // Try the post-075 column set first; gracefully fall back to legacy if the
+  // migration hasn't been applied yet (mirrors migration-074 pattern so the
+  // page renders cleanly during the rollout window).
+  type OrgRow = {
+    retention_offer_enabled?: boolean
+    retention_offer_percent?: number
+    retention_offer_months?: number | null
+    cancellation_policy?: string | null
+    cancellation_notice_days?: number
+    name?: string
+  }
+  let org: OrgRow | null = null
+  if (orgIdForRetention) {
+    const fullSelect = 'retention_offer_enabled, retention_offer_percent, retention_offer_months, cancellation_policy, cancellation_notice_days, name'
+    const fallbackSelect = 'retention_offer_enabled, retention_offer_percent, retention_offer_months, cancellation_notice_days, name'
+    const first = await supabase
+      .from('organisations')
+      .select(fullSelect)
+      .eq('id', orgIdForRetention)
+      .single()
+    if (first.error && first.error.code === '42703') {
+      const fallback = await supabase
         .from('organisations')
-        .select('retention_offer_enabled, retention_offer_percent, retention_offer_months')
+        .select(fallbackSelect)
         .eq('id', orgIdForRetention)
         .single()
-    : { data: null }
+      org = (fallback.data ?? null) as unknown as OrgRow | null
+    } else {
+      org = (first.data ?? null) as unknown as OrgRow | null
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -44,8 +69,17 @@ export default async function CancelPage() {
         planName={plan?.name || 'Subscription'}
         monthlyAmount={Number(plan?.amount || 0)}
         retentionEnabled={org?.retention_offer_enabled !== false}
-        retentionPercent={Number(org?.retention_offer_percent ?? 25)}
-        retentionMonths={org?.retention_offer_months == null ? null : Number(org.retention_offer_months)}
+        retentionPercent={Number(org?.retention_offer_percent ?? 50)}
+        retentionMonths={
+          org?.retention_offer_months === undefined
+            ? 1
+            : org.retention_offer_months == null
+              ? null
+              : Number(org.retention_offer_months)
+        }
+        cancellationPolicy={org?.cancellation_policy ?? null}
+        cancellationNoticeDays={Number(org?.cancellation_notice_days ?? 0)}
+        academyName={org?.name || 'your academy'}
       />
     </div>
   )

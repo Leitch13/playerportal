@@ -19,12 +19,14 @@ export default function PoliciesForm({
   orgId: string
   initial: {
     cancellation_notice_days: number
+    cancellation_policy: string
     refund_policy: string
     late_payment_grace_days: number
     terms_text: string
   }
 }) {
   const [noticeDays, setNoticeDays] = useState(initial.cancellation_notice_days.toString())
+  const [cancellationPolicy, setCancellationPolicy] = useState(initial.cancellation_policy)
   const [refundPolicy, setRefundPolicy] = useState(initial.refund_policy)
   const [graceDays, setGraceDays] = useState(initial.late_payment_grace_days.toString())
   const [terms, setTerms] = useState(initial.terms_text)
@@ -39,15 +41,29 @@ export default function PoliciesForm({
     setSaved(false)
     try {
       const supabase = createClient()
-      const { error: updateError } = await supabase
+      // Try the post-075 column set first; degrade gracefully if migration
+      // 075 hasn't been applied yet (mirror migration-074 pattern).
+      const fullPayload = {
+        cancellation_notice_days: parseInt(noticeDays || '0', 10) || 0,
+        cancellation_policy: cancellationPolicy.trim() || null,
+        refund_policy: refundPolicy.trim() || null,
+        late_payment_grace_days: parseInt(graceDays || '0', 10) || 0,
+        terms_text: terms.trim() || null,
+      }
+      let { error: updateError } = await supabase
         .from('organisations')
-        .update({
-          cancellation_notice_days: parseInt(noticeDays || '0', 10) || 0,
-          refund_policy: refundPolicy.trim() || null,
-          late_payment_grace_days: parseInt(graceDays || '0', 10) || 0,
-          terms_text: terms.trim() || null,
-        })
+        .update(fullPayload)
         .eq('id', orgId)
+      if (updateError && updateError.code === '42703') {
+        // Migration not yet applied — drop the new column and retry.
+        const legacyPayload = { ...fullPayload }
+        delete (legacyPayload as { cancellation_policy?: string | null }).cancellation_policy
+        const retry = await supabase
+          .from('organisations')
+          .update(legacyPayload)
+          .eq('id', orgId)
+        updateError = retry.error
+      }
       if (updateError) {
         setError(updateError.message)
       } else {
@@ -114,6 +130,23 @@ export default function PoliciesForm({
             Days after a failed payment before access is suspended. 7 is reasonable.
           </p>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-white/70 mb-1.5">
+          Cancellation policy
+        </label>
+        <textarea
+          value={cancellationPolicy}
+          onChange={(e) => setCancellationPolicy(e.target.value)}
+          rows={3}
+          placeholder="e.g. We're sorry to see you go. Cancellations apply at the end of your current month. Please email us if circumstances change — we may be able to pause your subscription instead."
+          className={inputCls + ' resize-none'}
+          data-testid="cancellation-policy-textarea"
+        />
+        <p className="text-xs text-white/40 mt-1.5">
+          Shown to parents in the cancel flow before they confirm. Falls back to a generic notice if blank.
+        </p>
       </div>
 
       <div>

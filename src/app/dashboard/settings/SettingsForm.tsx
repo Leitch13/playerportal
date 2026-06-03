@@ -68,7 +68,7 @@ export default function SettingsForm({
     logo_url: '', hero_image_url: '', google_review_url: '',
     sibling_discount_enabled: false, sibling_discount_percent: 10,
     quarterly_billing_enabled: true, quarterly_discount_percent: 10,
-    retention_offer_enabled: true, retention_offer_percent: 25, retention_offer_months: null,
+    retention_offer_enabled: true, retention_offer_percent: 50, retention_offer_months: 1,
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [copied, setCopied] = useState(false)
