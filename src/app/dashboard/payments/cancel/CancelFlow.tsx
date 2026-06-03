@@ -12,7 +12,7 @@ const REASONS = [
   { id: 'other', label: 'Other reason', icon: '💬' },
 ]
 
-type Step = 'reason' | 'offer' | 'confirm' | 'retained' | 'cancelled'
+type Step = 'reason' | 'policy' | 'offer' | 'confirm' | 'retained' | 'cancelled'
 
 export default function CancelFlow({
   subscriptionId,
@@ -24,6 +24,7 @@ export default function CancelFlow({
   cancellationPolicy = null,
   cancellationNoticeDays = 0,
   academyName = 'your academy',
+  currentPeriodEnd = null,
 }: {
   subscriptionId: string
   planName: string
@@ -34,6 +35,9 @@ export default function CancelFlow({
   cancellationPolicy?: string | null
   cancellationNoticeDays?: number
   academyName?: string
+  /** ISO string of the parent's current Stripe billing-period end. Used to
+   *  compute the effective cancellation date when notice_days === 0. */
+  currentPeriodEnd?: string | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('reason')
@@ -47,13 +51,51 @@ export default function CancelFlow({
   const discountFraction = Math.max(1, Math.min(90, retentionPercent)) / 100
   const discountPrice = (monthlyAmount * (1 - discountFraction)).toFixed(2)
   const savingAmount = (monthlyAmount * discountFraction).toFixed(2)
-  const totalSavingOverDuration = retentionMonths
+  // Total saving only makes sense for a finite repeating discount (months > 1).
+  // For 'once' (months === 1) the saving IS the saving — no need to multiply.
+  // For 'forever' (months === null) we can't compute a total.
+  const totalSavingOverDuration = retentionMonths && retentionMonths > 1
     ? (monthlyAmount * discountFraction * retentionMonths).toFixed(2)
     : null
+  // Duration label that MATCHES the Stripe coupon configuration applied by
+  // /api/stripe/retain (months===1 → duration='once'; null → 'forever'; N>1 → repeating).
+  // months===1 wording avoids "for 1 month" which reads ambiguously vs "your next month
+  // at X% off" — which is exactly what Stripe's 'once' coupon does.
   const durationText =
-    retentionMonths && retentionMonths > 0
-      ? `for ${retentionMonths} month${retentionMonths !== 1 ? 's' : ''}`
-      : 'forever'
+    retentionMonths === null
+      ? 'forever'
+      : retentionMonths === 1
+        ? 'on your next month'
+        : `for ${retentionMonths} months`
+  // Short-form noun-phrase variants for headings + buttons.
+  const durationTextShort =
+    retentionMonths === null
+      ? 'every month'
+      : retentionMonths === 1
+        ? 'next month'
+        : `for ${retentionMonths} months`
+
+  // ─── Effective cancellation date math (matches /api/stripe/cancel logic) ───
+  //   notice_days > 0  → today + notice_days
+  //   notice_days = 0  → current_period_end (Stripe's cancel_at_period_end default)
+  //   unknown          → fall back to a generic sentence
+  function fmtDate(d: Date): string {
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+  let computedEndDate: string | null = null
+  if (cancellationNoticeDays > 0) {
+    const d = new Date(Date.now() + cancellationNoticeDays * 86400_000)
+    computedEndDate = fmtDate(d)
+  } else if (currentPeriodEnd) {
+    const d = new Date(currentPeriodEnd)
+    if (!Number.isNaN(d.getTime())) computedEndDate = fmtDate(d)
+  }
+
+  // Steps shown in the progress dots — dynamic based on whether the academy
+  // offers a retention discount.
+  const flowSteps: Step[] = retentionEnabled
+    ? ['reason', 'policy', 'offer', 'confirm']
+    : ['reason', 'policy', 'confirm']
 
   async function handleAcceptOffer() {
     setLoading(true)
@@ -108,12 +150,15 @@ export default function CancelFlow({
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      {/* Progress dots */}
-      <div className="flex justify-center items-center gap-2 mb-8">
-        {(['reason', 'offer', 'confirm'] as const).map((s, i) => {
-          const currentIdx = (['reason', 'offer', 'confirm'] as const).indexOf(step as 'reason' | 'offer' | 'confirm')
+      {/* Progress dots — dynamic 3- or 4-dot depending on whether the offer step is in the flow */}
+      <div className="flex justify-center items-center gap-2 mb-8" data-testid="cancel-flow-progress">
+        {flowSteps.map((s, i) => {
+          const currentIdx = flowSteps.indexOf(step as Step)
           const isCurrent = step === s
-          const isPast = currentIdx > i && (step === 'reason' || step === 'offer' || step === 'confirm')
+          // Past = a step we've already navigated through. End-states ('retained', 'cancelled')
+          // mean all flow steps are conceptually behind us.
+          const inFlow = (flowSteps as Step[]).includes(step as Step)
+          const isPast = inFlow ? currentIdx > i : true
           return (
             <div key={s} className="flex items-center gap-2">
               <div
@@ -125,7 +170,7 @@ export default function CancelFlow({
                     : 'w-2 h-2 bg-white/15'
                 }`}
               />
-              {i < 2 && <div className={`w-6 h-px ${isPast ? 'bg-[#4ecde6]/40' : 'bg-white/10'}`} />}
+              {i < flowSteps.length - 1 && <div className={`w-6 h-px ${isPast ? 'bg-[#4ecde6]/40' : 'bg-white/10'}`} />}
             </div>
           )
         })}
@@ -166,13 +211,23 @@ export default function CancelFlow({
             ))}
           </div>
 
-          {reason === 'other' && (
-            <textarea
-              value={reasonDetail}
-              onChange={(e) => setReasonDetail(e.target.value)}
-              placeholder="Tell us more — we read every response."
-              className="w-full p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-white resize-none h-20 mb-4 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
-            />
+          {reason && (
+            <div className="mb-4" data-testid="reason-detail-block">
+              <label className="block text-xs text-white/50 mb-2">
+                {reason === 'other'
+                  ? 'Tell us more (required for "Other")'
+                  : 'Anything else you’d like to share? (optional)'}
+              </label>
+              <textarea
+                value={reasonDetail}
+                onChange={(e) => setReasonDetail(e.target.value)}
+                placeholder={reason === 'other'
+                  ? 'Help us understand — we read every response.'
+                  : 'Optional. Helps your academy improve.'}
+                className="w-full p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-white resize-none h-20 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
+                data-testid="reason-detail-textarea"
+              />
+            </div>
           )}
 
           <div className="flex gap-3">
@@ -183,11 +238,91 @@ export default function CancelFlow({
               Never mind
             </button>
             <button
-              onClick={() => reason && setStep(retentionEnabled ? 'offer' : 'confirm')}
-              disabled={!reason}
+              onClick={() => {
+                // Reason MUST be selected before continuing.
+                // For 'other', also require some detail.
+                if (!reason) return
+                if (reason === 'other' && !reasonDetail.trim()) return
+                setStep('policy')
+              }}
+              disabled={!reason || (reason === 'other' && !reasonDetail.trim())}
               className="flex-1 py-3.5 rounded-xl text-sm font-semibold bg-white/[0.06] text-white/70 border border-white/[0.1] hover:bg-white/[0.1] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               Continue →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ STEP 2: Cancellation Policy ═══ */}
+      {step === 'policy' && (
+        <div className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl" data-testid="policy-step">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
+              📄
+            </div>
+            <h1 className="text-2xl font-bold text-white">Cancellation policy</h1>
+            <p className="text-white/50 text-sm mt-2 max-w-sm mx-auto">
+              Here&apos;s what happens after you confirm.
+            </p>
+          </div>
+
+          {/* Three bullets that match the brief: notice period, end date, what happens during */}
+          <div className="rounded-2xl p-5 mb-5 bg-white/[0.03] border border-white/[0.08] space-y-4" data-testid="policy-bullets">
+            <div className="flex gap-3">
+              <span className="text-xl shrink-0">⏱️</span>
+              <div className="text-sm text-white/85 leading-relaxed">
+                {cancellationNoticeDays > 0 ? (
+                  <><strong className="text-white">{academyName}</strong> requires <strong className="text-white">{cancellationNoticeDays} day{cancellationNoticeDays === 1 ? '' : 's'}</strong> notice.</>
+                ) : (
+                  <><strong className="text-white">{academyName}</strong> has no minimum notice period — your cancellation takes effect at the end of your current billing month.</>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-xl shrink-0">📅</span>
+              <div className="text-sm text-white/85 leading-relaxed">
+                {computedEndDate ? (
+                  <>Your membership will remain active until <strong className="text-white">{computedEndDate}</strong>.</>
+                ) : (
+                  <>Your membership will remain active until the end of your current billing period.</>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <span className="text-xl shrink-0">⚽</span>
+              <div className="text-sm text-white/85 leading-relaxed">
+                You&apos;ll continue to have full access to all booked sessions during this period
+                {cancellationNoticeDays > 0 ? ', and will be billed for any sessions inside the notice window' : ''}.
+              </div>
+            </div>
+          </div>
+
+          {/* Optional academy-authored policy text */}
+          {cancellationPolicy && (
+            <div className="rounded-2xl p-4 mb-5 bg-white/[0.02] border border-white/[0.06]" data-testid="cancellation-policy-text">
+              <p className="text-xs font-bold uppercase tracking-wider text-white/50 mb-2">
+                {academyName}&apos;s policy
+              </p>
+              <p className="text-sm text-white/75 leading-relaxed whitespace-pre-wrap">
+                {cancellationPolicy}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setStep('reason')}
+              className="flex-1 py-3.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white bg-white/[0.04] border border-white/[0.08] hover:border-white/20 transition-all"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => setStep(retentionEnabled ? 'offer' : 'confirm')}
+              className="flex-1 py-3.5 rounded-xl text-sm font-semibold bg-white/[0.06] text-white border border-white/[0.1] hover:bg-white/[0.1] transition-all"
+              data-testid="policy-continue"
+            >
+              I understand — continue →
             </button>
           </div>
         </div>
@@ -209,8 +344,13 @@ export default function CancelFlow({
               <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
                 Wait — before you go
               </h1>
-              <p className="text-white/60 text-sm sm:text-base">
-                Stay and we&apos;ll knock <strong className="text-[#4ecde6]">{retentionPercent}% off</strong> your subscription {durationText}.
+              <p className="text-white/60 text-sm sm:text-base" data-testid="offer-headline">
+                {retentionMonths === 1
+                  ? <>Stay and get <strong className="text-[#4ecde6]">{retentionPercent}% off your next month</strong>.</>
+                  : retentionMonths === null
+                    ? <>Stay and get <strong className="text-[#4ecde6]">{retentionPercent}% off</strong> for every month you keep your subscription.</>
+                    : <>Stay and get <strong className="text-[#4ecde6]">{retentionPercent}% off</strong> for the next <strong className="text-[#4ecde6]">{retentionMonths} months</strong>.</>
+                }
               </p>
             </div>
 
@@ -221,7 +361,9 @@ export default function CancelFlow({
                 <p className="text-base text-white/50 line-through font-medium mb-3">
                   £{monthlyAmount.toFixed(2)}/month
                 </p>
-                <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-1">Your price if you stay</p>
+                <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-1">
+                  {retentionMonths === 1 ? 'Your price next month' : retentionMonths === null ? 'Your new monthly price' : 'Your price for the next ' + retentionMonths + ' months'}
+                </p>
                 <div className="flex items-baseline justify-center gap-1 mb-3">
                   <span className="text-5xl sm:text-6xl font-extrabold text-[#4ecde6] tabular-nums">
                     £{discountPrice}
@@ -232,9 +374,15 @@ export default function CancelFlow({
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 17l5-5-5-5M6 17l5-5-5-5" />
                   </svg>
-                  Save £{savingAmount}/month {durationText}
-                  {totalSavingOverDuration && ` · £${totalSavingOverDuration} total`}
+                  {retentionMonths === 1
+                    ? `Save £${savingAmount} on your next charge`
+                    : retentionMonths === null
+                      ? `Save £${savingAmount} every month, forever`
+                      : `Save £${savingAmount}/month · £${totalSavingOverDuration} total`}
                 </div>
+                {retentionMonths === 1 && (
+                  <p className="text-[10px] text-white/40 mt-2.5">After your next month, your subscription returns to £{monthlyAmount.toFixed(2)}/month.</p>
+                )}
               </div>
             </div>
 
@@ -242,7 +390,11 @@ export default function CancelFlow({
               {[
                 'Keep your child’s spot in class',
                 `${retentionPercent}% off applied automatically — no code needed`,
-                `Discount lasts ${durationText}`,
+                retentionMonths === 1
+                  ? 'Discount applies to your next charge only'
+                  : retentionMonths === null
+                    ? 'Discount applies every month for as long as you stay'
+                    : `Discount applies for ${retentionMonths} months, then your subscription returns to its normal price`,
                 'Cancel any time after — no strings',
               ].map((line) => (
                 <div key={line} className="flex items-center gap-2.5 text-sm text-white/80">
@@ -299,18 +451,33 @@ export default function CancelFlow({
             </p>
           </div>
 
-          {/* ─── Academy cancellation policy (always shown on confirm step) ─── */}
-          <div className="rounded-2xl p-4 mb-4 bg-white/[0.03] border border-white/[0.08]" data-testid="cancellation-policy">
-            <p className="text-xs font-bold uppercase tracking-wider text-white/60 mb-2">
-              {academyName}&apos;s cancellation policy
+          {/* ─── Policy summary on confirm step — every fact, no surprises ─── */}
+          <div className="rounded-2xl p-4 mb-4 bg-white/[0.03] border border-white/[0.08] space-y-2.5" data-testid="cancellation-policy">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/60">
+              What happens after you confirm
             </p>
-            <p className="text-sm text-white/85 leading-relaxed">
-              {cancellationNoticeDays > 0 ? (
-                <>Your cancellation will take effect <strong className="text-white">{cancellationNoticeDays} day{cancellationNoticeDays === 1 ? '' : 's'}</strong> after you confirm. You&apos;ll continue to have access — and be billed for any sessions in that notice period — until then.</>
-              ) : (
-                <>Your cancellation takes effect at the end of your current billing period. No further charges will be made.</>
-              )}
-            </p>
+            <ul className="space-y-2 text-sm text-white/85">
+              <li className="flex gap-2">
+                <span className="text-white/40 shrink-0">→</span>
+                <span data-testid="confirm-effective-date">
+                  Cancellation takes effect on <strong className="text-white">{computedEndDate || 'the end of your current billing period'}</strong>
+                  {cancellationNoticeDays > 0 ? ` (${cancellationNoticeDays} day${cancellationNoticeDays === 1 ? '' : 's'} from today).` : '.'}
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-white/40 shrink-0">→</span>
+                <span>
+                  {cancellationNoticeDays > 0
+                    ? <>You&apos;ll be billed normally during the {cancellationNoticeDays}-day notice period.</>
+                    : <>No further charges after the current period ends.</>
+                  }
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-white/40 shrink-0">→</span>
+                <span>Full access continues until the effective date above.</span>
+              </li>
+            </ul>
             {cancellationPolicy && (
               <p className="text-xs text-white/55 leading-relaxed mt-3 whitespace-pre-wrap border-t border-white/[0.06] pt-3">
                 {cancellationPolicy}
@@ -342,12 +509,12 @@ export default function CancelFlow({
           {retentionEnabled && (
             <div className="rounded-2xl p-4 mb-5 bg-[#4ecde6]/8 border border-[#4ecde6]/30">
               <p className="text-sm text-white/90">
-                💡 <strong className="text-white">Last chance:</strong> Save{' '}
+                💡 <strong className="text-white">Last chance:</strong> Get{' '}
                 <button
                   onClick={() => setStep('offer')}
                   className="text-[#4ecde6] font-bold underline underline-offset-2 hover:text-[#7adeeb] transition-colors"
                 >
-                  {retentionPercent}% off {durationText}
+                  {retentionPercent}% off {durationTextShort}
                 </button>{' '}
                 instead of leaving.
               </p>
@@ -379,7 +546,7 @@ export default function CancelFlow({
                   boxShadow: '0 8px 32px rgba(78, 205, 230, 0.3), 0 0 0 2px rgba(78, 205, 230, 0.5)',
                 }}
               >
-                Get {retentionPercent}% Off →
+                Get {retentionPercent}% Off {durationTextShort === 'every month' ? 'instead' : durationTextShort} →
               </button>
             )}
           </div>
@@ -396,10 +563,25 @@ export default function CancelFlow({
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Welcome back!</h1>
             <p className="text-white/70 mb-5 text-sm sm:text-base">
-              Your <strong className="text-emerald-300">{retentionPercent}% discount</strong> is applied {durationText}.
-              <br className="hidden sm:block" /> You now pay{' '}
-              <strong className="text-emerald-300 text-lg">£{discountedAmount || discountPrice}/month</strong>
-              {saving && <> (saving £{saving}/month)</>}.
+              {retentionMonths === 1 ? (
+                <>Your <strong className="text-emerald-300">{retentionPercent}% discount</strong> applies to your next charge.
+                  <br className="hidden sm:block" /> You&apos;ll pay{' '}
+                  <strong className="text-emerald-300 text-lg">£{discountedAmount || discountPrice}</strong> next month
+                  {saving && <> (saving £{saving})</>}, then back to £{monthlyAmount.toFixed(2)}/month.
+                </>
+              ) : retentionMonths === null ? (
+                <>Your <strong className="text-emerald-300">{retentionPercent}% discount</strong> applies every month.
+                  <br className="hidden sm:block" /> You now pay{' '}
+                  <strong className="text-emerald-300 text-lg">£{discountedAmount || discountPrice}/month</strong>
+                  {saving && <> (saving £{saving}/month)</>}.
+                </>
+              ) : (
+                <>Your <strong className="text-emerald-300">{retentionPercent}% discount</strong> applies for the next {retentionMonths} months.
+                  <br className="hidden sm:block" /> You&apos;ll pay{' '}
+                  <strong className="text-emerald-300 text-lg">£{discountedAmount || discountPrice}/month</strong> for {retentionMonths} months
+                  {saving && <> (saving £{saving}/month)</>}, then back to £{monthlyAmount.toFixed(2)}/month.
+                </>
+              )}
             </p>
             <div className="rounded-2xl p-4 mb-6 bg-emerald-500/10 border border-emerald-500/30">
               <p className="text-sm text-emerald-300 font-semibold">

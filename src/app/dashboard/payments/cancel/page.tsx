@@ -11,7 +11,7 @@ export default async function CancelPage() {
   const [{ data: subscriptions }, { data: profile }] = await Promise.all([
     supabase
       .from('subscriptions')
-      .select('id, stripe_subscription_id, status, organisation_id, subscription_plans(name, amount)')
+      .select('id, stripe_subscription_id, status, organisation_id, current_period_end, subscription_plans(name, amount)')
       .eq('parent_id', user.id)
       .in('status', ['active', 'trialing']),
     supabase
@@ -80,6 +80,7 @@ export default async function CancelPage() {
         cancellationPolicy={org?.cancellation_policy ?? null}
         cancellationNoticeDays={Number(org?.cancellation_notice_days ?? 0)}
         academyName={org?.name || 'your academy'}
+        currentPeriodEnd={(sub as { current_period_end?: string | null }).current_period_end ?? null}
       />
     </div>
   )
