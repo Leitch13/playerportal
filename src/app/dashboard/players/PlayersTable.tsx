@@ -313,7 +313,7 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
       <td className="py-2.5 px-3 text-right whitespace-nowrap">
         <div className="inline-flex items-center gap-1">
           <RowActionLink href={`/dashboard/players/${r.id}`} title="View profile">👤</RowActionLink>
-          {r.parent_id && <RowActionLink href={`/dashboard/parents?focus=${r.parent_id}`} title="View parent">👨‍👩‍👧</RowActionLink>}
+          {r.parent_id && <RowActionLink href={`/dashboard/parents/${r.parent_id}`} title="View parent">👨‍👩‍👧</RowActionLink>}
           {r.parent_id && <RowActionLink href={`/dashboard/messages?to=${r.parent_id}`} title="Message parent">✉️</RowActionLink>}
           <RowActionLink href={`/dashboard/attendance?player=${r.id}`} title="Mark attendance">✓</RowActionLink>
           <RowActionLink href="/dashboard/enrolments" title="Move class">↔️</RowActionLink>

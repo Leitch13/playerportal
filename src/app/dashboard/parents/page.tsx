@@ -214,6 +214,14 @@ function ParentRow({ p, childrenList, sub, pay }: RowProps) {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             </a>
           )}
+          {/* Phase 2.2: link to the new Parent Detail page. */}
+          <Link
+            href={`/dashboard/parents/${p.id}`}
+            title="View family"
+            className="w-7 h-7 rounded-md bg-white/[0.04] hover:bg-[#4ecde6]/15 text-white/50 hover:text-[#4ecde6] flex items-center justify-center transition-colors text-[14px]"
+          >
+            👨‍👩‍👧
+          </Link>
           <ParentProfileEditor parent={{
             id: p.id,
             full_name: p.full_name || '',
