@@ -927,6 +927,70 @@ export function paymentFailedAdminEmail(params: {
   }
 }
 
+/**
+ * Day 2 — Parent failed-payment recovery email.
+ *
+ * Sent when Stripe fires invoice.payment_failed on a parent's subscription.
+ * The brief: the parent must know their payment failed BEFORE their
+ * membership silently lapses. Previously they got only an in-app
+ * notification — unseen unless they logged in.
+ *
+ * Includes:
+ *   • Plain-English explanation ("your card was declined")
+ *   • Failure reason from Stripe when available
+ *   • Stripe-hosted update link (one-click card update + retry — official Stripe-hosted page, no auth needed)
+ *   • Clear timeline ("we'll retry over the next 5-7 days; please update before then")
+ */
+export function paymentFailedParentEmail(params: {
+  academyName: string
+  parentName: string
+  childName?: string
+  planName: string
+  amount: string
+  failureReason?: string | null    // e.g. "Your card was declined" — pulled from invoice.last_finalization_error or charge
+  updatePaymentUrl: string         // Stripe hosted_invoice_url — parent updates card and retries inline
+  dashboardUrl: string
+  accentColor?: string
+}) {
+  const accent = (params.accentColor || '#f59e0b').replace(/[^#0-9a-fA-F]/g, '')
+  const reasonLine = params.failureReason
+    ? `<p style="color:#aaa;margin:0 0 18px;line-height:1.6;font-size:14px"><strong style="color:#fca5a5">Reason:</strong> ${params.failureReason}</p>`
+    : ''
+  return {
+    subject: `Action needed: payment for ${params.academyName} couldn't be processed`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Your payment couldn't be processed</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        Hi ${params.parentName} — we tried to take payment for your <strong style="color:#fff">${params.academyName}</strong> membership${params.childName ? ` (for ${params.childName})` : ''} but the charge didn't go through.
+      </p>
+      ${reasonLine}
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Academy</td><td style="color:#fff;font-weight:600">${params.academyName}</td></tr>
+          <tr><td style="color:#888">Plan</td><td style="color:#fff">${params.planName}</td></tr>
+          ${params.childName ? `<tr><td style="color:#888">For</td><td style="color:#fff">${params.childName}</td></tr>` : ''}
+          <tr><td style="color:#888">Amount</td><td style="color:#${accent};font-weight:700">${params.amount}</td></tr>
+        </table>
+      </div>
+      <p style="color:#ddd;line-height:1.6;font-size:14px;margin:0 0 18px">
+        <strong>What to do next:</strong> tap the button below to securely update your card. You'll go to a Stripe-hosted page — no Player Portal login needed. Once your card is updated, we'll retry the payment automatically and your membership will continue uninterrupted.
+      </p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.updatePaymentUrl}" style="display:inline-block;background:#${accent};color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Update payment method →</a>
+      </div>
+      <p style="color:#aaa;font-size:13px;line-height:1.6;margin:18px 0 0">
+        <strong style="color:#ddd">Common reasons:</strong> expired card, insufficient funds, or your bank flagged the charge. Updating to a new card resolves all three.
+      </p>
+      <p style="color:#666;font-size:12px;line-height:1.6;margin:18px 0 0">
+        We'll automatically retry the payment over the next 5–7 days. If we can't collect, your subscription will be paused — please update before then to keep your child's place. Questions? Reply to this email and your academy will help.
+      </p>
+      <p style="color:#555;font-size:11px;line-height:1.5;margin:16px 0 0;text-align:center">
+        <a href="${params.dashboardUrl}/dashboard/payments" style="color:#666;text-decoration:underline">View this in your Player Portal dashboard</a>
+      </p>
+    `),
+  }
+}
+
 export function firstSaleEmail(params: {
   academyName: string
   academySlug: string

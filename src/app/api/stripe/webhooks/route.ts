@@ -1582,6 +1582,72 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
           await sendEmail({ to: adminEmail, ...template })
         }
       }
+
+      // ── Day 2: PARENT failed-payment recovery email ──
+      // Gate on attempt_count === 1 so the parent gets ONE email per failed
+      // billing period, not one per Stripe Smart-Retries attempt (which would
+      // spam the same person 4 times over 7 days). Webhook-level idempotency
+      // upstream prevents duplicate-event re-runs of the handler itself.
+      const attemptCount = (invoice as Stripe.Invoice & { attempt_count?: number }).attempt_count ?? 1
+      const parentEmail = parentProfile?.email as string | undefined
+      if (attemptCount === 1 && parentEmail) {
+        // Pull a recovery URL from Stripe. hosted_invoice_url goes to a
+        // Stripe-hosted page where the customer updates their card and the
+        // invoice auto-retries — no Player Portal auth needed. This is the
+        // canonical Stripe-recommended recovery path.
+        const updateUrl = (invoice as Stripe.Invoice & { hosted_invoice_url?: string | null }).hosted_invoice_url
+          || `${appUrl}/dashboard/payments`
+
+        // Pull the failure reason from the invoice's last finalization error,
+        // or from the latest charge's failure_message when available. Best-effort.
+        let failureReason: string | null = null
+        const finErr = (invoice as Stripe.Invoice & { last_finalization_error?: { message?: string } }).last_finalization_error
+        if (finErr?.message) failureReason = finErr.message
+        if (!failureReason) {
+          const chargeId = typeof (invoice as Stripe.Invoice & { charge?: string | Stripe.Charge }).charge === 'string'
+            ? (invoice as Stripe.Invoice & { charge?: string }).charge
+            : ((invoice as Stripe.Invoice & { charge?: Stripe.Charge }).charge as Stripe.Charge | undefined)?.id
+          if (chargeId) {
+            try {
+              const charge = await stripe.charges.retrieve(chargeId)
+              failureReason = charge.failure_message || charge.outcome?.seller_message || null
+            } catch (chErr) {
+              console.error('Failed to fetch charge for failure reason:', chErr)
+            }
+          }
+        }
+
+        // Brand the parent email with the academy's colour when available.
+        const { data: orgBranding } = await supabase
+          .from('organisations')
+          .select('primary_color')
+          .eq('id', localSub.organisation_id)
+          .maybeSingle()
+        const accentColor = (orgBranding?.primary_color as string | undefined) || '#f59e0b'
+
+        const { paymentFailedParentEmail } = await import('@/lib/email-templates')
+        const parentTpl = paymentFailedParentEmail({
+          academyName: (orgInfo?.name as string | undefined) || 'your academy',
+          parentName: (parentProfile?.full_name as string | undefined)?.split(' ')[0] || 'there',
+          childName,
+          planName: (plan?.name as string | undefined) || 'Subscription',
+          amount: `£${amountFailed.toFixed(2)}`,
+          failureReason,
+          updatePaymentUrl: updateUrl,
+          dashboardUrl: appUrl,
+          accentColor,
+        })
+
+        try {
+          await sendEmail({
+            to: parentEmail,
+            ...parentTpl,
+            fromName: (orgInfo?.name as string | undefined) || undefined,
+          })
+        } catch (parentSendErr) {
+          console.error('Payment failed PARENT email failed:', parentSendErr)
+        }
+      }
     } catch (err) {
       console.error('Payment failed admin email failed:', err)
     }
