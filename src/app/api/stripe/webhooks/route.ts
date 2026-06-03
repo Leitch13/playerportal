@@ -1011,6 +1011,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         })
         .eq('id', orgId)
       if (platformOrgErr) throw new Error(`platform organisations.update failed: ${platformOrgErr.message}`)
+
+      // ── Email #3: Subscription activated (academy → Player Portal) ──
+      // Sprint follow-up. Mirrors #1b in the Day-3 lifecycle: the academy's
+      // first paid charge succeeded; tell them their plan is live.
+      try {
+        await sendPlatformSubscriptionActivatedEmail(orgId, subId, planId)
+      } catch (actErr) {
+        console.error('platform activation email failed:', actErr)
+      }
     }
     return
   }
@@ -1490,6 +1499,30 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   const now = new Date().toISOString()
 
+  // ─── PLATFORM SUB branch (academy's OWN Player Portal sub failed) ───
+  // Sprint follow-up — Email #8. The handler previously looked up only
+  // parent `subscriptions`; platform-sub failures silently returned with
+  // no notification. Now we check the org table FIRST. If matched, send
+  // platformPaymentFailedEmail to admins and stop — we do NOT continue
+  // to the parent-sub branch (those tables don't have rows for platform
+  // subs anyway). State will sync via customer.subscription.updated.
+  const { data: platformOrg } = await supabase
+    .from('organisations')
+    .select('id, name, primary_color, platform_plan_id')
+    .eq('platform_stripe_subscription_id', subscriptionId)
+    .maybeSingle()
+  if (platformOrg) {
+    const attemptCount = (invoice as Stripe.Invoice & { attempt_count?: number }).attempt_count ?? 1
+    if (attemptCount === 1) {
+      try {
+        await sendPlatformPaymentFailedEmail(platformOrg.id, invoice)
+      } catch (pfErr) {
+        console.error('platform payment failed email failed:', pfErr)
+      }
+    }
+    return
+  }
+
   // Mark subscription as past_due
   const { data: localSub } = await supabase
     .from('subscriptions')
@@ -1678,6 +1711,17 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       })
       .eq('id', platformOrg.id)
     if (platCancelErr) throw new Error(`platform cancel organisations.update failed: ${platCancelErr.message}`)
+
+    // ── Email #9: Cancellation confirmation ──
+    // Sprint follow-up. Subscription is cancelled (either user-initiated via
+    // Billing Portal, or Stripe-side after retries exhausted). Closes the
+    // loop honestly so the academy knows their dashboard will lock at
+    // period end + how to resubscribe.
+    try {
+      await sendPlatformCancellationConfirmEmail(platformOrg.id, subscription)
+    } catch (cancelErr) {
+      console.error('platform cancellation email failed:', cancelErr)
+    }
     return
   }
 
@@ -1795,9 +1839,23 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   // Keep the academy's platform_subscription_status in sync with Stripe so the
   // dashboard gate reflects reality (e.g. failed renewal → past_due → locked,
   // payment recovers → active → unlocked).
+  //
+  // ALSO sync platform_plan_id when the academy upgrades/downgrades via the
+  // Stripe Billing Portal. The subscription swaps to a new Stripe Price →
+  // new Product; we read product.metadata.platform_plan_slug / platform_plan_id
+  // (set at creation in /api/platform/subscribe) to resolve to a platform_plans
+  // row. WITHOUT this sync, organisations.platform_plan_id stays on the
+  // original plan; the PLATFORM_FEE_RATE lookup in /api/stripe/subscribe then
+  // reads the OLD plan's transaction_fee_percent and applies it to every
+  // NEW parent subscription created at the academy — over-/under-charging
+  // application_fee_percent indefinitely.
+  //
+  // (Existing parent subscriptions are unaffected — Stripe locks
+  // application_fee_percent at sub creation. Only NEW parent subs benefit
+  // from the corrected platform_plan_id.)
   const { data: platformOrg } = await supabase
     .from('organisations')
-    .select('id')
+    .select('id, platform_subscription_status, platform_plan_id')
     .eq('platform_stripe_subscription_id', stripeSubId)
     .maybeSingle()
   if (platformOrg) {
@@ -1809,11 +1867,58 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
           : subscription.status === 'canceled'
             ? 'cancelled'
             : subscription.status
+
+    // ── Resolve the current platform_plan_id from the subscription's product
+    //    metadata. Best-effort: failure leaves platform_plan_id untouched. ──
+    let resolvedPlanId: string | null = null
+    try {
+      const firstItem = subscription.items?.data?.[0]
+      const priceProductId = typeof firstItem?.price?.product === 'string'
+        ? firstItem.price.product
+        : (firstItem?.price?.product as Stripe.Product | null | undefined)?.id ?? null
+      if (priceProductId) {
+        const product = await stripe.products.retrieve(priceProductId)
+        const metaPlanId = product.metadata?.platform_plan_id || null
+        const metaPlanSlug = product.metadata?.platform_plan_slug || null
+        if (metaPlanId) {
+          resolvedPlanId = metaPlanId
+        } else if (metaPlanSlug) {
+          const { data: planRow } = await supabase
+            .from('platform_plans')
+            .select('id')
+            .eq('slug', metaPlanSlug)
+            .maybeSingle()
+          if (planRow) resolvedPlanId = (planRow as { id: string }).id
+        }
+      }
+    } catch (planLookupErr) {
+      console.error('platform_plan_id lookup failed (non-fatal):', planLookupErr)
+    }
+
+    const updatePayload: Record<string, unknown> = { platform_subscription_status: mapped }
+    if (resolvedPlanId && resolvedPlanId !== platformOrg.platform_plan_id) {
+      updatePayload.platform_plan_id = resolvedPlanId
+    }
     const { error: platUpdErr } = await supabase
       .from('organisations')
-      .update({ platform_subscription_status: mapped })
+      .update(updatePayload)
       .eq('id', platformOrg.id)
     if (platUpdErr) throw new Error(`platform organisations.update failed: ${platUpdErr.message}`)
+
+    // ── Email #11: Payment recovered ──
+    // Sprint follow-up. Past_due/unpaid → active means the academy's
+    // renewal-retry succeeded (they updated their card and Stripe retried).
+    // We only fire on the actual transition; same active→active state
+    // change must NOT spam.
+    const wasFailing = platformOrg.platform_subscription_status === 'past_due'
+      || platformOrg.platform_subscription_status === 'unpaid'
+    if (mapped === 'active' && wasFailing) {
+      try {
+        await sendPlatformPaymentRecoveredEmail(platformOrg.id, resolvedPlanId || platformOrg.platform_plan_id)
+      } catch (recErr) {
+        console.error('platform payment recovered email failed:', recErr)
+      }
+    }
     return
   }
 
@@ -1842,6 +1947,156 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     .eq('stripe_subscription_id', stripeSubId)
   if (updSubErr) throw new Error(`update subscriptions.update failed: ${updSubErr.message}`)
 
+}
+
+// ---------------------------------------------------------------------------
+// Platform-billing email helpers (Sprint follow-up — emails #3, #8, #9, #11)
+// ---------------------------------------------------------------------------
+//
+// Each helper resolves the academy admin recipients, builds the email via
+// the relevant template, and dispatches via the existing Resend wrapper.
+// Errors are caller-swallowed (every call site wraps in try/catch + logs)
+// so a Resend hiccup never prevents DB state from progressing.
+// ---------------------------------------------------------------------------
+
+async function resolvePlatformContext(orgId: string) {
+  const [{ data: org }, { data: admins }] = await Promise.all([
+    supabase.from('organisations').select('name, primary_color, platform_plan_id').eq('id', orgId).maybeSingle(),
+    supabase.from('profiles').select('full_name, email').eq('organisation_id', orgId).eq('role', 'admin'),
+  ])
+  return {
+    academyName: ((org as { name?: string } | null)?.name) || 'Your academy',
+    primaryColor: ((org as { primary_color?: string } | null)?.primary_color) || '#4ecde6',
+    platformPlanId: ((org as { platform_plan_id?: string } | null)?.platform_plan_id) || null,
+    admins: ((admins || []) as Array<{ full_name?: string | null; email?: string | null }>),
+  }
+}
+
+async function resolvePlatformPlanName(planId: string | null): Promise<{ name: string; monthlyPrice: number }> {
+  if (!planId) return { name: 'Subscription', monthlyPrice: 0 }
+  const { data: plan } = await supabase
+    .from('platform_plans')
+    .select('name, monthly_price')
+    .eq('id', planId)
+    .maybeSingle()
+  return {
+    name: ((plan as { name?: string } | null)?.name) || 'Subscription',
+    monthlyPrice: Number((plan as { monthly_price?: number } | null)?.monthly_price ?? 0),
+  }
+}
+
+async function sendPlatformSubscriptionActivatedEmail(
+  orgId: string,
+  subId: string | null,
+  planIdFromMetadata: string | undefined,
+) {
+  const ctx = await resolvePlatformContext(orgId)
+  const effectivePlanId = planIdFromMetadata || ctx.platformPlanId
+  const planInfo = await resolvePlatformPlanName(effectivePlanId)
+  let nextBillingDate = 'next month'
+  if (subId) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subId)
+      const period = (sub as Stripe.Subscription & { current_period_end?: number }).current_period_end
+      if (period) nextBillingDate = new Date(period * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    } catch { /* fall through with fallback label */ }
+  }
+  const { platformSubscriptionActivatedEmail } = await import('@/lib/email-templates')
+  const { sendEmail } = await import('@/lib/email')
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  for (const admin of ctx.admins) {
+    if (!admin.email) continue
+    const tpl = platformSubscriptionActivatedEmail({
+      academyName: ctx.academyName,
+      adminFirstName: (admin.full_name || '').split(' ')[0] || 'there',
+      planName: planInfo.name,
+      monthlyAmount: `£${planInfo.monthlyPrice.toFixed(2)}`,
+      nextBillingDate,
+      dashboardUrl: appUrl,
+    })
+    await sendEmail({ to: admin.email, ...tpl })
+  }
+}
+
+async function sendPlatformPaymentFailedEmail(orgId: string, invoice: Stripe.Invoice) {
+  const ctx = await resolvePlatformContext(orgId)
+  const planInfo = await resolvePlatformPlanName(ctx.platformPlanId)
+  const amountFailed = (invoice.amount_due ?? 0) / 100
+  const updateUrl = (invoice as Stripe.Invoice & { hosted_invoice_url?: string | null }).hosted_invoice_url
+    || `${process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/dashboard/settings`
+  // Best-effort failure reason: invoice last_finalization_error first, then charge.failure_message.
+  let failureReason: string | null = null
+  const finErr = (invoice as Stripe.Invoice & { last_finalization_error?: { message?: string } }).last_finalization_error
+  if (finErr?.message) failureReason = finErr.message
+  if (!failureReason) {
+    const chargeId = typeof (invoice as Stripe.Invoice & { charge?: string | Stripe.Charge }).charge === 'string'
+      ? (invoice as Stripe.Invoice & { charge?: string }).charge
+      : ((invoice as Stripe.Invoice & { charge?: Stripe.Charge }).charge as Stripe.Charge | undefined)?.id
+    if (chargeId) {
+      try {
+        const ch = await stripe.charges.retrieve(chargeId)
+        failureReason = ch.failure_message || ch.outcome?.seller_message || null
+      } catch { /* best-effort */ }
+    }
+  }
+  const { platformPaymentFailedEmail } = await import('@/lib/email-templates')
+  const { sendEmail } = await import('@/lib/email')
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  for (const admin of ctx.admins) {
+    if (!admin.email) continue
+    const tpl = platformPaymentFailedEmail({
+      academyName: ctx.academyName,
+      adminFirstName: (admin.full_name || '').split(' ')[0] || 'there',
+      planName: planInfo.name,
+      amount: `£${amountFailed.toFixed(2)}`,
+      failureReason,
+      updatePaymentUrl: updateUrl,
+      dashboardUrl: appUrl,
+    })
+    await sendEmail({ to: admin.email, ...tpl })
+  }
+}
+
+async function sendPlatformCancellationConfirmEmail(orgId: string, subscription: Stripe.Subscription) {
+  const ctx = await resolvePlatformContext(orgId)
+  const planInfo = await resolvePlatformPlanName(ctx.platformPlanId)
+  const endTs = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end
+    || (subscription as Stripe.Subscription & { canceled_at?: number }).canceled_at
+  const endDate = endTs
+    ? new Date(endTs * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'end of current period'
+  const { platformCancellationConfirmEmail } = await import('@/lib/email-templates')
+  const { sendEmail } = await import('@/lib/email')
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  for (const admin of ctx.admins) {
+    if (!admin.email) continue
+    const tpl = platformCancellationConfirmEmail({
+      academyName: ctx.academyName,
+      adminFirstName: (admin.full_name || '').split(' ')[0] || 'there',
+      planName: planInfo.name,
+      endDate,
+      dashboardUrl: appUrl,
+    })
+    await sendEmail({ to: admin.email, ...tpl })
+  }
+}
+
+async function sendPlatformPaymentRecoveredEmail(orgId: string, planIdHint: string | null) {
+  const ctx = await resolvePlatformContext(orgId)
+  const planInfo = await resolvePlatformPlanName(planIdHint || ctx.platformPlanId)
+  const { platformPaymentRecoveredEmail } = await import('@/lib/email-templates')
+  const { sendEmail } = await import('@/lib/email')
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  for (const admin of ctx.admins) {
+    if (!admin.email) continue
+    const tpl = platformPaymentRecoveredEmail({
+      academyName: ctx.academyName,
+      adminFirstName: (admin.full_name || '').split(' ')[0] || 'there',
+      planName: planInfo.name,
+      dashboardUrl: appUrl,
+    })
+    await sendEmail({ to: admin.email, ...tpl })
+  }
 }
 
 // ---------------------------------------------------------------------------

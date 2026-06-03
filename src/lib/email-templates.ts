@@ -991,6 +991,154 @@ export function paymentFailedParentEmail(params: {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Day-2-4 sprint follow-up: PLATFORM-billing emails (academy → Player Portal)
+//
+// These four close the trust loop on the academy's own Player Portal
+// subscription. Before this batch, every platform-billing event updated
+// DB state silently — the academy never received an email confirming
+// what happened.
+//
+// All four are mailed to the academy's admin users. None affect Stripe
+// Connect parent-billing math.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export function platformSubscriptionActivatedEmail(params: {
+  academyName: string
+  adminFirstName: string
+  planName: string
+  monthlyAmount: string
+  nextBillingDate: string
+  dashboardUrl: string
+}) {
+  return {
+    subject: `Your Player Portal ${params.planName} plan is active`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">You're live on Player Portal 🎉</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        Hi ${params.adminFirstName} — your Player Portal subscription for <strong style="color:#fff">${params.academyName}</strong> is active. Your public booking page is live and parents can subscribe.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Monthly</td><td style="color:#4ecde6;font-weight:700">${params.monthlyAmount}</td></tr>
+          <tr><td style="color:#888">Next charge</td><td style="color:#fff">${params.nextBillingDate}</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/dashboard" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
+      </div>
+      <p style="color:#666;font-size:12px;line-height:1.6;margin:18px 0 0;text-align:center">
+        Manage billing or change plan from <a href="${params.dashboardUrl}/dashboard/settings" style="color:#888;text-decoration:underline">Settings</a> at any time. Your trial period has now ended and your subscription is rolling monthly.
+      </p>
+    `),
+  }
+}
+
+export function platformPaymentFailedEmail(params: {
+  academyName: string
+  adminFirstName: string
+  planName: string
+  amount: string
+  failureReason?: string | null
+  updatePaymentUrl: string
+  dashboardUrl: string
+}) {
+  const reasonLine = params.failureReason
+    ? `<p style="color:#aaa;margin:0 0 18px;line-height:1.6;font-size:14px"><strong style="color:#fca5a5">Reason:</strong> ${params.failureReason}</p>`
+    : ''
+  return {
+    subject: `Action needed: your Player Portal payment couldn't be processed`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Your Player Portal payment didn't go through</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        Hi ${params.adminFirstName} — we tried to renew your Player Portal subscription for <strong style="color:#fff">${params.academyName}</strong> but the charge didn't go through.
+      </p>
+      ${reasonLine}
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Amount</td><td style="color:#f59e0b;font-weight:700">${params.amount}</td></tr>
+        </table>
+      </div>
+      <p style="color:#ddd;line-height:1.6;font-size:14px;margin:0 0 18px">
+        <strong>Quick fix:</strong> tap the button below to update your card. You'll go to a Stripe-hosted page — once your card is updated, we'll retry automatically and your dashboard stays unlocked.
+      </p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.updatePaymentUrl}" style="display:inline-block;background:#f59e0b;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Update payment method →</a>
+      </div>
+      <p style="color:#aaa;font-size:13px;line-height:1.6;margin:18px 0 0">
+        Stripe will retry over the next 5–7 days. If we can't collect, your dashboard will be temporarily locked until you update — parents and existing bookings stay live throughout. Your public booking page is unaffected.
+      </p>
+    `),
+  }
+}
+
+export function platformCancellationConfirmEmail(params: {
+  academyName: string
+  adminFirstName: string
+  planName: string
+  endDate: string
+  dashboardUrl: string
+}) {
+  return {
+    subject: `Your Player Portal subscription has been cancelled`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Cancellation confirmed</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        Hi ${params.adminFirstName} — your Player Portal subscription for <strong style="color:#fff">${params.academyName}</strong> has been cancelled.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan cancelled</td><td style="color:#fff;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Access ends</td><td style="color:#fff">${params.endDate}</td></tr>
+        </table>
+      </div>
+      <p style="color:#aaa;line-height:1.6;font-size:14px;margin:0 0 18px">
+        <strong style="color:#ddd">What happens now:</strong> your admin dashboard will be locked once your current period ends. Existing parent subscriptions and your public booking page stay live throughout — parents continue to be charged and attend classes uninterrupted.
+      </p>
+      <p style="color:#aaa;line-height:1.6;font-size:14px;margin:0 0 18px">
+        Changed your mind? You can resubscribe at any time and pick up where you left off — all your data, players, classes, and parents are preserved.
+      </p>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/dashboard/settings" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Resubscribe →</a>
+      </div>
+      <p style="color:#666;font-size:12px;line-height:1.6;margin:18px 0 0;text-align:center">
+        We're sorry to see you go. Reply to this email if there's anything we can do.
+      </p>
+    `),
+  }
+}
+
+export function platformPaymentRecoveredEmail(params: {
+  academyName: string
+  adminFirstName: string
+  planName: string
+  dashboardUrl: string
+}) {
+  return {
+    subject: `Your Player Portal payment is sorted — dashboard unlocked`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">You're back — payment recovered ✓</h2>
+      <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
+        Hi ${params.adminFirstName} — great news. Your Player Portal subscription for <strong style="color:#fff">${params.academyName}</strong> is back to active. Your dashboard is fully unlocked.
+      </p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:18px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;font-weight:600">${params.planName}</td></tr>
+          <tr><td style="color:#888">Status</td><td style="color:#10b981;font-weight:700">Active</td></tr>
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}/dashboard" style="display:inline-block;background:#10b981;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
+      </div>
+      <p style="color:#666;font-size:12px;line-height:1.6;margin:18px 0 0;text-align:center">
+        No action required. Your next renewal will follow your normal billing schedule.
+      </p>
+    `),
+  }
+}
+
 export function firstSaleEmail(params: {
   academyName: string
   academySlug: string
