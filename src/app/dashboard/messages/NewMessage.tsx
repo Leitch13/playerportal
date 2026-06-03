@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { MessageData } from './MessagesApp'
 
 export default function NewMessage({
@@ -51,37 +50,51 @@ export default function NewMessage({
     if (!recipientId || !body.trim() || sending) return
 
     setSending(true)
-    const supabase = createClient()
 
-    // Create a new thread_id for this new conversation
+    // Day 1 — route through the unified send API so the message ALSO
+    // delivers via email. Previously this called supabase.from('messages')
+    // .insert directly; the row was created but no parent ever received
+    // anything in their inbox.
     const threadId = crypto.randomUUID()
+    let messageId = ''
+    let okToShow = false
+    let createdAt = new Date().toISOString()
 
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        organisation_id: orgId,
-        sender_id: currentUserId,
-        recipient_id: recipientId,
-        subject: subject || null,
-        body: body.trim(),
-        thread_id: threadId,
+    try {
+      const res = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          recipientIds: [recipientId],
+          subject: subject || null,
+          body: body.trim(),
+          threadId,
+        }),
       })
-      .select('*')
-      .single()
+      const json = await res.json().catch(() => ({} as { ok?: boolean; messageIds?: string[] }))
+      if (res.ok && json.ok && Array.isArray(json.messageIds) && json.messageIds.length > 0) {
+        messageId = json.messageIds[0]
+        okToShow = true
+      } else {
+        // surface error inline (existing UI degrades silently — improve later)
+        const errMsg = (json as { error?: string }).error || `HTTP ${res.status}`
+        console.error('Message send failed:', errMsg)
+      }
+    } catch (err) {
+      console.error('Message send threw:', err)
+    }
 
-    if (error) {
-      // message send failed
-    } else if (data) {
+    if (okToShow) {
       const recipient = recipients.find((r) => r.id === recipientId)
       const msgData: MessageData = {
-        id: data.id,
-        sender_id: data.sender_id,
-        recipient_id: data.recipient_id,
-        body: data.body,
-        subject: data.subject,
+        id: messageId,
+        sender_id: currentUserId,
+        recipient_id: recipientId,
+        body: body.trim(),
+        subject: subject || null,
         read: false,
-        created_at: data.created_at,
-        thread_id: data.thread_id || data.id,
+        created_at: createdAt,
+        thread_id: threadId,
         sender: { id: currentUserId, full_name: currentUserName, role: 'parent' },
         recipient: recipient || { id: recipientId, full_name: 'Unknown', role: 'parent' },
       }

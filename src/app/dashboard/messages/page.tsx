@@ -1,10 +1,36 @@
+/**
+ * /dashboard/messages — Day 1 rewrite.
+ *
+ * Before today, this page queried the unused `conversations` +
+ * `conversation_messages` tables (0 production rows) which meant the
+ * Messages page rendered EMPTY even when the academy owner had sent
+ * messages — those messages went to the legacy `messages` table which
+ * was the silent active surface.
+ *
+ * After today, the page reads the SAME `messages` table the rest of
+ * the app writes to (NewMessage, BulkMessageForm, SendMessageForm,
+ * ParentReplyForm — all now route through /api/messages/send). What
+ * the academy sent is what the academy sees.
+ *
+ * Behaviour:
+ *   • Threads grouped by `thread_id` (or the message id when null)
+ *   • Sender + recipient profile resolved per thread
+ *   • Unread counts use `read=false` for messages where current user is recipient
+ *   • Empty state is accurate ("No messages yet")
+ *   • BulkMessageForm continues to mount at the top when `?recipients=`
+ *     is present (Phase 2.3b deep-link contract preserved)
+ *
+ * Out of scope today: the conversation system's threaded reply UX
+ * (MessagingHub). MessagingHub.tsx is left in place for archaeology
+ * but is no longer imported.
+ */
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import type { UserRole } from '@/lib/types'
-import MessagingHub from './MessagingHub'
 import BulkMessageForm from './BulkMessageForm'
-import type { ConversationItem, Participant } from './MessagingHub'
+import MessagesList from './MessagesList'
+import { deriveThreads, type MessageRow, type ProfileLite } from '@/lib/messages-derive'
 import { validateRecipientsParam } from '@/lib/recipients-validate'
 
 export default async function MessagesPage({
@@ -14,9 +40,7 @@ export default async function MessagesPage({
 }) {
   const params = (await searchParams) || {}
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
   await requireFeature('messaging')
 
@@ -28,106 +52,68 @@ export default async function MessagesPage({
 
   const role = (profile?.role || 'parent') as UserRole
   const orgId = profile?.organisation_id || ''
-  const fullName = profile?.full_name || 'You'
 
-  // ---------- Fetch conversations the user is part of ----------
-  const { data: convData } = await supabase
-    .from('conversations')
-    .select(
-      `
-      id, subject, updated_at,
-      conversation_participants(user_id, last_read_at),
-      conversation_messages(id, content, created_at, sender_id)
-    `
-    )
+  // ── 1. Pull the user's messages (sent OR received) for this org. ──
+  // The org-scoping defence-in-depth + the sender/recipient OR clause
+  // together ensure cross-tenant data cannot leak even if RLS were
+  // misconfigured.
+  // Day 1: Select legacy columns + optional delivery columns. PostgREST
+  // returns NULL for columns that don't exist yet (pre-migration-074),
+  // so the page still renders cleanly during the rollout window.
+  const { data: msgs, error: msgsError } = await supabase
+    .from('messages')
+    .select('id, thread_id, sender_id, recipient_id, subject, body, read, created_at, channel, delivery_status, delivery_failure_reason')
     .eq('organisation_id', orgId)
-    .order('updated_at', { ascending: false })
+    .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+    .order('created_at', { ascending: false })
 
-  // Build profile map for all participants
-  const allUserIds = new Set<string>()
-  for (const c of convData || []) {
-    for (const p of (c.conversation_participants as { user_id: string }[])) {
-      allUserIds.add(p.user_id)
-    }
+  // If delivery columns don't exist (migration not applied yet), the SELECT
+  // above will fail with 42703. Fall back to legacy-only select.
+  let rows: MessageRow[]
+  if (msgsError && msgsError.code === '42703') {
+    const fallback = await supabase
+      .from('messages')
+      .select('id, thread_id, sender_id, recipient_id, subject, body, read, created_at')
+      .eq('organisation_id', orgId)
+      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+    rows = (fallback.data || []) as unknown as MessageRow[]
+  } else {
+    rows = (msgs || []) as unknown as MessageRow[]
   }
 
-  let profileMap = new Map<string, { id: string; full_name: string; role: string }>()
-  if (allUserIds.size > 0) {
-    const { data: profiles } = await supabase
+  // ── 2. Resolve every participant profile once. ──
+  const userIds = new Set<string>()
+  for (const m of rows) {
+    userIds.add(m.sender_id)
+    userIds.add(m.recipient_id)
+  }
+  let profileMap = new Map<string, ProfileLite>()
+  if (userIds.size > 0) {
+    const { data: profs } = await supabase
       .from('profiles')
       .select('id, full_name, role')
-      .in('id', Array.from(allUserIds))
-    for (const p of profiles || []) {
-      profileMap.set(p.id, p)
+      .in('id', [...userIds])
+    for (const p of (profs || [])) {
+      profileMap.set(p.id as string, { id: p.id as string, full_name: (p as { full_name?: string | null }).full_name ?? null, role: (p as { role?: string | null }).role ?? null })
     }
   }
 
-  // Map conversations, only include ones the current user participates in
-  const conversations: ConversationItem[] = (convData || [])
-    .filter((c) =>
-      (c.conversation_participants as { user_id: string }[]).some(
-        (p) => p.user_id === user.id
-      )
-    )
-    .map((c) => {
-      const parts = c.conversation_participants as {
-        user_id: string
-        last_read_at: string
-      }[]
-      const myPart = parts.find((p) => p.user_id === user.id)
-      const lastReadAt = myPart?.last_read_at || c.updated_at
+  // ── 3. Group by thread_id (or message id when null). ──
+  // Pure derive — testable in isolation, see scripts/_unit_tests_messages_derive.mjs
+  const threads = deriveThreads(rows, profileMap, user.id)
 
-      const msgs = (c.conversation_messages as {
-        id: string
-        content: string
-        created_at: string
-        sender_id: string
-      }[]) || []
-      const sorted = [...msgs].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      )
-      const lastMsg = sorted[sorted.length - 1] || null
-
-      const unreadCount = sorted.filter(
-        (m) =>
-          m.sender_id !== user.id &&
-          new Date(m.created_at) > new Date(lastReadAt)
-      ).length
-
-      const participants: Participant[] = parts
-        .map((p) => profileMap.get(p.user_id))
-        .filter(Boolean) as Participant[]
-
-      return {
-        id: c.id as string,
-        subject: c.subject as string | null,
-        updated_at: c.updated_at as string,
-        participants,
-        lastMessage: lastMsg
-          ? {
-              content: lastMsg.content,
-              created_at: lastMsg.created_at,
-              sender_id: lastMsg.sender_id,
-            }
-          : null,
-        unreadCount,
-      }
-    })
-
-  // ---------- Fetch potential recipients based on role ----------
-  let recipients: Participant[] = []
-
+  // ── 4. Build the recipient allow-list for the deep-link `?recipients=` cohort. ──
+  let recipients: { id: string; full_name: string; role: string }[] = []
   if (role === 'parent') {
-    // Parents see coaches and admins in their org
     const { data } = await supabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('organisation_id', orgId)
       .in('role', ['coach', 'admin'])
       .order('full_name')
-    recipients = (data || []) as Participant[]
+    recipients = (data || []) as typeof recipients
   } else if (role === 'coach') {
-    // Coaches see parents + other coaches + admins in their org
     const { data } = await supabase
       .from('profiles')
       .select('id, full_name, role')
@@ -135,50 +121,39 @@ export default async function MessagesPage({
       .in('role', ['parent', 'coach', 'admin'])
       .neq('id', user.id)
       .order('full_name')
-    recipients = (data || []) as Participant[]
+    recipients = (data || []) as typeof recipients
   } else {
-    // Admins see everyone in their org
     const { data } = await supabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('organisation_id', orgId)
       .neq('id', user.id)
       .order('full_name')
-    recipients = (data || []) as Participant[]
+    recipients = (data || []) as typeof recipients
   }
 
-  // ─── Phase 2.3b: deep-link recipient cohort ─────────────────────────
-  // `recipients=id1,id2,...` validates each ID against the org's allowed
-  // recipient list (built above per role) and surfaces BulkMessageForm
-  // in custom mode with the validated subset. Cross-org / unknown / mis-
-  // cased IDs are silently dropped — see validateRecipientsParam.
-  //
-  // `to=` continues to navigate here without pre-populating anything
-  // (pre-existing behaviour; preserved to avoid regressions on existing
-  // links emitted by the Players / Parents / Parent-Detail pages).
   const validation = validateRecipientsParam(params.recipients, recipients)
   const showBulkPanel = validation.ids.length > 0
 
   return (
-    <div className={showBulkPanel ? 'space-y-6' : ''}>
+    <div className="space-y-6 p-6 lg:p-8">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Messages</h1>
+        <p className="text-[11px] text-white/40 mt-1">
+          Each message you send via Player Portal also reaches the parent by email.
+        </p>
+      </div>
+
       {showBulkPanel && (
-        <div className="p-6 lg:p-8 pb-0">
-          <BulkMessageForm
-            orgId={orgId}
-            customRecipientIds={validation.ids}
-            customRecipientLabels={validation.labels}
-            autoOpen
-          />
-        </div>
+        <BulkMessageForm
+          orgId={orgId}
+          customRecipientIds={validation.ids}
+          customRecipientLabels={validation.labels}
+          autoOpen
+        />
       )}
-      <MessagingHub
-        currentUserId={user.id}
-        currentUserName={fullName}
-        role={role}
-        orgId={orgId}
-        initialConversations={conversations}
-        recipients={recipients}
-      />
+
+      <MessagesList currentUserId={user.id} threads={threads} />
     </div>
   )
 }

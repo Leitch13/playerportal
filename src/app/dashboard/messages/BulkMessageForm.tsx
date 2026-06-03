@@ -13,8 +13,10 @@ type Group = { id: string; name: string }
  * pre-populate an arbitrary cohort instead of the three built-in modes
  * (all / group / overdue).
  *
- * No new send code: the form still inserts into the `messages` table the
- * same way it always has. No new external integration (no email/SMS/WA).
+ * Day 1 UPDATE — the form now POSTs to /api/messages/send. The server
+ * route handles BOTH the messages.insert (legacy schema, same columns)
+ * AND the email delivery via Resend. Previously this component only did
+ * the insert; no email ever reached the parent.
  *
  * The 'custom' mode is opt-in via props — when omitted, the component
  * behaves exactly as it did before.
@@ -98,28 +100,43 @@ export default function BulkMessageForm({
       return
     }
 
-    // Insert messages in batches
-    const messages = recipientIds.map((rid) => ({
-      organisation_id: orgId,
-      sender_id: user.id,
-      recipient_id: rid,
-      subject: subject || null,
-      body,
-    }))
-
-    const { error } = await supabase.from('messages').insert(messages)
-
-    if (error) {
-      alert(error.message)
-    } else {
-      setSent(recipientIds.length)
-      setSubject('')
-      setBody('')
-      setTimeout(() => {
-        setOpen(false)
-        setSent(0)
-        router.refresh()
-      }, 2000)
+    // Day 1 — route through the unified send API so each row gets BOTH
+    // inserted AND emailed. Server-side validation re-checks org membership
+    // for every recipient (defence-in-depth) and the per-row delivery
+    // status is persisted (after migration 074).
+    try {
+      const res = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          recipientIds,
+          subject: subject || null,
+          body,
+        }),
+      })
+      const json = await res.json().catch(() => ({} as { ok?: boolean; sent?: number; emailed?: number; failed?: number; error?: string }))
+      if (!res.ok || !json.ok) {
+        alert((json as { error?: string }).error || `HTTP ${res.status}`)
+      } else {
+        // Show the actual delivery count, not just the inserted count, so
+        // the academy owner can tell if any sends silently failed.
+        const sentN = json.sent ?? 0
+        const emailedN = json.emailed ?? 0
+        setSent(sentN)
+        const summary = sentN === emailedN
+          ? null
+          : `${sentN - emailedN} stored but email delivery failed or skipped (no email on file). Check delivery status soon.`
+        if (summary) alert(summary)
+        setSubject('')
+        setBody('')
+        setTimeout(() => {
+          setOpen(false)
+          setSent(0)
+          router.refresh()
+        }, 2500)
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Send failed')
     }
     setLoading(false)
   }
@@ -211,7 +228,7 @@ export default function BulkMessageForm({
                 </span>
               ))}
             </div>
-            <p className="text-[11px] text-white/40 mt-1.5">Cohort pre-selected via deep-link. One row inserted into the in-app messages table per recipient.</p>
+            <p className="text-[11px] text-white/40 mt-1.5">Cohort pre-selected via deep-link. Each recipient gets one message in their dashboard + a notification email to the address on their profile.</p>
           </div>
         )}
 

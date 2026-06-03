@@ -60,6 +60,45 @@ function escapeHtml(s: string): string {
 }
 
 /**
+ * Day 1 — Message-notification email.
+ *
+ * Sent when an academy admin/coach sends an in-app message to a parent.
+ * The parent receives the actual message content in their inbox so they
+ * don't need to log into the dashboard to read it.
+ *
+ * Replies are NOT yet wired (no inbound email parsing). The CTA links to
+ * the parent's dashboard messages where they can read context + reply
+ * in-app.
+ */
+export function messageNotificationEmail(params: {
+  senderName: string
+  recipientName: string
+  subject: string | null
+  body: string
+  academyName: string
+  dashboardUrl: string
+  accentColor?: string
+}): { subject: string; html: string } {
+  const accent = params.accentColor || '#4ecde6'
+  const escapedBody = escapeHtml(params.body).replace(/\n/g, '<br>')
+  const displaySubject = params.subject?.trim() || `New message from ${params.academyName}`
+  const content = `
+    <p style="margin:0 0 8px;color:#999;font-size:13px;font-weight:500">Hi ${escapeHtml(params.recipientName)},</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#e5e5e5">
+      <strong style="color:${accent}">${escapeHtml(params.senderName)}</strong> sent you a message via <strong>${escapeHtml(params.academyName)}</strong>.
+    </p>
+    ${params.subject ? `<div style="margin:0 0 8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#666;font-weight:600">Subject</div><h2 style="margin:0 0 24px;font-size:18px;color:#fff;font-weight:700;line-height:1.4">${escapeHtml(params.subject)}</h2>` : ''}
+    <div style="background:#0a0a0a;border-left:3px solid ${accent};border-radius:0 12px 12px 0;padding:20px 24px;margin:0 0 28px;font-size:15px;color:#e5e5e5;line-height:1.65">${escapedBody}</div>
+    ${ctaButton('Open in Player Portal', params.dashboardUrl, accent)}
+    <p style="margin:24px 0 0;color:#666;font-size:12px;line-height:1.5;text-align:center">Replies are not yet supported by return email. Tap the button above to reply in-app.</p>
+  `
+  return {
+    subject: displaySubject,
+    html: baseLayout(content, accent, params.academyName),
+  }
+}
+
+/**
  * Helper to render a premium-styled CTA button inside an email.
  * White background + brand-color glow — matches the in-app button pattern.
  * Use this instead of inline links for primary CTAs.

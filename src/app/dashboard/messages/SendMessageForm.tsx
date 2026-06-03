@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 export default function SendMessageForm({
   parents,
@@ -28,32 +27,32 @@ export default function SendMessageForm({
     e.preventDefault()
     setLoading(true)
 
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      setLoading(false)
-      return
-    }
-
-    const { error } = await supabase.from('messages').insert({
-      organisation_id: orgId,
-      sender_id: user.id,
-      recipient_id: recipientId,
-      subject: subject || null,
-      body,
-    })
-
-    if (error) {
-      alert(error.message)
-    } else {
-      setOpen(false)
-      setRecipientId('')
-      setSubject('')
-      setBody('')
-      router.refresh()
+    // Day 1 — route through unified send API: inserts AND emails.
+    try {
+      const res = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          recipientIds: [recipientId],
+          subject: subject || null,
+          body,
+        }),
+      })
+      const json = await res.json().catch(() => ({} as { ok?: boolean; error?: string; emailed?: number }))
+      if (!res.ok || !json.ok) {
+        alert((json as { error?: string }).error || `HTTP ${res.status}`)
+      } else {
+        if ((json.emailed ?? 0) === 0) {
+          alert('Message saved, but email delivery skipped or failed (no email on file).')
+        }
+        setOpen(false)
+        setRecipientId('')
+        setSubject('')
+        setBody('')
+        router.refresh()
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Send failed')
     }
     setLoading(false)
   }
