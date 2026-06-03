@@ -13,7 +13,6 @@ import AssignSubscription from './AssignSubscription'
 import SubscriptionActions from './SubscriptionActions'
 import PaymentLinkGenerator from './PaymentLinkGenerator'
 import Link from 'next/link'
-import CancelSubscriptionButton from './CancelSubscriptionButton'
 import FinancialBreakdown from './FinancialBreakdown'
 import SendReminderButton from './SendReminderButton'
 
@@ -246,11 +245,13 @@ async function ParentPayments({
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge status={sub.status} />
                     {!sub.cancel_at_period_end && (
-                      <CancelSubscriptionButton
-                        subscriptionId={sub.id}
-                        planName={plan?.name || 'Subscription'}
-                        amount={plan ? Number(plan.amount) : 0}
-                      />
+                      <Link
+                        href="/dashboard/payments/cancel"
+                        className="text-xs text-rose-300/80 hover:text-rose-200 underline underline-offset-2 transition-colors"
+                        data-testid="cancel-subscription-link"
+                      >
+                        Cancel subscription
+                      </Link>
                     )}
                   </div>
                 </div>

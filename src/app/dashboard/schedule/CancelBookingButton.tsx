@@ -215,7 +215,7 @@ export default function CancelBookingButton({
                   Browse other classes
                 </button>
                 <a
-                  href={`/dashboard/payments/cancel/${parentSubscriptionId}`}
+                  href="/dashboard/payments/cancel"
                   className="flex-1 py-3 rounded-xl text-sm font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
                   style={{
                     background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
