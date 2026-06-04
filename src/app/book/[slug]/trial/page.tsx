@@ -1,13 +1,26 @@
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 import TrialBookingForm from './TrialBookingForm'
 
 export default async function TrialBookingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{
+    utm_source?: string
+    utm_medium?: string
+    utm_campaign?: string
+  }>
 }) {
   const { slug } = await params
+  const { utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign } = await searchParams
   const supabase = await createClient()
+  // Sprint 5 — server-only signals (Referer header + URL UTM) passed
+  // as props to the client form. See trial-source-derive.ts for the
+  // priority chain that combines these with the dropdown.
+  const requestHeaders = await headers()
+  const refererHeader = requestHeaders.get('referer') || requestHeaders.get('referrer') || null
 
   const { data: org } = await supabase
     .from('organisations')
@@ -77,6 +90,10 @@ export default async function TrialBookingPage({
           primaryColor={primaryColor}
           slug={slug}
           academyName={org.name}
+          utmSource={utmSource ?? null}
+          utmMedium={utmMedium ?? null}
+          utmCampaign={utmCampaign ?? null}
+          referer={refererHeader}
         />
       </div>
     </div>

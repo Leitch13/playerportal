@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { deriveTrialSource, SOURCE_LABELS, type CanonicalSource } from '@/lib/trial-source-derive'
 
 interface TrialFormProps {
   orgId: string
@@ -18,9 +19,16 @@ interface TrialFormProps {
   slug: string
   academyName: string
   preselectedGroupId?: string | null
+  // Sprint 5 — server-captured source signals (impossible to read on
+  // the client because Referer is a request header and ?utm_* params
+  // belong to the server-rendered page).
+  utmSource?: string | null
+  utmMedium?: string | null
+  utmCampaign?: string | null
+  referer?: string | null
 }
 
-export default function TrialForm({ orgId, groups, primaryColor, slug, academyName, preselectedGroupId }: TrialFormProps) {
+export default function TrialForm({ orgId, groups, primaryColor, slug, academyName, preselectedGroupId, utmSource, utmMedium, utmCampaign, referer }: TrialFormProps) {
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [childName, setChildName] = useState('')
@@ -34,6 +42,13 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  // Sprint 5 — "How did you hear about us?" dropdown + "Other" free text.
+  // Highest-trust signal in the source priority chain — fed into
+  // deriveTrialSource(). Optional from the parent's perspective; if
+  // they leave it blank, the chain falls through to UTM / Referer /
+  // 'unknown'.
+  const [sourceChoice, setSourceChoice] = useState<CanonicalSource | ''>('')
+  const [sourceOther, setSourceOther] = useState('')
 
   const selectedGroup = groups.find((g) => g.id === groupId)
 
@@ -185,6 +200,17 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       }
     }
 
+    // Sprint 5 — derive source via the shared priority chain.
+    // Highest-trust signal wins: parent dropdown → URL UTM → Referer → 'unknown'.
+    const sourceDerived = deriveTrialSource({
+      dropdownValue: sourceChoice || null,
+      dropdownOtherText: sourceOther,
+      utmSource,
+      utmCampaign,
+      referer,
+      academyHostHints: ['theplayerportal.net', 'playitloveit.com', 'playerportal.app'],
+    })
+
     const { error: insertError } = await supabase.from('trial_bookings').insert({
       organisation_id: orgId,
       training_group_id: groupId || null,
@@ -197,6 +223,10 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       notes: notes || null,
       terms_accepted_at: new Date().toISOString(),
       terms_version_hash: versionHash,
+      // Sprint 5 — three additive columns. Schema migration 080.
+      trial_source: sourceDerived.trial_source,
+      source_detail: sourceDerived.source_detail,
+      referrer_url: sourceDerived.referrer_url,
     })
 
     if (insertError) {
@@ -447,6 +477,47 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
+
+          {/* Sprint 5 — "How did you hear about us?" dropdown. Optional.
+              Highest-trust signal in the source priority chain. When left
+              empty, capture falls through to URL UTM / Referer / 'unknown'. */}
+          <div data-testid="source-tracking-block">
+            <label className="text-xs font-medium text-white/50 block mb-1.5">How did you hear about us?</label>
+            <select
+              data-testid="source-dropdown"
+              className={inputClass}
+              style={{ ['--tw-ring-color' as string]: primaryColor }}
+              value={sourceChoice}
+              onChange={(e) => setSourceChoice(e.target.value as CanonicalSource | '')}
+            >
+              <option value="">— Prefer not to say —</option>
+              <option value="facebook">{SOURCE_LABELS.facebook}</option>
+              <option value="instagram">{SOURCE_LABELS.instagram}</option>
+              <option value="google">{SOURCE_LABELS.google}</option>
+              <option value="whatsapp">{SOURCE_LABELS.whatsapp}</option>
+              <option value="referral">{SOURCE_LABELS.referral}</option>
+              <option value="school_visit">{SOURCE_LABELS.school_visit}</option>
+              <option value="flyer">{SOURCE_LABELS.flyer}</option>
+              <option value="website">{SOURCE_LABELS.website}</option>
+              <option value="other">{SOURCE_LABELS.other}</option>
+            </select>
+          </div>
+
+          {sourceChoice === 'other' && (
+            <div>
+              <label className="text-xs font-medium text-white/50 block mb-1.5">Please tell us where</label>
+              <input
+                type="text"
+                data-testid="source-other-text"
+                className={inputClass}
+                style={{ ['--tw-ring-color' as string]: primaryColor }}
+                placeholder="e.g. coach told me, local event…"
+                value={sourceOther}
+                onChange={(e) => setSourceOther(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+          )}
         </div>
       )}
 

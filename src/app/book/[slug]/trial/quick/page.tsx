@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import TrialForm from './TrialForm'
 
@@ -8,10 +9,28 @@ export default async function QuickTrialPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ class?: string }>
+  searchParams: Promise<{
+    class?: string
+    utm_source?: string
+    utm_medium?: string
+    utm_campaign?: string
+  }>
 }) {
   const { slug } = await params
-  const { class: preselectedClassId } = await searchParams
+  const {
+    class: preselectedClassId,
+    utm_source: utmSource,
+    utm_medium: utmMedium,
+    utm_campaign: utmCampaign,
+  } = await searchParams
+
+  // ─── Sprint 5 — Trial source tracking ───
+  // Capture two server-side signals here so the client form receives
+  // them as props (impossible to read these on the client because
+  // Referer is request-header-only, and ?utm_* params are owned by the
+  // server-rendered page).
+  const requestHeaders = await headers()
+  const refererHeader = requestHeaders.get('referer') || requestHeaders.get('referrer') || null
   const supabase = await createClient()
 
   const { data: org } = await supabase
@@ -133,6 +152,13 @@ export default async function QuickTrialPage({
           primaryColor={primaryColor}
           slug={slug}
           academyName={org.name}
+          // Sprint 5 — source-tracking signals captured server-side.
+          // The client form combines these with a "How did you hear?"
+          // dropdown using the priority chain in lib/trial-source-derive.
+          utmSource={utmSource ?? null}
+          utmMedium={utmMedium ?? null}
+          utmCampaign={utmCampaign ?? null}
+          referer={refererHeader}
         />
       </div>
 
