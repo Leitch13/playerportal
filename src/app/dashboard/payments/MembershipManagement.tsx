@@ -11,17 +11,24 @@
  * Every link points at an existing validated route. No new business logic.
  */
 import Link from 'next/link'
+// Sprint 6 — optional WhatsApp card. Hidden when academy has no phone.
+import WhatsAppButton from '@/components/WhatsAppButton'
+import { WA_TEMPLATES } from '@/lib/whatsapp'
 
 export default function MembershipManagement({
   hasActiveSub,
   noticeDays,
   policyText,
   academyName,
+  academyWhatsappPhone,
+  firstChildFirstName,
 }: {
   hasActiveSub: boolean
   noticeDays: number
   policyText: string | null
   academyName: string
+  academyWhatsappPhone?: string | null
+  firstChildFirstName?: string | null
 }) {
   return (
     <section className="space-y-3" data-testid="membership-management">
@@ -41,6 +48,35 @@ export default function MembershipManagement({
           {policyText && (
             <p className="text-xs text-white/55 leading-relaxed mt-2 border-t border-white/[0.06] pt-2 whitespace-pre-wrap">{policyText}</p>
           )}
+        </div>
+      )}
+
+      {/* Sprint 6 — Contact academy on WhatsApp.
+          Hidden when the academy hasn't set contact_phone. Uses
+          buildWhatsappUrl + WA_TEMPLATES so the message is pre-filled
+          ("Hi <academy>, this is <child>'s parent — quick question."). */}
+      {academyWhatsappPhone && (
+        <div
+          className="bg-emerald-500/[0.04] border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3 flex-wrap"
+          data-testid="parent-hub-whatsapp-card"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/90">
+              Contact academy on WhatsApp
+            </p>
+            <p className="text-[11px] text-white/55 mt-0.5">
+              Got a quick question? Message {academyName} directly.
+            </p>
+          </div>
+          <WhatsAppButton
+            phone={academyWhatsappPhone}
+            message={WA_TEMPLATES.parentToAcademyHi({
+              academyName,
+              childName: firstChildFirstName || undefined,
+            })}
+            label="Open chat"
+            testId="parent-hub-whatsapp-button"
+          />
         </div>
       )}
 

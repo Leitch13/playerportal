@@ -13,6 +13,9 @@ import {
 } from '@/lib/trial-derive'
 // Phase 2.4 step 5 — DB-only admin actions for the follow-up cohort.
 import TrialFollowUpActions from '@/app/dashboard/enrolments/TrialFollowUpActions'
+// Sprint 6 — per-row WhatsApp deep-link.
+import WhatsAppButton from '@/components/WhatsAppButton'
+import { WA_TEMPLATES } from '@/lib/whatsapp'
 
 interface Trial {
   id: string
@@ -72,7 +75,7 @@ function trialToBookingInput(t: Trial) {
   }
 }
 
-export default function TrialManager({ trials }: { trials: Trial[] }) {
+export default function TrialManager({ trials, academyName = 'the academy' }: { trials: Trial[]; academyName?: string }) {
   const router = useRouter()
   const [filter, setFilter] = useState<string>('all')
   const [loading, setLoading] = useState<string | null>(null)
@@ -211,6 +214,28 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center gap-1 justify-end flex-wrap">
+                          {/* Sprint 6 — WhatsApp deep-link. Chooses the right
+                              pre-filled template based on funnel stage: a chase
+                              for pending/confirmed trials, a follow-up nudge
+                              for already-attended trials. */}
+                          <WhatsAppButton
+                            phone={t.parentPhone}
+                            message={
+                              t.status === 'attended'
+                                ? WA_TEMPLATES.trialFollowUp({
+                                    parentName: t.parentName,
+                                    academyName,
+                                    childName: t.childName,
+                                  })
+                                : WA_TEMPLATES.trialChase({
+                                    parentName: t.parentName,
+                                    academyName,
+                                    childName: t.childName,
+                                  })
+                            }
+                            iconOnly
+                            testId="trial-row-whatsapp"
+                          />
                           {t.status === 'pending' && (
                             <button
                               onClick={() => updateStatus(t.id, 'confirmed')}

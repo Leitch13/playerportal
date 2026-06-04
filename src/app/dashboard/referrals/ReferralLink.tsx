@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { buildWhatsappShareUrl } from '@/lib/whatsapp'
 
 export default function ReferralLink({
   orgSlug,
@@ -204,6 +205,21 @@ export default function ReferralLink({
           >
             📤 Share
           </button>
+          {/* Sprint 6 — Click-to-share via WhatsApp. utm_source=whatsapp
+              utm_medium=referral so any resulting trial booking attributes
+              correctly via the Sprint 5 trial-source priority chain. */}
+          <a
+            href={buildWhatsappShareUrl(
+              'Join Player Portal using my link — we both benefit! ' +
+              referralUrl + (referralUrl.includes('?') ? '&' : '?') + 'utm_source=whatsapp&utm_medium=referral'
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="referral-whatsapp-share"
+            className="flex-1 py-3 rounded-xl text-sm font-bold bg-emerald-400 text-emerald-900 hover:bg-emerald-300 transition-all hover:scale-[1.02] text-center"
+          >
+            💬 WhatsApp
+          </a>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-3">

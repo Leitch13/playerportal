@@ -17,6 +17,14 @@ export default async function TrialsPage() {
 
   const { data: orgId } = await supabase.rpc('get_my_org')
 
+  // Sprint 6 — fetch academy name for WhatsApp template personalisation.
+  const { data: orgRow } = await supabase
+    .from('organisations')
+    .select('name')
+    .eq('id', orgId)
+    .single()
+  const academyName = (orgRow?.name as string | undefined) || 'the academy'
+
   // Phase 2.7 placement fix — load the existing trial-bookings list plus the
   // conversion metrics + Pending Follow-Up cohort in parallel. Both
   // ancillary loaders swallow their own errors (return zeroed counts /
@@ -102,7 +110,7 @@ export default async function TrialsPage() {
         </div>
       </div>
 
-      <TrialManager trials={allTrials.map(t => ({
+      <TrialManager academyName={academyName} trials={allTrials.map(t => ({
         id: t.id,
         parentName: t.parent_name,
         parentEmail: t.parent_email,

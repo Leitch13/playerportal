@@ -1046,6 +1046,10 @@ export function paymentFailedParentEmail(params: {
   updatePaymentUrl: string         // Stripe hosted_invoice_url — parent updates card and retries inline
   dashboardUrl: string
   accentColor?: string
+  /** Sprint 6 — optional wa.me URL with pre-filled message. Renders a
+      small "Reply on WhatsApp" line at the bottom when set. Hidden
+      gracefully when the academy has no contact_phone. */
+  whatsappUrl?: string | null
 }) {
   const accent = (params.accentColor || '#f59e0b').replace(/[^#0-9a-fA-F]/g, '')
   const reasonLine = params.failureReason
@@ -1082,6 +1086,10 @@ export function paymentFailedParentEmail(params: {
       <p style="color:#555;font-size:11px;line-height:1.5;margin:16px 0 0;text-align:center">
         <a href="${params.dashboardUrl}/dashboard/payments" style="color:#666;text-decoration:underline">View this in your Player Portal dashboard</a>
       </p>
+      ${params.whatsappUrl ? `
+      <div style="background:rgba(37,211,102,0.06);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:14px;margin:18px 0 0;text-align:center">
+        <a href="${params.whatsappUrl}" style="color:#25D366;text-decoration:none;font-weight:600;font-size:13px">💬 Or reply on WhatsApp →</a>
+      </div>` : ''}
     `),
   }
 }

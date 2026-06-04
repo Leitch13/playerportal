@@ -26,6 +26,9 @@ import Link from 'next/link'
 import FinancialBreakdown from './FinancialBreakdown'
 import CancellationIntelligence from './CancellationIntelligence'
 import SendReminderButton from './SendReminderButton'
+// Sprint 6 — WhatsApp deep-link for overdue rows.
+import WhatsAppButton from '@/components/WhatsAppButton'
+import { WA_TEMPLATES } from '@/lib/whatsapp'
 // Parent Subscription Hub section components (built in this PR)
 import MembershipOverview from './MembershipOverview'
 import MyChildrenList, { type ChildSummary } from './MyChildrenList'
@@ -196,11 +199,12 @@ async function ParentPayments({
     retention_offer_enabled?: boolean
     retention_offer_percent?: number
     retention_offer_months?: number | null
+    contact_phone?: string | null
   }
   let orgRow: OrgRow | null = null
   if (orgId) {
-    const full = 'name, cancellation_notice_days, cancellation_policy, retention_offer_enabled, retention_offer_percent, retention_offer_months'
-    const legacy = 'name, cancellation_notice_days, retention_offer_enabled, retention_offer_percent, retention_offer_months'
+    const full = 'name, cancellation_notice_days, cancellation_policy, retention_offer_enabled, retention_offer_percent, retention_offer_months, contact_phone'
+    const legacy = 'name, cancellation_notice_days, retention_offer_enabled, retention_offer_percent, retention_offer_months, contact_phone'
     const first = await supabase.from('organisations').select(full).eq('id', orgId).single()
     if (first.error && first.error.code === '42703') {
       const fallback = await supabase.from('organisations').select(legacy).eq('id', orgId).single()
@@ -210,6 +214,11 @@ async function ParentPayments({
     }
   }
   const academyName = orgRow?.name || 'your academy'
+  // Sprint 6 — academy's WhatsApp number (uses contact_phone for v1, no
+  // new column). Null when missing; the widget hides itself in that case.
+  const academyWhatsappPhone = orgRow?.contact_phone || null
+  // First-child first name for the WhatsApp message template, when known.
+  const firstChildFirstName = (myPlayers || [])[0]?.first_name as string | undefined
   const cancellationNoticeDays = Number(orgRow?.cancellation_notice_days ?? 0)
   const cancellationPolicy = orgRow?.cancellation_policy ?? null
   const retentionEnabled = orgRow?.retention_offer_enabled !== false
@@ -337,6 +346,8 @@ async function ParentPayments({
         noticeDays={cancellationNoticeDays}
         policyText={cancellationPolicy}
         academyName={academyName}
+        academyWhatsappPhone={academyWhatsappPhone}
+        firstChildFirstName={firstChildFirstName}
       />
 
       {/* Pending subs (incomplete checkouts) — only show when present.
@@ -425,6 +436,14 @@ async function AdminPayments({
   if (!meProfile.organisation_id || meProfile.organisation_id !== orgId) notFound()
   // From here on, `orgId` is proven to be this admin's actual organisation.
 
+  // Sprint 6 — fetch academy name for WhatsApp deep-link templates.
+  const { data: adminOrgRow } = await supabase
+    .from('organisations')
+    .select('name')
+    .eq('id', orgId)
+    .single()
+  const adminAcademyName = (adminOrgRow?.name as string | undefined) || 'the academy'
+
   // ─── Subscription Plans (org-scoped) ───
   const { data: plans } = await supabase
     .from('subscription_plans')
@@ -469,7 +488,7 @@ async function AdminPayments({
   // ─── Filtered payments for list (org-scoped) ───
   let query = supabase
     .from('payments')
-    .select('*, parent:profiles!payments_parent_id_fkey(full_name, email), player:players(first_name, last_name)')
+    .select('*, parent:profiles!payments_parent_id_fkey(full_name, email, phone), player:players(first_name, last_name)')
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
     .limit(200)
@@ -961,6 +980,20 @@ async function AdminPayments({
                               </Link>
                               {p.status === 'overdue' && (
                                 <SendReminderButton paymentId={p.id as string} />
+                              )}
+                              {/* Sprint 6 — WhatsApp deep-link for overdue rows.
+                                  Hidden when the parent has no phone — never a
+                                  broken link. */}
+                              {p.status === 'overdue' && (
+                                <WhatsAppButton
+                                  phone={(p.parent as unknown as { phone?: string | null })?.phone || null}
+                                  message={WA_TEMPLATES.paymentChase({
+                                    parentName: (p.parent as unknown as { full_name?: string })?.full_name || 'there',
+                                    academyName: adminAcademyName,
+                                  })}
+                                  iconOnly
+                                  testId="overdue-row-whatsapp"
+                                />
                               )}
                             </div>
                           </td>

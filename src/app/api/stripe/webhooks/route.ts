@@ -1702,12 +1702,26 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
         }
 
         // Brand the parent email with the academy's colour when available.
+        // Sprint 6 — also pull contact_phone so we can include an optional
+        // WhatsApp "reply on WhatsApp" CTA in the body. Strictly additive
+        // — the existing email send path stays identical when no phone is
+        // configured.
         const { data: orgBranding } = await supabase
           .from('organisations')
-          .select('primary_color')
+          .select('primary_color, contact_phone')
           .eq('id', localSub.organisation_id)
           .maybeSingle()
         const accentColor = (orgBranding?.primary_color as string | undefined) || '#f59e0b'
+        const academyPhoneRaw = (orgBranding?.contact_phone as string | undefined) || null
+        const { buildWhatsappUrl, WA_TEMPLATES } = await import('@/lib/whatsapp')
+        const parentFirstName = (parentProfile?.full_name as string | undefined)?.split(' ')[0] || 'there'
+        const whatsappUrlForEmail = buildWhatsappUrl(
+          academyPhoneRaw,
+          WA_TEMPLATES.paymentChase({
+            parentName: parentFirstName,
+            academyName: (orgInfo?.name as string | undefined) || 'the academy',
+          })
+        )
 
         const { paymentFailedParentEmail } = await import('@/lib/email-templates')
         const parentTpl = paymentFailedParentEmail({
@@ -1720,6 +1734,9 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
           updatePaymentUrl: updateUrl,
           dashboardUrl: appUrl,
           accentColor,
+          // Sprint 6 — optional WhatsApp CTA. Null when academy hasn't set
+          // contact_phone; template hides the CTA in that case.
+          whatsappUrl: whatsappUrlForEmail,
         })
 
         try {
