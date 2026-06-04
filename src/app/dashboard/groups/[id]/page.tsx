@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+// Sprint 8a — per-row kebab with View / Message parent / Remove from class.
+import ClassRosterRow from './ClassRosterRow'
 
 export default async function GroupDetailPage({
   params,
@@ -33,16 +35,68 @@ export default async function GroupDetailPage({
 
   if (!group) redirect('/dashboard/groups')
 
-  // Fetch enrolled players
-  const { data: enrolments } = await supabase
+  // Fetch enrolled players. Sprint 8a additions: pull parent_id from the
+  // player embed (drives the Message parent deep-link) and keep the
+  // enrolment id (drives Remove from class).
+  type EnrolmentRosterRow = {
+    id: string
+    status: string
+    player: {
+      id: string
+      first_name: string
+      last_name: string
+      photo_url: string | null
+      parent_id: string | null
+    } | null
+  }
+  const { data: enrolmentsRaw } = await supabase
     .from('enrolments')
-    .select('id, status, player:players(id, first_name, last_name, photo_url)')
+    .select('id, status, player:players(id, first_name, last_name, photo_url, parent_id)')
     .eq('group_id', id)
     .eq('status', 'active')
 
-  const players = (enrolments || [])
-    .map((e) => e.player as unknown as { id: string; first_name: string; last_name: string; photo_url: string | null })
-    .filter(Boolean)
+  const enrolments = (enrolmentsRaw || []) as unknown as EnrolmentRosterRow[]
+
+  // Resolve parent names in a single round-trip. Anything missing falls
+  // back to "Parent" so the row still renders gracefully.
+  const parentIds = Array.from(
+    new Set(enrolments.map((e) => e.player?.parent_id).filter((v): v is string => !!v))
+  )
+  const parentNameById = new Map<string, string>()
+  if (parentIds.length > 0) {
+    const { data: parents } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', parentIds)
+    for (const p of parents || []) {
+      parentNameById.set(p.id as string, (p as { full_name?: string | null }).full_name || 'Parent')
+    }
+  }
+
+  // Other-active-class count per player — surfaced in the Remove confirmation
+  // so the admin knows whether this is the player's last class. Single query
+  // scoped by player_id set + status = 'active'.
+  const playerIds = Array.from(
+    new Set(enrolments.map((e) => e.player?.id).filter((v): v is string => !!v))
+  )
+  const otherActiveCountById = new Map<string, number>()
+  if (playerIds.length > 0) {
+    const { data: allActive } = await supabase
+      .from('enrolments')
+      .select('player_id, group_id')
+      .in('player_id', playerIds)
+      .eq('status', 'active')
+    for (const row of allActive || []) {
+      const pid = (row as { player_id?: string }).player_id || ''
+      const gid = (row as { group_id?: string }).group_id || ''
+      if (!pid || gid === id) continue  // exclude THIS class
+      otherActiveCountById.set(pid, (otherActiveCountById.get(pid) || 0) + 1)
+    }
+  }
+
+  const players = enrolments
+    .map((e) => e.player)
+    .filter((p): p is NonNullable<EnrolmentRosterRow['player']> => !!p)
     .sort((a, b) => a.first_name.localeCompare(b.first_name))
 
   const coach = group.coach as unknown as { id: string; full_name: string; email: string } | null
@@ -198,34 +252,64 @@ export default async function GroupDetailPage({
               <p className="text-sm text-white/50">No players enrolled in this class yet</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {players.map((player) => (
-                <Link
-                  key={player.id}
-                  href={`/dashboard/players/${player.id}`}
-                  className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-4 flex items-center gap-3 hover:bg-[#1a1a1a] hover:border-[#4ecde6]/30 transition-all group"
-                >
-                  {player.photo_url ? (
-                    <img
-                      src={player.photo_url}
-                      alt=""
-                      className="w-9 h-9 rounded-full object-cover border border-[#1e1e1e]"
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6]">
-                      {player.first_name?.[0]}{player.last_name?.[0]}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold truncate group-hover:text-[#4ecde6] transition-colors">
-                      {player.first_name} {player.last_name}
-                    </div>
-                  </div>
-                  <svg className="w-4 h-4 text-white/20 ml-auto shrink-0 group-hover:text-[#4ecde6]/60 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              ))}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+              data-testid="class-roster"
+            >
+              {/* Admin/coach get the kebab menu (View / Message parent /
+                  Remove from class). Parents viewing this page get a plain
+                  read-only tile — they can't remove other people's children. */}
+              {isAdmin
+                ? enrolments
+                    .filter((e) => e.player)
+                    .sort((a, b) =>
+                      (a.player?.first_name || '').localeCompare(b.player?.first_name || '')
+                    )
+                    .map((e) => {
+                      const p = e.player!
+                      return (
+                        <ClassRosterRow
+                          key={e.id}
+                          enrolmentId={e.id}
+                          playerId={p.id}
+                          playerFirstName={p.first_name}
+                          playerLastName={p.last_name}
+                          playerPhotoUrl={p.photo_url}
+                          parentId={p.parent_id}
+                          parentName={p.parent_id ? parentNameById.get(p.parent_id) || null : null}
+                          className={group.name as string}
+                          otherActiveClasses={otherActiveCountById.get(p.id) || 0}
+                        />
+                      )
+                    })
+                : players.map((player) => (
+                    <Link
+                      key={player.id}
+                      href={`/dashboard/players/${player.id}`}
+                      className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-4 flex items-center gap-3 hover:bg-[#1a1a1a] hover:border-[#4ecde6]/30 transition-all group"
+                    >
+                      {player.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={player.photo_url}
+                          alt=""
+                          className="w-9 h-9 rounded-full object-cover border border-[#1e1e1e]"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6]">
+                          {player.first_name?.[0]}{player.last_name?.[0]}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate group-hover:text-[#4ecde6] transition-colors">
+                          {player.first_name} {player.last_name}
+                        </div>
+                      </div>
+                      <svg className="w-4 h-4 text-white/20 ml-auto shrink-0 group-hover:text-[#4ecde6]/60 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  ))}
             </div>
           )}
         </div>

@@ -196,8 +196,14 @@ export default function GroupCard({
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     Edit class
                   </button>
+                  {/* Sprint 8a: repoint to class detail page (the global
+                      Enrolments page silently ignored ?group=, so admins
+                      were dropped into every other class's enrolments and
+                      eventually funnelled to Delete Player). The class
+                      detail page filters to this class and hosts the new
+                      Remove-from-class action per row. */}
                   <Link
-                    href={`/dashboard/enrolments?group=${group.id}`}
+                    href={`/dashboard/groups/${group.id}`}
                     onClick={() => setMenuOpen(false)}
                     className="w-full text-left px-3 py-2 hover:bg-white/5 text-white/80 flex items-center gap-2"
                   >
