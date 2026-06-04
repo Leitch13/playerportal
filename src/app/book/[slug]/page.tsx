@@ -145,18 +145,23 @@ export default async function PublicBookingPage({
   // Class-card capacity counts include 'pending' (Stage 3 future-start) so
   // the seat is reserved at signup even before billing activates. Booking
   // gate enforces activates_on separately so this doesn't over-grant access.
+  //
+  // ─── 078 — use the SECURITY DEFINER RPC instead of direct enrolments
+  // SELECT. The booking page server component runs under the anon role
+  // (NEXT_PUBLIC_SUPABASE_ANON_KEY), and 077b restricted enrolments
+  // SELECT to authenticated only. A direct query returned 0 rows for
+  // every group, displaying every class as having full max_capacity
+  // available — including the full ones. The RPC bypasses RLS and
+  // returns ONLY (group_id, seat_count) aggregates, exposing no PII.
   const groupIds = (groups || []).map((g) => g.id)
-  const { data: enrolments } = groupIds.length > 0
-    ? await supabase
-        .from('enrolments')
-        .select('group_id')
-        .in('group_id', groupIds)
-        .in('status', ['active', 'pending'])
-    : { data: [] as { group_id: string }[] }
+  const { data: seatCounts } = await supabase
+    .rpc('get_group_seat_counts', { p_org_id: org.id })
 
   const countByGroup = new Map<string, number>()
-  for (const e of enrolments || []) {
-    countByGroup.set(e.group_id, (countByGroup.get(e.group_id) || 0) + 1)
+  for (const row of (seatCounts || []) as Array<{ group_id: string; seat_count: number | string }>) {
+    if (row.group_id && groupIds.includes(row.group_id)) {
+      countByGroup.set(row.group_id, Number(row.seat_count) || 0)
+    }
   }
 
   // Fetch ALL active plans for the org (we need them to show prices on class cards too)

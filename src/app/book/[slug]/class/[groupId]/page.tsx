@@ -73,11 +73,16 @@ export default async function ClassBookingPage({
   // enrolments that haven't activated yet) — the seat IS reserved at signup
   // even if billing is deferred. Booking gate separately blocks bookings
   // before activates_on so spotsLeft stays honest without over-granting access.
-  const { count } = await supabase
-    .from('enrolments')
-    .select('id', { count: 'exact', head: true })
-    .eq('group_id', groupId)
-    .in('status', ['active', 'pending'])
+  //
+  // ─── 078 — same RPC-based pattern as the parent /book/[slug] page.
+  // Anon-callable, returns aggregates only, doesn't reopen RLS on
+  // enrolments. We pick the row for THIS group out of the org's seat
+  // count list (single round-trip, same cost as the previous direct
+  // count query — the RPC body is one aggregate query).
+  const { data: seatCounts } = await supabase
+    .rpc('get_group_seat_counts', { p_org_id: org.id })
+  const seatRow = (seatCounts || []).find((r: { group_id: string }) => r.group_id === groupId) as { seat_count: number | string } | undefined
+  const count = seatRow ? Number(seatRow.seat_count) || 0 : 0
 
   // STRICT MATCHING — no crossover between plan tiers:
   // 1. If this class has class-specific plans (training_group_id = this class), use ONLY those.

@@ -65,13 +65,18 @@ export default async function QuickBookPage({
   // moment the parent commits, even if billing is deferred. The booking gate
   // separately blocks bookings before activates_on so this doesn't over-grant
   // access; it just keeps the spotsLeft count honest.
-  const { count } = await supabase
-    .from('enrolments')
-    .select('id', { count: 'exact', head: true })
-    .eq('group_id', groupId)
-    .in('status', ['active', 'pending'])
-
-  const enrolled = count || 0
+  //
+  // ─── 078 — RPC instead of direct enrolments SELECT. This page is
+  // server-rendered under whichever role the visitor has; signed-out
+  // browsers run as anon, and 077b restricted enrolments SELECT to
+  // authenticated only. Without the RPC, this gate's `isFull` check
+  // would always evaluate to false for anon and the "Class Full"
+  // short-circuit would never fire — letting a parent reach the
+  // checkout form for a class that's already full.
+  const { data: seatCounts } = await supabase
+    .rpc('get_group_seat_counts', { p_org_id: org.id })
+  const seatRow = (seatCounts || []).find((r: { group_id: string }) => r.group_id === groupId) as { seat_count: number | string } | undefined
+  const enrolled = seatRow ? Number(seatRow.seat_count) || 0 : 0
   const capacity = group.max_capacity || 20
   const spotsLeft = capacity - enrolled
   const isFull = spotsLeft <= 0
