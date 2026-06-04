@@ -1762,3 +1762,87 @@ export function newSignupAdminEmail(params: {
     `),
   }
 }
+
+/**
+ * Sprint 9 — camp booking confirmation.
+ *
+ * Fired from the Stripe webhook camp-branch after a successful paid
+ * Checkout completion. Includes optional WhatsApp deep-link (Sprint 6).
+ *
+ * No subscription / billing context — camps are one-off `mode='payment'`
+ * charges so this email is strictly transactional ("you're booked in,
+ * here's what we have on file, here's how to reach us").
+ *
+ * Idempotency: the email send is gated by the `stripe_events` table
+ * (migration 069) — a re-delivered webhook event short-circuits the
+ * entire handler before reaching this branch. No additional dedup is
+ * required at the template / send layer.
+ */
+export function campBookingConfirmationEmail(params: {
+  parentName: string
+  childName: string
+  campName: string
+  startDate: string             // already-formatted "Mon 21 Jul 2026"
+  endDate: string               // already-formatted; equal to startDate for single-day camps
+  amountPaid: string            // already-formatted "£60.00" (or "Free" when £0)
+  academyName: string
+  academyContactEmail: string | null
+  academyContactPhone: string | null
+  whatsappUrl?: string | null   // pre-built via @/lib/whatsapp (Sprint 6)
+  bookingReference?: string | null   // camp_bookings.id surfaces here for support
+}) {
+  const sameDay = params.startDate === params.endDate
+  const dateRow = sameDay
+    ? `<tr><td style="color:#888">Date</td><td style="text-align:right;color:#fff;font-weight:600">${params.startDate}</td></tr>`
+    : `<tr><td style="color:#888">Dates</td><td style="text-align:right;color:#fff;font-weight:600">${params.startDate} → ${params.endDate}</td></tr>`
+
+  const contactRows = [
+    params.academyContactEmail
+      ? `<tr><td style="color:#888">Email</td><td style="text-align:right"><a href="mailto:${params.academyContactEmail}" style="color:#4ecde6;text-decoration:none">${params.academyContactEmail}</a></td></tr>`
+      : '',
+    params.academyContactPhone
+      ? `<tr><td style="color:#888">Phone</td><td style="text-align:right;color:#fff">${params.academyContactPhone}</td></tr>`
+      : '',
+  ].filter(Boolean).join('')
+
+  return {
+    subject: `Your booking for ${params.campName} is confirmed — ${params.childName} ✓`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">You're all booked in! 🎯</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">
+        <strong style="color:#fff">${params.childName}</strong> is now booked onto
+        <strong style="color:#fff">${params.campName}</strong> at <strong style="color:#fff">${params.academyName}</strong>.
+        We can't wait to see them on the pitch.
+      </p>
+
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:11px;color:#888;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">Booking details</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Camp</td><td style="text-align:right;color:#fff;font-weight:600">${params.campName}</td></tr>
+          <tr><td style="color:#888">Child</td><td style="text-align:right;color:#fff">${params.childName}</td></tr>
+          ${dateRow}
+          <tr><td style="color:#888">Amount paid</td><td style="text-align:right;color:#10b981;font-weight:700">${params.amountPaid}</td></tr>
+          ${params.bookingReference ? `<tr><td style="color:#888">Reference</td><td style="text-align:right;color:#aaa;font-family:monospace;font-size:12px">${params.bookingReference.slice(0, 8)}</td></tr>` : ''}
+        </table>
+      </div>
+
+      ${contactRows ? `
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:11px;color:#888;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">Need to reach ${params.academyName}?</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          ${contactRows}
+        </table>
+      </div>` : ''}
+
+      ${params.whatsappUrl ? `
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.whatsappUrl}" style="display:inline-block;background:#25D366;color:#ffffff;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">💬 Message ${params.academyName} on WhatsApp</a>
+      </div>` : ''}
+
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:24px">
+        Keep this email for your records. We'll be in touch closer to the camp date with any final details.
+      </p>
+    `),
+  }
+}

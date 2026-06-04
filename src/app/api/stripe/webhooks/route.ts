@@ -444,49 +444,155 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .from('camp_bookings')
         .update({ payment_status: 'paid', stripe_session_id: session.id })
         .eq('id', session.metadata.camp_booking_id)
-        .select('organisation_id, parent_email, child_name, amount_paid, camp_id')
+        .select('id, organisation_id, parent_email, parent_name, child_name, amount_paid, camp_id')
         .maybeSingle()
       if (campUpdErr) throw new Error(`camp_bookings.update failed: ${campUpdErr.message}`)
 
-      // Record the camp as its own itemised line on the parent's billing page —
-      // separate from any subscription. Only possible if the booker has a parent
-      // account (payments.parent_id is NOT NULL); anonymous campers are skipped.
-      if (booking?.parent_email && booking.organisation_id) {
-        const { data: parentProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('organisation_id', booking.organisation_id)
-          .ilike('email', booking.parent_email as string)
+      // ─── Resolve camp + academy context once (shared by payments row + email) ───
+      // Used by BOTH the payments-row insert and the confirmation email; one
+      // round-trip instead of two.
+      let campName = 'Camp'
+      let campStartDate: string | null = null
+      let campEndDate: string | null = null
+      if (booking?.camp_id) {
+        const { data: camp } = await supabase
+          .from('camps')
+          .select('name, start_date, end_date')
+          .eq('id', booking.camp_id)
           .maybeSingle()
+        if (camp?.name) campName = camp.name as string
+        campStartDate = (camp as { start_date?: string | null } | null)?.start_date || null
+        campEndDate = (camp as { end_date?: string | null } | null)?.end_date || null
+      }
 
-        if (parentProfile?.id) {
-          let campName = 'Camp'
-          if (booking.camp_id) {
-            const { data: camp } = await supabase.from('camps').select('name').eq('id', booking.camp_id).maybeSingle()
-            if (camp?.name) campName = camp.name as string
-          }
-          const amt = Number(booking.amount_paid ?? (session.amount_total ?? 0) / 100)
-          const { error: campPayErr } = await supabase.from('payments').insert({
-            parent_id: parentProfile.id,
-            organisation_id: booking.organisation_id,
-            amount: amt,
-            amount_paid: amt,
-            status: 'paid',
-            stripe_session_id: session.id,
-            description: `Camp: ${campName}${booking.child_name ? ` — ${booking.child_name}` : ''}`,
-            due_date: new Date().toISOString().split('T')[0],
-            paid_date: new Date().toISOString().split('T')[0],
-            created_at: new Date().toISOString(),
-          })
+      // ─── Payments row (Sprint 9: relaxed — fires for anon bookers too) ───
+      // Record the camp as its own itemised line on the academy's payments
+      // page. Per Sprint 9 + migration 081, payments.parent_id is now
+      // nullable, so the academy admin sees every paid camp booking on
+      // /dashboard/payments — including anonymous campers without a profile
+      // in this org. When a profile DOES exist, we still link to it so the
+      // parent's own Hub itemises it correctly.
+      if (booking?.organisation_id) {
+        let resolvedParentId: string | null = null
+        if (booking.parent_email) {
+          const { data: parentProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('organisation_id', booking.organisation_id)
+            .ilike('email', booking.parent_email as string)
+            .maybeSingle()
+          resolvedParentId = parentProfile?.id || null
+        }
+
+        const amt = Number(booking.amount_paid ?? (session.amount_total ?? 0) / 100)
+        const { error: campPayErr } = await supabase.from('payments').insert({
+          parent_id: resolvedParentId,
+          organisation_id: booking.organisation_id,
+          amount: amt,
+          amount_paid: amt,
+          status: 'paid',
+          stripe_session_id: session.id,
+          description: `Camp: ${campName}${booking.child_name ? ` — ${booking.child_name}` : ''}`,
+          due_date: new Date().toISOString().split('T')[0],
+          paid_date: new Date().toISOString().split('T')[0],
+          created_at: new Date().toISOString(),
+        })
+        if (campPayErr) {
+          const code = (campPayErr as { code?: string }).code
           // 23505 = unique violation on stripe_session_id (partial unique
           // index from migration 069). Means a prior delivery of this same
           // Stripe event already inserted the camp payment row; treat as
           // success and continue so Stripe stops retrying. Camps remain
           // one-off `mode='payment'` charges — no subscription is involved
           // here. Same pattern as the tonight_then_sub guard.
-          if (campPayErr && (campPayErr as { code?: string }).code !== '23505') {
+          if (code === '23505') {
+            // already-inserted on prior delivery; continue cleanly
+          } else if (code === '23502' && !resolvedParentId) {
+            // 23502 = NOT NULL violation. Specifically: migration 081 has
+            // not yet been applied so payments.parent_id is still NOT NULL,
+            // and the booker is anon (no profile match). Fall back to
+            // pre-Sprint-9 behaviour — skip the payments row, log, and
+            // continue so Stripe doesn't retry. Once migration 081 is
+            // applied, this branch never fires again.
+            console.warn('[webhook:camp_payments_insert] migration 081 not yet applied — anon booker payments row skipped for', booking.id)
+          } else {
             throw new Error(`camp payments.insert failed: ${campPayErr.message}`)
           }
+        }
+      }
+
+      // ─── Confirmation email (Sprint 9 — new) ───
+      // Idempotency: this entire camp branch is gated by the
+      // shouldProcessEvent / markEventSuccess guard at the top of the
+      // webhook route (see src/lib/stripe-events.ts). A re-delivered
+      // event short-circuits before reaching here, so the email cannot
+      // double-send. We do NOT need a per-template dedup table.
+      //
+      // We swallow Resend errors instead of throwing — a transient email
+      // failure must not cause Stripe to retry the entire payment-side
+      // handler (which would risk the same idempotency window expiring).
+      if (booking?.parent_email && booking?.organisation_id) {
+        try {
+          const [{ sendEmail }, { campBookingConfirmationEmail }, { buildWhatsappUrl, WA_TEMPLATES }] = await Promise.all([
+            import('@/lib/email'),
+            import('@/lib/email-templates'),
+            import('@/lib/whatsapp'),
+          ])
+          // Pull academy display + contact channels — same shape the
+          // existing subscription / trial emails use.
+          const { data: orgRow } = await supabase
+            .from('organisations')
+            .select('name, contact_email, contact_phone')
+            .eq('id', booking.organisation_id)
+            .maybeSingle()
+          const academyName = (orgRow as { name?: string | null } | null)?.name || 'Your academy'
+          const academyEmail = (orgRow as { contact_email?: string | null } | null)?.contact_email || null
+          const academyPhone = (orgRow as { contact_phone?: string | null } | null)?.contact_phone || null
+
+          const fmtDate = (iso: string | null) =>
+            iso
+              ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', {
+                  weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+                })
+              : ''
+          const startDateLabel = fmtDate(campStartDate)
+          const endDateLabel = fmtDate(campEndDate) || startDateLabel
+          const amt = Number(booking.amount_paid ?? (session.amount_total ?? 0) / 100)
+          const amountLabel = amt > 0 ? `£${amt.toFixed(2)}` : 'Free'
+
+          const whatsappUrl = academyPhone
+            ? buildWhatsappUrl(
+                academyPhone,
+                WA_TEMPLATES.parentToAcademyHi({ academyName, childName: booking.child_name || undefined }),
+              )
+            : null
+
+          const tpl = campBookingConfirmationEmail({
+            parentName: booking.parent_name || 'there',
+            childName: booking.child_name || 'your child',
+            campName,
+            startDate: startDateLabel,
+            endDate: endDateLabel,
+            amountPaid: amountLabel,
+            academyName,
+            academyContactEmail: academyEmail,
+            academyContactPhone: academyPhone,
+            whatsappUrl,
+            bookingReference: booking.id,
+          })
+
+          await sendEmail({
+            to: booking.parent_email,
+            subject: tpl.subject,
+            html: tpl.html,
+            fromName: academyName,
+            replyTo: academyEmail || undefined,
+          })
+        } catch (emailErr) {
+          // Log + continue. Payment side already succeeded; failing the
+          // webhook here would cause Stripe to retry the whole payments
+          // insert and risk the 23505 path re-firing.
+          console.error('[webhook:camp_confirmation_email] failed:', emailErr)
         }
       }
     }

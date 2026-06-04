@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import Card from '@/components/Card'
@@ -210,7 +211,13 @@ export default async function CampsPage() {
                   return (
                     <tr key={camp.id} className="border-b border-white/[0.08] last:border-0 hover:bg-white/[0.03]">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-white">{camp.name}</div>
+                        {/* Sprint 9: name links to the camp roster page */}
+                        <Link
+                          href={`/dashboard/camps/${camp.id}`}
+                          className="font-medium text-white hover:text-[#4ecde6] transition-colors"
+                        >
+                          {camp.name}
+                        </Link>
                         <div className="flex items-center gap-2 mt-0.5">
                           {camp.location && (
                             <span className="text-xs text-white/40">{camp.location}</span>

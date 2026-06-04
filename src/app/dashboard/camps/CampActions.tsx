@@ -4,6 +4,7 @@ import { useState, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Props = {
   campId: string
@@ -94,6 +95,10 @@ export default function CampActions({ campId, campName, isPublished, orgSlug }: 
             className="fixed z-[101] w-48 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] shadow-2xl py-1"
             style={{ top: coords.top, right: coords.right }}
           >
+            {/* Sprint 9 — View roster (admin per-camp page) */}
+            <Link href={`/dashboard/camps/${campId}`} className={menuItem} onClick={() => setOpen(false)}>
+              View roster
+            </Link>
             <button onClick={handleTogglePublish} disabled={toggling} className={menuItem}>
               {isPublished
                 ? (toggling ? 'Unpublishing...' : 'Unpublish')
