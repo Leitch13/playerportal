@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import AddPlayerToCamp, { type RosterPlayer } from './AddPlayerToCamp'
+import RosterClient, { type CampRosterBooking } from './RosterClient'
 
 function fmtDateRange(start: string, end: string): string {
   const s = new Date(start + 'T00:00:00Z')
@@ -25,12 +26,6 @@ function fmtDateRange(start: string, end: string): string {
     return s.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
   }
   return `${s.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })} → ${e.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}`
-}
-
-function fmtBookedAt(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) +
-    ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default async function CampDetailPage({
@@ -65,34 +60,33 @@ export default async function CampDetailPage({
     redirect('/dashboard/camps')
   }
 
-  // Roster — newest first
+  // Roster — newest first. Sprint 10: also pulls medical_info + child_age
+  // for the workspace's safety badge + age column. Forward-compatible with
+  // the Sprint 9 booking_source column (catches 42703).
   type BookingRow = {
     id: string
     child_name: string | null
+    child_age: number | null
     parent_name: string | null
     parent_email: string | null
     parent_phone: string | null
+    medical_info: string | null
     amount_paid: number | null
     payment_status: string
     booking_source: string | null
     created_at: string
   }
-  // Sprint 9: SELECT may fail with 42703 (undefined_column) before
-  // migration 081 lands the `booking_source` column. Fall back to the
-  // legacy column set so the page still renders during the rollout
-  // window — the "Added by admin" badge just renders as "Online booking"
-  // for everyone until the migration is in.
   let bookingsRaw: unknown[] | null = null
   const firstAttempt = await supabase
     .from('camp_bookings')
-    .select('id, child_name, parent_name, parent_email, parent_phone, amount_paid, payment_status, booking_source, created_at')
+    .select('id, child_name, child_age, parent_name, parent_email, parent_phone, medical_info, amount_paid, payment_status, booking_source, created_at')
     .eq('camp_id', campId)
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
   if (firstAttempt.error && (firstAttempt.error as { code?: string }).code === '42703') {
     const legacy = await supabase
       .from('camp_bookings')
-      .select('id, child_name, parent_name, parent_email, parent_phone, amount_paid, payment_status, created_at')
+      .select('id, child_name, child_age, parent_name, parent_email, parent_phone, medical_info, amount_paid, payment_status, created_at')
       .eq('camp_id', campId)
       .eq('organisation_id', orgId)
       .order('created_at', { ascending: false })
@@ -101,6 +95,52 @@ export default async function CampDetailPage({
     bookingsRaw = (firstAttempt.data || []) as unknown[]
   }
   const bookings = (bookingsRaw || []) as BookingRow[]
+
+  // Sprint 10 — resolve parent profile IDs by email for the Send-to-all
+  // deep-link. Same iLIKE-equivalent semantics as the webhook handler.
+  const parentEmails = Array.from(
+    new Set(
+      bookings
+        .map((b) => (b.parent_email || '').toLowerCase().trim())
+        .filter((v) => v && !v.endsWith('@theplayerportal.net')),
+    ),
+  )
+  const parentProfileIdByEmail = new Map<string, string>()
+  if (parentEmails.length > 0) {
+    const { data: parentProfiles } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .eq('organisation_id', orgId)
+      .in('email', parentEmails)
+    for (const p of parentProfiles || []) {
+      const e = ((p as { email?: string | null }).email || '').toLowerCase()
+      if (e) parentProfileIdByEmail.set(e, (p as { id: string }).id)
+    }
+  }
+
+  // Academy display name for the WhatsApp templates.
+  const { data: orgRow } = await supabase
+    .from('organisations')
+    .select('name')
+    .eq('id', orgId)
+    .maybeSingle()
+  const academyName = (orgRow as { name?: string | null } | null)?.name || 'this academy'
+
+  // Build the RosterClient input.
+  const rosterBookings: CampRosterBooking[] = bookings.map((b) => ({
+    id: b.id,
+    child_name: b.child_name,
+    child_age: b.child_age,
+    parent_name: b.parent_name,
+    parent_email: b.parent_email,
+    parent_phone: b.parent_phone,
+    parent_profile_id: parentProfileIdByEmail.get((b.parent_email || '').toLowerCase()) || null,
+    medical_info: b.medical_info,
+    amount_paid: b.amount_paid,
+    payment_status: b.payment_status,
+    booking_source: b.booking_source,
+    created_at: b.created_at,
+  }))
 
   // Stats — exclude cancelled, count pending+paid as "booked"
   const booked = bookings.filter((b) => ['pending', 'paid'].includes(b.payment_status))
@@ -179,78 +219,15 @@ export default async function CampDetailPage({
         <StatCard label="Revenue collected" value={`£${revenue.toFixed(2)}`} tone="green" testId="stat-revenue" />
       </div>
 
-      {/* Roster table */}
-      <div className="rounded-xl border border-white/[0.08] bg-[#141414] overflow-hidden" data-testid="camp-roster">
-        <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-white/70">Booked players</h2>
-          <span className="text-[11px] text-white/40">{bookings.length} entr{bookings.length === 1 ? 'y' : 'ies'}</span>
-        </div>
-
-        {bookings.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <div className="text-3xl mb-2">🏕️</div>
-            <p className="text-sm text-white/55">No bookings yet for this camp.</p>
-            <p className="text-xs text-white/40 mt-1">
-              Share the booking link or use <span className="text-white">Add player</span> to enter one manually.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-white/[0.02]">
-                  <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Child</th>
-                  <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Parent</th>
-                  <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Contact</th>
-                  <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Booked</th>
-                  <th className="text-right px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Amount</th>
-                  <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Status</th>
-                  <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.map((b) => (
-                  <tr
-                    key={b.id}
-                    data-testid="camp-roster-row"
-                    data-booking-id={b.id}
-                    className="border-t border-white/[0.04] hover:bg-white/[0.02]"
-                  >
-                    <td className="px-6 py-3 text-white font-medium">{b.child_name || '—'}</td>
-                    <td className="px-6 py-3 text-white/70">{b.parent_name || '—'}</td>
-                    <td className="px-6 py-3 text-white/55 text-xs">
-                      {b.parent_email && (
-                        <div className="truncate max-w-[200px]">
-                          <a href={`mailto:${b.parent_email}`} className="text-[#4ecde6] hover:underline">{b.parent_email}</a>
-                        </div>
-                      )}
-                      {b.parent_phone && <div>{b.parent_phone}</div>}
-                    </td>
-                    <td className="px-6 py-3 text-white/55 text-xs">{fmtBookedAt(b.created_at)}</td>
-                    <td className="px-6 py-3 text-right">
-                      {Number(b.amount_paid || 0) > 0 ? (
-                        <span className="text-emerald-400 font-semibold">£{Number(b.amount_paid).toFixed(2)}</span>
-                      ) : (
-                        <span className="text-white/30">£0.00</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3">
-                      <PaymentStatusPill status={b.payment_status} />
-                    </td>
-                    <td className="px-6 py-3 text-[11px]">
-                      {b.booking_source === 'admin_created' ? (
-                        <span className="px-2 py-0.5 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] border border-[#4ecde6]/20 font-semibold">Added by admin</span>
-                      ) : (
-                        <span className="text-white/40">Online booking</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Sprint 10 — Roster Workspace.
+          Search · Send-to-all · Print · CSV · WhatsApp · Resend confirmation.
+          All client-side interactivity lives in RosterClient. */}
+      <RosterClient
+        campId={camp.id as string}
+        campName={camp.name as string}
+        academyName={academyName}
+        bookings={rosterBookings}
+      />
     </div>
   )
 }
@@ -284,18 +261,3 @@ function StatCard({
   )
 }
 
-function PaymentStatusPill({ status }: { status: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    paid:      { label: 'Paid',      cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-    pending:   { label: 'Pending',   cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-    failed:    { label: 'Failed',    cls: 'bg-red-500/20 text-red-300 border-red-500/30' },
-    refunded:  { label: 'Refunded',  cls: 'bg-violet-500/20 text-violet-300 border-violet-500/30' },
-    cancelled: { label: 'Cancelled', cls: 'bg-white/10 text-white/60 border-white/15' },
-  }
-  const m = map[status] || { label: status, cls: 'bg-white/10 text-white/60 border-white/15' }
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${m.cls}`}>
-      {m.label}
-    </span>
-  )
-}
