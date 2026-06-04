@@ -1,6 +1,16 @@
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import StatusBadge from '@/components/StatusBadge'
+
+// ─── SECURITY: force dynamic rendering ───
+// /dashboard/payments serves different content per user/role. Marking this
+// route dynamic explicitly is defence-in-depth against any edge / CDN /
+// build-time caching that could ever cross-serve an admin's RSC payload
+// to a parent (or any other user). The supabase server client already
+// touches cookies(), which Next infers as dynamic, but the explicit
+// directive removes any room for misconfiguration.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import EmptyState from '@/components/EmptyState'
 import type { UserRole, SubscriptionPlan } from '@/lib/types'
 import PaymentManager from './PaymentManager'
@@ -52,7 +62,14 @@ export default async function PaymentsPage({
   const role = (profile?.role || 'parent') as UserRole
   const orgId = profile?.organisation_id || ''
 
-  if (role === 'parent')
+  // ─── SECURITY: STRICT role gate ───
+  // Anything that isn't EXACTLY 'admin' falls through to the parent view.
+  // The previous gate was `if (role === 'parent') ...` which routed any
+  // unrecognised role string ('coach', 'super_admin', '', undefined, a
+  // corrupted profile, etc.) to the admin view by default. The defaults
+  // are now inverted: admin must be explicitly proven, everyone else gets
+  // the parent hub.
+  if (role !== 'admin') {
     return (
       <ParentPayments
         userId={user.id}
@@ -64,6 +81,15 @@ export default async function PaymentsPage({
         subCancelled={params.sub_cancelled === '1'}
       />
     )
+  }
+
+  // ─── SECURITY: an admin without an organisation_id is a corrupt
+  // state and must not see anything. 404 (not 401) — we don't want to
+  // leak whether the route exists.
+  if (!orgId) {
+    notFound()
+  }
+
   return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} orgId={orgId} activeTab={params.tab || 'overview'} />
 }
 
@@ -381,25 +407,48 @@ async function AdminPayments({
 }) {
   const supabase = await createClient()
 
-  // ─── Subscription Plans ───
+  // ─── SECURITY: re-assert role + org inside the admin component ───
+  // The page-level gate is the primary guard, but if this component is
+  // ever rendered through a different code path (a hot-reload mid-edit,
+  // a future route alias, a copy-paste in another file), the re-check
+  // catches it. We also re-read the profile from THIS request's auth
+  // context — never trust the orgId prop without verifying.
+  const { data: { user: meUser } } = await supabase.auth.getUser()
+  if (!meUser) redirect('/auth/signin')
+  const { data: meProfile } = await supabase
+    .from('profiles')
+    .select('role, organisation_id')
+    .eq('id', meUser.id)
+    .single()
+  if (!meProfile || meProfile.role !== 'admin') notFound()
+  if (!meProfile.organisation_id || meProfile.organisation_id !== orgId) notFound()
+  // From here on, `orgId` is proven to be this admin's actual organisation.
+
+  // ─── Subscription Plans (org-scoped) ───
   const { data: plans } = await supabase
     .from('subscription_plans')
     .select('*')
+    .eq('organisation_id', orgId)
     .order('sort_order')
 
   const activePlans = (plans || []).filter((p) => p.active)
 
-  // ─── All Subscriptions ───
+  // ─── All Subscriptions (org-scoped) ───
+  // SECURITY: explicit org filter is defence-in-depth. RLS on this
+  // table already restricts to the caller's org, but if RLS is ever
+  // mis-migrated this explicit filter keeps the leak surface to zero.
   const { data: allSubscriptions } = await supabase
     .from('subscriptions')
     .select('*, plan:subscription_plans(*), player:players(first_name, last_name), parent:profiles!subscriptions_parent_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
     .limit(200)
 
-  // ─── Players with parent names for assignment ───
+  // ─── Players with parent names for assignment (org-scoped) ───
   const { data: playersRaw } = await supabase
     .from('players')
     .select('id, first_name, last_name, parent_id, parent:profiles!players_parent_id_fkey(full_name)')
+    .eq('organisation_id', orgId)
     .order('first_name')
 
   const playersForAssign = (playersRaw || []).map((p) => ({
@@ -410,15 +459,17 @@ async function AdminPayments({
     parent_name: (p.parent as unknown as { full_name: string })?.full_name || '—',
   }))
 
-  // ─── All Payments (for stats + financial breakdown) ───
+  // ─── All Payments (org-scoped) — for stats + financial breakdown ───
   const { data: allPayments } = await supabase
     .from('payments')
     .select('amount, amount_paid, status, parent_id, created_at, paid_date')
+    .eq('organisation_id', orgId)
 
-  // ─── Filtered payments for list ───
+  // ─── Filtered payments for list (org-scoped) ───
   let query = supabase
     .from('payments')
     .select('*, parent:profiles!payments_parent_id_fkey(full_name, email), player:players(first_name, last_name)')
+    .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
     .limit(200)
 
@@ -428,17 +479,19 @@ async function AdminPayments({
 
   const { data: payments } = await query
 
-  // ─── All Parents (with signup dates) ───
+  // ─── All Parents (with signup dates) — org-scoped ───
   const { data: allParents } = await supabase
     .from('profiles')
     .select('id, full_name, created_at')
     .eq('role', 'parent')
+    .eq('organisation_id', orgId)
     .order('full_name')
 
-  // ─── All Players ───
+  // ─── All Players (org-scoped) ───
   const { data: allPlayers } = await supabase
     .from('players')
     .select('id, first_name, last_name, parent_id, created_at')
+    .eq('organisation_id', orgId)
     .order('first_name')
 
   // ═══════════════════════════════════════
