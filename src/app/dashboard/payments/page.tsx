@@ -24,6 +24,7 @@ import SubscriptionActions from './SubscriptionActions'
 import PaymentLinkGenerator from './PaymentLinkGenerator'
 import Link from 'next/link'
 import FinancialBreakdown from './FinancialBreakdown'
+import CancellationIntelligence from './CancellationIntelligence'
 import SendReminderButton from './SendReminderButton'
 // Parent Subscription Hub section components (built in this PR)
 import MembershipOverview from './MembershipOverview'
@@ -487,6 +488,90 @@ async function AdminPayments({
     .eq('organisation_id', orgId)
     .order('full_name')
 
+  // ─── Cancellation Intelligence — org-scoped read of the cancellations
+  // table + a pre-join to subscription_plans.amount so the derive layer
+  // can compute Lost MRR / Saved MRR / Offer ROI without holding any
+  // business logic of its own. Fetched only when on the analytics tab
+  // to keep the Overview tab fast.
+  //
+  // Schema-safe shape: cancellations.subscription_id is the *Stripe*
+  // subscription id (sub_*). We join subscriptions on
+  // stripe_subscription_id, then plan.amount.
+  type CancellationFetchRow = {
+    id: string
+    cancellation_type: string | null
+    reason: string | null
+    reason_detail: string | null
+    offered_discount: boolean
+    accepted_discount: boolean
+    discount_percent: number | null
+    final_status: string | null
+    cancelled_at: string | null
+    subscription_id: string | null
+  }
+  let cancellationsForDerive: import('@/lib/cancellation-derive').CancellationRow[] = []
+  let detectedSubscriptionCancellations = 0
+  if (activeTab === 'analytics') {
+    const { data: rawCancellations } = await supabase
+      .from('cancellations')
+      .select('id, cancellation_type, reason, reason_detail, offered_discount, accepted_discount, discount_percent, final_status, cancelled_at, subscription_id')
+      .eq('organisation_id', orgId)
+      .order('cancelled_at', { ascending: false })
+      .limit(1000)
+    const rows = (rawCancellations || []) as CancellationFetchRow[]
+
+    // Pull the plan amount for every Stripe sub id referenced. One round-trip.
+    const subIds = Array.from(new Set(rows.map(r => r.subscription_id).filter((s): s is string => !!s)))
+    const planAmountBySubId = new Map<string, number>()
+    if (subIds.length > 0) {
+      const { data: subRows } = await supabase
+        .from('subscriptions')
+        .select('stripe_subscription_id, plan:subscription_plans(amount)')
+        .eq('organisation_id', orgId)
+        .in('stripe_subscription_id', subIds)
+      // PostgREST returns the embedded relation as an array even on a
+      // 1:1 join; coerce safely.
+      for (const s of (subRows || []) as unknown as Array<{ stripe_subscription_id: string | null; plan: { amount: number | string | null } | { amount: number | string | null }[] | null }>) {
+        if (!s.stripe_subscription_id) continue
+        const plan = Array.isArray(s.plan) ? s.plan[0] : s.plan
+        const amt = Number(plan?.amount ?? 0)
+        planAmountBySubId.set(s.stripe_subscription_id, amt)
+      }
+    }
+
+    // Enrich rows for the derive layer.
+    cancellationsForDerive = rows.map(r => ({
+      id: r.id,
+      cancellation_type: (r.cancellation_type === 'class' || r.cancellation_type === 'subscription')
+        ? r.cancellation_type
+        : null,
+      reason: r.reason,
+      reason_detail: r.reason_detail,
+      offered_discount: !!r.offered_discount,
+      accepted_discount: !!r.accepted_discount,
+      discount_percent: r.discount_percent == null ? null : Number(r.discount_percent),
+      final_status: r.final_status,
+      cancelled_at: r.cancelled_at,
+      plan_amount: r.subscription_id ? (planAmountBySubId.get(r.subscription_id) ?? null) : null,
+    }))
+
+    // Detected subscription cancellations = subscriptions table cancel signals.
+    // Used by the derive layer's data-integrity check to surface orphaned
+    // cancels (e.g. legacy Stripe-side admin cancels that bypassed CancelFlow).
+    const { count: cancelledStatusCount } = await supabase
+      .from('subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('organisation_id', orgId)
+      .eq('status', 'canceled')
+    const { count: canceledAtCount } = await supabase
+      .from('subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('organisation_id', orgId)
+      .not('canceled_at', 'is', null)
+    // Either signal is a cancel — take the max (over-counting risk < 0 because both signals don't overlap by intent).
+    detectedSubscriptionCancellations = Math.max(cancelledStatusCount || 0, canceledAtCount || 0)
+  }
+
   // ─── All Players (org-scoped) ───
   const { data: allPlayers } = await supabase
     .from('players')
@@ -892,23 +977,30 @@ async function AdminPayments({
 
       {/* ═══════════════ ANALYTICS TAB ═══════════════ */}
       {activeTab === 'analytics' && (
-        <FinancialBreakdown
-          monthlyData={monthlyData}
-          planBreakdown={planBreakdown}
-          topParents={topParents}
-          summary={{
-            totalLifetimeRevenue,
-            monthlyRecurring,
-            projectedAnnual,
-            avgRevenuePerPlayer,
-            avgRevenuePerParent,
-            collectionRate,
-            activeParents: parentsWithPlayers,
-            totalParents: totalParentCount,
-            churnRate,
-            growthRate,
-          }}
-        />
+        <>
+          <FinancialBreakdown
+            monthlyData={monthlyData}
+            planBreakdown={planBreakdown}
+            topParents={topParents}
+            summary={{
+              totalLifetimeRevenue,
+              monthlyRecurring,
+              projectedAnnual,
+              avgRevenuePerPlayer,
+              avgRevenuePerParent,
+              collectionRate,
+              activeParents: parentsWithPlayers,
+              totalParents: totalParentCount,
+              churnRate,
+              growthRate,
+            }}
+          />
+          {/* Revenue Sprint 2 — Cancellation Intelligence (read-only, pure-derive) */}
+          <CancellationIntelligence
+            rows={cancellationsForDerive}
+            detectedSubscriptionCancellations={detectedSubscriptionCancellations}
+          />
+        </>
       )}
 
       {/* ═══════════════ MANAGE TAB ═══════════════ */}
