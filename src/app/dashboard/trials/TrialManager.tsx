@@ -99,12 +99,30 @@ export default function TrialManager({ trials }: { trials: Trial[] }) {
 
   async function updateStatus(id: string, status: string) {
     setLoading(id)
-    const supabase = createClient()
-    const update: Record<string, unknown> = { status }
-    if (status === 'confirmed') update.confirmed_at = new Date().toISOString()
-    await supabase.from('trial_bookings').update(update).eq('id', id)
-    router.refresh()
-    setLoading(null)
+    try {
+      // P1 Trial Funnel Reliability — server-side endpoint with proper
+      // org auth + service-role write. The previous client-side anon
+      // .update() call was silently no-op'd by RLS (HTTP 204, no error
+      // surfaced), making the button appear dead.
+      const res = await fetch(`/api/admin/trials/${id}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      const json = await res.json().catch(() => ({ ok: false }))
+      if (!res.ok || !json.ok) {
+        const msg = (json && json.error) || `Could not update trial (HTTP ${res.status})`
+        // Surface the failure instead of silently no-op'ing.
+        if (typeof window !== 'undefined') {
+          window.alert(msg)
+        }
+        setLoading(null)
+        return
+      }
+      router.refresh()
+    } finally {
+      setLoading(null)
+    }
   }
 
   const tabs = [

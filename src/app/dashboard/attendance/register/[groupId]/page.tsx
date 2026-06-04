@@ -83,6 +83,18 @@ export default async function RegisterPage({
     .eq('group_id', groupId)
     .eq('status', 'active')
 
+  // P2 Trial Funnel Reliability — trial guests for this group inside
+  // the selected date range. Shown as a separate block above the
+  // enrolled-player attendance table.
+  const { data: trialGuests } = await supabase
+    .from('trial_bookings')
+    .select('id, parent_name, parent_email, parent_phone, child_name, preferred_date, status')
+    .eq('training_group_id', groupId)
+    .in('status', ['pending', 'confirmed', 'attended', 'no_show'])
+    .gte('preferred_date', from)
+    .lte('preferred_date', to)
+    .order('preferred_date')
+
   const players = (enrolments || [])
     .map((e) => e.player as unknown as { id: string; first_name: string; last_name: string })
     .filter(Boolean)
@@ -252,6 +264,46 @@ export default async function RegisterPage({
             <div>{formatDateFull(from)} &mdash; {formatDateFull(to)}</div>
           </div>
         </div>
+
+        {/* P2 — Trial guests block (above enrolled players) */}
+        {(trialGuests || []).length > 0 && (
+          <div className="mb-6" data-testid="register-trial-guests">
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-700">Trial Guests</h3>
+            <table className="register-table w-full border-collapse text-xs">
+              <thead>
+                <tr>
+                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Child</th>
+                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Parent</th>
+                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Contact</th>
+                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Trial date</th>
+                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(trialGuests || []).map((t) => (
+                  <tr key={t.id} className="bg-amber-50" data-testid="register-trial-row">
+                    <td className="border border-gray-300 px-2 py-1.5 font-medium">{t.child_name}</td>
+                    <td className="border border-gray-300 px-2 py-1.5">{t.parent_name}</td>
+                    <td className="border border-gray-300 px-2 py-1.5 text-gray-700">
+                      {t.parent_phone || t.parent_email}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1.5">
+                      {t.preferred_date ? formatDate(t.preferred_date) : '—'}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-1.5">
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-900">
+                        Trial · {String(t.status || 'pending')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="text-[10px] text-gray-500 mt-1">
+              Trial guests are not on the attendance table. Mark them Attended / No Show on the Trials page after the session.
+            </p>
+          </div>
+        )}
 
         {/* Register table */}
         {players.length === 0 ? (

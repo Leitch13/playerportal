@@ -24,6 +24,22 @@ interface EnrolmentMap {
   [groupId: string]: string[]
 }
 
+// P2 Trial Funnel Reliability — trial guests surfaced above enrolled
+// players for the selected group + date. No attendance row is created
+// for trials (they're not in `players`); the row is informational so
+// the coach knows to expect them.
+interface TrialGuest {
+  id: string
+  group_id: string | null
+  child_name: string
+  child_age: number | null
+  parent_name: string
+  parent_email: string
+  parent_phone: string | null
+  preferred_date: string | null
+  status: string
+}
+
 type AttendanceState = 'present' | 'absent' | 'unmarked'
 
 export default function AttendanceManager({
@@ -31,11 +47,13 @@ export default function AttendanceManager({
   players,
   enrolmentMap,
   orgId,
+  trials = [],
 }: {
   groups: Group[]
   players: Player[]
   enrolmentMap: EnrolmentMap
   orgId: string
+  trials?: TrialGuest[]
 }) {
   const router = useRouter()
   const [groupId, setGroupId] = useState('')
@@ -63,6 +81,15 @@ export default function AttendanceManager({
       .filter((p): p is Player => !!p)
       .sort((a, b) => a.first_name.localeCompare(b.first_name))
   }, [groupId, enrolmentMap, playerMap])
+
+  // P2 — Trial guests for the selected group + date. Filtered client-side
+  // off the prefetched ±60-day window so changing date is instant.
+  const todaysTrials = useMemo(() => {
+    if (!groupId || !sessionDate) return [] as TrialGuest[]
+    return trials
+      .filter(t => t.group_id === groupId && t.preferred_date === sessionDate)
+      .sort((a, b) => a.child_name.localeCompare(b.child_name))
+  }, [trials, groupId, sessionDate])
 
   // Live counts
   const counts = useMemo(() => {
@@ -199,6 +226,48 @@ export default function AttendanceManager({
           <div className="text-4xl mb-3">📋</div>
           <h3 className="text-base font-bold text-white mb-1">Pick a class to start</h3>
           <p className="text-sm text-white/50">Choose the class above to see your enrolled players.</p>
+        </div>
+      )}
+
+      {/* P2 Trial Funnel Reliability — Trial Guests for the selected
+          group + date. Always rendered BEFORE the enrolled player list
+          when groupId is selected. Read from trial_bookings only — no
+          enrolment row is created, no attendance row is written. */}
+      {groupId && todaysTrials.length > 0 && (
+        <div className="px-5 pt-4 pb-3 border-b border-[#1e1e1e] bg-amber-500/[0.03]" data-testid="trial-guests-section">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-[11px] uppercase tracking-wider text-amber-300/90 font-bold">Trial Guests</h3>
+            <span className="text-[10px] text-white/40">{todaysTrials.length} expected</span>
+          </div>
+          <div className="space-y-1.5">
+            {todaysTrials.map(t => (
+              <div
+                key={t.id}
+                data-testid="trial-guest-row"
+                className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3 flex items-center justify-between gap-3 flex-wrap"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-white">{t.child_name}</span>
+                    {t.child_age != null && (
+                      <span className="text-[10px] text-white/50">age {t.child_age}</span>
+                    )}
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      Trial · {t.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/55 mt-0.5">
+                    Parent: <span className="text-white/80">{t.parent_name}</span>
+                    {t.parent_phone && <> · <a href={`tel:${t.parent_phone}`} className="text-amber-300/80 hover:text-amber-300">{t.parent_phone}</a></>}
+                    {!t.parent_phone && t.parent_email && <> · <span className="text-white/60">{t.parent_email}</span></>}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-white/40 mt-2">
+            Trial guests aren&apos;t in the attendance table — mark them as Attended / No Show on the Trials page after the session.
+          </p>
         </div>
       )}
 

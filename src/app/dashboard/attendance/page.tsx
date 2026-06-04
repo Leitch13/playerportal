@@ -233,7 +233,15 @@ async function ParentAttendance({ userId }: { userId: string }) {
 async function CoachAttendance({ orgId }: { orgId: string }) {
   const supabase = await createClient()
 
-  const [{ data: groups }, { data: players }, { data: enrolments }] = await Promise.all([
+  // P2 Trial Funnel Reliability — surface trial guests above enrolled
+  // players so the coach knows who else will be at the session. Window
+  // covers ±60 days so a guest booked for the next session shows even
+  // if the academy is browsing back through past sessions. The client
+  // filters by selected group + date.
+  const trialWindowStart = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString().split('T')[0]
+  const trialWindowEnd = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString().split('T')[0]
+
+  const [{ data: groups }, { data: players }, { data: enrolments }, { data: trials }] = await Promise.all([
     supabase
       .from('training_groups')
       .select('id, name, day_of_week, time_slot, location')
@@ -250,6 +258,14 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
       .select('group_id, player_id')
       .eq('organisation_id', orgId)
       .eq('status', 'active'),
+    supabase
+      .from('trial_bookings')
+      .select('id, training_group_id, parent_name, parent_email, parent_phone, child_name, child_age, preferred_date, status')
+      .eq('organisation_id', orgId)
+      .in('status', ['pending', 'confirmed'])
+      .gte('preferred_date', trialWindowStart)
+      .lte('preferred_date', trialWindowEnd)
+      .order('preferred_date'),
   ])
 
   // Build a group_id -> [player_id] map so the manager only shows enrolled players
@@ -281,6 +297,17 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
           players={players || []}
           enrolmentMap={enrolmentMap}
           orgId={orgId}
+          trials={(trials || []).map(t => ({
+            id: t.id,
+            group_id: t.training_group_id,
+            child_name: t.child_name,
+            child_age: t.child_age,
+            parent_name: t.parent_name,
+            parent_email: t.parent_email,
+            parent_phone: t.parent_phone,
+            preferred_date: t.preferred_date,
+            status: t.status,
+          }))}
         />
 
         <p className="text-xs text-white/30 text-center">

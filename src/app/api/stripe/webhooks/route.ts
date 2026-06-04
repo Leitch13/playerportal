@@ -1393,6 +1393,53 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       console.error('Subscription started email failed:', err)
     }
   }
+
+  // ─── P4 Trial Funnel Reliability — auto-link trial → subscription ───
+  // When this parent has an existing trial_bookings row for the same
+  // academy (matched by parent_email, within the last 90 days, not yet
+  // converted), flag it converted=true. Best-effort, fully isolated:
+  //
+  //   • No Stripe state read or mutated
+  //   • No billing / fee / subscription / enrolment side-effects
+  //   • Failure here never throws — the webhook already succeeded
+  //   • Only flips rows belonging to the SAME academy (organisation_id)
+  //
+  // Closes the long-standing under-count where funnel conversion % only
+  // reflected trials an admin remembered to mark converted by hand.
+  try {
+    const linkUserId = session.metadata?.supabase_user_id ?? null
+    if (linkUserId) {
+      const { data: linkProfile } = await supabase
+        .from('profiles')
+        .select('email, organisation_id')
+        .eq('id', linkUserId)
+        .maybeSingle()
+
+      const linkEmail = (linkProfile?.email as string | null) || null
+      const linkOrgId = (linkProfile?.organisation_id as string | null) || null
+
+      if (linkEmail && linkOrgId) {
+        const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+        const { data: matched, error: matchErr } = await supabase
+          .from('trial_bookings')
+          .update({ converted: true, updated_at: new Date().toISOString() })
+          .eq('organisation_id', linkOrgId)
+          .ilike('parent_email', linkEmail)
+          .eq('converted', false)
+          .gte('created_at', ninetyDaysAgo)
+          .select('id')
+
+        if (matchErr) {
+          console.error('Trial auto-link update failed:', matchErr.message)
+        } else if (matched && matched.length > 0) {
+          console.log(`Trial auto-link: ${matched.length} trial_bookings flagged converted for parent ${linkEmail} @ org ${linkOrgId}`)
+        }
+      }
+    }
+  } catch (err) {
+    // Auto-link is best-effort — never let it break the webhook.
+    console.error('Trial auto-link error (non-fatal):', err)
+  }
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {

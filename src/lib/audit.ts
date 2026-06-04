@@ -10,7 +10,7 @@ export type AuditAction =
   | 'team.invited' | 'team.removed'
   | 'export.downloaded'
   | 'waitlist.offered' | 'waitlist.removed'
-  | 'trial.confirmed' | 'trial.cancelled'
+  | 'trial.confirmed' | 'trial.cancelled' | 'trial.attended' | 'trial.no_show'
   | 'reminder.sent'
 
 export async function logAudit(params: {
