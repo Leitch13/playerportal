@@ -561,23 +561,28 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // status='active' is correct here because the parent has paid the bridge
     // and made a commitment.
     if (classId && playerId) {
-      const { data: existingEnrolment } = await supabase
-        .from('enrolments')
-        .select('id')
-        .eq('player_id', playerId)
-        .eq('group_id', classId)
-        .maybeSingle()
-      if (!existingEnrolment) {
-        const { error: enrolErr } = await supabase.from('enrolments').insert({
-          player_id: playerId,
-          group_id: classId,
-          status: 'active',
-          organisation_id: orgId,
-          activates_on: activatesOn,
-        })
-        if (enrolErr && (enrolErr as { code?: string }).code !== '23505') {
-          throw new Error(`future_session_bridge enrolments.insert failed: ${enrolErr.message}`)
-        }
+      // 079 — atomic capacity check + insert. The RPC handles the
+      // existence check (idempotent retries OK), the FOR UPDATE row
+      // lock on training_groups (serializes concurrent webhook
+      // deliveries for the same class), and the active+pending count
+      // check. If a parent paid for a seat that filled up between
+      // checkout init and webhook fire, we log loudly but do NOT throw
+      // — the subscription is valid and Stripe must not retry.
+      const { data: enrolRes, error: enrolErr } = await supabase.rpc('enrol_if_capacity_available', {
+        p_player_id: playerId,
+        p_group_id: classId,
+        p_org_id: orgId,
+        p_status: 'active',
+        p_activates_on: activatesOn,
+      })
+      if (enrolErr) {
+        throw new Error(`future_session_bridge enrol RPC failed: ${enrolErr.message}`)
+      }
+      const r = (enrolRes ?? {}) as { ok?: boolean; error?: string; capacity?: number; count?: number }
+      if (!r.ok && r.error === 'class_full') {
+        console.error('[webhook:future_session_bridge] class_full at enrolment time — parent paid but no seat', { playerId, classId, capacity: r.capacity, count: r.count })
+      } else if (!r.ok) {
+        throw new Error(`future_session_bridge enrol RPC returned: ${JSON.stringify(enrolRes)}`)
       }
     }
 
@@ -685,23 +690,25 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // on start_date. The booking gate (/api/enrolments/book/route.ts) also
     // enforces activates_on as defense in depth.
     if (classId && playerId) {
-      const { data: existingEnrolment } = await supabase
-        .from('enrolments')
-        .select('id')
-        .eq('player_id', playerId)
-        .eq('group_id', classId)
-        .maybeSingle()
-      if (!existingEnrolment) {
-        const { error: enrolErr } = await supabase.from('enrolments').insert({
-          player_id: playerId,
-          group_id: classId,
-          status: 'pending',
-          organisation_id: orgId,
-          activates_on: activatesOn,
-        })
-        if (enrolErr && (enrolErr as { code?: string }).code !== '23505') {
-          throw new Error(`future_prorated enrolments.insert failed: ${enrolErr.message}`)
-        }
+      // 079 — atomic capacity check + insert (status='pending' for
+      // Stage 3 future-start: the seat is reserved at signup but the
+      // booking gate enforces activates_on so the parent can't attend
+      // before billing starts).
+      const { data: enrolRes, error: enrolErr } = await supabase.rpc('enrol_if_capacity_available', {
+        p_player_id: playerId,
+        p_group_id: classId,
+        p_org_id: orgId,
+        p_status: 'pending',
+        p_activates_on: activatesOn,
+      })
+      if (enrolErr) {
+        throw new Error(`future_prorated enrol RPC failed: ${enrolErr.message}`)
+      }
+      const r = (enrolRes ?? {}) as { ok?: boolean; error?: string; capacity?: number; count?: number }
+      if (!r.ok && r.error === 'class_full') {
+        console.error('[webhook:future_prorated] class_full at enrolment time — parent paid but no seat', { playerId, classId, capacity: r.capacity, count: r.count })
+      } else if (!r.ok) {
+        throw new Error(`future_prorated enrol RPC returned: ${JSON.stringify(enrolRes)}`)
       }
     }
 
@@ -883,31 +890,30 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
       // Auto-enrol player in the class
       if (classId && playerId) {
-        const { data: existing } = await supabase
-          .from('enrolments')
-          .select('id')
-          .eq('player_id', playerId)
-          .eq('group_id', classId)
-          .maybeSingle()
-        if (!existing) {
-          // Stage 1: capture activates_on from session metadata so the booking
-          // gate can enforce it. Falls back to today if the picker wasn't on
-          // the form yet (defensive — never NULL after migration 070).
-          const tonightActivatesOn =
-            typeof session.metadata?.activates_on === 'string' &&
-            /^\d{4}-\d{2}-\d{2}$/.test(session.metadata.activates_on)
-              ? session.metadata.activates_on
-              : new Date().toISOString().split('T')[0]
-          const { error: tonightEnrolErr } = await supabase.from('enrolments').insert({
-            player_id: playerId,
-            group_id: classId,
-            status: 'active',
-            organisation_id: orgId,
-            activates_on: tonightActivatesOn,
-          })
-          if (tonightEnrolErr && (tonightEnrolErr as { code?: string }).code !== '23505') {
-            throw new Error(`tonight enrolments.insert failed: ${tonightEnrolErr.message}`)
-          }
+        // 079 — atomic capacity check + insert. Stage 1: activates_on
+        // captured from session metadata so the booking gate can
+        // enforce it; falls back to today if picker wasn't on the form
+        // yet (defensive — never NULL after migration 070).
+        const tonightActivatesOn =
+          typeof session.metadata?.activates_on === 'string' &&
+          /^\d{4}-\d{2}-\d{2}$/.test(session.metadata.activates_on)
+            ? session.metadata.activates_on
+            : new Date().toISOString().split('T')[0]
+        const { data: tonightRes, error: tonightErr } = await supabase.rpc('enrol_if_capacity_available', {
+          p_player_id: playerId,
+          p_group_id: classId,
+          p_org_id: orgId,
+          p_status: 'active',
+          p_activates_on: tonightActivatesOn,
+        })
+        if (tonightErr) {
+          throw new Error(`tonight enrol RPC failed: ${tonightErr.message}`)
+        }
+        const tr = (tonightRes ?? {}) as { ok?: boolean; error?: string; capacity?: number; count?: number }
+        if (!tr.ok && tr.error === 'class_full') {
+          console.error('[webhook:tonight_then_sub] class_full at enrolment time — parent paid but no seat', { playerId, classId, capacity: tr.capacity, count: tr.count })
+        } else if (!tr.ok) {
+          throw new Error(`tonight enrol RPC returned: ${JSON.stringify(tonightRes)}`)
         }
       }
 
@@ -1195,29 +1201,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // AUTO-ENROL: if the parent came from a specific class page, enrol their
     // player in that class straight away so the admin doesn't have to do it manually.
     if (ctx.classId && ctx.playerId) {
-      const { data: existingEnrolment } = await supabase
-        .from('enrolments')
-        .select('id')
-        .eq('player_id', ctx.playerId)
-        .eq('group_id', ctx.classId)
-        .maybeSingle()
-
-      if (!existingEnrolment) {
-        const { error: genEnrolErr } = await supabase.from('enrolments').insert({
-          player_id: ctx.playerId,
-          group_id: ctx.classId,
-          status: 'active',
-          organisation_id: ctx.orgId,
-          // Stage 1: parent's chosen start date. Booking gate enforces this is
-          // <= the session date being booked. For immediate-prorated signups
-          // this equals today; for sub_from_1st (no session this month) this
-          // is also today; for future-start signups (Stage 3) this is in the
-          // future and the parent cannot book anything before this date.
-          activates_on: ctx.activatesOn,
-        })
-        if (genEnrolErr && (genEnrolErr as { code?: string }).code !== '23505') {
-          throw new Error(`generic enrolments.insert failed: ${genEnrolErr.message}`)
-        }
+      // 079 — atomic capacity check + insert. activates_on is the
+      // parent's chosen start date; booking gate enforces this is
+      // <= the session date being booked. For immediate-prorated and
+      // sub_from_1st signups this is today; for future-start signups
+      // (Stage 3) this is in the future and the parent cannot book
+      // anything before this date.
+      const { data: genRes, error: genErr } = await supabase.rpc('enrol_if_capacity_available', {
+        p_player_id: ctx.playerId,
+        p_group_id: ctx.classId,
+        p_org_id: ctx.orgId,
+        p_status: 'active',
+        p_activates_on: ctx.activatesOn,
+      })
+      if (genErr) {
+        throw new Error(`generic enrol RPC failed: ${genErr.message}`)
+      }
+      const gr = (genRes ?? {}) as { ok?: boolean; error?: string; capacity?: number; count?: number }
+      if (!gr.ok && gr.error === 'class_full') {
+        console.error('[webhook:generic] class_full at enrolment time — parent paid but no seat', { playerId: ctx.playerId, classId: ctx.classId, capacity: gr.capacity, count: gr.count })
+      } else if (!gr.ok) {
+        throw new Error(`generic enrol RPC returned: ${JSON.stringify(genRes)}`)
       }
     }
   }

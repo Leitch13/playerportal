@@ -210,19 +210,37 @@ export async function POST(request: NextRequest) {
     // Create enrolment — activates_on defaults to today so self-booking via
     // the schedule page (no start-date picker) yields immediately-bookable
     // enrolments, matching pre-Stage-1 behaviour.
+    //
+    // 079 — atomic capacity check + insert via the RPC. Closes the
+    // overbooking path that previously existed here (this endpoint had
+    // a subscription gate but no capacity gate, so an authenticated
+    // parent could book into a full class via the schedule page).
     const todayIso = new Date().toISOString().split('T')[0]
-    const { error: enrolError } = await supabase
-      .from('enrolments')
-      .insert({
-        player_id: playerId,
-        group_id: groupId,
-        status: 'active',
-        organisation_id: group.organisation_id,
-        activates_on: todayIso,
-      })
+    const { data: enrolRes, error: enrolError } = await supabase.rpc('enrol_if_capacity_available', {
+      p_player_id: playerId,
+      p_group_id: groupId,
+      p_org_id: group.organisation_id,
+      p_status: 'active',
+      p_activates_on: todayIso,
+    })
 
     if (enrolError) {
       return NextResponse.json({ error: enrolError.message }, { status: 500 })
+    }
+    const r = (enrolRes ?? {}) as { ok?: boolean; error?: string; capacity?: number; count?: number }
+    if (!r.ok) {
+      if (r.error === 'class_full') {
+        return NextResponse.json({
+          error: `${group.name} is currently at capacity (${r.count}/${r.capacity}). Please choose another class or join the waitlist.`,
+          classFull: true,
+          capacity: r.capacity,
+          count: r.count,
+        }, { status: 409 })
+      }
+      if (r.error === 'group_not_found') {
+        return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+      }
+      return NextResponse.json({ error: r.error || 'enrol_failed' }, { status: 500 })
     }
 
     // Fire booking-confirmation email (best effort)

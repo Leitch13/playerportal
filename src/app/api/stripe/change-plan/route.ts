@@ -114,7 +114,14 @@ export async function POST(request: NextRequest) {
     // Point our subscription row at the new plan
     await admin.from('subscriptions').update({ plan_id: newPlan.id, updated_at: new Date().toISOString() }).eq('id', sub.id)
 
-    // Enrol the player in the class now that they have capacity (idempotent)
+    // Enrol the player in the class now that they have capacity (idempotent).
+    //
+    // 079 — for a brand-new enrolment use the atomic capacity-check RPC.
+    // For an existing-but-cancelled enrolment we re-activate in place (no
+    // capacity check needed because the seat was already theirs and we're
+    // not adding a new one — though if a busy academy has filled the seat
+    // since they cancelled, that's a future-call decision; leaving the
+    // re-activate path as-is to preserve change-plan behaviour).
     const { data: existing } = await admin
       .from('enrolments')
       .select('id, status')
@@ -126,12 +133,22 @@ export async function POST(request: NextRequest) {
         await admin.from('enrolments').update({ status: 'active' }).eq('id', existing.id)
       }
     } else {
-      await admin.from('enrolments').insert({
-        player_id: playerId,
-        group_id: groupId,
-        status: 'active',
-        organisation_id: group.organisation_id,
+      const { data: cpRes, error: cpErr } = await admin.rpc('enrol_if_capacity_available', {
+        p_player_id: playerId,
+        p_group_id: groupId,
+        p_org_id: group.organisation_id,
+        p_status: 'active',
+        p_activates_on: null,
       })
+      if (cpErr) {
+        console.error('[change-plan] enrol RPC failed', cpErr.message)
+        // change-plan already committed the sub change — don't roll that
+        // back here. Log + continue; an admin can manually enrol later.
+      }
+      const cr = (cpRes ?? {}) as { ok?: boolean; error?: string; capacity?: number; count?: number }
+      if (!cr.ok && cr.error === 'class_full') {
+        console.error('[change-plan] class_full at enrol — plan changed but no seat', { playerId, groupId, capacity: cr.capacity, count: cr.count })
+      }
     }
 
     return NextResponse.json({ success: true, newPlanName: newPlan.name })
