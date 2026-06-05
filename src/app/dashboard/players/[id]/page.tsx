@@ -722,10 +722,10 @@ export default async function PlayerDetailPage({
           const hasActive = activeIsh.length > 0
 
           // Sprint 12b — when any subscription on this player is in
-          // 'trialing' status, the Classes card decorates each active
-          // (non-trial) enrolment label as "Active during trial" so the
-          // page's Active enrolment pill and Trialing membership pill
-          // no longer read as conflicting.
+          // 'trialing' status, the Classes card relabels each genuinely
+          // active (non-trial) enrolment to "Class active · membership
+          // trialing" so the page's Active enrolment pill and Trialing
+          // membership pill no longer read as conflicting.
           const trialingMembership = ((playerSubscriptions || []) as unknown as Array<{ status: string | null }>)
             .some((s) => (s.status || '').toLowerCase() === 'trialing')
 
