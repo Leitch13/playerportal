@@ -1608,6 +1608,10 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           activePlayers={totalPlayers || 0}
           todaysSessions={(todaysGroups || []).length}
           activeSubs={activeSubs || 0}
+          // Sprint 14b.1 (QW2) — trial-day pill on the hero. Auto-hides
+          // when not on trial (readiness.trialDayOf is null).
+          trialDayOf={readiness.trialDayOf}
+          trialTotalDays={readiness.trialTotalDays}
         />
 
         {/* ═══ SPRINT 14 — ACADEMY READINESS ═══

@@ -28,6 +28,12 @@ export default function AdminHero({
   activePlayers,
   todaysSessions,
   activeSubs,
+  // Sprint 14b.1 (QW2) — optional trial-day pill. Rendered next to the
+  // "Live · Date" header when the academy is on trial. Disappears
+  // automatically when not on trial (caller passes null when subscribed,
+  // pilot, expired, or any non-trial state).
+  trialDayOf,
+  trialTotalDays,
 }: {
   firstName: string
   orgName: string | null
@@ -40,6 +46,8 @@ export default function AdminHero({
   activePlayers: number
   todaysSessions: number
   activeSubs: number
+  trialDayOf?: number | null
+  trialTotalDays?: number | null
 }) {
   // Animated count-up for the headline MRR number
   const [displayMrr, setDisplayMrr] = useState(0)
@@ -93,15 +101,29 @@ export default function AdminHero({
       />
 
       <div className="relative">
-        {/* Top row — date + booking page link */}
+        {/* Top row — date + trial pill + booking page link */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="relative inline-flex w-2 h-2 rounded-full" style={{ background: brandColor }}>
               <span className="absolute inset-0 rounded-full animate-ping" style={{ background: brandColor, opacity: 0.6 }} />
             </span>
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white/40">
               Live · {todayLabel}
             </p>
+            {/* Sprint 14b.1 (QW2) — persistent trial-day pill, visible from
+                Day 1. Only renders when the caller passes a positive
+                trialDayOf (i.e. academy is on a platform trial); auto-
+                disappears once status becomes 'active', 'cancelled', or
+                pilot-bypass is on. */}
+            {trialDayOf != null && trialTotalDays != null && trialDayOf > 0 && (
+              <span
+                data-testid="admin-hero-trial-pill"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-widest border border-amber-500/40 bg-amber-500/[0.08] text-amber-300"
+                title="Your Player Portal trial. Choose a plan before it ends to keep your dashboard live."
+              >
+                Free Trial · Day {trialDayOf} of {trialTotalDays}
+              </span>
+            )}
           </div>
           {orgSlug && (
             <Link

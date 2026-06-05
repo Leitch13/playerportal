@@ -104,9 +104,12 @@ export default function PlatformBilling({
   if (!data) return null
 
   const currentPlan = data.currentPlan
+  // Sprint 14b.1 (QW5) — unified copy "Free Trial — N days remaining"
+  // matches the layout banner, the readiness widget detail, and the
+  // lock screen. Was: "Trial - N days remaining".
   const statusLabel =
     data.status === 'trial'
-      ? `Trial - ${data.trialDaysRemaining} day${data.trialDaysRemaining !== 1 ? 's' : ''} remaining`
+      ? `Free Trial — ${data.trialDaysRemaining} day${data.trialDaysRemaining !== 1 ? 's' : ''} remaining`
       : data.status === 'active'
         ? 'Active'
         : data.status === 'past_due'

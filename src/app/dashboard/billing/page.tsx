@@ -109,6 +109,18 @@ export default async function BillingPage({
             <>You don&apos;t have an active plan yet.</>
           )}
         </p>
+        {/* Sprint 14b.1 (QW3) — explicit no-auto-charge reassurance,
+            shown when there is no active plan (trial or expired-trial
+            state). Pilot academies and paying plans skip this line. */}
+        {!featureCtx.pilot && !featureCtx.planName && (
+          <p
+            data-testid="billing-page-no-charge"
+            className="text-xs text-white/45 mt-2 leading-snug"
+          >
+            <span className="text-white/70 font-semibold">You won&apos;t be charged unless you choose a plan below.</span>{' '}
+            No card on file.
+          </p>
+        )}
       </div>
 
       {/* Plan comparison */}
@@ -147,6 +159,14 @@ export default async function BillingPage({
                 </div>
                 <p className="text-sm text-white/50">
                   {Number(plan.transaction_fee_percent)}% transaction fee
+                </p>
+                {/* Sprint 14b.1 (QW6) — billing-transparency clarifier
+                    on each plan card. Stripe Checkout is mode:'subscription'
+                    with no trial_period_days, so the first month is billed
+                    immediately on click. Surface that here so the owner is
+                    never surprised at Checkout. */}
+                <p className="text-[11px] text-white/40 mt-1.5 leading-snug">
+                  Billed monthly · charged immediately when you choose this plan
                 </p>
               </div>
 

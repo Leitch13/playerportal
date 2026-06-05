@@ -186,8 +186,12 @@ export default async function DashboardLayout({
           {showTrialCountdown && (
             <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3">
               <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                {/* Sprint 14b.1 (QW5) — unified copy: "Free Trial —
+                    N days remaining" — matches the settings pill, the
+                    readiness widget detail, and the lock screen. Was:
+                    "Your free trial ends in N days." */}
                 <p className="text-sm text-amber-200">
-                  <strong>Your free trial ends in {trialDaysLeft} day{trialDaysLeft === 1 ? '' : 's'}.</strong>{' '}
+                  <strong>Free Trial — {trialDaysLeft} day{trialDaysLeft === 1 ? '' : 's'} remaining.</strong>{' '}
                   Choose a plan now to keep your dashboard live — your booking page and parents stay live throughout.
                 </p>
                 <a

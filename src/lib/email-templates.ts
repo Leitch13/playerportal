@@ -1281,15 +1281,20 @@ export function firstSaleEmail(params: {
 
 export function adminWelcomeEmail(params: { adminName: string; academyName: string; dashboardUrl: string }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  // Sprint 14b.1 (QW1) — subject + opening copy now reflects reality:
+  // the academy is set up, trial has started, and the booking page is in
+  // preview until the owner subscribes to a platform plan. Previous copy
+  // ("is LIVE on Player Portal!" + "You're live!") contradicted the
+  // dashboard, which shows "preview mode" until is_published flips.
   return {
-    subject: `🏟️ ${params.academyName} is LIVE on Player Portal!`,
+    subject: `🏟️ ${params.academyName} is set up — your 14-day trial starts now`,
     html: baseLayout(`
       <div style="text-align:center;margin-bottom:24px">
         <div style="display:inline-block;background:linear-gradient(135deg, #4ecde6, #2ba8c3);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:28px;margin-bottom:12px">🏟️</div>
-        <h2 style="margin:0 0 4px;color:#ffffff;font-size:24px;font-weight:800">You're live!</h2>
+        <h2 style="margin:0 0 4px;color:#ffffff;font-size:24px;font-weight:800">Your 14-day trial starts now</h2>
         <p style="margin:0;color:#4ecde6;font-size:16px;font-weight:600">${params.academyName}</p>
       </div>
-      <p style="color:#aaa;margin:0 0 20px;text-align:center">Hi ${params.adminName}, your academy is set up and ready for parents.</p>
+      <p style="color:#aaa;margin:0 0 20px;text-align:center">Hi ${params.adminName}, your academy is set up. Finish the checklist below, choose a plan, and your booking page goes live for parents.</p>
 
       <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0;border-left:3px solid #4ecde6">
         <p style="margin:0 0 16px;font-size:15px;color:#fff;font-weight:700">🚀 Quick Start Checklist</p>
@@ -1323,8 +1328,9 @@ export function adminWelcomeEmail(params: { adminName: string; academyName: stri
       </div>
 
       <div style="text-align:center;padding:16px;border-top:1px solid #1e1e1e;margin-top:20px">
-        <p style="margin:0;color:#555;font-size:12px">🎉 Your 14-day free trial has started. No credit card required.</p>
-        <p style="margin:8px 0 0;color:#444;font-size:11px">Need help? Reply to this email — we read every message.</p>
+        <p style="margin:0;color:#aaa;font-size:13px;font-weight:600">🎉 Your 14-day free trial has started.</p>
+        <p style="margin:6px 0 0;color:#888;font-size:12px;line-height:1.5">No credit card required. You won&rsquo;t be charged unless you choose a plan.</p>
+        <p style="margin:10px 0 0;color:#444;font-size:11px">Need help? Reply to this email — we read every message.</p>
       </div>
     `),
   }

@@ -101,6 +101,20 @@ export default function AcademyReadinessWidget({ state }: { state: ReadinessStat
           <ReadinessRow key={item.key} item={item} />
         ))}
       </ul>
+
+      {/* Sprint 14b.1 (QW3) — no-auto-charge reassurance. Only renders
+          when the academy is still on the trial and not yet live;
+          disappears once subscribed, pilot, or otherwise live. Sits
+          below the checklist so the list reads first. */}
+      {!isLive && state.trialDaysRemaining != null && !state.isPilot && (
+        <p
+          data-testid="academy-readiness-no-charge"
+          className="mt-5 text-xs text-white/45 leading-snug border-t border-white/[0.04] pt-4"
+        >
+          <span className="text-white/65 font-semibold">Free trial — no card on file.</span>{' '}
+          You won&apos;t be charged unless you choose a plan.
+        </p>
+      )}
     </section>
   )
 }
@@ -116,6 +130,13 @@ function ReadinessRow({ item }: { item: ReadinessItem }) {
   ) : (
     <span className={item.done ? 'text-white/85' : 'text-white/85'}>{item.label}</span>
   )
+
+  // Sprint 14b.1 (QW7) — contextual help only on the
+  // platform-plan-active row. CSS-only hover tooltip; the title
+  // attribute is the accessible fallback for keyboard / touch users.
+  const isPlatformPlanRow = item.key === 'platform-plan-active'
+  const tooltipBody =
+    'Your Player Portal subscription. Choose a plan to publish your booking page — you will only be charged when you click "Choose plan" yourself. There is no automatic charge at the end of the trial.'
 
   return (
     <li
@@ -141,7 +162,32 @@ function ReadinessRow({ item }: { item: ReadinessItem }) {
       </span>
       <span className="sr-only">{item.done ? 'Complete:' : 'To do:'}</span>
       <div className="min-w-0 flex-1">
-        <div className="text-sm">{labelEl}</div>
+        <div className="text-sm flex items-center gap-1.5">
+          {labelEl}
+          {isPlatformPlanRow && (
+            <span
+              className="group relative inline-flex items-center"
+              tabIndex={0}
+            >
+              <span
+                aria-hidden
+                title={tooltipBody}
+                className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/[0.06] border border-white/15 text-[10px] font-bold text-white/55 cursor-help"
+              >
+                ?
+              </span>
+              <span className="sr-only">{tooltipBody}</span>
+              {/* CSS-only hover/focus tooltip — appears below the icon
+                  on hover or keyboard focus; no client JS needed. */}
+              <span
+                role="tooltip"
+                className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none absolute z-20 top-full left-0 mt-2 w-72 p-3 rounded-xl bg-[#0a0a0a] border border-white/10 shadow-xl text-xs leading-relaxed text-white/75"
+              >
+                {tooltipBody}
+              </span>
+            </span>
+          )}
+        </div>
         {item.detail && (
           <div className="text-xs text-white/45 mt-0.5 leading-snug">{item.detail}</div>
         )}

@@ -82,7 +82,9 @@ export default function TrialExpiredLock({
           <p className="text-sm sm:text-base text-white/50 max-w-xl mx-auto">
             {reason === 'lapsed'
               ? 'Your plan has lapsed. Pick a plan to unlock your dashboard again — '
-              : 'Your 14-day free trial has finished. Pick a plan to unlock your dashboard again — '}
+              // Sprint 14b.1 (QW5) — unified copy "Free Trial — …" across
+              // every surface. Was: "Your 14-day free trial has finished."
+              : 'Your Free Trial has ended. Pick a plan to unlock your dashboard again — '}
             your booking page and parents stay live the whole time.
           </p>
         </div>
@@ -124,6 +126,25 @@ export default function TrialExpiredLock({
             ))}
           </div>
         )}
+
+        {/* Sprint 14b.1 (QW4) — explicit "need more time?" support
+            escape valve. Renders as a softer second card under the
+            plan picker so an overwhelmed owner has a clear path
+            other than "pay now". The existing support-email line is
+            retained below as the secondary touchpoint. */}
+        <div className="mt-8 mx-auto max-w-md rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 sm:p-5 text-center">
+          <p className="text-sm text-white/70 font-semibold mb-1">Need more time?</p>
+          <p className="text-xs text-white/40 mb-3 leading-snug">
+            We&apos;re happy to extend your trial — just tell us where you&apos;re at.
+          </p>
+          <a
+            href={`mailto:support@theplayerportal.net?subject=${encodeURIComponent(`${orgName} — trial extension`)}&body=${encodeURIComponent(`Hi, I'd like a bit more time on my Player Portal trial for ${orgName}.`)}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-xs font-semibold text-white/80 transition-colors"
+          >
+            Contact support
+            <span aria-hidden>→</span>
+          </a>
+        </div>
 
         <p className="text-center text-xs text-white/30 mt-6">
           Questions? Email{' '}

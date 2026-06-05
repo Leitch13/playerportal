@@ -51,7 +51,17 @@ export type ReadinessState = {
   // widget can echo the platform-trial state alongside the other
   // signals — purely informational, no behaviour change.
   trialDaysRemaining: number | null
+  // Sprint 14b.1 (QW2) — day-of-N trial progress for the dashboard
+  // hero pill. Derived from trialDaysRemaining + the 14-day trial
+  // window. Null when not on a trial.
+  trialDayOf: number | null
+  trialTotalDays: number
 }
+
+// Sprint 14b.1 (QW2) — single source of truth for the 14-day trial
+// window length. Matches the +14 days stamped onto
+// `organisations.platform_trial_ends_at` in /api/onboard.
+const TRIAL_TOTAL_DAYS = 14
 
 // The default subscription plans seeded at /api/onboard signup. If the
 // org's plans still match these exactly (count, names, amounts), we
@@ -185,6 +195,14 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
       trialDaysRemaining = Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000)))
     }
   }
+  // Sprint 14b.1 (QW2) — derive Day-N-of-14 from the remaining count.
+  // Day 1 corresponds to remaining == 14 (just signed up).
+  // Day 14 corresponds to remaining == 1 (last full day).
+  // We cap at TRIAL_TOTAL_DAYS so a clock skew can never render "Day 15".
+  const trialDayOf =
+    trialDaysRemaining != null
+      ? Math.min(TRIAL_TOTAL_DAYS, Math.max(1, TRIAL_TOTAL_DAYS - trialDaysRemaining + 1))
+      : null
 
   // ── build the 8 readiness items in spec order ──────────────────────
   const items: ReadinessItem[] = [
@@ -245,7 +263,10 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
         : platformPlanActive
           ? undefined
           : trialDaysRemaining != null
-            ? `On trial · ${trialDaysRemaining} day${trialDaysRemaining === 1 ? '' : 's'} remaining`
+            // Sprint 14b.1 (QW5) — unified copy "Free Trial — N days
+            // remaining" across layout banner / settings pill / widget
+            // / lock screen.
+            ? `Free Trial — ${trialDaysRemaining} day${trialDaysRemaining === 1 ? '' : 's'} remaining`
             : 'No active platform plan',
       cta: !isPilot && !platformPlanActive
         ? { label: 'Choose a plan', href: '/dashboard/billing' }
@@ -283,5 +304,7 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
     stripeReadiness,
     isPilot,
     trialDaysRemaining,
+    trialDayOf,
+    trialTotalDays: TRIAL_TOTAL_DAYS,
   }
 }
