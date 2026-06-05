@@ -2,9 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistSpotAvailableEmail } from '@/lib/email-templates'
+// Sprint 13 (M3) — authenticated callers go through the standard
+// server client so we can role-gate via get_my_role(). The existing
+// service-role client (below) is still used for the actual waitlist
+// + notification writes — same behaviour as before.
+import { createClient as createServerClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
+    // ─── Sprint 13 M3 — auth gate ─────────────────────────────────────
+    // Two valid call paths:
+    //   1. Admin / coach user from the dashboard (cookie-auth)
+    //      — WaitlistManager, ClassRosterRow (Sprint 8a),
+    //        EnrolmentStatusToggle all run inside admin contexts
+    //   2. Internal server-to-server fire-and-forget from
+    //      /api/enrolments/cancel (Sprint 8a parent-cancel path)
+    //      — passes x-internal-secret header
+    // Anything else is rejected.
+    const internalSecret = request.headers.get('x-internal-secret')
+    const internalAllowed =
+      !!internalSecret && internalSecret === (process.env.INTERNAL_API_SECRET || '___unset___')
+
+    if (!internalAllowed) {
+      const authed = await createServerClient()
+      const { data: role } = await authed.rpc('get_my_role')
+      if (!role || !['admin', 'coach'].includes(role)) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     const { group_id } = await request.json()
 
     if (!group_id) {

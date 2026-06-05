@@ -63,9 +63,12 @@ export default async function UpgradePage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
 
+  // Sprint 13 (L3) — also pull organisation_id so the subscription_plans
+  // read below can carry an explicit defence-in-depth org filter on top
+  // of the existing RLS gate.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, organisation_id')
     .eq('id', user.id)
     .single()
 
@@ -73,11 +76,18 @@ export default async function UpgradePage() {
 
   const status = await getParentStatus(user.id)
 
-  // Fetch available subscription plans for the pricing cards
+  // Fetch available subscription plans for the pricing cards.
+  // Sprint 13 (L3) — explicit organisation_id filter. RLS already
+  // enforces same-org access on subscription_plans; this is the second
+  // belt against a misconfigured policy. The plan IDs returned for a
+  // valid parent are identical to what RLS already returns, so the
+  // Subscribe Now links into /dashboard/payments?tab=subscribe carry
+  // the same plan id into Stripe checkout.
   const { data: plans } = await supabase
     .from('subscription_plans')
     .select('*')
     .eq('active', true)
+    .eq('organisation_id', profile.organisation_id)
     .order('sort_order')
 
   return (

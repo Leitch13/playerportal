@@ -133,10 +133,19 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 3. Promote the next person on the waitlist (fire-and-forget) ──
+  // Sprint 13 (M3 caller-side) — /api/waitlist/promote now requires
+  // either an admin/coach cookie session or the server-to-server
+  // internal secret. This caller has no cookie session (it's a
+  // fire-and-forget from the server runtime), so it presents the
+  // secret instead. Env var already set in Vercel Production; matches
+  // the pattern used by /api/email/migration-invite-batch.
   if ((enrol as { group_id?: string }).group_id) {
     void fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/api/waitlist/promote`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_API_SECRET || '',
+      },
       body: JSON.stringify({ group_id: (enrol as { group_id?: string }).group_id }),
     }).catch(() => undefined)
   }

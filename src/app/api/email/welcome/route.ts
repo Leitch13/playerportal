@@ -5,10 +5,19 @@ import { welcomeEmail } from '@/lib/email-templates'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') || 'unknown'
-  const { success } = rateLimit(`welcome-email:${ip}`, 5, 3600000) // 5 per hour
-  if (!success) {
-    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  // Sprint 13 (M2) — trusted server-side callers can skip the per-IP
+  // rate-limit by presenting the existing INTERNAL_API_SECRET header
+  // (same pattern used by /api/email/migration-invite-batch). Client-side
+  // callers (signup, quick-book) still hit the rate-limit ceiling below.
+  const secret = request.headers.get('x-internal-secret')
+  const internalAllowed = !!secret && secret === (process.env.INTERNAL_API_SECRET || '___unset___')
+
+  if (!internalAllowed) {
+    const ip = request.headers.get('x-forwarded-for') || 'unknown'
+    const { success } = rateLimit(`welcome-email:${ip}`, 5, 3600000) // 5 per hour
+    if (!success) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
   }
 
   const { parentName, parentEmail, academyName, academySlug } = await request.json()

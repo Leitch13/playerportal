@@ -17,9 +17,12 @@ export default async function QRCodePage({
   if (!user) redirect('/auth/signin')
 
   // Verify the user is a coach or admin
+  // Sprint 13 (L1) — also pull organisation_id so the training_groups
+  // read below can carry an explicit defence-in-depth org filter on
+  // top of the existing RLS gate.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, organisation_id')
     .eq('id', user.id)
     .single()
 
@@ -28,10 +31,16 @@ export default async function QRCodePage({
   }
 
   // Load the training group
+  // Sprint 13 (L1) — explicit organisation_id filter. RLS already
+  // enforces same-org access on training_groups; this is the second
+  // belt: a misconfigured RLS policy or an admin-from-a-different-org
+  // tampering with the URL still cannot resolve to a foreign-org
+  // group. For valid same-org viewers the filter is a no-op.
   const { data: group } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, coach_id')
     .eq('id', groupId)
+    .eq('organisation_id', profile.organisation_id)
     .single()
 
   if (!group) redirect('/dashboard/groups')
