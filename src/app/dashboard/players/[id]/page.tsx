@@ -524,22 +524,29 @@ export default async function PlayerDetailPage({
               <div className="space-y-3" data-testid="player-membership-list">
                 {/* Sprint 12b — aggregate warning panel.
                     Visible only when N > 1 contributing subs exist.
-                    Above the row list so it leads the card. */}
+                    Wording matches the approved spec exactly:
+                      "⚠ Multiple subscriptions detected. Total monthly
+                       exposure: £X / month across N subscriptions.
+                       Next billing date: <date>."
+                    The trailing "Next billing date" clause is omitted
+                    when no shared next billing date is available. */}
                 {showAggregate && (
                   <div
                     className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] p-3"
                     data-testid="player-membership-aggregate"
                   >
-                    <p className="text-sm font-bold text-amber-200 flex items-center gap-2">
-                      <span>⚠</span>
-                      <span>Multiple subscriptions detected</span>
-                    </p>
-                    <p className="text-[12px] text-amber-100/85 mt-1" data-testid="player-membership-aggregate-total">
-                      Total monthly exposure:{' '}
-                      <strong>{fmtMoney(aggregate.totalMonthly)} / month</strong>{' '}
+                    <p className="text-sm font-bold text-amber-200" data-testid="player-membership-aggregate-text">
+                      ⚠ Multiple subscriptions detected. Total monthly exposure:{' '}
+                      <span data-testid="player-membership-aggregate-total">
+                        {fmtMoney(aggregate.totalMonthly)} / month
+                      </span>{' '}
                       across {aggregate.contributingCount} subscription{aggregate.contributingCount === 1 ? '' : 's'}.
                       {aggregateNextDateLabel && (
-                        <> Next billing date: <strong data-testid="player-membership-aggregate-next-date">{aggregateNextDateLabel}</strong>.</>
+                        <> Next billing date:{' '}
+                          <span data-testid="player-membership-aggregate-next-date">
+                            {aggregateNextDateLabel}
+                          </span>.
+                        </>
                       )}
                     </p>
                   </div>
@@ -1009,8 +1016,9 @@ type EnrRowProps = {
   }
   /** Sprint 12b — set true when the player has any subscription in
    *  'trialing' status. When the enrolment itself is NOT a trial
-   *  (is_trial = false) but the membership is, the badge is upgraded
-   *  from "Active" to "Active during trial" so the page no longer reads
+   *  (is_trial = false) but the membership is, the pill label is
+   *  upgraded from "Active" to the spec-approved
+   *  "Class active · membership trialing" so the page no longer reads
    *  as a conflict between an active class and a trialing sub. */
   trialingMembership?: boolean
 }
@@ -1020,10 +1028,10 @@ function ClassRow({ enr, trialingMembership }: EnrRowProps) {
   // Sprint 12b — only relabel when the enrolment is genuinely active
   // (status='active', not a trial-flagged row) AND the player has a
   // trialing membership. The pill colour stays emerald — only the text
-  // softens to "Active during trial".
+  // changes to "Class active · membership trialing" per spec.
   const showDuringTrial = !!trialingMembership && enr.status === 'active' && !enr.is_trial
   const d = showDuringTrial
-    ? { label: 'Active during trial', tone: baseDisplay.tone }
+    ? { label: 'Class active · membership trialing', tone: baseDisplay.tone }
     : baseDisplay
   const coachName = enr.group?.coach?.full_name || null
   const dateRows = [
