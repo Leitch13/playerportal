@@ -120,6 +120,17 @@ export default function OnboardPage() {
   const [adminEmail, setAdminEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  // Step 5 (Pricing — final step before submit): legal consent.
+  // The /api/onboard server requires all three to be true; previously
+  // the client never rendered any controls for them, so the user saw
+  // an unactionable 400 error on submit ("You must accept the Terms of
+  // Service, the Data Processing Agreement, and confirm your authority
+  // to bind the academy."). Deliberately NOT persisted to localStorage
+  // — consent must be re-given each session for legal hygiene.
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [dpaAccepted, setDpaAccepted] = useState(false)
+  const [authorityConfirmed, setAuthorityConfirmed] = useState(false)
+
   // Load saved progress from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('playerportal_onboard')
@@ -245,11 +256,19 @@ export default function OnboardPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) { setError('Please enter a valid email'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
 
+    // Legal consent — client-side guard so the user gets an actionable
+    // message instead of waiting for the API's 400 round-trip. Mirrors
+    // the server check in /api/onboard:49.
+    if (!termsAccepted || !dpaAccepted || !authorityConfirmed) {
+      setError('Please tick the three consent boxes below to continue.')
+      return
+    }
+
     setLoading(true)
 
     try {
       // 1. Create organisation via API
-      const orgPayload: Record<string, string> = {
+      const orgPayload: Record<string, string | boolean> = {
         name: academyName,
         slug,
         description,
@@ -260,6 +279,11 @@ export default function OnboardPage() {
         logoUrl,
         heroImageUrl,
         platformPlan: selectedPlan,
+        // Consent fields — /api/onboard rejects the request with 400 if
+        // any of these is not strictly true.
+        termsAccepted,
+        dpaAccepted,
+        authorityConfirmed,
       }
 
       // Classes can be added from the dashboard after setup
@@ -797,6 +821,75 @@ export default function OnboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Legal consent — three required tick-boxes. The
+                  /api/onboard server check (line 49) rejects with 400
+                  if any of these is not true. Previously the controls
+                  were missing entirely, leaving owners stuck on an
+                  unactionable error. Linked terms live at /terms and
+                  /dpa (both pre-existing public pages). */}
+              <fieldset
+                data-testid="onboard-consent"
+                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 space-y-3"
+              >
+                <legend className="px-2 text-xs font-bold uppercase tracking-wider text-white/60">
+                  Before you continue
+                </legend>
+                <label className="flex items-start gap-3 cursor-pointer group" data-testid="onboard-consent-terms">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 shrink-0 rounded border border-white/20 bg-[#0a0a0a] accent-[#4ecde6] cursor-pointer"
+                    aria-describedby="onboard-consent-terms-desc"
+                  />
+                  <span id="onboard-consent-terms-desc" className="text-sm text-white/80 leading-snug">
+                    I accept the{' '}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#4ecde6] hover:underline font-medium"
+                    >
+                      Terms of Service
+                    </a>
+                    .
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group" data-testid="onboard-consent-dpa">
+                  <input
+                    type="checkbox"
+                    checked={dpaAccepted}
+                    onChange={(e) => setDpaAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 shrink-0 rounded border border-white/20 bg-[#0a0a0a] accent-[#4ecde6] cursor-pointer"
+                    aria-describedby="onboard-consent-dpa-desc"
+                  />
+                  <span id="onboard-consent-dpa-desc" className="text-sm text-white/80 leading-snug">
+                    I accept the{' '}
+                    <a
+                      href="/dpa"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#4ecde6] hover:underline font-medium"
+                    >
+                      Data Processing Agreement
+                    </a>
+                    .
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group" data-testid="onboard-consent-authority">
+                  <input
+                    type="checkbox"
+                    checked={authorityConfirmed}
+                    onChange={(e) => setAuthorityConfirmed(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 shrink-0 rounded border border-white/20 bg-[#0a0a0a] accent-[#4ecde6] cursor-pointer"
+                    aria-describedby="onboard-consent-authority-desc"
+                  />
+                  <span id="onboard-consent-authority-desc" className="text-sm text-white/80 leading-snug">
+                    I confirm I am authorised to act on behalf of this academy.
+                  </span>
+                </label>
+              </fieldset>
             </div>
           )}
 
