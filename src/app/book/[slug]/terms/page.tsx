@@ -1,4 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — fully public read surface. Use the
+// pure-anon client so a logged-in cross-org viewer sees the academy's
+// own terms regardless of session. See src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -15,7 +18,7 @@ export default async function AcademyTermsPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data: org } = await supabase
     .from('organisations')

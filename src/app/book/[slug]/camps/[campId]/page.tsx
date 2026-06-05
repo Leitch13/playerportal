@@ -1,4 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — public reads (org, camp) go via the
+// pure-anon client so a logged-in cross-org viewer sees the academy's
+// camp page identically to anon viewers. The cookie-aware client is
+// kept for the parent's auth session, their viewer profile (to gate
+// reuse-of-details), and their own children list.
+// See src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ShareButton from './ShareButton'
@@ -96,9 +103,14 @@ export default async function CampDetailPage({
   const bookedParam = sp.booked === '1'
   const bookingIdParam = typeof sp.booking === 'string' ? sp.booking : null
 
+  // Cookie-aware client — used ONLY for the parent's auth session,
+  // their profile (to confirm they belong to this org), and their own
+  // children list. Every other read goes via `publicSupabase` so the
+  // page renders identically regardless of viewer.
   const supabase = await createClient()
+  const publicSupabase = createPublicClient()
 
-  const { data: org } = await supabase
+  const { data: org } = await publicSupabase
     .from('organisations')
     .select('*')
     .ilike('slug', slug)
@@ -106,7 +118,7 @@ export default async function CampDetailPage({
 
   if (!org) notFound()
 
-  const { data: camp } = await supabase
+  const { data: camp } = await publicSupabase
     .from('camps')
     .select('*')
     .eq('id', campId)

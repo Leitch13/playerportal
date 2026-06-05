@@ -1,4 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — fully public read surface. Use the
+// pure-anon client so a logged-in cross-org viewer sees the same trial
+// form as an anon viewer. The TrialBookingForm itself handles the
+// anon INSERT separately (protected system #5 — untouched).
+// See src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import { headers } from 'next/headers'
 import TrialBookingForm from './TrialBookingForm'
 
@@ -15,7 +20,7 @@ export default async function TrialBookingPage({
 }) {
   const { slug } = await params
   const { utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign } = await searchParams
-  const supabase = await createClient()
+  const supabase = createPublicClient()
   // Sprint 5 — server-only signals (Referer header + URL UTM) passed
   // as props to the client form. See trial-source-derive.ts for the
   // priority chain that combines these with the dropdown.

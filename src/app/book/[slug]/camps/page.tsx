@@ -1,4 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — fully public read surface. Pure-anon client
+// only; see src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 
 type Camp = {
@@ -45,7 +47,7 @@ export default async function CampsListingPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data: org } = await supabase
     .from('organisations')

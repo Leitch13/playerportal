@@ -1,4 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — fully public read surface. Use the
+// pure-anon client so a logged-in cross-org viewer sees the same paid
+// trial form as an anon viewer. PaidTrialForm itself handles checkout
+// via the existing Stripe paths — untouched. See
+// src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import { notFound } from 'next/navigation'
 import PaidTrialForm from './PaidTrialForm'
 
@@ -8,7 +13,7 @@ export default async function PaidTrialPage({
   params: Promise<{ slug: string; groupId: string }>
 }) {
   const { slug, groupId } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data: org } = await supabase
     .from('organisations')

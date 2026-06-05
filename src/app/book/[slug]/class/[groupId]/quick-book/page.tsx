@@ -1,4 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — dual-client page. Public-data reads (org,
+// class, plans, seat counts, bridge config) go through the pure-anon
+// client so they're identical for every viewer. The cookie-aware
+// client is reserved for the parent's auth session + their own
+// children list. See src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import { QuickBookForm } from './QuickBookForm'
 import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
@@ -9,12 +15,16 @@ export default async function QuickBookPage({
   params: Promise<{ slug: string; groupId: string }>
 }) {
   const { slug, groupId } = await params
+  // Cookie-aware client — used ONLY for the parent auth session and
+  // the parent's own `players` rows. All public-data reads go via
+  // publicSupabase below.
   const supabase = await createClient()
+  const publicSupabase = createPublicClient()
 
   // Get org. bridge_billing_mode (Stage 3 session enhancement) is fetched
   // separately below — it can be null if migration 072 hasn't been applied
   // yet, in which case we fall back to calendar mode safely.
-  const { data: org } = await supabase
+  const { data: org } = await publicSupabase
     .from('organisations')
     .select('id, name, slug, primary_color, contact_email, contact_phone')
     .ilike('slug', slug)
@@ -32,7 +42,7 @@ export default async function QuickBookPage({
   }
 
   // Get the specific class
-  const { data: group } = await supabase
+  const { data: group } = await publicSupabase
     .from('training_groups')
     .select(
       'id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, class_type, coach:profiles!training_groups_coach_id_fkey(full_name)'
@@ -73,7 +83,7 @@ export default async function QuickBookPage({
   // would always evaluate to false for anon and the "Class Full"
   // short-circuit would never fire — letting a parent reach the
   // checkout form for a class that's already full.
-  const { data: seatCounts } = await supabase
+  const { data: seatCounts } = await publicSupabase
     .rpc('get_group_seat_counts', { p_org_id: org.id })
   const seatRow = (seatCounts || []).find((r: { group_id: string }) => r.group_id === groupId) as { seat_count: number | string } | undefined
   const enrolled = seatRow ? Number(seatRow.seat_count) || 0 : 0
@@ -118,7 +128,7 @@ export default async function QuickBookPage({
   }
 
   // Fetch plans: class-specific first, then class_type, then org-wide
-  const { data: classPlans } = await supabase
+  const { data: classPlans } = await publicSupabase
     .from('subscription_plans')
     .select('id, name, description, amount, sessions_per_week, interval')
     .eq('organisation_id', org.id)
@@ -130,7 +140,7 @@ export default async function QuickBookPage({
 
   if (!plans || plans.length === 0) {
     const classType = (group as Record<string, unknown>).class_type as string || 'group'
-    const { data: typePlans } = await supabase
+    const { data: typePlans } = await publicSupabase
       .from('subscription_plans')
       .select('id, name, description, amount, sessions_per_week, interval')
       .eq('organisation_id', org.id)
@@ -142,7 +152,7 @@ export default async function QuickBookPage({
   }
 
   if (!plans || plans.length === 0) {
-    const { data: orgPlans } = await supabase
+    const { data: orgPlans } = await publicSupabase
       .from('subscription_plans')
       .select('id, name, description, amount, sessions_per_week, interval')
       .eq('organisation_id', org.id)
@@ -170,7 +180,7 @@ export default async function QuickBookPage({
   let bridgeMode: 'calendar' | 'session' = 'calendar'
   let plansSessionMap = new Map<string, number | null>()
   try {
-    const { data: orgBridge, error: bridgeErr } = await supabase
+    const { data: orgBridge, error: bridgeErr } = await publicSupabase
       .from('organisations')
       .select('bridge_billing_mode')
       .eq('id', org.id)
@@ -180,7 +190,7 @@ export default async function QuickBookPage({
     }
   } catch { /* migration 072 not applied — keep calendar default */ }
   try {
-    const { data: planSessionsData, error: spmErr } = await supabase
+    const { data: planSessionsData, error: spmErr } = await publicSupabase
       .from('subscription_plans')
       .select('id, sessions_per_month')
       .eq('organisation_id', org.id)

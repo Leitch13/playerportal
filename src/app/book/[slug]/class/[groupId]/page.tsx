@@ -1,4 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — this is a fully public read surface (no
+// owner-preview, no parent self-service). Every query goes through the
+// pure-anon client so logged-in cross-org viewers see the same plans,
+// groups, and capacity numbers as anon viewers. See
+// src/lib/supabase/public.ts for the full reasoning.
+import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import ShareButton from './ShareButton'
 import StickyBookBar from './StickyBookBar'
@@ -27,7 +32,7 @@ export default async function ClassBookingPage({
   params: Promise<{ slug: string; groupId: string }>
 }) {
   const { slug, groupId } = await params
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   // Get org
   const { data: org } = await supabase

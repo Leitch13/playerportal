@@ -1,4 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — pure anon client for public booking reads.
+// See src/lib/supabase/public.ts for the full reasoning.
+import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import PricingToggle from './PricingToggle'
@@ -11,7 +14,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
+  // Auth-contamination fix — metadata read uses the pure-anon client so
+  // the page renders the correct academy regardless of viewer session.
+  const supabase = createPublicClient()
   const { data: org } = await supabase
     .from('organisations')
     .select('name, description, logo_url')
@@ -61,9 +66,16 @@ export default async function PublicBookingPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  // Auth-aware client — used ONLY for the owner-preview check below
+  // (needs the viewer's session to identify them as the academy's own
+  // admin/coach). Every other read on this page goes through the
+  // pure-anon `publicSupabase` so a logged-in cross-org viewer doesn't
+  // get auth-contaminated zero-row results from the *_select_own_org
+  // RLS branch.
   const supabase = await createClient()
+  const publicSupabase = createPublicClient()
 
-  const { data: org } = await supabase
+  const { data: org } = await publicSupabase
     .from('organisations')
     .select('*')
     .ilike('slug', slug)
@@ -128,7 +140,7 @@ export default async function PublicBookingPage({
   // because the column doesn't exist, so the whole Weekly Classes section
   // appeared empty on every academy's booking page. Do not re-add a
   // published filter until/unless the column is migrated in.
-  const { data: groups } = await supabase
+  const { data: groups } = await publicSupabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, trial_price, age_group, short_description, image_url')
     .eq('organisation_id', org.id)
@@ -154,7 +166,7 @@ export default async function PublicBookingPage({
   // available — including the full ones. The RPC bypasses RLS and
   // returns ONLY (group_id, seat_count) aggregates, exposing no PII.
   const groupIds = (groups || []).map((g) => g.id)
-  const { data: seatCounts } = await supabase
+  const { data: seatCounts } = await publicSupabase
     .rpc('get_group_seat_counts', { p_org_id: org.id })
 
   const countByGroup = new Map<string, number>()
@@ -165,7 +177,7 @@ export default async function PublicBookingPage({
   }
 
   // Fetch ALL active plans for the org (we need them to show prices on class cards too)
-  const { data: allPlans } = await supabase
+  const { data: allPlans } = await publicSupabase
     .from('subscription_plans')
     .select('*')
     .eq('organisation_id', org.id)
@@ -214,7 +226,7 @@ export default async function PublicBookingPage({
   }
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: camps } = await supabase
+  const { data: camps } = await publicSupabase
     .from('camps')
     .select('id')
     .eq('organisation_id', org.id)
@@ -224,7 +236,7 @@ export default async function PublicBookingPage({
 
   const hasCamps = (camps || []).length > 0
 
-  const { data: events } = await supabase
+  const { data: events } = await publicSupabase
     .from('events')
     .select('*')
     .eq('organisation_id', org.id)
@@ -232,7 +244,14 @@ export default async function PublicBookingPage({
     .gte('end_date', today)
     .order('start_date')
 
-  // Trust signals: count unique parents and total attendance records
+  // Trust signals: count unique parents and total attendance records.
+  // These remain on the cookie-aware client — `enrolments` and
+  // `attendance` are 077b-locked to authenticated viewers, and the
+  // existing behaviour already returns 0 for anon / cross-org viewers
+  // (the trust-signal block hides itself when counts fall under the
+  // 5/20 threshold). Switching to anon would unconditionally zero the
+  // numbers for same-org admins viewing their own booking page —
+  // regression. Leave as-is.
   const { count: parentCount } = await supabase
     .from('enrolments')
     .select('player_id', { count: 'exact', head: true })

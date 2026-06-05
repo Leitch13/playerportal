@@ -1,4 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+// Auth-contamination fix — fully public read surface. Use the
+// pure-anon client so a logged-in cross-org viewer sees the same trial
+// form as an anon viewer. The TrialForm itself handles the anon INSERT
+// separately (protected system #5 — untouched).
+// See src/lib/supabase/public.ts.
+import { createPublicClient } from '@/lib/supabase/public'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import Link from 'next/link'
@@ -31,7 +36,7 @@ export default async function QuickTrialPage({
   // server-rendered page).
   const requestHeaders = await headers()
   const refererHeader = requestHeaders.get('referer') || requestHeaders.get('referrer') || null
-  const supabase = await createClient()
+  const supabase = createPublicClient()
 
   const { data: org } = await supabase
     .from('organisations')
