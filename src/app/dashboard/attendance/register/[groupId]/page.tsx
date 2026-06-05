@@ -1,27 +1,40 @@
+/**
+ * Sprint 11a — Live Register (default landing from a class card).
+ *
+ * Before Sprint 11a, this URL rendered the printable monthly report.
+ * That report has moved to `./report/page.tsx` (reachable via the Tabs
+ * strip or directly at /dashboard/attendance/register/[groupId]/report).
+ *
+ * Server-side responsibilities:
+ *   • Auth + admin/coach gate (parents bounce to /dashboard/attendance)
+ *   • Pull the group + active enrolments + pitch-side player fields
+ *     (photo_url, date_of_birth, medical_info, emergency_contact_*)
+ *   • Pull trial guests for the chosen session date
+ *   • Hand the data to LiveRegisterClient
+ *
+ * The client component owns: date picker, per-row ✓/✗ toggles, bulk
+ * actions, sticky save bar, existing-attendance pre-fill.
+ *
+ * No protected system touched. No schema change. No Stripe / RLS /
+ * capacity / messaging code in this diff.
+ */
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { UserRole } from '@/lib/types'
-import PrintButton from '../PrintButton'
+import LiveRegisterClient, {
+  type LiveRegisterPlayer,
+  type LiveRegisterTrial,
+} from './LiveRegisterClient'
+import RegisterTabs from './Tabs'
 
-function getMonthRange() {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), now.getMonth(), 1)
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-  return {
-    from: start.toISOString().split('T')[0],
-    to: end.toISOString().split('T')[0],
-  }
+function todayIso(): string {
+  return new Date().toISOString().split('T')[0]
 }
 
-function formatDate(dateStr: string) {
+function fmtPretty(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-}
-
-function formatDateFull(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 export default async function RegisterPage({
@@ -29,23 +42,21 @@ export default async function RegisterPage({
   searchParams,
 }: {
   params: Promise<{ groupId: string }>
-  searchParams: Promise<{ from?: string; to?: string }>
+  searchParams: Promise<{ date?: string }>
 }) {
   const { groupId } = await params
-  const query = await searchParams
+  const sp = await searchParams
+  const sessionDate = sp.date || todayIso()
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, organisation_id, full_name')
+    .select('role, organisation_id')
     .eq('id', user.id)
     .single()
-
   if (!profile) redirect('/dashboard')
 
   const role = (profile?.role || 'parent') as UserRole
@@ -53,356 +64,107 @@ export default async function RegisterPage({
 
   const orgId = profile?.organisation_id || ''
 
-  // Fetch org details
-  const { data: org } = await supabase
-    .from('organisations')
-    .select('name, logo_url')
-    .eq('id', orgId)
-    .single()
-
-  // Fetch group details
+  // Group + coach
   const { data: group } = await supabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, coach_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('id', groupId)
     .single()
-
   if (!group) redirect('/dashboard/attendance/register')
 
-  const coach = group.coach as unknown as { full_name: string } | null
+  const coach = group.coach as unknown as { full_name: string | null } | null
 
-  // Date range
-  const defaultRange = getMonthRange()
-  const from = query.from || defaultRange.from
-  const to = query.to || defaultRange.to
-
-  // Fetch enrolled players (active)
+  // Active enrolments + pitch-side player fields. Sprint 11a pulls
+  // photo, DOB, medical, and emergency contact in addition to the
+  // identifiers the legacy register used.
   const { data: enrolments } = await supabase
     .from('enrolments')
-    .select('player_id, player:players(id, first_name, last_name)')
+    .select(`
+      player_id,
+      player:players(
+        id, first_name, last_name,
+        photo_url, date_of_birth,
+        medical_info,
+        emergency_contact_name, emergency_contact_phone
+      )
+    `)
     .eq('group_id', groupId)
     .eq('status', 'active')
 
-  // P2 Trial Funnel Reliability — trial guests for this group inside
-  // the selected date range. Shown as a separate block above the
-  // enrolled-player attendance table.
-  const { data: trialGuests } = await supabase
-    .from('trial_bookings')
-    .select('id, parent_name, parent_email, parent_phone, child_name, preferred_date, status')
-    .eq('training_group_id', groupId)
-    .in('status', ['pending', 'confirmed', 'attended', 'no_show'])
-    .gte('preferred_date', from)
-    .lte('preferred_date', to)
-    .order('preferred_date')
-
-  const players = (enrolments || [])
-    .map((e) => e.player as unknown as { id: string; first_name: string; last_name: string })
-    .filter(Boolean)
+  const players: LiveRegisterPlayer[] = (enrolments || [])
+    .map((e) => e.player as unknown as LiveRegisterPlayer | null)
+    .filter((p): p is LiveRegisterPlayer => !!p)
     .sort((a, b) => {
-      const nameA = `${a.last_name} ${a.first_name}`.toLowerCase()
-      const nameB = `${b.last_name} ${b.first_name}`.toLowerCase()
-      return nameA.localeCompare(nameB)
+      const an = `${a.last_name || ''} ${a.first_name || ''}`.toLowerCase()
+      const bn = `${b.last_name || ''} ${b.first_name || ''}`.toLowerCase()
+      return an.localeCompare(bn)
     })
 
-  // Fetch attendance records in range
-  const playerIds = players.map((p) => p.id)
-  const { data: attendanceRecords } = playerIds.length > 0
-    ? await supabase
-        .from('attendance')
-        .select('player_id, session_date, present')
-        .eq('group_id', groupId)
-        .in('player_id', playerIds)
-        .gte('session_date', from)
-        .lte('session_date', to)
-        .order('session_date')
-    : { data: [] as { player_id: string; session_date: string; present: boolean }[] }
-
-  // Get unique session dates
-  const sessionDatesSet = new Set<string>()
-  for (const r of attendanceRecords || []) {
-    sessionDatesSet.add(r.session_date)
-  }
-  const sessionDates = Array.from(sessionDatesSet).sort()
-
-  // Build lookup map: player_id -> session_date -> present
-  const attendanceMap = new Map<string, Map<string, boolean>>()
-  for (const r of attendanceRecords || []) {
-    if (!attendanceMap.has(r.player_id)) {
-      attendanceMap.set(r.player_id, new Map())
-    }
-    attendanceMap.get(r.player_id)!.set(r.session_date, r.present)
-  }
-
-  // Calculate stats
-  const totalPlayers = players.length
-  const totalRecords = (attendanceRecords || []).length
-  const totalPresent = (attendanceRecords || []).filter((r) => r.present).length
-  const avgAttendance = totalRecords > 0 ? Math.round((totalPresent / totalRecords) * 100) : 0
-
-  const printedAt = new Date().toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  // Trial guests booked into this class for the chosen date. Same
+  // contract as the legacy register's trial block — informational only.
+  const { data: trialRows } = await supabase
+    .from('trial_bookings')
+    .select('id, parent_name, parent_email, parent_phone, child_name, child_age, preferred_date, status')
+    .eq('training_group_id', groupId)
+    .in('status', ['pending', 'confirmed', 'attended', 'no_show'])
+    .eq('preferred_date', sessionDate)
+  const trials: LiveRegisterTrial[] = (trialRows || []).map((t) => ({
+    id: (t as { id: string }).id,
+    child_name: (t as { child_name: string }).child_name,
+    child_age: (t as { child_age?: number | null }).child_age ?? null,
+    parent_name: (t as { parent_name: string }).parent_name,
+    parent_email: (t as { parent_email: string }).parent_email,
+    parent_phone: (t as { parent_phone?: string | null }).parent_phone ?? null,
+    preferred_date: (t as { preferred_date?: string | null }).preferred_date ?? null,
+    status: (t as { status?: string }).status ?? 'pending',
+  }))
 
   return (
-    <>
-      {/* Print styles */}
-      <style>{`
-        @media print {
-          @page {
-            size: landscape;
-            margin: 1cm;
-          }
-          body {
-            background: white !important;
-            color: black !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          nav, aside, header,
-          [data-sidebar], [data-topbar],
-          .no-print {
-            display: none !important;
-          }
-          .print-container {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            color: black !important;
-          }
-          .print-container * {
-            color: black !important;
-            border-color: #333 !important;
-          }
-          .register-table th {
-            background: #e5e7eb !important;
-            font-weight: 700 !important;
-          }
-          .register-table td, .register-table th {
-            padding: 4px 6px !important;
-            font-size: 10px !important;
-          }
-        }
-      `}</style>
+    <div className="space-y-4 p-6 lg:p-8 bg-[#0a0a0a] -m-6 lg:-m-8 min-h-screen text-white pb-24">
+      {/* ─── Breadcrumb ─── */}
+      <div className="flex items-center gap-2 text-sm text-white/50">
+        <Link href="/dashboard/groups" className="hover:text-[#4ecde6] transition-colors">Classes</Link>
+        <span>/</span>
+        <Link href={`/dashboard/groups/${groupId}`} className="hover:text-[#4ecde6] transition-colors">{group.name}</Link>
+        <span>/</span>
+        <span className="text-white/80">Live Register</span>
+      </div>
 
-      {/* Screen controls */}
-      <div className="no-print bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 text-white">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Class Register</h1>
-            <p className="text-sm text-white/60 mt-0.5">{group.name}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/attendance/register"
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors"
-            >
-              Back
-            </Link>
-            <Link
-              href={`/dashboard/attendance/register/${groupId}/blank`}
-              className="px-4 py-2 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-colors"
-            >
-              Blank Register
-            </Link>
-            <PrintButton />
+      {/* ─── Header ─── */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-white">{group.name}</h1>
+          <div className="flex items-center gap-3 mt-1 text-sm text-white/55 flex-wrap">
+            <span data-testid="live-register-date-label">{fmtPretty(sessionDate)}</span>
+            {group.time_slot && <span>· {group.time_slot}</span>}
+            {group.location && <span>· {group.location}</span>}
+            {coach?.full_name && <span>· Coach: {coach.full_name}</span>}
           </div>
         </div>
-
-        {/* Date range form */}
-        <form className="flex items-end gap-4 mb-6">
-          <div>
-            <label className="block text-xs text-white/60 mb-1">From</label>
-            <input
-              type="date"
-              name="from"
-              defaultValue={from}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-white/60 mb-1">To</label>
-            <input
-              type="date"
-              name="to"
-              defaultValue={to}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-4 py-1.5 bg-[#4ecde6] text-[#0a0a0a] text-sm font-bold rounded-lg hover:bg-[#3dbcd5] transition-colors"
+        <div className="flex items-center gap-3 flex-wrap">
+          <RegisterTabs groupId={groupId} />
+          <Link
+            href={`/dashboard/attendance/qr/${groupId}`}
+            data-testid="live-register-open-qr"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-white/[0.04] text-white/85 border border-white/10 hover:bg-white/[0.08] transition-colors"
           >
-            Update
-          </button>
-        </form>
-      </div>
-
-      {/* Printable register */}
-      <div className="print-container bg-white text-black p-6 lg:p-8 mt-4 rounded-2xl shadow-lg print:shadow-none print:rounded-none print:mt-0">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-6 border-b-2 border-black pb-4">
-          <div>
-            <h1 className="text-xl font-bold">{org?.name || 'Academy'}</h1>
-            <h2 className="text-lg font-semibold mt-1">{group.name}</h2>
-            <div className="text-sm mt-1 space-y-0.5 text-gray-700">
-              {group.day_of_week && <div>Day: {group.day_of_week}</div>}
-              {group.time_slot && <div>Time: {group.time_slot}</div>}
-              {group.location && <div>Location: {group.location}</div>}
-              {coach?.full_name && <div>Coach: {coach.full_name}</div>}
-            </div>
-          </div>
-          <div className="text-right text-sm text-gray-600">
-            <div className="font-semibold">Attendance Register</div>
-            <div>{formatDateFull(from)} &mdash; {formatDateFull(to)}</div>
-          </div>
-        </div>
-
-        {/* P2 — Trial guests block (above enrolled players) */}
-        {(trialGuests || []).length > 0 && (
-          <div className="mb-6" data-testid="register-trial-guests">
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-700">Trial Guests</h3>
-            <table className="register-table w-full border-collapse text-xs">
-              <thead>
-                <tr>
-                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Child</th>
-                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Parent</th>
-                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Contact</th>
-                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Trial date</th>
-                  <th className="border border-gray-400 bg-amber-100 px-2 py-1.5 text-left font-bold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(trialGuests || []).map((t) => (
-                  <tr key={t.id} className="bg-amber-50" data-testid="register-trial-row">
-                    <td className="border border-gray-300 px-2 py-1.5 font-medium">{t.child_name}</td>
-                    <td className="border border-gray-300 px-2 py-1.5">{t.parent_name}</td>
-                    <td className="border border-gray-300 px-2 py-1.5 text-gray-700">
-                      {t.parent_phone || t.parent_email}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1.5">
-                      {t.preferred_date ? formatDate(t.preferred_date) : '—'}
-                    </td>
-                    <td className="border border-gray-300 px-2 py-1.5">
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-900">
-                        Trial · {String(t.status || 'pending')}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="text-[10px] text-gray-500 mt-1">
-              Trial guests are not on the attendance table. Mark them Attended / No Show on the Trials page after the session.
-            </p>
-          </div>
-        )}
-
-        {/* Register table */}
-        {players.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            No players enrolled in this class.
-          </div>
-        ) : sessionDates.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            No attendance records found for this date range.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="register-table w-full border-collapse text-xs">
-              <thead>
-                <tr>
-                  <th className="border border-gray-400 bg-gray-200 px-2 py-1.5 text-left font-bold sticky left-0 bg-gray-200 min-w-[160px]">
-                    Player
-                  </th>
-                  {sessionDates.map((date) => (
-                    <th
-                      key={date}
-                      className="border border-gray-400 bg-gray-200 px-1.5 py-1.5 text-center font-semibold min-w-[52px]"
-                    >
-                      {formatDate(date)}
-                    </th>
-                  ))}
-                  <th className="border border-gray-400 bg-gray-200 px-2 py-1.5 text-center font-bold min-w-[50px]">
-                    %
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {players.map((player, idx) => {
-                  const playerAttendance = attendanceMap.get(player.id)
-                  const sessionsRecorded = sessionDates.filter(
-                    (d) => playerAttendance?.has(d)
-                  ).length
-                  const sessionsPresent = sessionDates.filter(
-                    (d) => playerAttendance?.get(d) === true
-                  ).length
-                  const pct = sessionsRecorded > 0
-                    ? Math.round((sessionsPresent / sessionsRecorded) * 100)
-                    : 0
-
-                  return (
-                    <tr key={player.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="border border-gray-300 px-2 py-1.5 font-medium sticky left-0 bg-inherit">
-                        {player.last_name}, {player.first_name}
-                      </td>
-                      {sessionDates.map((date) => {
-                        const record = playerAttendance?.get(date)
-                        let symbol = '-'
-                        let cellClass = 'text-gray-300'
-                        if (record === true) {
-                          symbol = '\u2713'
-                          cellClass = 'text-green-700 font-bold'
-                        } else if (record === false) {
-                          symbol = '\u2717'
-                          cellClass = 'text-red-600 font-bold'
-                        }
-                        return (
-                          <td
-                            key={date}
-                            className={`border border-gray-300 px-1.5 py-1.5 text-center ${cellClass}`}
-                          >
-                            {symbol}
-                          </td>
-                        )
-                      })}
-                      <td className={`border border-gray-300 px-2 py-1.5 text-center font-bold ${
-                        pct >= 80 ? 'text-green-700' : pct >= 50 ? 'text-amber-600' : 'text-red-600'
-                      }`}>
-                        {sessionsRecorded > 0 ? `${pct}%` : '-'}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="mt-6 pt-4 border-t border-gray-300 flex items-center justify-between text-xs text-gray-500">
-          <div className="space-x-4">
-            <span>Total Players: <strong className="text-black">{totalPlayers}</strong></span>
-            <span>Sessions: <strong className="text-black">{sessionDates.length}</strong></span>
-            <span>Average Attendance: <strong className="text-black">{avgAttendance}%</strong></span>
-          </div>
-          <div>Printed: {printedAt}</div>
-        </div>
-
-        {/* Legend */}
-        <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-          <span><span className="text-green-700 font-bold">{'\u2713'}</span> Present</span>
-          <span><span className="text-red-600 font-bold">{'\u2717'}</span> Absent</span>
-          <span><span className="text-gray-300">-</span> No record</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zm-11 11h7v7H3v-7zm14 3.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 0v3.5m0-10V7" />
+            </svg>
+            Open QR display
+          </Link>
         </div>
       </div>
-    </>
+
+      {/* ─── Live Register client ─── */}
+      <LiveRegisterClient
+        groupId={groupId}
+        groupName={group.name as string}
+        orgId={orgId}
+        defaultDate={sessionDate}
+        players={players}
+        trials={trials}
+      />
+    </div>
   )
 }

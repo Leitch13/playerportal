@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import QRDisplay from './QRDisplay'
 
@@ -48,6 +49,19 @@ export default async function QRCodePage({
 
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white max-w-2xl mx-auto">
+      {/* Sprint 11a — Back to live register link. Hidden in fullscreen
+          via the .no-print + QRDisplay's own fullscreen background. */}
+      <div className="no-print mb-3" data-testid="qr-back-to-live-register">
+        <Link
+          href={`/dashboard/attendance/register/${group.id}`}
+          className="inline-flex items-center gap-2 text-sm text-white/65 hover:text-white transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to live register
+        </Link>
+      </div>
       <QRDisplay
         groupId={group.id}
         groupName={group.name}

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { UserRole } from '@/lib/types'
 import PrintButton from '../../PrintButton'
+import RegisterTabs from '../Tabs'
 
 export default async function BlankRegisterPage({
   params,
@@ -115,23 +116,19 @@ export default async function BlankRegisterPage({
 
       {/* Screen controls */}
       <div className="no-print bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 text-white">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold">Blank Register</h1>
             <p className="text-sm text-white/60 mt-0.5">{group.name} — print and fill in by hand</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Sprint 11a: Live / Report / Blank tabs so coaches don't lose context */}
+            <RegisterTabs groupId={groupId} />
             <Link
               href="/dashboard/attendance/register"
               className="px-4 py-2 bg-white/[0.08] text-white text-sm font-medium rounded-xl hover:bg-white/[0.12] transition-colors"
             >
               Back
-            </Link>
-            <Link
-              href={`/dashboard/attendance/register/${groupId}`}
-              className="px-4 py-2 bg-white/[0.08] text-white text-sm font-medium rounded-xl hover:bg-white/[0.12] transition-colors"
-            >
-              Full Register
             </Link>
             <PrintButton />
           </div>
