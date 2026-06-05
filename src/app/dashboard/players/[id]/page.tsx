@@ -17,6 +17,15 @@ import AttendanceStreak from '@/components/AttendanceStreak'
 import PlayerLevelEditor from './PlayerLevelEditor'
 import DeletePlayerButton from './DeletePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
+// Sprint 12 — pure derive layer (no I/O, no Stripe call).
+import {
+  deriveSubscriptionDisplay,
+  deriveNextPaymentLabel,
+  deriveEnrolmentDisplay,
+  fmtMoney,
+  fmtInterval,
+  type Tone,
+} from '@/lib/subscription-derive'
 
 export default async function PlayerDetailPage({
   params,
@@ -82,11 +91,47 @@ export default async function PlayerDetailPage({
   const presentCount = (attendance || []).filter((a) => a.present).length
   const attendanceRate = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : 0
 
-  // Fetch enrolments
+  // Sprint 12 — extended enrolments SELECT.
+  //
+  // Adds the columns the player profile needs to answer "what class is
+  // this player in, when did they join, is it a trial" within 5 seconds
+  // of opening the page:
+  //   • enrolled_at, activates_on, is_trial, trial_expires_at
+  //   • embedded coach name via training_groups.coach_id → profiles
+  //
+  // All read-only. RLS unchanged (existing org-scoped policies cover
+  // both `enrolments` and `training_groups`).
   const { data: enrolments } = await supabase
     .from('enrolments')
-    .select('id, status, group_id, group:training_groups(name, day_of_week, time_slot, location)')
+    .select(`
+      id, status, group_id,
+      enrolled_at, activates_on, is_trial, trial_expires_at,
+      group:training_groups(
+        name, day_of_week, time_slot, location,
+        coach:profiles!training_groups_coach_id_fkey(full_name)
+      )
+    `)
     .eq('player_id', id)
+
+  // Sprint 12 — Membership card subscription SELECT.
+  //
+  // Read-only. Pulls every subscription row for this player so the
+  // page can show ALL active-ish subs (the prod audit found cases of
+  // duplicate subs — we surface that rather than hide it). Explicit
+  // org filter for defence-in-depth even though RLS already enforces
+  // org scoping on `subscriptions` (077 lockdown).
+  const { data: playerSubscriptions } = await supabase
+    .from('subscriptions')
+    .select(`
+      id, status, stripe_subscription_id, plan_id, training_group_id,
+      current_period_start, current_period_end,
+      cancel_at_period_end, cancelled_at, start_date, created_at,
+      plan:subscription_plans(name, amount, interval, sessions_per_month, class_type),
+      group:training_groups(name)
+    `)
+    .eq('player_id', id)
+    .eq('organisation_id', orgId)
+    .order('created_at', { ascending: false })
 
   // Fetch documents
   const { data: documents } = await supabase
@@ -418,36 +463,221 @@ export default async function PlayerDetailPage({
         </Card>
       </div>
 
-      {/* Groups */}
-      <Card title="Sessions" action={isStaff ? (
+      {/* ─── Sprint 12: Membership card ────────────────────────────────
+          Read-only display of all subscription rows attached to this
+          player. Surfaces:
+            • subscription status (Active / Trialing / Past due / etc.)
+            • plan name + amount + billing interval
+            • next charge date (derived from current_period_end)
+            • cancellation status (cancel_at_period_end → "cancelling X")
+          Empty state matches the user-approved copy.
+       ──────────────────────────────────────────────────────────────── */}
+      {(() => {
+        type SubRow = {
+          id: string
+          status: string | null
+          stripe_subscription_id: string | null
+          plan_id: string | null
+          training_group_id: string | null
+          current_period_start: string | null
+          current_period_end: string | null
+          cancel_at_period_end: boolean | null
+          cancelled_at: string | null
+          start_date: string | null
+          created_at: string | null
+          plan: {
+            name: string | null
+            amount: number | null
+            interval: string | null
+            sessions_per_month: number | null
+            class_type: string | null
+          } | null
+          group: { name: string | null } | null
+        }
+        const subs = ((playerSubscriptions || []) as unknown as SubRow[])
+        const subsToRender = subs
+
+        return (
+          <Card title="Membership">
+            {subsToRender.length === 0 ? (
+              <p className="text-sm text-white/55 py-2" data-testid="player-membership-empty">
+                No active subscription found.
+              </p>
+            ) : (
+              <div className="space-y-3" data-testid="player-membership-list">
+                {subsToRender.map((s) => {
+                  const d = deriveSubscriptionDisplay({
+                    status: s.status,
+                    cancel_at_period_end: s.cancel_at_period_end,
+                    cancelled_at: s.cancelled_at,
+                    current_period_end: s.current_period_end,
+                    start_date: s.start_date,
+                  })
+                  const nextPayment = deriveNextPaymentLabel({
+                    status: s.status,
+                    cancel_at_period_end: s.cancel_at_period_end,
+                    cancelled_at: s.cancelled_at,
+                    current_period_end: s.current_period_end,
+                    start_date: s.start_date,
+                  })
+                  const planName = s.plan?.name || (s.plan ? 'Unnamed plan' : 'Plan unavailable')
+                  const amount = s.plan?.amount
+                  const intervalLabel = fmtInterval(s.plan?.interval, s.plan?.sessions_per_month)
+                  const moneyLabel = amount != null ? fmtMoney(Number(amount)) : ''
+                  const startedLabel = s.start_date
+                    ? new Date(s.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : s.created_at
+                      ? new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : ''
+
+                  return (
+                    <div
+                      key={s.id}
+                      data-testid="player-membership-row"
+                      data-subscription-id={s.id}
+                      data-subscription-status={s.status || ''}
+                      className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2"
+                    >
+                      {/* Headline: status badge + plan + amount */}
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <TonedPill label={d.label} tone={d.tone} testId="player-membership-status" />
+                            <span className="text-sm font-bold text-white" data-testid="player-membership-plan">{planName}</span>
+                          </div>
+                          {d.detail && (
+                            <p className="text-[11px] text-white/55 mt-0.5" data-testid="player-membership-status-detail">{d.detail}</p>
+                          )}
+                        </div>
+                        {moneyLabel && (
+                          <div className="text-right shrink-0">
+                            <span className="text-base font-bold text-white" data-testid="player-membership-amount">
+                              {moneyLabel}
+                            </span>
+                            <span className="text-[11px] text-white/55 ml-1">{intervalLabel}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Meta rows */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-white/60">
+                        {startedLabel && (
+                          <div>
+                            <span className="text-white/40">Started:</span>{' '}
+                            <span className="text-white/85" data-testid="player-membership-started">{startedLabel}</span>
+                          </div>
+                        )}
+                        {nextPayment && (
+                          <div>
+                            <span className="text-white/40">Next charge:</span>{' '}
+                            <span className="text-emerald-300" data-testid="player-membership-next-payment">{nextPayment}</span>
+                          </div>
+                        )}
+                        {s.group?.name && (
+                          <div>
+                            <span className="text-white/40">For class:</span>{' '}
+                            <span className="text-white/85">{s.group.name}</span>
+                          </div>
+                        )}
+                        {s.plan?.class_type && (
+                          <div>
+                            <span className="text-white/40">Class type:</span>{' '}
+                            <span className="text-white/85">{s.plan.class_type}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Admin-only Stripe sub id (faded). Coaches don't see it. */}
+                      {role === 'admin' && s.stripe_subscription_id && (
+                        <p
+                          className="text-[10px] text-white/30 font-mono pt-1 border-t border-white/[0.06] truncate"
+                          data-testid="player-membership-stripe-id"
+                          title={s.stripe_subscription_id}
+                        >
+                          {s.stripe_subscription_id}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+                {subsToRender.length > 1 && (
+                  <p className="text-[10px] text-amber-300/80 italic" data-testid="player-membership-multiple-note">
+                    Multiple subscriptions found for this player — review for duplicates.
+                  </p>
+                )}
+              </div>
+            )}
+          </Card>
+        )
+      })()}
+
+      {/* ─── Sprint 12: Classes card (was: "Sessions") ──────────────────
+          Per enrolment, surfaces coach + day/time/location + enrolled
+          date + activates_on (for Stage 3 future-start) + trial expiry
+          (when is_trial). Status badge is the enrolment status, NEVER
+          the subscription status — kept strictly separate per sprint
+          spec.
+       ──────────────────────────────────────────────────────────────── */}
+      <Card title="Classes" action={isStaff ? (
         <AddToGroupButton
           playerId={id}
           groups={(trainingGroups || []).map((g) => ({ id: g.id, name: g.name, day_of_week: g.day_of_week, time_slot: g.time_slot }))}
           existingGroupIds={(enrolments || []).map((e) => (e as unknown as { group_id: string }).group_id).filter(Boolean)}
         />
       ) : undefined}>
-        {(enrolments || []).length > 0 ? (
-          <div className="divide-y divide-border">
-            {(enrolments || []).map((e) => {
-              const enr = e as unknown as { id: string; status: string; group: { name: string; day_of_week: string; time_slot: string; location: string } | null }
-              return (
-                <div key={enr.id} className="py-2 flex items-center justify-between">
-                  <div>
-                    <span className="font-medium text-sm">{enr.group?.name}</span>
-                    <span className="text-xs text-white/60 ml-2">
-                      {enr.group?.day_of_week && `${enr.group.day_of_week}`}
-                      {enr.group?.time_slot && ` ${enr.group.time_slot}`}
-                      {enr.group?.location && ` · ${enr.group.location}`}
-                    </span>
+        {(() => {
+          type EnrRow = {
+            id: string
+            status: string
+            is_trial: boolean | null
+            enrolled_at: string | null
+            activates_on: string | null
+            trial_expires_at: string | null
+            group: {
+              name: string
+              day_of_week: string | null
+              time_slot: string | null
+              location: string | null
+              coach: { full_name: string | null } | null
+            } | null
+          }
+          const enrs = ((enrolments || []) as unknown as EnrRow[])
+          // Active-ish enrolments shown first; cancelled muted below.
+          const activeIsh = enrs.filter((e) => e.status !== 'cancelled' && e.status !== 'inactive')
+          const ended = enrs.filter((e) => e.status === 'cancelled' || e.status === 'inactive')
+          const hasAny = enrs.length > 0
+          const hasActive = activeIsh.length > 0
+
+          if (!hasAny) {
+            return (
+              <p className="text-sm text-white/55 py-2" data-testid="player-classes-empty">
+                No active class enrolment found.
+              </p>
+            )
+          }
+
+          return (
+            <div className="space-y-3" data-testid="player-classes-list">
+              {hasActive
+                ? activeIsh.map((e) => <ClassRow key={e.id} enr={e} />)
+                : (
+                  <p className="text-sm text-white/55 py-2" data-testid="player-classes-empty">
+                    No active class enrolment found.
+                  </p>
+                )}
+              {ended.length > 0 && (
+                <details className="pt-2 border-t border-white/[0.06]">
+                  <summary className="text-[11px] text-white/45 cursor-pointer hover:text-white/65 transition-colors">
+                    {ended.length} cancelled enrolment{ended.length === 1 ? '' : 's'}
+                  </summary>
+                  <div className="mt-2 space-y-2 opacity-70">
+                    {ended.map((e) => <ClassRow key={e.id} enr={e} />)}
                   </div>
-                  <StatusBadge status={enr.status} />
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-white/50 py-2">No group enrolments yet.</p>
-        )}
+                </details>
+              )}
+            </div>
+          )
+        })()}
       </Card>
 
       {/* Achievements */}
@@ -647,6 +877,117 @@ export default async function PlayerDetailPage({
             playerId={id}
             playerName={`${player.first_name} ${player.last_name}`}
           />
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+ *  Sprint 12 helpers — kept inline so the page is one file.
+ *  Pure presentational. No state, no I/O.
+ * ────────────────────────────────────────────────────────────────────── */
+
+function TonedPill({
+  label,
+  tone,
+  testId,
+}: {
+  label: string
+  tone: Tone
+  testId?: string
+}) {
+  const cls = TONE_PILL[tone] || TONE_PILL.muted
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${cls}`}
+      data-testid={testId}
+      data-tone={tone}
+    >
+      {label}
+    </span>
+  )
+}
+
+const TONE_PILL: Record<Tone, string> = {
+  emerald: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  amber:   'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  red:     'bg-red-500/20 text-red-300 border-red-500/30',
+  violet:  'bg-violet-500/20 text-violet-300 border-violet-500/30',
+  muted:   'bg-white/10 text-white/60 border-white/15',
+}
+
+type EnrRowProps = {
+  enr: {
+    id: string
+    status: string
+    is_trial: boolean | null
+    enrolled_at: string | null
+    activates_on: string | null
+    trial_expires_at: string | null
+    group: {
+      name: string
+      day_of_week: string | null
+      time_slot: string | null
+      location: string | null
+      coach: { full_name: string | null } | null
+    } | null
+  }
+}
+
+function ClassRow({ enr }: EnrRowProps) {
+  const d = deriveEnrolmentDisplay({ status: enr.status, is_trial: enr.is_trial })
+  const coachName = enr.group?.coach?.full_name || null
+  const dateRows = [
+    enr.enrolled_at
+      ? { label: 'Enrolled', value: new Date(enr.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }
+      : null,
+    enr.activates_on
+      ? { label: 'Activates', value: new Date(enr.activates_on + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }
+      : null,
+    enr.is_trial && enr.trial_expires_at
+      ? { label: 'Trial expires', value: new Date(enr.trial_expires_at + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) }
+      : null,
+  ].filter((v): v is { label: string; value: string } => !!v)
+
+  return (
+    <div
+      className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 space-y-1.5"
+      data-testid="player-class-row"
+      data-enrolment-id={enr.id}
+      data-enrolment-status={enr.status}
+    >
+      {/* Headline: name + day/time/location + status pill */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-bold text-white truncate" data-testid="player-class-name">{enr.group?.name || '—'}</div>
+          <div className="text-[11px] text-white/55 mt-0.5">
+            {enr.group?.day_of_week && <span>{enr.group.day_of_week}</span>}
+            {enr.group?.time_slot && <span> · {enr.group.time_slot}</span>}
+            {enr.group?.location && <span> · {enr.group.location}</span>}
+          </div>
+        </div>
+        <TonedPill label={d.label} tone={d.tone} testId="player-class-status" />
+      </div>
+
+      {/* Coach line */}
+      {coachName && (
+        <div className="text-[11px] text-white/55" data-testid="player-class-coach">
+          <span className="text-white/40">Coach:</span> <span className="text-white/80">{coachName}</span>
+        </div>
+      )}
+
+      {/* Dates */}
+      {dateRows.length > 0 && (
+        <div
+          className="flex items-center gap-3 flex-wrap text-[11px] text-white/55 pt-0.5"
+          data-testid="player-class-dates"
+        >
+          {dateRows.map((d) => (
+            <span key={d.label}>
+              <span className="text-white/40">{d.label}:</span> <span className="text-white/80">{d.value}</span>
+            </span>
+          ))}
         </div>
       )}
     </div>
