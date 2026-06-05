@@ -188,3 +188,110 @@ export function fmtInterval(interval: string | null | undefined, sessionsPerMont
   if (raw === 'quarter' || raw === '3_months') return '/ quarter'
   return raw ? `/ ${raw}` : ''
 }
+
+// ─────────────────────────────────────────────────────────────────────
+//  Sprint 12b — pure helpers for the duplicate-aggregate banner and
+//  the combined trial-first-charge sentence.
+// ─────────────────────────────────────────────────────────────────────
+
+export interface SubAggregateInput {
+  status: string | null
+  cancel_at_period_end: boolean | null
+  current_period_end: string | null
+  plan: { amount: number | null; interval: string | null } | null
+}
+
+export interface SubAggregate {
+  /** Normalised to £ / month, summed across contributing subs. */
+  totalMonthly: number
+  /** Count of subscriptions that will actually charge going forward. */
+  contributingCount: number
+  /** Soonest `current_period_end` across contributing subs (ISO). */
+  nextBillingDate: string | null
+}
+
+/**
+ * Compute the aggregate monthly exposure for a list of subscriptions.
+ *
+ * Pure derive — no I/O. Skips subs that won't generate further charges:
+ *   • status in ('cancelled', 'canceled', 'incomplete_expired')
+ *   • cancel_at_period_end = true
+ *
+ * For each contributing sub, normalises plan.amount to a monthly figure:
+ *   • month   → ×1
+ *   • week    → ×(52/12) ≈ 4.333
+ *   • year    → ÷12
+ *   • quarter → ÷3
+ *
+ * Returns the soonest `current_period_end` across all contributing
+ * subs as `nextBillingDate` — the date the academy owner most cares
+ * about because that's when the next concentration of charges lands.
+ */
+export function aggregateExposure(subs: SubAggregateInput[]): SubAggregate {
+  let totalMonthly = 0
+  let contributingCount = 0
+  let nextEpoch = Number.POSITIVE_INFINITY
+  let nextDate: string | null = null
+  for (const s of subs) {
+    if (!subContributes(s)) continue
+    const amount = s.plan?.amount
+    if (amount == null) continue
+    totalMonthly += toMonthlyAmount(Number(amount), s.plan?.interval)
+    contributingCount++
+    if (s.current_period_end) {
+      const e = Date.parse(s.current_period_end)
+      if (Number.isFinite(e) && e < nextEpoch) {
+        nextEpoch = e
+        nextDate = s.current_period_end
+      }
+    }
+  }
+  return { totalMonthly, contributingCount, nextBillingDate: nextDate }
+}
+
+function subContributes(s: SubAggregateInput): boolean {
+  const raw = (s.status || '').toLowerCase().trim()
+  if (raw === 'cancelled' || raw === 'canceled' || raw === 'incomplete_expired') return false
+  if (s.cancel_at_period_end) return false
+  return true
+}
+
+function toMonthlyAmount(amount: number, interval: string | null | undefined): number {
+  const raw = (interval || '').toLowerCase()
+  if (raw === 'month') return amount
+  if (raw === 'week') return amount * (52 / 12)
+  if (raw === 'year') return amount / 12
+  if (raw === 'quarter' || raw === '3_months') return amount / 3
+  return amount
+}
+
+/**
+ * Combined "free trial ends X — first charge Y" sentence for trialing
+ * subscriptions.
+ *
+ * Replaces the previous two disconnected facts ("trial ends 1 Jul" +
+ * "Next charge: 1 Jul") with a single causal sentence that makes the
+ * relationship between the trial end date and the first ever charge
+ * unambiguous.
+ *
+ * Returns an empty string when:
+ *   • status is not 'trialing'
+ *   • current_period_end is unknown
+ * — caller falls back to existing behaviour in either case.
+ */
+export function deriveTrialFirstChargeLabel(args: {
+  status: string | null
+  current_period_end: string | null
+  amount: number | null | undefined
+}): string {
+  const raw = (args.status || '').toLowerCase().trim()
+  if (raw !== 'trialing') return ''
+  if (!args.current_period_end) return ''
+  const dateLabel = fmt(args.current_period_end)
+  if (!dateLabel) return ''
+  const moneyLabel = args.amount != null ? fmtMoney(Number(args.amount)) : ''
+  if (moneyLabel) {
+    return `Free trial ends ${dateLabel} — first charge of ${moneyLabel} will be taken that day.`
+  }
+  return `Free trial ends ${dateLabel} — first charge will be taken that day.`
+}

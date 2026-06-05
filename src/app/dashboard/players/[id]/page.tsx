@@ -18,10 +18,13 @@ import PlayerLevelEditor from './PlayerLevelEditor'
 import DeletePlayerButton from './DeletePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
 // Sprint 12 — pure derive layer (no I/O, no Stripe call).
+// Sprint 12b — adds aggregateExposure + deriveTrialFirstChargeLabel.
 import {
   deriveSubscriptionDisplay,
   deriveNextPaymentLabel,
   deriveEnrolmentDisplay,
+  aggregateExposure,
+  deriveTrialFirstChargeLabel,
   fmtMoney,
   fmtInterval,
   type Tone,
@@ -497,6 +500,20 @@ export default async function PlayerDetailPage({
         const subs = ((playerSubscriptions || []) as unknown as SubRow[])
         const subsToRender = subs
 
+        // Sprint 12b: aggregate monthly exposure across all contributing
+        // subs (skips cancelled + cancel_at_period_end). Renders above
+        // the row list when N > 1.
+        const aggregate = aggregateExposure(subsToRender.map((s) => ({
+          status: s.status,
+          cancel_at_period_end: s.cancel_at_period_end,
+          current_period_end: s.current_period_end,
+          plan: s.plan ? { amount: s.plan.amount, interval: s.plan.interval } : null,
+        })))
+        const showAggregate = subsToRender.length > 1 && aggregate.contributingCount > 0
+        const aggregateNextDateLabel = aggregate.nextBillingDate
+          ? new Date(aggregate.nextBillingDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          : ''
+
         return (
           <Card title="Membership">
             {subsToRender.length === 0 ? (
@@ -505,6 +522,29 @@ export default async function PlayerDetailPage({
               </p>
             ) : (
               <div className="space-y-3" data-testid="player-membership-list">
+                {/* Sprint 12b — aggregate warning panel.
+                    Visible only when N > 1 contributing subs exist.
+                    Above the row list so it leads the card. */}
+                {showAggregate && (
+                  <div
+                    className="rounded-xl border border-amber-500/40 bg-amber-500/[0.08] p-3"
+                    data-testid="player-membership-aggregate"
+                  >
+                    <p className="text-sm font-bold text-amber-200 flex items-center gap-2">
+                      <span>⚠</span>
+                      <span>Multiple subscriptions detected</span>
+                    </p>
+                    <p className="text-[12px] text-amber-100/85 mt-1" data-testid="player-membership-aggregate-total">
+                      Total monthly exposure:{' '}
+                      <strong>{fmtMoney(aggregate.totalMonthly)} / month</strong>{' '}
+                      across {aggregate.contributingCount} subscription{aggregate.contributingCount === 1 ? '' : 's'}.
+                      {aggregateNextDateLabel && (
+                        <> Next billing date: <strong data-testid="player-membership-aggregate-next-date">{aggregateNextDateLabel}</strong>.</>
+                      )}
+                    </p>
+                  </div>
+                )}
+
                 {subsToRender.map((s) => {
                   const d = deriveSubscriptionDisplay({
                     status: s.status,
@@ -520,6 +560,17 @@ export default async function PlayerDetailPage({
                     current_period_end: s.current_period_end,
                     start_date: s.start_date,
                   })
+                  // Sprint 12b — combined trial-first-charge sentence.
+                  // When this returns a non-empty string we render it INSTEAD OF
+                  // the "trial ends X" detail line and the separate "Next charge"
+                  // row, so the trial-end date and the first-ever-charge fact
+                  // are presented as one causal statement.
+                  const trialFirstCharge = deriveTrialFirstChargeLabel({
+                    status: s.status,
+                    current_period_end: s.current_period_end,
+                    amount: s.plan?.amount,
+                  })
+                  const isTrialing = !!trialFirstCharge
                   const planName = s.plan?.name || (s.plan ? 'Unnamed plan' : 'Plan unavailable')
                   const amount = s.plan?.amount
                   const intervalLabel = fmtInterval(s.plan?.interval, s.plan?.sessions_per_month)
@@ -545,7 +596,10 @@ export default async function PlayerDetailPage({
                             <TonedPill label={d.label} tone={d.tone} testId="player-membership-status" />
                             <span className="text-sm font-bold text-white" data-testid="player-membership-plan">{planName}</span>
                           </div>
-                          {d.detail && (
+                          {/* Status detail — suppressed for trialing subs in
+                              favour of the combined trial-first-charge line
+                              rendered below. */}
+                          {!isTrialing && d.detail && (
                             <p className="text-[11px] text-white/55 mt-0.5" data-testid="player-membership-status-detail">{d.detail}</p>
                           )}
                         </div>
@@ -559,7 +613,21 @@ export default async function PlayerDetailPage({
                         )}
                       </div>
 
-                      {/* Meta rows */}
+                      {/* Sprint 12b — combined trial-first-charge sentence for
+                          trialing subs only. Renders INSTEAD OF the disconnected
+                          "trial ends X" + "Next charge: X" pair. */}
+                      {isTrialing && (
+                        <p
+                          className="text-[12px] text-amber-200 bg-amber-500/[0.08] border border-amber-500/25 rounded-lg px-3 py-2"
+                          data-testid="player-membership-trial-first-charge"
+                        >
+                          {trialFirstCharge}
+                        </p>
+                      )}
+
+                      {/* Meta rows. For non-trialing subs we surface "Next charge"
+                          here. For trialing subs the combined sentence above
+                          already covers the date, so we skip it. */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-white/60">
                         {startedLabel && (
                           <div>
@@ -567,7 +635,7 @@ export default async function PlayerDetailPage({
                             <span className="text-white/85" data-testid="player-membership-started">{startedLabel}</span>
                           </div>
                         )}
-                        {nextPayment && (
+                        {!isTrialing && nextPayment && (
                           <div>
                             <span className="text-white/40">Next charge:</span>{' '}
                             <span className="text-emerald-300" data-testid="player-membership-next-payment">{nextPayment}</span>
@@ -600,11 +668,9 @@ export default async function PlayerDetailPage({
                     </div>
                   )
                 })}
-                {subsToRender.length > 1 && (
-                  <p className="text-[10px] text-amber-300/80 italic" data-testid="player-membership-multiple-note">
-                    Multiple subscriptions found for this player — review for duplicates.
-                  </p>
-                )}
+                {/* Sprint 12b — the pre-existing italic "Multiple subscriptions
+                    found" footer is REPLACED by the aggregate panel above.
+                    Footer no longer rendered to avoid duplicate signal. */}
               </div>
             )}
           </Card>
@@ -648,6 +714,14 @@ export default async function PlayerDetailPage({
           const hasAny = enrs.length > 0
           const hasActive = activeIsh.length > 0
 
+          // Sprint 12b — when any subscription on this player is in
+          // 'trialing' status, the Classes card decorates each active
+          // (non-trial) enrolment label as "Active during trial" so the
+          // page's Active enrolment pill and Trialing membership pill
+          // no longer read as conflicting.
+          const trialingMembership = ((playerSubscriptions || []) as unknown as Array<{ status: string | null }>)
+            .some((s) => (s.status || '').toLowerCase() === 'trialing')
+
           if (!hasAny) {
             return (
               <p className="text-sm text-white/55 py-2" data-testid="player-classes-empty">
@@ -659,7 +733,7 @@ export default async function PlayerDetailPage({
           return (
             <div className="space-y-3" data-testid="player-classes-list">
               {hasActive
-                ? activeIsh.map((e) => <ClassRow key={e.id} enr={e} />)
+                ? activeIsh.map((e) => <ClassRow key={e.id} enr={e} trialingMembership={trialingMembership} />)
                 : (
                   <p className="text-sm text-white/55 py-2" data-testid="player-classes-empty">
                     No active class enrolment found.
@@ -933,10 +1007,24 @@ type EnrRowProps = {
       coach: { full_name: string | null } | null
     } | null
   }
+  /** Sprint 12b — set true when the player has any subscription in
+   *  'trialing' status. When the enrolment itself is NOT a trial
+   *  (is_trial = false) but the membership is, the badge is upgraded
+   *  from "Active" to "Active during trial" so the page no longer reads
+   *  as a conflict between an active class and a trialing sub. */
+  trialingMembership?: boolean
 }
 
-function ClassRow({ enr }: EnrRowProps) {
-  const d = deriveEnrolmentDisplay({ status: enr.status, is_trial: enr.is_trial })
+function ClassRow({ enr, trialingMembership }: EnrRowProps) {
+  const baseDisplay = deriveEnrolmentDisplay({ status: enr.status, is_trial: enr.is_trial })
+  // Sprint 12b — only relabel when the enrolment is genuinely active
+  // (status='active', not a trial-flagged row) AND the player has a
+  // trialing membership. The pill colour stays emerald — only the text
+  // softens to "Active during trial".
+  const showDuringTrial = !!trialingMembership && enr.status === 'active' && !enr.is_trial
+  const d = showDuringTrial
+    ? { label: 'Active during trial', tone: baseDisplay.tone }
+    : baseDisplay
   const coachName = enr.group?.coach?.full_name || null
   const dateRows = [
     enr.enrolled_at
