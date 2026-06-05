@@ -13,6 +13,10 @@ import StatCard from '@/components/StatCard'
 import ReferralLink from './referrals/ReferralLink'
 import UpsellBanner from '@/components/UpsellBanner'
 import OnboardingChecklist from '@/components/OnboardingChecklist'
+// Sprint 14 — Academy Readiness widget. Pure display surface; see
+// src/lib/academy-readiness.ts for the state-computation helper.
+import AcademyReadinessWidget from '@/components/AcademyReadinessWidget'
+import { getAcademyReadiness } from '@/lib/academy-readiness'
 import ParentOnboardingChecklist from '@/components/ParentOnboardingChecklist'
 import ParentWelcomeModal from '@/components/ParentWelcomeModal'
 import ParentUnlockMilestones from '@/components/ParentUnlockMilestones'
@@ -1569,6 +1573,13 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const onboardingCompleted = [hasClasses, hasPlans, hasCoach, hasStripe, hasPlayers].filter(Boolean).length
   const showOnboarding = onboardingCompleted < 3
 
+  // Sprint 14 — Academy Readiness. Composes 8 launch signals into one
+  // verdict + next-step. Server-rendered every load; cannot be
+  // dismissed. The helper handles Stripe API errors internally and
+  // returns a degraded "unknown" verification state rather than
+  // throwing — the dashboard always renders.
+  const readiness = await getAcademyReadiness(orgId)
+
   // Relative time helper
   const relativeTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime()
@@ -1599,6 +1610,16 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           activeSubs={activeSubs || 0}
         />
 
+        {/* ═══ SPRINT 14 — ACADEMY READINESS ═══
+            Non-dismissible launch-state widget. Sits ABOVE the action
+            queue so a not-yet-live owner reads "NOT LIVE — next step"
+            before any of the operational widgets. When the academy is
+            LIVE it collapses to a celebratory summary and the
+            operational widgets below take over as the primary view. */}
+        <div className="mt-6">
+          <AcademyReadinessWidget state={readiness} />
+        </div>
+
         {/* ═══ PHASE 2.9 — ACTION QUEUE ═══
             Sits between AdminHero and Onboarding/SmartInsights so the
             academy owner sees "what should I do today?" before they scan
@@ -1608,8 +1629,14 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           <DashboardActionQueue counts={actionQueueCounts} />
         </div>
 
-        {/* ═══ ONBOARDING CHECKLIST ═══ */}
-        {showOnboarding && (
+        {/* ═══ ONBOARDING CHECKLIST ═══
+            Sprint 14: only render when the new Readiness widget says
+            the academy is LIVE. Pre-launch, the Readiness widget is
+            the single source of truth for "what's next"; showing both
+            duplicates the same checklist signals. Once live, the
+            OnboardingChecklist's operational items (Add a coach / Add
+            your first player / Share booking page) stay relevant. */}
+        {showOnboarding && readiness.isLive && (
           <>
             <OnboardingChecklist
               hasClasses={hasClasses}
