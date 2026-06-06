@@ -27,6 +27,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+// Sprint 11b — Player Quick Drawer mounted at the bottom of the register.
+import PlayerQuickDrawer from './PlayerQuickDrawer'
 
 export interface LiveRegisterPlayer {
   id: string
@@ -37,6 +39,10 @@ export interface LiveRegisterPlayer {
   medical_info: string | null
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
+  // Sprint 11b — added so the drawer can lazy-fetch the parent profile
+  // without a second round-trip. Server-side SELECT extended in
+  // page.tsx; nothing else on the register reads it.
+  parent_id: string | null
 }
 
 export interface LiveRegisterTrial {
@@ -84,6 +90,8 @@ export default function LiveRegisterClient({
   const [saving, setSaving] = useState(false)
   const [savedNote, setSavedNote] = useState('')
   const [existingLoaded, setExistingLoaded] = useState(false)
+  // Sprint 11b — Player Quick Drawer. Single open-player ID; null = closed.
+  const [openPlayerId, setOpenPlayerId] = useState<string | null>(null)
 
   // ─── Pre-fill from existing attendance rows for this group + date ───
   useEffect(() => {
@@ -292,73 +300,84 @@ export default function LiveRegisterClient({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    {/* Photo or initials */}
-                    <div className="shrink-0">
-                      {p.photo_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={p.photo_url}
-                          alt=""
-                          className="w-11 h-11 rounded-full object-cover border border-[#1e1e1e]"
-                          data-testid="live-register-row-photo"
-                        />
-                      ) : (
-                        <div
-                          className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold border ${
-                            state === 'present' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                            : state === 'absent' ? 'bg-red-500/20 text-red-300 border-red-500/30'
-                            : 'bg-[#4ecde6]/10 text-[#4ecde6] border-[#4ecde6]/20'
-                          }`}
-                          data-testid="live-register-row-initials"
-                        >
-                          {initials || '?'}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Name + meta */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-bold text-white truncate">
-                          {p.first_name} {p.last_name}
-                        </span>
-                        {age != null && <span className="text-[11px] text-white/45">age {age}</span>}
-                        {hasMedical && (
+                    {/* Sprint 11b — left zone is now a button that opens the
+                        Player Quick Drawer. The Present/Absent buttons remain
+                        siblings to the right so taps on them never bubble. */}
+                    <button
+                      type="button"
+                      onClick={() => setOpenPlayerId(p.id)}
+                      data-testid="live-register-row-open"
+                      aria-label={`Open quick view for ${p.first_name} ${p.last_name}`}
+                      className="flex items-start gap-3 flex-1 min-w-0 text-left rounded-lg p-0 -m-0 hover:bg-white/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4ecde6]/50"
+                    >
+                      {/* Photo or initials */}
+                      <span className="shrink-0">
+                        {p.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={p.photo_url}
+                            alt=""
+                            className="w-11 h-11 rounded-full object-cover border border-[#1e1e1e]"
+                            data-testid="live-register-row-photo"
+                          />
+                        ) : (
                           <span
-                            data-testid="live-register-row-medical"
-                            title={p.medical_info as string}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40 cursor-help"
+                            className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold border ${
+                              state === 'present' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                              : state === 'absent' ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                              : 'bg-[#4ecde6]/10 text-[#4ecde6] border-[#4ecde6]/20'
+                            }`}
+                            data-testid="live-register-row-initials"
                           >
-                            ⚠ Medical
+                            {initials || '?'}
                           </span>
                         )}
-                      </div>
-                      {(emergencyName || emergencyPhone) && (
-                        <p
-                          className="text-[11px] text-white/50 mt-0.5"
-                          data-testid="live-register-row-emergency"
-                        >
-                          🚨 Emergency:{' '}
-                          {emergencyName && <span className="text-white/70">{emergencyName}</span>}
-                          {emergencyName && emergencyPhone && ' · '}
-                          {emergencyPhone && (
-                            <a
-                              href={`tel:${emergencyPhone}`}
-                              className="text-[#4ecde6] hover:underline"
-                              data-testid="live-register-row-emergency-tel"
-                            >
-                              {emergencyPhone}
-                            </a>
-                          )}
-                        </p>
-                      )}
-                    </div>
+                      </span>
 
-                    {/* Present / Absent buttons */}
+                      {/* Name + meta */}
+                      <span className="min-w-0 flex-1 block">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-white truncate">
+                            {p.first_name} {p.last_name}
+                          </span>
+                          {age != null && <span className="text-[11px] text-white/45">age {age}</span>}
+                          {hasMedical && (
+                            <span
+                              data-testid="live-register-row-medical"
+                              title={p.medical_info as string}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40"
+                            >
+                              ⚠ Medical
+                            </span>
+                          )}
+                        </span>
+                        {(emergencyName || emergencyPhone) && (
+                          <span
+                            className="block text-[11px] text-white/50 mt-0.5"
+                            data-testid="live-register-row-emergency"
+                          >
+                            🚨 Emergency:{' '}
+                            {emergencyName && <span className="text-white/70">{emergencyName}</span>}
+                            {emergencyName && emergencyPhone && ' · '}
+                            {emergencyPhone && (
+                              <span
+                                className="text-[#4ecde6]"
+                                data-testid="live-register-row-emergency-tel"
+                              >
+                                {emergencyPhone}
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+
+                    {/* Present / Absent buttons — siblings of the drawer
+                        opener button so their clicks never bubble up. */}
                     <div className="flex gap-1.5 shrink-0">
                       <button
                         type="button"
-                        onClick={() => setOne(p.id, 'present')}
+                        onClick={(e) => { e.stopPropagation(); setOne(p.id, 'present') }}
                         data-testid="live-register-row-present"
                         aria-label={`Mark ${p.first_name} present`}
                         className={`w-12 h-10 sm:w-14 rounded-lg text-sm font-bold transition-all ${
@@ -371,7 +390,7 @@ export default function LiveRegisterClient({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setOne(p.id, 'absent')}
+                        onClick={(e) => { e.stopPropagation(); setOne(p.id, 'absent') }}
                         data-testid="live-register-row-absent"
                         aria-label={`Mark ${p.first_name} absent`}
                         className={`w-12 h-10 sm:w-14 rounded-lg text-sm font-bold transition-all ${
@@ -423,6 +442,17 @@ export default function LiveRegisterClient({
           </button>
         </div>
       )}
+
+      {/* ─── Sprint 11b — Player Quick Drawer ─── */}
+      <PlayerQuickDrawer
+        player={openPlayerId ? (players.find((p) => p.id === openPlayerId) ?? null) : null}
+        groupId={groupId}
+        groupName={groupName}
+        organisationId={orgId}
+        attendance={openPlayerId ? (attendance[openPlayerId] || 'unmarked') : 'unmarked'}
+        onMark={(s) => { if (openPlayerId) setOne(openPlayerId, s) }}
+        onClose={() => setOpenPlayerId(null)}
+      />
     </div>
   )
 }
