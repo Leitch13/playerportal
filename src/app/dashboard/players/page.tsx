@@ -78,11 +78,16 @@ export default async function PlayersPage({
 
   // ── 1. Players + parent + enrolments + group ──
   // Org-scoped EXPLICITLY (the prior version relied on RLS alone).
+  // Sprint 7 — select archived_at + archive_reason so the table can render
+  // the [ARCHIVED] badge and the 'archived' filter chip can include them.
+  // Default view excludes archived; switching to the Archived filter shows
+  // them.
   const { data: playersRaw } = await supabase
     .from('players')
     .select(`
       id, first_name, last_name, photo_url, playing_level, parent_id,
       date_of_birth, created_at, organisation_id,
+      archived_at, archive_reason,
       parent:profiles!players_parent_id_fkey(full_name, email, phone),
       enrolments(status, is_trial, trial_expires_at, activates_on, enrolled_at, group:training_groups(name))
     `)
@@ -99,6 +104,8 @@ export default async function PlayersPage({
     parent_id: string | null
     date_of_birth: string | null
     created_at: string
+    archived_at: string | null
+    archive_reason: string | null
     parent: { full_name: string | null; email: string | null; phone: string | null } | null
     enrolments: Array<{ status: string | null; is_trial: boolean | null; trial_expires_at: string | null; activates_on: string | null; enrolled_at: string | null; group: { name: string } | null }> | null
   }>
@@ -249,6 +256,10 @@ export default async function PlayersPage({
       // Phase 2.8 — server-computed attendance risk assessment. UI consumes
       // the fields directly; no client-side derivation.
       attendanceRisk,
+      // Sprint 7 — archive metadata. archivedAt drives the [ARCHIVED]
+      // badge + archived filter chip + Restore action. Null = active.
+      archivedAt: p.archived_at,
+      archiveReason: p.archive_reason,
     }
   })
 

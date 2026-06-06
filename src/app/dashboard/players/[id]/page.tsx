@@ -15,7 +15,11 @@ import PlayerTimeline from '@/components/PlayerTimeline'
 import type { TimelineItem } from '@/components/PlayerTimeline'
 import AttendanceStreak from '@/components/AttendanceStreak'
 import PlayerLevelEditor from './PlayerLevelEditor'
-import DeletePlayerButton from './DeletePlayerButton'
+// Sprint 7 — Archive replaces destructive Delete. DeletePlayerButton was
+// removed this sprint (it cascaded through 9 FK'd tables wiping attendance,
+// progress, awards, camps, makeup, waitlist, documents, etc).
+import ArchivePlayerModal from './ArchivePlayerModal'
+import RestorePlayerButton from './RestorePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
 // Sprint 8b v1 — Move Class action surfaced per active enrolment row.
 import MoveClassAction from './MoveClassAction'
@@ -974,16 +978,41 @@ export default async function PlayerDetailPage({
         </Card>
       )}
 
-      {/* Danger Zone — Admin only */}
+      {/* Sprint 7 — Archive zone (Admin only). Replaces the destructive
+          Delete Player flow with a reversible archive that preserves
+          attendance, progress, awards, payments, and messaging history. */}
       {role === 'admin' && (
-        <div className="border border-red-500/20 rounded-xl p-5 bg-red-500/[0.03]">
-          <h3 className="text-sm font-semibold text-red-400 mb-1">Danger Zone</h3>
-          <p className="text-xs text-white/50 mb-4">Permanently remove this player and all associated data. This cannot be undone.</p>
-          <DeletePlayerButton
-            playerId={id}
-            playerName={`${player.first_name} ${player.last_name}`}
-          />
-        </div>
+        (player as { archived_at?: string | null }).archived_at ? (
+          <div className="border border-amber-500/30 rounded-xl p-5 bg-amber-500/[0.04]">
+            <h3 className="text-sm font-semibold text-amber-300 mb-1">Archived player</h3>
+            <p className="text-xs text-white/55 mb-4">
+              Archived on {new Date((player as { archived_at: string }).archived_at as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {(player as { archive_reason?: string | null }).archive_reason
+                ? ` — ${String((player as { archive_reason: string }).archive_reason).replace(/_/g, ' ')}`
+                : ''}.
+              History is preserved. Restoring reactivates the player record only — re-enrol them manually after restore.
+            </p>
+            <RestorePlayerButton
+              playerId={id}
+              playerName={`${player.first_name} ${player.last_name}`}
+            />
+          </div>
+        ) : (
+          <div className="border border-amber-500/20 rounded-xl p-5 bg-amber-500/[0.03]">
+            <h3 className="text-sm font-semibold text-amber-300 mb-1">Archive zone</h3>
+            <p className="text-xs text-white/55 mb-4">
+              Archive hides this player from daily operations. Attendance, reports, payments, awards, and messaging history are preserved. You can restore at any time.
+            </p>
+            <ArchivePlayerModal
+              playerId={id}
+              playerName={`${player.first_name} ${player.last_name}`}
+              hasActiveSubscription={(playerSubscriptions || []).some(
+                (s: { status?: string | null; stripe_subscription_id?: string | null }) =>
+                  s.status === 'active' && !!s.stripe_subscription_id
+              )}
+            />
+          </div>
+        )
       )}
     </div>
   )

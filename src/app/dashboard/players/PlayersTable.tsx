@@ -64,6 +64,11 @@ export interface PlayersTableRow {
   // fields directly; no client-side derivation. Optional for forward-
   // compat — old call sites can omit and the row degrades to no badge.
   attendanceRisk?: AttendanceRiskAssessment
+  // Sprint 7 — archive metadata. null = active player. When non-null the
+  // row is hidden from every filter except 'archived' and gets the
+  // [ARCHIVED] badge + Restore action.
+  archivedAt?: string | null
+  archiveReason?: string | null
 }
 
 type FilterKey =
@@ -72,6 +77,9 @@ type FilterKey =
   | 'trial_followup'
   // Phase 2.8 — Attendance Risk chips.
   | 'attendance_risk' | 'no_attendance_14d'
+  // Sprint 7 — Archived view. ONLY this filter shows archived rows.
+  // Every other filter hides them by default.
+  | 'archived'
 
 type SortKey = 'name' | 'age' | 'last_attended' | 'attendance_pct' | 'joined'
 
@@ -97,6 +105,8 @@ const FILTER_CHIPS: Array<{ key: FilterKey; label: string }> = [
   { key: 'attendance_risk', label: 'Attendance risk' },
   { key: 'no_attendance_14d', label: 'No attendance (14d)' },
   { key: 'no_attendance_30d', label: 'No attendance (30d)' },
+  // Sprint 7 — visible-only-when-needed chip. Defaults to active view.
+  { key: 'archived', label: 'Archived' },
 ]
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
@@ -168,6 +178,18 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
     const q = search.trim().toLowerCase()
 
     let out = rows.filter(r => {
+      // Sprint 7 — Archive gate. Default behaviour: hide archived players
+      // from EVERY filter except the dedicated 'archived' chip. The
+      // archived chip flips this: only archived rows pass.
+      const isArchived = !!r.archivedAt
+      if (filterParam === 'archived') {
+        if (!isArchived) return false
+        // No further filters apply on the archived view.
+        // Still honour search below.
+      } else {
+        if (isArchived) return false
+      }
+
       // Filter chip
       if (filterParam === 'active'        && r.rowStatus !== 'active')         return false
       if (filterParam === 'pending'       && r.rowStatus !== 'pending')        return false
@@ -323,12 +345,25 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
 function PlayerRow({ r }: { r: PlayersTableRow }) {
   const sub = SUB_CHIP[r.subStatus]
   const status = STATUS_CHIP[r.rowStatus]
+  const isArchived = !!r.archivedAt
   return (
-    <tr className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]">
+    <tr className={`border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] ${isArchived ? 'opacity-60' : ''}`}>
       <td className="py-2.5 px-3">
         <Link href={`/dashboard/players/${r.id}`} className="flex items-center gap-2 text-[#4ecde6] hover:underline">
           <PlayerAvatar photoUrl={r.photo_url} firstName={r.first_name} lastName={r.last_name} size="sm" />
           <span className="font-medium">{r.first_name} {r.last_name}</span>
+          {/* Sprint 7 — ARCHIVED badge. Always rendered when archived,
+              regardless of which filter the admin is on (defensive — the
+              filter logic already excludes archived from non-'archived'
+              filters, but the badge is the source of truth). */}
+          {isArchived && (
+            <span
+              title={`Archived${r.archiveReason ? ` — ${r.archiveReason.replace(/_/g, ' ')}` : ''}${r.archivedAt ? ` on ${new Date(r.archivedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`}
+              className="px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-300 border border-amber-500/30"
+            >
+              Archived
+            </span>
+          )}
           {r.playing_level && LEVEL_CHIP[r.playing_level] && (
             <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${LEVEL_CHIP[r.playing_level]}`}>
               {r.playing_level.charAt(0).toUpperCase() + r.playing_level.slice(1)}
