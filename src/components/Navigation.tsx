@@ -289,10 +289,23 @@ const navGroups: Record<UserRole, NavGroup[]> = {
 // Sprint M1 (MF-2) — admin mobile bottom nav: Players replaces Analytics.
 // Analytics is still in the sidebar Reports group; Players is the day-to-day
 // surface academy owners want a thumb away from on the phone.
+//
+// Sprint M1.1 — admin mobile bottom nav re-aligned to actual academy-owner
+// frequency tiers from the Mobile Navigation Audit:
+//   - Drop Classes (Tier B) → still 1 tap away via More → sidebar
+//   - Drop Payments (Tier C weekly) → reachable via More
+//   - Drop Settings (Tier D rarely) → reachable via More
+//   - Add Attendance (Tier A peak during training windows) — Live Register
+//     entry point
+//   - Add Messages (Tier A daily) — highest-volume interactive surface
+//   - Add 'more' sentinel — opens the existing hamburger sidebar drawer
+//     (no new component, just relabel the 5th slot as a sidebar opener)
+// Parent + coach unchanged this sprint.
+const MOBILE_MORE = 'more' as const
 const mobileTabItems: Record<UserRole, string[]> = {
   parent: ['/dashboard', '/dashboard/schedule', '/dashboard/payments', '/dashboard/messages', '/dashboard/account'],
   coach: ['/dashboard', '/dashboard/session', '/dashboard/messages', '/dashboard/account'],
-  admin: ['/dashboard', '/dashboard/players', '/dashboard/groups', '/dashboard/payments', '/dashboard/settings'],
+  admin: ['/dashboard', '/dashboard/players', '/dashboard/attendance', '/dashboard/messages', MOBILE_MORE],
 }
 
 export default function Navigation({
@@ -337,8 +350,10 @@ export default function Navigation({
     .map(g => ({ ...g, items: g.items.filter(hasFeature) }))
     .filter(g => g.items.length > 0)
   const allItems = groups.flatMap(g => g.items)
+  // Sprint M1.1 — `mobileItems` (filter-by-href) was removed; the bottom-nav
+  // now iterates `mobileTabs` directly so order follows the array, and the
+  // 'more' sentinel can be handled without being in allItems.
   const mobileTabs = mobileTabItems[role] || []
-  const mobileItems = allItems.filter((i) => mobileTabs.includes(i.href))
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Collapsible groups with localStorage persistence
@@ -615,7 +630,33 @@ export default function Navigation({
       {/* ── Mobile bottom tab bar ── */}
       <div className="mobile-bottom-nav lg:hidden bg-[#0a0a0a] border-t border-white/[0.06]">
         <div className="flex justify-around items-center h-14">
-          {mobileItems.map((item) => {
+          {/* Sprint M1.1 — iterate `mobileTabs` (the role's bottom-nav source
+              of truth) instead of the feature-filtered `mobileItems`, so
+              ORDER follows the array declaration. Special-case the 'more'
+              sentinel: render as a button that opens the existing hamburger
+              sidebar drawer — no new component, no new state. */}
+          {mobileTabs.map((tabPath) => {
+            // 'more' sentinel — opens existing sidebar overlay
+            if (tabPath === MOBILE_MORE) {
+              return (
+                <button
+                  key="more"
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="More"
+                  className="flex flex-col items-center gap-0.5 px-3 py-1 relative transition-all duration-150 text-white/50 active:scale-95"
+                >
+                  <span className="flex items-center justify-center">{icons['ellipsis-horizontal']}</span>
+                  <span className="text-[10px] font-medium leading-tight">More</span>
+                </button>
+              )
+            }
+            // Lookup the corresponding NavItem (respects feature gating).
+            // If the org's plan doesn't include this feature, the slot
+            // silently disappears — same pre-existing behaviour for
+            // /dashboard/messages on non-pilot orgs without messaging.
+            const item = allItems.find((i) => i.href === tabPath)
+            if (!item) return null
             // For coach Session tab: resolve to dynamic next session href
             const resolvedHref = item.href === '/dashboard/session'
               ? (nextSessionHref || '/dashboard/session-plans')
