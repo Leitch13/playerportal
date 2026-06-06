@@ -293,30 +293,35 @@ async function ParentPayments({
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Payments & Subscriptions</h1>
+    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    {/* Sprint M1 (MF-3) — Header compressed on mobile so Membership Overview
+        sits above the fold at 375/390/430px. Tighter vertical spacing
+        (space-y-3 sm:space-y-6), smaller h1 (text-lg → text-2xl @ sm:),
+        banners compact (py-2 text-xs) until sm:. No business logic changed —
+        ManageBillingButton, layout, sections all identical from sm: up. */}
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-lg sm:text-2xl font-bold text-white leading-tight">Payments &amp; Subscriptions</h1>
         {hasStripeCustomer && <ManageBillingButton />}
       </div>
 
       {success && (
-        <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/30 text-[#4ecde6] rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/30 text-[#4ecde6] rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium">
           Payment successful! Your balance will update shortly.
         </div>
       )}
       {cancelled && (
-        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium">
           Payment was cancelled. You can try again anytime.
         </div>
       )}
       {subSuccess && (
-        <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/30 text-[#4ecde6] rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-[#4ecde6]/10 border border-[#4ecde6]/30 text-[#4ecde6] rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium">
           Subscription activated! Welcome aboard.
         </div>
       )}
       {subCancelled && (
-        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-4 py-3 text-sm font-medium">
+        <div className="bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium">
           Subscription setup was cancelled. You can subscribe anytime.
         </div>
       )}

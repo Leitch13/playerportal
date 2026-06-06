@@ -293,7 +293,9 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Player</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden sm:table-cell">Age</th>
                 <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Class</th>
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Attendance</th>
+                {/* Sprint M1 (MF-4) — Attendance % surfaces from sm: instead of md:
+                    so phones get the headline retention signal alongside Age. */}
+                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden sm:table-cell">Attendance</th>
                 {/* Phase 2.8 — "Last attended" column. Hidden below lg
                     to preserve mobile layout. The badge cell inside
                     Player still shows the inline risk label so mobile
@@ -388,7 +390,7 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
       </td>
       <td className="py-2.5 px-3 hidden sm:table-cell text-white/70 tabular-nums">{r.age ?? '—'}</td>
       <td className="py-2.5 px-3 hidden md:table-cell text-white/60 max-w-[200px] truncate" title={r.className}>{r.className || '—'}</td>
-      <td className="py-2.5 px-3 hidden md:table-cell">
+      <td className="py-2.5 px-3 hidden sm:table-cell">
         {r.attendancePct === null ? (
           <span className="text-white/40">—</span>
         ) : (

@@ -328,8 +328,9 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
   const inputClass =
     'w-full bg-white/[0.05] border border-white/[0.1] rounded-xl px-3.5 py-3 sm:px-4 sm:py-3.5 text-white placeholder-white/30 text-base focus:outline-none focus:ring-2 transition-all'
 
+  // Sprint M1 (MF-6) — pb-24 on mobile leaves room for the sticky CTA.
   return (
-    <form onSubmit={handleSubmit} className="bg-white/[0.04] backdrop-blur rounded-2xl border border-white/[0.08] p-4 sm:p-8 space-y-3 sm:space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white/[0.04] backdrop-blur rounded-2xl border border-white/[0.08] p-4 sm:p-8 pb-24 sm:pb-8 space-y-3 sm:space-y-4">
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400">
           {error}
@@ -539,7 +540,8 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
         </span>
       </label>
 
-      {/* Big CTA Button */}
+      {/* Big CTA Button (inline copy, kept for desktop + as anchor when
+          mobile keyboard collapses the sticky bar). */}
       <button
         type="submit"
         disabled={loading || !agreedToTerms}
@@ -562,6 +564,32 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       <p className="text-center text-xs text-white/30">
         No password. No payment. No commitment.
       </p>
+
+      {/* Sprint M1 (MF-6) — Sticky mobile-only submit CTA. Mirrors the
+          QuickBookForm pattern so trial booking has the same one-thumb
+          flow. Hidden on sm: up; the inline button above remains the
+          desktop submit. Padding accounts for the inline button so users
+          who scroll past it can still tap the sticky one. No business
+          logic change — same form submit handler. */}
+      <div className="sm:hidden h-2" />
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 pt-3" style={{ background: 'linear-gradient(to top, #0a0a0a 60%, transparent)' }}>
+        <button
+          type="submit"
+          disabled={loading || !agreedToTerms}
+          className="w-full py-3.5 rounded-2xl font-bold text-base transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          style={{ backgroundColor: primaryColor, color: '#0a0a0a', boxShadow: `0 -4px 30px ${primaryColor}50` }}
+        >
+          {loading ? (
+            <>
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Booking...
+            </>
+          ) : agreedToTerms ? 'Book Free Trial' : 'Tick the box to continue'}
+        </button>
+      </div>
     </form>
   )
 }

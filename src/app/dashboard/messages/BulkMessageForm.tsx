@@ -47,11 +47,19 @@ export default function BulkMessageForm({
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(0)
+  // Sprint M1 (MF-5) — inline error + soft-fail warning replace alert()s
+  // so a failed bulk send doesn't blow away the message body the academy
+  // owner just typed. Retry button re-fires handleSubmit without resetting
+  // state.
+  const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setSent(0)
+    setError(null)
+    setWarning(null)
 
     const supabase = createClient()
     const {
@@ -95,7 +103,7 @@ export default function BulkMessageForm({
     }
 
     if (recipientIds.length === 0) {
-      alert('No recipients found for the selected criteria.')
+      setError('No recipients found for the selected criteria.')
       setLoading(false)
       return
     }
@@ -116,7 +124,7 @@ export default function BulkMessageForm({
       })
       const json = await res.json().catch(() => ({} as { ok?: boolean; sent?: number; emailed?: number; failed?: number; error?: string }))
       if (!res.ok || !json.ok) {
-        alert((json as { error?: string }).error || `HTTP ${res.status}`)
+        setError((json as { error?: string }).error || `Send failed (HTTP ${res.status}). Tap Retry to try again.`)
       } else {
         // Show the actual delivery count, not just the inserted count, so
         // the academy owner can tell if any sends silently failed.
@@ -126,7 +134,7 @@ export default function BulkMessageForm({
         const summary = sentN === emailedN
           ? null
           : `${sentN - emailedN} stored but email delivery failed or skipped (no email on file). Check delivery status soon.`
-        if (summary) alert(summary)
+        if (summary) setWarning(summary)
         setSubject('')
         setBody('')
         setTimeout(() => {
@@ -136,9 +144,14 @@ export default function BulkMessageForm({
         }, 2500)
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Send failed')
+      setError(err instanceof Error ? err.message : 'Send failed. Tap Retry to try again.')
     }
     setLoading(false)
+  }
+
+  // MF-5 — Retry re-submits with the body the user already typed.
+  function handleRetry() {
+    handleSubmit({ preventDefault() {} } as React.FormEvent)
   }
 
   if (!open) {
@@ -161,20 +174,22 @@ export default function BulkMessageForm({
   const customNames = (customRecipientIds || []).map(id => customRecipientLabels?.[id] || id)
 
   return (
-    <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-6">
-      <h2 className="text-lg font-semibold mb-4">
+    // Sprint M1 (MF-1) — flex column + max-height so the action row sticks
+    // to the bottom of the panel above the soft keyboard on mobile.
+    <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-4 sm:p-6 flex flex-col max-h-[calc(100dvh-8rem)]">
+      <h2 className="text-lg font-semibold mb-4 shrink-0">
         {hasCustom
           ? `Message ${customRecipientIds!.length} ${customRecipientIds!.length === 1 ? 'recipient' : 'recipients'}`
           : 'Bulk Message'}
       </h2>
 
       {sent > 0 && (
-        <div className="bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3 text-sm font-medium text-cyan-800 mb-4">
+        <div className="bg-cyan-50 border border-cyan-200 rounded-lg px-4 py-3 text-sm font-medium text-cyan-800 mb-4 shrink-0">
           Sent to {sent} parent{sent !== 1 ? 's' : ''}!
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 flex flex-col min-h-0 flex-1">
         {/* Mode toggles — hidden when in custom-only mode for a cleaner UX */}
         {availableModes.length > 1 && (
           <div>
@@ -245,21 +260,38 @@ export default function BulkMessageForm({
 
         <div>
           <label className="block text-sm font-medium mb-1">Message *</label>
+          {/* MF-1 — textarea grows from 5 rows on desktop to ~40dvh max
+              on mobile so the field gets big when the keyboard's not up
+              and scrolls inside its bounds once you start typing. */}
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             required
             rows={5}
             placeholder="Write your message here..."
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[120px] sm:min-h-[150px] max-h-[40dvh] resize-y"
           />
         </div>
 
-        <div className="flex gap-2">
+        {/* MF-5 — inline error + soft-fail warning. Replaces alert(). */}
+        {error && (
+          <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs sm:text-sm text-rose-300">
+            <div className="font-medium">Couldn&apos;t send your message</div>
+            <div className="text-rose-300/80 mt-0.5">{error}</div>
+          </div>
+        )}
+        {warning && !error && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs sm:text-sm text-amber-300">
+            {warning}
+          </div>
+        )}
+
+        {/* MF-1 — sticky action row above mobile keyboard. */}
+        <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 px-4 sm:px-6 py-3 mt-auto bg-[#141414] dark:bg-[#141414] border-t border-white/5 flex gap-2 flex-wrap shrink-0">
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            className="px-4 py-2.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors flex-1 sm:flex-none min-h-[44px]"
           >
             {loading
               ? 'Sending...'
@@ -267,10 +299,19 @@ export default function BulkMessageForm({
                 ? `Send to ${customRecipientIds!.length}`
                 : `Send to ${mode === 'all' ? 'All' : mode === 'group' ? 'Group' : 'Overdue'}`}
           </button>
+          {error && !loading && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="px-4 py-2.5 sm:py-2 bg-rose-500/15 text-rose-200 border border-rose-500/30 rounded-lg text-sm font-medium hover:bg-rose-500/25 transition-colors min-h-[44px]"
+            >
+              Retry
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
+            className="px-4 py-2.5 sm:py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors min-h-[44px]"
           >
             Cancel
           </button>

@@ -286,10 +286,13 @@ const navGroups: Record<UserRole, NavGroup[]> = {
   ],
 }
 
+// Sprint M1 (MF-2) — admin mobile bottom nav: Players replaces Analytics.
+// Analytics is still in the sidebar Reports group; Players is the day-to-day
+// surface academy owners want a thumb away from on the phone.
 const mobileTabItems: Record<UserRole, string[]> = {
   parent: ['/dashboard', '/dashboard/schedule', '/dashboard/payments', '/dashboard/messages', '/dashboard/account'],
   coach: ['/dashboard', '/dashboard/session', '/dashboard/messages', '/dashboard/account'],
-  admin: ['/dashboard', '/dashboard/analytics', '/dashboard/groups', '/dashboard/payments', '/dashboard/settings'],
+  admin: ['/dashboard', '/dashboard/players', '/dashboard/groups', '/dashboard/payments', '/dashboard/settings'],
 }
 
 export default function Navigation({
