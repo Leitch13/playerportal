@@ -279,6 +279,9 @@ export default async function GroupDetailPage({
                           parentName={p.parent_id ? parentNameById.get(p.parent_id) || null : null}
                           className={group.name as string}
                           otherActiveClasses={otherActiveCountById.get(p.id) || 0}
+                          // Sprint 8b v1 — Move modal needs these.
+                          groupId={group.id as string}
+                          organisationId={group.organisation_id as string}
                         />
                       )
                     })

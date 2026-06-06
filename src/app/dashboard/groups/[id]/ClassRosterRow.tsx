@@ -28,6 +28,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+// Sprint 8b v1 — Move Player modal. Shared with the player-profile
+// Actions menu; takes care of capacity / future-date / parent notify
+// against the new /api/enrolments/move endpoint.
+import MovePlayerModal from '@/components/MovePlayerModal'
 
 export interface ClassRosterRowProps {
   enrolmentId: string
@@ -41,6 +45,9 @@ export interface ClassRosterRowProps {
   /** Total active enrolments for this player across all classes — gives the
    *  admin context in the confirmation dialog. */
   otherActiveClasses: number
+  // Sprint 8b v1 — surfaces the source class id + org id to the Move modal.
+  groupId: string
+  organisationId: string
 }
 
 export default function ClassRosterRow({
@@ -53,10 +60,13 @@ export default function ClassRosterRow({
   parentName,
   className,
   otherActiveClasses,
+  groupId,
+  organisationId,
 }: ClassRosterRowProps) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [moveOpen, setMoveOpen] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -223,6 +233,20 @@ export default function ClassRosterRow({
 
               <div className="h-px bg-white/5 my-1" />
 
+              {/* Sprint 8b v1 — Move Class action. Opens the shared
+                  MovePlayerModal anchored to this enrolment. */}
+              <button
+                type="button"
+                onClick={() => { setMoveOpen(true); setMenuOpen(false) }}
+                data-testid="roster-action-move-class"
+                className="w-full text-left px-3 py-2 hover:bg-white/5 text-white/80 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+                Move to another class
+              </button>
+
               <button
                 type="button"
                 onClick={() => { setConfirmOpen(true); setMenuOpen(false) }}
@@ -304,6 +328,19 @@ export default function ClassRosterRow({
           </div>
         </div>
       )}
+
+      {/* Sprint 8b v1 — Move Player modal. Stays mounted only while open. */}
+      <MovePlayerModal
+        open={moveOpen}
+        onClose={() => setMoveOpen(false)}
+        sourceEnrolmentId={enrolmentId}
+        sourceGroupId={groupId}
+        sourceGroupName={className}
+        playerId={playerId}
+        playerFirstName={playerFirstName}
+        playerLastName={playerLastName}
+        organisationId={organisationId}
+      />
     </>
   )
 }

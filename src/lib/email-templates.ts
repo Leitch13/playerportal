@@ -1852,3 +1852,94 @@ export function campBookingConfirmationEmail(params: {
     `),
   }
 }
+
+/**
+ * Sprint 8b v1 — Move Player parent notification.
+ *
+ * Sent by /api/enrolments/move (immediate or future-dated) AND by the
+ * /api/cron/process-scheduled-moves cron when a scheduled move actually
+ * fires.
+ *
+ * Goal of the copy: reassure the parent that nothing they value gets
+ * lost — attendance, progress, billing, trial — and tell them exactly
+ * when the change takes effect.
+ */
+export function playerMoveConfirmationEmail(params: {
+  parentName: string
+  playerName: string
+  sourceClassName: string
+  sourceClassWhen: string | null
+  destinationClassName: string
+  destinationClassWhen: string | null
+  effectiveDate: string                  // ISO yyyy-mm-dd
+  isImmediate: boolean
+  academyName: string
+  academyContactEmail: string | null
+  academyLogoUrl?: string | null
+  academyPrimaryColor?: string | null
+}) {
+  const accent = (params.academyPrimaryColor || '#4ecde6')
+  const firstName = (params.parentName || '').trim().split(/\s+/)[0] || 'there'
+  const playerName = params.playerName || 'your player'
+  const niceDate = (() => {
+    const d = new Date(`${params.effectiveDate}T00:00:00`)
+    if (!Number.isFinite(d.getTime())) return params.effectiveDate
+    return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  })()
+  const verb = params.isImmediate ? 'has moved' : 'will move'
+  const whenLine = params.isImmediate
+    ? `Effective today, ${niceDate}.`
+    : `Starting ${niceDate}.`
+
+  return {
+    subject: `${escapeHtml(playerName)} ${params.isImmediate ? 'has been moved' : 'is moving'} — ${escapeHtml(params.destinationClassName)}`,
+    html: baseLayout(`
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="display:inline-block;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:800;color:${accent}">Class change confirmed</div>
+        <h2 style="margin:10px 0 4px;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.4px">${escapeHtml(playerName)} ${verb} class</h2>
+        <p style="margin:0;color:#aaa;font-size:14px">${whenLine}</p>
+      </div>
+
+      <p style="color:#d4d4d4;font-size:15px;line-height:1.6;margin:18px 0 8px">Hi ${escapeHtml(firstName)},</p>
+      <p style="color:#bababa;font-size:14px;line-height:1.6;margin:0 0 18px">
+        Just a heads-up from <strong style="color:#fff">${escapeHtml(params.academyName)}</strong>: ${escapeHtml(playerName)}${params.isImmediate ? ' has been moved to a new class.' : ' is scheduled to move to a new class.'}
+      </p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:6px 0 18px">
+        <tr>
+          <td valign="top" width="50%" style="padding:6px">
+            <div style="background:#161616;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px">
+              <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888;font-weight:700;margin-bottom:6px">Was</div>
+              <div style="color:#fff;font-size:14px;font-weight:700">${escapeHtml(params.sourceClassName)}</div>
+              ${params.sourceClassWhen ? `<div style="color:#888;font-size:12px;margin-top:4px">${escapeHtml(params.sourceClassWhen)}</div>` : ''}
+            </div>
+          </td>
+          <td valign="top" width="50%" style="padding:6px">
+            <div style="background:linear-gradient(135deg, ${accent}11 0%, transparent 100%);border:1px solid ${accent}55;border-radius:12px;padding:14px">
+              <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:${accent};font-weight:700;margin-bottom:6px">Now</div>
+              <div style="color:#fff;font-size:14px;font-weight:700">${escapeHtml(params.destinationClassName)}</div>
+              ${params.destinationClassWhen ? `<div style="color:#bababa;font-size:12px;margin-top:4px">${escapeHtml(params.destinationClassWhen)}</div>` : ''}
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="background:#161616;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin:16px 0">
+        <div style="color:#fff;font-size:14px;font-weight:700;margin-bottom:8px">What stays the same</div>
+        <table style="width:100%;border-collapse:collapse"><tbody>
+          <tr><td style="padding:4px 0;color:#bababa;font-size:13px"><span style="color:${accent};font-weight:800;margin-right:6px">✓</span>${escapeHtml(playerName)}&rsquo;s attendance history is preserved</td></tr>
+          <tr><td style="padding:4px 0;color:#bababa;font-size:13px"><span style="color:${accent};font-weight:800;margin-right:6px">✓</span>Progress reviews and reports are unchanged</td></tr>
+          <tr><td style="padding:4px 0;color:#bababa;font-size:13px"><span style="color:${accent};font-weight:800;margin-right:6px">✓</span>Your billing and subscription are unchanged</td></tr>
+        </tbody></table>
+      </div>
+
+      ${params.academyContactEmail ? `
+      <p style="margin:18px 0 0;color:#888;font-size:13px;line-height:1.6;text-align:center">
+        Questions about the change? Reply to this email or contact ${escapeHtml(params.academyName)} at <a href="mailto:${escapeHtml(params.academyContactEmail)}" style="color:${accent};text-decoration:none">${escapeHtml(params.academyContactEmail)}</a>.
+      </p>` : `
+      <p style="margin:18px 0 0;color:#888;font-size:13px;line-height:1.6;text-align:center">
+        Questions about the change? Just reply to this email — it goes straight to ${escapeHtml(params.academyName)}.
+      </p>`}
+    `, accent, params.academyName),
+  }
+}

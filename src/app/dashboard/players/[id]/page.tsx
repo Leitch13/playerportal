@@ -17,6 +17,8 @@ import AttendanceStreak from '@/components/AttendanceStreak'
 import PlayerLevelEditor from './PlayerLevelEditor'
 import DeletePlayerButton from './DeletePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
+// Sprint 8b v1 — Move Class action surfaced per active enrolment row.
+import MoveClassAction from './MoveClassAction'
 // Sprint 12 — pure derive layer (no I/O, no Stripe call).
 // Sprint 12b — adds aggregateExposure + deriveTrialFirstChargeLabel.
 import {
@@ -740,7 +742,30 @@ export default async function PlayerDetailPage({
           return (
             <div className="space-y-3" data-testid="player-classes-list">
               {hasActive
-                ? activeIsh.map((e) => <ClassRow key={e.id} enr={e} trialingMembership={trialingMembership} />)
+                ? activeIsh.map((e) => {
+                    // Sprint 8b v1 — staff get a "Move class" action on
+                    // each active/pending row. Parents don't.
+                    const eAny = e as unknown as { group_id: string }
+                    const moveAction = isStaff && eAny.group_id ? (
+                      <MoveClassAction
+                        enrolmentId={e.id}
+                        sourceGroupId={eAny.group_id}
+                        sourceGroupName={e.group?.name || 'this class'}
+                        playerId={id}
+                        playerFirstName={player.first_name}
+                        playerLastName={player.last_name}
+                        organisationId={orgId}
+                      />
+                    ) : undefined
+                    return (
+                      <ClassRow
+                        key={e.id}
+                        enr={e}
+                        trialingMembership={trialingMembership}
+                        action={moveAction}
+                      />
+                    )
+                  })
                 : (
                   <p className="text-sm text-white/55 py-2" data-testid="player-classes-empty">
                     No active class enrolment found.
@@ -1021,9 +1046,15 @@ type EnrRowProps = {
    *  "Class active · membership trialing" so the page no longer reads
    *  as a conflict between an active class and a trialing sub. */
   trialingMembership?: boolean
+  /**
+   * Sprint 8b v1 — optional action node rendered in the row footer.
+   * Today's only caller passes the Move Class button when the row is
+   * active and the viewer is staff.
+   */
+  action?: React.ReactNode
 }
 
-function ClassRow({ enr, trialingMembership }: EnrRowProps) {
+function ClassRow({ enr, trialingMembership, action }: EnrRowProps) {
   const baseDisplay = deriveEnrolmentDisplay({ status: enr.status, is_trial: enr.is_trial })
   // Sprint 12b — only relabel when the enrolment is genuinely active
   // (status='active', not a trial-flagged row) AND the player has a
@@ -1084,6 +1115,14 @@ function ClassRow({ enr, trialingMembership }: EnrRowProps) {
               <span className="text-white/40">{d.label}:</span> <span className="text-white/80">{d.value}</span>
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Sprint 8b v1 — optional row action (Move Class). Only the
+          active enrolment rows get this from the caller. */}
+      {action && (
+        <div className="flex justify-end pt-1.5 border-t border-white/[0.04]">
+          {action}
         </div>
       )}
     </div>
