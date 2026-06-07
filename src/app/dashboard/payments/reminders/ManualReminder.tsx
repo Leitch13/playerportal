@@ -1,8 +1,21 @@
 'use client'
 
+/**
+ * Sprint — Manual Payment Reminder.
+ *
+ * Previously this component wrote `payment_reminders` and `notifications`
+ * directly from the browser with `email_sent: false`, which left the admin
+ * thinking an email was sent when none was. Now it calls the server route
+ * `/api/payments/reminders/manual` which actually sends the email through
+ * the existing Resend pipeline (same one the daily cron uses), then logs
+ * the reminder with an HONEST `email_sent` flag.
+ *
+ * The `orgId` prop is now unused (the server resolves the admin's org from
+ * the session) but the prop remains for API stability with the parent page.
+ */
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 interface OverdueParent {
   paymentId: string
@@ -12,44 +25,74 @@ interface OverdueParent {
   amount: number
 }
 
-export default function ManualReminder({ orgId, overdueParents }: { orgId: string; overdueParents: OverdueParent[] }) {
+export default function ManualReminder({
+  orgId,
+  overdueParents,
+}: {
+  orgId: string  // kept for API stability — server resolves org from admin session
+  overdueParents: OverdueParent[]
+}) {
+  void orgId  // intentionally unused — see file header
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [okBanner, setOkBanner] = useState<string | null>(null)
 
   const selected = overdueParents.find(p => p.paymentId === selectedId)
 
   async function handleSend() {
     if (!selected) return
     setLoading(true)
-    const supabase = createClient()
+    setError(null)
+    setOkBanner(null)
+    try {
+      const res = await fetch('/api/payments/reminders/manual', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          paymentId: selected.paymentId,
+          customMessage: message.trim() || undefined,
+        }),
+      })
+      const json = await res.json().catch(() => ({} as {
+        ok?: boolean
+        emailSent?: boolean
+        error?: string
+        warning?: string
+        parentEmail?: string
+      }))
 
-    // Record reminder
-    await supabase.from('payment_reminders').insert({
-      payment_id: selected.paymentId,
-      profile_id: selected.profileId,
-      organisation_id: orgId,
-      reminder_type: 'custom',
-      email_sent: false,
-    })
+      if (!res.ok || !json.ok) {
+        setError(json.error || `HTTP ${res.status}`)
+        setLoading(false)
+        return
+      }
 
-    // Create notification
-    await supabase.from('notifications').insert({
-      user_id: selected.profileId,
-      organisation_id: orgId,
-      type: 'payment_reminder',
-      title: 'Payment reminder',
-      body: message || `£${selected.amount.toFixed(2)} payment is overdue. Please update your payment.`,
-      link: '/dashboard/payments',
-    })
+      // Surface email success/failure clearly to the admin so they know
+      // whether the parent actually received the email.
+      if (json.emailSent) {
+        setOkBanner(`Email sent to ${json.parentEmail || selected.email}`)
+      } else {
+        setError(json.warning || 'Reminder logged but email delivery failed. The parent did NOT receive an email.')
+      }
 
-    setOpen(false)
-    setSelectedId('')
-    setMessage('')
-    setLoading(false)
-    router.refresh()
+      // Close + reset after a short pause so the admin sees the result
+      setTimeout(() => {
+        setOpen(false)
+        setSelectedId('')
+        setMessage('')
+        setLoading(false)
+        setOkBanner(null)
+        setError(null)
+        router.refresh()
+      }, 1800)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Send failed')
+      setLoading(false)
+    }
   }
 
   return (
@@ -102,8 +145,20 @@ export default function ManualReminder({ orgId, overdueParents }: { orgId: strin
                 placeholder="Leave blank for default reminder message"
                 value={message}
                 onChange={e => setMessage(e.target.value)}
+                maxLength={1000}
               />
             </div>
+
+            {okBanner && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs sm:text-sm text-emerald-300">
+                {okBanner}
+              </div>
+            )}
+            {error && (
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs sm:text-sm text-rose-300">
+                {error}
+              </div>
+            )}
 
             <div className="flex gap-2 pt-2">
               <button
@@ -111,11 +166,12 @@ export default function ManualReminder({ orgId, overdueParents }: { orgId: strin
                 disabled={!selected || loading}
                 className="flex-1 py-2.5 rounded-xl font-semibold text-sm bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#6dd8ee] disabled:opacity-40 transition-all"
               >
-                {loading ? 'Sending...' : 'Send Reminder'}
+                {loading ? 'Sending email…' : 'Send Reminder Email'}
               </button>
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] text-white hover:bg-white/[0.1] transition-colors"
+                disabled={loading}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] text-white hover:bg-white/[0.1] disabled:opacity-40 transition-colors"
               >
                 Cancel
               </button>

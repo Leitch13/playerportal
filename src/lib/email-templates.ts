@@ -241,12 +241,31 @@ export function waitlistDeclinedEmail(params: {
   }
 }
 
+// Sprint — Manual Payment Reminder. Backward-compatible: all existing callers
+// (the daily payment-reminders cron) keep working because every new param is
+// optional. New manual-reminder route passes the extras to surface child name,
+// academy branding, and an admin's custom note above the standard breakdown.
 export function paymentReminderEmail(params: {
   parentName: string
   amount: string
   daysOverdue: number
   planName: string
   dashboardUrl: string
+  // ─── NEW optional params for manual reminders ─────────────────────────
+  /** Child name(s) — e.g. "Jake" or "Jake and Emma". When provided the
+   * subject + body reference the child specifically rather than the
+   * generic "your child" line. */
+  childName?: string
+  /** Custom admin-typed note shown above the standard amount breakdown.
+   * Rendered in a neutral panel; admin's voice, not Player Portal's. */
+  customMessage?: string
+  /** Academy name shown in the subject when present so the parent sees a
+   * branded sender + branded subject line in their inbox preview. */
+  academyName?: string
+  /** When true, the email frames as a one-off reminder from the academy
+   * (no "X days overdue" badge). When false/undefined, the original
+   * cron-style escalating-tone template renders. */
+  manualOverride?: boolean
 }) {
   const urgency = params.daysOverdue >= 14 ? 'final' : params.daysOverdue >= 7 ? 'second' : 'friendly'
   const colors = {
@@ -256,23 +275,71 @@ export function paymentReminderEmail(params: {
   }
   const c = colors[urgency]
 
-  return {
-    subject: urgency === 'final'
+  // ─── Subject line ─────────────────────────────────────────────────────
+  // Manual override branches into a softer, academy-branded subject so the
+  // parent sees it as a personal academy nudge, not an automated final notice.
+  const subject = params.manualOverride
+    ? `${params.academyName ? params.academyName + ' — ' : ''}Payment reminder${params.childName ? ` for ${params.childName}` : ''}`
+    : urgency === 'final'
       ? `Final reminder: Payment overdue — ${params.planName}`
-      : `Payment reminder — ${params.planName}`,
+      : `Payment reminder — ${params.planName}`
+
+  // ─── Header line ──────────────────────────────────────────────────────
+  const heading = params.manualOverride
+    ? 'Payment Reminder'
+    : urgency === 'friendly' ? 'Payment Reminder'
+    : urgency === 'second' ? 'Payment Overdue'
+    : 'Final Notice'
+
+  // ─── Custom-message panel (only when admin provided one) ──────────────
+  // Rendered above the amount breakdown so the human note arrives first
+  // and the numbers second.
+  const customPanel = params.customMessage && params.customMessage.trim()
+    ? `<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:16px;margin:20px 0">
+         <p style="margin:0;font-size:14px;color:#ddd;white-space:pre-wrap;line-height:1.6">${escapeForCustomNote(params.customMessage.trim())}</p>
+       </div>`
+    : ''
+
+  // ─── Amount breakdown panel ───────────────────────────────────────────
+  // Manual reminders skip the "(N days)" suffix since manual sends can fire
+  // before the 3-day cron threshold.
+  const amountPanel = params.manualOverride
+    ? `<div style="background:${colors.friendly.bg};border:1px solid ${colors.friendly.border};border-radius:12px;padding:16px;margin:20px 0">
+         <p style="margin:0;font-size:14px;color:${colors.friendly.text}"><strong>${params.amount}</strong> is outstanding for <strong>${params.planName}</strong>.</p>
+       </div>`
+    : `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:12px;padding:16px;margin:20px 0">
+         <p style="margin:0;font-size:14px;color:${c.text}"><strong>${params.amount}</strong> is overdue for <strong>${params.planName}</strong> (${params.daysOverdue} days).</p>
+       </div>`
+
+  const childRef = params.childName ? params.childName : "your child"
+
+  return {
+    subject,
     html: baseLayout(`
-      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">${urgency === 'friendly' ? 'Payment Reminder' : urgency === 'second' ? 'Payment Overdue' : 'Final Notice'}</h2>
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">${heading}</h2>
       <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
-      <div style="background:${c.bg};border:1px solid ${c.border};border-radius:12px;padding:16px;margin:20px 0">
-        <p style="margin:0;font-size:14px;color:${c.text}"><strong>${params.amount}</strong> is overdue for <strong>${params.planName}</strong> (${params.daysOverdue} days).</p>
-      </div>
-      <p style="color:#aaa;line-height:1.6">Please update your payment to keep your child's place in the class.</p>
+      ${customPanel}
+      ${amountPanel}
+      <p style="color:#aaa;line-height:1.6">Please update your payment to keep ${childRef}&#39;s place in the class.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Make Payment</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View your payments</a>
       </div>
-      <p style="color:#666;font-size:13px">If you've already paid, please ignore this email.</p>
+      <p style="color:#666;font-size:13px">If you&#39;ve already paid, please ignore this email.</p>
     `),
   }
+}
+
+// Minimal HTML escape for custom admin-typed message. We never trust admin
+// input directly into HTML — strips tag boundaries so a stray "<script>"
+// renders as text, not script. Renamed to avoid collision with the
+// pre-existing `escapeHtml` helper elsewhere in this file.
+function escapeForCustomNote(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 export function announcementEmail(params: {
