@@ -24,7 +24,7 @@ const ENTRY_SELECT = SCHEMA_FIX_ON
   ? `id, player_id, parent_id, group_id, organisation_id, status, expires_at,
      player:players(id, full_name, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-     group:training_groups(id, name)`
+     group:training_groups!waitlist_group_id_fkey(id, name)`
   : `id, player_id, parent_id, training_group_id, organisation_id, status, expires_at,
      player:players(id, full_name, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),

@@ -9,7 +9,7 @@ const EXPIRED_SELECT = SCHEMA_FIX_ON
   ? `id, group_id, parent_id, organisation_id,
      player:players(id, full_name, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-     group:training_groups(id, name)`
+     group:training_groups!waitlist_group_id_fkey(id, name)`
   : `id, training_group_id, parent_id, organisation_id,
      player:players(id, full_name, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
@@ -18,7 +18,7 @@ const NEXT_SELECT = SCHEMA_FIX_ON
   ? `id, parent_id, organisation_id,
      player:players(id, full_name, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-     group:training_groups(id, name)`
+     group:training_groups!waitlist_group_id_fkey(id, name)`
   : `id, parent_id, organisation_id,
      player:players(id, full_name, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
