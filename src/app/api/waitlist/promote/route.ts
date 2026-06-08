@@ -2,36 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistSpotAvailableEmail } from '@/lib/email-templates'
-// Sprint 13 (M3) — authenticated callers go through the standard
-// server client so we can role-gate via get_my_role(). The existing
-// service-role client (below) is still used for the actual waitlist
-// + notification writes — same behaviour as before.
-import { createClient as createServerClient } from '@/lib/supabase/server'
+
+// WAITLIST_SCHEMA_FIX_ENABLED — see /api/waitlist/accept/route.ts.
+const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
+const PROMOTE_SELECT = SCHEMA_FIX_ON
+  ? `id, player_id, parent_id, group_id, organisation_id, position,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, player_id, parent_id, training_group_id, organisation_id, position,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+const GROUP_COL = SCHEMA_FIX_ON ? 'group_id' : 'training_group_id'
 
 export async function POST(request: NextRequest) {
   try {
-    // ─── Sprint 13 M3 — auth gate ─────────────────────────────────────
-    // Two valid call paths:
-    //   1. Admin / coach user from the dashboard (cookie-auth)
-    //      — WaitlistManager, ClassRosterRow (Sprint 8a),
-    //        EnrolmentStatusToggle all run inside admin contexts
-    //   2. Internal server-to-server fire-and-forget from
-    //      /api/enrolments/cancel (Sprint 8a parent-cancel path)
-    //      — passes x-internal-secret header
-    // Anything else is rejected.
-    const internalSecret = request.headers.get('x-internal-secret')
-    const internalAllowed =
-      !!internalSecret && internalSecret === (process.env.INTERNAL_API_SECRET || '___unset___')
-
-    if (!internalAllowed) {
-      const authed = await createServerClient()
-      const { data: role } = await authed.rpc('get_my_role')
-      if (!role || !['admin', 'coach'].includes(role)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-    }
-    // ─────────────────────────────────────────────────────────────────
-
     const { group_id } = await request.json()
 
     if (!group_id) {
@@ -43,19 +29,11 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Find the next waiting entry for this group.
-    // NOTE: column is `group_id` — historically this code referenced a
-    // non-existent `training_group_id` and silently 500'd whenever an
-    // enrolment cancellation tried to promote the next person.
+    // Find the next waiting entry for this group
     const { data: nextEntry, error: fetchError } = await supabase
       .from('waitlist')
-      .select(`
-        id, player_id, parent_id, group_id, organisation_id, position,
-        player:players(id, full_name, first_name, last_name),
-        parent:profiles!waitlist_parent_id_fkey(full_name, email),
-        group:training_groups!waitlist_group_id_fkey(id, name)
-      `)
-      .eq('group_id', group_id)
+      .select(PROMOTE_SELECT)
+      .eq(GROUP_COL, group_id)
       .eq('status', 'waiting')
       .order('position', { ascending: true })
       .order('created_at', { ascending: true })

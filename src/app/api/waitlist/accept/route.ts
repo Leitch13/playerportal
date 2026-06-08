@@ -3,6 +3,38 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistAcceptedEmail, waitlistSpotLostEmail } from '@/lib/email-templates'
 
+// ============================================================================
+// Schema-fix flag: WAITLIST_SCHEMA_FIX_ENABLED.
+// ============================================================================
+// Production waitlist.column is group_id (from migration 008); migration 012
+// tried to use training_group_id but CREATE TABLE IF NOT EXISTS no-op'd over
+// the existing schema. The rest of this codebase was written against the
+// 012 intent — every direct column reference + FK alias against training_group_id
+// fails at the SELECT step (route returned 404 "not found" on probe).
+//
+// Flag ON  → use real column name group_id, drop the FK alias (let PostgREST
+//            infer the only FK from waitlist→training_groups), write inserts
+//            with group_id.
+// Flag OFF → preserve today's broken code path verbatim so rollback is just
+//            an env flip.
+// ============================================================================
+const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
+
+const ENTRY_SELECT = SCHEMA_FIX_ON
+  ? `id, player_id, parent_id, group_id, organisation_id, status, expires_at,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, player_id, parent_id, training_group_id, organisation_id, status, expires_at,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function entryGroupId(entry: any): string {
+  return SCHEMA_FIX_ON ? entry.group_id : entry.training_group_id
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { id } = await request.json()
@@ -19,18 +51,14 @@ export async function POST(request: NextRequest) {
     // Fetch the waitlist entry
     const { data: entry, error: fetchError } = await supabase
       .from('waitlist')
-      .select(`
-        id, player_id, parent_id, training_group_id, organisation_id, status, expires_at,
-        player:players(id, full_name, first_name, last_name),
-        parent:profiles!waitlist_parent_id_fkey(full_name, email),
-        group:training_groups!waitlist_training_group_id_fkey(id, name)
-      `)
+      .select(ENTRY_SELECT)
       .eq('id', id)
       .single()
 
     if (fetchError || !entry) {
       return NextResponse.json({ error: 'Waitlist entry not found' }, { status: 404 })
     }
+    const groupIdValue = entryGroupId(entry)
 
     if (entry.status !== 'offered') {
       return NextResponse.json({ error: `Cannot accept — current status is "${entry.status}"` }, { status: 400 })
@@ -65,7 +93,7 @@ export async function POST(request: NextRequest) {
       const { data: rpcResult, error: rpcErr } = await supabase
         .rpc('enrol_if_capacity_available', {
           p_player_id: entry.player_id,
-          p_group_id: entry.training_group_id,
+          p_group_id: groupIdValue,
           p_org_id: entry.organisation_id,
           p_status: 'active',
         })
@@ -102,12 +130,12 @@ export async function POST(request: NextRequest) {
           .eq('role', 'admin')
         for (const a of admins || []) {
           await supabase.from('notifications').insert({
-            profile_id: a.id as string,
+            user_id: a.id as string,
             organisation_id: entry.organisation_id,
             type: 'capacity_overflow',
             title: 'Waitlist offer lost a race — class is full',
             body: `${parentDisplayName} accepted a waitlist offer for ${className} but the class filled before we could enrol ${childDisplayName}. They were not added. Please review.`,
-            link: `/dashboard/groups/${entry.training_group_id}`,
+            link: `/dashboard/groups/${groupIdValue}`,
           })
         }
 
@@ -166,7 +194,7 @@ export async function POST(request: NextRequest) {
         .from('enrolments')
         .insert({
           player_id: entry.player_id,
-          group_id: entry.training_group_id,
+          group_id: groupIdValue,
           status: 'active',
           organisation_id: entry.organisation_id,
         })
@@ -216,18 +244,14 @@ export async function GET(request: NextRequest) {
   // Fetch the waitlist entry
   const { data: entry } = await supabase
     .from('waitlist')
-    .select(`
-      id, player_id, parent_id, training_group_id, organisation_id, status, expires_at,
-      player:players(id, full_name, first_name, last_name),
-      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_training_group_id_fkey(id, name)
-    `)
+    .select(ENTRY_SELECT)
     .eq('id', id)
     .single()
 
   if (!entry) {
     return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=not_found`)
   }
+  const groupIdValueGet = entryGroupId(entry)
 
   if (entry.status !== 'offered') {
     return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=status_${entry.status}`)
@@ -248,7 +272,7 @@ export async function GET(request: NextRequest) {
     const { data: rpcResult, error: rpcErr } = await supabase
       .rpc('enrol_if_capacity_available', {
         p_player_id: entry.player_id,
-        p_group_id: entry.training_group_id,
+        p_group_id: groupIdValueGet,
         p_org_id: entry.organisation_id,
         p_status: 'active',
       })
@@ -282,12 +306,12 @@ export async function GET(request: NextRequest) {
         .eq('role', 'admin')
       for (const a of admins || []) {
         await supabase.from('notifications').insert({
-          profile_id: a.id as string,
+          user_id: a.id as string,
           organisation_id: entry.organisation_id,
           type: 'capacity_overflow',
           title: 'Waitlist offer lost a race — class is full',
           body: `${parentDisplayName} accepted a waitlist offer for ${className} but the class filled before we could enrol ${childDisplayName}. They were not added. Please review.`,
-          link: `/dashboard/groups/${entry.training_group_id}`,
+          link: `/dashboard/groups/${groupIdValueGet}`,
         })
       }
 
@@ -334,7 +358,7 @@ export async function GET(request: NextRequest) {
     // Inline fallback (flag OFF or RPC error).
     await supabase.from('enrolments').insert({
       player_id: entry.player_id,
-      group_id: entry.training_group_id,
+      group_id: groupIdValueGet,
       status: 'active',
       organisation_id: entry.organisation_id,
     })

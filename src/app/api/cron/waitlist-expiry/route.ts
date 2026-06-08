@@ -1,10 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail, sendEmailBatch } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { waitlistExpiredEmail, waitlistSpotAvailableEmail } from '@/lib/email-templates'
 
-export const maxDuration = 300
-export const dynamic = 'force-dynamic'
+// WAITLIST_SCHEMA_FIX_ENABLED — see /api/waitlist/accept/route.ts.
+const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
+const EXPIRED_SELECT = SCHEMA_FIX_ON
+  ? `id, group_id, parent_id, organisation_id,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, training_group_id, parent_id, organisation_id,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+const NEXT_SELECT = SCHEMA_FIX_ON
+  ? `id, parent_id, organisation_id,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, parent_id, organisation_id,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+const GROUP_COL = SCHEMA_FIX_ON ? 'group_id' : 'training_group_id'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function entryGroupId(e: any): string {
+  return SCHEMA_FIX_ON ? e.group_id : e.training_group_id
+}
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -17,28 +40,16 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Find expired offers.
-  // NOTE: column is `group_id`, NOT `training_group_id` — that earlier
-  // name was a typo and the cron silently returned zero rows.
-  const { data: expiredEntries, error: expiredErr } = await supabase
+  // Find expired offers
+  const { data: expiredEntries } = await supabase
     .from('waitlist')
-    .select(`
-      id, group_id, parent_id, organisation_id,
-      player:players(id, full_name, first_name, last_name),
-      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_group_id_fkey(id, name)
-    `)
+    .select(EXPIRED_SELECT)
     .eq('status', 'offered')
     .lt('expires_at', new Date().toISOString())
-
-  if (expiredErr) {
-    return NextResponse.json({ error: 'Failed to fetch expired offers', detail: expiredErr.message }, { status: 500 })
-  }
 
   let expired = 0
   let promoted = 0
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
-  const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const entry of expiredEntries || []) {
     // Mark as expired
@@ -58,19 +69,14 @@ export async function GET(request: NextRequest) {
         childName,
         className,
       })
-      jobs.push({ to: parent.email, ...template })
+      await sendEmail({ to: parent.email, ...template })
     }
 
     // Promote next person in this group
     const { data: nextEntry } = await supabase
       .from('waitlist')
-      .select(`
-        id, parent_id, organisation_id,
-        player:players(id, full_name, first_name, last_name),
-        parent:profiles!waitlist_parent_id_fkey(full_name, email),
-        group:training_groups!waitlist_group_id_fkey(id, name)
-      `)
-      .eq('group_id', entry.group_id)
+      .select(NEXT_SELECT)
+      .eq(GROUP_COL, entryGroupId(entry))
       .eq('status', 'waiting')
       .order('position', { ascending: true })
       .order('created_at', { ascending: true })
@@ -115,14 +121,12 @@ export async function GET(request: NextRequest) {
             minute: '2-digit',
           }),
         })
-        jobs.push({ to: nextParent.email, ...template })
+        await sendEmail({ to: nextParent.email, ...template })
       }
 
       promoted++
     }
   }
-
-  await sendEmailBatch(jobs)
 
   return NextResponse.json({ expired, promoted, checked: (expiredEntries || []).length })
 }

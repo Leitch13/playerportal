@@ -3,18 +3,41 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistDeclinedEmail, waitlistSpotAvailableEmail } from '@/lib/email-templates'
 
+// WAITLIST_SCHEMA_FIX_ENABLED — see /api/waitlist/accept/route.ts for full
+// rationale. Real column is group_id; today's code uses training_group_id
+// which doesn't exist. Flag-gated so rollback is one env flip.
+const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
+const PROMOTE_SELECT = SCHEMA_FIX_ON
+  ? `id, player_id, parent_id, group_id, organisation_id, position,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, player_id, parent_id, training_group_id, organisation_id, position,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+const DECLINE_SELECT = SCHEMA_FIX_ON
+  ? `id, group_id, status,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, training_group_id, status,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+const GROUP_COL = SCHEMA_FIX_ON ? 'group_id' : 'training_group_id'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function entryGroupId(e: any): string {
+  return SCHEMA_FIX_ON ? e.group_id : e.training_group_id
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function promoteNext(supabase: any, groupId: string) {
   // Find the next waiting entry
   const { data: nextEntry } = await supabase
     .from('waitlist')
-    .select(`
-      id, player_id, parent_id, training_group_id, organisation_id, position,
-      player:players(id, full_name, first_name, last_name),
-      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_training_group_id_fkey(id, name)
-    `)
-    .eq('training_group_id', groupId)
+    .select(PROMOTE_SELECT)
+    .eq(GROUP_COL, groupId)
     .eq('status', 'waiting')
     .order('position', { ascending: true })
     .order('created_at', { ascending: true })
@@ -85,12 +108,7 @@ export async function POST(request: NextRequest) {
     // Fetch the entry
     const { data: entry } = await supabase
       .from('waitlist')
-      .select(`
-        id, training_group_id, status,
-        player:players(id, full_name, first_name, last_name),
-        parent:profiles!waitlist_parent_id_fkey(full_name, email),
-        group:training_groups!waitlist_training_group_id_fkey(id, name)
-      `)
+      .select(DECLINE_SELECT)
       .eq('id', id)
       .single()
 
@@ -120,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Promote the next person
-    const promoted = await promoteNext(supabase, entry.training_group_id)
+    const promoted = await promoteNext(supabase, entryGroupId(entry))
 
     return NextResponse.json({ success: true, next_promoted: promoted })
   } catch {
@@ -144,12 +162,7 @@ export async function GET(request: NextRequest) {
 
   const { data: entry } = await supabase
     .from('waitlist')
-    .select(`
-      id, training_group_id, status,
-      player:players(id, full_name, first_name, last_name),
-      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_training_group_id_fkey(id, name)
-    `)
+    .select(DECLINE_SELECT)
     .eq('id', id)
     .single()
 
@@ -172,7 +185,7 @@ export async function GET(request: NextRequest) {
     await sendEmail({ to: parent.email, ...template })
   }
 
-  await promoteNext(supabase, entry.training_group_id)
+  await promoteNext(supabase, entryGroupId(entry))
 
   return NextResponse.redirect(`${appUrl}/dashboard/waitlist?declined=true`)
 }

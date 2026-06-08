@@ -3,6 +3,18 @@ import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import WaitlistManager from './WaitlistManager'
 
+// WAITLIST_SCHEMA_FIX_ENABLED — see /api/waitlist/accept/route.ts.
+const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
+const ENTRIES_SELECT = SCHEMA_FIX_ON
+  ? `id, position, status, created_at, offered_at, expires_at,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups(id, name)`
+  : `id, position, status, created_at, offered_at, expires_at,
+     player:players(id, full_name, first_name, last_name),
+     parent:profiles!waitlist_parent_id_fkey(full_name, email),
+     group:training_groups!waitlist_training_group_id_fkey(id, name)`
+
 export default async function WaitlistPage() {
   const supabase = await createClient()
   const { data: role } = await supabase.rpc('get_my_role')
@@ -13,12 +25,7 @@ export default async function WaitlistPage() {
 
   const { data: entries } = await supabase
     .from('waitlist')
-    .select(`
-      id, position, status, created_at, offered_at, expires_at,
-      player:players(id, full_name, first_name, last_name),
-      parent:profiles!waitlist_parent_id_fkey(full_name, email),
-      group:training_groups!waitlist_group_id_fkey(id, name)
-    `)
+    .select(ENTRIES_SELECT)
     .eq('organisation_id', orgId)
     .in('status', ['waiting', 'offered', 'accepted', 'declined', 'expired'])
     .order('position')
