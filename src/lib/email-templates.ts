@@ -241,6 +241,30 @@ export function waitlistDeclinedEmail(params: {
   }
 }
 
+// Sent when a parent accepts a waitlist offer but the class filled up
+// between offer-sent and accept-clicked. The accept route, with the
+// WAITLIST_CAPACITY_GUARD_ENABLED flag on, returns 409 class_full and
+// fires this email instead of waitlistAcceptedEmail.
+export function waitlistSpotLostEmail(params: {
+  parentName: string
+  childName: string
+  className: string
+}) {
+  return {
+    subject: `Spot no longer available — ${params.className}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Spot no longer available</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">You accepted the waitlist offer for <strong>${params.className}</strong>, but unfortunately the class filled up before we could enrol <strong>${params.childName}</strong>.</p>
+      <div style="background:#1c1917;border:1px solid #78716c;border-radius:12px;padding:16px;margin:20px 0">
+        <p style="margin:0;font-size:14px;color:#a8a29e">No charge has been made. ${params.childName} has not been enrolled.</p>
+      </div>
+      <p style="color:#aaa;line-height:1.6">You can rejoin the waitlist from your dashboard. We'll let you know as soon as another spot opens up.</p>
+      <p style="color:#666;font-size:13px;text-align:center">We're sorry about this — thanks for your patience.</p>
+    `),
+  }
+}
+
 // Sprint — Manual Payment Reminder. Backward-compatible: all existing callers
 // (the daily payment-reminders cron) keep working because every new param is
 // optional. New manual-reminder route passes the extras to surface child name,
