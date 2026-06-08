@@ -7,11 +7,11 @@ import WaitlistManager from './WaitlistManager'
 const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
 const ENTRIES_SELECT = SCHEMA_FIX_ON
   ? `id, position, status, created_at, offered_at, expires_at,
-     player:players(id, full_name, first_name, last_name),
+     player:players(id, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
      group:training_groups!waitlist_group_id_fkey(id, name)`
   : `id, position, status, created_at, offered_at, expires_at,
-     player:players(id, full_name, first_name, last_name),
+     player:players(id, first_name, last_name),
      parent:profiles!waitlist_parent_id_fkey(full_name, email),
      group:training_groups!waitlist_training_group_id_fkey(id, name)`
 
