@@ -268,7 +268,14 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
         return
       } else {
         setShowSuccess(false)
-        setGlobalError(data.error || 'Failed to start payment')
+        // Map known API error codes to friendly text. Anything we don't
+        // recognise falls through to the API's `error` field as-is, or a
+        // generic fallback if the response had no error field at all.
+        const friendly =
+          data.error === 'class_full'
+            ? 'This class is full — please join the waitlist.'
+            : (data.error || 'Failed to start payment')
+        setGlobalError(friendly)
         setLoading(false)
         return
       }
