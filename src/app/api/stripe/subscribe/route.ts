@@ -186,6 +186,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // Capacity preflight (RPC) — Phase 1a, flag-gated.
+    // Grafted from hotfix 841f97b onto day1's richer route during the
+    // Batch 1 recovery merge (the wholesale cherry-pick would have
+    // reverted Stage 1+2 billing, so only this block was carried over).
+    //
+    // When CAPACITY_RPC_ENABLED is true and a classId is present,
+    // consult the SECURITY DEFINER get_group_seat_counts RPC (race-proof
+    // read, same data source the production enrol_if_capacity_available
+    // RPC uses internally). If the seat count is at-or-over
+    // max_capacity, reject with HTTP 409 BEFORE any Stripe API call —
+    // no Coupon.create, no Customer.create, no Checkout.Session.create.
+    // Money never moves.
+    //
+    // Body shape: { error: 'class_full', count, capacity } matches the
+    // live RPC's class_full jsonb so client-side parsing is shared.
+    //
+    // RPC failure or empty data falls through — an RPC outage cannot
+    // block legitimate bookings; the new path is only ever stricter
+    // than today, never more lenient.
+    //
+    // Flag OFF: this block is skipped entirely.
+    // ════════════════════════════════════════════════════════════════
+    if (classId && process.env.CAPACITY_RPC_ENABLED === 'true') {
+      const { data: capGroup } = await supabase
+        .from('training_groups')
+        .select('max_capacity')
+        .eq('id', classId)
+        .single()
+      const cap = Number(capGroup?.max_capacity ?? 20)
+      const { data: seatRows, error: seatErr } = await supabase
+        .rpc('get_group_seat_counts', { p_org_id: plan.organisation_id })
+      if (seatErr) {
+        console.error('[capacity-rpc][preflight] rpc_error', seatErr.message)
+        // Fall through — never block legitimate bookings on RPC outage.
+      } else {
+        const seatRow = (seatRows ?? []).find(
+          (r: { group_id: string; seat_count: number }) => r.group_id === classId
+        )
+        const seat = Number(seatRow?.seat_count ?? 0)
+        if (cap > 0 && seat >= cap) {
+          console.log('[capacity-rpc][preflight] class_full', { classId, seat, capacity: cap })
+          return NextResponse.json(
+            { error: 'class_full', count: seat, capacity: cap },
+            { status: 409 }
+          )
+        }
+      }
+    }
+
     // ── Detect if this parent already has an active subscription with the academy ──
     // If they do, and the academy has sibling discount enabled, auto-apply.
     let siblingCouponId: string | null = null
