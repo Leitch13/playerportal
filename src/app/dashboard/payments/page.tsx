@@ -301,7 +301,9 @@ async function ParentPayments({
         ManageBillingButton, layout, sections all identical from sm: up. */}
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-lg sm:text-2xl font-bold text-white leading-tight">Payments &amp; Subscriptions</h1>
+        {/* Parent h1 says "Membership" — matches the parent nav label and the
+            Membership Hub framing (2e1e255).  Admin h1 below is untouched. */}
+        <h1 className="text-lg sm:text-2xl font-bold text-white leading-tight">Membership</h1>
         {hasStripeCustomer && <ManageBillingButton />}
       </div>
 

@@ -59,7 +59,10 @@ export default function ActiveClassesList({
   }
 
   return (
-    <section className="space-y-3" data-testid="active-classes-list">
+    // testid is `current-classes` — the production DOM contract from the
+    // Membership Hub Quick Wins (2e1e255); the Parent Hub validation
+    // surface asserts on this exact name.
+    <section className="space-y-3" data-testid="current-classes">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-bold uppercase tracking-wider text-white/50">Active classes</h2>
         <span className="text-xs text-white/40">{classes.length} {classes.length === 1 ? 'class' : 'classes'}</span>

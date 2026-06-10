@@ -208,7 +208,11 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/shop', label: 'Shop', icon: 'shopping-bag', feature: 'shop' },
     ]},
     { title: 'Account', items: [
-      { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
+      // Parent label says "Membership" because this page is the
+      // de-facto Membership Hub (Protected #8) — covers monthly
+      // spend, current classes, billing, subscription management,
+      // and available upgrades.  Admin nav still labels it "Payments".
+      { href: '/dashboard/payments', label: 'Membership', icon: 'credit-card' },
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble', feature: 'messaging' },
       { href: '/dashboard/referrals', label: 'Refer a Friend', icon: 'gift', feature: 'referrals' },
       { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
