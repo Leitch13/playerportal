@@ -50,16 +50,26 @@ export async function POST(request: NextRequest) {
 
   const result = await sendEmail({ to: parent.email, ...template })
 
-  // Log the reminder in payment_reminders table
+  // Log the reminder in payment_reminders table.
+  // Note: reminder_type MUST be one of ('3_day','7_day','14_day','custom') per
+  // the CHECK constraint payment_reminders_reminder_type_check (see migration
+  // 015_payment_reminders.sql).  Historical value 'manual' violated the
+  // constraint and silently failed.  Manual one-off chase uses 'custom'.
   const { data: orgId } = await supabase.rpc('get_my_org')
-  await supabase.from('payment_reminders').insert({
+  const { error: auditErr } = await supabase.from('payment_reminders').insert({
     organisation_id: orgId,
     profile_id: parent.id,
     payment_id: paymentId,
-    reminder_type: 'manual',
+    reminder_type: 'custom',
     email_sent: true,
     sent_at: new Date().toISOString(),
   })
+
+  // If the audit insert fails, surface it in the response so the caller knows
+  // (the email still went out — that side-effect is irreversible).
+  if (auditErr) {
+    return NextResponse.json({ ...result, success: true, audit_error: auditErr.message })
+  }
 
   return NextResponse.json({ ...result, success: true })
 }

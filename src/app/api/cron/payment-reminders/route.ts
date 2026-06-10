@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail, sendEmailBatch } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { paymentReminderEmail } from '@/lib/email-templates'
 
-export const maxDuration = 300
-export const dynamic = 'force-dynamic'
+// COLLECTIONS_CRON_V2_ENABLED — Task #250 Tier 1.  When OFF, cron retains
+// the historical (broken-but-silent) shape so rollback is one env flip.
+// V2 fixes three pre-existing bugs in one branch:
+//   1. Removes the unresolvable `plan:subscription_plans(name)` embed
+//      (payments has no FK to subscription_plans — the V1 query has been
+//      erroring at PostgREST resolution every 09:00 UTC run and silently
+//      no-op-ing on null `data`).
+//   2. Filters `status IN ('unpaid','partial') AND due_date <= today`
+//      instead of the never-produced `status='overdue'`.
+//   3. Computes reminder age from `due_date` (the right field) instead of
+//      `created_at`.
+// V2 also adds idempotency via `payment_reminders` so duplicate cron runs
+// or borderline daysOverdue rounding cannot double-send a stage email.
+const COLLECTIONS_CRON_V2_ON =
+  process.env.COLLECTIONS_CRON_V2_ENABLED === 'true'
 
 // This runs as a cron job - uses service role key
 export async function GET(request: NextRequest) {
@@ -18,57 +31,88 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Find overdue payments. Pull each payment's parent contact and academy
-  // info so we can send the reminder branded as the academy (not generic
-  // Player Portal) and let the parent reply directly to their coach.
-  const { data: overdue, error: overdueErr } = await supabase
-    .from('payments')
-    .select(`
-      id, amount, created_at, status,
-      parent:profiles!payments_parent_id_fkey(full_name, email),
-      plan:subscription_plans(name),
-      organisation:organisations(name, contact_email)
-    `)
-    .eq('status', 'overdue')
+  const today = new Date().toISOString().split('T')[0]
 
-  if (overdueErr) {
-    return NextResponse.json({ error: 'Failed to fetch overdue payments', detail: overdueErr.message }, { status: 500 })
-  }
+  // Find chasable payments
+  const { data: overdue } = COLLECTIONS_CRON_V2_ON
+    ? await supabase
+        .from('payments')
+        .select('id, amount, due_date, description, status, organisation_id, profile:profiles(id, full_name, email)')
+        .in('status', ['unpaid', 'partial'])
+        .lte('due_date', today)
+    : await supabase
+        .from('payments')
+        .select('id, amount, created_at, status, profile:profiles(full_name, email), plan:subscription_plans(name)')
+        .eq('status', 'overdue')
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
-  const jobs: Parameters<typeof sendEmail>[0][] = []
+  let sent = 0
 
   for (const payment of overdue || []) {
-    const profile = payment.parent as unknown as { full_name: string; email: string } | null
-    const plan = payment.plan as unknown as { name: string } | null
-    const org = payment.organisation as unknown as { name: string; contact_email: string | null } | null
+    const profile = payment.profile as unknown as { id?: string; full_name: string; email: string } | null
     if (!profile?.email) continue
 
-    const daysOverdue = Math.floor((Date.now() - new Date(payment.created_at).getTime()) / 86400000)
+    // Compute days overdue from due_date (V2) or created_at (V1 legacy)
+    let refDate: Date | null = null
+    if (COLLECTIONS_CRON_V2_ON) {
+      const dueDate = (payment as unknown as { due_date?: string | null }).due_date
+      refDate = dueDate ? new Date(dueDate) : null
+    } else {
+      const createdAt = (payment as unknown as { created_at: string }).created_at
+      refDate = new Date(createdAt)
+    }
+    if (!refDate) continue
+    const daysOverdue = Math.max(
+      0,
+      Math.floor((Date.now() - refDate.getTime()) / 86400000)
+    )
 
     // Send at 3, 7, 14 days
     if (![3, 7, 14].includes(daysOverdue)) continue
 
+    const reminderType = `${daysOverdue}_day`
+
+    // Idempotency guard (V2 only): skip if a reminder for this
+    // (payment, stage) has already been logged
+    if (COLLECTIONS_CRON_V2_ON) {
+      const { count: alreadySent } = await supabase
+        .from('payment_reminders')
+        .select('id', { count: 'exact', head: true })
+        .eq('payment_id', payment.id)
+        .eq('reminder_type', reminderType)
+      if ((alreadySent || 0) > 0) continue
+    }
+
+    // Compose planName: V2 falls back to payment.description (populated with
+    // subscription wording) since the subscription_plans embed doesn't resolve.
+    const planName = COLLECTIONS_CRON_V2_ON
+      ? ((payment as unknown as { description?: string | null }).description || 'Subscription')
+      : ((payment as unknown as { plan?: { name: string } | null }).plan?.name || 'Subscription')
+
     const template = paymentReminderEmail({
       parentName: profile.full_name?.split(' ')[0] || 'there',
-      amount: `\u00A3${Number(payment.amount).toFixed(2)}`,
+      amount: `£${Number(payment.amount).toFixed(2)}`,
       daysOverdue,
-      planName: plan?.name || 'Subscription',
+      planName,
       dashboardUrl: `${appUrl}/dashboard/payments`,
     })
 
-    jobs.push({
-      to: profile.email,
-      ...template,
-      // Brand the From: line as the academy so the parent sees a familiar
-      // name in their inbox, and Reply-To: routes their reply straight
-      // to the coach instead of into a Player Portal black hole.
-      fromName: org?.name || undefined,
-      replyTo: org?.contact_email || undefined,
-    })
-  }
+    await sendEmail({ to: profile.email, ...template })
+    sent++
 
-  const { sent } = await sendEmailBatch(jobs)
+    // Audit trail (V2 only): mirrors /api/email/payment-reminder's row shape
+    // so the cron and the manual reminder share one audit table.
+    if (COLLECTIONS_CRON_V2_ON) {
+      await supabase.from('payment_reminders').insert({
+        organisation_id: (payment as unknown as { organisation_id?: string }).organisation_id,
+        profile_id: profile.id,
+        payment_id: payment.id,
+        reminder_type: reminderType,
+        email_sent: true,
+        sent_at: new Date().toISOString(),
+      })
+    }
+  }
 
   return NextResponse.json({ sent, checked: (overdue || []).length })
 }
