@@ -816,17 +816,86 @@ export function trialFollowUpEmail(params: {
     html: baseLayout(`
       <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Did ${params.childName} enjoy it?</h2>
       <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
-      <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> had a great time at the <strong>${params.className}</strong> trial session with <strong>${params.academyName}</strong>!</p>
-      <p style="color:#aaa;line-height:1.6">If they loved it, why not sign up for regular classes? We've got a special offer just for trial families:</p>
-      <div style="background:linear-gradient(135deg,#f0fdff,#e0f7ff);border:2px solid #4ecde6;border-radius:16px;padding:24px;margin:24px 0;text-align:center">
-        <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#059669">First month</p>
-        <p style="margin:0;font-size:32px;font-weight:800;color:#4ecde6">20% off</p>
-        <p style="margin:4px 0 0;font-size:13px;color:#666">When you sign up within 7 days</p>
-      </div>
+      <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> had a great time at the${params.className ? ` <strong>${params.className}</strong>` : ''} trial session with <strong>${params.academyName}</strong>.</p>
+      <p style="color:#aaa;line-height:1.6">If you'd like to continue their football journey, you can view available classes and memberships below.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Sign Up Now</a>
+        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">View Classes</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">Questions? Just reply to this email.</p>
+    `),
+  }
+}
+
+export function newTrialBookingAdminEmail(params: {
+  academyName: string
+  parentName: string
+  parentEmail: string
+  parentPhone?: string | null
+  childName: string
+  childAge?: number | null
+  className?: string | null
+  preferredDate?: string | null
+  notes?: string | null
+  dashboardUrl: string
+}) {
+  const detailRow = (label: string, value: string | null | undefined) =>
+    value
+      ? `<tr><td style="padding:6px 0;color:#666;font-size:13px;width:120px">${label}</td><td style="padding:6px 0;color:#fff;font-size:14px">${value}</td></tr>`
+      : ''
+  return {
+    subject: `New trial booking — ${params.childName} (${params.academyName})`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">New trial booking</h2>
+      <p style="color:#aaa;margin:0 0 20px">A parent has just booked a free trial at <strong>${params.academyName}</strong>.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px 20px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse">
+          ${detailRow('Child', `${params.childName}${params.childAge ? ` (age ${params.childAge})` : ''}`)}
+          ${detailRow('Parent', params.parentName)}
+          ${detailRow('Email', params.parentEmail)}
+          ${detailRow('Phone', params.parentPhone)}
+          ${detailRow('Class', params.className)}
+          ${detailRow('Date', params.preferredDate)}
+          ${detailRow('Notes', params.notes)}
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:15px">Review &amp; Confirm</a>
+      </div>
+      <p style="color:#666;font-size:12px;line-height:1.5;margin-top:16px">Tip: confirming the trial in the dashboard will (soon) send the parent a confirmation email automatically.</p>
+    `),
+  }
+}
+
+export function trialConfirmedEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className?: string | null
+  dayTime?: string | null
+  location?: string | null
+  preferredDate?: string | null
+  dashboardUrl: string
+}) {
+  const detailRow = (label: string, value: string | null | undefined) =>
+    value
+      ? `<tr><td style="padding:6px 0;color:#666;font-size:13px;width:120px">${label}</td><td style="padding:6px 0;color:#fff;font-size:14px">${value}</td></tr>`
+      : ''
+  return {
+    subject: `Your trial is confirmed — ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Your trial is confirmed!</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">Great news — ${params.academyName} has confirmed <strong>${params.childName}</strong>&rsquo;s free trial session. See you there!</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px 20px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse">
+          ${detailRow('Class', params.className)}
+          ${detailRow('Date', params.preferredDate)}
+          ${detailRow('Day &amp; time', params.dayTime)}
+          ${detailRow('Where', params.location)}
+        </table>
+      </div>
+      <p style="color:#aaa;line-height:1.6">Just turn up &mdash; the coach will be expecting you.  Bring trainers, shin pads if you have them, and a water bottle.</p>
+      <p style="color:#666;font-size:13px;margin-top:24px">No payment required for the trial session.</p>
     `),
   }
 }

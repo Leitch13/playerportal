@@ -268,6 +268,21 @@ export default function TrialForm({ orgId, groups, primaryColor, slug, academyNa
       }),
     }).catch(() => {})
 
+    // P1.1 — Notify the academy (bell notification + email to org owner).
+    // Fire-and-forget; flag-gated server-side by TRIAL_ACADEMY_NOTIFY_ENABLED.
+    // Server resolves the trial via (organisation_id, parent_email,
+    // child_name) tuple within a 60s recency window — avoids the
+    // SELECT-after-INSERT RLS trap that anon clients hit.
+    fetch('/api/trials/notify-academy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        organisation_id: orgId,
+        parent_email: parentEmail,
+        child_name: childName,
+      }),
+    }).catch(() => {})
+
     setSuccess(true)
     setLoading(false)
   }

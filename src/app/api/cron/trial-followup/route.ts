@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
   const { data: trials, error: trialsError } = await supabase
     .from('trial_bookings')
-    .select('id, parent_name, parent_email, child_name, followup_sent, training_group:training_groups(name), organisation:organisations(name, id)')
+    .select('id, parent_name, parent_email, child_name, followup_sent, training_group:training_groups(name), organisation:organisations(name, slug)')
     .eq('status', 'attended')
     .eq('followup_sent', false)
     .gte('updated_at', yesterdayStart)
@@ -62,13 +62,15 @@ export async function GET(request: NextRequest) {
     if (!trial.parent_email) continue
 
     const group = trial.training_group as unknown as { name: string } | null
-    const org = trial.organisation as unknown as { name: string; id: string } | null
+    // P1.4 — booking page is routed by slug, not UUID.  Before this fix
+    // every CTA in trialFollowUpEmail linked to `/book/<uuid>` (404).
+    const org = trial.organisation as unknown as { name: string; slug: string } | null
 
     const template = trialFollowUpEmail({
       parentName: trial.parent_name?.split(' ')[0] || 'there',
       childName: trial.child_name,
       academyName: org?.name || 'the academy',
-      signupUrl: `${appUrl}/book/${org?.id || ''}`,
+      signupUrl: `${appUrl}/book/${org?.slug || ''}`,
       className: group?.name || 'the class',
     })
 

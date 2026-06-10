@@ -122,6 +122,20 @@ export default function TrialManager({ trials, academyName = 'the academy' }: { 
         setLoading(null)
         return
       }
+      // P1.3 — fire trial-confirmed email to the parent.  Fire-and-forget;
+      // flag-gated server-side by TRIAL_CONFIRMED_EMAIL_ENABLED.  Server
+      // also guards idempotency (60s window on confirmed_at — set by the
+      // /api/admin/trials/[id]/status route above) so a double-click or
+      // browser retry doesn't double-send.  The status POST above is the
+      // source of truth — if this fetch fails, the trial is still
+      // confirmed in the DB.
+      if (status === 'confirmed') {
+        fetch('/api/email/trial-confirmed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trialId: id }),
+        }).catch(() => {})
+      }
       router.refresh()
     } finally {
       setLoading(null)
