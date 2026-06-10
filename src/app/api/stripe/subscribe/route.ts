@@ -596,7 +596,7 @@ export async function POST(request: NextRequest) {
       // anchor and the full monthly invoice fires with no proration.)
       // (Class-day validation already enforced above for all
       //  useFutureProratedBase branches — no per-branch re-check needed.)
-      const { estimateBridgePence, bridgeDescriptionFor } = await import('@/lib/billing/sessions')
+      const { estimateBridgePence } = await import('@/lib/billing/sessions')
 
       const estimate = estimateBridgePence({
         monthlyPence: Math.round(Number(plan.amount) * 100),
@@ -614,7 +614,13 @@ export async function POST(request: NextRequest) {
         const anchorUnix = firstOfNextMonthUnix(activatesOnDate)
         const anchorIso = new Date(anchorUnix * 1000).toISOString().slice(0, 10)
 
-        const bridgeDescription = bridgeDescriptionFor(activatesOnDate)
+        // a54bd62 graft — explicit "Paid today" wording on the bridge line
+        // item so the parent anchors on what they're actually charged at
+        // checkout, rather than Stripe's automatic "X days free" label on
+        // the recurring line. Bridge math + amount unchanged — display only.
+        const startMonthName = activatesOnDate.toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })
+        const sessionWord = estimate.sessionsRemaining === 1 ? 'session' : 'sessions'
+        const bridgeLineName = `Paid today — covers ${estimate.sessionsRemaining} remaining ${startMonthName} ${sessionWord}`
 
         // Resolve a Stripe priceId for the monthly recurring leg. Reuse the
         // existing one set on the plan if present, else create via price_data
@@ -639,7 +645,10 @@ export async function POST(request: NextRequest) {
         sessionBridgeLineItems.push({
           price_data: {
             currency: 'gbp',
-            product_data: { name: bridgeDescription },
+            product_data: {
+              name: bridgeLineName,
+              description: `${estimate.sessionsRemaining} ${sessionWord} × £${(estimate.perSessionPence / 100).toFixed(2)}`,
+            },
             unit_amount: estimate.bridgePence,
           },
           quantity: 1,
