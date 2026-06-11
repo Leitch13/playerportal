@@ -41,6 +41,17 @@ import {
   playersNotPaying as calcPlayersNotPaying,
   pickFifthCard,
 } from '@/lib/dashboard-metrics'
+import ParentHub from '@/components/parent/ParentHub'
+import {
+  PARENT_HUB_ENABLED,
+  monthlySpend as calcSpend,
+  sumOutstanding as calcParentOutstanding,
+  progressSnapshot,
+  attendancePct as calcAttendancePct,
+  nextSession as calcNextSession,
+  actionSignals,
+  formatAgeLabel,
+} from '@/lib/parent-hub-metrics'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -65,8 +76,167 @@ export default async function DashboardPage() {
 }
 
 /* ─── PARENT DASHBOARD ─── */
+// Parent Hub MVP loader — read-only, parent-scoped. Builds the props for
+// <ParentHub/> from data that mostly already exists. No writes, no Stripe.
+async function loadParentHub(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  name: string,
+): Promise<React.ComponentProps<typeof ParentHub>> {
+  const { data: playersData } = await supabase
+    .from('players')
+    .select('id, first_name, last_name, age_group, photo_url, enrolments(id, status, group:training_groups(name, day_of_week, time_slot, location))')
+    .eq('parent_id', userId)
+  const pls = playersData || []
+  const playerIds = pls.map((p) => p.id)
+  const idFilter = playerIds.length ? playerIds : ['none']
+
+  const { data: subsData } = await supabase
+    .from('subscriptions')
+    .select('*, plan:subscription_plans(*), player:players(first_name, last_name)')
+    .eq('parent_id', userId)
+  const subs = subsData || []
+  const activeSubs = subs.filter((s) => s.status === 'active')
+  const anyPastDue = subs.some((s) => s.status === 'past_due' || s.status === 'unpaid')
+
+  const { data: unpaid } = await supabase
+    .from('payments')
+    .select('amount, amount_paid, status')
+    .eq('parent_id', userId)
+    .in('status', ['unpaid', 'partial', 'overdue'])
+  const outstanding = calcParentOutstanding(unpaid || [])
+
+  const { data: reviewsData } = await supabase
+    .from('progress_reviews')
+    .select('id, player_id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement, review_date, parent_summary, coach:profiles!progress_reviews_coach_id_fkey(full_name)')
+    .in('player_id', idFilter)
+    .order('review_date', { ascending: false })
+  const revs = reviewsData || []
+
+  const since90 = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10)
+  const { data: attData } = await supabase
+    .from('attendance')
+    .select('player_id, present')
+    .in('player_id', idFilter)
+    .gte('session_date', since90)
+  const attByPlayer = new Map<string, { present: boolean }[]>()
+  for (const a of attData || []) {
+    const l = attByPlayer.get(a.player_id) || []
+    l.push({ present: a.present }); attByPlayer.set(a.player_id, l)
+  }
+
+  const { data: msgsData } = await supabase
+    .from('messages')
+    .select('id, subject, read, created_at, sender:profiles!messages_sender_id_fkey(full_name)')
+    .eq('recipient_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(3)
+  const { count: unreadCount } = await supabase
+    .from('messages').select('id', { count: 'exact', head: true })
+    .eq('recipient_id', userId).eq('read', false)
+
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)
+  const newReviewCount = revs.filter((r) => (r.review_date || '') >= weekAgo).length
+
+  const { data: prof } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
+  const orgId = prof?.organisation_id as string | undefined
+  const { data: org } = orgId
+    ? await supabase.from('organisations').select('name, logo_url').eq('id', orgId).single()
+    : { data: null }
+  const { data: annData } = orgId
+    ? await supabase.from('announcements').select('id, title, body, created_at').eq('organisation_id', orgId).order('created_at', { ascending: false }).limit(3)
+    : { data: [] as { id: string; title: string | null; body: string | null; created_at: string }[] }
+
+  // ── derive ──
+  const reviewsByPlayer = new Map<string, typeof revs>()
+  for (const r of revs) { const l = reviewsByPlayer.get(r.player_id) || []; l.push(r); reviewsByPlayer.set(r.player_id, l) }
+
+  type EnrolRow = { status: string | null; group: { name: string; day_of_week: string | null; time_slot: string | null; location: string | null } | null }
+  const slots: { name: string; dayOfWeek: string | null; timeSlot: string | null; location: string | null; childName: string }[] = []
+  for (const p of pls) {
+    for (const e of ((p.enrolments || []) as unknown as EnrolRow[]).filter((e) => e.status === 'active')) {
+      if (e.group) slots.push({ name: e.group.name, dayOfWeek: e.group.day_of_week, timeSlot: e.group.time_slot, location: e.group.location, childName: `${p.first_name} ${p.last_name}`.trim() })
+    }
+  }
+  const ranked = slots
+    .map((s) => ({ s, n: calcNextSession([{ name: s.name, dayOfWeek: s.dayOfWeek, timeSlot: s.timeSlot }]) }))
+    .filter((x): x is { s: typeof slots[number]; n: NonNullable<typeof x.n> } => x.n != null)
+    .sort((a, b) => a.n.whenMs - b.n.whenMs)
+  const schedule = ranked.slice(0, 4).map((x) => ({ name: x.s.name, dayName: x.s.dayOfWeek, time: x.s.timeSlot, location: x.s.location, childName: x.s.childName }))
+
+  const formatNext = (ms: number): string => {
+    const d = new Date(ms)
+    const isToday = d.toDateString() === new Date().toDateString()
+    const time = d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })
+    return `${isToday ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'short' })}, ${time}`
+  }
+  const nextSession = ranked[0]
+    ? { label: formatNext(ranked[0].n.whenMs), name: ranked[0].s.name, child: ranked[0].s.childName }
+    : null
+
+  const kids = pls.map((p) => {
+    const enrols = ((p.enrolments || []) as unknown as EnrolRow[]).filter((e) => e.status === 'active')
+    const playerReviews = reviewsByPlayer.get(p.id) || []
+    return {
+      id: p.id,
+      name: `${p.first_name} ${p.last_name}`.trim(),
+      ageLabel: formatAgeLabel(p.age_group as string | null),
+      programme: enrols[0]?.group?.name ?? null,
+      attendancePct: calcAttendancePct(attByPlayer.get(p.id) || []),
+      score: progressSnapshot(playerReviews).score,
+      hasNewReport: playerReviews.some((r) => (r.review_date || '') >= weekAgo),
+      photoUrl: (p.photo_url as string | null) ?? null,
+    }
+  })
+
+  const progress = kids
+    .filter((c) => (reviewsByPlayer.get(c.id) || []).length > 0)
+    .map((c) => {
+      const snap = progressSnapshot(reviewsByPlayer.get(c.id) || [])
+      return { childName: c.name, score: snap.score, delta: snap.delta, direction: snap.direction, latestFeedback: snap.latestFeedback }
+    })
+
+  const messages = (msgsData || []).map((m) => ({
+    id: m.id,
+    subject: m.subject as string | null,
+    senderName: (m.sender as unknown as { full_name?: string } | null)?.full_name ?? null,
+    when: new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+    read: !!m.read,
+  }))
+
+  const announcements = (annData || []).map((a) => ({ id: a.id, title: a.title, body: a.body, when: '' }))
+
+  return {
+    firstName: name.split(' ')[0] || name,
+    orgName: (org?.name as string | null) ?? null,
+    orgLogo: (org?.logo_url as string | null) ?? null,
+    childCount: pls.length,
+    monthlySpend: calcSpend(activeSubs as unknown as { plan?: { amount?: number | string | null } | null }[]),
+    outstanding,
+    nextSession,
+    kids,
+    activeSubs: activeSubs as unknown as React.ComponentProps<typeof ParentHub>['activeSubs'],
+    schedule,
+    progress,
+    messages,
+    announcements,
+    actions: actionSignals({ outstanding, newReviewCount, unreadCount: unreadCount || 0, anyPastDue }),
+    isNewFamily: slots.length === 0,
+  }
+}
+
 async function ParentDashboard({ userId, name }: { userId: string; name: string }) {
   const supabase = await createClient()
+
+  // ═══ PARENT HUB MVP — child-centric home (flag-gated, display-only) ═══
+  // Reached ONLY when PARENT_HUB_ENABLED is on; otherwise the existing parent
+  // dashboard below renders byte-identically. Pure read / derive / compose —
+  // no writes, no Stripe, no cancellation/subscription-logic changes, no schema.
+  // Protected #8 (Parent Hub) recomposition; #9 + #4 untouched. See
+  // PARENT_HUB_MVP_PHASE0.md.
+  if (PARENT_HUB_ENABLED) {
+    return <ParentHub {...await loadParentHub(supabase, userId, name)} />
+  }
 
   const { data: players } = await supabase
     .from('players')
