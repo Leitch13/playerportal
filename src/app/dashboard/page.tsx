@@ -32,6 +32,15 @@ import BirthdaysThisWeek, { type BirthdayPlayer } from '@/components/BirthdaysTh
 // logic on the dashboard.
 import DashboardActionQueue from '@/components/DashboardActionQueue'
 import { loadDashboardActionQueue } from '@/lib/dashboard-action-queue-loader'
+import CommandCentre, { type WeekSession } from '@/components/CommandCentre'
+import {
+  DASHBOARD_MVP_ENABLED,
+  sumOutstanding,
+  sumOverdue,
+  countActivePayingPlayers,
+  playersNotPaying as calcPlayersNotPaying,
+  pickFifthCard,
+} from '@/lib/dashboard-metrics'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -1590,6 +1599,113 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
     if (hrs < 24) return `${hrs}h ago`
     const days = Math.floor(hrs / 24)
     return `${days}d ago`
+  }
+
+  // ═══ DASHBOARD MVP — owner-first command centre (flag-gated, display-only) ═══
+  // Phase 1 of the approved Dashboard MVP. Reached ONLY when DASHBOARD_MVP_ENABLED
+  // is on; otherwise the existing dashboard below renders byte-identically. Pure
+  // read / derive / display — no writes, no Stripe, no schema, no RLS changes.
+  // Overdue is derived at read-time (grace-aware) rather than via the webhook
+  // (Protected #2), keeping this entirely in the surfacing lane. See
+  // DASHBOARD_MVP_PHASE0.md.
+  if (DASHBOARD_MVP_ENABLED) {
+    // Late-payment grace period (Settings → Academy Policies) for overdue maths.
+    const { data: orgPolicy } = await supabase
+      .from('organisations')
+      .select('late_payment_grace_days')
+      .eq('id', orgId)
+      .single()
+    const graceDays = Number(orgPolicy?.late_payment_grace_days ?? 0) || 0
+
+    // Active enrolments → player ids with an active enrolment.
+    const { data: activeEnrolRows } = await supabase
+      .from('enrolments')
+      .select('player_id')
+      .eq('organisation_id', orgId)
+      .eq('status', 'active')
+    const enrolledPlayerIds = new Set<string>(
+      (activeEnrolRows || [])
+        .map((r) => r.player_id as string | null)
+        .filter((id): id is string => !!id),
+    )
+
+    // Paying players = active subscription linked to a player (mirrors the
+    // Players-page derivation so the two pages agree).
+    const { data: payingRows } = await supabase
+      .from('subscriptions')
+      .select('player_id')
+      .eq('organisation_id', orgId)
+      .eq('status', 'active')
+      .not('player_id', 'is', null)
+    const payingPlayerIds = new Set<string>(
+      (payingRows || [])
+        .map((r) => r.player_id as string | null)
+        .filter((id): id is string => !!id),
+    )
+
+    const activePaying = countActivePayingPlayers(enrolledPlayerIds, payingPlayerIds)
+    const notPaying = calcPlayersNotPaying(totalPlayers || 0, payingPlayerIds.size)
+
+    // Outstanding + grace-aware overdue, derived at read-time (no stored status).
+    const { data: outstandingRows } = await supabase
+      .from('payments')
+      .select('amount, amount_paid, status, due_date')
+      .eq('organisation_id', orgId)
+      .in('status', ['unpaid', 'partial', 'overdue'])
+    const outstanding = sumOutstanding(outstandingRows || [])
+    const overdue = sumOverdue(outstandingRows || [], graceDays)
+
+    // This week's sessions for the operations panel.
+    const { data: weekGroups } = await supabase
+      .from('training_groups')
+      .select('id, name, day_of_week, time_slot, location, max_capacity')
+      .eq('organisation_id', orgId)
+    const weekGroupIds = (weekGroups || []).map((g) => g.id)
+    const { data: weekEnrol } = await supabase
+      .from('enrolments')
+      .select('group_id')
+      .in('group_id', weekGroupIds.length > 0 ? weekGroupIds : ['none'])
+      .eq('status', 'active')
+    const weekCounts = new Map<string, number>()
+    for (const e of weekEnrol || []) weekCounts.set(e.group_id, (weekCounts.get(e.group_id) || 0) + 1)
+    const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    const weekSessions: WeekSession[] = (weekGroups || [])
+      .map((g) => ({
+        id: g.id as string,
+        name: (g.name as string) || 'Class',
+        day: (g.day_of_week as string) || '',
+        time: (g.time_slot as string) || null,
+        location: (g.location as string) || null,
+        count: weekCounts.get(g.id) || 0,
+        capacity: Number(g.max_capacity) || 0,
+      }))
+      .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day))
+
+    return (
+      <CommandCentre
+        firstName={name.split(' ')[0] || name}
+        orgName={(orgData?.name as string | null) || null}
+        recurringRevenue={forecastMrr}
+        collectedThisMonth={monthlyRevenue}
+        outstanding={outstanding}
+        overdueAmount={overdue.amount}
+        overdueCount={overdue.count}
+        activeSubs={activeSubs || 0}
+        activePlayers={activePaying}
+        totalPlayers={totalPlayers || 0}
+        playersNotPaying={notPaying}
+        atRiskFamilies={actionQueueCounts.atRiskFamilies}
+        fifthCard={pickFifthCard(notPaying, actionQueueCounts.atRiskFamilies)}
+        trialFollowUps={actionQueueCounts.trialFollowUps}
+        actionQueueCounts={actionQueueCounts}
+        newLeadsThisWeek={newLeadsThisWeek || 0}
+        bookingUrl={bookingUrl}
+        bookingSlug={bookingSlug || null}
+        isLive={readiness.isLive}
+        readiness={readiness}
+        weekSessions={weekSessions}
+      />
+    )
   }
 
   return (
