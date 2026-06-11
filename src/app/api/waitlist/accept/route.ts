@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistAcceptedEmail, waitlistSpotLostEmail } from '@/lib/email-templates'
+import { verifyWaitlistToken, fetchStoredToken } from '@/lib/waitlist-token'
 
 // ============================================================================
 // Schema-fix flag: WAITLIST_SCHEMA_FIX_ENABLED.
@@ -37,7 +38,7 @@ function entryGroupId(entry: any): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { id } = await request.json()
+    const { id, token } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: 'Waitlist entry id is required' }, { status: 400 })
@@ -57,6 +58,12 @@ export async function POST(request: NextRequest) {
 
     if (fetchError || !entry) {
       return NextResponse.json({ error: 'Waitlist entry not found' }, { status: 404 })
+    }
+    // Finding #1: token gate (no-op when flag OFF; grace-allows NULL-token
+    // in-flight offers). Checked before any state change so a guessed id
+    // without the matching token learns nothing and mutates nothing.
+    if (!verifyWaitlistToken(await fetchStoredToken(supabase, id), token).ok) {
+      return NextResponse.json({ error: 'invalid_token' }, { status: 403 })
     }
     const groupIdValue = entryGroupId(entry)
 
@@ -230,6 +237,7 @@ export async function POST(request: NextRequest) {
 // Also support GET for email link clicks — redirect to dashboard after processing
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get('id')
+  const token = request.nextUrl.searchParams.get('token')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
   if (!id) {
@@ -250,6 +258,10 @@ export async function GET(request: NextRequest) {
 
   if (!entry) {
     return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=not_found`)
+  }
+  // Finding #1: token gate (email-link path). No-op when flag OFF.
+  if (!verifyWaitlistToken(await fetchStoredToken(supabase, id), token).ok) {
+    return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=invalid_token`)
   }
   const groupIdValueGet = entryGroupId(entry)
 

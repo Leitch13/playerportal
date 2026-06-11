@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistSpotAvailableEmail } from '@/lib/email-templates'
+import { WAITLIST_TOKEN_ON, generateWaitlistToken, withToken } from '@/lib/waitlist-token'
 
 // WAITLIST_SCHEMA_FIX_ENABLED — see /api/waitlist/accept/route.ts.
 const SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
 
     const now = new Date()
     const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000)
+    // Finding #1: mint a fresh per-offer token (flag-gated).
+    const offerToken = WAITLIST_TOKEN_ON ? generateWaitlistToken() : null
 
     // Update waitlist entry to offered
     const { error: updateError } = await supabase
@@ -54,6 +57,7 @@ export async function POST(request: NextRequest) {
         status: 'offered',
         offered_at: now.toISOString(),
         expires_at: expiresAt.toISOString(),
+        ...(WAITLIST_TOKEN_ON ? { accept_token: offerToken } : {}),
       })
       .eq('id', nextEntry.id)
 
@@ -86,8 +90,8 @@ export async function POST(request: NextRequest) {
         parentName,
         childName,
         className,
-        acceptUrl: `${appUrl}/api/waitlist/accept?id=${nextEntry.id}`,
-        declineUrl: `${appUrl}/api/waitlist/decline?id=${nextEntry.id}`,
+        acceptUrl: withToken(`${appUrl}/api/waitlist/accept?id=${nextEntry.id}`, offerToken),
+        declineUrl: withToken(`${appUrl}/api/waitlist/decline?id=${nextEntry.id}`, offerToken),
         expiryDate: expiresAt.toLocaleDateString('en-GB', {
           weekday: 'long',
           day: 'numeric',

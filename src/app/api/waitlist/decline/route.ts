@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { waitlistDeclinedEmail, waitlistSpotAvailableEmail } from '@/lib/email-templates'
+import { WAITLIST_TOKEN_ON, generateWaitlistToken, withToken, verifyWaitlistToken, fetchStoredToken } from '@/lib/waitlist-token'
 
 // WAITLIST_SCHEMA_FIX_ENABLED — see /api/waitlist/accept/route.ts for full
 // rationale. Real column is group_id; today's code uses training_group_id
@@ -48,11 +49,15 @@ async function promoteNext(supabase: any, groupId: string) {
 
   const now = new Date()
   const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000)
+  // Finding #1: mint a fresh per-offer token (flag-gated). Stored on the row
+  // and embedded in the accept/decline links below.
+  const offerToken = WAITLIST_TOKEN_ON ? generateWaitlistToken() : null
 
   await supabase.from('waitlist').update({
     status: 'offered',
     offered_at: now.toISOString(),
     expires_at: expiresAt.toISOString(),
+    ...(WAITLIST_TOKEN_ON ? { accept_token: offerToken } : {}),
   }).eq('id', nextEntry.id)
 
   // Create notification
@@ -76,8 +81,8 @@ async function promoteNext(supabase: any, groupId: string) {
       parentName: parent.full_name?.split(' ')[0] || 'there',
       childName: player?.full_name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'your child',
       className: group?.name || 'the class',
-      acceptUrl: `${appUrl}/api/waitlist/accept?id=${nextEntry.id}`,
-      declineUrl: `${appUrl}/api/waitlist/decline?id=${nextEntry.id}`,
+      acceptUrl: withToken(`${appUrl}/api/waitlist/accept?id=${nextEntry.id}`, offerToken),
+      declineUrl: withToken(`${appUrl}/api/waitlist/decline?id=${nextEntry.id}`, offerToken),
       expiryDate: expiresAt.toLocaleDateString('en-GB', {
         weekday: 'long',
         day: 'numeric',
@@ -94,7 +99,7 @@ async function promoteNext(supabase: any, groupId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { id } = await request.json()
+    const { id, token } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: 'Waitlist entry id is required' }, { status: 400 })
@@ -114,6 +119,10 @@ export async function POST(request: NextRequest) {
 
     if (!entry) {
       return NextResponse.json({ error: 'Waitlist entry not found' }, { status: 404 })
+    }
+    // Finding #1: token gate (no-op when flag OFF; grace-allows NULL token).
+    if (!verifyWaitlistToken(await fetchStoredToken(supabase, id), token).ok) {
+      return NextResponse.json({ error: 'invalid_token' }, { status: 403 })
     }
 
     if (entry.status !== 'offered') {
@@ -149,6 +158,7 @@ export async function POST(request: NextRequest) {
 // Support GET for email link clicks
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get('id')
+  const token = request.nextUrl.searchParams.get('token')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
   if (!id) {
@@ -166,7 +176,14 @@ export async function GET(request: NextRequest) {
     .eq('id', id)
     .single()
 
-  if (!entry || entry.status !== 'offered') {
+  if (!entry) {
+    return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=invalid`)
+  }
+  // Finding #1: token gate (email-link path). No-op when flag OFF.
+  if (!verifyWaitlistToken(await fetchStoredToken(supabase, id), token).ok) {
+    return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=invalid_token`)
+  }
+  if (entry.status !== 'offered') {
     return NextResponse.redirect(`${appUrl}/dashboard/waitlist?error=invalid`)
   }
 
