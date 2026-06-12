@@ -6,6 +6,8 @@ import PlayerAvatar from '@/components/PlayerAvatar'
 import ReportActions from './ReportActions'
 import ReportViewedPing from '@/components/reports/ReportViewedPing'
 import { REPORT_VIEWED_TRACKING_ENABLED } from '@/lib/report-visibility'
+import ReportPremiumTop from '@/components/reports/ReportPremiumTop'
+import { REPORTS_PREMIUM_ENABLED, computeVerdict, trendHeadline, skillDeltas } from '@/lib/report-premium'
 
 // Inline SVG radar chart for print-friendliness (no client JS needed)
 function PrintRadarChart({ scores }: { scores: { label: string; value: number }[] }) {
@@ -511,6 +513,16 @@ export default async function PlayerReportPage({
   const isStaffViewer = role === 'admin' || role === 'coach'
   const latestReviewViewedAt = (latestReview as Record<string, unknown> | undefined)?.viewed_at as string | undefined
 
+  // Phase 1A — Premium Top (display-only, flag-gated). Derived entirely from
+  // data already fetched above: progressOverTime, latestReview, reviews[1],
+  // displayCategories, overallAverage, player.first_name. No new queries.
+  const premiumVerdict = computeVerdict(progressOverTime)
+  const premiumHeadline = trendHeadline(progressOverTime, player.first_name)
+  const prevReview = (reviews || [])[1] as Record<string, unknown> | undefined
+  const premiumDeltas = skillDeltas(latestReview as Record<string, unknown> | undefined, prevReview, displayCategories)
+  const premiumCoachQuote = (latestReview as Record<string, unknown> | undefined)?.parent_summary as string | undefined
+  const premiumCoachName = (latestReview as unknown as { coach?: { full_name?: string } } | undefined)?.coach?.full_name
+
   return (
     <div className="max-w-3xl mx-auto">
       {REPORT_VIEWED_TRACKING_ENABLED && isParentOwner && <ReportViewedPing playerId={id} />}
@@ -582,8 +594,22 @@ export default async function PlayerReportPage({
           </div>
         </div>
 
-        {/* Overall Rating */}
-        {latestReview && (
+        {/* Phase 1A — Premium Top (journey-first: verdict + coach quote + what's changed, above the radar). Flag-gated; OFF ⇒ not rendered. */}
+        {REPORTS_PREMIUM_ENABLED && latestReview && (
+          <ReportPremiumTop
+            firstName={player.first_name}
+            verdict={premiumVerdict}
+            headline={premiumHeadline}
+            rating={overallAverage}
+            coachQuote={premiumCoachQuote}
+            coachName={premiumCoachName}
+            deltas={premiumDeltas}
+            hasPrevReview={!!prevReview}
+          />
+        )}
+
+        {/* Overall Rating — hidden when Premium Top is on (the verdict hero carries the rating). */}
+        {latestReview && !REPORTS_PREMIUM_ENABLED && (
           <div className="px-8 py-6 border-b border-border">
             <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-3">Overall Rating</h3>
             <OverallRating average={overallAverage} />
