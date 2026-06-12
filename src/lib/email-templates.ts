@@ -6,6 +6,9 @@
 // show that academy's name in the header + footer instead of generic
 // "Player Portal". The platform tag ("by JSL Sports") stays on the header
 // for trust, and the footer always carries the legal entity for compliance.
+import { premiumSubject, premiumPreheader, emailProgressHeadline, strengthSentence, focusSentence } from './report-email-premium'
+import type { Verdict } from './report-premium'
+
 function baseLayout(content: string, accentColor = '#4ecde6', academyName?: string): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
   const heroName = academyName ? escapeHtml(academyName) : 'Player Portal'
@@ -1049,6 +1052,118 @@ export function progressReportEmail(params: {
 </div>
 </div></body></html>`,
   }
+}
+
+// Phase 1B — Premium report email (flag-gated by REPORTS_PREMIUM_EMAIL_ENABLED
+// in the send routes). Leads with the coach's words + an honest verdict-driven
+// headline. Light theme + table layout + inline styles + bulletproof CTA for
+// maximum client compatibility (Gmail/Outlook/Apple, images on or off).
+export function progressReportEmailPremium(params: {
+  parentName: string
+  childName: string
+  firstName: string
+  academyName: string
+  academyLogoUrl?: string | null
+  coachName?: string | null
+  verdict: Verdict
+  overallScore: number
+  topStrength?: string | null
+  topFocus?: string | null
+  coachQuote?: string | null
+  attendanceRate: number
+  sessionsAttended: number
+  reportUrl: string
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  const accent = '#4ecde6'
+  const name = escapeHtml(params.firstName || params.childName)
+  const academy = escapeHtml(params.academyName || 'Your Academy')
+  const coach = params.coachName ? escapeHtml(params.coachName) : null
+  const headline = escapeHtml(emailProgressHeadline(params.verdict, params.firstName))
+  const subject = premiumSubject(params.verdict, params.firstName)        // plain text (not HTML)
+  const preheader = escapeHtml(premiumPreheader(params.coachQuote, params.firstName, params.coachName, params.verdict))
+  const quote = params.coachQuote && params.coachQuote.trim() ? escapeHtml(params.coachQuote.trim()) : null
+  const strength = params.topStrength ? escapeHtml(strengthSentence(params.topStrength, params.firstName)) : null
+  const focus = params.topFocus ? escapeHtml(focusSentence(params.topFocus)) : null
+  const tone = params.verdict.tone
+  const trendArrow = tone === 'up' ? '▲' : tone === 'down' ? '▼' : tone === 'flat' ? '→' : '✦'
+  const trendColour = tone === 'up' ? '#059669' : tone === 'down' ? '#d97706' : tone === 'flat' ? '#475569' : accent
+  const trendText = escapeHtml(
+    tone === 'new'
+      ? 'First report — baseline set'
+      : params.verdict.delta != null
+        ? `${tone === 'up' ? 'Up' : tone === 'down' ? 'Down' : 'Steady'}${tone === 'flat' ? '' : ' ' + Math.abs(params.verdict.delta).toFixed(1)} since last report`
+        : 'Latest report',
+  )
+
+  const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${preheader}</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f5f7">
+<tr><td align="center" style="padding:24px 16px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6e8eb">
+
+<!-- Academy branding -->
+<tr><td style="padding:24px 32px 0;text-align:center">
+${params.academyLogoUrl ? `<img src="${escapeHtml(params.academyLogoUrl)}" width="48" height="48" alt="${academy}" style="width:48px;height:48px;object-fit:contain;border-radius:8px">` : ''}
+<div style="margin:8px 0 0;font-size:16px;font-weight:700;color:#1a1a1a">${academy}</div>
+<div style="margin:2px 0 0;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#9aa0a6;font-weight:600">Progress Report</div>
+</td></tr>
+
+<!-- Progress headline -->
+<tr><td style="padding:20px 32px 0;text-align:center">
+<div style="font-size:22px;font-weight:800;letter-spacing:-0.4px;color:#0f172a">${headline} ⚽</div>
+<div style="display:inline-block;margin:12px 0 0;padding:5px 12px;border-radius:999px;background:${trendColour}14;color:${trendColour};font-size:12px;font-weight:700"><span aria-hidden="true">${trendArrow}</span> ${trendText}</div>
+</td></tr>
+
+<!-- Coach quote hero -->
+<tr><td style="padding:22px 32px 0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${accent}0f;border-left:4px solid ${accent};border-radius:0 12px 12px 0">
+<tr><td style="padding:18px 20px">
+<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:0 0 6px">What your coach said</div>
+${quote
+      ? `<div style="font-size:17px;line-height:1.55;color:#0f172a;font-style:italic">&ldquo;${quote}&rdquo;</div>${coach ? `<div style="margin:10px 0 0;font-size:13px;color:#64748b;font-weight:600">— Coach ${coach}</div>` : ''}`
+      : `<div style="font-size:15px;line-height:1.55;color:#334155">${coach ? `Coach ${coach} has` : 'Your coach has'} logged ${name}&rsquo;s latest scores and progress — tap below to see the full breakdown.</div>`}
+</td></tr></table>
+</td></tr>
+
+<!-- Strength + Focus sentences -->
+${strength ? `<tr><td style="padding:18px 32px 0"><div style="font-size:15px;line-height:1.5;color:#0f172a"><span style="color:#059669;font-weight:700">Strength &middot; </span>${strength}</div></td></tr>` : ''}
+${focus ? `<tr><td style="padding:10px 32px 0"><div style="font-size:15px;line-height:1.5;color:#0f172a"><span style="color:#d97706;font-weight:700">Next focus &middot; </span>${focus}</div></td></tr>` : ''}
+
+<!-- Rating + attendance chip row -->
+<tr><td style="padding:18px 32px 0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+<td style="padding:10px 0;text-align:center;background:#f8fafc;border-radius:10px 0 0 10px;border:1px solid #eef1f4;border-right:0">
+<div style="font-size:20px;font-weight:800;color:${accent}">${params.overallScore.toFixed(1)}<span style="font-size:12px;color:#94a3b8">/5</span></div>
+<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600">Coach rating</div>
+</td>
+<td style="padding:10px 0;text-align:center;background:#f8fafc;border-radius:0 10px 10px 0;border:1px solid #eef1f4">
+<div style="font-size:20px;font-weight:800;color:#0f172a">${params.attendanceRate}%</div>
+<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600">${params.sessionsAttended} sessions</div>
+</td>
+</tr></table>
+</td></tr>
+
+<!-- CTA (bulletproof) -->
+<tr><td style="padding:24px 32px 28px;text-align:center">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${params.reportUrl}" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="25%" strokecolor="${accent}" fillcolor="${accent}"><w:anchorlock/><center style="color:#0a0a0a;font-family:sans-serif;font-size:16px;font-weight:bold;">See ${name}&rsquo;s full report &rarr;</center></v:roundrect><![endif]-->
+<!--[if !mso]><!-- --><a href="${params.reportUrl}" style="display:inline-block;background:${accent};color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px">See ${name}&rsquo;s full report &rarr;</a><!--<![endif]-->
+</td></tr>
+
+<!-- Footer -->
+<tr><td style="background:#fafbfc;border-top:1px solid #eef1f4;padding:18px 32px;text-align:center">
+<p style="margin:0;color:#94a3b8;font-size:12px">You received this because ${name} is enrolled at ${academy}.</p>
+<p style="margin:6px 0 0;color:#c2c8cf;font-size:10px">Powered by <a href="${appUrl}" style="color:#94a3b8;text-decoration:none">Player Portal</a></p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`
+
+  return { subject, html }
 }
 
 export function upsellAddClassEmail(params: { parentName: string; childName: string; className: string; academyName: string; bookingUrl: string }) {

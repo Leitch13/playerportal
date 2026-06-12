@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
-import { progressReportEmail } from '@/lib/email-templates'
+import { progressReportEmail, progressReportEmailPremium } from '@/lib/email-templates'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import { REPORT_EMAIL_IDEMPOTENCY_ENABLED } from '@/lib/report-visibility'
+import { REPORTS_PREMIUM_EMAIL_ENABLED, emailVerdict } from '@/lib/report-email-premium'
 
 const FALLBACK_SCORE_CATEGORIES = [
   { key: 'attitude', label: 'Attitude' },
@@ -40,9 +41,9 @@ export async function POST(request: NextRequest) {
   const parent = player.profiles as unknown as { full_name: string; email: string } | null
   if (!parent?.email) return NextResponse.json({ error: 'No parent email' }, { status: 400 })
 
-  // Get org name
+  // Get org name (+ logo for the premium email)
   const { data: orgId } = await supabase.rpc('get_my_org')
-  const { data: org } = await supabase.from('organisations').select('name').eq('id', orgId).single()
+  const { data: org } = await supabase.from('organisations').select('name, logo_url').eq('id', orgId).single()
 
   // Fetch custom scoring categories for this org
   const { data: dbScoringCats } = await supabase
@@ -93,19 +94,59 @@ export async function POST(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
-  const template = progressReportEmail({
-    parentName: parent.full_name?.split(' ')[0] || 'there',
-    childName: `${player.first_name} ${player.last_name}`,
-    academyName: org?.name || 'Your Academy',
-    overallScore,
-    scores: scoreList,
-    strengths: strengthsList,
-    focusAreas: focusList,
-    attendanceRate,
-    sessionsAttended,
-    coachComment: coachComment || undefined,
-    reportUrl: `${appUrl}/dashboard/players/${playerId}/report`,
-  })
+  const reportUrl = `${appUrl}/dashboard/players/${playerId}/report`
+
+  // Phase 1B — premium report email (flag-gated). When OFF, the existing
+  // template is used unchanged (byte-identical). When ON, lead with the coach's
+  // words + an honest verdict derived from a READ-ONLY previous-review series.
+  let template
+  if (REPORTS_PREMIUM_EMAIL_ENABLED) {
+    // Coach name = the authoring coach/admin (the caller).
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: coachProfile } = user
+      ? await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      : { data: null }
+    const coachName = (coachProfile?.full_name || '').split(' ')[0] || null
+
+    // Read-only review series for this player → trend verdict.
+    const { data: seriesRows } = await supabase
+      .from('progress_reviews')
+      .select('attitude, effort, technical_quality, game_understanding, confidence, physical_movement, scores, review_date')
+      .eq('player_id', playerId)
+      .order('review_date', { ascending: false })
+    const verdict = emailVerdict((seriesRows || []) as Record<string, unknown>[], scoringCategories)
+
+    template = progressReportEmailPremium({
+      parentName: parent.full_name?.split(' ')[0] || 'there',
+      childName: `${player.first_name} ${player.last_name}`,
+      firstName: player.first_name,
+      academyName: org?.name || 'Your Academy',
+      academyLogoUrl: org?.logo_url || null,
+      coachName,
+      verdict,
+      overallScore,
+      topStrength: strengthsList[0] || null,
+      topFocus: focusList[0] || null,
+      coachQuote: coachComment || null,
+      attendanceRate,
+      sessionsAttended,
+      reportUrl,
+    })
+  } else {
+    template = progressReportEmail({
+      parentName: parent.full_name?.split(' ')[0] || 'there',
+      childName: `${player.first_name} ${player.last_name}`,
+      academyName: org?.name || 'Your Academy',
+      overallScore,
+      scores: scoreList,
+      strengths: strengthsList,
+      focusAreas: focusList,
+      attendanceRate,
+      sessionsAttended,
+      coachComment: coachComment || undefined,
+      reportUrl,
+    })
+  }
 
   const result = await sendEmail({ to: parent.email, ...template })
 

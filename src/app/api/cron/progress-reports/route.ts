@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, sendEmailBatch } from '@/lib/email'
-import { progressReportEmail } from '@/lib/email-templates'
+import { progressReportEmail, progressReportEmailPremium } from '@/lib/email-templates'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import { REPORT_EMAIL_IDEMPOTENCY_ENABLED } from '@/lib/report-visibility'
+import { REPORTS_PREMIUM_EMAIL_ENABLED, emailVerdict } from '@/lib/report-email-premium'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
         parent:profiles!players_parent_id_fkey(full_name, email)
       ),
       coach:profiles!progress_reviews_coach_id_fkey(full_name),
-      organisation:organisations!progress_reviews_organisation_id_fkey(name)
+      organisation:organisations!progress_reviews_organisation_id_fkey(name, logo_url)
     `)
     .gte('created_at', since)
 
@@ -131,19 +132,48 @@ export async function GET(request: NextRequest) {
       ? Math.round((sessionsAttended / (totalSessions || 1)) * 100)
       : 0
 
-    const template = progressReportEmail({
-      parentName: player.parent.full_name?.split(' ')[0] || 'there',
-      childName: `${player.first_name} ${player.last_name}`,
-      academyName: org?.name || 'Your Academy',
-      overallScore,
-      scores,
-      strengths,
-      focusAreas,
-      attendanceRate,
-      sessionsAttended,
-      coachComment: (review.parent_summary as string) || undefined,
-      reportUrl: `${appUrl}/dashboard/players/${player.id}/report`,
-    })
+    const reportUrl = `${appUrl}/dashboard/players/${player.id}/report`
+
+    // Phase 1B — premium email (flag-gated). OFF ⇒ existing template, unchanged.
+    let template
+    if (REPORTS_PREMIUM_EMAIL_ENABLED) {
+      const { data: seriesRows } = await supabase
+        .from('progress_reviews')
+        .select('attitude, effort, technical_quality, game_understanding, confidence, physical_movement, scores, review_date')
+        .eq('player_id', player.id)
+        .order('review_date', { ascending: false })
+      const verdict = emailVerdict((seriesRows || []) as Record<string, unknown>[], reviewCategories)
+      template = progressReportEmailPremium({
+        parentName: player.parent.full_name?.split(' ')[0] || 'there',
+        childName: `${player.first_name} ${player.last_name}`,
+        firstName: player.first_name,
+        academyName: org?.name || 'Your Academy',
+        academyLogoUrl: (org as { logo_url?: string } | null)?.logo_url || null,
+        coachName: (coach?.full_name || '').split(' ')[0] || null,
+        verdict,
+        overallScore,
+        topStrength: strengths[0] || null,
+        topFocus: focusAreas[0] || null,
+        coachQuote: (review.parent_summary as string) || null,
+        attendanceRate,
+        sessionsAttended,
+        reportUrl,
+      })
+    } else {
+      template = progressReportEmail({
+        parentName: player.parent.full_name?.split(' ')[0] || 'there',
+        childName: `${player.first_name} ${player.last_name}`,
+        academyName: org?.name || 'Your Academy',
+        overallScore,
+        scores,
+        strengths,
+        focusAreas,
+        attendanceRate,
+        sessionsAttended,
+        coachComment: (review.parent_summary as string) || undefined,
+        reportUrl,
+      })
+    }
 
     jobs.push({ to: player.parent.email, ...template })
     jobReviewIds.push(review.id as string)
