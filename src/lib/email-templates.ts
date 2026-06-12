@@ -6,8 +6,8 @@
 // show that academy's name in the header + footer instead of generic
 // "Player Portal". The platform tag ("by JSL Sports") stays on the header
 // for trust, and the footer always carries the legal entity for compliance.
-import { premiumSubject, premiumPreheader, emailProgressHeadline, strengthSentence, focusSentence } from './report-email-premium'
-import type { Verdict } from './report-premium'
+import { premiumSubject, premiumPreheader, emailProgressHeadline, strengthSentence, focusSentence, emailHeadlineV2 } from './report-email-premium'
+import type { Verdict, SkillDelta } from './report-premium'
 
 function baseLayout(content: string, accentColor = '#4ecde6', academyName?: string): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
@@ -1150,6 +1150,141 @@ ${focus ? `<tr><td style="padding:10px 32px 0"><div style="font-size:15px;line-h
 <tr><td style="padding:24px 32px 28px;text-align:center">
 <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${params.reportUrl}" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="25%" strokecolor="${accent}" fillcolor="${accent}"><w:anchorlock/><center style="color:#0a0a0a;font-family:sans-serif;font-size:16px;font-weight:bold;">See ${name}&rsquo;s full report &rarr;</center></v:roundrect><![endif]-->
 <!--[if !mso]><!-- --><a href="${params.reportUrl}" style="display:inline-block;background:${accent};color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px">See ${name}&rsquo;s full report &rarr;</a><!--<![endif]-->
+</td></tr>
+
+<!-- Footer -->
+<tr><td style="background:#fafbfc;border-top:1px solid #eef1f4;padding:18px 32px;text-align:center">
+<p style="margin:0;color:#94a3b8;font-size:12px">You received this because ${name} is enrolled at ${academy}.</p>
+<p style="margin:6px 0 0;color:#c2c8cf;font-size:10px">Powered by <a href="${appUrl}" style="color:#94a3b8;text-decoration:none">Player Portal</a></p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`
+
+  return { subject, html }
+}
+
+// Phase 1C — Premium report email V2 (flag REPORTS_PREMIUM_EMAIL_V2_ENABLED in
+// the send routes; FROM=academy is set via sendEmail's fromName by the routes).
+// Coach-first: the coach's words are the FIRST content (above the headline);
+// adds a Progress Snapshot (per-skill deltas vs last review) and an emotional
+// headline. Same safe shell as 1B (light, table-based, inline, VML, alt, small).
+export function progressReportEmailPremiumV2(params: {
+  parentName: string
+  childName: string
+  firstName: string
+  academyName: string
+  academyLogoUrl?: string | null
+  coachName?: string | null
+  verdict: Verdict
+  overallScore: number
+  topStrength?: string | null
+  topFocus?: string | null
+  coachQuote?: string | null
+  attendanceRate: number
+  sessionsAttended: number
+  reportUrl: string
+  snapshotDeltas: SkillDelta[]
+  overallDelta: number | null
+  hasPrevReview: boolean
+}) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+  const accent = '#4ecde6'
+  const name = escapeHtml(params.firstName || params.childName)
+  const academy = escapeHtml(params.academyName || 'Your Academy')
+  const coach = params.coachName ? escapeHtml(params.coachName) : null
+  const headline = escapeHtml(emailHeadlineV2(params.verdict, params.firstName))
+  const subject = `${emailHeadlineV2(params.verdict, params.firstName)} ⚽`          // plain text
+  const preheader = escapeHtml(premiumPreheader(params.coachQuote, params.firstName, params.coachName, params.verdict))
+  const quote = params.coachQuote && params.coachQuote.trim() ? escapeHtml(params.coachQuote.trim()) : null
+  const focus = params.topFocus ? escapeHtml(focusSentence(params.topFocus)) : null
+  const tone = params.verdict.tone
+  const trendArrow = tone === 'up' ? '▲' : tone === 'down' ? '▼' : tone === 'flat' ? '→' : '✦'
+  const trendColour = tone === 'up' ? '#059669' : tone === 'down' ? '#d97706' : tone === 'flat' ? '#475569' : accent
+  const trendText = escapeHtml(
+    tone === 'new'
+      ? 'First report — baseline set'
+      : params.verdict.delta != null
+        ? `${tone === 'up' ? 'Up' : tone === 'down' ? 'Down' : 'Steady'}${tone === 'flat' ? '' : ' ' + Math.abs(params.verdict.delta).toFixed(1)} since last report`
+        : 'Latest report',
+  )
+
+  // Progress Snapshot rows (top movers) + overall.
+  const dColour = (d: number) => (d > 0 ? '#059669' : d < 0 ? '#d97706' : '#94a3b8')
+  const dArrow = (d: number) => (d > 0 ? '▲' : d < 0 ? '▼' : '→')
+  const dWord = (d: number) => (d > 0 ? 'up' : d < 0 ? 'down' : 'no change')
+  const dVal = (d: number) => (d === 0 ? 'same' : `${d > 0 ? '+' : ''}${Number.isInteger(d) ? d : d.toFixed(1)}`)
+  const snapRow = (label: string, d: number) => `<tr>
+    <td style="padding:6px 0;font-size:14px;color:#334155">${escapeHtml(label)}</td>
+    <td style="padding:6px 0;text-align:right;font-size:14px;font-weight:700;color:${dColour(d)}"><span aria-hidden="true">${dArrow(d)}</span> <span class="sr">${dWord(d)} </span>${dVal(d)}</td>
+  </tr>`
+  const snapshotHtml = params.hasPrevReview && params.snapshotDeltas.length > 0
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        ${params.snapshotDeltas.map((d) => snapRow(d.label, d.delta)).join('')}
+        ${params.overallDelta != null ? `<tr><td colspan="2" style="border-top:1px solid #eef1f4;padding-top:4px"></td></tr>
+        <tr><td style="padding:6px 0;font-size:14px;font-weight:700;color:#0f172a">Overall</td>
+        <td style="padding:6px 0;text-align:right;font-size:14px;font-weight:800;color:${dColour(params.overallDelta)}"><span aria-hidden="true">${dArrow(params.overallDelta)}</span> ${dVal(params.overallDelta)}</td></tr>` : ''}
+       </table>`
+    : `<p style="margin:0;font-size:14px;color:#475569;line-height:1.5">Baseline set — next month you&rsquo;ll see exactly what improved. 🎯</p>`
+
+  const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><style>.sr{position:absolute;left:-9999px}</style></head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${preheader}</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f5f7">
+<tr><td align="center" style="padding:24px 16px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6e8eb">
+
+<!-- Academy mark -->
+<tr><td style="padding:22px 32px 0;text-align:center">
+${params.academyLogoUrl ? `<img src="${escapeHtml(params.academyLogoUrl)}" width="40" height="40" alt="${academy}" style="width:40px;height:40px;object-fit:contain;border-radius:8px">` : ''}
+<div style="margin:6px 0 0;font-size:13px;font-weight:700;color:#64748b">${academy}</div>
+</td></tr>
+
+<!-- Coach quote — HERO (first content) -->
+<tr><td style="padding:18px 32px 0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${accent}0f;border-left:4px solid ${accent};border-radius:0 14px 14px 0">
+<tr><td style="padding:20px 22px">
+<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:0 0 8px">What ${coach ? `Coach ${coach}` : 'your coach'} said</div>
+${quote
+      ? `<div style="font-size:19px;line-height:1.55;color:#0f172a;font-style:italic;font-weight:500">&ldquo;${quote}&rdquo;</div>${coach ? `<div style="margin:12px 0 0;font-size:13px;color:#64748b;font-weight:600">— Coach ${coach}</div>` : ''}`
+      : `<div style="font-size:16px;line-height:1.55;color:#334155">${coach ? `Coach ${coach} has` : 'Your coach has'} just reviewed ${name}&rsquo;s progress — here&rsquo;s how the month went.</div>`}
+</td></tr></table>
+</td></tr>
+
+<!-- Emotional headline + trend pill -->
+<tr><td style="padding:18px 32px 0;text-align:center">
+<div style="font-size:21px;font-weight:800;letter-spacing:-0.4px;color:#0f172a">${headline} ⚽</div>
+<div style="display:inline-block;margin:10px 0 0;padding:5px 12px;border-radius:999px;background:${trendColour}14;color:${trendColour};font-size:12px;font-weight:700"><span aria-hidden="true">${trendArrow}</span> ${trendText}</div>
+</td></tr>
+
+<!-- Progress Snapshot -->
+<tr><td style="padding:20px 32px 0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f8fafc;border:1px solid #eef1f4;border-radius:12px">
+<tr><td style="padding:16px 20px">
+<div style="font-size:12px;font-weight:700;color:#0f172a;margin:0 0 10px">📈 What&rsquo;s changed since last review</div>
+${snapshotHtml}
+</td></tr></table>
+</td></tr>
+
+<!-- Next focus -->
+${focus ? `<tr><td style="padding:16px 32px 0"><div style="font-size:15px;line-height:1.5;color:#0f172a"><span style="color:#d97706;font-weight:700">Next focus &middot; </span>${focus}</div></td></tr>` : ''}
+
+<!-- Attendance (rating reduced to a small note) -->
+<tr><td style="padding:16px 32px 0;text-align:center">
+<div style="display:inline-block;padding:10px 18px;background:#f8fafc;border:1px solid #eef1f4;border-radius:10px">
+<span style="font-size:18px;font-weight:800;color:#0f172a">${params.attendanceRate}%</span>
+<span style="font-size:12px;color:#94a3b8"> attendance &middot; ${params.sessionsAttended} sessions</span>
+</div>
+<div style="margin:8px 0 0;font-size:11px;color:#b6bcc4">Coach rating ${params.overallScore.toFixed(1)}/5</div>
+</td></tr>
+
+<!-- CTA -->
+<tr><td style="padding:22px 32px 26px;text-align:center">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${params.reportUrl}" style="height:48px;v-text-anchor:middle;width:300px;" arcsize="25%" strokecolor="${accent}" fillcolor="${accent}"><w:anchorlock/><center style="color:#0a0a0a;font-family:sans-serif;font-size:16px;font-weight:bold;">See ${name}&rsquo;s full journey &rarr;</center></v:roundrect><![endif]-->
+<!--[if !mso]><!-- --><a href="${params.reportUrl}" style="display:inline-block;background:${accent};color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px">See ${name}&rsquo;s full journey &rarr;</a><!--<![endif]-->
 </td></tr>
 
 <!-- Footer -->

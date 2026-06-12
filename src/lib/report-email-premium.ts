@@ -9,9 +9,13 @@
 // byte-identical production.
 // ============================================================================
 
-import { computeVerdict, readScore, type Verdict } from './report-premium'
+import { computeVerdict, readScore, skillDeltas, type Verdict, type SkillDelta } from './report-premium'
 
 export const REPORTS_PREMIUM_EMAIL_ENABLED = process.env.REPORTS_PREMIUM_EMAIL_ENABLED === 'true'
+
+// Phase 1C — V2 (coach-first + progress snapshot + academy sender). Sits above
+// the 1B flag: OFF ⇒ the live 1B premium email is produced unchanged.
+export const REPORTS_PREMIUM_EMAIL_V2_ENABLED = process.env.REPORTS_PREMIUM_EMAIL_V2_ENABLED === 'true'
 
 type ReviewLike = Record<string, unknown>
 type Category = { key: string; label: string }
@@ -75,4 +79,28 @@ export function strengthSentence(label: string, firstName: string): string {
 }
 export function focusSentence(label: string): string {
   return `The next focus is ${label.toLowerCase()}.`
+}
+
+// V2 emotional in-body headline (honest — only "brilliant month" when trend up).
+// Also used as the V2 subject (with a ⚽). No coachName dependency (may be null).
+export function emailHeadlineV2(verdict: Verdict, firstName: string): string {
+  const n = firstName || 'Your child'
+  switch (verdict.tone) {
+    case 'up':   return `${n} had a brilliant month`
+    case 'flat': return `${n} is making steady progress`
+    case 'down': return `A focus month for ${n}`
+    default:     return `${n}'s development this month`
+  }
+}
+
+export type ReportSnapshot = { deltas: SkillDelta[]; hasPrev: boolean }
+
+// Progress Snapshot — top movers vs the previous review, from the SAME review
+// series the verdict already reads (no new query). Empty (hasPrev=false) for a
+// first/only report. The overall delta is taken from verdict.delta by the caller.
+export function buildSnapshot(series: ReviewLike[], categories: Category[]): ReportSnapshot {
+  const latest = series[0]
+  const prev = series[1]
+  if (!latest || !prev) return { deltas: [], hasPrev: false }
+  return { deltas: skillDeltas(latest, prev, categories).slice(0, 3), hasPrev: true }
 }

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
-import { progressReportEmail, progressReportEmailPremium } from '@/lib/email-templates'
+import { progressReportEmail, progressReportEmailPremium, progressReportEmailPremiumV2 } from '@/lib/email-templates'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import { REPORT_EMAIL_IDEMPOTENCY_ENABLED } from '@/lib/report-visibility'
-import { REPORTS_PREMIUM_EMAIL_ENABLED, emailVerdict } from '@/lib/report-email-premium'
+import { REPORTS_PREMIUM_EMAIL_ENABLED, REPORTS_PREMIUM_EMAIL_V2_ENABLED, emailVerdict, buildSnapshot } from '@/lib/report-email-premium'
 
 const FALLBACK_SCORE_CATEGORIES = [
   { key: 'attitude', label: 'Attitude' },
@@ -96,11 +96,14 @@ export async function POST(request: NextRequest) {
 
   const reportUrl = `${appUrl}/dashboard/players/${playerId}/report`
 
-  // Phase 1B — premium report email (flag-gated). When OFF, the existing
-  // template is used unchanged (byte-identical). When ON, lead with the coach's
-  // words + an honest verdict derived from a READ-ONLY previous-review series.
+  // Premium report email (flag-gated, three-way). Flag OFF (both) ⇒ the existing
+  // template, byte-identical. 1B ⇒ coach-led premium. V2 ⇒ coach-FIRST + Progress
+  // Snapshot + academy sender. The premium enrichment (coach name + the read-only
+  // review series → verdict) is shared by 1B and V2; the snapshot reuses that
+  // SAME series (no new read). FROM=academy is applied via sendEmail.fromName only
+  // when V2 is on.
   let template
-  if (REPORTS_PREMIUM_EMAIL_ENABLED) {
+  if (REPORTS_PREMIUM_EMAIL_V2_ENABLED || REPORTS_PREMIUM_EMAIL_ENABLED) {
     // Coach name = the authoring coach/admin (the caller).
     const { data: { user } } = await supabase.auth.getUser()
     const { data: coachProfile } = user
@@ -108,15 +111,16 @@ export async function POST(request: NextRequest) {
       : { data: null }
     const coachName = (coachProfile?.full_name || '').split(' ')[0] || null
 
-    // Read-only review series for this player → trend verdict.
+    // Read-only review series for this player → trend verdict (+ snapshot in V2).
     const { data: seriesRows } = await supabase
       .from('progress_reviews')
       .select('attitude, effort, technical_quality, game_understanding, confidence, physical_movement, scores, review_date')
       .eq('player_id', playerId)
       .order('review_date', { ascending: false })
-    const verdict = emailVerdict((seriesRows || []) as Record<string, unknown>[], scoringCategories)
+    const series = (seriesRows || []) as Record<string, unknown>[]
+    const verdict = emailVerdict(series, scoringCategories)
 
-    template = progressReportEmailPremium({
+    const base = {
       parentName: parent.full_name?.split(' ')[0] || 'there',
       childName: `${player.first_name} ${player.last_name}`,
       firstName: player.first_name,
@@ -131,7 +135,19 @@ export async function POST(request: NextRequest) {
       attendanceRate,
       sessionsAttended,
       reportUrl,
-    })
+    }
+
+    if (REPORTS_PREMIUM_EMAIL_V2_ENABLED) {
+      const snap = buildSnapshot(series, scoringCategories)
+      template = progressReportEmailPremiumV2({
+        ...base,
+        snapshotDeltas: snap.deltas,
+        overallDelta: verdict.delta,
+        hasPrevReview: snap.hasPrev,
+      })
+    } else {
+      template = progressReportEmailPremium(base)
+    }
   } else {
     template = progressReportEmail({
       parentName: parent.full_name?.split(' ')[0] || 'there',
@@ -148,7 +164,10 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  const result = await sendEmail({ to: parent.email, ...template })
+  // V2: send FROM the academy display name (sendEmail.fromName — verified address
+  // unchanged). OFF ⇒ no fromName ⇒ identical sender to today.
+  const fromName = REPORTS_PREMIUM_EMAIL_V2_ENABLED ? (org?.name || undefined) : undefined
+  const result = await sendEmail({ to: parent.email, ...template, ...(fromName ? { fromName } : {}) })
 
   // Slice C — Email reliability: on a SUCCESSFUL send, stamp emailed_at on the
   // just-created review (the latest for this player) so the daily cron skips
