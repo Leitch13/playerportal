@@ -52,6 +52,7 @@ import {
   actionSignals,
   formatAgeLabel,
 } from '@/lib/parent-hub-metrics'
+import { REPORT_VISIBILITY_ENABLED, REPORT_NOTIFICATION_TYPES } from '@/lib/report-visibility'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -138,6 +139,24 @@ async function loadParentHub(
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10)
   const newReviewCount = revs.filter((r) => (r.review_date || '') >= weekAgo).length
 
+  // Slice A: when REPORT_VISIBILITY_ENABLED, drive the "new report" signal from
+  // UNREAD report notifications (clears when the parent reads it) instead of the
+  // 7-day window. Read-only; falls back to the window if no report notifications
+  // exist for this parent ("if available"). No writes, no migration, no RLS.
+  let reportSignalCount = newReviewCount
+  if (REPORT_VISIBILITY_ENABLED) {
+    const reportTypes = [...REPORT_NOTIFICATION_TYPES]
+    const { count: totalReportNotifs } = await supabase
+      .from('notifications').select('id', { count: 'exact', head: true })
+      .eq('user_id', userId).in('type', reportTypes)
+    if ((totalReportNotifs || 0) > 0) {
+      const { count: unreadReportNotifs } = await supabase
+        .from('notifications').select('id', { count: 'exact', head: true })
+        .eq('user_id', userId).eq('read', false).in('type', reportTypes)
+      reportSignalCount = unreadReportNotifs || 0
+    }
+  }
+
   const { data: prof } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
   const orgId = prof?.organisation_id as string | undefined
   const { data: org } = orgId
@@ -220,7 +239,7 @@ async function loadParentHub(
     progress,
     messages,
     announcements,
-    actions: actionSignals({ outstanding, newReviewCount, unreadCount: unreadCount || 0, anyPastDue }),
+    actions: actionSignals({ outstanding, newReviewCount: reportSignalCount, unreadCount: unreadCount || 0, anyPastDue }),
     isNewFamily: slots.length === 0,
   }
 }
