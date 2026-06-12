@@ -4,6 +4,8 @@ import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import PlayerAvatar from '@/components/PlayerAvatar'
 import ReportActions from './ReportActions'
+import ReportViewedPing from '@/components/reports/ReportViewedPing'
+import { REPORT_VIEWED_TRACKING_ENABLED } from '@/lib/report-visibility'
 
 // Inline SVG radar chart for print-friendliness (no client JS needed)
 function PrintRadarChart({ scores }: { scores: { label: string; value: number }[] }) {
@@ -503,8 +505,15 @@ export default async function PlayerReportPage({
     year: 'numeric',
   })
 
+  // Slice B — viewed tracking. Only the owning parent's open records a view;
+  // staff see an indicator on the latest review (the one the notification points to).
+  const isParentOwner = role === 'parent' && player.parent_id === user.id
+  const isStaffViewer = role === 'admin' || role === 'coach'
+  const latestReviewViewedAt = (latestReview as Record<string, unknown> | undefined)?.viewed_at as string | undefined
+
   return (
     <div className="max-w-3xl mx-auto">
+      {REPORT_VIEWED_TRACKING_ENABLED && isParentOwner && <ReportViewedPing playerId={id} />}
       <ReportActions playerId={id} />
 
       {/* === PRINTABLE REPORT === */}
@@ -532,6 +541,13 @@ export default async function PlayerReportPage({
           </div>
           <div className="text-right text-sm text-text-light">
             <p>{reportDate}</p>
+            {REPORT_VIEWED_TRACKING_ENABLED && isStaffViewer && latestReview && (
+              <p className={`mt-1 text-xs print:hidden ${latestReviewViewedAt ? 'text-emerald-600' : 'text-text-light'}`}>
+                {latestReviewViewedAt
+                  ? `Parent viewed ✓ ${new Date(latestReviewViewedAt).toLocaleDateString('en-GB')}`
+                  : 'Not yet viewed'}
+              </p>
+            )}
           </div>
         </div>
 

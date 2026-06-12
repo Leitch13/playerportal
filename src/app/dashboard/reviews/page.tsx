@@ -6,6 +6,7 @@ import EmptyState from '@/components/EmptyState'
 import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ReviewForm from './ReviewForm'
+import { REPORT_VIEWED_TRACKING_ENABLED } from '@/lib/report-visibility'
 
 export default async function ReviewsPage({
   searchParams,
@@ -88,6 +89,9 @@ export default async function ReviewsPage({
                       {player?.age_group && (
                         <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-semibold">{player.age_group}</span>
                       )}
+                      {REPORT_VIEWED_TRACKING_ENABLED && (review as Record<string, unknown>).viewed_at ? (
+                        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full text-[10px] font-semibold">✓ Viewed</span>
+                      ) : null}
                     </div>
                   </div>
                   {/* Average score */}

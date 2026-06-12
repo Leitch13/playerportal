@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { progressReportEmail } from '@/lib/email-templates'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
+import { REPORT_EMAIL_IDEMPOTENCY_ENABLED } from '@/lib/report-visibility'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
   // Find reviews from the last 24 hours that haven't been emailed
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-  const { data: reviews, error: reviewsErr } = await supabase
+  let reviewsQuery = supabase
     .from('progress_reviews')
     .select(`
       id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement,
@@ -46,6 +47,14 @@ export async function GET(request: NextRequest) {
       organisation:organisations!progress_reviews_organisation_id_fkey(name)
     `)
     .gte('created_at', since)
+
+  // Slice C — Email reliability: when ON, only email reviews that were NOT
+  // already emailed (on-create stamps emailed_at on success) ⇒ no double-send.
+  if (REPORT_EMAIL_IDEMPOTENCY_ENABLED) {
+    reviewsQuery = reviewsQuery.is('emailed_at', null)
+  }
+
+  const { data: reviews, error: reviewsErr } = await reviewsQuery
 
   if (reviewsErr) {
     return NextResponse.json({ error: 'Failed to fetch reviews', detail: reviewsErr.message }, { status: 500 })
@@ -70,6 +79,7 @@ export async function GET(request: NextRequest) {
   }
 
   const jobs: Parameters<typeof sendEmail>[0][] = []
+  const jobReviewIds: string[] = []   // Slice C — parallel to `jobs`, for emailed_at stamping
 
   for (const review of reviews || []) {
     const player = review.player as unknown as {
@@ -136,9 +146,28 @@ export async function GET(request: NextRequest) {
     })
 
     jobs.push({ to: player.parent.email, ...template })
+    jobReviewIds.push(review.id as string)
   }
 
-  const { sent } = await sendEmailBatch(jobs)
+  let sent = 0
+  if (REPORT_EMAIL_IDEMPOTENCY_ENABLED) {
+    // Slice C — send sequentially so we can stamp emailed_at ONLY on the reviews
+    // whose email actually succeeded (a failed send leaves emailed_at NULL ⇒
+    // retried next run). Idempotent: .is('emailed_at', null) never overwrites.
+    for (let i = 0; i < jobs.length; i++) {
+      const r = await sendEmail(jobs[i])
+      if (r.success) {
+        sent++
+        await supabase
+          .from('progress_reviews')
+          .update({ emailed_at: new Date().toISOString() })
+          .eq('id', jobReviewIds[i])
+          .is('emailed_at', null)
+      }
+    }
+  } else {
+    ;({ sent } = await sendEmailBatch(jobs))
+  }
 
   return NextResponse.json({ checked: (reviews || []).length, sent })
 }

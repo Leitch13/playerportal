@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 import { progressReportEmail } from '@/lib/email-templates'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
+import { REPORT_EMAIL_IDEMPOTENCY_ENABLED } from '@/lib/report-visibility'
 
 const FALLBACK_SCORE_CATEGORIES = [
   { key: 'attitude', label: 'Attitude' },
@@ -107,6 +108,27 @@ export async function POST(request: NextRequest) {
   })
 
   const result = await sendEmail({ to: parent.email, ...template })
+
+  // Slice C — Email reliability: on a SUCCESSFUL send, stamp emailed_at on the
+  // just-created review (the latest for this player) so the daily cron skips
+  // it. Failure ⇒ emailed_at stays NULL ⇒ cron retries. Uses the coach's
+  // session (existing coach/admin UPDATE policy) — no RLS change, idempotent.
+  if (REPORT_EMAIL_IDEMPOTENCY_ENABLED && result?.success) {
+    const { data: latest } = await supabase
+      .from('progress_reviews')
+      .select('id')
+      .eq('player_id', playerId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    if (latest) {
+      await supabase
+        .from('progress_reviews')
+        .update({ emailed_at: new Date().toISOString() })
+        .eq('id', latest.id)
+        .is('emailed_at', null)
+    }
+  }
 
   // Also create a notification
   await supabase.from('notifications').insert({
