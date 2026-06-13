@@ -7,6 +7,8 @@ import CancelBookingButton from './CancelBookingButton'
 import CalendarTabs from './CalendarTabs'
 import type { CalendarSession, CalendarEvent } from './CalendarTabs'
 import type { UserRole } from '@/lib/types'
+import ScheduleTopV2 from '@/components/schedule/ScheduleTopV2'
+import { PARENT_SCHEDULE_V2_ENABLED, upcomingSessions, isThisWeek, type ScheduleSlot } from '@/lib/schedule-v2'
 
 const DAY_ORDER = [
   'Monday',
@@ -515,6 +517,34 @@ async function ParentSchedule({
       (DAY_ORDER.indexOf(b) === -1 ? 99 : DAY_ORDER.indexOf(b))
   )
 
+  // Parent Schedule 2.0 (Phase 1A) — child-first "top" computed from data
+  // already loaded above (no new query). Gated; OFF ⇒ none of this runs.
+  const groupById = new Map(groups.map((g) => [g.id, g]))
+  const nowMs = Date.now()
+  const bookedSlots: ScheduleSlot[] = PARENT_SCHEDULE_V2_ENABLED
+    ? activeEnrolments
+        .map((e): ScheduleSlot | null => {
+          const g = groupById.get(e.group_id)
+          const child = (myPlayers || []).find((p) => p.id === e.player_id)
+          if (!g || !child) return null
+          return {
+            dayOfWeek: g.day_of_week,
+            timeSlot: g.time_slot,
+            location: g.location,
+            coachName: g.coach?.full_name || null,
+            groupName: g.name,
+            groupId: g.id,
+            playerId: child.id,
+            playerName: child.first_name,
+            enrolmentId: e.id,
+          }
+        })
+        .filter((s): s is ScheduleSlot => s !== null)
+    : []
+  const upcoming = PARENT_SCHEDULE_V2_ENABLED ? upcomingSessions(bookedSlots, nowMs) : []
+  const heroSession = upcoming[0] || null
+  const thisWeekSessions = upcoming.filter((s) => isThisWeek(s.whenMs, nowMs))
+
   return (
     <div
       className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white"
@@ -598,6 +628,21 @@ async function ParentSchedule({
         </div>
       </div>
 
+      {/* Parent Schedule 2.0 (Phase 1A) — child-first top: Next Session · This Week · My Schedule. Flag OFF ⇒ not rendered. */}
+      {PARENT_SCHEDULE_V2_ENABLED && (
+        <ScheduleTopV2
+          hero={heroSession}
+          thisWeek={thisWeekSessions}
+          mySchedule={bookedSlots}
+          brandColor={brandColor}
+          parentFirstName={parentFirstName}
+          nowMs={nowMs}
+          retentionEnabled={retentionEnabled}
+          retentionPercent={retentionPercent}
+          retentionMonths={retentionMonths}
+        />
+      )}
+
       {/* Stat cards — punchier than the old generic boxes */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#4ecde6]/10 via-[#0f1818] to-[#0a0a0a] p-3 sm:p-4">
@@ -680,7 +725,7 @@ async function ParentSchedule({
       <div className="space-y-4 sm:space-y-5">
         <div className="flex items-end justify-between flex-wrap gap-2 sm:gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white">Classes</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white">{PARENT_SCHEDULE_V2_ENABLED ? 'Browse & book more classes' : 'Classes'}</h2>
             <p className="text-xs sm:text-sm text-white/50 mt-0.5">All weekly sessions — book your child in with one click.</p>
           </div>
           <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white/40">
