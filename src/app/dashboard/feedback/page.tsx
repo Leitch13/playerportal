@@ -8,8 +8,14 @@ import EmptyState from '@/components/EmptyState'
 import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ProgressTrend from './ProgressTrend'
+import ParentProgressV2 from '@/components/progress/ParentProgressV2'
+import { PARENT_PROGRESS_V2_ENABLED, buildChildJourney } from '@/lib/parent-progress-v2'
 
-export default async function FeedbackPage() {
+export default async function FeedbackPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ child?: string }>
+}) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -70,6 +76,24 @@ export default async function FeedbackPage() {
       }
     }
     reviewsByPlayer[pid].reviews!.push(r)
+  }
+
+  // ── Parent Progress 2.0 (Phase 1A) — child-first development journey. Built
+  // entirely from the data already loaded above (players, reviews, categories);
+  // no new queries. Flag OFF ⇒ this branch is skipped and the page below renders
+  // byte-identical to current production. ──
+  if (PARENT_PROGRESS_V2_ENABLED) {
+    const sp = await searchParams
+    const journeys = (players || []).map((p) =>
+      buildChildJourney(p.id, p.first_name || '', reviewsByPlayer[p.id]?.reviews ?? [], scoringCategories),
+    )
+    const selectedId =
+      journeys.find((j) => j.playerId === sp?.child)?.playerId ?? journeys[0]?.playerId ?? ''
+    return (
+      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+        <ParentProgressV2 journeys={journeys} selectedId={selectedId} />
+      </div>
+    )
   }
 
   return (
