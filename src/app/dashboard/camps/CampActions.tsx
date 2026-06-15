@@ -5,16 +5,48 @@ import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+// Camps Safe Edit — Phase 1A. The Edit entry point is rendered only when the
+// server passes editEnabled (gated by CAMP_EDIT_ENABLED). OFF ⇒ this component
+// renders exactly as before.
+import CampEditForm from './CampEditForm'
+
+type EditableCamp = {
+  id: string
+  name: string
+  description: string | null
+  start_date: string
+  end_date: string
+  daily_start_time: string | null
+  daily_end_time: string | null
+  location: string | null
+  age_group: string | null
+  price: number | null
+  max_capacity: number | null
+  image_url: string | null
+  what_to_bring: string | null
+  is_published: boolean
+  early_bird_price: number | null
+  sibling_discount_enabled: boolean
+  sibling_discount_percent: number | null
+  training_group_id: string | null
+}
 
 type Props = {
   campId: string
   campName: string
   isPublished: boolean
   orgSlug: string
+  // Phase 1A safe-edit wiring (all optional ⇒ flag-OFF renders unchanged).
+  editEnabled?: boolean
+  camp?: EditableCamp
+  bookedCount?: number
+  trainingGroups?: { id: string; name: string }[]
 }
 
-export default function CampActions({ campId, campName, isPublished, orgSlug }: Props) {
+export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups }: Props) {
   const [open, setOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const canEdit = !!editEnabled && !!camp
   const [toggling, setToggling] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
   const [coords, setCoords] = useState<{ top: number; right: number }>({ top: 0, right: 0 })
@@ -99,6 +131,12 @@ export default function CampActions({ campId, campName, isPublished, orgSlug }: 
             <Link href={`/dashboard/camps/${campId}`} className={menuItem} onClick={() => setOpen(false)}>
               View roster
             </Link>
+            {/* Camps Safe Edit — Phase 1A. Flag-gated edit entry. */}
+            {canEdit && (
+              <button onClick={() => { setOpen(false); setEditOpen(true) }} className={menuItem}>
+                Edit details
+              </button>
+            )}
             <button onClick={handleTogglePublish} disabled={toggling} className={menuItem}>
               {isPublished
                 ? (toggling ? 'Unpublishing...' : 'Unpublish')
@@ -124,6 +162,16 @@ export default function CampActions({ campId, campName, isPublished, orgSlug }: 
           </div>
         </>,
         document.body
+      )}
+
+      {/* Camps Safe Edit — Phase 1A. Lean edit modal, safe fields only. */}
+      {canEdit && editOpen && camp && (
+        <CampEditForm
+          camp={camp}
+          bookedCount={bookedCount || 0}
+          trainingGroups={trainingGroups || []}
+          onClose={() => setEditOpen(false)}
+        />
       )}
     </>
   )

@@ -6,6 +6,9 @@ import Card from '@/components/Card'
 import EmptyState from '@/components/EmptyState'
 import CampForm from './CampForm'
 import CampActions from './CampActions'
+// Camps Safe Edit — Phase 1A. Flag gates the Edit entry point; OFF ⇒ page
+// renders identically to the create-only original (no extra reads, no Edit item).
+import { CAMP_EDIT_ENABLED } from '@/lib/camps-edit'
 
 type Camp = {
   id: string
@@ -31,6 +34,7 @@ type Camp = {
   sibling_discount_percent: number | null
   collect_medical_info: boolean
   require_consent: boolean
+  training_group_id: string | null
 }
 
 type CampBooking = {
@@ -269,6 +273,29 @@ export default async function CampsPage() {
                           campName={camp.name}
                           isPublished={camp.is_published}
                           orgSlug={orgSlug}
+                          editEnabled={CAMP_EDIT_ENABLED}
+                          camp={CAMP_EDIT_ENABLED ? {
+                            id: camp.id,
+                            name: camp.name,
+                            description: camp.description,
+                            start_date: camp.start_date,
+                            end_date: camp.end_date,
+                            daily_start_time: camp.daily_start_time,
+                            daily_end_time: camp.daily_end_time,
+                            location: camp.location,
+                            age_group: camp.age_group,
+                            price: camp.price,
+                            max_capacity: camp.max_capacity,
+                            image_url: camp.image_url,
+                            what_to_bring: camp.what_to_bring,
+                            is_published: camp.is_published,
+                            early_bird_price: camp.early_bird_price,
+                            sibling_discount_enabled: camp.sibling_discount_enabled,
+                            sibling_discount_percent: camp.sibling_discount_percent,
+                            training_group_id: camp.training_group_id,
+                          } : undefined}
+                          bookedCount={CAMP_EDIT_ENABLED ? stats.bookingCount : undefined}
+                          trainingGroups={CAMP_EDIT_ENABLED ? trainingGroups : undefined}
                         />
                       </td>
                     </tr>
