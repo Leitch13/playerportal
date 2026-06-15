@@ -121,8 +121,9 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           todayISO(),
         )
       : null
-  // Is the whole camp still un-started? (controls whether structural UI is live)
-  const startedErr =
+  // Is the camp still editable? (structural edits are allowed until the camp has
+  // fully ended — the guard below blocks only when end_date is in the past.)
+  const endedErr =
     structuralEnabled
       ? additiveEditError(
           { start_date: camp.start_date, end_date: camp.end_date, schedule: origSchedule },
@@ -130,7 +131,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           todayISO(),
         )
       : null
-  const campStarted = startedErr != null
+  const campEnded = endedErr != null
 
   // Impact figures.
   const origDays = campDayCount(camp.start_date, camp.end_date)
@@ -288,7 +289,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
               </div>
               <div>
                 <label className="block text-xs text-white/50 mb-1">End Date</label>
-                {structuralEnabled && !campStarted ? (
+                {structuralEnabled && !campEnded ? (
                   <input
                     type="date"
                     value={endDate}
@@ -305,10 +306,10 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                 <div className={lockedCls}>{camp.price != null ? `£${Number(camp.price).toFixed(0)}` : '—'}</div>
               </div>
             </div>
-            {structuralEnabled && campStarted && (
-              <p className="text-[11px] text-white/30">This camp has started — dates &amp; schedule are locked.</p>
+            {structuralEnabled && campEnded && (
+              <p className="text-[11px] text-white/30">This camp has ended — dates &amp; schedule are locked.</p>
             )}
-            {structuralEnabled && !campStarted && (
+            {structuralEnabled && !campEnded && (
               <p className="text-[11px] text-white/40">
                 You can only extend the end date — never bring it forward. No charge is made; existing bookings simply
                 cover the longer camp.
@@ -318,7 +319,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           </div>
 
           {/* Additive schedule (Phase 2A) */}
-          {structuralEnabled && !campStarted && (
+          {structuralEnabled && !campEnded && (
             <div className="rounded-lg border border-[#1e1e1e] p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>

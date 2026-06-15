@@ -183,7 +183,7 @@ export type AdditiveSnapshot = {
 
 // The structural guard. Returns the first failing message, or null when the
 // edit is purely additive and safe. `todayISO` is 'YYYY-MM-DD' (caller supplies;
-// compared in UTC). Enforces: camp not started · start unchanged · end only
+// compared in UTC). Enforces: camp not ended · start unchanged · end only
 // grows · day-count non-decreasing · schedule append-only · sane bounds.
 export function additiveEditError(orig: AdditiveSnapshot, next: AdditiveSnapshot, todayISO: string): string | null {
   const today = parseISODate(todayISO)
@@ -193,9 +193,12 @@ export function additiveEditError(orig: AdditiveSnapshot, next: AdditiveSnapshot
   const ne = parseISODate(next.end_date)
   if ([today, os, oe, ns, ne].some((n) => isNaN(n))) return 'Invalid camp dates.'
 
-  // Block once the camp has started (start today or earlier). Because the start
-  // can't move and the end can't shrink, this also guarantees no past-date edit.
-  if (os <= today) return "Structural edits aren't allowed once a camp has started."
+  // Block only once the camp has FULLY ENDED (end date strictly in the past).
+  // Additive edits never touch bookings/payments, so a camp can still be
+  // extended/enhanced right up to and during its run — through its final day
+  // (end_date === today is still editable). The start can't move and the end
+  // can't shrink, so this never enables a reductive or past-shifting edit.
+  if (oe < today) return "Structural edits aren't allowed once a camp has ended."
 
   // Start date is immutable in additive editing.
   if (ns !== os) return "The start date can't be changed."
