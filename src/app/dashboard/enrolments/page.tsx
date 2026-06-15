@@ -10,6 +10,19 @@ import TrialFollowUpSection from './TrialFollowUpSection'
 // Phase 2.4: trial follow-up loader. Pulls both trial_bookings + enrolments.is_trial
 // and returns the unified `needsFollowUp` cohort. Read-only — no mutations.
 import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
+// Enrolments Revenue Ops Phase 1A — read-only "Daily Actions" band. Flag-gated;
+// OFF ⇒ no extra reads, byte-identical page.
+import {
+  ENROLMENTS_REVOPS_ENABLED,
+  trialsEndingSoon,
+  conversionSummary,
+  buildAttendanceConcerns,
+  type ActionTrial,
+  type AttendanceConcern,
+  type ConversionSummary,
+} from '@/lib/enrolments-revops'
+import { loadTrialConversionData } from '@/lib/trial-conversion-loader'
+import EnrolmentsActionBand from '@/components/enrolments/EnrolmentsActionBand'
 
 type EnrolmentRow = {
   id: string
@@ -81,6 +94,44 @@ export default async function EnrolmentsPage() {
   const paused = rows.filter(e => e.status === 'paused')
   const cancelled = rows.filter(e => e.status === 'cancelled' || e.status === 'inactive')
 
+  // ── Enrolments Revenue Ops Phase 1A — read-only Daily Actions band. ──
+  // Built only when the flag is ON: trials-ending-soon from already-loaded
+  // `trials`, plus two flag-gated reads (trial conversion counts, recent
+  // attendance for active members). Flag OFF ⇒ none of this runs, so the page
+  // fires no extra queries and renders byte-identical.
+  let bandTrials: ActionTrial[] = []
+  let bandConcerns: AttendanceConcern[] = []
+  let bandConversion: ConversionSummary | null = null
+  if (ENROLMENTS_REVOPS_ENABLED) {
+    const nowMs = Date.now()
+    bandTrials = trialsEndingSoon(trials, nowMs, 7)
+    // Gross conversion % via the existing trial-conversion loader (read-only).
+    const conv = await loadTrialConversionData(supabase, orgId).catch(() => null)
+    bandConversion = conversionSummary({
+      activeTrials: trials.length,
+      endingThisWeek: bandTrials.filter((t) => (t.daysLeft ?? -99) >= 0).length,
+      followUpDue: trialFollowUps.length,
+      counts: conv?.counts ?? null,
+    })
+    // Attendance risk for ACTIVE members only — one bounded read (90-day window).
+    const activePlayerIds = [...new Set(active.map((e) => e.player_id))]
+    if (activePlayerIds.length > 0) {
+      const cutoff = new Date(nowMs - 90 * 86_400_000).toISOString().slice(0, 10)
+      const { data: att } = await supabase
+        .from('attendance')
+        .select('player_id, session_date, present')
+        .in('player_id', activePlayerIds)
+        .gte('session_date', cutoff)
+      const byPlayer = new Map<string, Array<{ session_date: string; present: boolean }>>()
+      for (const a of (att || []) as Array<{ player_id: string; session_date: string; present: boolean }>) {
+        const arr = byPlayer.get(a.player_id) ?? []
+        arr.push({ session_date: a.session_date, present: a.present })
+        byPlayer.set(a.player_id, arr)
+      }
+      bandConcerns = buildAttendanceConcerns(active, byPlayer, nowMs)
+    }
+  }
+
   // Group active enrolments by class for the existing display
   const byGroup: Record<string, EnrolmentRow[]> = {}
   for (const e of active) {
@@ -123,6 +174,14 @@ export default async function EnrolmentsPage() {
           <Chip href="#cancelled"       label="Cancelled"        value={cancelled.length}       tone="muted" />
         </div>
       </div>
+
+      {ENROLMENTS_REVOPS_ENABLED && (
+        <EnrolmentsActionBand
+          trialsEndingSoon={bandTrials}
+          attendanceConcerns={bandConcerns}
+          conversion={bandConversion}
+        />
+      )}
 
       <EnrolmentForm players={players || []} groups={groups || []} orgId={orgId} />
 
