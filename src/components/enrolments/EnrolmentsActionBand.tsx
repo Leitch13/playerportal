@@ -4,8 +4,10 @@ import type { ActionTrial, AttendanceConcern, ConversionSummary } from '@/lib/en
 // Enrolments Revenue Ops — Phase 1A "Daily Actions" band. Server presentational,
 // read-only. Sits above the existing chip row / sections and answers
 // "Who needs attention today?" in one glance: trials ending soon + attendance
-// concerns, with a small trial-conversion pulse. No buttons (Phase 2 owns
-// actions). Dark theme to match the existing Enrolments page.
+// concerns (one row PER PLAYER), with a small trial-conversion pulse. No buttons
+// (Phase 2 owns actions). Dark theme to match the existing Enrolments page.
+
+const CAP = 5 // max rows per list; the rest collapse into a "view all" link
 
 function daysLeftLabel(d: number | null): string {
   if (d == null) return '—'
@@ -39,7 +41,17 @@ export default function EnrolmentsActionBand({
   attendanceConcerns: AttendanceConcern[]
   conversion: ConversionSummary | null
 }) {
-  const nothingUrgent = trialsEndingSoon.length === 0 && attendanceConcerns.length === 0
+  const hasTrials = trialsEndingSoon.length > 0
+  const hasConcerns = attendanceConcerns.length > 0
+  const nothingUrgent = !hasTrials && !hasConcerns
+  // Two columns only when BOTH lists have content — otherwise the single list
+  // goes full-width so there's no dead half.
+  const twoCol = hasTrials && hasConcerns
+
+  const shownTrials = trialsEndingSoon.slice(0, CAP)
+  const moreTrials = trialsEndingSoon.length - shownTrials.length
+  const shownConcerns = attendanceConcerns.slice(0, CAP)
+  const moreConcerns = attendanceConcerns.length - shownConcerns.length
 
   return (
     <section aria-label="Actions required" className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 space-y-4">
@@ -48,18 +60,18 @@ export default function EnrolmentsActionBand({
         <span className="text-[11px] text-white/40">Who needs attention today</span>
       </div>
 
-      {/* ── Trial conversion pulse ── */}
+      {/* ── Trial conversion pulse (conversion first; zeros muted) ── */}
       {conversion && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <PulseChip label="Active trials" value={String(conversion.active)} tone="sky" />
-          <PulseChip label="Ending this week" value={String(conversion.endingThisWeek)} tone={conversion.endingThisWeek > 0 ? 'amber' : 'muted'} />
-          <PulseChip label="Follow-up due" value={String(conversion.followUpDue)} tone={conversion.followUpDue > 0 ? 'rose' : 'muted'} />
           <PulseChip
             label="Conversion"
             value={conversion.grossPct != null ? `${conversion.grossPct}%` : '—'}
             tone="emerald"
             hint={conversion.grossPct != null ? `${conversion.grossSampleN} trials` : 'no data yet'}
           />
+          <PulseChip label="Active trials" value={String(conversion.active)} tone={conversion.active > 0 ? 'sky' : 'muted'} />
+          <PulseChip label="Ending this week" value={String(conversion.endingThisWeek)} tone={conversion.endingThisWeek > 0 ? 'amber' : 'muted'} />
+          <PulseChip label="Follow-up due" value={String(conversion.followUpDue)} tone={conversion.followUpDue > 0 ? 'rose' : 'muted'} />
         </div>
       )}
 
@@ -69,15 +81,13 @@ export default function EnrolmentsActionBand({
           <p className="text-xs text-white/50 mt-1">No trials ending this week and no attendance concerns.</p>
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className={twoCol ? 'grid gap-4 lg:grid-cols-2' : 'space-y-4'}>
           {/* ── Trials ending soon ── */}
-          <div className="space-y-2">
-            <h3 className="text-[11px] font-bold uppercase tracking-wider text-sky-300">Trials ending soon</h3>
-            {trialsEndingSoon.length === 0 ? (
-              <p className="text-xs text-white/40 px-1">No trials ending this week.</p>
-            ) : (
+          {hasTrials && (
+            <div className="space-y-2">
+              <SectionHead title="Trials ending soon" tone="text-sky-300" count={trialsEndingSoon.length} />
               <ul className="rounded-xl border border-white/[0.06] divide-y divide-white/[0.05] overflow-hidden">
-                {trialsEndingSoon.map((t) => {
+                {shownTrials.map((t) => {
                   const urgent = (t.daysLeft ?? 99) <= 3
                   return (
                     <li key={t.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
@@ -92,23 +102,27 @@ export default function EnrolmentsActionBand({
                   )
                 })}
               </ul>
-            )}
-          </div>
+              {moreTrials > 0 && (
+                <a href="/dashboard/trials" className="block text-[11px] text-white/40 hover:text-white/70 transition-colors px-1">
+                  +{moreTrials} more · View all trials →
+                </a>
+              )}
+            </div>
+          )}
 
-          {/* ── Attendance risk ── */}
-          <div className="space-y-2">
-            <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-300">Attendance risk</h3>
-            {attendanceConcerns.length === 0 ? (
-              <p className="text-xs text-white/40 px-1">No attendance concerns.</p>
-            ) : (
+          {/* ── Attendance risk (one row per player) ── */}
+          {hasConcerns && (
+            <div className="space-y-2">
+              <SectionHead title="Attendance risk" tone="text-amber-300" count={attendanceConcerns.length} />
               <ul className="rounded-xl border border-white/[0.06] divide-y divide-white/[0.05] overflow-hidden">
-                {attendanceConcerns.map((c) => {
+                {shownConcerns.map((c) => {
                   const disp = ATTENDANCE_LEVEL_DISPLAY[c.level]
+                  const where = c.classCount > 1 ? `${c.classCount} classes` : c.className
                   return (
                     <li key={c.playerId} className="flex items-center justify-between gap-3 px-3 py-2.5">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-white truncate">{c.playerName}</p>
-                        <p className="text-[11px] text-white/50 truncate">{c.className} · {lastSeenLabel(c.daysSinceAttendance)}</p>
+                        <p className="text-[11px] text-white/50 truncate">{where} · {lastSeenLabel(c.daysSinceAttendance)}</p>
                       </div>
                       <span className={`shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold border ${LEVEL_TONE[disp.tone]}`}>
                         {disp.emoji} {disp.label}
@@ -117,11 +131,25 @@ export default function EnrolmentsActionBand({
                   )
                 })}
               </ul>
-            )}
-          </div>
+              {moreConcerns > 0 && (
+                <a href="/dashboard/attendance/insights" className="block text-[11px] text-white/40 hover:text-white/70 transition-colors px-1">
+                  +{moreConcerns} more · View all in Attendance →
+                </a>
+              )}
+            </div>
+          )}
         </div>
       )}
     </section>
+  )
+}
+
+function SectionHead({ title, tone, count }: { title: string; tone: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <h3 className={`text-[11px] font-bold uppercase tracking-wider ${tone}`}>{title}</h3>
+      <span className="text-[10px] font-bold text-white/40 bg-white/[0.06] px-1.5 py-0.5 rounded-full">{count}</span>
+    </div>
   )
 }
 

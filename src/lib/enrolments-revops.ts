@@ -100,34 +100,49 @@ export type AttendanceConcern = {
   playerId: string
   playerName: string
   className: string
+  classCount: number
   level: AttendanceRiskLevel
   daysSinceAttendance: number | null
 }
 
-// Run the shipped deriveAttendanceRisk per active member; surface only the
-// high/medium concerns, highest-risk + longest-absence first.
+// One concern PER PLAYER (not per enrolment): a child in N classes appears once,
+// with their worst risk and a class count. Attendance history is player-wide, so
+// we derive risk once using the player's longest-standing enrolment context
+// (earliest enrolled_at avoids a tenured player being mis-flagged "new"). Surface
+// only high/medium, highest-risk + longest-absence first.
 export function buildAttendanceConcerns(
   active: ActiveInput[],
   attendanceByPlayer: Map<string, Array<{ session_date: string; present: boolean }>>,
   nowMs: number,
 ): AttendanceConcern[] {
-  const out: AttendanceConcern[] = []
+  const byPlayer = new Map<string, ActiveInput[]>()
   for (const e of active) {
+    const arr = byPlayer.get(e.player_id) ?? []
+    arr.push(e)
+    byPlayer.set(e.player_id, arr)
+  }
+
+  const out: AttendanceConcern[] = []
+  for (const [playerId, enrolments] of byPlayer) {
+    const earliest = enrolments.reduce((a, b) => (a.enrolled_at <= b.enrolled_at ? a : b))
     const a = deriveAttendanceRisk({
-      attendanceHistory: attendanceByPlayer.get(e.player_id) ?? null,
-      enrolmentStatus: e.status,
-      enrolledAt: e.enrolled_at,
+      attendanceHistory: attendanceByPlayer.get(playerId) ?? null,
+      enrolmentStatus: earliest.status,
+      enrolledAt: earliest.enrolled_at,
       nowMs,
     })
     if (a.riskLevel !== 'high' && a.riskLevel !== 'medium') continue
+    const first = enrolments[0]
     out.push({
-      playerId: e.player_id,
-      playerName: `${e.player?.first_name ?? ''} ${e.player?.last_name ?? ''}`.trim() || 'Player',
-      className: e.group?.name ?? 'Unassigned',
+      playerId,
+      playerName: `${first.player?.first_name ?? ''} ${first.player?.last_name ?? ''}`.trim() || 'Player',
+      className: first.group?.name ?? 'Unassigned',
+      classCount: enrolments.length,
       level: a.riskLevel,
       daysSinceAttendance: a.daysSinceAttendance,
     })
   }
+
   const rank = (l: AttendanceRiskLevel) => (l === 'high' ? 0 : 1)
   return out.sort(
     (x, y) => rank(x.level) - rank(y.level) || (y.daysSinceAttendance ?? 0) - (x.daysSinceAttendance ?? 0),
