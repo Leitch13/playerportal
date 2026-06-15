@@ -29,6 +29,8 @@ type EditableCamp = {
   sibling_discount_enabled: boolean
   sibling_discount_percent: number | null
   training_group_id: string | null
+  // Phase 2A — additive structural editing reads the schedule jsonb.
+  schedule: { day: string; date: string; activities: string[] }[] | null
 }
 
 type Props = {
@@ -41,9 +43,11 @@ type Props = {
   camp?: EditableCamp
   bookedCount?: number
   trainingGroups?: { id: string; name: string }[]
+  // Phase 2A — structural-edit sub-gate (passed through to CampEditForm).
+  structuralEnabled?: boolean
 }
 
-export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups }: Props) {
+export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled }: Props) {
   const [open, setOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canEdit = !!editEnabled && !!camp
@@ -171,6 +175,7 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
           bookedCount={bookedCount || 0}
           trainingGroups={trainingGroups || []}
           onClose={() => setEditOpen(false)}
+          structuralEnabled={!!structuralEnabled}
         />
       )}
     </>

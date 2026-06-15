@@ -8,7 +8,7 @@ import CampForm from './CampForm'
 import CampActions from './CampActions'
 // Camps Safe Edit — Phase 1A. Flag gates the Edit entry point; OFF ⇒ page
 // renders identically to the create-only original (no extra reads, no Edit item).
-import { CAMP_EDIT_ENABLED } from '@/lib/camps-edit'
+import { CAMP_EDIT_ENABLED, CAMP_STRUCTURAL_EDIT_ENABLED } from '@/lib/camps-edit'
 
 type Camp = {
   id: string
@@ -293,9 +293,13 @@ export default async function CampsPage() {
                             sibling_discount_enabled: camp.sibling_discount_enabled,
                             sibling_discount_percent: camp.sibling_discount_percent,
                             training_group_id: camp.training_group_id,
+                            schedule: Array.isArray(camp.schedule)
+                              ? (camp.schedule as { day: string; date: string; activities: string[] }[])
+                              : [],
                           } : undefined}
                           bookedCount={CAMP_EDIT_ENABLED ? stats.bookingCount : undefined}
                           trainingGroups={CAMP_EDIT_ENABLED ? trainingGroups : undefined}
+                          structuralEnabled={CAMP_EDIT_ENABLED && CAMP_STRUCTURAL_EDIT_ENABLED}
                         />
                       </td>
                     </tr>

@@ -1,21 +1,31 @@
 'use client'
 
-// Camps Safe Edit — Phase 1A.
+// Camps Safe Edit — Phase 1A + Phase 2A (additive structural editing).
 //
 // A lean, dedicated edit modal — deliberately NOT a mode bolted onto the big
 // create form (CampForm). Keeping it separate means the create flow stays
-// byte-identical and this component can only ever write the safe allowlist.
+// byte-identical and this component can only ever write the allowlists.
 //
-// Safe fields are editable. Dangerous money/structure fields (price, dates,
-// early-bird / sibling pricing, daily schedule) are rendered READ-ONLY with a
-// "future update" note. Save goes through pickSafeCampFields() →
-// camps.update(...).eq('id') — no Stripe, no booking rows touched.
+// Phase 1A: safe fields editable; dangerous money/structure fields read-only.
+// Phase 2A (gated by structuralEnabled): the end date + schedule unlock for
+// ADDITIVE changes only — extend end date, add day(s), append activities.
+// Start date + price stay locked always. The structural guard (additiveEditError)
+// + pickAdditiveCampFields make the write provably non-reductive. Save is still a
+// single camps.update(...).eq('id') — no Stripe, no booking rows touched.
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
-import { pickSafeCampFields, capacityError } from '@/lib/camps-edit'
+import {
+  pickSafeCampFields,
+  capacityError,
+  pickAdditiveCampFields,
+  additiveEditError,
+  generateScheduleDays,
+  campDayCount,
+  type ScheduleDay,
+} from '@/lib/camps-edit'
 
 type EditableCamp = {
   id: string
@@ -36,6 +46,7 @@ type EditableCamp = {
   sibling_discount_enabled: boolean
   sibling_discount_percent: number | null
   training_group_id: string | null
+  schedule: ScheduleDay[] | null
 }
 
 type Props = {
@@ -43,6 +54,8 @@ type Props = {
   bookedCount: number
   trainingGroups: { id: string; name: string }[]
   onClose: () => void
+  // Phase 2A — when false, dates + schedule stay locked (Phase 1A behaviour).
+  structuralEnabled?: boolean
 }
 
 const inputCls =
@@ -54,12 +67,22 @@ function formatDate(d: string): string {
   return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function CampEditForm({ camp, bookedCount, trainingGroups, onClose }: Props) {
+// Today as 'YYYY-MM-DD' in UTC, matching the UTC-only guard in camps-edit.
+function todayISO(): string {
+  return new Date().toISOString().split('T')[0]
+}
+
+function cloneSchedule(s: ScheduleDay[] | null | undefined): ScheduleDay[] {
+  if (!Array.isArray(s)) return []
+  return s.map((d) => ({ day: d.day, date: d.date, activities: [...(d.activities || [])] }))
+}
+
+export default function CampEditForm({ camp, bookedCount, trainingGroups, onClose, structuralEnabled = false }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // Safe, editable fields only.
+  // Safe, editable fields (Phase 1A).
   const [name, setName] = useState(camp.name || '')
   const [description, setDescription] = useState(camp.description || '')
   const [location, setLocation] = useState(camp.location || '')
@@ -72,8 +95,122 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [maxCapacity, setMaxCapacity] = useState(camp.max_capacity != null ? String(camp.max_capacity) : '30')
   const [isPublished, setIsPublished] = useState(camp.is_published)
 
+  // Additive structural state (Phase 2A).
+  const origSchedule = cloneSchedule(camp.schedule)
+  // Per original date → how many original activities it had (those are locked).
+  const origActivityCount = new Map<string, number>()
+  for (const d of origSchedule) origActivityCount.set(d.date, (d.activities || []).length)
+  const origDates = new Set(origSchedule.map((d) => d.date))
+
+  const [endDate, setEndDate] = useState(camp.end_date)
+  const [schedule, setSchedule] = useState<ScheduleDay[]>(cloneSchedule(camp.schedule))
+  const [showImpact, setShowImpact] = useState(false)
+
   const capValue = parseInt(maxCapacity, 10)
   const capError = maxCapacity ? capacityError(capValue, bookedCount) : null
+
+  // Structural change detection + guard.
+  const structuralChanged =
+    structuralEnabled &&
+    (endDate !== camp.end_date || JSON.stringify(schedule) !== JSON.stringify(origSchedule))
+  const additiveErr =
+    structuralEnabled && structuralChanged
+      ? additiveEditError(
+          { start_date: camp.start_date, end_date: camp.end_date, schedule: origSchedule },
+          { start_date: camp.start_date, end_date: endDate, schedule },
+          todayISO(),
+        )
+      : null
+  // Is the whole camp still un-started? (controls whether structural UI is live)
+  const startedErr =
+    structuralEnabled
+      ? additiveEditError(
+          { start_date: camp.start_date, end_date: camp.end_date, schedule: origSchedule },
+          { start_date: camp.start_date, end_date: camp.end_date, schedule: origSchedule },
+          todayISO(),
+        )
+      : null
+  const campStarted = startedErr != null
+
+  // Impact figures.
+  const origDays = campDayCount(camp.start_date, camp.end_date)
+  const nextDays = campDayCount(camp.start_date, endDate)
+  const addedDays = Math.max(0, nextDays - origDays)
+  const origActivityTotal = origSchedule.reduce((n, d) => n + (d.activities || []).length, 0)
+  const nextActivityTotal = schedule.reduce((n, d) => n + (d.activities || []).length, 0)
+  const addedActivities = Math.max(0, nextActivityTotal - origActivityTotal)
+  const addedDates = schedule.filter((d) => !origDates.has(d.date)).map((d) => d.date)
+
+  // ── Schedule editing (append-only) ──
+  const handleGenerateNewDays = () => {
+    // Append stub days for any date in (origEnd+1 .. endDate) not already present.
+    const have = new Set(schedule.map((d) => d.date))
+    const fresh = generateScheduleDays(camp.end_date, endDate).filter(
+      (d) => d.date !== camp.end_date && !have.has(d.date),
+    )
+    if (fresh.length) setSchedule((prev) => [...prev, ...fresh])
+  }
+  const addActivity = (dayIdx: number) =>
+    setSchedule((prev) => prev.map((d, i) => (i === dayIdx ? { ...d, activities: [...d.activities, ''] } : d)))
+  const updateActivity = (dayIdx: number, actIdx: number, val: string) =>
+    setSchedule((prev) =>
+      prev.map((d, i) =>
+        i === dayIdx ? { ...d, activities: d.activities.map((a, j) => (j === actIdx ? val : a)) } : d,
+      ),
+    )
+  // Removal is permitted ONLY for activities added this session (index beyond the
+  // original count for that date). Original activities can never be removed.
+  const removeActivity = (dayIdx: number, actIdx: number) =>
+    setSchedule((prev) =>
+      prev.map((d, i) =>
+        i === dayIdx ? { ...d, activities: d.activities.filter((_, j) => j !== actIdx) } : d,
+      ),
+    )
+
+  const buildPayload = () => {
+    // Safe allowlist (Phase 1A) — never includes dates/price/schedule.
+    const safe = pickSafeCampFields({
+      name: name.trim(),
+      description: description.trim() || null,
+      location: location.trim() || null,
+      age_group: ageGroup.trim() || null,
+      daily_start_time: dailyStartTime || null,
+      daily_end_time: dailyEndTime || null,
+      training_group_id: trainingGroupId || null,
+      image_url: imageUrl.trim() || null,
+      what_to_bring: whatToBring.trim() || null,
+      max_capacity: capValue,
+      is_published: isPublished,
+    })
+    // Additive allowlist (Phase 2A) — only end_date/schedule, only when a
+    // structural change is staged and the guard passes.
+    if (structuralEnabled && structuralChanged && !additiveErr) {
+      const additive = pickAdditiveCampFields({
+        end_date: endDate,
+        schedule: schedule.map((d) => ({ ...d, activities: d.activities.filter((a) => a.trim() !== '') })),
+      })
+      return { ...safe, ...additive }
+    }
+    return safe
+  }
+
+  const doSave = async () => {
+    setShowImpact(false)
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      const payload = buildPayload()
+      const { error: updErr } = await supabase.from('camps').update(payload).eq('id', camp.id)
+      if (updErr) {
+        setError('Error saving changes: ' + updErr.message)
+      } else {
+        onClose()
+        router.refresh()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleSave = async () => {
     setError('')
@@ -85,34 +222,16 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
       setError(capError)
       return
     }
-    setSaving(true)
-    try {
-      const supabase = createClient()
-      // pickSafeCampFields hard-filters to the allowlist — price, dates,
-      // schedule, early-bird and sibling pricing can never leak into the update.
-      const payload = pickSafeCampFields({
-        name: name.trim(),
-        description: description.trim() || null,
-        location: location.trim() || null,
-        age_group: ageGroup.trim() || null,
-        daily_start_time: dailyStartTime || null,
-        daily_end_time: dailyEndTime || null,
-        training_group_id: trainingGroupId || null,
-        image_url: imageUrl.trim() || null,
-        what_to_bring: whatToBring.trim() || null,
-        max_capacity: capValue,
-        is_published: isPublished,
-      })
-      const { error: updErr } = await supabase.from('camps').update(payload).eq('id', camp.id)
-      if (updErr) {
-        setError('Error saving changes: ' + updErr.message)
-      } else {
-        onClose()
-        router.refresh()
-      }
-    } finally {
-      setSaving(false)
+    if (structuralEnabled && structuralChanged && additiveErr) {
+      setError(additiveErr)
+      return
     }
+    // Show the impact summary before a structural change on a booked camp.
+    if (structuralEnabled && structuralChanged && bookedCount > 0) {
+      setShowImpact(true)
+      return
+    }
+    await doSave()
   }
 
   return (
@@ -136,7 +255,10 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                 {bookedCount} {bookedCount === 1 ? 'family has' : 'families have'} booked this camp.
               </p>
               <p className="text-xs text-amber-200/70 mt-0.5">
-                Your changes will be visible to them. Price and dates are locked to protect their bookings.
+                Your changes will be visible to them.{' '}
+                {structuralEnabled
+                  ? 'Dates can only be extended (never shortened); price stays locked.'
+                  : 'Price and dates are locked to protect their bookings.'}
               </p>
             </div>
           )}
@@ -153,10 +275,11 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={inputCls} />
           </div>
 
-          {/* Locked: dates + price (Phase 2) */}
+          {/* Locked / additive: dates + price */}
           <div className="rounded-lg border border-dashed border-[#2a2a2a] p-3 space-y-3">
             <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
-              <span aria-hidden>&#128274;</span> Locked &mdash; editable in a future update
+              <span aria-hidden>&#128274;</span>
+              {structuralEnabled ? 'Start date & price stay locked' : 'Locked — editable in a future update'}
             </p>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -165,19 +288,107 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
               </div>
               <div>
                 <label className="block text-xs text-white/50 mb-1">End Date</label>
-                <div className={lockedCls}>{formatDate(camp.end_date)}</div>
+                {structuralEnabled && !campStarted ? (
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={camp.end_date}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className={`${inputCls} ${additiveErr ? 'border-rose-500/60 focus:ring-rose-500/40' : ''}`}
+                  />
+                ) : (
+                  <div className={lockedCls}>{formatDate(camp.end_date)}</div>
+                )}
               </div>
               <div>
                 <label className="block text-xs text-white/50 mb-1">Price</label>
                 <div className={lockedCls}>{camp.price != null ? `£${Number(camp.price).toFixed(0)}` : '—'}</div>
               </div>
             </div>
-            {(camp.early_bird_price != null || camp.sibling_discount_enabled) && (
-              <p className="text-[11px] text-white/30">
-                Early-bird and sibling pricing are also locked here — they affect paid value.
+            {structuralEnabled && campStarted && (
+              <p className="text-[11px] text-white/30">This camp has started — dates &amp; schedule are locked.</p>
+            )}
+            {structuralEnabled && !campStarted && (
+              <p className="text-[11px] text-white/40">
+                You can only extend the end date — never bring it forward. No charge is made; existing bookings simply
+                cover the longer camp.
               </p>
             )}
+            {additiveErr && <p className="text-xs text-rose-400">{additiveErr}</p>}
           </div>
+
+          {/* Additive schedule (Phase 2A) */}
+          {structuralEnabled && !campStarted && (
+            <div className="rounded-lg border border-[#1e1e1e] p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>
+                {endDate > camp.end_date && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateNewDays}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                  >
+                    Add entries for new days
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-white/40">
+                Add-only: existing days and activities are locked. You can append new activities or add the new days.
+              </p>
+              {schedule.length === 0 && <p className="text-xs text-white/40">No schedule entries yet.</p>}
+              <div className="space-y-3">
+                {schedule.map((day, dayIdx) => {
+                  const lockedCount = origActivityCount.get(day.date) ?? 0
+                  const isNewDay = !origDates.has(day.date)
+                  return (
+                    <div key={`${day.date}-${dayIdx}`} className="border border-[#1e1e1e] rounded-lg p-3">
+                      <h4 className="text-xs font-medium text-white mb-2">
+                        {day.date ? formatDate(day.date) : day.day}
+                        {isNewDay && <span className="ml-2 text-[10px] text-accent">new</span>}
+                      </h4>
+                      <div className="space-y-1.5">
+                        {day.activities.map((activity, actIdx) => {
+                          const locked = actIdx < lockedCount
+                          return (
+                            <div key={actIdx} className="flex items-center gap-2">
+                              {locked ? (
+                                <div className={`flex-1 ${lockedCls} !py-1.5 text-xs`}>{activity}</div>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={activity}
+                                  onChange={(e) => updateActivity(dayIdx, actIdx, e.target.value)}
+                                  placeholder="e.g. 09:00 - Warm Up & Skills"
+                                  className={`flex-1 ${inputCls} !py-1.5 text-xs`}
+                                />
+                              )}
+                              {!locked && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeActivity(dayIdx, actIdx)}
+                                  className="text-rose-400 hover:text-rose-600 text-sm px-1.5"
+                                  aria-label="Remove new activity"
+                                >
+                                  &times;
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addActivity(dayIdx)}
+                        className="mt-2 text-xs text-accent hover:underline"
+                      >
+                        + Add activity
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Times (safe) */}
           <div className="grid grid-cols-2 gap-4">
@@ -272,13 +483,41 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || !name.trim() || !!capError}
+            disabled={saving || !name.trim() || !!capError || !!additiveErr}
             className="px-6 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
+
+      {/* Impact summary — shown before a structural change on a booked camp */}
+      {showImpact && (
+        <div className="fixed inset-0 bg-black/60 z-[130] flex items-center justify-center p-4">
+          <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] w-full max-w-md p-6 space-y-4">
+            <h3 className="text-base font-semibold text-white">You&rsquo;re growing this camp</h3>
+            <ul className="text-sm text-white/80 space-y-1.5">
+              <li>• Affects <span className="font-semibold text-white">{bookedCount}</span> booked {bookedCount === 1 ? 'family' : 'families'}</li>
+              <li>• Camp grows: <span className="font-semibold text-white">{origDays} → {nextDays}</span> day{nextDays !== 1 ? 's' : ''}</li>
+              {addedDates.length > 0 && (
+                <li>• New day{addedDates.length !== 1 ? 's' : ''}: {addedDates.map((d) => formatDate(d)).join(', ')}</li>
+              )}
+              {addedActivities > 0 && <li>• Added activities: <span className="font-semibold text-white">{addedActivities}</span></li>}
+            </ul>
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
+              <p className="text-xs text-emerald-300">No additional charge will be made. No refunds are required.</p>
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button onClick={() => setShowImpact(false)} className="px-4 py-2 text-sm font-medium text-[#888] hover:text-white/90">
+                Cancel
+              </button>
+              <button onClick={doSave} disabled={saving} className="px-5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                {saving ? 'Saving...' : 'Confirm & save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

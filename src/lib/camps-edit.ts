@@ -73,3 +73,153 @@ export function capacityError(newCapacity: number, bookedCount: number): string 
   }
   return null
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Camps Phase 2A — Additive structural editing.
+//
+// Gated by its OWN flag, independent of CAMP_EDIT_ENABLED. OFF ⇒ dates +
+// schedule stay locked exactly as in Phase 1A. ON ⇒ the edit modal unlocks
+// ONLY value-adding structural changes: extend the end date, add day(s), and
+// append schedule activities. Reductive changes (shorten, remove day, remove
+// activity, move start) are impossible — `additiveEditError` rejects them and
+// `pickAdditiveCampFields` only ever emits `end_date`/`schedule`. The write is
+// still a single `camps.update(...)`; NO Stripe / refund / camp_bookings path.
+//
+// Why additive is safe without refunds: a booking is whole-camp with a frozen
+// amount_paid; growing the camp gives existing bookings MORE for the same price,
+// so no parent ever receives less than they paid for → no refund can be owed.
+// ───────────────────────────────────────────────────────────────────────────
+
+export const CAMP_STRUCTURAL_EDIT_ENABLED = process.env.CAMP_STRUCTURAL_EDIT_ENABLED === 'true'
+
+// A single day in the camp's display-only schedule jsonb.
+export type ScheduleDay = {
+  day: string
+  date: string
+  activities: string[]
+}
+
+// The ONLY columns additive structural editing may UPDATE. Deliberately excludes
+// start_date, price, early-bird/sibling — so a structural edit can never move the
+// start, change paid value, or shrink anything.
+export type AdditiveCampFields = {
+  end_date: string
+  schedule: ScheduleDay[]
+}
+
+export const ADDITIVE_CAMP_FIELDS: readonly (keyof AdditiveCampFields)[] = [
+  'end_date',
+  'schedule',
+] as const
+
+// Hard-filter to the additive allowlist (defence-in-depth, mirrors
+// pickSafeCampFields): only end_date/schedule survive — start_date/price/etc.
+// can never be written from the structural path.
+export function pickAdditiveCampFields(input: Record<string, unknown>): Partial<AdditiveCampFields> {
+  const out: Record<string, unknown> = {}
+  for (const k of ADDITIVE_CAMP_FIELDS) {
+    if (k in input) out[k] = input[k]
+  }
+  return out as Partial<AdditiveCampFields>
+}
+
+// Parse a 'YYYY-MM-DD' date as UTC midnight. Returns NaN on a bad value.
+// UTC-only to avoid the local-timezone off-by-one footgun.
+function parseISODate(d: string): number {
+  return Date.parse(String(d) + 'T00:00:00Z')
+}
+
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+// Inclusive day count between two ISO dates (start..end). 0 if invalid/inverted.
+export function campDayCount(startDate: string, endDate: string): number {
+  const s = parseISODate(startDate)
+  const e = parseISODate(endDate)
+  if (isNaN(s) || isNaN(e) || e < s) return 0
+  return Math.floor((e - s) / 86_400_000) + 1
+}
+
+// Build empty schedule-day stubs for every date in start..end (inclusive),
+// UTC-safe. Pure — copied here so CampForm stays byte-untouched.
+export function generateScheduleDays(startDate: string, endDate: string): ScheduleDay[] {
+  const s = parseISODate(startDate)
+  const e = parseISODate(endDate)
+  if (isNaN(s) || isNaN(e) || e < s) return []
+  const days: ScheduleDay[] = []
+  for (let t = s; t <= e; t += 86_400_000) {
+    const d = new Date(t)
+    days.push({ day: DAYS_OF_WEEK[d.getUTCDay()], date: d.toISOString().split('T')[0], activities: [] })
+  }
+  return days
+}
+
+// Append-only check: every original day (matched by date) must still be present,
+// and every original activity occurrence must still be present in that day
+// (multiset, so a removed/edited duplicate is caught). Additions are allowed.
+export function scheduleIsSuperset(oldSchedule: ScheduleDay[], newSchedule: ScheduleDay[]): boolean {
+  const byDate = new Map<string, ScheduleDay>()
+  for (const d of newSchedule || []) byDate.set(d.date, d)
+  for (const od of oldSchedule || []) {
+    const nd = byDate.get(od.date)
+    if (!nd) return false
+    const counts = new Map<string, number>()
+    for (const a of nd.activities || []) counts.set(a, (counts.get(a) || 0) + 1)
+    for (const a of od.activities || []) {
+      const c = counts.get(a) || 0
+      if (c <= 0) return false
+      counts.set(a, c - 1)
+    }
+  }
+  return true
+}
+
+const MAX_EXTRA_DAYS = 180
+
+export type AdditiveSnapshot = {
+  start_date: string
+  end_date: string
+  schedule: ScheduleDay[]
+}
+
+// The structural guard. Returns the first failing message, or null when the
+// edit is purely additive and safe. `todayISO` is 'YYYY-MM-DD' (caller supplies;
+// compared in UTC). Enforces: camp not started · start unchanged · end only
+// grows · day-count non-decreasing · schedule append-only · sane bounds.
+export function additiveEditError(orig: AdditiveSnapshot, next: AdditiveSnapshot, todayISO: string): string | null {
+  const today = parseISODate(todayISO)
+  const os = parseISODate(orig.start_date)
+  const oe = parseISODate(orig.end_date)
+  const ns = parseISODate(next.start_date)
+  const ne = parseISODate(next.end_date)
+  if ([today, os, oe, ns, ne].some((n) => isNaN(n))) return 'Invalid camp dates.'
+
+  // Block once the camp has started (start today or earlier). Because the start
+  // can't move and the end can't shrink, this also guarantees no past-date edit.
+  if (os <= today) return "Structural edits aren't allowed once a camp has started."
+
+  // Start date is immutable in additive editing.
+  if (ns !== os) return "The start date can't be changed."
+
+  // End date can only be extended, never brought forward.
+  if (ne < oe) return 'The end date can only be extended, not brought forward.'
+
+  // Basic date sanity.
+  if (ne < ns) return 'End date must be on or after the start date.'
+
+  // Day count can only grow (subsumed by the above; asserted explicitly).
+  const origDays = campDayCount(orig.start_date, orig.end_date)
+  const nextDays = campDayCount(next.start_date, next.end_date)
+  if (nextDays < origDays) return 'The camp length can only grow.'
+
+  // Fat-finger guard on enormous extensions.
+  if (nextDays - origDays > MAX_EXTRA_DAYS) {
+    return `That extends the camp by more than ${MAX_EXTRA_DAYS} days — please check the end date.`
+  }
+
+  // Schedule may only be added to, never have days/activities removed or edited.
+  if (!scheduleIsSuperset(orig.schedule || [], next.schedule || [])) {
+    return 'Existing schedule days and activities can only be added to — not removed or changed.'
+  }
+
+  return null
+}
