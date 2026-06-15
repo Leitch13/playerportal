@@ -4,6 +4,19 @@ import { createClient } from '@/lib/supabase/server'
 import EmptyState from '@/components/EmptyState'
 import GroupForm from './GroupForm'
 import GroupCard from './GroupCard'
+// Classes Revenue Intelligence Phase 1A — read-only Revenue & Capacity strip.
+// Flag-gated; OFF ⇒ no extra reads, byte-identical page.
+import {
+  CLASSES_REVOPS_ENABLED,
+  monthlyAmount,
+  buildClassIntel,
+  type ClassIntel,
+  type ClassesRollup,
+} from '@/lib/classes-revops'
+import ClassesRevenueStrip from '@/components/classes/ClassesRevenueStrip'
+
+// Mirrors the Waitlist page's column-duality handling (task #248/#249).
+const WAITLIST_SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
 
 export default async function GroupsPage() {
   const supabase = await createClient()
@@ -81,6 +94,56 @@ export default async function GroupsPage() {
   const totalCapacity = (groups || []).reduce((sum, g) => sum + ((g.max_capacity as number) || 20), 0)
   const fillRate = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0
 
+  // ── Classes Revenue Intelligence Phase 1A — read-only Revenue & Capacity strip.
+  // Built only when the flag is ON, from three flag-gated reads (canonical seat
+  // counts via get_group_seat_counts, org subscription plans, waitlist counts).
+  // Flag OFF ⇒ none of this runs, no extra queries, byte-identical page. ──
+  let classRollup: ClassesRollup | null = null
+  let classNeedsAttention: ClassIntel[] = []
+  if (CLASSES_REVOPS_ENABLED && (groups || []).length > 0) {
+    // Canonical occupancy (active+pending), read-only RPC.
+    const { data: seatRows } = await supabase.rpc('get_group_seat_counts', { p_org_id: orgId })
+    const seatByGroup = new Map<string, number>()
+    for (const r of (seatRows || []) as Array<{ group_id: string; seat_count: number | string }>) {
+      seatByGroup.set(r.group_id, Number(r.seat_count) || 0)
+    }
+    // Per-class monthly price: match subscription_plans by class_type, prefer the
+    // 'month' plan, interval-normalised. Read-only.
+    const { data: plans } = await supabase
+      .from('subscription_plans')
+      .select('class_type, amount, interval')
+      .eq('organisation_id', orgId)
+    const monthlyByClassType = new Map<string, number>()
+    for (const p of (plans || []) as Array<{ class_type: string | null; amount: number | string | null; interval: string | null }>) {
+      if (!p.class_type) continue
+      const m = monthlyAmount(p)
+      if (m <= 0) continue
+      const existing = monthlyByClassType.get(p.class_type)
+      // 'month' interval is the headline price; otherwise keep the first seen.
+      if (existing == null || (p.interval || '').toLowerCase() === 'month') monthlyByClassType.set(p.class_type, m)
+    }
+    // Waitlist demand per class (waiting + offered), read-only.
+    const wlCol = WAITLIST_SCHEMA_FIX_ON ? 'group_id' : 'training_group_id'
+    const { data: wl } = await supabase
+      .from('waitlist')
+      .select(`${wlCol}, status`)
+      .eq('organisation_id', orgId)
+      .in('status', ['waiting', 'offered'])
+    const waitingByGroup = new Map<string, number>()
+    for (const w of (wl || []) as Array<Record<string, unknown>>) {
+      const gid = w[wlCol] as string | null
+      if (gid) waitingByGroup.set(gid, (waitingByGroup.get(gid) || 0) + 1)
+    }
+    const intel = buildClassIntel(
+      (groups || []) as Array<{ id: string; name: string; day_of_week?: string | null; time_slot?: string | null; max_capacity?: number | null; class_type?: string | null }>,
+      seatByGroup,
+      waitingByGroup,
+      monthlyByClassType,
+    )
+    classRollup = intel.rollup
+    classNeedsAttention = intel.needsAttention
+  }
+
   return (
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
@@ -91,6 +154,10 @@ export default async function GroupsPage() {
           <p className="text-sm text-white/60 mt-0.5">Manage your training sessions and class capacity</p>
         </div>
       </div>
+
+      {CLASSES_REVOPS_ENABLED && classRollup && (
+        <ClassesRevenueStrip rollup={classRollup} needsAttention={classNeedsAttention} />
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
