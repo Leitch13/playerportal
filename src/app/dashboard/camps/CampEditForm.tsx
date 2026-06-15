@@ -26,6 +26,7 @@ import {
   campDayCount,
   type ScheduleDay,
 } from '@/lib/camps-edit'
+import { amountError, instructionsError, formatRequestAmount, CAMP_MANUAL_PAYMENT_REQUEST_ENABLED } from '@/lib/camp-payment-request'
 
 type EditableCamp = {
   id: string
@@ -82,6 +83,13 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Phase 2B — optional manual payment request (off-platform; no Stripe).
+  const [paymentMode, setPaymentMode] = useState<'none' | 'request'>('none')
+  const [requestAmount, setRequestAmount] = useState('')
+  const [requestInstructions, setRequestInstructions] = useState('')
+  const [showEmailPreview, setShowEmailPreview] = useState(false)
+  const [testState, setTestState] = useState<'' | 'sending' | 'sent' | 'error'>('')
+
   // Safe, editable fields (Phase 1A).
   const [name, setName] = useState(camp.name || '')
   const [description, setDescription] = useState(camp.description || '')
@@ -102,6 +110,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   for (const d of origSchedule) origActivityCount.set(d.date, (d.activities || []).length)
   const origDates = new Set(origSchedule.map((d) => d.date))
 
+  const [startDate, setStartDate] = useState(camp.start_date)
   const [endDate, setEndDate] = useState(camp.end_date)
   const [schedule, setSchedule] = useState<ScheduleDay[]>(cloneSchedule(camp.schedule))
   const [showImpact, setShowImpact] = useState(false)
@@ -112,12 +121,14 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   // Structural change detection + guard.
   const structuralChanged =
     structuralEnabled &&
-    (endDate !== camp.end_date || JSON.stringify(schedule) !== JSON.stringify(origSchedule))
+    (startDate !== camp.start_date ||
+      endDate !== camp.end_date ||
+      JSON.stringify(schedule) !== JSON.stringify(origSchedule))
   const additiveErr =
     structuralEnabled && structuralChanged
       ? additiveEditError(
           { start_date: camp.start_date, end_date: camp.end_date, schedule: origSchedule },
-          { start_date: camp.start_date, end_date: endDate, schedule },
+          { start_date: startDate, end_date: endDate, schedule },
           todayISO(),
         )
       : null
@@ -135,21 +146,31 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
 
   // Impact figures.
   const origDays = campDayCount(camp.start_date, camp.end_date)
-  const nextDays = campDayCount(camp.start_date, endDate)
+  const nextDays = campDayCount(startDate, endDate)
   const addedDays = Math.max(0, nextDays - origDays)
   const origActivityTotal = origSchedule.reduce((n, d) => n + (d.activities || []).length, 0)
   const nextActivityTotal = schedule.reduce((n, d) => n + (d.activities || []).length, 0)
   const addedActivities = Math.max(0, nextActivityTotal - origActivityTotal)
   const addedDates = schedule.filter((d) => !origDates.has(d.date)).map((d) => d.date)
+  const startEarlier = startDate < camp.start_date
 
   // ── Schedule editing (append-only) ──
+  // Generate stub days for any NEW date — at the front (Phase 2C, when the start
+  // moves earlier: newStart..origStart) and/or the back (Phase 2A, when the end
+  // extends: origEnd..newEnd) — that isn't already present, then keep the
+  // schedule sorted by date for display. Existing days are never removed.
   const handleGenerateNewDays = () => {
-    // Append stub days for any date in (origEnd+1 .. endDate) not already present.
     const have = new Set(schedule.map((d) => d.date))
-    const fresh = generateScheduleDays(camp.end_date, endDate).filter(
+    const front = generateScheduleDays(startDate, camp.start_date).filter(
+      (d) => d.date !== camp.start_date && !have.has(d.date),
+    )
+    const back = generateScheduleDays(camp.end_date, endDate).filter(
       (d) => d.date !== camp.end_date && !have.has(d.date),
     )
-    if (fresh.length) setSchedule((prev) => [...prev, ...fresh])
+    const fresh = [...front, ...back]
+    if (fresh.length) {
+      setSchedule((prev) => [...prev, ...fresh].sort((a, b) => a.date.localeCompare(b.date)))
+    }
   }
   const addActivity = (dayIdx: number) =>
     setSchedule((prev) => prev.map((d, i) => (i === dayIdx ? { ...d, activities: [...d.activities, ''] } : d)))
@@ -183,10 +204,13 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
       max_capacity: capValue,
       is_published: isPublished,
     })
-    // Additive allowlist (Phase 2A) — only end_date/schedule, only when a
-    // structural change is staged and the guard passes.
+    // Additive allowlist (Phase 2A/2C) — only start_date/end_date/schedule, only
+    // when a structural change is staged and the guard passes. The guard
+    // guarantees start_date is earlier-and-not-past; pickAdditiveCampFields is
+    // the defence-in-depth filter.
     if (structuralEnabled && structuralChanged && !additiveErr) {
       const additive = pickAdditiveCampFields({
+        start_date: startDate,
         end_date: endDate,
         schedule: schedule.map((d) => ({ ...d, activities: d.activities.filter((a) => a.trim() !== '') })),
       })
@@ -195,8 +219,39 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     return safe
   }
 
+  // Phase 2B — the "request payment" option is offered only when a real day was
+  // added to a booked camp and the flag is on.
+  const canRequestPayment = CAMP_MANUAL_PAYMENT_REQUEST_ENABLED && bookedCount > 0 && addedDays > 0
+  const amtErr = paymentMode === 'request' ? amountError(requestAmount) : null
+  const insErr = paymentMode === 'request' ? instructionsError(requestInstructions) : null
+
+  // Body shared by the test-send + real send (dates are display-only).
+  const paymentBody = (mode: 'send' | 'test') => ({
+    amount: requestAmount,
+    instructions: requestInstructions,
+    originalStartDate: camp.start_date,
+    originalEndDate: camp.end_date,
+    newStartDate: startDate,
+    newEndDate: endDate,
+    mode,
+  })
+
+  const sendTest = async () => {
+    if (amtErr || insErr) { setError(amtErr || insErr || ''); return }
+    setError(''); setTestState('sending')
+    try {
+      const res = await fetch(`/api/admin/camps/${camp.id}/payment-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentBody('test')),
+      })
+      setTestState(res.ok ? 'sent' : 'error')
+    } catch {
+      setTestState('error')
+    }
+  }
+
   const doSave = async () => {
-    setShowImpact(false)
     setSaving(true)
     try {
       const supabase = createClient()
@@ -204,10 +259,29 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
       const { error: updErr } = await supabase.from('camps').update(payload).eq('id', camp.id)
       if (updErr) {
         setError('Error saving changes: ' + updErr.message)
-      } else {
-        onClose()
-        router.refresh()
+        setSaving(false)
+        return
       }
+      // Phase 2B — optional manual payment request email. The extension is
+      // already saved; this only sends email (no Stripe, no booking write). If
+      // it fails, surface it but leave the saved extension in place.
+      if (canRequestPayment && paymentMode === 'request') {
+        if (amtErr || insErr) { setError(amtErr || insErr || ''); setSaving(false); return }
+        const res = await fetch(`/api/admin/camps/${camp.id}/payment-request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(paymentBody('send')),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setError('Camp saved, but sending the payment email failed: ' + (data.error || 'unknown'))
+          setSaving(false)
+          return
+        }
+      }
+      setShowImpact(false)
+      onClose()
+      router.refresh()
     } finally {
       setSaving(false)
     }
@@ -280,12 +354,23 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           <div className="rounded-lg border border-dashed border-[#2a2a2a] p-3 space-y-3">
             <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
               <span aria-hidden>&#128274;</span>
-              {structuralEnabled ? 'Start date & price stay locked' : 'Locked — editable in a future update'}
+              {structuralEnabled ? 'Price stays locked' : 'Locked — editable in a future update'}
             </p>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-white/50 mb-1">Start Date</label>
-                <div className={lockedCls}>{formatDate(camp.start_date)}</div>
+                {structuralEnabled && !campEnded ? (
+                  <input
+                    type="date"
+                    value={startDate}
+                    min={todayISO()}
+                    max={camp.start_date}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className={`${inputCls} ${additiveErr ? 'border-rose-500/60 focus:ring-rose-500/40' : ''}`}
+                  />
+                ) : (
+                  <div className={lockedCls}>{formatDate(camp.start_date)}</div>
+                )}
               </div>
               <div>
                 <label className="block text-xs text-white/50 mb-1">End Date</label>
@@ -311,8 +396,8 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
             )}
             {structuralEnabled && !campEnded && (
               <p className="text-[11px] text-white/40">
-                You can only extend the end date — never bring it forward. No charge is made; existing bookings simply
-                cover the longer camp.
+                Dates can only grow — start earlier or end later, never the reverse. No charge is made; existing
+                bookings simply cover the longer camp.
               </p>
             )}
             {additiveErr && <p className="text-xs text-rose-400">{additiveErr}</p>}
@@ -323,7 +408,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
             <div className="rounded-lg border border-[#1e1e1e] p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>
-                {endDate > camp.end_date && (
+                {(endDate > camp.end_date || startDate < camp.start_date) && (
                   <button
                     type="button"
                     onClick={handleGenerateNewDays}
@@ -500,20 +585,81 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
             <ul className="text-sm text-white/80 space-y-1.5">
               <li>• Affects <span className="font-semibold text-white">{bookedCount}</span> booked {bookedCount === 1 ? 'family' : 'families'}</li>
               <li>• Camp grows: <span className="font-semibold text-white">{origDays} → {nextDays}</span> day{nextDays !== 1 ? 's' : ''}</li>
+              {startEarlier && (
+                <li>• Starts earlier: <span className="font-semibold text-white">{formatDate(startDate)}</span> (was {formatDate(camp.start_date)})</li>
+              )}
               {addedDates.length > 0 && (
                 <li>• New day{addedDates.length !== 1 ? 's' : ''}: {addedDates.map((d) => formatDate(d)).join(', ')}</li>
               )}
               {addedActivities > 0 && <li>• Added activities: <span className="font-semibold text-white">{addedActivities}</span></li>}
             </ul>
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
-              <p className="text-xs text-emerald-300">No additional charge will be made. No refunds are required.</p>
-            </div>
+            {/* Phase 2B — optional manual payment request (off-platform) */}
+            {canRequestPayment ? (
+              <div className="space-y-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="radio" checked={paymentMode === 'none'} onChange={() => setPaymentMode('none')} />
+                    <span className="text-white">No extra charge</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="radio" checked={paymentMode === 'request'} onChange={() => setPaymentMode('request')} />
+                    <span className="text-white">Request manual payment for the extra day(s)</span>
+                  </label>
+                </div>
+
+                {paymentMode === 'none' ? (
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
+                    <p className="text-xs text-emerald-300">No additional charge will be made. No refunds are required.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 rounded-lg border border-[#2a2a2a] p-3">
+                    <div>
+                      <label className="block text-xs text-white/60 mb-1">Amount (£)</label>
+                      <input type="number" min="0" step="0.01" value={requestAmount} onChange={(e) => setRequestAmount(e.target.value)} placeholder="e.g. 40" className={`${inputCls} ${amtErr ? 'border-rose-500/60' : ''}`} />
+                      {amtErr && <p className="text-xs text-rose-400 mt-1">{amtErr}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/60 mb-1">How to pay (instructions)</label>
+                      <textarea value={requestInstructions} onChange={(e) => setRequestInstructions(e.target.value)} rows={3} placeholder="e.g. Bank transfer — Sort 00-00-00, Acc 12345678, ref CAMP-AUG" className={`${inputCls} ${insErr ? 'border-rose-500/60' : ''}`} />
+                      {insErr && <p className="text-xs text-rose-400 mt-1">{insErr}</p>}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => setShowEmailPreview((v) => !v)} className="text-xs text-accent hover:underline">
+                        {showEmailPreview ? 'Hide preview' : 'Preview email'}
+                      </button>
+                      <button type="button" onClick={sendTest} disabled={testState === 'sending' || !!amtErr || !!insErr} className="text-xs text-white/60 hover:text-white disabled:opacity-40">
+                        {testState === 'sending' ? 'Sending test…' : testState === 'sent' ? 'Test sent to you ✓' : testState === 'error' ? 'Test failed — retry' : 'Send test to myself'}
+                      </button>
+                    </div>
+                    {showEmailPreview && (
+                      <div className="rounded-lg bg-[#0f0f0f] border border-[#1e1e1e] p-3 text-xs text-white/70 space-y-1">
+                        <p className="text-white/90 font-medium">{camp.name} has been extended</p>
+                        <p>Hi [parent] — we&rsquo;ve added more to {camp.name}.</p>
+                        <p>Was {formatDate(camp.start_date)}–{formatDate(camp.end_date)} → now {formatDate(startDate)}–{formatDate(endDate)}.</p>
+                        <p>Extra cost: <span className="text-emerald-300">{requestAmount ? formatRequestAmount(requestAmount) : '£—'}</span></p>
+                        <p className="text-white/80">{requestInstructions || '[your payment instructions]'}</p>
+                        <p className="text-amber-300/80">Pay the academy directly — not through Player Portal; no card is charged here.</p>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-white/40">
+                      Families pay the academy directly. Player Portal sends the email but doesn&rsquo;t process or track the payment.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2">
+                <p className="text-xs text-emerald-300">No additional charge will be made. No refunds are required.</p>
+              </div>
+            )}
+
+            {error && <p className="text-xs text-rose-400">{error}</p>}
             <div className="flex items-center justify-end gap-3 pt-1">
               <button onClick={() => setShowImpact(false)} className="px-4 py-2 text-sm font-medium text-[#888] hover:text-white/90">
                 Cancel
               </button>
-              <button onClick={doSave} disabled={saving} className="px-5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
-                {saving ? 'Saving...' : 'Confirm & save'}
+              <button onClick={doSave} disabled={saving || (paymentMode === 'request' && (!!amtErr || !!insErr))} className="px-5 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                {saving ? 'Saving…' : paymentMode === 'request' ? `Save & email ${bookedCount}` : 'Confirm & save'}
               </button>
             </div>
           </div>

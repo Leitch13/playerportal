@@ -99,22 +99,27 @@ export type ScheduleDay = {
   activities: string[]
 }
 
-// The ONLY columns additive structural editing may UPDATE. Deliberately excludes
-// start_date, price, early-bird/sibling — so a structural edit can never move the
-// start, change paid value, or shrink anything.
+// The ONLY columns additive structural editing may UPDATE. start_date is allowed
+// (Phase 2C) but ONLY ever moves EARLIER and never before today — the guard in
+// additiveEditError enforces that; the allowlist alone is not the safety boundary.
+// Still deliberately excludes price / early-bird / sibling — a structural edit can
+// never change paid value or shrink anything.
 export type AdditiveCampFields = {
+  start_date: string
   end_date: string
   schedule: ScheduleDay[]
 }
 
 export const ADDITIVE_CAMP_FIELDS: readonly (keyof AdditiveCampFields)[] = [
+  'start_date',
   'end_date',
   'schedule',
 ] as const
 
 // Hard-filter to the additive allowlist (defence-in-depth, mirrors
-// pickSafeCampFields): only end_date/schedule survive — start_date/price/etc.
-// can never be written from the structural path.
+// pickSafeCampFields): only start_date/end_date/schedule survive — price etc.
+// can never be written from the structural path. start_date passes the filter
+// but additiveEditError guarantees the value is earlier-and-not-past.
 export function pickAdditiveCampFields(input: Record<string, unknown>): Partial<AdditiveCampFields> {
   const out: Record<string, unknown> = {}
   for (const k of ADDITIVE_CAMP_FIELDS) {
@@ -183,8 +188,9 @@ export type AdditiveSnapshot = {
 
 // The structural guard. Returns the first failing message, or null when the
 // edit is purely additive and safe. `todayISO` is 'YYYY-MM-DD' (caller supplies;
-// compared in UTC). Enforces: camp not ended · start unchanged · end only
-// grows · day-count non-decreasing · schedule append-only · sane bounds.
+// compared in UTC). Enforces: camp not ended · start earlier-only (not later,
+// not before today) · end only grows · day-count non-decreasing · schedule
+// append-only · sane bounds.
 export function additiveEditError(orig: AdditiveSnapshot, next: AdditiveSnapshot, todayISO: string): string | null {
   const today = parseISODate(todayISO)
   const os = parseISODate(orig.start_date)
@@ -200,8 +206,12 @@ export function additiveEditError(orig: AdditiveSnapshot, next: AdditiveSnapshot
   // can't shrink, so this never enables a reductive or past-shifting edit.
   if (oe < today) return "Structural edits aren't allowed once a camp has ended."
 
-  // Start date is immutable in additive editing.
-  if (ns !== os) return "The start date can't be changed."
+  // Start date may move EARLIER only (Phase 2C — additive: the camp grows at the
+  // front, existing whole-camp bookings simply include the earlier day at no
+  // charge). Never later (reductive — drops a paid first day), and never before
+  // today (would add days already past and slam the booking-availability gate).
+  if (ns > os) return 'The start date can only be moved earlier, not later.'
+  if (ns < today) return "The start date can't be earlier than today."
 
   // End date can only be extended, never brought forward.
   if (ne < oe) return 'The end date can only be extended, not brought forward.'

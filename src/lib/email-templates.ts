@@ -2264,6 +2264,83 @@ export function campBookingConfirmationEmail(params: {
 }
 
 /**
+ * Camps Phase 2B — manual payment request after a camp extension.
+ *
+ * Sent (optionally) when an admin extends a booked camp and chooses to ask
+ * existing families to pay for the added day(s). The payment is collected by
+ * the academy DIRECTLY (bank transfer / cash) — NOT through Player Portal. No
+ * card is charged, no Stripe, no booking row touched. The copy is deliberately
+ * friendly + explicit that the money goes academy ↔ parent.
+ */
+export function campExtensionPaymentRequestEmail(params: {
+  parentName: string
+  childName: string
+  campName: string
+  oldDates: string              // pre-formatted "Mon 21 Jul → Wed 23 Jul 2026"
+  newDates: string              // pre-formatted (the extended range)
+  amount: string                // pre-formatted "£40.00"
+  instructions: string          // raw admin free-text (escaped + nl2br here)
+  academyName: string
+  academyContactEmail: string | null
+  academyContactPhone: string | null
+  bookingReference?: string | null
+}) {
+  const instr = escapeHtml(params.instructions).replace(/\n/g, '<br/>')
+  const contactRows = [
+    params.academyContactEmail
+      ? `<tr><td style="color:#888">Email</td><td style="text-align:right"><a href="mailto:${params.academyContactEmail}" style="color:#4ecde6;text-decoration:none">${params.academyContactEmail}</a></td></tr>`
+      : '',
+    params.academyContactPhone
+      ? `<tr><td style="color:#888">Phone</td><td style="text-align:right;color:#fff">${params.academyContactPhone}</td></tr>`
+      : '',
+  ].filter(Boolean).join('')
+
+  return {
+    subject: `${params.academyName}: ${params.campName} has been extended`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Good news — we've added more to ${escapeHtml(params.campName)}! 🎉</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${escapeHtml(params.parentName)},</p>
+      <p style="color:#aaa;line-height:1.6">
+        <strong style="color:#fff">${escapeHtml(params.academyName)}</strong> has extended
+        <strong style="color:#fff">${escapeHtml(params.campName)}</strong>, so
+        <strong style="color:#fff">${escapeHtml(params.childName)}</strong> gets extra time on the pitch.
+      </p>
+
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:11px;color:#888;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">What's changed</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#888;width:120px">Was</td><td style="text-align:right;color:#aaa">${params.oldDates}</td></tr>
+          <tr><td style="color:#888">Now</td><td style="text-align:right;color:#fff;font-weight:600">${params.newDates}</td></tr>
+          <tr><td style="color:#888">Extra cost</td><td style="text-align:right;color:#10b981;font-weight:700">${params.amount}</td></tr>
+          ${params.bookingReference ? `<tr><td style="color:#888">Reference</td><td style="text-align:right;color:#aaa;font-family:monospace;font-size:12px">${escapeHtml(params.bookingReference.slice(0, 8))}</td></tr>` : ''}
+        </table>
+      </div>
+
+      <div style="background:#11271f;border:1px solid #10b98133;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 8px;font-size:11px;color:#10b981;letter-spacing:0.05em;text-transform:uppercase;font-weight:700">How to pay</p>
+        <p style="color:#ddd;line-height:1.6;margin:0 0 12px">${instr}</p>
+        <p style="color:#9fb7ad;font-size:13px;line-height:1.6;margin:0">
+          Please pay <strong style="color:#fff">${escapeHtml(params.academyName)}</strong> directly for the extra day(s).
+          This payment is <strong>not</strong> taken through Player Portal, and no card is charged here.
+        </p>
+      </div>
+
+      ${contactRows ? `
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:11px;color:#888;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">Questions? Contact ${escapeHtml(params.academyName)}</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          ${contactRows}
+        </table>
+      </div>` : ''}
+
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:24px">
+        If you've already arranged this with ${escapeHtml(params.academyName)}, please ignore this message.
+      </p>
+    `),
+  }
+}
+
+/**
  * Sprint 8b v1 — Move Player parent notification.
  *
  * Sent by /api/enrolments/move (immediate or future-dated) AND by the
