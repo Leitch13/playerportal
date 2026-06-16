@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
+import { QUARTERLY_BILLING_ENABLED, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,12 @@ export async function POST(request: NextRequest) {
 
   if (!token) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 })
+  }
+
+  // GLOBAL SAFETY GATE — quarterly hard-disabled until rebuilt as recurring.
+  // Fires before any Stripe object is created.
+  if (isQuarterly && !QUARTERLY_BILLING_ENABLED) {
+    return NextResponse.json({ error: QUARTERLY_UNAVAILABLE_MESSAGE }, { status: 400 })
   }
 
   const admin = createClient(

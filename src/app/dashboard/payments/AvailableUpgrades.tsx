@@ -7,6 +7,7 @@
  */
 import SubscribeButton from './SubscribeButton'
 import type { SubscriptionPlan } from '@/lib/types'
+import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
 
 export default function AvailableUpgrades({
   plans,
@@ -59,6 +60,7 @@ export default function AvailableUpgrades({
                   planName={plan.name}
                   amount={Number(plan.amount)}
                   interval={plan.interval || 'month'}
+                  quarterlyEnabled={QUARTERLY_BILLING_ENABLED}
                 />
               </div>
             </div>

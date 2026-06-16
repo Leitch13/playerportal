@@ -9,6 +9,7 @@ export default function SubscribeButton({
   interval,
   playerId,
   label,
+  quarterlyEnabled = false,
 }: {
   planId: string
   planName: string
@@ -16,6 +17,9 @@ export default function SubscribeButton({
   interval: string
   playerId?: string
   label?: string
+  // Global quarterly safety kill-switch. When false the toggle is hidden and
+  // billing stays monthly-only. Default false for safety.
+  quarterlyEnabled?: boolean
 }) {
   const [loading, setLoading] = useState(false)
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
@@ -50,35 +54,37 @@ export default function SubscribeButton({
 
   return (
     <div className="space-y-2">
-      {/* Billing toggle */}
-      <div className="flex rounded-lg bg-[#0a0a0a] overflow-hidden border border-[#1e1e1e]">
-        <button
-          type="button"
-          onClick={() => setBillingOption('monthly')}
-          className={`flex-1 py-1.5 text-xs font-semibold transition-all ${
-            billingOption === 'monthly'
-              ? 'bg-primary text-white'
-              : 'text-white/60 hover:text-white'
-          }`}
-        >
-          Monthly
-        </button>
-        <button
-          type="button"
-          onClick={() => setBillingOption('quarterly')}
-          className={`flex-1 py-1.5 text-xs font-semibold transition-all relative ${
-            billingOption === 'quarterly'
-              ? 'bg-green-600 text-white'
-              : 'text-white/60 hover:text-white'
-          }`}
-        >
-          3 Months
-          <span className="ml-1 text-[9px] opacity-80">-10%</span>
-        </button>
-      </div>
+      {/* Billing toggle — hidden while quarterly billing is disabled */}
+      {quarterlyEnabled && (
+        <div className="flex rounded-lg bg-[#0a0a0a] overflow-hidden border border-[#1e1e1e]">
+          <button
+            type="button"
+            onClick={() => setBillingOption('monthly')}
+            className={`flex-1 py-1.5 text-xs font-semibold transition-all ${
+              billingOption === 'monthly'
+                ? 'bg-primary text-white'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingOption('quarterly')}
+            className={`flex-1 py-1.5 text-xs font-semibold transition-all relative ${
+              billingOption === 'quarterly'
+                ? 'bg-green-600 text-white'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            3 Months
+            <span className="ml-1 text-[9px] opacity-80">-10%</span>
+          </button>
+        </div>
+      )}
 
       {/* Price display */}
-      {billingOption === 'quarterly' && (
+      {quarterlyEnabled && billingOption === 'quarterly' && (
         <div className="text-center py-1">
           <span className="text-xs text-green-600 font-medium">
             £{quarterlyDiscounted.toFixed(2)} (save £{saving.toFixed(2)})

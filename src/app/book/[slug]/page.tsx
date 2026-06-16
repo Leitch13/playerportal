@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import PricingToggle from './PricingToggle'
 import EnquiryButton from './EnquiryButton'
+import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
 import BookingPageHero from '@/components/BookingPageHero'
 
 export async function generateMetadata({
@@ -426,7 +427,7 @@ export default async function PublicBookingPage({
                       ) : matchedPlan ? (
                         (() => {
                           const monthly = Number(matchedPlan.amount)
-                          const qEnabled = (org as Record<string, unknown>).quarterly_billing_enabled !== false
+                          const qEnabled = QUARTERLY_BILLING_ENABLED && (org as Record<string, unknown>).quarterly_billing_enabled !== false
                           const qPercent = Math.max(0, Math.min(50, Number((org as Record<string, unknown>).quarterly_discount_percent ?? 10)))
                           const quarterly = monthly * 3 * (1 - qPercent / 100)
                           const saving = monthly * 3 * (qPercent / 100)

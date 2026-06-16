@@ -43,6 +43,12 @@ interface QuickBookFormProps {
    * sessions_per_month set.
    */
   bridgeMode?: 'calendar' | 'session'
+  /**
+   * Global quarterly safety kill-switch (server-resolved from
+   * QUARTERLY_BILLING_ENABLED). When false the monthly/quarterly toggle is
+   * hidden and billing stays monthly-only. Default false for safety.
+   */
+  quarterlyEnabled?: boolean
 }
 
 function getQuarterlyPrice(monthlyAmount: number) {
@@ -95,7 +101,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false, bridgeMode = 'calendar' }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false, bridgeMode = 'calendar', quarterlyEnabled = false }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -368,10 +374,12 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
         </h2>
         {plans.length === 0 ? <p className="text-sm text-white/40">No plans available yet. Please contact the academy.</p> : (
           <>
-            <div className="bg-white/[0.04] rounded-xl p-1 flex mb-5">
-              <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
-              <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-10%</span></button>
-            </div>
+            {quarterlyEnabled && (
+              <div className="bg-white/[0.04] rounded-xl p-1 flex mb-5">
+                <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
+                <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-white/[0.08] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-10%</span></button>
+              </div>
+            )}
             <div className="space-y-3">
               {plans.map((plan) => {
                 const monthly = plan.amount

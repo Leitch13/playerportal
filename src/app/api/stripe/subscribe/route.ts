@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isStartDateBillingEnabled, isFutureStartBillingEnabled } from '@/lib/billing/flag'
+import { QUARTERLY_BILLING_ENABLED, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import {
   firstOfNextMonthUnix,
   isStartInCurrentMonth,
@@ -165,6 +166,15 @@ export async function POST(request: NextRequest) {
         .single()
       planSessionsPerMonth = (planSpm as { sessions_per_month?: number | null } | null)?.sessions_per_month ?? null
     } catch { /* migration 072 not applied */ }
+
+    // ── GLOBAL SAFETY GATE: quarterly billing is hard-disabled until it is
+    // re-built as a true recurring subscription (the current one-time path
+    // takes money without enrolling — see QUARTERLY_BILLING_ENROLMENT_AUDIT.md).
+    // This fires BEFORE any Stripe object is created, so a blocked quarterly
+    // request makes zero Stripe calls.
+    if (isQuarterly && !QUARTERLY_BILLING_ENABLED) {
+      return NextResponse.json({ error: QUARTERLY_UNAVAILABLE_MESSAGE }, { status: 400 })
+    }
 
     // Respect the academy's quarterly-billing settings
     const quarterlyEnabled = planOrg?.quarterly_billing_enabled !== false // default true

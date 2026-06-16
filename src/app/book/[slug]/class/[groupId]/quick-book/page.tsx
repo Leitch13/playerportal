@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import { QuickBookForm } from './QuickBookForm'
+import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
 import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
 
 export default async function QuickBookPage({
@@ -285,6 +286,7 @@ export default async function QuickBookPage({
         classTimeSlot={group.time_slot as string | null}
         allowFutureStart={allowFutureStart}
         bridgeMode={bridgeMode}
+        quarterlyEnabled={QUARTERLY_BILLING_ENABLED}
       />
 
       {/* Footer */}
