@@ -69,19 +69,19 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full bg-[#141414] rounded-2xl border border-[#1e1e1e] border-dashed p-5 text-center hover:bg-[#1a1a1a] transition-colors group"
+        className="w-full bg-gradient-to-br from-[#4ecde6]/10 to-transparent rounded-2xl border border-[#4ecde6]/25 hover:border-[#4ecde6]/50 p-5 flex items-center justify-center gap-3 hover:from-[#4ecde6]/15 transition-all group"
       >
-        <span className="text-2xl block mb-1 group-hover:scale-110 transition-transform inline-block">📢</span>
-        <span className="font-semibold text-sm text-primary block">New Announcement</span>
+        <span className="w-9 h-9 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform" aria-hidden>📢</span>
+        <span className="font-semibold text-sm text-[#4ecde6]">New announcement</span>
       </button>
     )
   }
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-4">
+    <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold">New Announcement</h2>
-        <button onClick={() => setOpen(false)} className="text-white/50 hover:text-primary text-sm">Cancel</button>
+        <h2 className="font-bold text-white">New announcement</h2>
+        <button onClick={() => setOpen(false)} className="text-white/50 hover:text-white text-sm transition-colors">Cancel</button>
       </div>
 
       <input
@@ -153,7 +153,7 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
         <button
           onClick={() => handleSend(false)}
           disabled={loading || !title || !body}
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-40 transition-all"
+          className="px-5 py-2.5 rounded-xl font-bold text-sm bg-[#4ecde6] text-[#06222a] hover:bg-[#6fd9ec] disabled:opacity-40 transition-all"
         >
           {loading ? 'Sending...' : 'Send Now'}
         </button>
