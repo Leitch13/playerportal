@@ -25,13 +25,37 @@ import {
 
 export const PARENT_PROGRESS_V2_ENABLED = process.env.PARENT_PROGRESS_V2_ENABLED === 'true'
 
+// Phase 2B · Phase 1A — nested flag inside the already-live ParentProgressV2.
+// OFF (default) ⇒ ParentProgressV2 renders byte-identically; the engagement
+// strip / chips / radar / enriched history are never rendered and the
+// attendance read is never run. ON ⇒ the five additions below. Derivation only;
+// the single new data input is a read-only, child-scoped attendance SELECT.
+export const PARENT_PROGRESS_V2_1B_ENABLED = process.env.PARENT_PROGRESS_V2_1B_ENABLED === 'true'
+
 type Category = { key: string; label: string }
 type ReviewLike = Record<string, unknown> & { review_date?: string | null }
 
 // Legacy flat score columns (pre-jsonb), mirrored from the report page.
 const LEGACY_KEYS = ['attitude', 'effort', 'technical_quality', 'game_understanding', 'confidence', 'physical_movement']
 
-export type HistoryEntry = { id: string; date: string | null; coachName: string | null; rating: number | null }
+// Phase 1B — one read-only attendance row, child-scoped. present + date only.
+export type AttendanceRecord = { present: boolean | null; session_date?: string | null }
+// Phase 1B — engagement/value strip metrics (all derived, no new schema).
+export type Engagement = { attendancePct: number | null; sessionsAttended: number; streak: number; reportsReceived: number }
+// Phase 1B — strongest / focus chip + radar point.
+export type SkillChip = { label: string; value: number | null }
+export type RadarPoint = { label: string; value: number }
+
+export type HistoryEntry = {
+  id: string
+  date: string | null
+  coachName: string | null
+  rating: number | null
+  // Phase 1B — enriched, derived from the same reviews (no new query).
+  delta?: number | null
+  strongest?: string | null
+  focus?: string | null
+}
 
 export type ChildJourney = {
   playerId: string
@@ -56,6 +80,11 @@ export type ChildJourney = {
   trendReviews: (Record<string, unknown> & { review_date: string })[]
   hasTrend: boolean
   history: HistoryEntry[]
+  // Phase 1B — additive; only rendered when PARENT_PROGRESS_V2_1B_ENABLED.
+  engagement: Engagement
+  strongest: SkillChip | null
+  focusChip: SkillChip | null
+  radar: RadarPoint[]
 }
 
 // Average of a review over the given categories, counting only real (>0) scores.
@@ -79,6 +108,79 @@ function coachNameOf(review: ReviewLike | undefined): string | null {
   return c?.full_name ?? null
 }
 
+// ── Phase 1B derivations (pure; over data already loaded) ───────────────────
+
+// Highest real (>0) category score of a review.
+function strongestCategory(review: ReviewLike | undefined, cats: Category[]): SkillChip | null {
+  if (!review) return null
+  let best: SkillChip | null = null
+  for (const c of cats) {
+    const v = readScore(review, c.key)
+    if (typeof v === 'number' && v > 0 && (best === null || v > (best.value ?? -Infinity))) {
+      best = { label: c.label, value: v }
+    }
+  }
+  return best
+}
+
+// Lowest real (>0) category score of a review.
+function lowestCategory(review: ReviewLike | undefined, cats: Category[]): SkillChip | null {
+  if (!review) return null
+  let worst: SkillChip | null = null
+  for (const c of cats) {
+    const v = readScore(review, c.key)
+    if (typeof v === 'number' && v > 0 && (worst === null || v < (worst.value ?? Infinity))) {
+      worst = { label: c.label, value: v }
+    }
+  }
+  return worst
+}
+
+// Focus chip — PREFER the coach's written focus_next intent; fall back to the
+// lowest-scoring category. Mirrors the approved spec (coach intent first).
+function focusChipFor(review: ReviewLike | undefined, cats: Category[]): SkillChip | null {
+  const fn = (review as Record<string, unknown> | undefined)?.focus_next as string | null | undefined
+  if (fn && fn.trim()) return { label: fn.trim(), value: null }
+  return lowestCategory(review, cats)
+}
+
+// Radar points for the latest review (single-series). Hidden (<3 axes) — a
+// 1–2 axis radar is meaningless.
+function radarFor(review: ReviewLike | undefined, cats: Category[]): RadarPoint[] {
+  if (!review) return []
+  const pts: RadarPoint[] = []
+  for (const c of cats) {
+    const v = readScore(review, c.key)
+    if (typeof v === 'number' && v > 0) pts.push({ label: c.label, value: v })
+  }
+  return pts.length >= 3 ? pts : []
+}
+
+// Engagement metrics from the child's own attendance rows + report count.
+// Streak = consecutive present sessions from the most recent backwards.
+export function engagementFrom(
+  records: AttendanceRecord[] | null | undefined,
+  reportsReceived: number,
+): Engagement {
+  const recs = (records || []).filter((r): r is AttendanceRecord => !!r)
+  const total = recs.length
+  const present = recs.filter((r) => r.present === true).length
+  const byDateDesc = [...recs].sort((a, b) =>
+    String(b.session_date || '').localeCompare(String(a.session_date || '')),
+  )
+  let streak = 0
+  for (const r of byDateDesc) {
+    if (r.present === true) streak++
+    else break
+  }
+  return {
+    attendancePct: total > 0 ? Math.round((present / total) * 100) : null,
+    sessionsAttended: present,
+    streak,
+    reportsReceived,
+  }
+}
+
 // Build one child's journey from the reviews the loader already returned
 // (NEWEST-FIRST, as `progress_reviews` is ordered by review_date DESC). Safe on
 // null/empty/malformed input — degenerate data yields an empty (hero: null) journey.
@@ -87,6 +189,10 @@ export function buildChildJourney(
   firstName: string,
   reviewsNewestFirst: ReviewLike[] | null | undefined,
   scoringCategories: Category[],
+  // Phase 1B — this child's own attendance rows (read-only, child-scoped by the
+  // loader). Optional so existing callers compile unchanged; when absent the
+  // engagement strip simply has no attendance data.
+  attendanceRecords?: AttendanceRecord[] | null,
 ): ChildJourney {
   const name = firstName || 'Your child'
   const reviews = (reviewsNewestFirst || []).filter((r): r is ReviewLike => !!r)
@@ -96,6 +202,8 @@ export function buildChildJourney(
     return {
       playerId, firstName: name, reviewCount: 0, displayCategories: cats,
       hero: null, strengths: null, focusNext: null, trendReviews: [], hasTrend: false, history: [],
+      engagement: engagementFrom(attendanceRecords, 0),
+      strongest: null, focusChip: null, radar: [],
     }
   }
 
@@ -139,12 +247,24 @@ export function buildChildJourney(
       return row
     })
 
-  const history: HistoryEntry[] = reviews.map((r) => ({
-    id: String((r as Record<string, unknown>).id ?? ''),
-    date: typeof r.review_date === 'string' ? r.review_date : null,
-    coachName: coachNameOf(r),
-    rating: reviewAverage(r, displayCategories),
-  }))
+  // History (newest-first). Phase 1B enriches each row with the score change vs
+  // the next-older report + that report's strongest/lowest category — all
+  // derived from the same reviews, no new query. Compact category labels used
+  // for the timeline (the hero focus chip carries the coach's written intent).
+  const history: HistoryEntry[] = reviews.map((r, i) => {
+    const rating = reviewAverage(r, displayCategories)
+    const olderRating = reviewAverage(reviews[i + 1], displayCategories)
+    const delta = rating != null && olderRating != null ? Math.round((rating - olderRating) * 10) / 10 : null
+    return {
+      id: String((r as Record<string, unknown>).id ?? ''),
+      date: typeof r.review_date === 'string' ? r.review_date : null,
+      coachName: coachNameOf(r),
+      rating,
+      delta,
+      strongest: strongestCategory(r, displayCategories)?.label ?? null,
+      focus: lowestCategory(r, displayCategories)?.label ?? null,
+    }
+  })
 
   return {
     playerId,
@@ -166,5 +286,9 @@ export function buildChildJourney(
     trendReviews,
     hasTrend: trendReviews.length >= 2,
     history,
+    engagement: engagementFrom(attendanceRecords, reviews.length),
+    strongest: strongestCategory(latest, displayCategories),
+    focusChip: focusChipFor(latest, displayCategories),
+    radar: radarFor(latest, displayCategories),
   }
 }

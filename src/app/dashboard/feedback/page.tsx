@@ -9,7 +9,7 @@ import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ProgressTrend from './ProgressTrend'
 import ParentProgressV2 from '@/components/progress/ParentProgressV2'
-import { PARENT_PROGRESS_V2_ENABLED, buildChildJourney } from '@/lib/parent-progress-v2'
+import { PARENT_PROGRESS_V2_ENABLED, PARENT_PROGRESS_V2_1B_ENABLED, buildChildJourney, type AttendanceRecord } from '@/lib/parent-progress-v2'
 
 export default async function FeedbackPage({
   searchParams,
@@ -84,8 +84,36 @@ export default async function FeedbackPage({
   // byte-identical to current production. ──
   if (PARENT_PROGRESS_V2_ENABLED) {
     const sp = await searchParams
+
+    // ── Phase 2B · Phase 1A — engagement strip data. One read-only attendance
+    // SELECT, scoped to THIS parent's own children (playerIds derived from
+    // players where parent_id = user.id) and additionally protected by RLS.
+    // Only run when the 1B flag is on, so the OFF path adds no query and stays
+    // byte-identical. present + session_date only; last 90 days. ──
+    const attendanceByPlayer: Record<string, AttendanceRecord[]> = {}
+    if (PARENT_PROGRESS_V2_1B_ENABLED && playerIds.length > 0) {
+      const since90 = new Date()
+      since90.setDate(since90.getDate() - 90)
+      const { data: attendanceRows } = await supabase
+        .from('attendance')
+        .select('player_id, present, session_date')
+        .in('player_id', playerIds)
+        .gte('session_date', since90.toISOString().split('T')[0])
+      for (const a of attendanceRows || []) {
+        const pid = a.player_id as string
+        if (!pid) continue
+        ;(attendanceByPlayer[pid] ||= []).push({ present: a.present as boolean | null, session_date: a.session_date as string | null })
+      }
+    }
+
     const journeys = (players || []).map((p) =>
-      buildChildJourney(p.id, p.first_name || '', reviewsByPlayer[p.id]?.reviews ?? [], scoringCategories),
+      buildChildJourney(
+        p.id,
+        p.first_name || '',
+        reviewsByPlayer[p.id]?.reviews ?? [],
+        scoringCategories,
+        attendanceByPlayer[p.id] ?? [],
+      ),
     )
     const selectedId =
       journeys.find((j) => j.playerId === sp?.child)?.playerId ?? journeys[0]?.playerId ?? ''
