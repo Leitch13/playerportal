@@ -1893,6 +1893,11 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
         isLive={readiness.isLive}
         readiness={readiness}
         weekSessions={weekSessions}
+        // Phase 2A·1A — already-computed metrics, surfaced only when
+        // DASHBOARD_HEALTHBAR_ENABLED is on (unused otherwise → flag-OFF
+        // output unchanged).
+        revenueTrend={revenueTrend}
+        attendanceRate={attendanceRate}
       />
     )
   }

@@ -51,9 +51,22 @@ const ROWS: RowDef[] = [
   { key: 'reviewsDue',       label: 'Reviews Due',        href: '/dashboard/reviews',                          emoji: '🟡', tone: 'yellow' },
 ]
 
-export default function DashboardActionQueue({ counts }: { counts: ActionQueueCounts }) {
-  // Filter out zero-count rows per spec.
-  const visibleRows = ROWS.filter(r => (counts[r.key] ?? 0) > 0)
+export default function DashboardActionQueue({
+  counts,
+  order,
+}: {
+  counts: ActionQueueCounts
+  // Optional ranking override (Phase 2A·1A). When omitted the default
+  // ROWS order is used — so existing callers render byte-identically.
+  order?: Array<keyof ActionQueueCounts>
+}) {
+  // Apply an optional ranking, then filter out zero-count rows per spec.
+  const orderedRows = order
+    ? order
+      .map(k => ROWS.find(r => r.key === k))
+      .filter((r): r is RowDef => !!r)
+    : ROWS
+  const visibleRows = orderedRows.filter(r => (counts[r.key] ?? 0) > 0)
 
   return (
     <section className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">

@@ -14,8 +14,9 @@
 import Link from 'next/link'
 import AcademyReadinessWidget from '@/components/AcademyReadinessWidget'
 import DashboardActionQueue from '@/components/DashboardActionQueue'
+import AcademyHealthBar from '@/components/AcademyHealthBar'
 import BookingShareBar from '@/components/BookingShareBar'
-import { formatGBP } from '@/lib/dashboard-metrics'
+import { formatGBP, DASHBOARD_HEALTHBAR_ENABLED } from '@/lib/dashboard-metrics'
 
 type ActionQueueCounts = React.ComponentProps<typeof DashboardActionQueue>['counts']
 type ReadinessState = React.ComponentProps<typeof AcademyReadinessWidget>['state']
@@ -52,6 +53,10 @@ export interface CommandCentreProps {
   isLive: boolean
   readiness: ReadinessState
   weekSessions: WeekSession[]
+  // Phase 2A·1A — already-computed metrics, used only when the Health Bar
+  // is enabled. Optional so existing flag-OFF callers are unaffected.
+  revenueTrend?: number
+  attendanceRate?: number
 }
 
 function StatCard({
@@ -84,7 +89,7 @@ export default function CommandCentre(props: CommandCentreProps) {
     overdueAmount, overdueCount, activeSubs, activePlayers, totalPlayers,
     playersNotPaying, atRiskFamilies, fifthCard, trialFollowUps,
     actionQueueCounts, newLeadsThisWeek, bookingUrl, bookingSlug, isLive,
-    readiness, weekSessions,
+    readiness, weekSessions, revenueTrend = 0, attendanceRate = 0,
   } = props
 
   const fifth = fifthCard === 'not_paying'
@@ -104,6 +109,152 @@ export default function CommandCentre(props: CommandCentreProps) {
     }
 
   const sessionsWithTimes = weekSessions.filter((s) => s.time)
+
+  // ════════════════════════════════════════════════════════════════════════
+  // Phase 2A · Phase 1A — Health Bar + 6-card Snapshot + promoted Action
+  // Centre. Rendered ONLY when DASHBOARD_HEALTHBAR_ENABLED is on. The flag-OFF
+  // path below is left byte-identical to today's live CommandCentre.
+  // Pure composition over props already passed in — no new data.
+  // ════════════════════════════════════════════════════════════════════════
+  if (DASHBOARD_HEALTHBAR_ENABLED) {
+    const collectedTone: 'good' | 'warn' | 'bad' | 'neutral' =
+      revenueTrend > 0 ? 'good' : revenueTrend < 0 ? 'bad' : (collectedThisMonth > 0 ? 'good' : 'neutral')
+    const collectedSub = revenueTrend !== 0
+      ? `${revenueTrend > 0 ? '↑' : '↓'} ${Math.abs(revenueTrend)}% vs last month`
+      : 'paid so far this month'
+    const attendanceTone: 'good' | 'warn' | 'bad' | 'neutral' =
+      attendanceRate <= 0 ? 'neutral' : attendanceRate >= 80 ? 'good' : attendanceRate >= 60 ? 'warn' : 'bad'
+
+    return (
+      <div className="min-h-screen -m-6 bg-[#0a0a0a] p-6 text-white lg:-m-8 lg:p-8">
+        <div className="mx-auto max-w-5xl space-y-6">
+          {/* ── Greeting ── */}
+          <header className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold sm:text-3xl">Good morning, {firstName} 👋</h1>
+              <p className="mt-1 text-sm text-white/50">
+                Here&apos;s what matters at {orgName || 'your academy'} today.
+              </p>
+            </div>
+            {bookingSlug && (
+              <Link
+                href={`/book/${bookingSlug}`}
+                className="rounded-xl border border-[#4ecde6]/30 bg-[#4ecde6]/10 px-4 py-2 text-sm font-semibold text-[#4ecde6] transition hover:bg-[#4ecde6]/20"
+              >
+                View Booking Page
+              </Link>
+            )}
+          </header>
+
+          {/* ── SECTION 1: Academy Health Bar (Am I healthy?) ── */}
+          <AcademyHealthBar
+            isLive={isLive}
+            stripeReadiness={readiness.stripeReadiness}
+            isPilot={readiness.isPilot}
+            trialDaysRemaining={readiness.trialDaysRemaining}
+            doneCount={readiness.doneCount}
+            totalCount={readiness.totalCount}
+            overdueCount={overdueCount}
+            overdueAmount={overdueAmount}
+          />
+
+          {/* Pre-live: expanded readiness checklist; Snapshot suppressed (no £0 cards). */}
+          {!isLive && <AcademyReadinessWidget state={readiness} />}
+
+          {/* ── SECTION 2: Business Snapshot — 6 cards (Am I growing?) ── */}
+          {isLive && (
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+              <StatCard
+                label="Recurring Revenue"
+                value={formatGBP(recurringRevenue)}
+                sub={`from ${activeSubs} active sub${activeSubs === 1 ? '' : 's'}`}
+                href="/dashboard/payments"
+                tone="neutral"
+              />
+              <StatCard
+                label="Collected This Month"
+                value={formatGBP(collectedThisMonth)}
+                sub={collectedSub}
+                href="/dashboard/payments"
+                tone={collectedTone}
+              />
+              <StatCard
+                label="Active Players"
+                value={String(activePlayers)}
+                sub={`of ${totalPlayers} · enrolled & paying`}
+                href="/dashboard/players"
+                tone="neutral"
+              />
+              <StatCard
+                label="Outstanding"
+                value={formatGBP(outstanding)}
+                sub={overdueCount > 0 ? `${overdueCount} overdue · chase →` : 'all up to date'}
+                href="/dashboard/payments"
+                tone={overdueCount > 0 ? 'bad' : 'neutral'}
+              />
+              <StatCard
+                label="At-Risk Families"
+                value={String(atRiskFamilies)}
+                sub="needing attention →"
+                href="/dashboard/parents?filter=needs_attention"
+                tone={atRiskFamilies > 0 ? 'warn' : 'neutral'}
+              />
+              <StatCard
+                label="Attendance"
+                value={attendanceRate > 0 ? `${attendanceRate}%` : '—'}
+                sub={attendanceRate > 0 ? 'last 30 days' : 'no sessions yet'}
+                href="/dashboard/attendance"
+                tone={attendanceTone}
+              />
+            </div>
+          )}
+
+          {/* ── SECTION 3: Action Centre — promoted full-width anchor ──
+              Ranking: revenue risk → revenue opportunity → retention risk →
+              operations. Reuses DashboardActionQueue with an order override;
+              the component default (and the flag-OFF path) is unchanged. */}
+          <DashboardActionQueue
+            counts={actionQueueCounts}
+            order={['paymentIssues', 'trialFollowUps', 'atRiskFamilies', 'attendanceRisks', 'reviewsDue']}
+          />
+
+          {/* ── This week's sessions (operations, below the fold) ── */}
+          {sessionsWithTimes.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-xs font-medium uppercase tracking-wider text-white/40">This Week&apos;s Sessions</p>
+                <Link href="/dashboard/calendar" className="text-xs font-medium text-[#4ecde6] hover:underline">Full timetable →</Link>
+              </div>
+              <ul className="divide-y divide-white/5">
+                {sessionsWithTimes.slice(0, 6).map((s) => (
+                  <li key={s.id} className="flex items-center justify-between py-2.5 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-white">{s.name}</p>
+                      <p className="text-xs text-white/40">{s.day}{s.time ? ` · ${s.time}` : ''}{s.location ? ` · ${s.location}` : ''}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-white/50">{s.count}/{s.capacity}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* ── Booking share + leads (below the fold; status now lives in the Health Bar) ── */}
+          {bookingUrl && (
+            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">Share Your Booking Page</p>
+              <BookingShareBar bookingUrl={bookingUrl} academyName={orgName} />
+              {newLeadsThisWeek > 0 && (
+                <Link href="/dashboard/leads" className="mt-3 inline-block text-xs font-medium text-[#4ecde6] hover:underline">
+                  {newLeadsThisWeek} new lead{newLeadsThisWeek === 1 ? '' : 's'} this week →
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen -m-6 bg-[#0a0a0a] p-6 text-white lg:-m-8 lg:p-8">

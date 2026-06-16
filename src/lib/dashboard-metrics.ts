@@ -13,6 +13,15 @@
 
 export const DASHBOARD_MVP_ENABLED = process.env.DASHBOARD_MVP_ENABLED === 'true'
 
+// Phase 2A · Phase 1A — nested flag inside the already-live CommandCentre.
+// OFF (default) ⇒ CommandCentre renders byte-identically to today's live
+// dashboard. ON ⇒ adds the Academy Health Bar, the 6-card Business Snapshot
+// (surfacing the already-computed revenueTrend + attendanceRate), and
+// promotes the Action Queue to a full-width anchor. Display-layer only:
+// no writes, no new queries, no schema, no protected systems. See
+// ACADEMY_HOME_PHASE2A_PHASE0_1A.md.
+export const DASHBOARD_HEALTHBAR_ENABLED = process.env.DASHBOARD_HEALTHBAR_ENABLED === 'true'
+
 /** Subset of a payments row needed for outstanding/overdue maths. */
 export interface PaymentLike {
   amount: number | string
