@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import type { Term, Holiday } from './page'
@@ -58,14 +58,234 @@ function StatusBadge({ active }: { active: boolean }) {
   )
 }
 
+/* ── Current Teaching Period derivation (read-only, pure) ── */
+
+const DAY_MS = 86_400_000
+
+function todayISOFromMs(nowMs: number) {
+  const d = new Date(nowMs)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Whole-day diff between two ISO dates (b - a), midnight-anchored.
+function dayDiff(aISO: string, bISO: string) {
+  const a = new Date(aISO + 'T00:00:00').getTime()
+  const b = new Date(bISO + 'T00:00:00').getTime()
+  return Math.round((b - a) / DAY_MS)
+}
+
+type CurrentPeriod = {
+  activeTerm: Term | null
+  status: 'in_progress' | 'not_started' | 'ended' | 'on_break' | 'none'
+  weekX: number
+  weekY: number
+  weeksRemaining: number
+  teachingWeeks: number
+  holidayWeeksTotal: number
+  endsInDays: number | null
+  startsInDays: number | null
+  endedDaysAgo: number | null
+  onBreak: Holiday | null
+  nextHoliday: { holiday: Holiday; inDays: number } | null
+  nextTerm: { term: Term; inDays: number } | null
+}
+
+// Derives the "right now" picture from already-loaded data + a client clock.
+// Reads the existing is_active flag — never writes it, never re-derives a
+// different "current" term. Pure: no I/O.
+function deriveCurrentPeriod(terms: Term[], holidays: Holiday[], nowMs: number): CurrentPeriod {
+  const today = todayISOFromMs(nowMs)
+  const active = terms.find((t) => t.is_active) ?? null
+
+  // Forward-looking, term-independent signals (across ALL loaded rows).
+  const nextTermRow = terms
+    .filter((t) => t.start_date > today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))[0]
+  const nextTerm = nextTermRow ? { term: nextTermRow, inDays: dayDiff(today, nextTermRow.start_date) } : null
+
+  // "next holiday" = the soonest holiday not yet finished; if one straddles today → on break.
+  const upcomingOrLive = holidays
+    .filter((h) => h.end_date >= today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+  const onBreak = upcomingOrLive.find((h) => h.start_date <= today && today <= h.end_date) ?? null
+  const nextHolidayRow = upcomingOrLive.find((h) => h.start_date > today) ?? null
+  const nextHoliday = nextHolidayRow ? { holiday: nextHolidayRow, inDays: dayDiff(today, nextHolidayRow.start_date) } : null
+
+  if (!active) {
+    return {
+      activeTerm: null, status: 'none', weekX: 0, weekY: 0, weeksRemaining: 0,
+      teachingWeeks: 0, holidayWeeksTotal: 0, endsInDays: null, startsInDays: null,
+      endedDaysAgo: null, onBreak, nextHoliday, nextTerm,
+    }
+  }
+
+  const termHols = holidays.filter((h) => h.term_id === active.id)
+  const teachingWeeks = Math.max(0, weeksBetween(active.start_date, active.end_date) - holidayWeeks(termHols))
+  const holidayWeeksTotal = holidayWeeks(termHols)
+
+  // Status relative to today.
+  let status: CurrentPeriod['status']
+  let startsInDays: number | null = null
+  let endedDaysAgo: number | null = null
+  if (today < active.start_date) {
+    status = 'not_started'
+    startsInDays = dayDiff(today, active.start_date)
+  } else if (today > active.end_date) {
+    status = 'ended'
+    endedDaysAgo = dayDiff(active.end_date, today)
+  } else if (onBreak && onBreak.term_id === active.id) {
+    status = 'on_break'
+  } else {
+    status = 'in_progress'
+  }
+
+  // Teaching-week progress (holiday-aware), only meaningful once started.
+  const weekY = Math.max(1, Math.ceil(teachingWeeks))
+  let weekX = 0
+  let weeksRemaining = teachingWeeks
+  if (status !== 'not_started') {
+    const cappedToday = today > active.end_date ? active.end_date : today
+    const holsBefore = termHols.filter((h) => h.end_date <= cappedToday)
+    const elapsedTeaching = Math.max(0, weeksBetween(active.start_date, cappedToday) - holidayWeeks(holsBefore))
+    weekX = Math.min(weekY, Math.max(1, Math.ceil(elapsedTeaching)))
+    const holsAfter = termHols.filter((h) => h.end_date >= cappedToday)
+    weeksRemaining = today > active.end_date
+      ? 0
+      : Math.max(0, weeksBetween(cappedToday, active.end_date) - holidayWeeks(holsAfter))
+  }
+
+  return {
+    activeTerm: active, status, weekX, weekY,
+    weeksRemaining: Math.round(weeksRemaining * 10) / 10,
+    teachingWeeks: Math.round(teachingWeeks * 10) / 10,
+    holidayWeeksTotal: Math.round(holidayWeeksTotal * 10) / 10,
+    endsInDays: status === 'ended' ? null : dayDiff(today, active.end_date),
+    startsInDays, endedDaysAgo, onBreak: status === 'on_break' ? onBreak : null,
+    nextHoliday, nextTerm,
+  }
+}
+
+function countdownLabel(days: number) {
+  if (days <= 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  if (days < 14) return `in ${days} days`
+  if (days < 60) return `in ${Math.round(days / 7)} weeks`
+  return `in ${Math.round(days / 30)} months`
+}
+
+/* ── Current Teaching Period Band (read-only) ── */
+
+function CountdownChip({
+  tone, eyebrow, title, sub,
+}: { tone: 'cyan' | 'amber' | 'rose' | 'muted'; eyebrow: string; title: string; sub?: string }) {
+  const tones: Record<string, string> = {
+    cyan: 'bg-[#4ecde6]/10 border-[#4ecde6]/25',
+    amber: 'bg-amber-500/10 border-amber-500/25',
+    rose: 'bg-rose-500/10 border-rose-500/25',
+    muted: 'bg-white/[0.04] border-white/[0.08]',
+  }
+  return (
+    <div className={`rounded-xl border p-3 ${tones[tone]}`}>
+      <p className="text-[10px] uppercase tracking-wider text-white/45">{eyebrow}</p>
+      <p className="text-sm font-semibold text-white mt-0.5 truncate">{title}</p>
+      {sub && <p className="text-[11px] text-white/50 mt-0.5 truncate">{sub}</p>}
+    </div>
+  )
+}
+
+function CurrentPeriodBand({ period }: { period: CurrentPeriod }) {
+  const p = period
+  // Headline status line for the active term (read-only; reflects is_active + today).
+  let statusLine = ''
+  let statusTone = 'text-white/60'
+  if (p.status === 'in_progress') { statusLine = `Week ${p.weekX} of ${p.weekY} · ${p.weeksRemaining} teaching ${p.weeksRemaining === 1 ? 'week' : 'weeks'} left`; statusTone = 'text-[#4ecde6]' }
+  else if (p.status === 'on_break') { statusLine = p.onBreak ? `On break: ${p.onBreak.name} until ${fmtShort(p.onBreak.end_date)}` : 'On break'; statusTone = 'text-amber-300' }
+  else if (p.status === 'not_started') { statusLine = `Starts ${countdownLabel(p.startsInDays ?? 0)} · ${p.teachingWeeks} teaching weeks`; statusTone = 'text-white/70' }
+  else if (p.status === 'ended') { statusLine = `Ended ${p.endedDaysAgo} ${p.endedDaysAgo === 1 ? 'day' : 'days'} ago`; statusTone = 'text-rose-300' }
+
+  const progressPct = p.weekY > 0 ? Math.min(100, Math.round((p.weekX / p.weekY) * 100)) : 0
+  const showProgress = p.status === 'in_progress' || p.status === 'on_break'
+
+  return (
+    <section aria-label="Current teaching period" className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-white/70">Current teaching period</h2>
+        <span className="text-[11px] text-white/40">Where your academy is right now</span>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Active term + progress */}
+        <div className="lg:col-span-2 rounded-xl border border-white/[0.08] bg-white/[0.03] p-4">
+          {p.activeTerm ? (
+            <>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-300 shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                </span>
+                <h3 className="text-base font-bold text-white truncate">{p.activeTerm.name}</h3>
+                <span className={`text-xs font-semibold ${statusTone}`}>{statusLine}</span>
+              </div>
+              <p className="text-xs text-white/50 mt-1.5">
+                {fmtDate(p.activeTerm.start_date)} &mdash; {fmtDate(p.activeTerm.end_date)}
+                {p.endsInDays != null && p.status !== 'ended' && (
+                  <span className="text-white/40"> · ends {countdownLabel(p.endsInDays)}</span>
+                )}
+              </p>
+              {showProgress && (
+                <div className="mt-3">
+                  <div className="h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
+                    <div className="h-full rounded-full bg-[#4ecde6] transition-all" style={{ width: `${progressPct}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-white/40 mt-1">
+                    <span>{p.teachingWeeks} teaching wks</span>
+                    <span>{p.holidayWeeksTotal} holiday wks</span>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.12] flex items-center justify-center text-white/50 shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              </span>
+              <div>
+                <h3 className="text-base font-bold text-white">No active term set</h3>
+                <p className="text-xs text-white/50 mt-0.5">Set a term active to track the teaching period.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Countdown chips */}
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+          {p.nextHoliday ? (
+            <CountdownChip tone="amber" eyebrow="Next holiday" title={p.nextHoliday.holiday.name}
+              sub={`${countdownLabel(p.nextHoliday.inDays)} · ${fmtShort(p.nextHoliday.holiday.start_date)}`} />
+          ) : (
+            <CountdownChip tone="muted" eyebrow="Next holiday" title="None scheduled" />
+          )}
+          {p.nextTerm ? (
+            <CountdownChip tone="cyan" eyebrow="Next term" title={p.nextTerm.term.name}
+              sub={`${countdownLabel(p.nextTerm.inDays)} · ${fmtShort(p.nextTerm.term.start_date)}`} />
+          ) : (
+            <CountdownChip tone="muted" eyebrow="Next term" title="None scheduled" />
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ── Timeline Bar ── */
 
 function Timeline({
   terms,
   holidays,
+  todayISO,
 }: {
   terms: Term[]
   holidays: Holiday[]
+  todayISO?: string | null
 }) {
   if (terms.length === 0) return null
 
@@ -81,8 +301,23 @@ function Timeline({
     return ((new Date(d + 'T00:00:00').getTime() - min) / range) * 100
   }
 
+  // Today marker only when today falls within the charted span.
+  const todayPct = todayISO != null ? pct(todayISO) : null
+  const showToday = todayPct != null && todayPct >= 0 && todayPct <= 100
+
   return (
-    <div className="relative w-full h-20 rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+    <div className="overflow-x-auto">
+    <div className="relative w-full min-w-[520px] h-20 rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+      {/* today marker */}
+      {showToday && (
+        <div
+          className="absolute top-0 bottom-0 w-px bg-[#4ecde6] z-10 pointer-events-none"
+          style={{ left: `${todayPct}%` }}
+          title="Today"
+        >
+          <span className="absolute -top-0 left-1 text-[8px] font-bold text-[#4ecde6] whitespace-nowrap">Today</span>
+        </div>
+      )}
       {/* term bars */}
       {terms.map((t) => {
         const left = pct(t.start_date)
@@ -119,19 +354,20 @@ function Timeline({
         )
       })}
 
-      {/* labels row */}
-      {terms.map((t) => {
+      {/* labels row — active term only, to avoid overlap (others on hover title) */}
+      {terms.filter((t) => t.is_active).map((t) => {
         const left = pct(t.start_date)
         return (
           <div
             key={t.id + '-label'}
-            className="absolute bottom-1 text-[9px] text-white/40 whitespace-nowrap"
+            className="absolute bottom-1 text-[9px] text-[#4ecde6]/70 whitespace-nowrap"
             style={{ left: `${left}%` }}
           >
             {fmtShort(t.start_date)}
           </div>
         )
       })}
+    </div>
     </div>
   )
 }
@@ -615,6 +851,19 @@ export default function TermManager({
 
   const [view, setView] = useState<'cards' | 'calendar'>('cards')
 
+  // Client clock — set AFTER mount so SSR and first client render match
+  // (avoids a Date-based hydration mismatch). Band/marker appear once mounted.
+  const [nowMs, setNowMs] = useState<number | null>(null)
+  useEffect(() => {
+    setNowMs(Date.now())
+  }, [])
+  const todayISO = nowMs != null ? todayISOFromMs(nowMs) : null
+
+  const period = useMemo(
+    () => (nowMs != null ? deriveCurrentPeriod(terms, holidays, nowMs) : null),
+    [terms, holidays, nowMs],
+  )
+
   function refresh() {
     router.refresh()
     // Also re-fetch client-side for instant feedback
@@ -684,25 +933,59 @@ export default function TermManager({
 
   return (
     <div className="space-y-6">
+      {/* Current Teaching Period band (read-only; appears after mount) */}
+      {period && terms.length > 0 && <CurrentPeriodBand period={period} />}
+
       {/* Summary row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+        {/* Terms */}
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
+          <span className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.12] flex items-center justify-center text-white/70 mb-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          </span>
           <div className="text-2xl font-bold text-white">{terms.length}</div>
-          <div className="text-xs text-white/40 mt-1">Terms</div>
+          <div className="text-xs text-white/50 mt-0.5">Terms</div>
+          <div className="text-[11px] text-white/35 mt-0.5">{terms.filter((t) => t.is_active).length} active</div>
         </div>
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
+        {/* Holidays */}
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
+          <span className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center text-red-300 mb-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+          </span>
           <div className="text-2xl font-bold text-white">{holidays.length}</div>
-          <div className="text-xs text-white/40 mt-1">Holidays</div>
+          <div className="text-xs text-white/50 mt-0.5">Holidays</div>
+          <div className="text-[11px] text-white/35 mt-0.5">across all terms</div>
         </div>
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-cyan-300">{totalTeachingWeeks.toFixed(1)}</div>
-          <div className="text-xs text-white/40 mt-1">Teaching Weeks</div>
+        {/* Teaching weeks */}
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
+          <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/25 flex items-center justify-center text-[#4ecde6] mb-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.42a12 12 0 01.84 4.42 12 12 0 01-14 0 12 12 0 01.84-4.42L12 14z" /></svg>
+          </span>
+          <div className="text-2xl font-bold text-[#4ecde6]">{totalTeachingWeeks.toFixed(1)}</div>
+          <div className="text-xs text-white/50 mt-0.5">Teaching Weeks</div>
+          <div className="text-[11px] text-white/35 mt-0.5">this academic year</div>
         </div>
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-300">
-            {terms.find((t) => t.is_active)?.name || 'None'}
-          </div>
-          <div className="text-xs text-white/40 mt-1">Current Term</div>
+        {/* Current term — name at readable size + range sub-label */}
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
+          <span className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-300 mb-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          </span>
+          {(() => {
+            const active = terms.find((t) => t.is_active)
+            return active ? (
+              <>
+                <div className="text-base font-bold text-emerald-300 truncate">{active.name}</div>
+                <div className="text-xs text-white/50 mt-0.5">Current Term</div>
+                <div className="text-[11px] text-white/35 mt-0.5 truncate">{fmtShort(active.start_date)} – {fmtShort(active.end_date)}</div>
+              </>
+            ) : (
+              <>
+                <div className="text-base font-bold text-white/50">Not set</div>
+                <div className="text-xs text-white/50 mt-0.5">Current Term</div>
+                <div className="text-[11px] text-white/35 mt-0.5">No active term</div>
+              </>
+            )
+          })()}
         </div>
       </div>
 
@@ -710,7 +993,7 @@ export default function TermManager({
       {terms.length > 0 && (
         <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-5">
           <h2 className="text-sm font-semibold text-white mb-3">Term Timeline</h2>
-          <Timeline terms={terms} holidays={holidays} />
+          <Timeline terms={terms} holidays={holidays} todayISO={todayISO} />
         </div>
       )}
 
