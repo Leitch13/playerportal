@@ -6,7 +6,13 @@ import EmptyState from '@/components/EmptyState'
 import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ReviewForm from './ReviewForm'
+import PlayerFirstReports from './PlayerFirstReports'
 import { REPORT_VIEWED_TRACKING_ENABLED } from '@/lib/report-visibility'
+
+// Player Reports Glow-Up Phase 1A — flag-gated, default OFF. When OFF the page
+// renders the original report list unchanged (byte-identical). Presentation +
+// derivation only; no query/scoring/publish/parent/email/schema changes.
+const REPORTS_REDESIGN_ENABLED = process.env.REPORTS_REDESIGN_ENABLED === 'true'
 
 export default async function ReviewsPage({
   searchParams,
@@ -67,6 +73,11 @@ export default async function ReviewsPage({
 
       {(reviews || []).length === 0 ? (
         <EmptyState message="No reports created yet. Click '+ New Report' above to get started." />
+      ) : REPORTS_REDESIGN_ENABLED ? (
+        <PlayerFirstReports
+          reviews={(reviews || []) as unknown as Parameters<typeof PlayerFirstReports>[0]['reviews']}
+          categories={scoringCategories}
+        />
       ) : (
         <div className="space-y-3">
           {(reviews || []).map((review) => {
