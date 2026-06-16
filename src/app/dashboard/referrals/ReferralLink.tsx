@@ -24,7 +24,8 @@ export default function ReferralLink({
   const [rewardAmount, setRewardAmount] = useState('')
   const [showRewardInput, setShowRewardInput] = useState(false)
 
-  // Build the referral URL — use relative path for SSR, full URL after mount
+  // Build the referral URL — use relative path for SSR, full URL after mount.
+  // Target preserved exactly (referral attribution unchanged).
   const relativePath = `/auth/signup?org=${orgSlug}&ref=${referralCode}`
   const [referralUrl, setReferralUrl] = useState(relativePath)
 
@@ -34,14 +35,14 @@ export default function ReferralLink({
     }
   }, [relativePath, referralCode])
 
-  // Admin approve reward button
+  // Admin approve reward button (update logic preserved byte-for-byte; dark restyle only)
   if (approveReferralId) {
     return (
       <div className="flex items-center gap-2">
         {!showRewardInput ? (
           <button
             onClick={() => setShowRewardInput(true)}
-            className="text-xs px-2 py-1 rounded font-medium bg-cyan-50 text-primary hover:bg-cyan-100"
+            className="text-xs px-2.5 py-1 rounded-lg font-medium bg-[#4ecde6]/15 text-[#4ecde6] border border-[#4ecde6]/30 hover:bg-[#4ecde6]/25 transition-colors"
           >
             Approve Reward
           </button>
@@ -55,7 +56,7 @@ export default function ReferralLink({
               value={rewardAmount}
               onChange={(e) => setRewardAmount(e.target.value)}
               placeholder="0.00"
-              className="w-20 border border-[#1e1e1e] rounded px-2 py-1 text-xs"
+              className="w-20 bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
             />
             <button
               disabled={loading || !rewardAmount}
@@ -74,7 +75,7 @@ export default function ReferralLink({
                 setLoading(false)
                 setShowRewardInput(false)
               }}
-              className="text-xs px-2 py-1 rounded font-medium bg-primary text-white hover:opacity-90 disabled:opacity-50"
+              className="text-xs px-2.5 py-1 rounded-lg font-medium bg-[#4ecde6] text-[#06222a] hover:bg-[#6fd9ec] disabled:opacity-50 transition-colors"
             >
               {loading ? '...' : 'Confirm'}
             </button>
@@ -83,7 +84,7 @@ export default function ReferralLink({
                 setShowRewardInput(false)
                 setRewardAmount('')
               }}
-              className="text-xs px-2 py-1 rounded font-medium text-white/60 hover:text-white"
+              className="text-xs px-2 py-1 rounded-lg font-medium text-white/60 hover:text-white"
             >
               Cancel
             </button>
@@ -120,122 +121,97 @@ export default function ReferralLink({
     }
   }
 
-  // Compact version for embedding in dashboard
+  const whatsappHref = buildWhatsappShareUrl(
+    'Join Player Portal using my link — we both benefit! ' +
+    referralUrl + (referralUrl.includes('?') ? '&' : '?') + 'utm_source=whatsapp&utm_medium=referral',
+  )
+
+  const primaryBtn = `w-full py-3 rounded-xl text-sm font-bold transition-all ${
+    copied ? 'bg-emerald-500 text-white' : 'bg-[#4ecde6] text-[#06222a] hover:bg-[#6fd9ec]'
+  }`
+  const secondaryBtn =
+    'py-3 rounded-xl text-sm font-semibold bg-white/[0.06] border border-white/[0.12] text-white hover:bg-white/[0.1] transition-colors text-center'
+
+  // Compact version for embedding in dashboard (self-contained, on-brand)
   if (compact) {
     return (
-      <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-2xl p-5 text-white relative overflow-hidden">
-        {/* Decorative */}
-        <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
-        <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
-
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">🎁</span>
-            <h3 className="text-base font-bold">Refer a Friend</h3>
+      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-base" aria-hidden>🎁</span>
+          <div>
+            <h3 className="text-sm font-bold text-white">Refer a friend</h3>
+            <p className="text-xs text-white/50">Share your link — you both benefit.</p>
           </div>
-          <p className="text-sm text-white/80 mb-4">
-            Share your link and earn rewards when friends sign up!
-          </p>
+        </div>
 
-          <div className="bg-white/15 backdrop-blur rounded-lg px-3 py-2 mb-3 flex items-center gap-2">
-            <span className="text-xs font-mono truncate flex-1 text-white/90">{referralUrl}</span>
-          </div>
+        <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-lg px-3 py-2 mb-3">
+          <span className="text-xs font-mono truncate block text-white/70">{referralUrl}</span>
+        </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleCopy}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                copied
-                  ? 'bg-green-400 text-green-900'
-                  : 'bg-[#141414] text-purple-600 hover:bg-white/90'
-              }`}
-            >
-              {copied ? '✓ Copied!' : 'Copy Link'}
-            </button>
-            <button
-              onClick={handleShare}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold bg-white/20 hover:bg-white/30 transition-colors"
-            >
-              Share
-            </button>
-          </div>
+        <div className="flex gap-2">
+          <button onClick={handleCopy} className={`flex-1 ${copied ? 'bg-emerald-500 text-white' : 'bg-[#4ecde6] text-[#06222a] hover:bg-[#6fd9ec]'} py-2.5 rounded-xl text-sm font-bold transition-all`}>
+            {copied ? '✓ Copied' : 'Copy link'}
+          </button>
+          <button onClick={handleShare} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-white/[0.06] border border-white/[0.12] text-white hover:bg-white/[0.1] transition-colors">
+            Share
+          </button>
         </div>
       </div>
     )
   }
 
-  // Full version for referrals page
+  // Full version for the referrals page — share card (dark/cyan, on-brand)
   return (
-    <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
-      {/* Decorative circles */}
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
-      <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-white/10 rounded-full" />
-      <div className="absolute top-1/2 right-1/3 w-16 h-16 bg-white/5 rounded-full" />
-
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-3xl">🎁</span>
-          <div>
-            <h2 className="text-xl font-bold">Refer a Friend</h2>
-            <p className="text-sm text-white/80">Share the love and earn rewards!</p>
-          </div>
+    <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 md:p-8">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl" aria-hidden>🎁</span>
+        <div>
+          <h2 className="text-lg font-bold text-white">Your referral link</h2>
+          <p className="text-sm text-white/60">Share it anywhere — copy it, send via WhatsApp, or use your phone's share sheet.</p>
         </div>
+      </div>
 
-        <div className="bg-white/10 backdrop-blur rounded-xl p-4 mt-4 mb-4">
-          <p className="text-xs text-white/60 mb-2 font-medium">Your personal referral link:</p>
-          <div className="bg-white/15 rounded-lg px-4 py-3 font-mono text-sm break-all">
-            {referralUrl}
-          </div>
-        </div>
+      <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl px-4 py-3 mb-4">
+        <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1">Your link</p>
+        <p className="text-sm text-white/80 font-mono truncate">{referralUrl}</p>
+      </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={handleCopy}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              copied
-                ? 'bg-green-400 text-green-900'
-                : 'bg-[#141414] text-purple-600 hover:bg-white/90 hover:scale-[1.02]'
-            }`}
-          >
-            {copied ? '✓ Link Copied!' : '📋 Copy Link'}
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex-1 py-3 rounded-xl text-sm font-bold bg-white/20 hover:bg-white/30 transition-all hover:scale-[1.02]"
-          >
-            📤 Share
-          </button>
-          {/* Sprint 6 — Click-to-share via WhatsApp. utm_source=whatsapp
-              utm_medium=referral so any resulting trial booking attributes
-              correctly via the Sprint 5 trial-source priority chain. */}
+      <div className="space-y-2.5">
+        <button onClick={handleCopy} className={primaryBtn}>
+          {copied ? '✓ Copied!' : 'Copy your link'}
+        </button>
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Sprint 6 — Click-to-share via WhatsApp. utm_source=whatsapp utm_medium=referral
+              so any resulting trial booking attributes via the Sprint 5 trial-source chain. */}
           <a
-            href={buildWhatsappShareUrl(
-              'Join Player Portal using my link — we both benefit! ' +
-              referralUrl + (referralUrl.includes('?') ? '&' : '?') + 'utm_source=whatsapp&utm_medium=referral'
-            )}
+            href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="referral-whatsapp-share"
-            className="flex-1 py-3 rounded-xl text-sm font-bold bg-emerald-400 text-emerald-900 hover:bg-emerald-300 transition-all hover:scale-[1.02] text-center"
+            className="py-3 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-400 transition-colors text-center"
           >
-            💬 WhatsApp
+            WhatsApp
           </a>
+          <button onClick={handleShare} className={secondaryBtn}>
+            Share
+          </button>
         </div>
+      </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="bg-white/10 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold">1</p>
-            <p className="text-[10px] text-white/70">Share link</p>
+      {/* On-brand 1-2-3 explainer */}
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        {[
+          { n: '1', label: 'Share your link' },
+          { n: '2', label: 'Your friend joins' },
+          { n: '3', label: 'You get rewarded' },
+        ].map((s) => (
+          <div key={s.n} className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3 text-center">
+            <div className="w-7 h-7 mx-auto rounded-full bg-[#4ecde6]/15 border border-[#4ecde6]/30 text-[#4ecde6] font-bold text-sm flex items-center justify-center">
+              {s.n}
+            </div>
+            <p className="text-[11px] text-white/60 mt-2">{s.label}</p>
           </div>
-          <div className="bg-white/10 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold">2</p>
-            <p className="text-[10px] text-white/70">Friend signs up</p>
-          </div>
-          <div className="bg-white/10 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold">3</p>
-            <p className="text-[10px] text-white/70">You get rewarded</p>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )
