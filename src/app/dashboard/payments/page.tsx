@@ -36,6 +36,14 @@ import ActiveClassesList, { type ActiveClass } from './ActiveClassesList'
 import BillingPanel, { type BillingFacts } from './BillingPanel'
 import MembershipManagement from './MembershipManagement'
 import AvailableUpgrades from './AvailableUpgrades'
+import MembershipTabs from './MembershipTabs'
+
+// Phase 1A — Membership & Billing safe reskin. Flag OFF (default) ⇒ the parent
+// page renders byte-identically to today. Flag ON ⇒ a tabbed, subscription-first
+// reskin that REUSES the same section components (preserving every protected
+// testid) — presentation only. No Stripe, no billing mutation, no new queries,
+// no subscription-control change. See MEMBERSHIP_BILLING_PHASE0A.md.
+const MEMBERSHIP_RESKIN_ENABLED = process.env.MEMBERSHIP_RESKIN_ENABLED === 'true'
 
 export default async function PaymentsPage({
   searchParams,
@@ -290,6 +298,164 @@ async function ParentPayments({
     lastPaymentAmount: lastPaid ? Number(lastPaid.amount_paid || 0) : null,
     nextPaymentDate: nextPaymentIso,
     nextPaymentAmount,
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // Phase 1A — Membership & Billing safe reskin (flag-gated). REUSES the same
+  // section components (every protected testid preserved) in a tabbed,
+  // subscription-first layout. Presentation only: no new queries, no Stripe,
+  // no billing mutation, no subscription-control change. The flag-OFF path
+  // below is left byte-identical to today.
+  // ════════════════════════════════════════════════════════════════════════
+  if (MEMBERSHIP_RESKIN_ENABLED) {
+    const primaryPlan = (activeSubs[0]?.plan ?? null) as { name?: string; sessions_per_week?: number } | null
+    const spw = Number(primaryPlan?.sessions_per_week ?? 0) || 0
+    const whatYouGet = [
+      spw > 0 ? `${spw} session${spw === 1 ? '' : 's'} per week` : 'Weekly coaching sessions',
+      'Qualified coaches',
+      'Small group sizes',
+      'Session attendance tracking',
+      'Progress reports',
+      'Awards & achievements',
+    ]
+    const banners = (
+      <>
+        {success && (
+          <div className="rounded-lg border border-[#4ecde6]/30 bg-[#4ecde6]/10 px-4 py-3 text-sm font-medium text-[#4ecde6]">Payment successful! Your balance will update shortly.</div>
+        )}
+        {cancelled && (
+          <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-medium text-orange-400">Payment was cancelled. You can try again anytime.</div>
+        )}
+        {subSuccess && (
+          <div className="rounded-lg border border-[#4ecde6]/30 bg-[#4ecde6]/10 px-4 py-3 text-sm font-medium text-[#4ecde6]">Subscription activated! Welcome aboard.</div>
+        )}
+        {subCancelled && (
+          <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm font-medium text-orange-400">Subscription setup was cancelled. You can subscribe anytime.</div>
+        )}
+      </>
+    )
+
+    const paymentMethodPanel = (
+      <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-white/40">Payment Method</p>
+        <p className="text-sm text-white/70">Your payment method is managed securely via Stripe.</p>
+        {hasStripeCustomer ? (
+          <div className="mt-3"><ManageBillingButton /></div>
+        ) : (
+          <p className="mt-2 text-xs text-white/40">No card on file yet — it&rsquo;s added when you subscribe.</p>
+        )}
+      </div>
+    )
+
+    const quarterlyExplainer = (
+      <div className="rounded-2xl border border-[#4ecde6]/20 bg-[#4ecde6]/[0.04] p-5" data-testid="quarterly-explainer">
+        <p className="mb-2 text-sm font-semibold text-white">Prefer to pay quarterly?</p>
+        <ul className="space-y-1 text-sm text-white/70">
+          <li>• Quarterly means paying once every 3 months.</li>
+          <li>• Your membership remains active during the full billing period.</li>
+          <li>• Cancellation still follows your academy&rsquo;s policy.</li>
+          <li>• To ask about quarterly billing, message your academy — this page doesn&rsquo;t switch billing automatically.</li>
+        </ul>
+        <Link
+          href="/dashboard/messages"
+          className="mt-3 inline-block rounded-lg border border-[#4ecde6]/30 bg-[#4ecde6]/10 px-4 py-2 text-sm font-semibold text-[#4ecde6] transition hover:bg-[#4ecde6]/20"
+        >
+          Ask academy about quarterly billing →
+        </Link>
+      </div>
+    )
+
+    const trustBar = (
+      <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-[#141414] p-4 text-xs text-white/60 sm:grid-cols-4">
+        <div><span className="block font-semibold text-white">🛡 Cancel anytime</span>No long-term contracts</div>
+        <div><span className="block font-semibold text-white">🔒 Secure payments</span>Powered by Stripe</div>
+        <div><span className="block font-semibold text-white">📈 Save with longer plans</span>Ask about quarterly billing</div>
+        <div><span className="block font-semibold text-white">🎧 Dedicated support</span>We&rsquo;re here to help</div>
+      </div>
+    )
+
+    const overviewPanel = (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <MembershipOverview activeSubs={activeSubs as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />
+            <BillingPanel facts={billingFacts} />
+            {paymentMethodPanel}
+            {quarterlyExplainer}
+          </div>
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">What you get</p>
+              <ul className="space-y-2 text-sm text-white/80">
+                {whatYouGet.map((f) => (
+                  <li key={f} className="flex items-center gap-2"><span className="text-emerald-400" aria-hidden>✓</span>{f}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+              <p className="mb-1 text-sm font-semibold text-white">Need help?</p>
+              <p className="mb-3 text-xs text-white/50">Contact the academy about your membership.</p>
+              <Link href="/dashboard/messages" className="inline-flex items-center gap-2 rounded-lg bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#0a0a0a] transition hover:opacity-90">💬 Message Academy</Link>
+            </div>
+          </div>
+        </div>
+
+        <MyChildrenList children={childSummaries} />
+        <ActiveClassesList classes={activeClassesEnriched} retentionEnabled={retentionEnabled} retentionPercent={retentionPercent} retentionMonths={retentionMonths} />
+        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} />
+        <MembershipManagement
+          hasActiveSub={activeSubs.length > 0}
+          noticeDays={cancellationNoticeDays}
+          policyText={cancellationPolicy}
+          academyName={academyName}
+          academyWhatsappPhone={academyWhatsappPhone}
+          firstChildFirstName={firstChildFirstName}
+        />
+        {trustBar}
+      </div>
+    )
+
+    const fmtGBP = (n: number | null) => (n == null ? '—' : `£${Number(n).toFixed(2)}`)
+    const fmtDate = (d: string | null) => {
+      if (!d) return '—'
+      const t = Date.parse(d)
+      return Number.isNaN(t) ? '—' : new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    }
+    const billingHistoryPanel = (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wider text-white/40">Billing summary</p>
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between"><dt className="text-white/60">Last payment</dt><dd className="font-semibold text-white">{fmtGBP(billingFacts.lastPaymentAmount)} · {fmtDate(billingFacts.lastPaymentDate)}</dd></div>
+            <div className="flex justify-between"><dt className="text-white/60">Next payment</dt><dd className="font-semibold text-white">{fmtGBP(billingFacts.nextPaymentAmount)} · {fmtDate(billingFacts.nextPaymentDate)}</dd></div>
+            <div className="flex justify-between"><dt className="text-white/60">Total paid</dt><dd className="font-semibold text-white">{fmtGBP(billingFacts.totalPaid)}</dd></div>
+            <div className="flex justify-between"><dt className="text-white/60">Outstanding</dt><dd className={`font-semibold ${billingFacts.outstanding > 0 ? 'text-red-400' : 'text-white'}`}>{fmtGBP(billingFacts.outstanding)}</dd></div>
+          </dl>
+          <Link href="/dashboard/payments/statement" className="mt-4 inline-block text-xs font-medium text-[#4ecde6] hover:underline">View full payment history →</Link>
+        </div>
+        {/* Full BillingPanel preserved for parity (billing-panel testid lives in Overview too). */}
+      </div>
+    )
+
+    return (
+      <div className="min-h-screen -m-6 bg-[#0a0a0a] p-4 text-white sm:p-6 lg:-m-8 lg:p-8">
+        <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold sm:text-3xl">Membership &amp; Billing</h1>
+              <p className="mt-1 text-sm text-white/50">Manage your subscription, billing, and support options.</p>
+            </div>
+            {hasStripeCustomer && <ManageBillingButton />}
+          </div>
+          {banners}
+          <MembershipTabs
+            overview={overviewPanel}
+            billingHistory={billingHistoryPanel}
+            paymentMethods={paymentMethodPanel}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
