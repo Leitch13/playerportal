@@ -43,6 +43,32 @@ function nextOccurrenceOfDayOfWeek(dayOfWeek: string | null | undefined): Date |
   return next
 }
 
+// ── Quarterly Recurring (Phase 1A) — deterministic forever coupon for the
+// quarterly saving, get-or-created exactly like the sibling/retention coupons.
+// Stable id keyed on the percent so the same coupon is reused across academies
+// and renewals; applying it via `discounts` re-applies the % to every 3-month
+// invoice. Percent-off only (no schema, no new Product). ──
+function quarterlyCouponId(percent: number): string {
+  return `pp-quarterly-${Math.round(percent)}pct-forever`
+}
+async function getOrCreateQuarterlyCoupon(percent: number, organisationId: string): Promise<string> {
+  const id = quarterlyCouponId(percent)
+  try {
+    const existing = await stripe.coupons.retrieve(id)
+    if (existing && !(existing as { deleted?: boolean }).deleted) return existing.id
+  } catch (e) {
+    if (e instanceof Stripe.errors.StripeError && e.code !== 'resource_missing') throw e
+  }
+  const coupon = await stripe.coupons.create({
+    id,
+    name: id,
+    percent_off: percent,
+    duration: 'forever',
+    metadata: { organisation_id: organisationId, type: 'quarterly' },
+  })
+  return coupon.id
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -368,72 +394,105 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
     if (isQuarterly) {
-      // ═══ QUARTERLY: Pay 3 months upfront with per-academy configured discount ═══
-      // One-time payment (not recurring subscription) — covers 3 full months
+      // ═══ QUARTERLY: Real RECURRING Stripe subscription (Phase 1A) ═══
+      // Mirrors the monthly subscription branch — mode:'subscription' + the same
+      // Connect subscription_data + the SAME auto-enrol metadata — but with a
+      // 3-month recurring Price and the quarterly % applied via a forever coupon.
+      // The generic webhook handler (mode==='subscription', no pp_flow) then
+      // creates the subscription row AND auto-enrols the player — inherited,
+      // unchanged. No proration / no trial_end: the full first quarter is charged
+      // today and recurs every 3 months. Connect routing + fee math are IDENTICAL
+      // to monthly (#1 application_fee_percent = PLATFORM_FEE_RATE preserved).
       const monthlyAmount = Number(plan.amount)
-      const quarterlyTotal = monthlyAmount * 3
-      const discountedTotal = Math.round(quarterlyTotal * (1 - quarterlyDiscountRate) * 100) // in pence
 
-      // Create a one-time price for the quarterly payment
-      const quarterlyPrice = await stripe.prices.create({
+      // Double-sub guard (quarterly-branch only): a player who already has an
+      // active subscription must not be able to start a second — prevents
+      // parallel billing. Returns a clear error before any Stripe object.
+      if (playerId) {
+        const { count: activeForPlayer } = await supabase
+          .from('subscriptions')
+          .select('id', { count: 'exact', head: true })
+          .eq('player_id', playerId)
+          .eq('organisation_id', plan.organisation_id)
+          .eq('status', 'active')
+        if ((activeForPlayer || 0) > 0) {
+          return NextResponse.json(
+            { error: 'This player already has an active subscription.' },
+            { status: 400 },
+          )
+        }
+      }
+
+      // Recurring quarterly Price: full 3 months, billed every 3 months. Created
+      // inline (mirrors the previous quarterly price-create) so NO schema column
+      // is needed; the discount is the coupon, NOT baked into the price.
+      const quarterlyRecurringPrice = await stripe.prices.create({
         product: stripeProductId,
-        unit_amount: discountedTotal,
+        unit_amount: Math.round(monthlyAmount * 3 * 100), // full 3 months, pence
         currency: 'gbp',
-        metadata: {
-          supabase_plan_id: plan.id,
-          billing_option: 'quarterly',
-          months_covered: '3',
-          discount_percent: String(quarterlyDiscountRate * 100),
-        },
+        recurring: { interval: 'month', interval_count: 3 },
+        metadata: { supabase_plan_id: plan.id, billing_option: 'quarterly', months_covered: '3' },
       })
+
+      // Quarterly saving via a deterministic forever percent-off coupon
+      // (pp-quarterly-{pct}pct-forever, get-or-create). Re-applies every cycle.
+      const quarterlyCoupon =
+        quarterlyDiscountRate > 0
+          ? await getOrCreateQuarterlyCoupon(quarterlyDiscountRate * 100, plan.organisation_id as string)
+          : null
 
       const quarterlySessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: customerId,
-        line_items: [
-          {
-            price: quarterlyPrice.id,
-            quantity: 1,
-          },
-        ],
-        mode: 'payment',
+        line_items: [{ price: quarterlyRecurringPrice.id, quantity: 1 }],
+        mode: 'subscription',
         payment_method_types: ['card'],
         success_url: `${origin}/dashboard/payments/success?billing=quarterly`,
         cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
-        ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
+        ...(quarterlyCoupon ? { discounts: [{ coupon: quarterlyCoupon }] } : {}),
+        // Session metadata MUST match monthly so the generic webhook resolves
+        // ctx.planId / classId / playerId and fires the auto-enrol RPC.
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           billing_option: 'quarterly',
           months_covered: '3',
+          activates_on: activatesOnIso,
           ...(classId ? { supabase_class_id: classId } : {}),
-          ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
-      }
-
-      // Route payment through the connected account with the plan's platform fee.
-      // `on_behalf_of` makes the connected account the SETTLEMENT MERCHANT, so
-      // Stripe Checkout renders the academy's business name (e.g. "Jamie Allan
-      // Football Academy") in the mandate text and on the receipt — not the
-      // platform's Stripe account name. Required for any parent-facing Checkout.
-      if (connectedAccountId) {
-        const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(discountedTotal * PLATFORM_FEE_RATE) : 0
-        quarterlySessionParams.payment_intent_data = {
-          on_behalf_of: connectedAccountId,
-          ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
-          transfer_data: {
-            destination: connectedAccountId,
+        subscription_data: {
+          metadata: {
+            supabase_plan_id: planId,
+            supabase_user_id: user.id,
+            supabase_player_id: playerId || '',
+            billing_option: 'quarterly',
+            activates_on: activatesOnIso,
+            ...(classId ? { supabase_class_id: classId } : {}),
           },
-        }
+          // Connect routing + platform fee IDENTICAL to the monthly branch.
+          // `on_behalf_of` brands Checkout/receipts with the academy; the fee is
+          // the SAME application_fee_percent (PLATFORM_FEE_RATE) — fee math (#1)
+          // unchanged. No trial_end / billing_cycle_anchor → full quarter today.
+          ...(connectedAccountId
+            ? {
+                on_behalf_of: connectedAccountId,
+                ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
+                transfer_data: { destination: connectedAccountId },
+              }
+            : {}),
+        },
       }
 
       const session = await stripe.checkout.sessions.create(quarterlySessionParams)
 
+      const quarterlyFull = monthlyAmount * 3
+      const quarterlyDiscounted = quarterlyFull * (1 - quarterlyDiscountRate)
       return NextResponse.json({
         url: session.url,
         billing: 'quarterly',
-        total: (discountedTotal / 100).toFixed(2),
-        saving: (quarterlyTotal * quarterlyDiscountRate).toFixed(2),
+        recurring: true,
+        total: quarterlyDiscounted.toFixed(2),
+        saving: (quarterlyFull * quarterlyDiscountRate).toFixed(2),
         discountPercent: Math.round(quarterlyDiscountRate * 100),
       })
     }
