@@ -413,6 +413,39 @@ async function ParentPayments({
 /* ═══════════════════════════════════════════════
    ADMIN VIEW
    ═══════════════════════════════════════════════ */
+// ─── Local, on-brand presentation helpers — AdminPayments view ONLY. ───
+// Deliberately NOT the shared StatusBadge (that one is also used by
+// ParentPayments / other pages and must stay byte-identical). These render
+// display chrome only — no status logic, no data, no behaviour.
+function adminSubStatusPill(status: string) {
+  const map: Record<string, { label: string; cls: string; dot: string }> = {
+    active: { label: 'Active', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot: 'bg-emerald-400' },
+    trialing: { label: 'Trialing', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/30', dot: 'bg-blue-400' },
+    scheduled: { label: 'Scheduled', cls: 'bg-[#4ecde6]/12 text-[#4ecde6] border-[#4ecde6]/30', dot: 'bg-[#4ecde6]' },
+    paused: { label: 'Paused', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30', dot: 'bg-amber-400' },
+    past_due: { label: 'Past due', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30', dot: 'bg-orange-400' },
+    canceled: { label: 'Canceled', cls: 'bg-white/[0.06] text-white/50 border-white/[0.12]', dot: 'bg-white/40' },
+    cancelled: { label: 'Canceled', cls: 'bg-white/[0.06] text-white/50 border-white/[0.12]', dot: 'bg-white/40' },
+    incomplete: { label: 'Incomplete', cls: 'bg-white/[0.06] text-white/50 border-white/[0.12]', dot: 'bg-white/40' },
+  }
+  const m = map[status] || { label: status, cls: 'bg-white/[0.06] text-white/60 border-white/[0.12]', dot: 'bg-white/40' }
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border ${m.cls}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} aria-hidden />
+      {m.label}
+    </span>
+  )
+}
+
+function adminInitialsChip(name: string) {
+  const initials = (name || '').split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase() || '').join('') || '—'
+  return (
+    <span className="w-9 h-9 shrink-0 rounded-xl bg-[#4ecde6]/12 border border-[#4ecde6]/25 flex items-center justify-center text-xs font-bold text-[#4ecde6]">
+      {initials}
+    </span>
+  )
+}
+
 async function AdminPayments({
   autoOpen,
   filter,
@@ -830,31 +863,45 @@ async function AdminPayments({
         <>
           {/* Summary stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">&pound;{stats.monthlyRevenue.toFixed(0)}</div>
-                <div className="text-xs text-white/60 mt-0.5">Monthly Recurring</div>
-              </div>
+            {/* Monthly Recurring */}
+            <div className="relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-[#4ecde6]/10 blur-2xl rounded-full pointer-events-none" aria-hidden />
+              <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/25 flex items-center justify-center text-[#4ecde6] mb-2.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </span>
+              <div className="text-2xl font-bold text-white">&pound;{stats.monthlyRevenue.toFixed(0)}</div>
+              <div className="text-xs text-white/60 mt-0.5">Monthly Recurring</div>
+              <div className="text-[11px] text-white/40 mt-1">&pound;{projectedAnnual.toFixed(0)}/yr projected</div>
             </div>
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#4ecde6]">{stats.activeSubs}</div>
-                <div className="text-xs text-white/60 mt-0.5">Active Subs</div>
-              </div>
+            {/* Active Subs */}
+            <div className="relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none" aria-hidden />
+              <span className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-300 mb-2.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
+              </span>
+              <div className="text-2xl font-bold text-emerald-300">{stats.activeSubs}</div>
+              <div className="text-xs text-white/60 mt-0.5">Active Subs</div>
+              <div className="text-[11px] text-white/40 mt-1">of {(allSubscriptions || []).length} total</div>
             </div>
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">&pound;{stats.totalCollected.toFixed(0)}</div>
-                <div className="text-xs text-white/60 mt-0.5">Collected</div>
-              </div>
+            {/* Collected */}
+            <div className="relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-[#4ecde6]/10 blur-2xl rounded-full pointer-events-none" aria-hidden />
+              <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/25 flex items-center justify-center text-[#4ecde6] mb-2.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </span>
+              <div className="text-2xl font-bold text-white">&pound;{stats.totalCollected.toFixed(0)}</div>
+              <div className="text-xs text-white/60 mt-0.5">Collected</div>
+              <div className="text-[11px] text-white/40 mt-1">{collectionRate}% collection rate</div>
             </div>
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="text-center">
-                <div className={`text-2xl font-bold ${stats.overdueCount > 0 ? 'text-red-400' : 'text-[#4ecde6]'}`}>
-                  {stats.overdueCount}
-                </div>
-                <div className="text-xs text-white/60 mt-0.5">Overdue</div>
-              </div>
+            {/* Overdue */}
+            <div className={`relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border rounded-2xl p-5 ${stats.overdueCount > 0 ? 'border-red-500/30' : 'border-white/[0.08]'}`}>
+              <div className={`absolute -top-6 -right-6 w-20 h-20 ${stats.overdueCount > 0 ? 'bg-red-500/15' : 'bg-white/[0.04]'} blur-2xl rounded-full pointer-events-none`} aria-hidden />
+              <span className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 border ${stats.overdueCount > 0 ? 'bg-red-500/15 border-red-500/25 text-red-300' : 'bg-white/[0.06] border-white/[0.12] text-white/50'}`}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+              </span>
+              <div className={`text-2xl font-bold ${stats.overdueCount > 0 ? 'text-red-400' : 'text-white'}`}>{stats.overdueCount}</div>
+              <div className="text-xs text-white/60 mt-0.5">Overdue</div>
+              <div className={`text-[11px] mt-1 ${stats.overdueCount > 0 ? 'text-red-400/70' : 'text-white/40'}`}>{stats.overdueCount > 0 ? 'Needs attention' : 'All clear'}</div>
             </div>
           </div>
 
@@ -873,22 +920,25 @@ async function AdminPayments({
                   return (
                     <div
                       key={sub.id}
-                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg border border-white/[0.08] hover:bg-white/[0.03] transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.12] transition-colors"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {parent?.full_name || '—'}
-                          {player && (
-                            <span className="text-white/60 font-normal">
-                              {' '}&middot; {player.first_name} {player.last_name}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-white/60">
-                          &pound;{plan ? Number(plan.amount).toFixed(0) : '—'}/mo &middot; Next: {periodEnd}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {adminInitialsChip(parent?.full_name || '')}
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate text-white">
+                            {parent?.full_name || '—'}
+                            {player && (
+                              <span className="text-white/55 font-normal">
+                                {' '}&middot; {player.first_name} {player.last_name}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-white/55 mt-0.5">
+                            <span className="text-white/75 font-medium">&pound;{plan ? Number(plan.amount).toFixed(0) : '—'}</span>/mo &middot; Next: {periodEnd}
+                          </div>
                         </div>
                       </div>
-                      <StatusBadge status={sub.status} />
+                      {adminSubStatusPill(sub.status)}
                       <SubscriptionActions
                         subscriptionId={sub.id}
                         currentStatus={sub.status}
@@ -931,15 +981,15 @@ async function AdminPayments({
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/[0.08]">
-                        <th className="text-left py-2 font-medium">Parent</th>
-                        <th className="text-left py-2 font-medium">Player</th>
-                        <th className="text-left py-2 font-medium hidden md:table-cell">Description</th>
-                        <th className="text-left py-2 font-medium">Due</th>
-                        <th className="text-left py-2 font-medium">Paid</th>
-                        <th className="text-left py-2 font-medium hidden md:table-cell">Due Date</th>
-                        <th className="text-left py-2 font-medium">Status</th>
-                        <th className="text-left py-2 font-medium w-10"></th>
+                      <tr className="border-b border-white/[0.08] text-[11px] uppercase tracking-wider text-white/45">
+                        <th className="text-left py-2.5 font-semibold">Parent</th>
+                        <th className="text-left py-2.5 font-semibold">Player</th>
+                        <th className="text-left py-2.5 font-semibold hidden md:table-cell">Description</th>
+                        <th className="text-right py-2.5 font-semibold">Due</th>
+                        <th className="text-right py-2.5 font-semibold">Paid</th>
+                        <th className="text-left py-2.5 font-semibold hidden md:table-cell">Due Date</th>
+                        <th className="text-left py-2.5 font-semibold">Status</th>
+                        <th className="text-left py-2.5 font-semibold w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -957,9 +1007,9 @@ async function AdminPayments({
                               : '—'}
                           </td>
                           <td className="py-2.5 hidden md:table-cell text-white/60">{(p.description as string) || '—'}</td>
-                          <td className="py-2.5 font-medium">&pound;{Number(p.amount).toFixed(2)}</td>
-                          <td className="py-2.5">
-                            <span className={Number(p.amount_paid || 0) >= Number(p.amount) ? 'text-[#4ecde6] font-medium' : ''}>
+                          <td className="py-2.5 font-medium text-right tabular-nums">&pound;{Number(p.amount).toFixed(2)}</td>
+                          <td className="py-2.5 text-right tabular-nums">
+                            <span className={Number(p.amount_paid || 0) >= Number(p.amount) ? 'text-[#4ecde6] font-medium' : 'text-white/70'}>
                               &pound;{Number(p.amount_paid || 0).toFixed(2)}
                             </span>
                           </td>
