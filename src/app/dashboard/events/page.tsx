@@ -422,14 +422,15 @@ async function ParentEvents({
   // RLS "Public read camps" (is_published=true) already permits this read.
   const { data: orgRow } = await supabase
     .from('organisations')
-    .select('slug')
+    .select('slug, primary_color')
     .eq('id', orgId)
     .single()
   const orgSlug = (orgRow?.slug as string | undefined) || ''
+  const orgPrimary = (orgRow?.primary_color as string | undefined) || '#4ecde6'
 
   const { data: campRows } = await supabase
     .from('camps')
-    .select('id, name, start_date, end_date, location, price, early_bird_price, early_bird_deadline, age_group')
+    .select('id, name, start_date, end_date, location, price, early_bird_price, early_bird_deadline, age_group, image_url')
     .eq('organisation_id', orgId)
     .eq('is_published', true)
     .gte('end_date', today)
@@ -445,6 +446,7 @@ async function ParentEvents({
     early_bird_price: number | null
     early_bird_deadline: string | null
     age_group: string | null
+    image_url: string | null
   }
   const camps = (campRows || []) as unknown as CampRow[]
 
@@ -730,31 +732,75 @@ async function ParentEvents({
                 <a
                   key={camp.id}
                   href={`/book/${orgSlug}/camps/${camp.id}`}
-                  className="block rounded-xl border border-[#1e1e1e] bg-[#141414] p-4 hover:border-[#4ecde6]/30 transition-colors"
+                  className="group block rounded-2xl overflow-hidden border border-white/[0.08] bg-white/[0.03] transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-xl hover:shadow-black/40"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-semibold text-sm">{camp.name}</div>
-                    {displayPrice != null && (
-                      <div className="text-right shrink-0">
-                        <div className="text-lg font-bold text-[#4ecde6]">&pound;{displayPrice.toFixed(0)}</div>
-                        {isEarlyBird && <div className="text-[10px] text-green-400 font-medium">Early bird</div>}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/60 mt-1.5">
-                    <span>
-                      {new Date(camp.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      {camp.end_date !== camp.start_date && (
-                        <>
-                          {' – '}
-                          {new Date(camp.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                        </>
+                  {/* Hero — camp photo, or a branded gradient fallback */}
+                  <div
+                    className="relative h-36 sm:h-40"
+                    style={
+                      camp.image_url
+                        ? { backgroundImage: `url(${camp.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                        : { background: `linear-gradient(135deg, #060606 0%, ${orgPrimary}66 100%)` }
+                    }
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
+                    <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-2">
+                      {isEarlyBird ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500 text-white shadow-lg">
+                          Early Bird
+                        </span>
+                      ) : (
+                        <span />
                       )}
-                    </span>
-                    {camp.location && <span>{camp.location}</span>}
-                    {camp.age_group && <span>Ages {camp.age_group}</span>}
+                      {camp.age_group && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-black/50 text-white backdrop-blur-sm">
+                          Ages {camp.age_group}
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-base sm:text-lg font-extrabold text-white drop-shadow-lg leading-tight">
+                        {camp.name}
+                      </h3>
+                    </div>
                   </div>
-                  <div className="mt-3 text-xs font-semibold text-[#4ecde6]">Book this camp &rarr;</div>
+
+                  {/* Body */}
+                  <div className="p-4 space-y-2.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/55">
+                      <span className="font-medium text-white/80">
+                        {new Date(camp.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        {camp.end_date !== camp.start_date && (
+                          <>
+                            {' – '}
+                            {new Date(camp.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          </>
+                        )}
+                      </span>
+                      {camp.location && <span>&middot; {camp.location}</span>}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
+                      {displayPrice != null ? (
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-extrabold" style={{ color: orgPrimary }}>
+                            &pound;{displayPrice.toFixed(0)}
+                          </span>
+                          {isEarlyBird && (
+                            <span className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">early bird</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                      <span
+                        className="inline-flex items-center gap-1 text-xs font-bold group-hover:translate-x-0.5 transition-transform"
+                        style={{ color: orgPrimary }}
+                      >
+                        Book &rarr;
+                      </span>
+                    </div>
+                  </div>
                 </a>
               )
             })}
