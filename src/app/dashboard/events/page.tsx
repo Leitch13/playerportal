@@ -415,6 +415,39 @@ async function ParentEvents({
     countByEvent[r.event_id] = (countByEvent[r.event_id] || 0) + 1
   }
 
+  // ── CAMPS (read-only). Camps are a SEPARATE model from `events`; parents
+  // could previously only discover them on the public booking page. Surface
+  // published, upcoming camps for THIS academy and link straight to the EXISTING
+  // camp booking flow (/book/[slug]/camps/[id]) — no new booking/payment path.
+  // RLS "Public read camps" (is_published=true) already permits this read.
+  const { data: orgRow } = await supabase
+    .from('organisations')
+    .select('slug')
+    .eq('id', orgId)
+    .single()
+  const orgSlug = (orgRow?.slug as string | undefined) || ''
+
+  const { data: campRows } = await supabase
+    .from('camps')
+    .select('id, name, start_date, end_date, location, price, early_bird_price, early_bird_deadline, age_group')
+    .eq('organisation_id', orgId)
+    .eq('is_published', true)
+    .gte('end_date', today)
+    .order('start_date')
+
+  type CampRow = {
+    id: string
+    name: string
+    start_date: string
+    end_date: string
+    location: string | null
+    price: number | null
+    early_bird_price: number | null
+    early_bird_deadline: string | null
+    age_group: string | null
+  }
+  const camps = (campRows || []) as unknown as CampRow[]
+
   // Separate into booked and available
   const myBookedEventIds = new Set(
     bookings.filter((b) => b.status === 'confirmed').map((b) => b.event_id)
@@ -676,6 +709,58 @@ async function ParentEvents({
           </div>
         )}
       </div>
+
+      {/* Upcoming Camps — read-only. Links to the EXISTING camp booking flow
+          (/book/[slug]/camps/[id]); no new booking/payment path here. */}
+      {orgSlug && camps.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Upcoming Camps</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {camps.map((camp) => {
+              const isEarlyBird =
+                camp.early_bird_price != null &&
+                camp.early_bird_deadline != null &&
+                today <= camp.early_bird_deadline
+              const displayPrice = isEarlyBird
+                ? Number(camp.early_bird_price)
+                : camp.price != null
+                ? Number(camp.price)
+                : null
+              return (
+                <a
+                  key={camp.id}
+                  href={`/book/${orgSlug}/camps/${camp.id}`}
+                  className="block rounded-xl border border-[#1e1e1e] bg-[#141414] p-4 hover:border-[#4ecde6]/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-semibold text-sm">{camp.name}</div>
+                    {displayPrice != null && (
+                      <div className="text-right shrink-0">
+                        <div className="text-lg font-bold text-[#4ecde6]">&pound;{displayPrice.toFixed(0)}</div>
+                        {isEarlyBird && <div className="text-[10px] text-green-400 font-medium">Early bird</div>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/60 mt-1.5">
+                    <span>
+                      {new Date(camp.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      {camp.end_date !== camp.start_date && (
+                        <>
+                          {' – '}
+                          {new Date(camp.end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </>
+                      )}
+                    </span>
+                    {camp.location && <span>{camp.location}</span>}
+                    {camp.age_group && <span>Ages {camp.age_group}</span>}
+                  </div>
+                  <div className="mt-3 text-xs font-semibold text-[#4ecde6]">Book this camp &rarr;</div>
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Help text */}
       <Card>
