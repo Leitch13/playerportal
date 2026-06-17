@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import { QuickBookForm } from './QuickBookForm'
-import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
+import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
 
 export default async function QuickBookPage({
@@ -27,7 +27,7 @@ export default async function QuickBookPage({
   // yet, in which case we fall back to calendar mode safely.
   const { data: org } = await publicSupabase
     .from('organisations')
-    .select('id, name, slug, primary_color, contact_email, contact_phone')
+    .select('id, name, slug, primary_color, contact_email, contact_phone, quarterly_billing_enabled')
     .ilike('slug', slug)
     .single()
 
@@ -286,7 +286,7 @@ export default async function QuickBookPage({
         classTimeSlot={group.time_slot as string | null}
         allowFutureStart={allowFutureStart}
         bridgeMode={bridgeMode}
-        quarterlyEnabled={QUARTERLY_BILLING_ENABLED}
+        quarterlyEnabled={isQuarterlyEnabledForOrg(org.id as string, (org as Record<string, unknown>).quarterly_billing_enabled as boolean | null | undefined)}
       />
 
       {/* Footer */}

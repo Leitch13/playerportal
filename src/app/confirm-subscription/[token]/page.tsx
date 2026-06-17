@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import ConfirmClient from './ConfirmClient'
-import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
+import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,7 +69,7 @@ export default async function ConfirmSubscriptionPage({
       academyName={org.name}
       primaryColor={org.primary_color || '#4ecde6'}
       logoUrl={org.logo_url || null}
-      quarterlyEnabled={QUARTERLY_BILLING_ENABLED && org.quarterly_billing_enabled !== false}
+      quarterlyEnabled={isQuarterlyEnabledForOrg(org.id, org.quarterly_billing_enabled)}
       quarterlyDiscountPercent={Number(org.quarterly_discount_percent ?? 10)}
     />
   )

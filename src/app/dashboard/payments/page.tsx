@@ -37,6 +37,7 @@ import BillingPanel, { type BillingFacts } from './BillingPanel'
 import MembershipManagement from './MembershipManagement'
 import AvailableUpgrades from './AvailableUpgrades'
 import MembershipTabs from './MembershipTabs'
+import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 
 // Phase 1A — Membership & Billing safe reskin. Flag OFF (default) ⇒ the parent
 // page renders byte-identically to today. Flag ON ⇒ a tabbed, subscription-first
@@ -208,11 +209,12 @@ async function ParentPayments({
     retention_offer_percent?: number
     retention_offer_months?: number | null
     contact_phone?: string | null
+    quarterly_billing_enabled?: boolean | null
   }
   let orgRow: OrgRow | null = null
   if (orgId) {
-    const full = 'name, cancellation_notice_days, cancellation_policy, retention_offer_enabled, retention_offer_percent, retention_offer_months, contact_phone'
-    const legacy = 'name, cancellation_notice_days, retention_offer_enabled, retention_offer_percent, retention_offer_months, contact_phone'
+    const full = 'name, cancellation_notice_days, cancellation_policy, retention_offer_enabled, retention_offer_percent, retention_offer_months, contact_phone, quarterly_billing_enabled'
+    const legacy = 'name, cancellation_notice_days, retention_offer_enabled, retention_offer_percent, retention_offer_months, contact_phone, quarterly_billing_enabled'
     const first = await supabase.from('organisations').select(full).eq('id', orgId).single()
     if (first.error && first.error.code === '42703') {
       const fallback = await supabase.from('organisations').select(legacy).eq('id', orgId).single()
@@ -221,6 +223,9 @@ async function ParentPayments({
       orgRow = (first.data ?? null) as unknown as OrgRow | null
     }
   }
+  // Per-org quarterly enablement for the parent hub's upgrade cards. Default OFF
+  // unless this academy is allow-listed (or the global flag is on).
+  const quarterlyEnabledForOrg = isQuarterlyEnabledForOrg(orgId, orgRow?.quarterly_billing_enabled)
   const academyName = orgRow?.name || 'your academy'
   // Sprint 6 — academy's WhatsApp number (uses contact_phone for v1, no
   // new column). Null when missing; the widget hides itself in that case.
@@ -402,7 +407,7 @@ async function ParentPayments({
 
         <MyChildrenList children={childSummaries} />
         <ActiveClassesList classes={activeClassesEnriched} retentionEnabled={retentionEnabled} retentionPercent={retentionPercent} retentionMonths={retentionMonths} />
-        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} />
+        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} />
         <MembershipManagement
           hasActiveSub={activeSubs.length > 0}
           noticeDays={cancellationNoticeDays}
@@ -569,7 +574,7 @@ async function ParentPayments({
         </div>
       )}
 
-      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} />
+      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} />
 
     </div>
     </div>

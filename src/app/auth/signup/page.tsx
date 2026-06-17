@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AcademySearch from '@/components/AcademySearch'
-import { QUARTERLY_BILLING_ENABLED_PUBLIC } from '@/lib/quarterly-billing'
+import { isQuarterlyEnabledForOrgPublic } from '@/lib/quarterly-billing'
 
 export default function SignUpPage() {
   return (
@@ -38,6 +38,10 @@ function SignUp() {
   const [password, setPassword] = useState('')
   const [orgSlug, setOrgSlug] = useState('')
   const [orgName, setOrgName] = useState<string | null>(null)
+  // Per-org quarterly enablement (allowlist) for this academy — fetched in
+  // lookupOrg. Gates the client-side quarterly toggle / pre-selection below.
+  const [orgId, setOrgId] = useState<string | null>(null)
+  const [orgQuarterlyEnabled, setOrgQuarterlyEnabled] = useState<boolean | null>(null)
   const [orgColor, setOrgColor] = useState('#4ecde6')
   const [orgLogo, setOrgLogo] = useState<string | null>(null)
   const [orgError, setOrgError] = useState('')
@@ -83,7 +87,7 @@ function SignUp() {
   const inviteRole = isStaffInvite ? roleParam : 'parent'
   const [referrerName, setReferrerName] = useState<string | null>(null)
 
-  useEffect(() => { if (preSelectedBilling === 'quarterly' && QUARTERLY_BILLING_ENABLED_PUBLIC) setBillingOption('quarterly') }, [preSelectedBilling])
+  useEffect(() => { if (preSelectedBilling === 'quarterly' && isQuarterlyEnabledForOrgPublic(orgId, orgQuarterlyEnabled)) setBillingOption('quarterly') }, [preSelectedBilling, orgId, orgQuarterlyEnabled])
 
   // ─── Logged-in parents adding a new subscription ───
   // If the user is already authenticated and lands on /auth/signup (e.g. clicked
@@ -210,9 +214,9 @@ function SignUp() {
   async function lookupOrg(slug: string) {
     if (!slug.trim()) { setOrgName(null); setOrgError(''); return }
     const supabase = createClient()
-    const { data } = await supabase.from('organisations').select('name, primary_color, logo_url').ilike('slug', slug.trim()).single()
-    if (data) { setOrgName(data.name); if (data.primary_color) setOrgColor(data.primary_color); if (data.logo_url) setOrgLogo(data.logo_url); setOrgError('') }
-    else { setOrgName(null); setOrgError('Organisation not found') }
+    const { data } = await supabase.from('organisations').select('id, name, primary_color, logo_url, quarterly_billing_enabled').ilike('slug', slug.trim()).single()
+    if (data) { setOrgName(data.name); setOrgId(data.id); setOrgQuarterlyEnabled((data as { quarterly_billing_enabled?: boolean | null }).quarterly_billing_enabled ?? null); if (data.primary_color) setOrgColor(data.primary_color); if (data.logo_url) setOrgLogo(data.logo_url); setOrgError('') }
+    else { setOrgName(null); setOrgId(null); setOrgQuarterlyEnabled(null); setOrgError('Organisation not found') }
   }
 
   async function handleCreateAccount(e: React.FormEvent) {
@@ -533,7 +537,7 @@ function SignUp() {
                 <div className="space-y-3 sm:space-y-4">
                   {/* Migration links are monthly-only (deferred first charge can't apply to a one-off quarterly payment).
                       Quarterly toggle also hidden globally while quarterly billing is disabled (safety kill-switch). */}
-                  {!billedFrom && QUARTERLY_BILLING_ENABLED_PUBLIC && (
+                  {!billedFrom && isQuarterlyEnabledForOrgPublic(orgId, orgQuarterlyEnabled) && (
                   <div className="bg-[#1a1a1a] rounded-xl p-1 flex">
                     <button type="button" onClick={() => setBillingOption('monthly')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${billingOption === 'monthly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay Monthly</button>
                     <button type="button" onClick={() => setBillingOption('quarterly')} className={`flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all relative ${billingOption === 'quarterly' ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-white/40 hover:text-white/60'}`}>Pay 3 Months<span className="absolute -top-2 -right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">Save 10%</span></button>

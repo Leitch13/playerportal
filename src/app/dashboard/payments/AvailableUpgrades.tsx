@@ -7,14 +7,18 @@
  */
 import SubscribeButton from './SubscribeButton'
 import type { SubscriptionPlan } from '@/lib/types'
-import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
 
 export default function AvailableUpgrades({
   plans,
   hasActiveSub,
+  quarterlyEnabled = false,
 }: {
   plans: SubscriptionPlan[]
   hasActiveSub: boolean
+  // Per-org quarterly enablement, computed server-side by the parent page via
+  // isQuarterlyEnabledForOrg(). Defaults OFF so the toggle never shows unless
+  // explicitly enabled for this academy.
+  quarterlyEnabled?: boolean
 }) {
   if (!plans || plans.length === 0) return null
 
@@ -60,7 +64,7 @@ export default function AvailableUpgrades({
                   planName={plan.name}
                   amount={Number(plan.amount)}
                   interval={plan.interval || 'month'}
-                  quarterlyEnabled={QUARTERLY_BILLING_ENABLED}
+                  quarterlyEnabled={quarterlyEnabled}
                 />
               </div>
             </div>

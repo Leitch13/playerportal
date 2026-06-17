@@ -7,7 +7,7 @@ import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import ShareButton from './ShareButton'
 import StickyBookBar from './StickyBookBar'
-import { QUARTERLY_BILLING_ENABLED } from '@/lib/quarterly-billing'
+import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import ClassWaitlistCTA from './ClassWaitlistCTA'
 
 const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color: string }> = {
@@ -390,7 +390,7 @@ export default async function ClassBookingPage({
             <div className="grid gap-3">
               {plans.map((plan, i) => {
                 const amount = Number(plan.amount)
-                const qEnabled = QUARTERLY_BILLING_ENABLED && (org as Record<string, unknown>).quarterly_billing_enabled !== false
+                const qEnabled = isQuarterlyEnabledForOrg((org as Record<string, unknown>).id as string, (org as Record<string, unknown>).quarterly_billing_enabled as boolean | null | undefined)
                 const qPercent = Math.max(0, Math.min(50, Number((org as Record<string, unknown>).quarterly_discount_percent ?? 10)))
                 const showQuarterly = qEnabled && qPercent > 0
                 const quarterlyAmount = Math.round(amount * 3 * (1 - qPercent / 100) * 100) / 100
@@ -458,7 +458,7 @@ export default async function ClassBookingPage({
               })}
             </div>
             {(() => {
-              const qEnabled = (org as Record<string, unknown>).quarterly_billing_enabled !== false
+              const qEnabled = isQuarterlyEnabledForOrg((org as Record<string, unknown>).id as string, (org as Record<string, unknown>).quarterly_billing_enabled as boolean | null | undefined)
               const qPercent = Number((org as Record<string, unknown>).quarterly_discount_percent ?? 10)
               if (!qEnabled || qPercent <= 0) return null
               return (
