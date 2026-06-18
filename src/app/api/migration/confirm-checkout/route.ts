@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
-import { QUARTERLY_BILLING_ENABLED, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
+import { QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,9 +29,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 })
   }
 
-  // GLOBAL SAFETY GATE — quarterly hard-disabled until rebuilt as recurring.
-  // Fires before any Stripe object is created.
-  if (isQuarterly && !QUARTERLY_BILLING_ENABLED) {
+  // QUARTERLY NOT SUPPORTED ON MIGRATION. The quarterly branch below is the
+  // legacy one-time `mode:'payment'` charge — for a prepaid migrating member
+  // that is a double-charge risk, and it was never rebuilt as a deferred
+  // recurring subscription. Hard-block it regardless of any flag/allowlist until
+  // explicitly supported. Fires before any Stripe object is created.
+  if (isQuarterly) {
     return NextResponse.json({ error: QUARTERLY_UNAVAILABLE_MESSAGE }, { status: 400 })
   }
 
@@ -62,6 +65,29 @@ export async function POST(request: NextRequest) {
 
   const plan = sub.plan as unknown as { id: string; name: string; amount: number; stripe_product_id: string | null; stripe_price_id: string | null; interval: string }
   const org = sub.org as unknown as { id: string; name: string; stripe_account_id: string | null; platform_plan_id: string | null; quarterly_billing_enabled: boolean | null; quarterly_discount_percent: number | null }
+
+  // P1 CONNECT PRE-FLIGHT — never open a Checkout session if the academy's
+  // connected account can't actually take a charge (the JSL situation: account
+  // exists but charges_enabled=false / transfers inactive). Without this the
+  // parent clicks "Confirm & pay" and hits a raw Stripe error mid-migration,
+  // breaking trust across the academy's whole imported base. Fires before any
+  // Stripe object is created.
+  const CONNECT_NOT_READY = 'This academy is still finishing payment setup. Please try again later.'
+  if (!org.stripe_account_id) {
+    return NextResponse.json({ error: CONNECT_NOT_READY }, { status: 503 })
+  }
+  try {
+    const acct = await stripe.accounts.retrieve(org.stripe_account_id)
+    const transfersCap = acct.capabilities?.transfers
+    const chargesOk = acct.charges_enabled === true
+    // Block if charges are off, or if the transfers capability exists but isn't active.
+    const transfersOk = transfersCap === undefined || transfersCap === 'active'
+    if (!chargesOk || !transfersOk) {
+      return NextResponse.json({ error: CONNECT_NOT_READY }, { status: 503 })
+    }
+  } catch {
+    return NextResponse.json({ error: CONNECT_NOT_READY }, { status: 503 })
+  }
 
   // Deferred first-charge date (member prepaid elsewhere). Use as Stripe
   // trial_end if it's still in the future; otherwise ignore (prorate as normal).

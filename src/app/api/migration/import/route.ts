@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
   const summary = {
     imported: 0,
     skipped: 0,
+    // P0: rows skipped because the parent email already belongs to ANOTHER
+    // academy — we never reassign a profile across tenants.
+    conflicts: [] as { row: number; email: string; reason: string }[],
     errors: [] as { row: number; error: string }[],
     invitationsQueued: 0,
   }
@@ -122,13 +125,29 @@ export async function POST(request: NextRequest) {
       if (!parentId) {
         const { data: existing } = await admin
           .from('profiles')
-          .select('id')
+          .select('id, organisation_id')
           .eq('email', email)
           .maybeSingle()
 
         if (existing?.id) {
+          const existingOrg = (existing as { organisation_id?: string | null }).organisation_id
+          // P0 SAFETY: if this email already belongs to a DIFFERENT academy, do
+          // NOT reassign it — that would hijack the parent (and their child/sub
+          // visibility) from their current academy. Skip the whole row.
+          if (existingOrg && existingOrg !== orgId) {
+            summary.conflicts.push({
+              row: i + 1,
+              email,
+              reason: 'Email already registered with another academy — skipped (not reassigned).',
+            })
+            summary.skipped++
+            continue
+          }
           parentId = existing.id
-          // Keep profile tied to the right org + make sure contact info is present
+          // Same-org (or not-yet-assigned) parent: safe to set org + refresh
+          // contact info. `organisation_id: orgId` is a no-op when already set to
+          // this org, and the cross-org case was rejected above — so this can
+          // never move a profile between tenants.
           await admin
             .from('profiles')
             .update({
