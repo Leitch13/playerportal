@@ -72,6 +72,10 @@ export default function SettingsForm({
   })
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [copied, setCopied] = useState(false)
+  const [staffName, setStaffName] = useState('')
+  const [staffEmail, setStaffEmail] = useState('')
+  const [staffRole, setStaffRole] = useState<'coach' | 'admin'>('coach')
+  const [addingStaff, setAddingStaff] = useState(false)
 
   function showToast(msg: string) {
     setToast(msg)
@@ -98,6 +102,31 @@ export default function SettingsForm({
     await supabase.from('profiles').update({ organisation_id: null, role: 'parent' }).eq('id', id)
     router.refresh()
     showToast('Member removed')
+  }
+
+  async function handleAddStaff(e: React.FormEvent) {
+    e.preventDefault()
+    if (!staffName.trim() || !staffEmail.trim()) { showToast('Enter a name and email'); return }
+    setAddingStaff(true)
+    try {
+      const res = await fetch('/api/staff/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: staffName.trim(), email: staffEmail.trim(), role: staffRole }),
+      })
+      const data = await res.json()
+      if (!res.ok) { showToast(data.error || 'Could not add staff member'); setAddingStaff(false); return }
+      showToast(
+        data.status === 'updated'
+          ? `Existing account updated to ${staffRole}`
+          : `${staffRole === 'admin' ? 'Admin' : 'Coach'} added — they'll get an email to set their password`
+      )
+      setStaffName(''); setStaffEmail(''); setStaffRole('coach')
+      router.refresh()
+    } catch {
+      showToast('Something went wrong')
+    }
+    setAddingStaff(false)
   }
 
   function copySlug() {
@@ -280,41 +309,42 @@ export default function SettingsForm({
 
               <div className="pt-4 border-t border-[#1e1e1e] space-y-5">
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">Invite a Coach</h3>
-                  <p className="text-xs text-[#888] mb-3">Send this link to your coach via WhatsApp, text or email. When they click it, they&apos;ll create an account and join your academy as a coach automatically.</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
-                      /auth/signup?org={form.slug}&amp;role=coach
+                  <h3 className="font-semibold text-sm mb-1">Add a Staff Member</h3>
+                  <p className="text-xs text-[#888] mb-3">Add a coach or admin to your academy. They&apos;ll get an email to set their password and sign in. Admins can manage everything — payments, settings and billing — so only add admins you fully trust.</p>
+                  <form onSubmit={handleAddStaff} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input
+                        className={inputClass}
+                        placeholder="Full name"
+                        value={staffName}
+                        onChange={e => setStaffName(e.target.value)}
+                      />
+                      <input
+                        type="email"
+                        className={inputClass}
+                        placeholder="Email address"
+                        value={staffEmail}
+                        onChange={e => setStaffEmail(e.target.value)}
+                      />
                     </div>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/auth/signup?org=${form.slug}&role=coach`)
-                        showToast('Coach invite link copied!')
-                      }}
-                      className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#4ecde6]/10 text-[#4ecde6] hover:bg-[#4ecde6]/20 transition-colors whitespace-nowrap"
-                    >
-                      Copy Link
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold text-sm mb-1">Invite Another Admin</h3>
-                  <p className="text-xs text-[#888] mb-3">Admins can manage everything — payments, settings, billing. Only share with people you fully trust.</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
-                      /auth/signup?org={form.slug}&amp;role=admin
+                    <div className="flex items-center gap-2">
+                      <select
+                        className={inputClass + ' max-w-[150px]'}
+                        value={staffRole}
+                        onChange={e => setStaffRole(e.target.value as 'coach' | 'admin')}
+                      >
+                        <option value="coach">Coach</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <button
+                        type="submit"
+                        disabled={addingStaff}
+                        className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all whitespace-nowrap"
+                      >
+                        {addingStaff ? 'Adding…' : 'Add staff member'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/auth/signup?org=${form.slug}&role=admin`)
-                        showToast('Admin invite link copied!')
-                      }}
-                      className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors whitespace-nowrap"
-                    >
-                      Copy Link
-                    </button>
-                  </div>
+                  </form>
                 </div>
 
                 <div>

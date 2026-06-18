@@ -1689,6 +1689,43 @@ export function firstSaleEmail(params: {
   }
 }
 
+export function staffInviteEmail(params: {
+  staffName: string
+  academyName: string
+  role: string
+  actionLink: string | null
+  signinUrl: string
+  supportEmail: string
+}) {
+  const roleLabel = params.role === 'admin' ? 'an admin' : 'a coach'
+  const roleNote = params.role === 'admin'
+    ? 'As an admin you can manage everything — players, classes, payments and settings.'
+    : 'As a coach you can manage your classes, registers and player progress.'
+  // Primary CTA: a direct set-password link when we could mint one. Otherwise
+  // we omit the button and rely on the always-true Forgot-password fallback.
+  const cta = params.actionLink
+    ? `<div style="text-align:center;margin:24px 0">
+         <a href="${params.actionLink}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px">Set your password</a>
+       </div>
+       <p style="color:#888;font-size:13px;text-align:center;margin:0 0 8px">This link sets your password and signs you in. If it has expired, just use “Forgot password” on the sign-in page.</p>`
+    : `<div style="text-align:center;margin:24px 0">
+         <a href="${params.signinUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px">Go to sign-in</a>
+       </div>
+       <p style="color:#888;font-size:13px;text-align:center;margin:0 0 8px">To get in for the first time, click “Forgot password” on the sign-in page and enter this email address (${params.supportEmail ? 'your email' : 'your email'}) to set your password.</p>`
+  return {
+    subject: `You've been added to ${params.academyName} on Player Portal`,
+    html: baseLayout(`
+      <div style="text-align:center;margin-bottom:20px">
+        <h2 style="margin:0 0 4px;color:#ffffff;font-size:22px;font-weight:800">You're now ${roleLabel}</h2>
+        <p style="margin:0;color:#4ecde6;font-size:16px;font-weight:600">${params.academyName}</p>
+      </div>
+      <p style="color:#aaa;margin:0 0 16px">Hi ${params.staffName}, ${params.academyName} has added you to their team on Player Portal as ${roleLabel}. ${roleNote}</p>
+      ${cta}
+      <p style="color:#777;font-size:13px;text-align:center;margin:16px 0 0">Sign in any time at <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a>. Questions? Contact <a href="mailto:${params.supportEmail}" style="color:#4ecde6;text-decoration:none">${params.supportEmail}</a>.</p>
+    `),
+  }
+}
+
 export function adminWelcomeEmail(params: { adminName: string; academyName: string; dashboardUrl: string }) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
   // Sprint 14b.1 (QW1) — subject + opening copy now reflects reality:
