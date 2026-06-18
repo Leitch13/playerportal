@@ -6,6 +6,7 @@ import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isStartDateBillingEnabled, isFutureStartBillingEnabled } from '@/lib/billing/flag'
 import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
+import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import {
   firstOfNextMonthUnix,
   isStartInCurrentMonth,
@@ -215,6 +216,16 @@ export async function POST(request: NextRequest) {
         { error: 'This academy is still finishing their setup. Payments are not available yet — please check back in a day or two.' },
         { status: 503 }
       )
+    }
+
+    // CONNECT READINESS PRE-FLIGHT — presence of a connected account isn't enough:
+    // it may not be able to take charges yet (charges_enabled=false / transfers
+    // inactive). Block before any Stripe object is created so the parent gets a
+    // friendly message instead of a raw mid-checkout error. Mirrors the proven
+    // pre-flight in /api/migration/confirm-checkout. Additive — does not alter fee
+    // math, on_behalf_of, or transfer_data below.
+    if (!(await isConnectChargeReady(connectedAccountId))) {
+      return NextResponse.json({ error: CONNECT_NOT_READY_MESSAGE }, { status: 503 })
     }
 
     // ════════════════════════════════════════════════════════════════

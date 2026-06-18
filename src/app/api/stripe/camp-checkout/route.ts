@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
+import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 
 // Use service-role client since public users (no auth) can book camps
 function getServiceClient() {
@@ -172,6 +173,15 @@ export async function POST(request: NextRequest) {
         { error: 'This academy is still finishing their setup. Camp bookings can\'t be paid for just yet.' },
         { status: 503 }
       )
+    }
+
+    // CONNECT READINESS PRE-FLIGHT — a connected account that can't take charges
+    // yet (charges_enabled=false / transfers inactive) would fail mid-checkout.
+    // Block here before any Stripe object is created. Mirrors the proven pre-flight
+    // in /api/migration/confirm-checkout. Additive — fee/on_behalf_of/transfer_data
+    // routing below is unchanged.
+    if (!(await isConnectChargeReady(payoutOrg.stripe_account_id))) {
+      return NextResponse.json({ error: CONNECT_NOT_READY_MESSAGE }, { status: 503 })
     }
 
     // Resolve the platform fee rate from the academy's plan tier (default 3.5%)
