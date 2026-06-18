@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
 import { QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
+import { feePercentFromRate } from '@/lib/stripe-fee'
 
 export const dynamic = 'force-dynamic'
 
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
       ...(connectedAccountId
         ? {
             on_behalf_of: connectedAccountId,
-            ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: PLATFORM_FEE_RATE * 100 } : {}),
+            ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: feePercentFromRate(PLATFORM_FEE_RATE) } : {}),
             transfer_data: { destination: connectedAccountId },
           }
         : {}),
