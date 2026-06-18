@@ -1726,60 +1726,58 @@ export function staffInviteEmail(params: {
   }
 }
 
-export function adminWelcomeEmail(params: { adminName: string; academyName: string; dashboardUrl: string }) {
+export function adminWelcomeEmail(params: { adminName: string; academyName: string; academySlug?: string; dashboardUrl: string }) {
+  // Premium "red carpet" onboarding welcome. Bespoke full-document layout (does
+  // not use baseLayout) — hosted white logo + founder photo in /public, real
+  // booking slug (no more name-slugify guess), monitored support address.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
-  // Sprint 14b.1 (QW1) — subject + opening copy now reflects reality:
-  // the academy is set up, trial has started, and the booking page is in
-  // preview until the owner subscribes to a platform plan. Previous copy
-  // ("is LIVE on Player Portal!" + "You're live!") contradicted the
-  // dashboard, which shows "preview mode" until is_published flips.
+  const ACC = '#4ecde6'
+  const SUP = 'support@theplayerportal.net'
+  const academy = escapeHtml(params.academyName)
+  const firstName = escapeHtml(params.adminName || 'there')
+  const slug = params.academySlug || params.academyName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  const dash = params.dashboardUrl
+  const bookingUrl = `${appUrl}/book/${slug}`
+  const logo = `${appUrl}/logo-white.png`
+  const founder = `${appUrl}/founder-john.png`
+
+  const feat = (b: string, t: string, d: string) => `<tr><td style="padding:0 0 12px"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#10151d;border:1px solid #1f2937;border-radius:14px"><tr>
+<td width="60" valign="middle" style="padding:16px 0 16px 16px"><div style="width:44px;height:44px;border-radius:11px;background:#0f2a31;border:1px solid #1d4d57;text-align:center;line-height:44px;font-size:19px;color:${ACC};font-weight:800">${b}</div></td>
+<td valign="middle" style="padding:14px 8px 14px 14px"><div style="color:#fff;font-size:15px;font-weight:700;margin:0 0 3px">${t}</div><div style="color:#9db0c3;font-size:13px;line-height:1.45">${d}</div></td>
+<td width="34" valign="middle" align="right" style="padding:14px 16px 14px 0;color:${ACC};font-size:17px">&rarr;</td></tr></table></td></tr>`
+
+  const stp = (n: number, t: string, cta: string, href: string) => `<tr><td style="padding:9px 0;border-bottom:1px solid #161d27"><table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
+<td valign="middle"><span style="display:inline-block;width:24px;height:24px;background:${ACC};color:#06222a;border-radius:50%;text-align:center;line-height:24px;font-weight:800;font-size:12px;margin-right:12px">${n}</span><span style="color:#dfe7ef;font-size:14px;font-weight:600">${t}</span></td>
+<td valign="middle" align="right"><a href="${href}" style="color:${ACC};font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap">${cta} &rarr;</a></td></tr></table></td></tr>`
+
   return {
-    subject: `🏟️ ${params.academyName} is set up — your 14-day trial starts now`,
-    html: baseLayout(`
-      <div style="text-align:center;margin-bottom:24px">
-        <div style="display:inline-block;background:linear-gradient(135deg, #4ecde6, #2ba8c3);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:28px;margin-bottom:12px">🏟️</div>
-        <h2 style="margin:0 0 4px;color:#ffffff;font-size:24px;font-weight:800">Your 14-day trial starts now</h2>
-        <p style="margin:0;color:#4ecde6;font-size:16px;font-weight:600">${params.academyName}</p>
-      </div>
-      <p style="color:#aaa;margin:0 0 20px;text-align:center">Hi ${params.adminName}, your academy is set up. Finish the checklist below, choose a plan, and your booking page goes live for parents.</p>
-
-      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0;border-left:3px solid #4ecde6">
-        <p style="margin:0 0 16px;font-size:15px;color:#fff;font-weight:700">🚀 Quick Start Checklist</p>
-        <table style="width:100%" cellpadding="0" cellspacing="0">
-          <tr><td style="padding:8px 0;color:#aaa;font-size:14px">
-            <span style="display:inline-block;width:28px;height:28px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:28px;font-weight:700;font-size:13px;margin-right:10px">1</span>
-            <a href="${params.dashboardUrl}/groups" style="color:#4ecde6;text-decoration:none;font-weight:500">Create your first class</a>
-          </td></tr>
-          <tr><td style="padding:8px 0;color:#aaa;font-size:14px">
-            <span style="display:inline-block;width:28px;height:28px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:28px;font-weight:700;font-size:13px;margin-right:10px">2</span>
-            <a href="${params.dashboardUrl}/settings" style="color:#4ecde6;text-decoration:none;font-weight:500">Set up pricing & connect Stripe</a>
-          </td></tr>
-          <tr><td style="padding:8px 0;color:#aaa;font-size:14px">
-            <span style="display:inline-block;width:28px;height:28px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:28px;font-weight:700;font-size:13px;margin-right:10px">3</span>
-            <span style="color:#aaa">Share your booking link with parents</span>
-          </td></tr>
-          <tr><td style="padding:8px 0;color:#aaa;font-size:14px">
-            <span style="display:inline-block;width:28px;height:28px;background:#4ecde6;color:#0a0a0a;border-radius:50%;text-align:center;line-height:28px;font-weight:700;font-size:13px;margin-right:10px">4</span>
-            <a href="${params.dashboardUrl}/players/import" style="color:#4ecde6;text-decoration:none;font-weight:500">Import existing players</a>
-          </td></tr>
-        </table>
-      </div>
-
-      <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0;text-align:center">
-        <p style="margin:0 0 4px;color:#aaa;font-size:13px">Your booking page</p>
-        <p style="margin:0;color:#4ecde6;font-size:14px;font-weight:600;font-family:monospace">${appUrl}/book/${params.academyName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}</p>
-      </div>
-
-      <div style="text-align:center;margin:28px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg, #4ecde6, #2ba8c3);color:#0a0a0a;padding:16px 40px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px;letter-spacing:-0.3px">Open Your Dashboard →</a>
-      </div>
-
-      <div style="text-align:center;padding:16px;border-top:1px solid #1e1e1e;margin-top:20px">
-        <p style="margin:0;color:#aaa;font-size:13px;font-weight:600">🎉 Your 14-day free trial has started.</p>
-        <p style="margin:6px 0 0;color:#888;font-size:12px;line-height:1.5">No credit card required. You won&rsquo;t be charged unless you choose a plan.</p>
-        <p style="margin:10px 0 0;color:#444;font-size:11px">Need help? Reply to this email — we read every message.</p>
-      </div>
-    `),
+    subject: `🎉 ${params.academyName} is officially live on Player Portal`,
+    html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#050608;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e5e5e5">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0">Your academy is live on Player Portal — let's get you set up.</span>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#050608"><tr><td align="center" style="padding:0 14px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px">
+<tr><td style="padding:16px 8px 10px;color:#6b7888;font-size:12px">Your academy is live. Let's get you set up.</td></tr>
+<tr><td style="background:#0a0e14;background-image:radial-gradient(ellipse 80% 70% at 50% 0%, rgba(78,205,230,0.20), rgba(10,14,20,0) 70%);border-radius:22px 22px 0 0;border:1px solid #182230;border-bottom:0;padding:42px 36px 30px;text-align:center">
+<img src="${logo}" width="196" alt="The Player Portal" style="display:block;margin:0 auto 24px;width:196px;max-width:66%;height:auto">
+<div style="color:${ACC};font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin:0 0 12px">Welcome to the platform</div>
+<div style="color:#fff;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">Your academy is<br>officially live.</div>
+<div style="color:${ACC};font-size:21px;line-height:1.2;font-weight:800;margin:0 0 14px">${academy}.</div>
+<div style="color:#9db0c3;font-size:15px;line-height:1.55;margin:0 auto;max-width:420px">Hi ${firstName}, the stage is set and everything you need is ready inside Player Portal. Start taking bookings, get paid and grow your academy.</div>
+<div style="margin:22px 0 2px"><span style="display:inline-block;background:rgba(78,205,230,0.10);border:1px solid rgba(78,205,230,0.4);color:${ACC};font-size:12.5px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;padding:9px 18px;border-radius:30px">&#128197;&nbsp; Day 1 of your 14-day free trial</span></div></td></tr>
+<tr><td style="height:1px;background:#182230;font-size:0;line-height:0">&nbsp;</td></tr>
+<tr><td style="background:#0b0f15;padding:30px 28px 8px;border:1px solid #182230;border-top:0;border-bottom:0"><div style="color:#fff;font-size:18px;font-weight:800;margin:0 0 16px;text-align:center">Everything's ready for you</div><table role="presentation" cellpadding="0" cellspacing="0" width="100%">${feat('&pound;', 'Get paid on autopilot', 'Recurring memberships, automatic reminders, and payouts straight to your Stripe account.')}${feat('&#9673;', 'Your own branded booking page', 'Parents discover classes, book trials and subscribe &mdash; on a page that looks like you.')}${feat('&#9733;', 'Progress parents can see', 'Skill ratings, attendance and coach reviews that keep families engaged and renewing.')}</table></td></tr>
+<tr><td style="background:#0b0f15;padding:6px 28px 4px;border:1px solid #182230;border-top:0;border-bottom:0"><div style="background:#0f141c;border:1px solid #1f2937;border-radius:14px;padding:18px 22px"><div style="color:#fff;font-size:15px;font-weight:800;margin:0 0 6px">Get live in 3 simple steps</div><table role="presentation" cellpadding="0" cellspacing="0" width="100%">${stp(1, 'Create your first class', 'Get started', dash + '/groups')}${stp(2, 'Connect Stripe to get paid', 'Connect now', dash + '/settings')}${stp(3, 'Share your booking link with parents', 'View your page', bookingUrl)}</table></div></td></tr>
+<tr><td style="background:#0b0f15;padding:24px 28px 26px;border:1px solid #182230;border-top:0;border-bottom:0;text-align:center"><a href="${dash}" style="display:inline-block;background:${ACC};color:#06222a;padding:16px 40px;border-radius:14px;font-weight:800;text-decoration:none;font-size:16px">Launch your academy dashboard &nbsp;&rarr;</a></td></tr>
+<tr><td style="background:#0b0f15;padding:4px 28px 28px;border:1px solid #182230;border-top:0;border-bottom:0"><table role="presentation" width="100%" style="background:#10151d;border:1px solid #1f2937;border-radius:14px"><tr>
+<td width="108" valign="top" style="padding:18px 0 18px 18px"><img src="${founder}" width="84" alt="John, Founder" style="display:block;width:84px;height:84px;border-radius:50%;border:2px solid ${ACC}"></td>
+<td valign="top" style="padding:18px 18px 18px 14px"><div style="color:#fff;font-size:15px;font-weight:700;margin:0 0 5px">Need a hand getting set up?</div><div style="color:#9db0c3;font-size:13px;line-height:1.5;margin:0 0 8px">Just reply to this email — a real person reads every message and we'll help you get your academy live.</div><div style="color:${ACC};font-size:13px;font-weight:700">John <span style="color:#6b7888;font-weight:500">&middot; Founder, Player Portal</span></div></td></tr></table></td></tr>
+<tr><td style="background:#0b0f15;height:16px;border-radius:0 0 22px 22px;border:1px solid #182230;border-top:0;font-size:0;line-height:0">&nbsp;</td></tr>
+<tr><td style="padding:20px 18px 8px"><table role="presentation" width="100%"><tr>
+<td valign="top" style="color:#5a6675;font-size:11.5px;line-height:1.6">&#10003; No card required — you won't be charged unless you choose a plan.</td>
+<td valign="top" align="right" style="color:#5a6675;font-size:11.5px;line-height:1.6">Questions? Reply to this email or<br>email <a href="mailto:${SUP}" style="color:${ACC};text-decoration:none">${SUP}</a></td></tr></table>
+<div style="text-align:center;color:#3f4a57;font-size:11px;margin:14px 0 0">&copy; 2026 JSL Sports Technology Ltd · The Player Portal</div></td></tr>
+</table></td></tr></table></body></html>`,
   }
 }
 

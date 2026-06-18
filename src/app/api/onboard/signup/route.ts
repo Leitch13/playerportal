@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
       const template = adminWelcomeEmail({
         adminName: fullName.split(' ')[0],
         academyName: orgData?.name || orgSlug,
+        academySlug: orgSlug,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/dashboard`,
       })
       await sendEmail({ to: email, ...template })
