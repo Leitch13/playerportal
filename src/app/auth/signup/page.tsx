@@ -81,10 +81,16 @@ function SignUp() {
   // billedFrom= (YYYY-MM-DD): MIGRATION links for parents who already prepaid the
   // academy elsewhere. Card captured now, £0 today, first charge on this date.
   const billedFrom = searchParams.get('billedFrom')
-  // Coach/admin invitation flow: bypass child/subscription steps
-  const roleParam = (searchParams.get('role') || '').toLowerCase()
-  const isStaffInvite = roleParam === 'coach' || roleParam === 'admin'
-  const inviteRole = isStaffInvite ? roleParam : 'parent'
+  // SECURITY (role-escalation fix): the public signup page must NEVER grant a
+  // staff role. Previously ?role=admin / ?role=coach in the URL was trusted and
+  // written into user metadata, letting anyone who knew an academy's public slug
+  // self-provision as that academy's admin/coach. Self-serve signup is now ALWAYS
+  // a parent; coaches/admins are created server-side only (api/onboard/signup and
+  // a future invite-token flow). Defense-in-depth: the handle_new_user DB trigger
+  // also coerces any metadata role to 'parent', so a direct supabase.auth.signUp
+  // that bypasses this page cannot escalate either. URL role param is ignored.
+  const isStaffInvite = false
+  const inviteRole = 'parent'
   const [referrerName, setReferrerName] = useState<string | null>(null)
 
   useEffect(() => { if (preSelectedBilling === 'quarterly' && isQuarterlyEnabledForOrgPublic(orgId, orgQuarterlyEnabled)) setBillingOption('quarterly') }, [preSelectedBilling, orgId, orgQuarterlyEnabled])
@@ -387,8 +393,7 @@ function SignUp() {
             <img src={orgLogo} alt={orgName} className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover mx-auto mb-2.5 sm:mb-3 bg-[#1a1a1a]" />
           )}
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">{orgName ? orgName : 'Player Portal'}</h1>
-          {orgName && isStaffInvite && <p className="text-xs sm:text-sm text-white/40">You&apos;ve been invited to join as {inviteRole === 'admin' ? 'an admin' : 'a coach'}</p>}
-          {orgName && !isStaffInvite && <p className="text-xs sm:text-sm text-white/40">Create your account to get started</p>}
+          {orgName && <p className="text-xs sm:text-sm text-white/40">Create your account to get started</p>}
           {!orgName && !searchParams.get('org') && <p className="text-xs sm:text-sm text-white/40">Sign up to join your academy</p>}
         </div>
 
