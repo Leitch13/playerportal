@@ -14,35 +14,41 @@ function baseLayout(content: string, accentColor = '#4ecde6', academyName?: stri
   const heroName = academyName ? escapeHtml(academyName) : 'Player Portal'
   const footerName = academyName ? escapeHtml(academyName) : 'Player Portal'
   const platformTag = academyName ? 'Powered by Player Portal' : 'by JSL Sports'
+  // Premium Polish Pass: real white logo (never the ⚽ emoji), palette + radius +
+  // hairlines aligned to adminWelcomeEmail, readable footer contrast. Academy
+  // name stays prominent for white-label parent emails (logo sits above it).
+  const logo = `${appUrl}/logo-white.png`
+  const logoW = academyName ? 120 : 168
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#060606;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e5e5e5">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#060606">
+<body style="margin:0;padding:0;background:#050608;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e5e5e5">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#050608">
 <tr><td align="center" style="padding:24px 16px">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px">
 
 <!-- Header card -->
-<tr><td style="background:linear-gradient(135deg, #0a0a0a 0%, #141414 60%, ${accentColor}15 100%);border-radius:20px 20px 0 0;padding:32px 36px;text-align:center;border:1px solid #1e1e1e;border-bottom:0">
-<div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:${accentColor};margin:0">⚽ ${heroName}</div>
-<div style="margin:8px 0 0;color:#666;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">${platformTag}</div>
+<tr><td style="background:#0a0e14;background-image:radial-gradient(ellipse 80% 70% at 50% 0%, rgba(78,205,230,0.18), rgba(10,14,20,0) 70%);border-radius:22px 22px 0 0;padding:34px 36px 26px;text-align:center;border:1px solid #182230;border-bottom:0">
+<img src="${logo}" width="${logoW}" alt="The Player Portal" style="display:block;margin:0 auto ${academyName ? 14 : 8}px;width:${logoW}px;max-width:58%;height:auto">
+${academyName ? `<div style="font-size:21px;font-weight:800;letter-spacing:-0.3px;color:${accentColor};margin:0">${heroName}</div>` : ''}
+<div style="margin:${academyName ? 6 : 0}px 0 0;color:#8a98a8;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">${platformTag}</div>
 </td></tr>
 
 <!-- Brand accent line -->
-<tr><td style="height:3px;background:linear-gradient(90deg, transparent 0%, ${accentColor} 50%, transparent 100%);font-size:0;line-height:0">&nbsp;</td></tr>
+<tr><td style="height:3px;background:linear-gradient(90deg, transparent 0%, ${accentColor} 50%, transparent 100%);font-size:0;line-height:0;border-left:1px solid #182230;border-right:1px solid #182230">&nbsp;</td></tr>
 
 <!-- Main content -->
-<tr><td style="background:#141414;padding:36px;border:1px solid #1e1e1e;border-top:0;border-bottom:0;color:#e5e5e5;line-height:1.6">
+<tr><td style="background:#0b0f15;padding:36px;border:1px solid #182230;border-top:0;border-bottom:0;color:#e5e5e5;line-height:1.6">
 ${content}
 </td></tr>
 
 <!-- Bottom rounded corner -->
-<tr><td style="background:#141414;height:20px;border-radius:0 0 20px 20px;border:1px solid #1e1e1e;border-top:0;font-size:0;line-height:0">&nbsp;</td></tr>
+<tr><td style="background:#0b0f15;height:20px;border-radius:0 0 22px 22px;border:1px solid #182230;border-top:0;font-size:0;line-height:0">&nbsp;</td></tr>
 
 <!-- Footer -->
 <tr><td align="center" style="padding:20px 16px 0">
-<div style="color:#777;font-size:13px;font-weight:500">Sent by <a href="${appUrl}" style="color:${accentColor};text-decoration:none;font-weight:600">${footerName}</a></div>
-<div style="margin:8px 0 0;color:#444;font-size:11px;line-height:1.5">You&apos;re receiving this because you have an account with ${footerName}.</div>
-<div style="margin:6px 0 0;color:#333;font-size:11px">&copy; 2026 JSL Sports Technology Ltd. All rights reserved.</div>
+<div style="color:#8a98a8;font-size:13px;font-weight:500">Sent by <a href="${appUrl}" style="color:${accentColor};text-decoration:none;font-weight:600">${footerName}</a></div>
+<div style="margin:8px 0 0;color:#6b7888;font-size:11px;line-height:1.5">You&apos;re receiving this because you have an account with ${footerName}.</div>
+<div style="margin:6px 0 0;color:#5a6675;font-size:11px">&copy; 2026 JSL Sports Technology Ltd. All rights reserved.</div>
 </td></tr>
 
 </table>
@@ -150,7 +156,7 @@ export function waitlistOfferEmail(params: {
         <p style="margin:0;font-size:14px;color:#92400e"><strong>You have 48 hours to accept.</strong> This offer expires ${params.expiresAt}.</p>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Accept Spot</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">Accept Spot &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px">If you don't respond in time, the spot will be offered to the next family.</p>
     `),
@@ -349,7 +355,7 @@ export function paymentReminderEmail(params: {
       ${amountPanel}
       <p style="color:#aaa;line-height:1.6">Please update your payment to keep ${childRef}&#39;s place in the class.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View your payments</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">View your payments &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px">If you&#39;ve already paid, please ignore this email.</p>
     `),
@@ -384,10 +390,10 @@ export function announcementEmail(params: {
       <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">${params.title}</h2>
       <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
       <div style="border-left:4px solid ${borderColor};padding:16px;background:#f8f9fa;border-radius:0 12px 12px 0;margin:20px 0">
-        <p style="margin:0;color:#333;line-height:1.6;white-space:pre-wrap">${params.body}</p>
+        <p style="margin:0;color:#5a6675;line-height:1.6;white-space:pre-wrap">${params.body}</p>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">View in Dashboard</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:14px">View in Dashboard &rarr;</a>
       </div>
       <p style="color:#999;font-size:12px">From ${params.academyName}</p>
     `, borderColor),
@@ -429,10 +435,10 @@ export function welcomeEmail(params: {
       </div>
 
       <div style="text-align:center;margin:28px 0 12px">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 36px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">Open your dashboard →</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">Open your dashboard →</a>
       </div>
 
-      <p style="color:#777;font-size:13px;line-height:1.6;margin:24px 0 0;text-align:center">
+      <p style="color:#8a98a8;font-size:13px;line-height:1.6;margin:24px 0 0;text-align:center">
         💡 <strong style="color:#aaa">Pro tip:</strong> Add Player Portal to your home screen so it works like an app.
       </p>
 
@@ -545,10 +551,10 @@ export function subscriptionStartedEmail(params: {
       ` : ''}
 
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 36px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">View dashboard →</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">View dashboard →</a>
       </div>
 
-      <p style="color:#777;font-size:13px;line-height:1.6;margin:24px 0 0">
+      <p style="color:#8a98a8;font-size:13px;line-height:1.6;margin:24px 0 0">
         🔔 We'll send reminders before every session. You can cancel anytime from your dashboard, no questions asked.
       </p>
 
@@ -581,6 +587,7 @@ export function paymentReceiptEmail(params: {
         </table>
       </div>
       <p style="color:#999;font-size:12px;text-align:center">Keep this email for your records.</p>
+      <div style="text-align:center;margin:22px 0 0;padding-top:16px;border-top:1px solid #182230"><span style="color:#7c8b9c;font-size:12px">Payments securely processed by </span><span style="color:#9db0c3;font-size:13px;font-weight:700">Stripe</span></div>
     `),
   }
 }
@@ -675,7 +682,7 @@ export function cancellationAdminNotifyEmail(params: {
         💡 <strong style="color:#ddd">Worth a quick check-in?</strong> A short, kind follow-up message often surfaces a fixable problem — and sometimes wins the family back.
       </p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open billing dashboard →</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">Open billing dashboard →</a>
       </div>
     `),
   }
@@ -745,7 +752,7 @@ export function bookingConfirmationEmail(params: {
         <p style="margin:0;font-size:14px;color:#1e40af">Football boots, shin pads, water bottle, and a good attitude!</p>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View in Dashboard</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">View in Dashboard &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">See you on the pitch!</p>
     `),
@@ -799,7 +806,7 @@ export function postSessionFollowUpEmail(params: {
       <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> enjoyed today's <strong>${params.className}</strong> session at <strong>${params.academyName}</strong>!</p>
       <p style="color:#aaa;line-height:1.6">You can view your child's progress and any coach notes in the dashboard.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View Progress</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">View Progress &rarr;</a>
       </div>
       <p style="color:#aaa;line-height:1.6;font-size:14px">We'd love to hear how it went — leave a quick rating or feedback from your dashboard.</p>
       <p style="color:#666;font-size:13px;text-align:center">Thank you for choosing ${params.academyName}!</p>
@@ -822,7 +829,7 @@ export function trialFollowUpEmail(params: {
       <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> had a great time at the${params.className ? ` <strong>${params.className}</strong>` : ''} trial session with <strong>${params.academyName}</strong>.</p>
       <p style="color:#aaa;line-height:1.6">If you'd like to continue their football journey, you can view available classes and memberships below.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">View Classes</a>
+        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">View Classes &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">Questions? Just reply to this email.</p>
     `),
@@ -862,7 +869,7 @@ export function newTrialBookingAdminEmail(params: {
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:15px">Review &amp; Confirm</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:15px">Review &amp; Confirm &rarr;</a>
       </div>
       <p style="color:#666;font-size:12px;line-height:1.5;margin-top:16px">Tip: confirming the trial in the dashboard will (soon) send the parent a confirmation email automatically.</p>
     `),
@@ -918,7 +925,7 @@ export function missedSessionEmail(params: {
       <p style="color:#aaa;line-height:1.6">We noticed <strong>${params.childName}</strong> wasn't at today's <strong>${params.className}</strong> session. We hope everything is okay!</p>
       <p style="color:#aaa;line-height:1.6">If something came up, no worries at all — you can check the upcoming schedule and make sure you don't miss the next one.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View Schedule</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">View Schedule &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">We look forward to seeing ${params.childName} next time!</p>
     `),
@@ -947,7 +954,7 @@ export function subscriptionExpiringEmail(params: {
       </div>
       <p style="color:#aaa;line-height:1.6">If you'd like to make any changes, you can manage your subscription from the dashboard.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Manage Subscription</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">Manage Subscription &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">No action needed if you'd like to continue as normal.</p>
     `),
@@ -1042,13 +1049,13 @@ export function progressReportEmail(params: {
       </div>` : ''}
 
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.reportUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View Full Report</a>
+        <a href="${params.reportUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">View Full Report &rarr;</a>
       </div>
 </div>
 <div style="background:#0f0f0f;border-radius:0 0 16px 16px;border:1px solid #1e1e1e;border-top:none;padding:20px 32px;text-align:center">
 <p style="margin:0;color:#555;font-size:12px">Powered by <a href="${appUrl}" style="color:#4ecde6;text-decoration:none;font-weight:600">Player Portal</a></p>
-<p style="margin:8px 0 0;color:#333;font-size:11px">You received this because your child is enrolled at ${params.academyName}.</p>
-<p style="margin:4px 0 0;color:#333;font-size:11px">To stop receiving progress reports, contact your academy directly.</p>
+<p style="margin:8px 0 0;color:#5a6675;font-size:11px">You received this because your child is enrolled at ${params.academyName}.</p>
+<p style="margin:4px 0 0;color:#5a6675;font-size:11px">To stop receiving progress reports, contact your academy directly.</p>
 </div>
 </div></body></html>`,
   }
@@ -1315,7 +1322,7 @@ export function upsellAddClassEmail(params: { parentName: string; childName: str
       </div>
       <p style="color:#aaa;line-height:1.6">The more they train, the faster they improve. Add a second session and save 15%.</p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.bookingUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">Browse Classes</a>
+        <a href="${params.bookingUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">Browse Classes &rarr;</a>
       </div>
     `),
   }
@@ -1334,7 +1341,7 @@ export function upsellSubscriptionEmail(params: { parentName: string; childName:
         <div style="margin-top:12px;display:inline-block;background:#dcfce7;color:#166534;font-size:12px;font-weight:600;padding:4px 12px;border-radius:99px">Never miss a session + save vs pay-as-you-go</div>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:600;text-decoration:none;font-size:16px">View Subscription Plans</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:16px">View Subscription Plans &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">Cancel anytime. No lock-in contracts.</p>
     `),
@@ -1468,7 +1475,10 @@ export function paymentFailedParentEmail(params: {
   return {
     subject: `Action needed: payment for ${params.academyName} couldn't be processed`,
     html: baseLayout(`
-      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Your payment couldn't be processed</h2>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 10px"><tr>
+        <td valign="middle"><div style="width:36px;height:36px;border-radius:10px;background:rgba(242,112,90,0.12);border:1px solid rgba(242,112,90,0.4);text-align:center;line-height:36px;color:#f2705a;font-size:19px;font-weight:800">!</div></td>
+        <td valign="middle" style="padding-left:12px"><h2 style="margin:0;color:#ffffff;font-size:22px">Your payment couldn't be processed</h2></td>
+      </tr></table>
       <p style="color:#aaa;margin:0 0 18px;line-height:1.6">
         Hi ${params.parentName} — we tried to take payment for your <strong style="color:#fff">${params.academyName}</strong> membership${params.childName ? ` (for ${params.childName})` : ''} but the charge didn't go through.
       </p>
@@ -1496,6 +1506,7 @@ export function paymentFailedParentEmail(params: {
       <p style="color:#555;font-size:11px;line-height:1.5;margin:16px 0 0;text-align:center">
         <a href="${params.dashboardUrl}/dashboard/payments" style="color:#666;text-decoration:underline">View this in your Player Portal dashboard</a>
       </p>
+      <div style="text-align:center;margin:22px 0 0;padding-top:16px;border-top:1px solid #182230"><span style="color:#7c8b9c;font-size:12px">Payments securely processed by </span><span style="color:#9db0c3;font-size:13px;font-weight:700">Stripe</span></div>
       ${params.whatsappUrl ? `
       <div style="background:rgba(37,211,102,0.06);border:1px solid rgba(37,211,102,0.25);border-radius:12px;padding:14px;margin:18px 0 0;text-align:center">
         <a href="${params.whatsappUrl}" style="color:#25D366;text-decoration:none;font-weight:600;font-size:13px">💬 Or reply on WhatsApp →</a>
@@ -1539,7 +1550,7 @@ export function platformSubscriptionActivatedEmail(params: {
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}/dashboard" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
+        <a href="${params.dashboardUrl}/dashboard" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
       </div>
       <p style="color:#666;font-size:12px;line-height:1.6;margin:18px 0 0;text-align:center">
         Manage billing or change plan from <a href="${params.dashboardUrl}/dashboard/settings" style="color:#888;text-decoration:underline">Settings</a> at any time. Your trial period has now ended and your subscription is rolling monthly.
@@ -1614,7 +1625,7 @@ export function platformCancellationConfirmEmail(params: {
         Changed your mind? You can resubscribe at any time and pick up where you left off — all your data, players, classes, and parents are preserved.
       </p>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}/dashboard/settings" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Resubscribe →</a>
+        <a href="${params.dashboardUrl}/dashboard/settings" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">Resubscribe →</a>
       </div>
       <p style="color:#666;font-size:12px;line-height:1.6;margin:18px 0 0;text-align:center">
         We're sorry to see you go. Reply to this email if there's anything we can do.
@@ -1683,7 +1694,7 @@ export function firstSaleEmail(params: {
         <li>Ask for a testimonial after 3 weeks</li>
       </ol>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}/platform" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">View in Platform Admin →</a>
+        <a href="${params.dashboardUrl}/platform" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">View in Platform Admin →</a>
       </div>
     `),
   }
@@ -1721,7 +1732,7 @@ export function staffInviteEmail(params: {
       </div>
       <p style="color:#aaa;margin:0 0 16px">Hi ${params.staffName}, ${params.academyName} has added you to their team on Player Portal as ${roleLabel}. ${roleNote}</p>
       ${cta}
-      <p style="color:#777;font-size:13px;text-align:center;margin:16px 0 0">Sign in any time at <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a>. Questions? Contact <a href="mailto:${params.supportEmail}" style="color:#4ecde6;text-decoration:none">${params.supportEmail}</a>.</p>
+      <p style="color:#8a98a8;font-size:13px;text-align:center;margin:16px 0 0">Sign in any time at <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a>. Questions? Contact <a href="mailto:${params.supportEmail}" style="color:#4ecde6;text-decoration:none">${params.supportEmail}</a>.</p>
     `),
   }
 }
@@ -1796,7 +1807,7 @@ export function enrolmentConfirmationEmail(params: { parentName: string; childNa
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">View Schedule</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:14px">View Schedule &rarr;</a>
       </div>
     `),
   }
@@ -1817,7 +1828,7 @@ export function reviewPromptEmail(params: {
       <p style="color:#aaa;line-height:1.6"><strong>${params.childName}</strong> has now completed <strong>${params.sessionCount} sessions</strong> at <strong>${params.academyName}</strong> — what a milestone!</p>
       <p style="color:#aaa;line-height:1.6">We'd love to know how things are going. It only takes a moment.</p>
       <div style="text-align:center;margin:28px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Share Your Feedback</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">Share Your Feedback &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;margin-top:24px;text-align:center">Your feedback helps us improve and helps other parents find us.</p>
     `),
@@ -1854,7 +1865,7 @@ export function certExpiryEmail(params: {
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">Update Certifications</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:14px">Update Certifications &rarr;</a>
       </div>
     `),
   }
@@ -1987,7 +1998,7 @@ export function trialConversionEmail(params: {
         </div>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Sign Up Now</a>
+        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Sign Up Now &rarr;</a>
       </div>
       <p style="color:#666;font-size:13px;text-align:center">Questions? Just reply to this email — we'd love to hear from you.</p>
     `),
@@ -2023,7 +2034,7 @@ export function certExpiryAdminEmail(params: {
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:12px 28px;border-radius:12px;font-weight:600;text-decoration:none;font-size:14px">View Compliance</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:14px">View Compliance &rarr;</a>
       </div>
     `),
   }
@@ -2092,7 +2103,7 @@ export function newLeadEmail(params: {
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}/dashboard/leads" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open your leads →</a>
+        <a href="${params.dashboardUrl}/dashboard/leads" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">Open your leads →</a>
       </div>
       <p style="color:#666;font-size:12px;line-height:1.6;margin:20px 0 0;text-align:center">
         Tip: academies that reply within the hour convert far more enquiries than those that wait a day.
@@ -2160,10 +2171,10 @@ export function scheduledSignupConfirmationEmail(params: {
       </div>
 
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 36px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">View dashboard →</a>
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px;box-shadow:0 8px 24px rgba(78,205,230,0.3)">View dashboard →</a>
       </div>
 
-      <p style="color:#777;font-size:13px;line-height:1.6;margin:24px 0 0">
+      <p style="color:#8a98a8;font-size:13px;line-height:1.6;margin:24px 0 0">
         🔔 We'll send a reminder before your first session. You can cancel anytime from your dashboard, no questions asked.
       </p>
 
@@ -2208,7 +2219,7 @@ export function newSignupAdminEmail(params: {
         </table>
       </div>
       <div style="text-align:center;margin:24px 0">
-        <a href="${params.dashboardUrl}/dashboard/players" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:14px 28px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
+        <a href="${params.dashboardUrl}/dashboard/players" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:15px">Open dashboard →</a>
       </div>
     `),
   }
