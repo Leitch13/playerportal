@@ -1209,7 +1209,7 @@ export function progressReportEmailPremiumV2(params: {
   const focus = params.topFocus ? escapeHtml(focusSentence(params.topFocus)) : null
   const tone = params.verdict.tone
   const trendArrow = tone === 'up' ? '▲' : tone === 'down' ? '▼' : tone === 'flat' ? '→' : '✦'
-  const trendColour = tone === 'up' ? '#059669' : tone === 'down' ? '#d97706' : tone === 'flat' ? '#475569' : accent
+  const trendColour = tone === 'up' ? '#34d399' : tone === 'down' ? '#fbbf24' : tone === 'flat' ? '#94a3b8' : accent
   const trendText = escapeHtml(
     tone === 'new'
       ? 'First report — baseline set'
@@ -1219,7 +1219,7 @@ export function progressReportEmailPremiumV2(params: {
   )
 
   // Progress Snapshot rows (top movers) + overall.
-  const dColour = (d: number) => (d > 0 ? '#059669' : d < 0 ? '#d97706' : '#94a3b8')
+  const dColour = (d: number) => (d > 0 ? '#34d399' : d < 0 ? '#fbbf24' : '#94a3b8')
   const dArrow = (d: number) => (d > 0 ? '▲' : d < 0 ? '▼' : '→')
   const dWord = (d: number) => (d > 0 ? 'up' : d < 0 ? 'down' : 'no change')
   const dVal = (d: number) => (d === 0 ? 'same' : `${d > 0 ? '+' : ''}${Number.isInteger(d) ? d : d.toFixed(1)}`)
@@ -1236,68 +1236,72 @@ export function progressReportEmailPremiumV2(params: {
        </table>`
     : `<p style="margin:0;font-size:14px;color:#475569;line-height:1.5">Baseline set — next month you&rsquo;ll see exactly what improved. 🎯</p>`
 
+  const logo = `${appUrl}/logo-white.png`
   const html = `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"><style>.sr{position:absolute;left:-9999px}</style></head>
-<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>.sr{position:absolute;left:-9999px}</style></head>
+<body style="margin:0;padding:0;background:#050608;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e5e5e5">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${preheader}</div>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f5f7">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#050608">
 <tr><td align="center" style="padding:24px 16px">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6e8eb">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;background:#0b0f15;border-radius:22px;overflow:hidden;border:1px solid #182230">
 
-<!-- Academy mark -->
-<tr><td style="padding:22px 32px 0;text-align:center">
-${params.academyLogoUrl ? `<img src="${escapeHtml(params.academyLogoUrl)}" width="40" height="40" alt="${academy}" style="width:40px;height:40px;object-fit:contain;border-radius:8px">` : ''}
-<div style="margin:6px 0 0;font-size:13px;font-weight:700;color:#64748b">${academy}</div>
+<!-- Header: Player Portal logo + academy mark -->
+<tr><td style="background:#0a0e14;background-image:radial-gradient(ellipse 80% 70% at 50% 0%, rgba(78,205,230,0.18), rgba(10,14,20,0) 70%);padding:30px 32px 24px;text-align:center">
+<img src="${logo}" width="120" alt="Player Portal" style="display:block;margin:0 auto 14px;width:120px;max-width:50%">
+${params.academyLogoUrl ? `<img src="${escapeHtml(params.academyLogoUrl)}" width="34" height="34" alt="${academy}" style="width:34px;height:34px;object-fit:contain;border-radius:8px;margin:0 auto 6px">` : ''}
+<div style="font-size:15px;font-weight:800;color:${accent}">${academy}</div>
+<div style="margin:5px 0 0;color:#8a98a8;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600">Progress Report</div>
 </td></tr>
+<tr><td style="height:3px;background:linear-gradient(90deg, transparent 0%, ${accent} 50%, transparent 100%);font-size:0;line-height:0">&nbsp;</td></tr>
 
 <!-- Coach quote — HERO (first content) -->
-<tr><td style="padding:18px 32px 0">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${accent}0f;border-left:4px solid ${accent};border-radius:0 14px 14px 0">
+<tr><td style="padding:24px 32px 0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(78,205,230,0.07);border-left:4px solid ${accent};border-radius:0 14px 14px 0">
 <tr><td style="padding:20px 22px">
-<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;margin:0 0 8px">What ${coach ? `Coach ${coach}` : 'your coach'} said</div>
+<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8a98a8;font-weight:700;margin:0 0 8px">What ${coach ? `Coach ${coach}` : 'your coach'} said</div>
 ${quote
-      ? `<div style="font-size:19px;line-height:1.55;color:#0f172a;font-style:italic;font-weight:500">&ldquo;${quote}&rdquo;</div>${coach ? `<div style="margin:12px 0 0;font-size:13px;color:#64748b;font-weight:600">— Coach ${coach}</div>` : ''}`
-      : `<div style="font-size:16px;line-height:1.55;color:#334155">${coach ? `Coach ${coach} has` : 'Your coach has'} just reviewed ${name}&rsquo;s progress — here&rsquo;s how the month went.</div>`}
+      ? `<div style="font-size:19px;line-height:1.55;color:#f0f4f8;font-style:italic;font-weight:500">&ldquo;${quote}&rdquo;</div>${coach ? `<div style="margin:12px 0 0;font-size:13px;color:#9db0c3;font-weight:600">— Coach ${coach}</div>` : ''}`
+      : `<div style="font-size:16px;line-height:1.55;color:#b7c5d6">${coach ? `Coach ${coach} has` : 'Your coach has'} just reviewed ${name}&rsquo;s progress — here&rsquo;s how the month went.</div>`}
 </td></tr></table>
 </td></tr>
 
 <!-- Emotional headline + trend pill -->
-<tr><td style="padding:18px 32px 0;text-align:center">
-<div style="font-size:21px;font-weight:800;letter-spacing:-0.4px;color:#0f172a">${headline} ⚽</div>
-<div style="display:inline-block;margin:10px 0 0;padding:5px 12px;border-radius:999px;background:${trendColour}14;color:${trendColour};font-size:12px;font-weight:700"><span aria-hidden="true">${trendArrow}</span> ${trendText}</div>
+<tr><td style="padding:22px 32px 0;text-align:center">
+<div style="font-size:21px;font-weight:800;letter-spacing:-0.4px;color:#ffffff">${headline} ⚽</div>
+<div style="display:inline-block;margin:10px 0 0;padding:5px 12px;border-radius:999px;background:${trendColour}26;color:${trendColour};font-size:12px;font-weight:700"><span aria-hidden="true">${trendArrow}</span> ${trendText}</div>
 </td></tr>
 
 <!-- Progress Snapshot -->
-<tr><td style="padding:20px 32px 0">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f8fafc;border:1px solid #eef1f4;border-radius:12px">
+<tr><td style="padding:22px 32px 0">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#11161f;border:1px solid #182230;border-radius:14px">
 <tr><td style="padding:16px 20px">
-<div style="font-size:12px;font-weight:700;color:#0f172a;margin:0 0 10px">📈 What&rsquo;s changed since last review</div>
+<div style="font-size:12px;font-weight:700;color:#ffffff;margin:0 0 10px">📈 What&rsquo;s changed since last review</div>
 ${snapshotHtml}
 </td></tr></table>
 </td></tr>
 
 <!-- Next focus -->
-${focus ? `<tr><td style="padding:16px 32px 0"><div style="font-size:15px;line-height:1.5;color:#0f172a"><span style="color:#d97706;font-weight:700">Next focus &middot; </span>${focus}</div></td></tr>` : ''}
+${focus ? `<tr><td style="padding:16px 32px 0"><div style="font-size:15px;line-height:1.5;color:#e8eef4"><span style="color:#fbbf24;font-weight:700">Next focus &middot; </span>${focus}</div></td></tr>` : ''}
 
 <!-- Attendance (rating reduced to a small note) -->
-<tr><td style="padding:16px 32px 0;text-align:center">
-<div style="display:inline-block;padding:10px 18px;background:#f8fafc;border:1px solid #eef1f4;border-radius:10px">
-<span style="font-size:18px;font-weight:800;color:#0f172a">${params.attendanceRate}%</span>
-<span style="font-size:12px;color:#94a3b8"> attendance &middot; ${params.sessionsAttended} sessions</span>
+<tr><td style="padding:18px 32px 0;text-align:center">
+<div style="display:inline-block;padding:10px 18px;background:#11161f;border:1px solid #182230;border-radius:12px">
+<span style="font-size:18px;font-weight:800;color:#ffffff">${params.attendanceRate}%</span>
+<span style="font-size:12px;color:#9db0c3"> attendance &middot; ${params.sessionsAttended} sessions</span>
 </div>
-<div style="margin:8px 0 0;font-size:11px;color:#b6bcc4">Coach rating ${params.overallScore.toFixed(1)}/5</div>
+<div style="margin:8px 0 0;font-size:11px;color:#6b7888">Coach rating ${params.overallScore.toFixed(1)}/5</div>
 </td></tr>
 
 <!-- CTA -->
-<tr><td style="padding:22px 32px 26px;text-align:center">
-<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${params.reportUrl}" style="height:48px;v-text-anchor:middle;width:300px;" arcsize="25%" strokecolor="${accent}" fillcolor="${accent}"><w:anchorlock/><center style="color:#0a0a0a;font-family:sans-serif;font-size:16px;font-weight:bold;">See ${name}&rsquo;s full journey &rarr;</center></v:roundrect><![endif]-->
-<!--[if !mso]><!-- --><a href="${params.reportUrl}" style="display:inline-block;background:${accent};color:#0a0a0a;padding:14px 32px;border-radius:12px;font-weight:700;text-decoration:none;font-size:16px">See ${name}&rsquo;s full journey &rarr;</a><!--<![endif]-->
+<tr><td style="padding:24px 32px 28px;text-align:center">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${params.reportUrl}" style="height:52px;v-text-anchor:middle;width:320px;" arcsize="27%" strokecolor="${accent}" fillcolor="${accent}"><w:anchorlock/><center style="color:#0a0a0a;font-family:sans-serif;font-size:16px;font-weight:bold;">See ${name}&rsquo;s full journey &rarr;</center></v:roundrect><![endif]-->
+<!--[if !mso]><!-- --><a href="${params.reportUrl}" style="display:inline-block;background:${accent};color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:800;text-decoration:none;font-size:16px">See ${name}&rsquo;s full journey &rarr;</a><!--<![endif]-->
 </td></tr>
 
 <!-- Footer -->
-<tr><td style="background:#fafbfc;border-top:1px solid #eef1f4;padding:18px 32px;text-align:center">
-<p style="margin:0;color:#94a3b8;font-size:12px">You received this because ${name} is enrolled at ${academy}.</p>
-<p style="margin:6px 0 0;color:#c2c8cf;font-size:10px">Powered by <a href="${appUrl}" style="color:#94a3b8;text-decoration:none">Player Portal</a></p>
+<tr><td style="background:#0b0f15;border-top:1px solid #182230;padding:20px 32px;text-align:center">
+<p style="margin:0;color:#8a98a8;font-size:12px">You received this because ${name} is enrolled at ${academy}.</p>
+<p style="margin:6px 0 0;color:#5a6675;font-size:11px">Powered by <a href="${appUrl}" style="color:#8a98a8;text-decoration:none;font-weight:600">Player Portal</a></p>
 </td></tr>
 
 </table>
