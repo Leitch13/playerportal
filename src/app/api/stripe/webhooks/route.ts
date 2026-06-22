@@ -533,7 +533,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       // handler (which would risk the same idempotency window expiring).
       if (booking?.parent_email && booking?.organisation_id) {
         try {
-          const [{ sendEmail }, { campBookingConfirmationEmail }, { buildWhatsappUrl, WA_TEMPLATES }] = await Promise.all([
+          const [{ sendEmail }, { campBookingConfirmationEmail, newCampBookingAdminEmail }, { buildWhatsappUrl, WA_TEMPLATES }] = await Promise.all([
             import('@/lib/email'),
             import('@/lib/email-templates'),
             import('@/lib/whatsapp'),
@@ -557,6 +557,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               : ''
           const startDateLabel = fmtDate(campStartDate)
           const endDateLabel = fmtDate(campEndDate) || startDateLabel
+          const datesLabel = startDateLabel
+            ? (endDateLabel && endDateLabel !== startDateLabel ? `${startDateLabel} → ${endDateLabel}` : startDateLabel)
+            : null
           const amt = Number(booking.amount_paid ?? (session.amount_total ?? 0) / 100)
           const amountLabel = amt > 0 ? `£${amt.toFixed(2)}` : 'Free'
 
@@ -567,32 +570,71 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               )
             : null
 
-          const tpl = campBookingConfirmationEmail({
-            parentName: booking.parent_name || 'there',
-            childName: booking.child_name || 'your child',
-            campName,
-            startDate: startDateLabel,
-            endDate: endDateLabel,
-            amountPaid: amountLabel,
-            academyName,
-            academyContactEmail: academyEmail,
-            academyContactPhone: academyPhone,
-            whatsappUrl,
-            bookingReference: booking.id,
-          })
+          // ─── Parent confirmation (existing send) ───
+          try {
+            const tpl = campBookingConfirmationEmail({
+              parentName: booking.parent_name || 'there',
+              childName: booking.child_name || 'your child',
+              campName,
+              startDate: startDateLabel,
+              endDate: endDateLabel,
+              amountPaid: amountLabel,
+              academyName,
+              academyContactEmail: academyEmail,
+              academyContactPhone: academyPhone,
+              whatsappUrl,
+              bookingReference: booking.id,
+            })
 
-          await sendEmail({
-            to: booking.parent_email,
-            subject: tpl.subject,
-            html: tpl.html,
-            fromName: academyName,
-            replyTo: academyEmail || undefined,
-          })
+            await sendEmail({
+              to: booking.parent_email,
+              subject: tpl.subject,
+              html: tpl.html,
+              fromName: academyName,
+              replyTo: academyEmail || undefined,
+            })
+          } catch (parentEmailErr) {
+            console.error('[webhook:camp_confirmation_email] failed:', parentEmailErr)
+          }
+
+          // ─── Academy admin notification (new — mirrors trial notify) ───
+          // Inserted alongside the parent confirmation so admins get
+          // pinged the same moment the parent does. Inherits the same
+          // webhook-level event-idempotency guard, so re-deliveries can't
+          // double-fire this either.
+          try {
+            const recipient =
+              academyEmail ||
+              process.env.ADMIN_NOTIFICATION_EMAIL ||
+              'johnleitch970@gmail.com'
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+            const dashboardUrl = booking.camp_id
+              ? `${appUrl}/dashboard/camps/${booking.camp_id}`
+              : `${appUrl}/dashboard/camps`
+            const adminTpl = newCampBookingAdminEmail({
+              academyName,
+              parentName: booking.parent_name || '—',
+              parentEmail: booking.parent_email,
+              parentPhone: null,  // not selected from camp_bookings above
+              childName: booking.child_name || '—',
+              campName,
+              campDates: datesLabel,
+              amountPaid: amountLabel,
+              dashboardUrl,
+            })
+            await sendEmail({
+              to: recipient,
+              subject: adminTpl.subject,
+              html: adminTpl.html,
+            })
+          } catch (adminEmailErr) {
+            console.error('[webhook:camp_admin_notification_email] failed:', adminEmailErr)
+          }
         } catch (emailErr) {
           // Log + continue. Payment side already succeeded; failing the
           // webhook here would cause Stripe to retry the whole payments
           // insert and risk the 23505 path re-firing.
-          console.error('[webhook:camp_confirmation_email] failed:', emailErr)
+          console.error('[webhook:camp_email_block] failed:', emailErr)
         }
       }
     }

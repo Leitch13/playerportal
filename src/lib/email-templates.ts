@@ -2314,6 +2314,61 @@ export function campBookingConfirmationEmail(params: {
 }
 
 /**
+ * Academy admin notification when a parent books a camp.
+ *
+ * Mirrors `newTrialBookingAdminEmail` for the camps surface — at production
+ * commit 899b324, camp bookings sent confirmation emails to PARENTS only
+ * (via the Stripe webhook for paid camps; free camps had no email pathway
+ * at all). Academy admins never received a notification for any camp
+ * booking. This template closes that gap.
+ *
+ * Fires from two sites — kept in sync with the parent confirmation send
+ * sites so admin always sees what the parent sees:
+ *   • src/app/api/stripe/camp-checkout/route.ts  (free-camp branch)
+ *   • src/app/api/stripe/webhooks/route.ts        (paid-camp branch)
+ *
+ * Recipient resolution: org.contact_email → env.ADMIN_NOTIFICATION_EMAIL
+ * → johnleitch970@gmail.com (same fallback chain as trial admin email).
+ */
+export function newCampBookingAdminEmail(params: {
+  academyName: string
+  parentName: string
+  parentEmail: string
+  parentPhone?: string | null
+  childName: string
+  campName: string
+  campDates: string | null      // pre-formatted "Mon 21 Jul → Wed 23 Jul 2026" (or just start when single-day)
+  amountPaid: string            // pre-formatted "£60.00" or "Free"
+  dashboardUrl: string
+}) {
+  const detailRow = (label: string, value: string | null | undefined) =>
+    value
+      ? `<tr><td style="padding:6px 0;color:#666;font-size:13px;width:120px">${label}</td><td style="padding:6px 0;color:#fff;font-size:14px">${value}</td></tr>`
+      : ''
+  return {
+    subject: `New camp booking — ${params.childName} on ${params.campName} (${params.academyName})`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">New camp booking</h2>
+      <p style="color:#aaa;margin:0 0 20px">A parent has just booked a place on <strong>${params.campName}</strong> at <strong>${params.academyName}</strong>.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px 20px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse">
+          ${detailRow('Camp', params.campName)}
+          ${detailRow('Child', params.childName)}
+          ${detailRow('Dates', params.campDates)}
+          ${detailRow('Amount paid', params.amountPaid)}
+          ${detailRow('Parent', params.parentName)}
+          ${detailRow('Email', params.parentEmail)}
+          ${detailRow('Phone', params.parentPhone)}
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:15px">View Camp Bookings &rarr;</a>
+      </div>
+    `),
+  }
+}
+
+/**
  * Camps Phase 2B — manual payment request after a camp extension.
  *
  * Sent (optionally) when an admin extends a booked camp and chooses to ask
