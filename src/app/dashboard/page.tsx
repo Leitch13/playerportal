@@ -1766,7 +1766,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   const hasStripe = !!orgData?.stripe_account_id
   const hasPlayers = (totalPlayers || 0) > 0
   const bookingSlug = orgData?.slug || ''
-  const bookingUrl = bookingSlug ? `${process.env.NEXT_PUBLIC_BASE_URL || 'https://playerportal.co'}/book/${bookingSlug}` : ''
+  const bookingUrl = bookingSlug ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.theplayerportal.net'}/book/${bookingSlug}` : ''
 
   const onboardingCompleted = [hasClasses, hasPlans, hasCoach, hasStripe, hasPlayers].filter(Boolean).length
   const showOnboarding = onboardingCompleted < 3

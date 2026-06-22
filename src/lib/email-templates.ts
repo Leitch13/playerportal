@@ -603,12 +603,12 @@ export function winBackEmail(params: { parentName: string; planName: string; ori
       <div style="background:linear-gradient(135deg,#f0fdff,#e0f7ff);border:2px solid #4ecde6;border-radius:16px;padding:24px;margin:24px 0;text-align:center">
         <p style="margin:0 0 4px;font-size:13px;color:#666;text-decoration:line-through">${params.originalAmount}/month</p>
         <p style="margin:0;font-size:32px;font-weight:800;color:#4ecde6">${params.discountedAmount}/month</p>
-        <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#059669">25% off — forever</p>
+        <p style="margin:4px 0 0;font-size:14px;font-weight:600;color:#059669">25% off your membership</p>
       </div>
       <div style="text-align:center;margin:24px 0">
         <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Come Back & Save 25% →</a>
       </div>
-      <p style="color:#666;font-size:13px;text-align:center">This offer won't last forever. We'd love to see your child back on the pitch!</p>
+      <p style="color:#666;font-size:13px;text-align:center">This offer is just for you. We'd love to see your child back on the pitch!</p>
     `),
   }
 }
