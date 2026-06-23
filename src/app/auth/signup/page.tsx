@@ -222,13 +222,25 @@ function SignUp() {
     const supabase = createClient()
     const { data } = await supabase.from('organisations').select('id, name, primary_color, logo_url, quarterly_billing_enabled').ilike('slug', slug.trim()).single()
     if (data) { setOrgName(data.name); setOrgId(data.id); setOrgQuarterlyEnabled((data as { quarterly_billing_enabled?: boolean | null }).quarterly_billing_enabled ?? null); if (data.primary_color) setOrgColor(data.primary_color); if (data.logo_url) setOrgLogo(data.logo_url); setOrgError('') }
-    else { setOrgName(null); setOrgId(null); setOrgQuarterlyEnabled(null); setOrgError('Organisation not found') }
+    else {
+      // Migration 094 — the DB trigger now refuses to create a profile when
+      // the org_slug doesn't resolve, so blocking submission here surfaces a
+      // friendly message instead of letting the user hit a cryptic DB error.
+      setOrgName(null); setOrgId(null); setOrgQuarterlyEnabled(null)
+      setOrgError("We couldn't find that academy. Please use the booking link your academy sent you.")
+    }
   }
 
   async function handleCreateAccount(e: React.FormEvent) {
     e.preventDefault()
     if (!orgSlug.trim()) { setOrgError('Please enter your organisation code'); return }
-    if (!orgName) { setOrgError('Invalid organisation code'); return }
+    if (!orgName) {
+      // Belt-and-braces preflight — the DB trigger will also reject this,
+      // but blocking client-side gives the user a friendlier message and
+      // avoids creating an auth.users row that has no matching profile.
+      setOrgError("We couldn't find that academy. Please use the booking link your academy sent you.")
+      return
+    }
     setLoading(true); setError('')
     const supabase = createClient()
     const metadata: Record<string, string> = { full_name: fullName, phone, role: inviteRole, org_slug: orgSlug.trim().toLowerCase() }

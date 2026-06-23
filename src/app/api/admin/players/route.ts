@@ -77,12 +77,25 @@ export async function POST(req: NextRequest) {
 
     // 1. Try to create the auth user. If the email is already in use, fall back
     //    to looking them up — same parent, just relink them.
+    // Migration 094: resolve the admin's org slug so the hardened
+    // handle_new_user trigger has a valid org_slug to anchor the new
+    // profile against. Without it the trigger now raises an exception.
+    const { data: orgSlugRow } = await admin
+      .from('organisations')
+      .select('slug')
+      .eq('id', orgId)
+      .single()
+    const orgSlug = (orgSlugRow?.slug as string | null) || null
+    if (!orgSlug) {
+      return NextResponse.json({ error: 'Could not resolve your academy slug; contact support.' }, { status: 500 })
+    }
+
     const tempPassword = Math.random().toString(36).slice(-12) + 'A1!'
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email: parentEmail,
       password: tempPassword,
       email_confirm: true,
-      user_metadata: { full_name: parentName, phone: parentPhone, role: 'parent' },
+      user_metadata: { full_name: parentName, phone: parentPhone, role: 'parent', org_slug: orgSlug },
     })
 
     if (createErr) {

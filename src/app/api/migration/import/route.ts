@@ -50,6 +50,20 @@ export async function POST(request: NextRequest) {
 
   const orgId = profile.organisation_id
 
+  // Migration 094 — resolve the org slug once so every auth.admin.createUser
+  // call below can pass it in user_metadata. The hardened handle_new_user
+  // trigger now refuses signups without a valid org_slug; this keeps the
+  // ClassForKids importer working unchanged.
+  const { data: orgSlugRow } = await supabase
+    .from('organisations')
+    .select('slug')
+    .eq('id', orgId)
+    .single()
+  const orgSlug = (orgSlugRow?.slug as string | null) || null
+  if (!orgSlug) {
+    return NextResponse.json({ error: 'Could not resolve organisation slug' }, { status: 500 })
+  }
+
   let body: { rows?: ImportRow[]; classMap?: Record<string, ClassMapping>; sendInvitations?: boolean; billingStartsAt?: string }
   try {
     body = await request.json()
@@ -163,7 +177,10 @@ export async function POST(request: NextRequest) {
           const { data: authResult, error: authErr } = await admin.auth.admin.createUser({
             email,
             email_confirm: false, // parent confirms via magic link / signin later
-            user_metadata: { full_name: r.parent_name || '', imported: true, source: 'classforkids' },
+            // Migration 094: org_slug is now required by the handle_new_user
+            // trigger; without it the trigger raises an exception. Passing
+            // the resolved slug keeps the importer working identically.
+            user_metadata: { full_name: r.parent_name || '', org_slug: orgSlug, imported: true, source: 'classforkids' },
           })
           if (authErr || !authResult?.user) {
             summary.errors.push({ row: i + 1, error: `Parent auth: ${authErr?.message || 'unknown'}` })
