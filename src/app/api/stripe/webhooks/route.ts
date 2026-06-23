@@ -2407,10 +2407,16 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     return
   }
 
-  // Phase 1A scope filter: camps only for now. Log + skip everything else.
+  // Phase 1B: sync refunds for ALL payment kinds we can classify. The
+  // classifier mirrors the refund route's classifyPayment() — anything we
+  // can't classify gets logged + skipped (manual Dashboard refund of a
+  // weird description; admin can reconcile).
   const description = (payment.description as string | null) || ''
-  if (!description.startsWith('Camp:')) {
-    console.log('[webhook:charge.refunded] non-camp payment refund — Phase 1A scope skips sync', {
+  const isCamp = description.startsWith('Camp:')
+  const isBridge = description.startsWith('First session ')
+  const isSubscription = description.includes('— subscription') || description.startsWith('Subscription payment')
+  if (!isCamp && !isBridge && !isSubscription) {
+    console.log('[webhook:charge.refunded] unclassified payment refund — skipping sync', {
       payment_id: payment.id,
       description,
       refund_id: refundId,
@@ -2447,8 +2453,9 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     throw new Error(`payments.update for refund failed: ${updErr.message}`)
   }
 
-  // Sync camp_bookings (frees the seat).
-  if (payment.stripe_session_id) {
+  // For camp refunds only, sync camp_bookings (frees the seat). Subscription
+  // and bridge payments don't have camp_bookings rows.
+  if (isCamp && payment.stripe_session_id) {
     try {
       await supabase
         .from('camp_bookings')

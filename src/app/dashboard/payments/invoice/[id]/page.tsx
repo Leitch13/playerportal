@@ -118,24 +118,45 @@ export default async function InvoicePage({
       <div className="mb-8 no-print flex flex-wrap items-center gap-3">
         <InvoiceActions paymentId={id} />
         {/*
-          Refunds Phase 1A: server-derived visibility — only mount the button when:
+          Refunds Phase 1A + 1B: server-derived visibility — only mount the
+          button when:
             (1) caller is an admin in this payment's org
             (2) payment is paid
-            (3) payment is a camp (description starts with "Camp:")
-            (4) payment is not already refunded
-            (5) payment has a stripe_session_id (otherwise no charge to refund)
+            (3) payment is not already refunded
+            (4) payment has a stripe_session_id (otherwise no charge to refund)
+            (5) description classifies as a known kind (camp / subscription /
+                bridge). Unknown descriptions are blocked from refund here so
+                we never trigger the server's 422 classification gate.
           The server route re-checks all of these; the UI gate just avoids
-          rendering a button that would always 422.
+          rendering a button that would always error.
         */}
-        {isAdmin && sameOrg && isPaid && payment.status !== 'refunded' && (description as string).startsWith('Camp:') && payment.stripe_session_id && (
-          <RefundButton
-            paymentId={id}
-            amount={amount}
-            player={playerName}
-            camp={description}
-            academy={org?.name || null}
-          />
-        )}
+        {(() => {
+          const desc = (description as string) || ''
+          const kind: 'camp' | 'subscription' | 'bridge' | null =
+            desc.startsWith('Camp:') ? 'camp'
+            : desc.startsWith('First session ') ? 'bridge'
+            : (desc.includes('— subscription') || desc.startsWith('Subscription payment')) ? 'subscription'
+            : null
+          const ageDays = Math.floor(
+            (Date.now() - new Date(payment.created_at as string).getTime()) /
+            (24 * 60 * 60 * 1000)
+          )
+          if (
+            !(isAdmin && sameOrg && isPaid && payment.status !== 'refunded' &&
+              payment.stripe_session_id && kind)
+          ) return null
+          return (
+            <RefundButton
+              paymentId={id}
+              amount={amount}
+              player={playerName}
+              camp={description}
+              academy={org?.name || null}
+              kind={kind}
+              paymentAgeDays={ageDays}
+            />
+          )
+        })()}
       </div>
 
       {/* Invoice document */}
