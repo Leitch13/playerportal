@@ -1571,20 +1571,88 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const linkOrgId = (linkProfile?.organisation_id as string | null) || null
 
       if (linkEmail && linkOrgId) {
-        const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-        const { data: matched, error: matchErr } = await supabase
-          .from('trial_bookings')
-          .update({ converted: true, updated_at: new Date().toISOString() })
-          .eq('organisation_id', linkOrgId)
-          .ilike('parent_email', linkEmail)
-          .eq('converted', false)
-          .gte('created_at', ninetyDaysAgo)
-          .select('id')
+        // ─── Trial Conversion 1A — Phase 3: explicit-trial-id primary match ───
+        // When the parent arrived via a personalised email link
+        // (/book/[slug]?trial=<id>&email=<>), the booking page wrote a row
+        // into trial_signup_attributions. We consume the freshest unexpired
+        // row for this (email, org) tuple FIRST and use that as the primary
+        // trial-match key — preferred over the 90-day fuzzy email match.
+        //
+        // After consuming, we delete the attribution row (one-shot) so a
+        // second subscription by the same parent doesn't claim the same
+        // trial again.
+        let explicitTrialIds: string[] = []
+        try {
+          const { data: attrRows } = await supabase
+            .from('trial_signup_attributions')
+            .select('id, trial_booking_id, expires_at')
+            .ilike('parent_email', linkEmail)
+            .eq('organisation_id', linkOrgId)
+            .gt('expires_at', new Date().toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1)
+          if (attrRows && attrRows.length > 0) {
+            explicitTrialIds = [attrRows[0].trial_booking_id as string]
+            // Consume the attribution row(s) — one-shot
+            await supabase
+              .from('trial_signup_attributions')
+              .delete()
+              .eq('id', attrRows[0].id)
+          }
+        } catch (attrErr) {
+          // Best-effort — fall through to email fuzzy match
+          console.error('Trial attribution lookup failed (falling back to email match):', attrErr)
+        }
 
-        if (matchErr) {
-          console.error('Trial auto-link update failed:', matchErr.message)
-        } else if (matched && matched.length > 0) {
-          console.log(`Trial auto-link: ${matched.length} trial_bookings flagged converted for parent ${linkEmail} @ org ${linkOrgId}`)
+        // ─── Subscription → trial back-reference ───
+        // If this checkout created a subscription (subscriptionId present),
+        // stamp the resolved trial id onto the subscription row for
+        // long-term traceability (subscriptions.trial_booking_id). Best-
+        // effort: failure here doesn't affect the conversion flip.
+        const subStripeId = typeof session.subscription === 'string' ? session.subscription : (session.subscription as { id?: string } | null)?.id ?? null
+        if (subStripeId && explicitTrialIds.length > 0) {
+          try {
+            await supabase
+              .from('subscriptions')
+              .update({ trial_booking_id: explicitTrialIds[0] })
+              .eq('stripe_subscription_id', subStripeId)
+          } catch (linkErr) {
+            console.error('Subscription trial_booking_id stamp failed (non-fatal):', linkErr)
+          }
+        }
+
+        // ─── Conversion flip ───
+        // Primary: explicit trial id from attribution. Fallback: 90-day
+        // fuzzy email match (existing behaviour for organic conversions).
+        if (explicitTrialIds.length > 0) {
+          const { data: matched, error: matchErr } = await supabase
+            .from('trial_bookings')
+            .update({ converted: true, updated_at: new Date().toISOString() })
+            .in('id', explicitTrialIds)
+            .eq('organisation_id', linkOrgId)
+            .eq('converted', false)
+            .select('id')
+          if (matchErr) {
+            console.error('Trial auto-link (explicit) update failed:', matchErr.message)
+          } else if (matched && matched.length > 0) {
+            console.log(`Trial auto-link (explicit): ${matched.length} trial_bookings flagged converted via attribution for ${linkEmail} @ ${linkOrgId}`)
+          }
+        } else {
+          // Fallback: existing 90-day email fuzzy match
+          const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+          const { data: matched, error: matchErr } = await supabase
+            .from('trial_bookings')
+            .update({ converted: true, updated_at: new Date().toISOString() })
+            .eq('organisation_id', linkOrgId)
+            .ilike('parent_email', linkEmail)
+            .eq('converted', false)
+            .gte('created_at', ninetyDaysAgo)
+            .select('id')
+          if (matchErr) {
+            console.error('Trial auto-link (email-fallback) update failed:', matchErr.message)
+          } else if (matched && matched.length > 0) {
+            console.log(`Trial auto-link (email-fallback): ${matched.length} trial_bookings flagged converted for parent ${linkEmail} @ org ${linkOrgId}`)
+          }
         }
       }
     }

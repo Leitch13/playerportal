@@ -75,9 +75,34 @@ function trialToBookingInput(t: Trial) {
   }
 }
 
-export default function TrialManager({ trials, academyName = 'the academy' }: { trials: Trial[]; academyName?: string }) {
+export default function TrialManager({
+  trials,
+  academyName = 'the academy',
+  academySlug = '',
+}: {
+  trials: Trial[]
+  academyName?: string
+  academySlug?: string
+}) {
   const router = useRouter()
   const [filter, setFilter] = useState<string>('all')
+  // Trial Conversion 1A — Phase 4: track which row just had its signup link
+  // copied so we can show a transient "Copied!" pill on that row only.
+  const [copiedTrialId, setCopiedTrialId] = useState<string | null>(null)
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+
+  async function copySignupLink(trial: Trial) {
+    if (!academySlug) return
+    const personalisedUrl = `${baseUrl}/book/${academySlug}?trial=${trial.id}&email=${encodeURIComponent(trial.parentEmail)}`
+    try {
+      await navigator.clipboard.writeText(personalisedUrl)
+      setCopiedTrialId(trial.id)
+      setTimeout(() => setCopiedTrialId(null), 2000)
+    } catch {
+      // Last-ditch fallback for clipboard-blocked contexts: open a prompt
+      window.prompt('Copy this signup link:', personalisedUrl)
+    }
+  }
   const [loading, setLoading] = useState<string | null>(null)
 
   // Phase 2.4 — derive each trial's stage ONCE for the whole component. The
@@ -250,6 +275,19 @@ export default function TrialManager({ trials, academyName = 'the academy' }: { 
                             iconOnly
                             testId="trial-row-whatsapp"
                           />
+                          {/* Trial Conversion 1A — Phase 4: per-row copyable
+                              personalised signup link. Includes ?trial=<id> +
+                              ?email=<encoded> so the booking page can write
+                              an attribution row for webhook primary-match. */}
+                          {academySlug && (
+                            <button
+                              onClick={() => copySignupLink(t)}
+                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+                              title="Copy personalised signup link"
+                            >
+                              {copiedTrialId === t.id ? '✓ Copied' : 'Copy link'}
+                            </button>
+                          )}
                           {t.status === 'pending' && (
                             <button
                               onClick={() => updateStatus(t.id, 'confirmed')}

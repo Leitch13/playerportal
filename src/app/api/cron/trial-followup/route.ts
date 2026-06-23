@@ -66,11 +66,19 @@ export async function GET(request: NextRequest) {
     // every CTA in trialFollowUpEmail linked to `/book/<uuid>` (404).
     const org = trial.organisation as unknown as { name: string; slug: string } | null
 
+    // Trial Conversion 1A — Phase 2 + 3: append trial+email for
+    // attribution. The webhook auto-link uses `trial` as the primary
+    // match key (via trial_signup_attributions written by the booking
+    // page when the parent clicks through).
+    const personalisedSignupUrl = trial.parent_email
+      ? `${appUrl}/book/${org?.slug || ''}?trial=${trial.id}&email=${encodeURIComponent(trial.parent_email)}`
+      : `${appUrl}/book/${org?.slug || ''}`
+
     const template = trialFollowUpEmail({
       parentName: trial.parent_name?.split(' ')[0] || 'there',
       childName: trial.child_name,
       academyName: org?.name || 'the academy',
-      signupUrl: `${appUrl}/book/${org?.slug || ''}`,
+      signupUrl: personalisedSignupUrl,
       className: group?.name || 'the class',
     })
 

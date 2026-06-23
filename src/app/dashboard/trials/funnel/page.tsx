@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import FunnelDashboard from './FunnelDashboard'
+import ConversionBySource from './ConversionBySource'
 
 // Phase 2.7 placement fix — ConversionMetrics moved up to /dashboard/trials
 // so headline numbers live in exactly one place. This page keeps the deeper
@@ -65,6 +66,17 @@ export default async function TrialFunnelPage() {
       </div>
 
       <FunnelDashboard trials={mapped} />
+
+      {/* Trial Conversion 1A — Phase 5: source-segmented conversion view.
+          Re-uses the already-loaded `trials` rows; zero new fetches. */}
+      <ConversionBySource
+        trials={(trials || []).map((t) => ({
+          status: t.status as string,
+          converted: (t.converted as boolean) ?? false,
+          trial_source: (t.trial_source as string | null) ?? null,
+          source_detail: (t.source_detail as string | null) ?? null,
+        }))}
+      />
     </div>
   )
 }

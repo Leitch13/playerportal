@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 // Auth-contamination fix — pure anon client for public booking reads.
 // See src/lib/supabase/public.ts for the full reasoning.
 import { createPublicClient } from '@/lib/supabase/public'
@@ -63,10 +64,19 @@ const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color
 
 export default async function PublicBookingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { slug } = await params
+  // Trial Conversion 1A — Phase 3: read attribution params from the
+  // personalised email links (?trial=<id>&email=<encoded>). Used below
+  // once the org is loaded to write an attribution row that the webhook
+  // auto-link consumes as the primary trial-match key.
+  const sp = (await searchParams) || {}
+  const incomingTrialId = typeof sp.trial === 'string' ? sp.trial : null
+  const incomingEmailParam = typeof sp.email === 'string' ? sp.email : null
   // Auth-aware client — used ONLY for the owner-preview check below
   // (needs the viewer's session to identify them as the academy's own
   // admin/coach). Every other read on this page goes through the
@@ -91,6 +101,48 @@ export default async function PublicBookingPage({
         </div>
       </div>
     )
+  }
+
+  // ─── Trial Conversion 1A — Phase 3: write attribution row ──────────
+  // When a parent arrives via the personalised email link
+  // (/book/[slug]?trial=<id>&email=<encoded>), we record the (trial,
+  // email, org) tuple so the Stripe webhook auto-link can match the
+  // resulting subscription back to THIS specific trial — not just any
+  // recent trial with the same email.
+  //
+  // Fire-and-forget: failures are logged but never block the page
+  // render. We verify the trial belongs to THIS org before writing
+  // (prevents URL-crafting from creating cross-org attributions).
+  if (incomingTrialId && incomingEmailParam) {
+    try {
+      const sb = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+      const { data: trial } = await sb
+        .from('trial_bookings')
+        .select('id, organisation_id, parent_email, converted')
+        .eq('id', incomingTrialId)
+        .maybeSingle()
+      if (
+        trial &&
+        trial.organisation_id === org.id &&
+        !trial.converted &&
+        trial.parent_email?.toLowerCase() === incomingEmailParam.toLowerCase()
+      ) {
+        await sb.from('trial_signup_attributions').insert({
+          trial_booking_id: trial.id,
+          parent_email: incomingEmailParam.toLowerCase(),
+          organisation_id: org.id,
+        })
+      }
+    } catch (err) {
+      console.error('[trial_attribution_write_failed]', {
+        slug,
+        incomingTrialId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
 
   // ─── Publish gate (hybrid go-live model) ───
