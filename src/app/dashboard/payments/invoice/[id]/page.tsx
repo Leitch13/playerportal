@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import InvoiceActions from './InvoiceActions'
+import RefundButton from './RefundButton'
 
 export default async function InvoicePage({
   params,
@@ -114,8 +115,27 @@ export default async function InvoicePage({
   return (
     <div className="invoice-page max-w-3xl mx-auto">
       {/* Action buttons — hidden when printing */}
-      <div className="mb-8 no-print">
+      <div className="mb-8 no-print flex flex-wrap items-center gap-3">
         <InvoiceActions paymentId={id} />
+        {/*
+          Refunds Phase 1A: server-derived visibility — only mount the button when:
+            (1) caller is an admin in this payment's org
+            (2) payment is paid
+            (3) payment is a camp (description starts with "Camp:")
+            (4) payment is not already refunded
+            (5) payment has a stripe_session_id (otherwise no charge to refund)
+          The server route re-checks all of these; the UI gate just avoids
+          rendering a button that would always 422.
+        */}
+        {isAdmin && sameOrg && isPaid && payment.status !== 'refunded' && (description as string).startsWith('Camp:') && payment.stripe_session_id && (
+          <RefundButton
+            paymentId={id}
+            amount={amount}
+            player={playerName}
+            camp={description}
+            academy={org?.name || null}
+          />
+        )}
       </div>
 
       {/* Invoice document */}
@@ -301,16 +321,18 @@ export default async function InvoicePage({
           </div>
           <span
             className={`inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-              isPaid
-                ? 'bg-green-50 text-green-700 border border-green-200'
-                : payment.status === 'overdue'
-                  ? 'bg-red-50 text-red-700 border border-red-200'
-                  : payment.status === 'partial'
-                    ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                    : 'bg-blue-50 text-blue-700 border border-blue-200'
+              payment.status === 'refunded'
+                ? 'bg-violet-50 text-violet-700 border border-violet-200'
+                : isPaid
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : payment.status === 'overdue'
+                    ? 'bg-red-50 text-red-700 border border-red-200'
+                    : payment.status === 'partial'
+                      ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                      : 'bg-blue-50 text-blue-700 border border-blue-200'
             }`}
           >
-            {isPaid ? 'Paid' : (payment.status as string)}
+            {payment.status === 'refunded' ? 'Refunded' : isPaid ? 'Paid' : (payment.status as string)}
           </span>
         </div>
 

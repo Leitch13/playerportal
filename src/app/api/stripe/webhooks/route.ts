@@ -2327,7 +2327,159 @@ function handlerFor(eventType: string): string {
     'invoice.payment_failed': 'handleInvoicePaymentFailed',
     'customer.subscription.deleted': 'handleSubscriptionDeleted',
     'customer.subscription.updated': 'handleSubscriptionUpdated',
+    'charge.refunded': 'handleChargeRefunded',
   } as Record<string, string>)[eventType] || 'unhandled'
+}
+
+/**
+ * Refunds Phase 1A — sync refunded state from Stripe back into payments.
+ *
+ * Fires for refunds issued via:
+ *   • Our own /api/admin/payments/[id]/refund route (in which case the row
+ *     was already updated inline; this handler is a safety net + sync for
+ *     the rare DB-post-Stripe-failure case)
+ *   • Stripe Dashboard (admin clicks Refund on a charge directly) — this
+ *     is the PRIMARY reason for this handler. Without it, dashboard-issued
+ *     refunds never reach our DB.
+ *
+ * Idempotency:
+ *   1. Event-level: shouldProcessEvent at top of POST prevents re-fire.
+ *   2. Row-level: the partial unique index on payments.stripe_refund_id
+ *      (migration 092) blocks duplicate writes if the event-level guard
+ *      ever misfires. The UPDATE here matches on stripe_charge_id, so
+ *      idempotent regardless.
+ *
+ * Match strategy:
+ *   payments.stripe_charge_id matches charge.id first (cached after the
+ *   initial in-app refund). If not found, fall back to matching by
+ *   stripe_session_id derived from charge.payment_intent → checkout
+ *   session lookup. Most rows go via the cached path.
+ *
+ * Scope: Phase 1A only updates rows where description starts with 'Camp:'.
+ * Other payment types (subscriptions, etc.) refunded in Stripe Dashboard
+ * are LOGGED but not synced — they'll be picked up in Phase 1B.
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const refunds = charge.refunds?.data || []
+  if (refunds.length === 0) {
+    console.warn('[webhook:charge.refunded] no refunds in charge object', { charge_id: charge.id })
+    return
+  }
+
+  // Use the most recent refund (last in the refunds array, per Stripe ordering)
+  const latestRefund = refunds[refunds.length - 1]
+  const refundId = latestRefund.id
+  const refundAmount = latestRefund.amount
+
+  // Look up the payment row by cached stripe_charge_id first
+  let { data: payment } = await supabase
+    .from('payments')
+    .select('id, organisation_id, description, status, amount, amount_paid, stripe_session_id, stripe_charge_id')
+    .eq('stripe_charge_id', charge.id)
+    .maybeSingle()
+
+  // Fallback: match via session_id by walking charge → payment_intent → session
+  if (!payment && charge.payment_intent) {
+    const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent.id
+    // Stripe stores the session that created this PI via session.payment_intent;
+    // we don't have a reverse lookup, so list sessions filtered by PI.
+    try {
+      const sessions = await stripe.checkout.sessions.list({ payment_intent: piId, limit: 1 })
+      const sessionId = sessions.data[0]?.id
+      if (sessionId) {
+        const { data: p } = await supabase
+          .from('payments')
+          .select('id, organisation_id, description, status, amount, amount_paid, stripe_session_id, stripe_charge_id')
+          .eq('stripe_session_id', sessionId)
+          .maybeSingle()
+        payment = p
+      }
+    } catch (err) {
+      console.error('[webhook:charge.refunded] session lookup failed', {
+        charge_id: charge.id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
+  if (!payment) {
+    console.warn('[webhook:charge.refunded] no matching payment row found', { charge_id: charge.id })
+    return
+  }
+
+  // Phase 1A scope filter: camps only for now. Log + skip everything else.
+  const description = (payment.description as string | null) || ''
+  if (!description.startsWith('Camp:')) {
+    console.log('[webhook:charge.refunded] non-camp payment refund — Phase 1A scope skips sync', {
+      payment_id: payment.id,
+      description,
+      refund_id: refundId,
+    })
+    return
+  }
+
+  // Idempotent UPDATE: if already refunded with this refund id, no-op.
+  if (payment.status === 'refunded') {
+    return
+  }
+
+  const refundedAmount = refundAmount / 100  // convert pence → pounds
+  const now = new Date().toISOString()
+  const { error: updErr } = await supabase
+    .from('payments')
+    .update({
+      status: 'refunded',
+      amount_refunded: refundedAmount,
+      refunded_at: now,
+      stripe_refund_id: refundId,
+      stripe_charge_id: charge.id,
+      updated_at: now,
+    })
+    .eq('id', payment.id)
+
+  if (updErr) {
+    const code = (updErr as { code?: string }).code
+    if (code === '23505') {
+      // unique violation on stripe_refund_id — another delivery already wrote.
+      // Safe to ignore; this is the idempotency guarantee paying off.
+      return
+    }
+    throw new Error(`payments.update for refund failed: ${updErr.message}`)
+  }
+
+  // Sync camp_bookings (frees the seat).
+  if (payment.stripe_session_id) {
+    try {
+      await supabase
+        .from('camp_bookings')
+        .update({ payment_status: 'refunded' })
+        .eq('stripe_session_id', payment.stripe_session_id)
+    } catch (err) {
+      console.error('[webhook:charge.refunded] camp_bookings update failed', {
+        payment_id: payment.id,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+  }
+
+  // Audit log (best-effort)
+  try {
+    await supabase.from('audit_log').insert({
+      organisation_id: payment.organisation_id,
+      user_id: null,  // webhook-originated — no specific user
+      action: 'payment.refunded',
+      entity_type: 'payment',
+      entity_id: payment.id,
+      details: {
+        source: 'webhook',
+        amount: refundedAmount,
+        stripe_refund_id: refundId,
+        stripe_charge_id: charge.id,
+      },
+    })
+  } catch {
+    // Swallow audit failures — primary state change already succeeded.
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -2410,6 +2562,10 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.updated':
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
+        break
+
+      case 'charge.refunded':
+        await handleChargeRefunded(event.data.object as Stripe.Charge)
         break
 
       default:
