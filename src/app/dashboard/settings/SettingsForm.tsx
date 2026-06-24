@@ -72,6 +72,10 @@ export default function SettingsForm({
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [copied, setCopied] = useState(false)
 
+  // Coach invite links must always point at the production domain, never the
+  // host the admin happens to be browsing (e.g. a *.vercel.app preview).
+  const inviteBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
@@ -281,11 +285,11 @@ export default function SettingsForm({
                   <p className="text-xs text-[#888] mb-3">Send this link to your coach via WhatsApp, text or email. When they click it, they&apos;ll create an account and join your academy as a coach automatically.</p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
-                      /auth/signup?org={form.slug}&amp;role=coach
+                      {inviteBaseUrl}/auth/signup?org={form.slug}&amp;role=coach
                     </div>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/auth/signup?org=${form.slug}&role=coach`)
+                        navigator.clipboard.writeText(`${inviteBaseUrl}/auth/signup?org=${form.slug}&role=coach`)
                         showToast('Coach invite link copied!')
                       }}
                       className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-[#4ecde6]/10 text-[#4ecde6] hover:bg-[#4ecde6]/20 transition-colors whitespace-nowrap"
