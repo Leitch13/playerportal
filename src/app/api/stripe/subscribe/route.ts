@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isStartDateBillingEnabled, isFutureStartBillingEnabled } from '@/lib/billing/flag'
 import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
@@ -82,6 +83,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Service-role client for PUBLIC reads (subscription plans, organisations,
+    // training groups, platform_plans) and for SYSTEM writes that don't depend
+    // on the caller's identity (caching Stripe product/price IDs onto plan rows,
+    // backfilling stripe_sibling_coupon_id onto an org).
+    //
+    // Why this exists (cross-academy bug fix):
+    //   subscription_plans RLS only lets authenticated users see plans in their
+    //   OWN org. The anon-published policy doesn't apply to authenticated callers.
+    //   So an existing parent at Academy A trying to subscribe at Academy B
+    //   hit "Plan not found" — the lookup was blocked by RLS even though the
+    //   plan was a public booking surface.
+    //
+    // What this does NOT change:
+    //   • User-scoped reads/writes (profiles.SELECT/UPDATE by user.id,
+    //     subscriptions WHERE parent_id=user.id) remain on the auth client.
+    //   • No RLS policies are touched.
+    //   • Service-role access is bounded to data already visible to anon
+    //     viewers via the booking page (published active plans, published orgs,
+    //     class metadata) — no widening of public exposure.
+    const serviceDb = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    )
+
     // billingOption: 'monthly' (default) or 'quarterly' (3 months, 10% off)
     // classId (optional): if provided, the player will be auto-enrolled in that class on first payment
     // firstSessionDate (optional, ISO date string): for 1-2-1 / 2-1 / intensity, the parent's chosen
@@ -150,8 +175,12 @@ export async function POST(request: NextRequest) {
     // monthly when a firstBillingDate is in play.
     const isQuarterly = billingOption === 'quarterly' && !migrationTrialEnd
 
-    // Fetch the plan
-    const { data: plan, error: planError } = await supabase
+    // Fetch the plan. Use service-role: this is a PUBLIC read (the booking
+    // page shows this plan to anon visitors via the published-anon RLS
+    // policy), but authenticated cross-org callers are blocked by the
+    // own-org RLS policy — hence the cross-academy "Plan not found" bug
+    // before this fix.
+    const { data: plan, error: planError } = await serviceDb
       .from('subscription_plans')
       .select('*')
       .eq('id', planId)
@@ -163,7 +192,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Look up the organisation's Stripe Connect account, platform plan, discounts, etc.
-    const { data: planOrg } = await supabase
+    // Service-role: same cross-academy concern as the plan read above.
+    const { data: planOrg } = await serviceDb
       .from('organisations')
       .select('stripe_account_id, platform_plan_id, sibling_discount_enabled, sibling_discount_percent, stripe_sibling_coupon_id, quarterly_billing_enabled, quarterly_discount_percent')
       .eq('id', plan.organisation_id)
@@ -174,7 +204,7 @@ export async function POST(request: NextRequest) {
     // If the column doesn't exist yet, we fall back to 'calendar'.
     let bridgeBillingMode = 'calendar'
     try {
-      const { data: orgBridge } = await supabase
+      const { data: orgBridge } = await serviceDb
         .from('organisations')
         .select('bridge_billing_mode')
         .eq('id', plan.organisation_id)
@@ -187,7 +217,7 @@ export async function POST(request: NextRequest) {
     // sessions_per_month (Stage 3 session enhancement) read separately.
     let planSessionsPerMonth: number | null = null
     try {
-      const { data: planSpm } = await supabase
+      const { data: planSpm } = await serviceDb
         .from('subscription_plans')
         .select('sessions_per_month')
         .eq('id', planId)
@@ -252,13 +282,17 @@ export async function POST(request: NextRequest) {
     // Flag OFF: this block is skipped entirely.
     // ════════════════════════════════════════════════════════════════
     if (classId && process.env.CAPACITY_RPC_ENABLED === 'true') {
-      const { data: capGroup } = await supabase
+      // Service-role for class metadata + seat-count RPC: same cross-academy
+      // concern (a parent in Academy A booking at Academy B would be RLS-
+      // blocked from reading B's class row). The RPC is SECURITY DEFINER
+      // so it works either way, but we use service-role for consistency.
+      const { data: capGroup } = await serviceDb
         .from('training_groups')
         .select('max_capacity')
         .eq('id', classId)
         .single()
       const cap = Number(capGroup?.max_capacity ?? 20)
-      const { data: seatRows, error: seatErr } = await supabase
+      const { data: seatRows, error: seatErr } = await serviceDb
         .rpc('get_group_seat_counts', { p_org_id: plan.organisation_id })
       if (seatErr) {
         console.error('[capacity-rpc][preflight] rpc_error', seatErr.message)
@@ -306,7 +340,10 @@ export async function POST(request: NextRequest) {
           })
           couponId = coupon.id
 
-          await supabase
+          // Service-role: writing the academy's Stripe coupon ID — a system
+          // bookkeeping write that shouldn't depend on the caller being an
+          // org member.
+          await serviceDb
             .from('organisations')
             .update({ stripe_sibling_coupon_id: couponId })
             .eq('id', plan.organisation_id)
@@ -316,10 +353,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Resolve the platform fee rate from the academy's platform plan
+    // Resolve the platform fee rate from the academy's platform plan.
+    // Service-role: platform_plans is an internal config table; the fee
+    // rate is needed for every checkout regardless of caller identity.
     let PLATFORM_FEE_RATE = 0.035 // default to Starter rate (3.5%)
     if (planOrg?.platform_plan_id) {
-      const { data: platformPlan } = await supabase
+      const { data: platformPlan } = await serviceDb
         .from('platform_plans')
         .select('transaction_fee_percent')
         .eq('id', planOrg.platform_plan_id)
@@ -391,7 +430,10 @@ export async function POST(request: NextRequest) {
       })
       stripeProductId = product.id
 
-      await supabase
+      // Service-role: caching the Stripe product id on the plan row — a
+      // system write that shouldn't depend on the caller being in the
+      // plan's org (same cross-academy concern as the plan SELECT above).
+      await serviceDb
         .from('subscription_plans')
         .update({ stripe_product_id: stripeProductId })
         .eq('id', plan.id)
@@ -519,7 +561,9 @@ export async function POST(request: NextRequest) {
       })
       stripePriceId = price.id
 
-      await supabase
+      // Service-role: same as the stripe_product_id cache above — system
+      // bookkeeping write that mustn't fail for cross-academy callers.
+      await serviceDb
         .from('subscription_plans')
         .update({ stripe_price_id: stripePriceId })
         .eq('id', plan.id)
@@ -540,7 +584,10 @@ export async function POST(request: NextRequest) {
     // in [activatesOn, anchor). NULL when no class is linked or no class day.
     let classDayOfWeek: string | null = null
     if (classId) {
-      const { data: group } = await supabase
+      // Service-role: class metadata (day_of_week, class_type) is public
+      // information shown on the booking page. Same cross-academy concern
+      // as the plan + org reads above.
+      const { data: group } = await serviceDb
         .from('training_groups')
         .select('day_of_week, class_type')
         .eq('id', classId)
