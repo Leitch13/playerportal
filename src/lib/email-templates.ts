@@ -2369,6 +2369,129 @@ export function newCampBookingAdminEmail(params: {
 }
 
 /**
+ * Move Camp Booking Phase 1 — parent confirmation that their booking
+ * has been moved to a different camp. No payment changes — the original
+ * booking amount carries over verbatim.
+ *
+ * Fires from /api/admin/camps/[campId]/bookings/[bookingId]/move after
+ * the camp_bookings.camp_id UPDATE succeeds.
+ */
+export function campBookingMovedParentEmail(params: {
+  parentName: string
+  childName: string
+  fromCampName: string
+  fromCampDates: string
+  fromCampLocation: string | null
+  toCampName: string
+  toCampDates: string
+  toCampLocation: string | null
+  amountPaid: string
+  academyName: string
+  academyContactEmail: string | null
+  academyContactPhone: string | null
+}) {
+  const contactRows = [
+    params.academyContactEmail
+      ? `<tr><td style="color:#888">Email</td><td style="text-align:right"><a href="mailto:${params.academyContactEmail}" style="color:#4ecde6;text-decoration:none">${params.academyContactEmail}</a></td></tr>`
+      : '',
+    params.academyContactPhone
+      ? `<tr><td style="color:#888">Phone</td><td style="text-align:right;color:#fff">${params.academyContactPhone}</td></tr>`
+      : '',
+  ].filter(Boolean).join('')
+
+  return {
+    subject: `Booking moved — ${params.childName} is now on ${params.toCampName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Your booking has been moved</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">
+        <strong style="color:#fff">${params.academyName}</strong> has moved
+        <strong style="color:#fff">${params.childName}</strong>&rsquo;s camp booking. The original
+        amount carries over &mdash; no payment changes have been made.
+      </p>
+
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 8px;font-size:11px;color:#888;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">Previous booking</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="5">
+          <tr><td style="color:#888;width:90px">Camp</td><td style="color:#fff">${params.fromCampName}</td></tr>
+          <tr><td style="color:#888">Dates</td><td style="color:#fff">${params.fromCampDates || '&mdash;'}</td></tr>
+          ${params.fromCampLocation ? `<tr><td style="color:#888">Location</td><td style="color:#fff">${params.fromCampLocation}</td></tr>` : ''}
+        </table>
+      </div>
+
+      <div style="background:linear-gradient(135deg,#1a1a1a 0%,#0f1f1f 100%);border:1px solid rgba(78,205,230,0.25);border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 8px;font-size:11px;color:#4ecde6;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">New booking</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="5">
+          <tr><td style="color:#888;width:90px">Camp</td><td style="color:#fff;font-weight:600">${params.toCampName}</td></tr>
+          <tr><td style="color:#888">Dates</td><td style="color:#fff">${params.toCampDates || '&mdash;'}</td></tr>
+          ${params.toCampLocation ? `<tr><td style="color:#888">Location</td><td style="color:#fff">${params.toCampLocation}</td></tr>` : ''}
+          <tr><td style="color:#888">Amount paid</td><td style="color:#10b981;font-weight:700">${params.amountPaid}</td></tr>
+        </table>
+      </div>
+
+      ${contactRows ? `
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <p style="margin:0 0 12px;font-size:11px;color:#888;letter-spacing:0.05em;text-transform:uppercase;font-weight:600">Need to reach ${params.academyName}?</p>
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          ${contactRows}
+        </table>
+      </div>` : ''}
+
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:24px">
+        Keep this email for your records. We&rsquo;ll see you on the new camp!
+      </p>
+    `),
+  }
+}
+
+/**
+ * Move Camp Booking Phase 1 — academy admin notification when a booking
+ * has been moved between camps. Mirrors the audit log row written by
+ * /api/admin/camps/[campId]/bookings/[bookingId]/move.
+ */
+export function campBookingMovedAdminEmail(params: {
+  academyName: string
+  childName: string
+  parentName: string
+  parentEmail: string
+  fromCampName: string
+  toCampName: string
+  toCampDates: string
+  amountPaid: string
+  movedByName: string
+  reason: string | null
+  dashboardUrl: string
+}) {
+  const detailRow = (label: string, value: string | null | undefined) =>
+    value
+      ? `<tr><td style="padding:6px 0;color:#666;font-size:13px;width:120px">${label}</td><td style="padding:6px 0;color:#fff;font-size:14px">${value}</td></tr>`
+      : ''
+  return {
+    subject: `Camp booking moved — ${params.childName}: ${params.fromCampName} → ${params.toCampName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Camp booking moved</h2>
+      <p style="color:#aaa;margin:0 0 20px">A camp booking at <strong>${params.academyName}</strong> has been moved between camps.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px 20px;margin:20px 0">
+        <table style="width:100%;border-collapse:collapse">
+          ${detailRow('Child', params.childName)}
+          ${detailRow('Parent', params.parentName)}
+          ${detailRow('Email', params.parentEmail)}
+          ${detailRow('From', params.fromCampName)}
+          ${detailRow('To', params.toCampName)}
+          ${detailRow('Dates', params.toCampDates)}
+          ${detailRow('Amount paid', params.amountPaid)}
+          ${detailRow('Moved by', params.movedByName)}
+          ${detailRow('Reason', params.reason)}
+        </table>
+      </div>
+      <div style="text-align:center;margin:24px 0">
+        <a href="${params.dashboardUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:600;text-decoration:none;font-size:15px">View New Camp Roster &rarr;</a>
+      </div>
+    `),
+  }
+}
+
+/**
  * Camps Phase 2B — manual payment request after a camp extension.
  *
  * Sent (optionally) when an admin extends a booked camp and chooses to ask

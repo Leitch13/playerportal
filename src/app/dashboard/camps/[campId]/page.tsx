@@ -142,6 +142,54 @@ export default async function CampDetailPage({
     created_at: b.created_at,
   }))
 
+  // Move Camp Booking Phase 1 — load every other published, future camp in
+  // the org with capacity remaining, plus its current booked count, so the
+  // RosterClient modal can show a clean target-camp picker. The server
+  // route re-validates everything; this list is purely a UX hint.
+  const todayISO = new Date().toISOString().split('T')[0]
+  const { data: otherCamps } = await supabase
+    .from('camps')
+    .select('id, name, start_date, end_date, location, max_capacity, price, early_bird_price, early_bird_deadline')
+    .eq('organisation_id', orgId)
+    .eq('is_published', true)
+    .neq('id', campId)
+    .gte('start_date', todayISO)
+    .order('start_date', { ascending: true })
+  const targetCampIds = (otherCamps || []).map((c) => c.id as string)
+  const targetBookedCounts = new Map<string, number>()
+  if (targetCampIds.length > 0) {
+    const { data: targetBookings } = await supabase
+      .from('camp_bookings')
+      .select('camp_id, payment_status')
+      .in('camp_id', targetCampIds)
+      .in('payment_status', ['pending', 'paid'])
+    for (const b of targetBookings || []) {
+      const cid = (b as { camp_id: string }).camp_id
+      targetBookedCounts.set(cid, (targetBookedCounts.get(cid) || 0) + 1)
+    }
+  }
+  const eligibleTargetCamps = (otherCamps || []).map((c) => {
+    const earlyBirdActive =
+      (c.early_bird_price as number | null) != null &&
+      (c.early_bird_deadline as string | null) != null &&
+      todayISO <= (c.early_bird_deadline as string)
+    const effectivePrice = earlyBirdActive
+      ? Number(c.early_bird_price)
+      : Number((c.price as number | null) ?? 0)
+    const cap = (c.max_capacity as number | null) ?? 0
+    const bookedCount = targetBookedCounts.get(c.id as string) ?? 0
+    return {
+      id: c.id as string,
+      name: c.name as string,
+      start_date: c.start_date as string | null,
+      end_date: c.end_date as string | null,
+      location: c.location as string | null,
+      capacity: cap,
+      booked: bookedCount,
+      effective_price: Math.round(effectivePrice * 100) / 100,
+    }
+  })
+
   // Stats — exclude cancelled, count pending+paid as "booked"
   const booked = bookings.filter((b) => ['pending', 'paid'].includes(b.payment_status))
   const paid = bookings.filter((b) => b.payment_status === 'paid')
@@ -227,6 +275,9 @@ export default async function CampDetailPage({
         campName={camp.name as string}
         academyName={academyName}
         bookings={rosterBookings}
+        eligibleTargetCamps={eligibleTargetCamps}
+        sourceCampPrice={(camp.price as number | null) ?? 0}
+        callerIsAdmin={profile.role === 'admin'}
       />
     </div>
   )

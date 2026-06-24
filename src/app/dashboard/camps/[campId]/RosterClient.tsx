@@ -38,20 +38,92 @@ export interface CampRosterBooking {
   created_at: string
 }
 
+export interface EligibleTargetCamp {
+  id: string
+  name: string
+  start_date: string | null
+  end_date: string | null
+  location: string | null
+  capacity: number
+  booked: number
+  effective_price: number
+}
+
 export default function RosterClient({
   campId,
   campName,
   academyName,
   bookings,
+  eligibleTargetCamps = [],
+  sourceCampPrice = 0,
+  callerIsAdmin = false,
 }: {
   campId: string
   campName: string
   academyName: string
   bookings: CampRosterBooking[]
+  eligibleTargetCamps?: EligibleTargetCamp[]
+  sourceCampPrice?: number
+  callerIsAdmin?: boolean
 }) {
   const [search, setSearch] = useState('')
   const [resendingId, setResendingId] = useState<string | null>(null)
   const [resentMap, setResentMap] = useState<Record<string, 'ok' | 'fail'>>({})
+
+  // Move Camp Booking Phase 1 — modal state
+  const [moveOpen, setMoveOpen] = useState<CampRosterBooking | null>(null)
+  const [moveTargetId, setMoveTargetId] = useState<string>('')
+  const [moveReason, setMoveReason] = useState<string>('')
+  const [moveBusy, setMoveBusy] = useState(false)
+  const [moveError, setMoveError] = useState<string>('')
+  const [moveSuccess, setMoveSuccess] = useState<string>('')
+
+  function openMove(b: CampRosterBooking) {
+    setMoveOpen(b)
+    setMoveTargetId('')
+    setMoveReason('')
+    setMoveError('')
+    setMoveSuccess('')
+  }
+  function closeMove() {
+    if (moveBusy) return
+    setMoveOpen(null)
+  }
+  async function submitMove() {
+    if (!moveOpen || !moveTargetId) return
+    setMoveBusy(true)
+    setMoveError('')
+    try {
+      const res = await fetch(`/api/admin/camps/${campId}/bookings/${moveOpen.id}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_camp_id: moveTargetId,
+          reason: moveReason.trim() || undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || `Move failed (HTTP ${res.status})`)
+      setMoveSuccess(`Moved to ${data.to_camp_name || 'the target camp'}.`)
+      setTimeout(() => {
+        if (typeof window !== 'undefined') window.location.reload()
+      }, 900)
+    } catch (e) {
+      setMoveError(e instanceof Error ? e.message : 'Move failed')
+    } finally {
+      setMoveBusy(false)
+    }
+  }
+
+  const selectedTarget = moveTargetId
+    ? eligibleTargetCamps.find((c) => c.id === moveTargetId) ?? null
+    : null
+  const priceMatchesAtSelectedTarget = selectedTarget
+    ? Math.round(selectedTarget.effective_price * 100) === Math.round((moveOpen?.amount_paid ?? 0) * 100)
+    : true
+  const targetFull = selectedTarget
+    ? selectedTarget.capacity > 0 && selectedTarget.booked >= selectedTarget.capacity
+    : false
 
   // ─── Filtered view ───
   const filtered = useMemo(() => {
@@ -382,6 +454,21 @@ export default function RosterClient({
                               </svg>
                             )}
                           </button>
+
+                          {/* Move Camp Booking Phase 1 — admin-only, only for
+                              moveable bookings (pending/paid), only when there
+                              is at least one eligible target camp. */}
+                          {callerIsAdmin && (b.payment_status === 'pending' || b.payment_status === 'paid') && eligibleTargetCamps.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => openMove(b)}
+                              title="Move to another camp"
+                              data-testid="camp-roster-row-move"
+                              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+                            >
+                              Move
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -392,6 +479,162 @@ export default function RosterClient({
           </div>
         )}
       </div>
+
+      {/* Move Camp Booking Phase 1 — modal */}
+      {moveOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={closeMove}
+        >
+          <div
+            className="bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white">Move camp booking</h2>
+              <button
+                onClick={closeMove}
+                disabled={moveBusy}
+                className="text-white/50 hover:text-white disabled:opacity-30 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/10 rounded-lg p-3 mb-4 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-white/50">Child</span>
+                <span className="text-white">{moveOpen.child_name || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Parent</span>
+                <span className="text-white text-right">{moveOpen.parent_name || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Email</span>
+                <span className="text-white text-right text-xs">{moveOpen.parent_email || '—'}</span>
+              </div>
+              <div className="flex justify-between border-t border-white/10 pt-1 mt-1">
+                <span className="text-white/50">From</span>
+                <span className="text-white text-right">{campName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/50">Amount paid</span>
+                <span className="text-emerald-400 font-semibold">£{Number(moveOpen.amount_paid ?? 0).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <label className="block text-xs text-white/50 mb-1.5">Target camp</label>
+            <select
+              value={moveTargetId}
+              onChange={(e) => setMoveTargetId(e.target.value)}
+              disabled={moveBusy}
+              className="w-full px-3 py-2 mb-3 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/20"
+            >
+              <option value="" className="bg-[#111]">— Select a camp —</option>
+              {eligibleTargetCamps.map((c) => {
+                const full = c.capacity > 0 && c.booked >= c.capacity
+                const dates = c.start_date
+                  ? new Date(c.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                  : 'TBD'
+                const cap = c.capacity > 0 ? `${c.booked}/${c.capacity}` : `${c.booked}`
+                return (
+                  <option key={c.id} value={c.id} disabled={full} className="bg-[#111]">
+                    {c.name} · {dates} · £{c.effective_price.toFixed(2)} · {cap}{full ? ' · FULL' : ''}
+                  </option>
+                )
+              })}
+            </select>
+
+            {selectedTarget && (
+              <div className="bg-white/[0.02] border border-white/10 rounded-lg p-3 mb-3 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-white/50">Dates</span>
+                  <span className="text-white">
+                    {selectedTarget.start_date
+                      ? new Date(selectedTarget.start_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+                      : 'TBD'}
+                    {selectedTarget.end_date && selectedTarget.end_date !== selectedTarget.start_date
+                      ? ` → ${new Date(selectedTarget.end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+                      : ''}
+                  </span>
+                </div>
+                {selectedTarget.location && (
+                  <div className="flex justify-between">
+                    <span className="text-white/50">Location</span>
+                    <span className="text-white">{selectedTarget.location}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-white/50">Capacity</span>
+                  <span className={targetFull ? 'text-red-300' : 'text-white'}>
+                    {selectedTarget.capacity > 0
+                      ? `${selectedTarget.booked} / ${selectedTarget.capacity}`
+                      : `${selectedTarget.booked}`}
+                    {targetFull ? ' · FULL' : ''}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/50">Price</span>
+                  <span className={priceMatchesAtSelectedTarget ? 'text-emerald-400' : 'text-amber-300'}>
+                    £{selectedTarget.effective_price.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {selectedTarget && !priceMatchesAtSelectedTarget && (
+              <div className="mb-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-200">
+                <strong>Price mismatch:</strong> this booking was £{Number(moveOpen.amount_paid ?? 0).toFixed(2)} but the target is £{selectedTarget.effective_price.toFixed(2)}. Refund this booking and create a fresh booking on the target camp instead.
+              </div>
+            )}
+            {selectedTarget && targetFull && (
+              <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-200">
+                Target camp is full.
+              </div>
+            )}
+
+            <label className="block text-xs text-white/50 mb-1.5">Reason (optional)</label>
+            <textarea
+              value={moveReason}
+              onChange={(e) => setMoveReason(e.target.value)}
+              disabled={moveBusy}
+              maxLength={500}
+              rows={2}
+              placeholder="e.g. parent requested earlier dates"
+              className="w-full px-3 py-2 mb-4 rounded-lg bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/20 resize-none"
+            />
+
+            {moveError && (
+              <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-200">
+                {moveError}
+              </div>
+            )}
+            {moveSuccess && (
+              <div className="mb-3 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs text-emerald-200">
+                ✓ {moveSuccess}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeMove}
+                disabled={moveBusy}
+                className="px-4 py-2 text-sm text-white/70 hover:text-white disabled:opacity-30"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitMove}
+                disabled={moveBusy || !moveTargetId || !priceMatchesAtSelectedTarget || targetFull || !!moveSuccess}
+                className="px-5 py-2 bg-[#4ecde6] text-black font-semibold rounded-lg text-sm hover:bg-[#3bb8d0] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {moveBusy ? 'Moving…' : 'Move booking'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
