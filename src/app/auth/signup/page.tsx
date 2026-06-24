@@ -71,6 +71,11 @@ function SignUp() {
 
   useEffect(() => { if (preSelectedBilling === 'quarterly') setBillingOption('quarterly') }, [preSelectedBilling])
 
+  // Debug proof: confirms the coach/staff invite branch is taken for ?role=coach
+  useEffect(() => {
+    console.log('[signup] role param =', searchParams.get('role'), '| isStaffInvite =', isStaffInvite, '| inviteRole =', inviteRole, '| child step skipped =', isStaffInvite)
+  }, [searchParams, isStaffInvite, inviteRole])
+
   useEffect(() => {
     if (refCode) {
       const supabase = createClient()
@@ -223,7 +228,7 @@ function SignUp() {
               <div><label className="block text-xs text-white/50 mb-1.5">Password *</label><div className="relative"><input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters" className={inputCls + ' pr-10'} /><button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">{showPassword ? (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9.27-3.11-11-7.5a11.72 11.72 0 013.168-4.477M6.343 6.343A9.97 9.97 0 0112 5c5 0 9.27 3.11 11 7.5a11.7 11.7 0 01-4.373 5.157M6.343 6.343L3 3m3.343 3.343l2.829 2.829M17.657 17.657L21 21m-3.343-3.343l-2.829-2.829M9.878 9.878a3 3 0 104.243 4.243" /></svg>) : (<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>)}</button></div></div>
               <div className="flex items-start gap-3">
                 <input type="checkbox" id="terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded border-white/20 bg-transparent cursor-pointer" style={{ accentColor: primaryColor }} />
-                <label htmlFor="terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">I agree to the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Terms &amp; Conditions</Link> and confirm I am the parent or legal guardian of the child being registered.</label>
+                <label htmlFor="terms" className="text-xs text-white/40 cursor-pointer leading-relaxed">I agree to the <Link href="/terms" target="_blank" className="underline hover:text-white/60" style={{ color: primaryColor }}>Terms &amp; Conditions</Link>{!isStaffInvite && ' and confirm I am the parent or legal guardian of the child being registered'}.</label>
               </div>
               {error && <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
               <button type="submit" disabled={loading || !agreedToTerms} className="w-full py-3.5 rounded-xl font-bold text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
