@@ -119,7 +119,7 @@ export default function SettingsForm({
       showToast(
         data.status === 'updated'
           ? `Existing account updated to ${staffRole}`
-          : `${staffRole === 'admin' ? 'Admin' : 'Coach'} added — they'll get an email to set their password`
+          : `${staffRole === 'admin' ? 'Admin' : 'Coach'} added — login details have been emailed.`
       )
       setStaffName(''); setStaffEmail(''); setStaffRole('coach')
       router.refresh()

@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomInt } from 'crypto'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * Generate a 9-character temporary password using crypto.randomInt for entropy.
+ * Character set excludes visually-ambiguous glyphs (0/O, 1/l/I) so the password
+ * is reliably typeable from an email.
+ *
+ * Format: 4 letters + 4 digits + 1 symbol — meets Supabase's 6-char minimum
+ * with comfortable margin and includes mixed character classes by construction.
+ */
+function generateTempPassword(): string {
+  const letters = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const symbols = '!@#$%*'
+  const parts: string[] = []
+  for (let i = 0; i < 4; i++) parts.push(letters[randomInt(letters.length)])
+  for (let i = 0; i < 4; i++) parts.push(digits[randomInt(digits.length)])
+  parts.push(symbols[randomInt(symbols.length)])
+  return parts.join('')
+}
 
 // Admin-provisioned staff creation. This is the SAFE replacement for the old
 // "copy ?role=coach invite link" buttons, which became dead after the public
@@ -92,13 +112,17 @@ export async function POST(request: NextRequest) {
     if (upErr) {
       return NextResponse.json({ error: 'Could not update that account.' }, { status: 500 })
     }
-    await sendStaffEmail(db, { email, fullName: existing.full_name || fullName, role: newRole, org })
+    // Existing user is being promoted — they already have a password, do NOT
+    // reset it. Send the email without credentials, just the promotion notice.
+    await sendStaffEmail({ email, fullName: existing.full_name || fullName, role: newRole, org, tempPassword: null })
     return NextResponse.json({ status: 'updated', userId: existing.id })
   }
 
   // ── 4. Create the auth user server-side. Role is NOT passed in metadata —
   // the hardened trigger forces 'parent'; we set the real role in step 5. ──
-  const tempPassword = 'Tmp!' + Math.random().toString(36).slice(2, 12) + 'Z9'
+  // The temp password is emailed verbatim to the staff member as their first
+  // sign-in credential — see the email-credentials approach in sendStaffEmail.
+  const tempPassword = generateTempPassword()
   const { data: created, error: createErr } = await db.auth.admin.createUser({
     email,
     password: tempPassword,
@@ -138,31 +162,28 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // ── 6. Invite email with a set-password link (best-effort) ──
-  await sendStaffEmail(db, { email, fullName, role: newRole, org })
+  // ── 6. Invite email with sign-in credentials (best-effort) ──
+  // PRAGMATIC ACCESS HOTFIX: instead of a Supabase recovery action_link (which
+  // had multiple failure modes through /auth/reset-password), we email the
+  // temp password directly. The staff member uses it to sign in at /auth/signin.
+  // We'll restore polished recovery links once the reset flow is stable.
+  await sendStaffEmail({ email, fullName, role: newRole, org, tempPassword })
 
   return NextResponse.json({ status: 'created', userId })
 }
 
-type AdminDb = ReturnType<typeof adminDb>
-
 async function sendStaffEmail(
-  db: AdminDb,
-  { email, fullName, role, org }: { email: string; fullName: string; role: string; org: { name: string | null; contact_email: string | null } }
+  { email, fullName, role, org, tempPassword }: {
+    email: string
+    fullName: string
+    role: string
+    org: { name: string | null; contact_email: string | null }
+    /** Null for promotions of existing accounts — they keep their current password. */
+    tempPassword: string | null
+  }
 ) {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
-    // Mint a set-password link. If this fails for any reason, the email falls
-    // back to "use Forgot password on the sign-in page" — which always works.
-    let actionLink: string | null = null
-    try {
-      const { data: linkData } = await db.auth.admin.generateLink({
-        type: 'recovery',
-        email,
-        options: { redirectTo: `${appUrl}/auth/reset-password` },
-      })
-      actionLink = (linkData?.properties as { action_link?: string } | undefined)?.action_link || null
-    } catch { /* fall back to Forgot-password instructions */ }
 
     const { sendEmail } = await import('@/lib/email')
     const { staffInviteEmail } = await import('@/lib/email-templates')
@@ -170,7 +191,8 @@ async function sendStaffEmail(
       staffName: (fullName || '').split(' ')[0] || 'there',
       academyName: org.name || 'your academy',
       role,
-      actionLink,
+      signinEmail: email,
+      tempPassword,
       signinUrl: `${appUrl}/auth/signin`,
       supportEmail: org.contact_email || 'support@theplayerportal.net',
     })

@@ -1708,7 +1708,17 @@ export function staffInviteEmail(params: {
   staffName: string
   academyName: string
   role: string
-  actionLink: string | null
+  signinEmail: string
+  /**
+   * Temporary password for a brand-new staff account. Null when promoting an
+   * existing account that already has a password the user knows.
+   *
+   * Pragmatic-access hotfix: this replaces the prior Supabase recovery
+   * action_link, which was unreliable through /auth/reset-password's PKCE
+   * exchange path. We'll restore link-based credentials once the recovery
+   * flow is stable.
+   */
+  tempPassword: string | null
   signinUrl: string
   supportEmail: string
 }) {
@@ -1716,17 +1726,16 @@ export function staffInviteEmail(params: {
   const roleNote = params.role === 'admin'
     ? 'As an admin you can manage everything — players, classes, payments and settings.'
     : 'As a coach you can manage your classes, registers and player progress.'
-  // Primary CTA: a direct set-password link when we could mint one. Otherwise
-  // we omit the button and rely on the always-true Forgot-password fallback.
-  const cta = params.actionLink
-    ? `<div style="text-align:center;margin:24px 0">
-         <a href="${params.actionLink}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px">Set your password</a>
+
+  const credentialsBlock = params.tempPassword
+    ? `<div style="background:#0f141c;border:1px solid #1f2937;border-radius:12px;padding:18px 22px;margin:22px 0">
+         <div style="color:#9db0c3;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;font-weight:700;margin:0 0 12px">Your sign-in details</div>
+         <div style="color:#dfe7ef;font-size:14px;line-height:1.6;margin:0 0 6px"><span style="color:#9db0c3;display:inline-block;width:90px">Email</span><span style="color:#fff;font-weight:600">${params.signinEmail}</span></div>
+         <div style="color:#dfe7ef;font-size:14px;line-height:1.6;margin:0"><span style="color:#9db0c3;display:inline-block;width:90px">Password</span><code style="font-family:Menlo,Monaco,Consolas,monospace;background:#1a1f2e;padding:4px 9px;border-radius:5px;color:#4ecde6;font-size:14px;letter-spacing:0.6px;font-weight:600">${params.tempPassword}</code></div>
        </div>
-       <p style="color:#888;font-size:13px;text-align:center;margin:0 0 8px">This link sets your password and signs you in. If it has expired, just use “Forgot password” on the sign-in page.</p>`
-    : `<div style="text-align:center;margin:24px 0">
-         <a href="${params.signinUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px">Go to sign-in</a>
-       </div>
-       <p style="color:#888;font-size:13px;text-align:center;margin:0 0 8px">To get in for the first time, click “Forgot password” on the sign-in page and enter this email address (${params.supportEmail ? 'your email' : 'your email'}) to set your password.</p>`
+       <p style="color:#8a98a8;font-size:13px;line-height:1.6;margin:0 0 4px">This is a temporary password. Keep this email somewhere safe — we'll share password-change instructions once our password reset flow is updated.</p>`
+    : `<p style="color:#aaa;margin:14px 0 0;line-height:1.6">Use your existing Player Portal sign-in — your email and password haven't changed.</p>`
+
   return {
     subject: `You've been added to ${params.academyName} on Player Portal`,
     html: baseLayout(`
@@ -1734,9 +1743,12 @@ export function staffInviteEmail(params: {
         <h2 style="margin:0 0 4px;color:#ffffff;font-size:22px;font-weight:800">You're now ${roleLabel}</h2>
         <p style="margin:0;color:#4ecde6;font-size:16px;font-weight:600">${params.academyName}</p>
       </div>
-      <p style="color:#aaa;margin:0 0 16px">Hi ${params.staffName}, ${params.academyName} has added you to their team on Player Portal as ${roleLabel}. ${roleNote}</p>
-      ${cta}
-      <p style="color:#8a98a8;font-size:13px;text-align:center;margin:16px 0 0">Sign in any time at <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a>. Questions? Contact <a href="mailto:${params.supportEmail}" style="color:#4ecde6;text-decoration:none">${params.supportEmail}</a>.</p>
+      <p style="color:#aaa;margin:0 0 4px;line-height:1.6">Hi ${params.staffName}, ${params.academyName} has added you to their team on Player Portal as ${roleLabel}. ${roleNote}</p>
+      ${credentialsBlock}
+      <div style="text-align:center;margin:24px 0 8px">
+        <a href="${params.signinUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 32px;border-radius:10px;font-size:15px">Sign in</a>
+      </div>
+      <p style="color:#8a98a8;font-size:13px;text-align:center;margin:16px 0 0">Or visit <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a> directly. Questions? Contact <a href="mailto:${params.supportEmail}" style="color:#4ecde6;text-decoration:none">${params.supportEmail}</a>.</p>
     `),
   }
 }
