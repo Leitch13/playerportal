@@ -74,6 +74,7 @@ export default function RosterClient({
   const [moveOpen, setMoveOpen] = useState<CampRosterBooking | null>(null)
   const [moveTargetId, setMoveTargetId] = useState<string>('')
   const [moveReason, setMoveReason] = useState<string>('')
+  const [moveNotifyParent, setMoveNotifyParent] = useState(true)
   const [moveBusy, setMoveBusy] = useState(false)
   const [moveError, setMoveError] = useState<string>('')
   const [moveSuccess, setMoveSuccess] = useState<string>('')
@@ -82,6 +83,7 @@ export default function RosterClient({
     setMoveOpen(b)
     setMoveTargetId('')
     setMoveReason('')
+    setMoveNotifyParent(true)
     setMoveError('')
     setMoveSuccess('')
   }
@@ -100,6 +102,7 @@ export default function RosterClient({
         body: JSON.stringify({
           target_camp_id: moveTargetId,
           reason: moveReason.trim() || undefined,
+          notifyParent: moveNotifyParent,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -118,9 +121,6 @@ export default function RosterClient({
   const selectedTarget = moveTargetId
     ? eligibleTargetCamps.find((c) => c.id === moveTargetId) ?? null
     : null
-  const priceMatchesAtSelectedTarget = selectedTarget
-    ? Math.round(selectedTarget.effective_price * 100) === Math.round((moveOpen?.amount_paid ?? 0) * 100)
-    : true
   const targetFull = selectedTarget
     ? selectedTarget.capacity > 0 && selectedTarget.booked >= selectedTarget.capacity
     : false
@@ -576,18 +576,13 @@ export default function RosterClient({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white/50">Price</span>
-                  <span className={priceMatchesAtSelectedTarget ? 'text-emerald-400' : 'text-amber-300'}>
+                  <span className="text-white">
                     £{selectedTarget.effective_price.toFixed(2)}
                   </span>
                 </div>
               </div>
             )}
 
-            {selectedTarget && !priceMatchesAtSelectedTarget && (
-              <div className="mb-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-200">
-                <strong>Price mismatch:</strong> this booking was £{Number(moveOpen.amount_paid ?? 0).toFixed(2)} but the target is £{selectedTarget.effective_price.toFixed(2)}. Refund this booking and create a fresh booking on the target camp instead.
-              </div>
-            )}
             {selectedTarget && targetFull && (
               <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-200">
                 Target camp is full.
@@ -602,8 +597,19 @@ export default function RosterClient({
               maxLength={500}
               rows={2}
               placeholder="e.g. parent requested earlier dates"
-              className="w-full px-3 py-2 mb-4 rounded-lg bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/20 resize-none"
+              className="w-full px-3 py-2 mb-3 rounded-lg bg-white/[0.04] border border-white/10 text-white text-xs focus:outline-none focus:border-white/20 resize-none"
             />
+
+            <label className="flex items-center gap-2 mb-4 text-xs text-white/70 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={moveNotifyParent}
+                onChange={(e) => setMoveNotifyParent(e.target.checked)}
+                disabled={moveBusy}
+                className="w-3.5 h-3.5 rounded border border-white/20 bg-white/[0.04] accent-[#4ecde6] cursor-pointer disabled:cursor-not-allowed"
+              />
+              Notify parent by email
+            </label>
 
             {moveError && (
               <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-200">
@@ -626,7 +632,7 @@ export default function RosterClient({
               </button>
               <button
                 onClick={submitMove}
-                disabled={moveBusy || !moveTargetId || !priceMatchesAtSelectedTarget || targetFull || !!moveSuccess}
+                disabled={moveBusy || !moveTargetId || targetFull || !!moveSuccess}
                 className="px-5 py-2 bg-[#4ecde6] text-black font-semibold rounded-lg text-sm hover:bg-[#3bb8d0] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {moveBusy ? 'Moving…' : 'Move booking'}

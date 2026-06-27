@@ -49,25 +49,13 @@ type CampRow = {
   is_published: boolean | null
 }
 
-function effectivePriceToday(camp: CampRow): number {
-  // Returns the price the target camp would charge a NEW booking today.
-  // We compare this against the source booking's amount_paid to enforce
-  // the Phase-1 "no automatic money adjustment" rule.
-  const todayISO = new Date().toISOString().split('T')[0]
-  const earlyBirdActive =
-    camp.early_bird_price != null &&
-    camp.early_bird_deadline != null &&
-    todayISO <= (camp.early_bird_deadline as string)
-  const base = earlyBirdActive ? Number(camp.early_bird_price) : Number(camp.price ?? 0)
-  return Math.round(base * 100) / 100
-}
-
-function moneyEqual(a: number | null | undefined, b: number | null | undefined): boolean {
-  // Pence-precision equality — avoids floating-point surprises.
-  const av = Math.round(Number(a ?? 0) * 100)
-  const bv = Math.round(Number(b ?? 0) * 100)
-  return av === bv
-}
+// NOTE — pricing helpers (effectivePriceToday + moneyEqual) were removed when
+// the Phase-1 "prices must match" gate was dropped. A move is now an
+// operational reseat: camp_id is the only mutated field, amount_paid +
+// payment_status + stripe_session_id are preserved verbatim. Future "Move +
+// charge difference" or "Move + refund difference" actions would be NEW
+// admin choices (separate endpoint or explicit body flag) — they should NOT
+// be reintroduced as automatic side-effects of this default move path.
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return ''
@@ -87,12 +75,16 @@ export async function POST(
   const body = (await req.json().catch(() => null)) as {
     target_camp_id?: unknown
     reason?: unknown
+    notifyParent?: unknown
   } | null
 
   const targetCampId = typeof body?.target_camp_id === 'string' ? body.target_camp_id : null
   const reason = typeof body?.reason === 'string' && body.reason.trim().length > 0
     ? body.reason.trim().slice(0, 500)
     : null
+  // Default to true to preserve existing behaviour — only an explicit `false`
+  // skips the parent email. Admin notification + audit log are unaffected.
+  const notifyParent = body?.notifyParent === false ? false : true
 
   if (!targetCampId) {
     return NextResponse.json({ ok: false, error: 'target_camp_id is required' }, { status: 400 })
@@ -215,22 +207,11 @@ export async function POST(
     }
   }
 
-  // ─── Price match (Phase 1 — no automatic money adjustment) ───
-  const targetEffective = effectivePriceToday(target)
+  // The source booking's amount_paid is preserved verbatim — moving is
+  // an operational reseat, not a financial transaction. No price comparison,
+  // no refund suggestion, no charge calculation. Admin can choose those as
+  // explicit follow-up actions if needed.
   const sourceAmount = Number(booking.amount_paid ?? 0)
-  if (!moneyEqual(sourceAmount, targetEffective)) {
-    const fmtGBP = (n: number) => `£${n.toFixed(2)}`
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          `Prices differ: this booking was ${fmtGBP(sourceAmount)} but ${target.name} ` +
-          `is currently ${fmtGBP(targetEffective)}. Refund the original booking and create ` +
-          `a fresh booking on the target camp.`,
-      },
-      { status: 422 }
-    )
-  }
 
   // ─── The move (single field update on camp_bookings) ───
   const { error: updErr } = await service
@@ -295,8 +276,9 @@ export async function POST(
     const toEnd = fmtDate(target.end_date) || toStart
     const toDates = toEnd && toEnd !== toStart ? `${toStart} → ${toEnd}` : toStart
 
-    // Parent email
-    if (parentEmail) {
+    // Parent email — admin can opt out via the modal checkbox (notifyParent=false).
+    // Admin notification + audit log below are unaffected by this flag.
+    if (parentEmail && notifyParent) {
       try {
         const tpl = campBookingMovedParentEmail({
           parentName,
