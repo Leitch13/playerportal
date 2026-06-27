@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ResetPasswordPage() {
@@ -10,7 +11,47 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  // PKCE recovery flow: Supabase redirects here with ?code=<pkce> which must be
+  // exchanged for a session before updateUser({password}) can succeed. Without
+  // this exchange the page silently fails with "Auth session missing" — which
+  // is the bug behind staff invite recovery emails not working.
+  const [sessionState, setSessionState] = useState<'checking' | 'ready' | 'invalid'>('checking')
   const accent = '#4ecde6'
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function establishSession() {
+      const supabase = createClient()
+      const url = new URL(window.location.href)
+      const code = url.searchParams.get('code')
+
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (cancelled) return
+        if (exchangeError) {
+          setSessionState('invalid')
+          return
+        }
+        // Strip the ?code= from the URL so a refresh doesn't re-attempt with a
+        // now-consumed code (which would falsely show the invalid-link screen).
+        window.history.replaceState(null, '', '/auth/reset-password')
+        setSessionState('ready')
+        return
+      }
+
+      // No code in the URL — the user may already have a live session (e.g. an
+      // already-signed-in user changing their password from settings). Verify.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (cancelled) return
+      setSessionState(session ? 'ready' : 'invalid')
+    }
+
+    establishSession()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Light password strength indicator — purely visual feedback, not enforced
   const strength = (() => {
@@ -29,6 +70,11 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (sessionState !== 'ready') {
+      setError('Your session is no longer valid. Request a new password-reset email and try again.')
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Those passwords don\'t match. Have another look.')
@@ -65,10 +111,22 @@ export default function ResetPasswordPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain mx-auto mb-3" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-1 tracking-tight">
-            {success ? 'All done!' : 'Set a new password'}
+            {success
+              ? 'All done!'
+              : sessionState === 'invalid'
+                ? 'Link expired'
+                : sessionState === 'checking'
+                  ? 'Verifying link…'
+                  : 'Set a new password'}
           </h1>
           <p className="text-sm text-white/40">
-            {success ? 'Redirecting you to sign in…' : 'Pick something only you would know'}
+            {success
+              ? 'Redirecting you to sign in…'
+              : sessionState === 'invalid'
+                ? "Request a fresh email and try again"
+                : sessionState === 'checking'
+                  ? 'Just a moment'
+                  : 'Pick something only you would know'}
           </p>
         </div>
 
@@ -89,6 +147,37 @@ export default function ResetPasswordPage() {
                 }
                 .animate-pop-in { animation: pop-in 0.5s ease-out; }
               `}</style>
+            </div>
+          ) : sessionState === 'checking' ? (
+            <div className="text-center py-8">
+              <svg className="w-10 h-10 mx-auto mb-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.2" strokeWidth="3" />
+                <path d="M22 12a10 10 0 0 1-10 10" stroke={accent} strokeWidth="3" strokeLinecap="round" />
+              </svg>
+              <p className="text-sm text-white/50">Confirming your reset link…</p>
+            </div>
+          ) : sessionState === 'invalid' ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 rounded-full mx-auto mb-4 bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+              </div>
+              <p className="text-sm text-white/70 mb-2">This password-reset link has expired or was already used.</p>
+              <p className="text-xs text-white/40 mb-5">If you were just invited as staff, request a fresh email from the academy admin. Otherwise, start a new password reset below.</p>
+              <Link
+                href="/auth/forgot-password"
+                className="inline-block w-full px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors"
+                style={{ background: 'white', color: '#0a0a0a' }}
+              >
+                Request a new reset email
+              </Link>
+              <Link
+                href="/auth/signin"
+                className="inline-block text-xs text-white/40 hover:text-white/60 mt-3"
+              >
+                Back to sign in
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

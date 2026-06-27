@@ -119,11 +119,23 @@ export async function POST(request: NextRequest) {
   const userId = created.user.id
 
   // ── 5. Ensure the profile row is in THIS academy with the staff role ──
+  // The handle_new_user trigger created a row with the hardcoded 'parent'
+  // role (security: 091 hardening). We MUST overwrite it here, and if that
+  // write fails for any reason we cannot silently return success — the
+  // admin would see a green toast for a coach who is still a parent.
   const { data: prof } = await db.from('profiles').select('id').eq('id', userId).maybeSingle()
-  if (!prof) {
-    await db.from('profiles').insert({ id: userId, email, full_name: fullName, role: newRole, organisation_id: org.id })
-  } else {
-    await db.from('profiles').update({ role: newRole, organisation_id: org.id, full_name: fullName }).eq('id', userId)
+  const profileWriteError = prof
+    ? (await db.from('profiles').update({ role: newRole, organisation_id: org.id, full_name: fullName }).eq('id', userId)).error
+    : (await db.from('profiles').insert({ id: userId, email, full_name: fullName, role: newRole, organisation_id: org.id })).error
+
+  if (profileWriteError) {
+    return NextResponse.json(
+      {
+        error:
+          "The account was created but the staff role couldn't be set. Please try adding them again — if the issue persists, contact support.",
+      },
+      { status: 500 }
+    )
   }
 
   // ── 6. Invite email with a set-password link (best-effort) ──
