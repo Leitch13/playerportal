@@ -104,7 +104,8 @@ export async function POST(request: NextRequest) {
       )
     }
     // Same academy (or an unattached account): promote to the requested staff
-    // role and claim into this academy. We do NOT touch any other academy.
+    // role and claim into this academy. We do NOT touch any other academy
+    // (cross-academy is blocked by the 409 above).
     const { error: upErr } = await db
       .from('profiles')
       .update({ role: newRole, organisation_id: org.id, full_name: existing.full_name || fullName })
@@ -112,9 +113,26 @@ export async function POST(request: NextRequest) {
     if (upErr) {
       return NextResponse.json({ error: 'Could not update that account.' }, { status: 500 })
     }
-    // Existing user is being promoted — they already have a password, do NOT
-    // reset it. Send the email without credentials, just the promotion notice.
-    await sendStaffEmail({ email, fullName: existing.full_name || fullName, role: newRole, org, tempPassword: null })
+
+    // Re-invite: generate a fresh temp password and apply it server-side, then
+    // email the new credentials. This covers the common cases that previously
+    // required manual DB cleanup:
+    //   - Coach lost the original invite email
+    //   - Coach never clicked the original invite link (broken recovery flow)
+    //   - Admin re-added a coach who was promoted to admin (or vice versa)
+    // Cross-academy claims are blocked by the 409 above, so this only ever
+    // resets passwords for users in OUR org or unattached accounts being
+    // claimed in.
+    const tempPassword = generateTempPassword()
+    const { error: pwErr } = await db.auth.admin.updateUserById(existing.id, { password: tempPassword })
+    if (pwErr) {
+      return NextResponse.json(
+        { error: "Updated the role but couldn't reset the password. Please try again — if this persists, contact support." },
+        { status: 500 }
+      )
+    }
+
+    await sendStaffEmail({ email, fullName: existing.full_name || fullName, role: newRole, org, tempPassword })
     return NextResponse.json({ status: 'updated', userId: existing.id })
   }
 

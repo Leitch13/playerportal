@@ -118,7 +118,7 @@ export default function SettingsForm({
       if (!res.ok) { showToast(data.error || 'Could not add staff member'); setAddingStaff(false); return }
       showToast(
         data.status === 'updated'
-          ? `Existing account updated to ${staffRole}`
+          ? `Existing account updated to ${staffRole} — fresh login details have been emailed.`
           : `${staffRole === 'admin' ? 'Admin' : 'Coach'} added — login details have been emailed.`
       )
       setStaffName(''); setStaffEmail(''); setStaffRole('coach')
