@@ -113,6 +113,39 @@ export default async function PublicBookingPage({
   // Fire-and-forget: failures are logged but never block the page
   // render. We verify the trial belongs to THIS org before writing
   // (prevents URL-crafting from creating cross-org attributions).
+  // ─── Cross-academy warning (Google Sign-In Phase 1) ──────────────
+  // If a parent is signed in but their profile is anchored to a
+  // DIFFERENT academy than this booking page, surface a banner so
+  // they don't continue under the wrong org. We do NOT auto-switch
+  // their organisation — that's a multi-academy concern out of scope
+  // for Phase 1.
+  let crossAcademyWarning: { otherOrgName: string | null } | null = null
+  {
+    const { data: { user: viewer } } = await supabase.auth.getUser()
+    if (viewer) {
+      const { data: viewerProfile } = await supabase
+        .from('profiles')
+        .select('organisation_id, role')
+        .eq('id', viewer.id)
+        .maybeSingle()
+      if (
+        viewerProfile &&
+        viewerProfile.role === 'parent' &&
+        viewerProfile.organisation_id &&
+        viewerProfile.organisation_id !== org.id
+      ) {
+        const { data: otherOrg } = await publicSupabase
+          .from('organisations')
+          .select('name')
+          .eq('id', viewerProfile.organisation_id)
+          .maybeSingle()
+        crossAcademyWarning = {
+          otherOrgName: (otherOrg?.name as string | null) || null,
+        }
+      }
+    }
+  }
+
   if (incomingTrialId && incomingEmailParam) {
     try {
       const sb = createServiceClient(
@@ -348,6 +381,20 @@ export default async function PublicBookingPage({
           </p>
         </div>
       )}
+
+      {crossAcademyWarning && (
+        <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-3 text-center">
+          <p className="text-sm text-amber-200 max-w-3xl mx-auto">
+            <strong>You&apos;re currently signed in to {crossAcademyWarning.otherOrgName || 'another academy'}.</strong>
+            {' '}To join {org.name as string}, please{' '}
+            <a href="/auth/signout" className="underline font-semibold hover:text-amber-100">sign out</a>
+            {' '}and use a different email address, or{' '}
+            <a href={`mailto:${(org.contact_email as string | undefined) || 'support@theplayerportal.net'}`} className="underline font-semibold hover:text-amber-100">contact support</a>
+            {' '}if you need access to multiple academies.
+          </p>
+        </div>
+      )}
+
       <BookingPageHero
         slug={slug}
         orgName={org.name as string}
