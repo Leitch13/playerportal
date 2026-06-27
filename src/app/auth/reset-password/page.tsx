@@ -95,7 +95,17 @@ export default function ResetPasswordPage() {
       setLoading(false)
     } else {
       setSuccess(true)
-      setTimeout(() => {
+      // Sign the recovery session out before redirecting. Without this, the
+      // session from updateUser is still live, and the middleware redirect
+      // for authenticated users on /auth/* (supabase/middleware.ts:60-65)
+      // forwards /auth/signin?message=... to /dashboard — bypassing the
+      // signin form entirely. The user then can't verify their new password
+      // and lands on a half-rendered dashboard if their profile is in a
+      // partial state (e.g. a staff invite whose org wasn't fully linked).
+      // Signing out forces a clean re-authentication with the new password,
+      // which is also the moment the password change becomes observable.
+      setTimeout(async () => {
+        await supabase.auth.signOut({ scope: 'local' })
         window.location.href = '/auth/signin?message=Password+updated.+Sign+in+with+your+new+password.'
       }, 1800)
     }
