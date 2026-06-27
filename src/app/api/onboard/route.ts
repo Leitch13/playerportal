@@ -109,6 +109,12 @@ export async function POST(request: NextRequest) {
         platform_plan_id: platformPlanId,
         platform_subscription_status: 'trial',
         platform_trial_ends_at: trialEndsAt.toISOString(),
+        // Academies are live (public-bookable) during their 14-day platform
+        // trial. The webhook still flips this to true on platform-plan
+        // payment, but new trial academies no longer have to pay to publish.
+        // Existing webhook behaviour on cancellation (keep is_published=true
+        // — webhooks/route.ts:1982 comment) is unchanged.
+        is_published: true,
         terms_accepted_at: acceptedAt,
         dpa_accepted_at: acceptedAt,
         terms_version: TERMS_VERSION,

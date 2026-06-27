@@ -180,8 +180,14 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
   const stripeVerified = stripeReadiness === 'ready_to_take_payments'
 
   // Platform plan active. Pilot academies bypass.
+  // 'trial' is treated as satisfying the platform-plan gate — the academy
+  // has full platform access during the 14-day platform trial and should
+  // be marked ready to publish. The webhook still flips status to 'active'
+  // on payment (webhooks/route.ts:1161) with no change here.
   const platformPlanActive =
-    isPilot || org?.platform_subscription_status === 'active'
+    isPilot ||
+    org?.platform_subscription_status === 'active' ||
+    org?.platform_subscription_status === 'trial'
 
   // Academy published — pilot academies are flipped published by
   // migration 064, so they always pass this gate too.
