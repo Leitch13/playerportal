@@ -1274,6 +1274,38 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       terms_version_hash: m.terms_version_hash || null,
     })
     if (trialBookingErr) throw new Error(`trial_bookings.insert failed: ${trialBookingErr.message}`)
+
+    // Academy notification — mirrors the free-trial path's call from
+    // TrialForm.tsx. The notify-academy route fans out a bell notification
+    // to each admin and emails the org's contact_email. Non-fatal: a
+    // failure here must NEVER break the webhook (the trial row is already
+    // committed above and the parent confirmation is already queued via
+    // sendTrialConfirmedEmail elsewhere). Gated by the same env flag as
+    // the free-trial path so one rollback covers both.
+    if (process.env.TRIAL_ACADEMY_NOTIFY_ENABLED === 'true' && m.supabase_org_id && m.parent_email) {
+      const notifyController = new AbortController()
+      const notifyTimeout = setTimeout(() => notifyController.abort(), 3000)
+      try {
+        const notifyBase = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
+        await fetch(`${notifyBase}/api/trials/notify-academy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            organisation_id: m.supabase_org_id,
+            parent_email: m.parent_email,
+            child_name: childName,
+          }),
+          signal: notifyController.signal,
+        })
+      } catch (e) {
+        console.error(
+          '[stripe webhook] paid trial academy notify failed (non-fatal):',
+          e instanceof Error ? e.message : String(e)
+        )
+      } finally {
+        clearTimeout(notifyTimeout)
+      }
+    }
     return
   }
 
