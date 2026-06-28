@@ -301,7 +301,44 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
     plan = data
   }
 
-  const orgId = profile?.organisation_id ?? plan?.organisation_id ?? null
+  // Cross-academy write-path fix:
+  //
+  // The organisation that owns the booking is the academy whose PLAN is being
+  // bought (and whose CLASS is being booked), NOT the parent's existing
+  // profile.organisation_id. A parent with a dormant account at academy A who
+  // books a class on academy B's public page must produce DB rows attached to
+  // B — Stripe routes money to B via on_behalf_of/transfer_data, so the DB
+  // must agree or Jamie's coaches won't see Austin on the register.
+  //
+  // Priority:
+  //   1. metadata.supabase_org_id  — authoritative when the subscribe route
+  //      stamps it (post-fix sessions)
+  //   2. plan.organisation_id      — authoritative source (plans are per-org)
+  //   3. (no profile fallback)     — profile.organisation_id is NEVER the
+  //      booked academy for cross-academy buyers
+  //
+  // If metadata.supabase_org_id is present AND mismatches plan.organisation_id
+  // we throw — better to fail loud than write inconsistent data. Legacy
+  // sessions without metadata pass through using plan.organisation_id alone.
+  const metadataOrgId: string | null = session.metadata?.supabase_org_id ?? null
+  if (metadataOrgId && plan?.organisation_id && metadataOrgId !== plan.organisation_id) {
+    throw new Error(
+      `[webhook] supabase_org_id metadata (${metadataOrgId}) does not match plan.organisation_id (${plan.organisation_id}) — refusing to write to avoid cross-academy corruption`
+    )
+  }
+  if (metadataOrgId && classId) {
+    const { data: classRow } = await supabase
+      .from('training_groups')
+      .select('organisation_id')
+      .eq('id', classId)
+      .maybeSingle()
+    if (classRow?.organisation_id && classRow.organisation_id !== metadataOrgId) {
+      throw new Error(
+        `[webhook] supabase_org_id metadata (${metadataOrgId}) does not match class.organisation_id (${classRow.organisation_id}) — refusing to write`
+      )
+    }
+  }
+  const orgId = metadataOrgId ?? plan?.organisation_id ?? null
 
   if (orgId) {
     const { data } = await supabase
@@ -1313,25 +1350,69 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const amountPaid = (session.amount_total ?? 0) / 100
   const now = new Date().toISOString()
 
+  // ─── Single source of truth for booking organisation ownership ───
+  //
+  // The player is created BEFORE Stripe Checkout by QuickBookForm using the
+  // parent's existing profile.organisation_id as the org_id. For a parent with
+  // a dormant account at academy A who books a class on academy B, this lands
+  // the new player on academy A — invisible to academy B's coaches.
+  //
+  // The webhook is the single authority for booking org assignment: by the
+  // time we get here, ctx.orgId has already been validated against
+  // metadata.supabase_org_id, plan.organisation_id, and (when classId is in
+  // metadata) training_groups.organisation_id. Update the player to match,
+  // self-healing any pre-payment drift. No-op when QuickBookForm already wrote
+  // the correct org. Webhook re-delivery is idempotent (UPDATE to same value).
+  //
+  // Order matters: do this BEFORE payments/subscriptions/enrolments below so
+  // that all downstream rows reference a player already attributed correctly,
+  // and so register/dashboard queries that join players see the right org
+  // even if the rest of the webhook subsequently fails and Stripe retries.
+  if (ctx.playerId && ctx.orgId) {
+    const { error: playerOrgUpdErr } = await supabase
+      .from('players')
+      .update({ organisation_id: ctx.orgId })
+      .eq('id', ctx.playerId)
+    if (playerOrgUpdErr) {
+      throw new Error(`player.organisation_id update failed: ${playerOrgUpdErr.message}`)
+    }
+  }
+
   // 1. Record / update payment — itemised line on the parent's billing page.
   // NOTE: the payments table uses parent_id (NOT profile_id) and has no
   // subscription_plan_id column. The plan is captured in `description`.
+  //
+  // Idempotency: webhook redelivery on the same checkout.session.completed
+  // event MUST NOT create duplicate payment rows. The existing 23505 catch
+  // only protects when a UNIQUE constraint exists — for generic subscription
+  // payments no such constraint is in place today (Jenna's session produced
+  // 4 duplicate £0 rows). We pre-check by (parent_id, stripe_session_id)
+  // before inserting. One extra small query per webhook delivery, but the
+  // generic subscription path now redelivers safely.
   if (ctx.userId) {
-    const { error: genPayErr } = await supabase.from('payments').insert({
-      parent_id: ctx.userId,
-      player_id: ctx.playerId || null,
-      organisation_id: ctx.orgId,
-      amount: amountPaid,
-      amount_paid: amountPaid,
-      status: 'paid',
-      stripe_session_id: session.id,
-      description: ctx.plan?.name ? `${ctx.plan.name} — subscription` : 'Subscription payment',
-      due_date: now.split('T')[0],
-      paid_date: now.split('T')[0],
-      created_at: now,
-    })
-    if (genPayErr && (genPayErr as { code?: string }).code !== '23505') {
-      throw new Error(`generic payments.insert failed: ${genPayErr.message}`)
+    const { data: existingGenPay } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('parent_id', ctx.userId)
+      .eq('stripe_session_id', session.id)
+      .maybeSingle()
+    if (!existingGenPay) {
+      const { error: genPayErr } = await supabase.from('payments').insert({
+        parent_id: ctx.userId,
+        player_id: ctx.playerId || null,
+        organisation_id: ctx.orgId,
+        amount: amountPaid,
+        amount_paid: amountPaid,
+        status: 'paid',
+        stripe_session_id: session.id,
+        description: ctx.plan?.name ? `${ctx.plan.name} — subscription` : 'Subscription payment',
+        due_date: now.split('T')[0],
+        paid_date: now.split('T')[0],
+        created_at: now,
+      })
+      if (genPayErr && (genPayErr as { code?: string }).code !== '23505') {
+        throw new Error(`generic payments.insert failed: ${genPayErr.message}`)
+      }
     }
   }
 

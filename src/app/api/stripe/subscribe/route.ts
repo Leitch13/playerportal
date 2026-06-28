@@ -501,6 +501,7 @@ export async function POST(request: NextRequest) {
         // ctx.planId / classId / playerId and fires the auto-enrol RPC.
         metadata: {
           supabase_plan_id: planId,
+          supabase_org_id: plan.organisation_id as string,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           billing_option: 'quarterly',
@@ -511,6 +512,7 @@ export async function POST(request: NextRequest) {
         subscription_data: {
           metadata: {
             supabase_plan_id: planId,
+            supabase_org_id: plan.organisation_id as string,
             supabase_user_id: user.id,
             supabase_player_id: playerId || '',
             billing_option: 'quarterly',
@@ -793,6 +795,7 @@ export async function POST(request: NextRequest) {
             transfer_data: { destination: connectedAccountId },
             metadata: {
               supabase_plan_id: planId,
+              supabase_org_id: plan.organisation_id as string,
               supabase_user_id: user.id,
               ...(playerId ? { supabase_player_id: playerId } : {}),
               ...(classId ? { supabase_class_id: classId } : {}),
@@ -806,6 +809,7 @@ export async function POST(request: NextRequest) {
           },
           metadata: {
             supabase_plan_id: planId,
+            supabase_org_id: plan.organisation_id as string,
             supabase_user_id: user.id,
             supabase_player_id: playerId || '',
             billing_option: 'monthly',
@@ -870,6 +874,7 @@ export async function POST(request: NextRequest) {
           ...(connectedAccountId ? { on_behalf_of: connectedAccountId } : {}),
           metadata: {
             supabase_plan_id: planId,
+            supabase_org_id: plan.organisation_id as string,
             supabase_user_id: user.id,
             ...(playerId ? { supabase_player_id: playerId } : {}),
             ...(classId ? { supabase_class_id: classId } : {}),
@@ -880,6 +885,7 @@ export async function POST(request: NextRequest) {
         },
         metadata: {
           supabase_plan_id: planId,
+          supabase_org_id: plan.organisation_id as string,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           billing_option: 'monthly',
@@ -932,6 +938,7 @@ export async function POST(request: NextRequest) {
         ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
         metadata: {
           supabase_plan_id: planId,
+          supabase_org_id: plan.organisation_id as string,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           billing_option: 'monthly',
@@ -944,6 +951,7 @@ export async function POST(request: NextRequest) {
         subscription_data: {
           metadata: {
             supabase_plan_id: planId,
+            supabase_org_id: plan.organisation_id as string,
             supabase_user_id: user.id,
             supabase_player_id: playerId || '',
             billing_model: 'immediate_prorated',
@@ -1040,6 +1048,7 @@ export async function POST(request: NextRequest) {
           // The webhook reads these to build the subscription after payment.
           pp_flow: 'tonight_then_sub',
           supabase_plan_id: planId,
+          supabase_org_id: plan.organisation_id as string,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           supabase_class_id: classId || '',
@@ -1090,6 +1099,7 @@ export async function POST(request: NextRequest) {
       ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
       metadata: {
         supabase_plan_id: planId,
+        supabase_org_id: plan.organisation_id as string,
         supabase_user_id: user.id,
         supabase_player_id: playerId || '',
         billing_option: 'monthly',
@@ -1102,6 +1112,7 @@ export async function POST(request: NextRequest) {
       subscription_data: {
         metadata: {
           supabase_plan_id: planId,
+          supabase_org_id: plan.organisation_id as string,
           supabase_user_id: user.id,
           supabase_player_id: playerId || '',
           billing_model: migrationTrialEnd ? 'migration' : 'sub_from_1st',
