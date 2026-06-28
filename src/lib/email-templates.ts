@@ -483,6 +483,15 @@ export function subscriptionStartedEmail(params: {
   academyLogoUrl?: string
   academyContactEmail?: string
   billingContext?: SubscriptionStartedBillingContext
+  // Phase 1B — optional Term info. When set, renders a term block beneath
+  // the billing breakdown. Absent ⇒ section omitted (no change for subs whose
+  // class has no term assigned).
+  term?: {
+    name: string
+    start_date: string
+    end_date: string
+    parent_message?: string | null
+  } | null
 }) {
   const greetingName = params.parentName.split(' ')[0] || params.parentName
   const bc = params.billingContext
@@ -541,6 +550,8 @@ export function subscriptionStartedEmail(params: {
       </p>
 
       ${breakdownPanel}
+
+      ${termSection(params.term || undefined)}
 
       ${params.nextClass ? `
       <div style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(16,185,129,0.02));border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:20px;margin:20px 0">
@@ -725,6 +736,30 @@ export function retentionAcceptedAdminNotifyEmail(params: {
   }
 }
 
+// Phase 1B — optional Term/Season block surfaced in confirmation emails when
+// the booked class is assigned to a term. Rendered as plain HTML in the same
+// dark card style as the rest of the email. Returns '' when params not provided.
+function termSection(term?: {
+  name: string
+  start_date: string
+  end_date: string
+  parent_message?: string | null
+}): string {
+  if (!term?.name || !term.start_date || !term.end_date) return ''
+  const start = new Date(term.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const end = new Date(term.end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  const message = term.parent_message && term.parent_message.trim().length > 0
+    ? `<p style="margin:10px 0 0;font-size:14px;color:#cce">${term.parent_message.trim()}</p>`
+    : ''
+  return `
+      <div style="background:#0f1820;border:1px solid #4ecde640;border-radius:12px;padding:16px;margin:20px 0">
+        <p style="margin:0 0 4px;font-size:11px;color:#4ecde6;font-weight:700;letter-spacing:1px;text-transform:uppercase">Term</p>
+        <p style="margin:0;font-size:16px;color:#ffffff;font-weight:600">${term.name}</p>
+        <p style="margin:4px 0 0;font-size:14px;color:#aaa">${start} – ${end}</p>
+        ${message}
+      </div>`
+}
+
 export function bookingConfirmationEmail(params: {
   parentName: string
   childName: string
@@ -733,6 +768,14 @@ export function bookingConfirmationEmail(params: {
   location: string
   academyName: string
   dashboardUrl: string
+  // Phase 1B — only rendered when set; absent ⇒ section omitted (no change for
+  // bookings of classes without a term).
+  term?: {
+    name: string
+    start_date: string
+    end_date: string
+    parent_message?: string | null
+  } | null
 }) {
   return {
     subject: `You're all booked in! ${params.className} — ${params.academyName}`,
@@ -747,6 +790,7 @@ export function bookingConfirmationEmail(params: {
           <tr><td style="color:#999">Where</td><td style="text-align:right">${params.location}</td></tr>
         </table>
       </div>
+      ${termSection(params.term || undefined)}
       <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:12px;padding:16px;margin:20px 0">
         <p style="margin:0 0 8px;font-size:14px;color:#1e40af;font-weight:600">What to bring</p>
         <p style="margin:0;font-size:14px;color:#1e40af">Football boots, shin pads, water bottle, and a good attitude!</p>

@@ -188,6 +188,51 @@ async function ParentPayments({
     (s) => s.status !== 'active' && s.status !== 'trialing'
   )
 
+  // ─── Phase 1B — resolve term per active sub via enrolment → group → term ───
+  // A sub doesn't directly link to a term; we walk: sub.player_id → enrolment
+  // (already loaded into bookedClasses) → group_id → training_groups.term_id
+  // → terms.* (two extra reads). When a player has multiple enrolments we use
+  // the first one with a term assigned. No-term-anywhere → no extra rendering.
+  const enrolledGroupIds = Array.from(new Set(bookedClasses.map((c) => c.group_id)))
+  const { data: groupTermRows } = enrolledGroupIds.length > 0
+    ? await supabase
+        .from('training_groups')
+        .select('id, term_id')
+        .in('id', enrolledGroupIds)
+    : { data: [] as { id: string; term_id: string | null }[] }
+  const groupTermByGroupId = new Map<string, string | null>()
+  for (const r of (groupTermRows || []) as { id: string; term_id: string | null }[]) {
+    groupTermByGroupId.set(r.id, r.term_id)
+  }
+  const termIdsForSubs = Array.from(new Set(
+    Array.from(groupTermByGroupId.values()).filter((v): v is string => !!v),
+  ))
+  const { data: termsForSubs } = termIdsForSubs.length > 0
+    ? await supabase
+        .from('terms')
+        .select('id, name, start_date, end_date, parent_message')
+        .in('id', termIdsForSubs)
+    : { data: [] as { id: string; name: string; start_date: string; end_date: string; parent_message: string | null }[] }
+  const termById = new Map<string, { id: string; name: string; start_date: string; end_date: string; parent_message: string | null }>()
+  for (const t of (termsForSubs || []) as { id: string; name: string; start_date: string; end_date: string; parent_message: string | null }[]) {
+    termById.set(t.id, t)
+  }
+  const termByPlayer = new Map<string, { id: string; name: string; start_date: string; end_date: string; parent_message: string | null }>()
+  for (const e of bookedClasses) {
+    if (termByPlayer.has(e.player_id)) continue
+    const termId = groupTermByGroupId.get(e.group_id)
+    if (termId) {
+      const term = termById.get(termId)
+      if (term) termByPlayer.set(e.player_id, term)
+    }
+  }
+  const activeSubsWithTerm = activeSubs.map((s) => ({
+    ...s,
+    term: (s as { player_id?: string }).player_id
+      ? termByPlayer.get((s as { player_id?: string }).player_id as string) || null
+      : null,
+  }))
+
   const totalDue = (payments || []).reduce((sum, p) => sum + Number(p.amount), 0)
   const totalPaid = (payments || []).reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
   const outstanding = totalDue - totalPaid
@@ -506,7 +551,7 @@ async function ParentPayments({
           are reused unchanged through deep links + the existing components.
           ═══════════════════════════════════════════════════════════ */}
 
-      <MembershipOverview activeSubs={activeSubs as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />
+      <MembershipOverview activeSubs={activeSubsWithTerm as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />
 
       <MyChildrenList children={childSummaries} />
 
