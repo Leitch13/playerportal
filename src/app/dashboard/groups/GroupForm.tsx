@@ -51,6 +51,7 @@ export default function GroupForm({
   orgId,
   editGroup,
   onClose,
+  terms = [],
 }: {
   coaches: { id: string; full_name: string }[]
   orgId: string
@@ -75,8 +76,12 @@ export default function GroupForm({
     what_to_bring?: string | null
     image_url?: string | null
     is_featured?: boolean | null
+    // Phase 1B — optional link to public.terms.
+    term_id?: string | null
   }
   onClose?: () => void
+  // Phase 1B — terms available for assignment in the dropdown.
+  terms?: { id: string; name: string; start_date: string; end_date: string }[]
 }) {
   const router = useRouter()
   const isEdit = !!editGroup
@@ -103,6 +108,8 @@ export default function GroupForm({
   const [endTime, setEndTime] = useState(editGroup?.end_time || '')
   const [location, setLocation] = useState(editGroup?.location || '')
   const [coachId, setCoachId] = useState(editGroup?.coach_id || '')
+  // Phase 1B — term assignment.
+  const [termId, setTermId] = useState(editGroup?.term_id || '')
 
   // Pricing & Capacity
   const [maxCapacity, setMaxCapacity] = useState(editGroup?.max_capacity?.toString() || '20')
@@ -164,6 +171,8 @@ export default function GroupForm({
       is_featured: isFeatured,
       price_per_session: pricePerSession ? parseFloat(pricePerSession) : null,
       trial_price: trialPrice ? parseFloat(trialPrice) : null,
+      // Phase 1B — link class to a term ("" → null for "No term").
+      term_id: termId || null,
     }
 
     if (isEdit && editGroup) {
@@ -202,6 +211,7 @@ export default function GroupForm({
         setImageUrl('')
         setIsFeatured(false)
         setPricePerSession('')
+        setTermId('')
         router.refresh()
       }
     }
@@ -499,6 +509,40 @@ export default function GroupForm({
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Phase 1B — Term dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-1.5">Term</label>
+              <select
+                value={termId}
+                onChange={(e) => setTermId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">No term — runs all year</option>
+                {terms.map((t) => {
+                  const start = new Date(t.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                  const end = new Date(t.end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({start} – {end})
+                    </option>
+                  )
+                })}
+              </select>
+              {termId && (() => {
+                const selected = terms.find((t) => t.id === termId)
+                if (!selected) return null
+                const start = new Date(selected.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                const end = new Date(selected.end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                return (
+                  <p className="text-xs text-white/50 mt-1.5">Runs: {start} – {end}</p>
+                )
+              })()}
+              <p className="text-[11px] text-white/40 mt-1">
+                Optional. When set, parents see the term name and dates on the
+                booking page, dashboard, and confirmation emails.
+              </p>
             </div>
           </div>
         )}

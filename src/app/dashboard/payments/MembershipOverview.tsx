@@ -14,6 +14,7 @@
  */
 import type { SubscriptionPlan } from '@/lib/types'
 import Link from 'next/link'
+import TermInfo from '@/components/TermInfo'
 
 type Sub = {
   id: string
@@ -23,6 +24,15 @@ type Sub = {
   created_at: string
   plan: SubscriptionPlan | null
   player: { first_name: string; last_name: string } | null
+  // Phase 1B — optional term for the player's enrolled class. Renders an
+  // inline term line beneath the plan title. Null when the class has no term.
+  term?: {
+    id: string
+    name: string
+    start_date: string
+    end_date: string
+    parent_message: string | null
+  } | null
 }
 
 function fmtGBP(amount: number): string {
@@ -130,6 +140,17 @@ export default function MembershipOverview({
                   {planName}
                   {childName && <span className="text-white/60 font-normal text-base"> · {childName}</span>}
                 </h3>
+                {/* Phase 1B — Term info inline beneath the plan/child line */}
+                {sub.term && (
+                  <div className="mt-1.5">
+                    <TermInfo
+                      variant="inline"
+                      name={sub.term.name}
+                      start_date={sub.term.start_date}
+                      end_date={sub.term.end_date}
+                    />
+                  </div>
+                )}
               </div>
               <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
                 isTrialing ? 'bg-purple-500/15 text-purple-200 border-purple-500/30'

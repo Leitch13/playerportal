@@ -67,12 +67,25 @@ export default async function RegisterPage({
   // Group + coach
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, coach_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .select('id, name, day_of_week, time_slot, location, coach_id, term_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('id', groupId)
     .single()
   if (!group) redirect('/dashboard/attendance/register')
 
   const coach = group.coach as unknown as { full_name: string | null } | null
+
+  // Phase 1B — fetch this class's term name (if any) to append to the header.
+  // Read-only. No attendance behaviour affected.
+  let termName: string | null = null
+  const classTermId = (group as { term_id?: string | null }).term_id ?? null
+  if (classTermId) {
+    const { data: termRow } = await supabase
+      .from('terms')
+      .select('name')
+      .eq('id', classTermId)
+      .maybeSingle()
+    termName = (termRow as { name?: string } | null)?.name ?? null
+  }
 
   // Active enrolments + pitch-side player fields. Sprint 11a pulls
   // photo, DOB, medical, and emergency contact in addition to the
@@ -140,6 +153,11 @@ export default async function RegisterPage({
             {group.time_slot && <span>· {group.time_slot}</span>}
             {group.location && <span>· {group.location}</span>}
             {coach?.full_name && <span>· Coach: {coach.full_name}</span>}
+            {termName && (
+              <span data-testid="register-term-name" className="text-cyan-300/85">
+                · {termName}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap">

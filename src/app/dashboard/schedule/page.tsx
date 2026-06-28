@@ -9,6 +9,7 @@ import type { CalendarSession, CalendarEvent } from './CalendarTabs'
 import type { UserRole } from '@/lib/types'
 import ScheduleTopV2 from '@/components/schedule/ScheduleTopV2'
 import { PARENT_SCHEDULE_V2_ENABLED, upcomingSessions, isThisWeek, type ScheduleSlot } from '@/lib/schedule-v2'
+import TermInfo from '@/components/TermInfo'
 
 const DAY_ORDER = [
   'Monday',
@@ -384,9 +385,28 @@ async function ParentSchedule({
   // Get ALL available classes in the org
   const { data: allGroups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, max_capacity, coach_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .select('id, name, day_of_week, time_slot, location, max_capacity, coach_id, term_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('organisation_id', orgId)
     .order('name')
+
+  // Phase 1B — resolve the parent's current term: find term_id of the first
+  // class the parent's children are actively enrolled in, then fetch that
+  // term. One subtle indicator near the schedule hero. No-term-anywhere → null.
+  type CurrentTermRow = { id: string; name: string; start_date: string; end_date: string }
+  let currentTermForParent: CurrentTermRow | null = null
+  const enrolledGroupIds = new Set(
+    (enrolments || []).filter((e) => e.status === 'active').map((e) => e.group_id),
+  )
+  const enrolledTermId = ((allGroups || []) as Array<{ id: string; term_id: string | null }>)
+    .find((g) => enrolledGroupIds.has(g.id) && g.term_id != null)?.term_id ?? null
+  if (enrolledTermId) {
+    const { data: termRow } = await supabase
+      .from('terms')
+      .select('id, name, start_date, end_date')
+      .eq('id', enrolledTermId)
+      .maybeSingle()
+    currentTermForParent = (termRow as CurrentTermRow | null) ?? null
+  }
 
   // Upcoming published camps for this academy (shown as a section below classes)
   const todayStr = new Date().toISOString().split('T')[0]
@@ -627,6 +647,22 @@ async function ParentSchedule({
           </div>
         </div>
       </div>
+
+      {/* Phase 1B — one-line current term indicator (only when the parent's
+          enrolled class has a term assigned). Subtle row beneath the hero. */}
+      {currentTermForParent && (
+        <div className="flex items-center gap-2 text-xs sm:text-sm" data-testid="schedule-current-term">
+          <span className="text-white/40 uppercase tracking-wider text-[10px] font-semibold">
+            Currently in:
+          </span>
+          <TermInfo
+            variant="inline"
+            name={currentTermForParent.name}
+            start_date={currentTermForParent.start_date}
+            end_date={currentTermForParent.end_date}
+          />
+        </div>
+      )}
 
       {/* Parent Schedule 2.0 (Phase 1A) — child-first top: Next Session · This Week · My Schedule. Flag OFF ⇒ not rendered. */}
       {PARENT_SCHEDULE_V2_ENABLED && (

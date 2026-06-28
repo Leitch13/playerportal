@@ -146,9 +146,23 @@ async function sendSignupEmails(
     sb.from('subscription_plans').select('name, amount').eq('id', args.planId).maybeSingle(),
     sb.from('organisations').select('name, logo_url, contact_email').eq('id', args.orgId).maybeSingle(),
     args.classId
-      ? sb.from('training_groups').select('name').eq('id', args.classId).maybeSingle()
+      ? sb.from('training_groups').select('name, term_id').eq('id', args.classId).maybeSingle()
       : Promise.resolve({ data: null }),
   ])
+
+  // Phase 1B — if the class has a term assigned, load it for the parent email's
+  // optional term section. Absent term ⇒ template omits the section (no
+  // behaviour change for classes without a term).
+  let term: { name: string; start_date: string; end_date: string; parent_message: string | null } | null = null
+  const groupTermId = (group as { term_id?: string | null } | null)?.term_id ?? null
+  if (groupTermId) {
+    const { data: termRow } = await sb
+      .from('terms')
+      .select('name, start_date, end_date, parent_message')
+      .eq('id', groupTermId)
+      .maybeSingle()
+    term = (termRow ?? null) as typeof term
+  }
 
   if (!profile?.email) return
 
@@ -193,6 +207,7 @@ async function sendSignupEmails(
         anchorLabel,
         monthlyAmount,
       },
+      term,
     })
     billingModelLabel = `Bridge — ${bridgeAmount} today covers ${args.bridgeSessionsRemaining ?? 0} session(s); ${monthlyAmount}/mo from ${anchorLabel}`
   } else if (args.billingModel === 'future_prorated') {
@@ -215,6 +230,7 @@ async function sendSignupEmails(
       academyLogoUrl: (org?.logo_url as string | undefined) || undefined,
       academyContactEmail: (org?.contact_email as string | undefined) || undefined,
       billingContext: { kind: 'prorated', anchorLabel, monthlyAmount },
+      term,
     })
     billingModelLabel = `Today — ${today} pro-rata to ${anchorLabel}, then ${monthlyAmount}/mo`
   }
