@@ -39,6 +39,65 @@ interface ParsedRow {
 
 type WizardStep = 'upload' | 'map' | 'review' | 'done'
 
+// Migration Safety Phase 1 — chunk size for the bulk import. Each chunk is one
+// HTTP request to /api/migration/import. Keeping it small (≤10 rows) means
+// each call comfortably finishes within Vercel's per-function budget even with
+// Supabase auth signup latency, and a network hiccup loses at most 10 rows of
+// progress (the route is idempotent, so re-running the same CSV later picks
+// up where we left off).
+const IMPORT_CHUNK_SIZE = 10
+// Match the chunk size for invitations so per-batch Resend time stays bounded.
+const EMAIL_CHUNK_SIZE = 10
+
+interface ConflictRow {
+  row: number
+  email: string
+  existingAcademyId: string
+  existingAcademyName: string
+  reason: string
+}
+
+interface ImportError {
+  row: number
+  email?: string
+  error: string
+}
+
+interface InvitationPayload {
+  email: string
+  parentName: string
+  childName: string
+  token: string
+  planAmount: number
+  planName: string
+}
+
+interface WarningRow {
+  row: number
+  email: string
+  childName: string
+  existingPlayerId: string
+  existingDOB: string | null
+  csvDOB: string | null
+  reason: string
+}
+
+interface ImportSummary {
+  imported: number
+  skipped: number
+  conflicts: ConflictRow[]
+  warnings: WarningRow[]
+  errors: ImportError[]
+  invitations: InvitationPayload[]
+}
+
+interface SendResult {
+  email: string
+  token: string
+  sent: boolean
+  error?: string
+}
+
 const HEADER_ALIASES: Record<string, string> = {
   'first_name': 'first_name', 'firstname': 'first_name', 'first name': 'first_name',
   'childfirstname': 'first_name', 'playerfirstname': 'first_name',
@@ -129,11 +188,37 @@ function parseCSV(text: string): ParsedRow[] {
   return rows
 }
 
+function SummaryStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string
+  value: number
+  accent: 'emerald' | 'amber' | 'rose' | 'cyan' | 'white'
+}) {
+  const colour = {
+    emerald: 'text-emerald-400',
+    amber: 'text-amber-400',
+    rose: 'text-rose-400',
+    cyan: 'text-cyan-400',
+    white: 'text-white',
+  }[accent]
+  return (
+    <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+      <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">{label}</p>
+      <p className={`text-2xl font-bold tabular-nums ${colour}`}>{value}</p>
+    </div>
+  )
+}
+
 export default function MigrationWizard({
+  orgId,
   groups,
   plans,
   existingInvitations,
 }: {
+  orgId: string
   groups: GroupOption[]
   plans: PlanOption[]
   existingInvitations: ExistingInvitation[]
@@ -143,13 +228,20 @@ export default function MigrationWizard({
   const [rows, setRows] = useState<ParsedRow[]>([])
   const [fileName, setFileName] = useState('')
   const [mapping, setMapping] = useState<Record<string, { groupId: string | null; planId: string | null }>>({})
-  const [sendInvitations, setSendInvitations] = useState(true)
   // Optional: if these members have already prepaid (e.g. via ClassForKids),
   // set the date their existing payment runs out so we don't charge them again
   // on confirm — Stripe defers the first charge to this date.
   const [billingStartsAt, setBillingStartsAt] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<{ imported: number; skipped: number; errors: { row: number; error: string }[]; invitationsQueued: number } | null>(null)
+  // Migration Safety Phase 1 — aggregated summary across all chunked POSTs.
+  const [result, setResult] = useState<ImportSummary | null>(null)
+  // Progress shown during chunked import: "Imported 20 of 80".
+  const [progress, setProgress] = useState<{ done: number; total: number; phase: 'idle' | 'importing' | 'sending' }>({ done: 0, total: 0, phase: 'idle' })
+  // Per-recipient send results, populated by the Send Invitations step.
+  const [sendResults, setSendResults] = useState<SendResult[]>([])
+  const [sending, setSending] = useState(false)
+  // If a chunk fails fatally we stop and surface the error here.
+  const [fatalError, setFatalError] = useState<string | null>(null)
 
   // Unique class names from the CSV
   const uniqueClasses = useMemo(() => {
@@ -180,25 +272,187 @@ export default function MigrationWizard({
     setStep('map')
   }
 
+  /**
+   * Migration Safety Phase 1 — chunked import.
+   *
+   * Splits the CSV rows into chunks of IMPORT_CHUNK_SIZE and POSTs each chunk
+   * sequentially to /api/migration/import. The server route is idempotent
+   * per-row (SELECT-before-INSERT on profiles/players/enrolments/subscriptions),
+   * so chunking is safe — any chunk that fails can be re-run later by
+   * uploading the same CSV again; already-imported rows are skipped.
+   *
+   * Aggregates imported / skipped / conflicts / errors / invitations across
+   * all chunks into a single summary. Fatal chunk failures (non-200 response)
+   * stop processing and surface to the admin via fatalError state.
+   */
   async function handleSubmit() {
     setSubmitting(true)
-    try {
-      const res = await fetch('/api/migration/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows, classMap: mapping, sendInvitations, billingStartsAt: billingStartsAt || null }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setResult(data.summary)
-        setStep('done')
-      } else {
-        alert('Import failed: ' + (data.error || 'unknown error'))
-      }
-    } catch (err) {
-      alert('Network error: ' + (err instanceof Error ? err.message : String(err)))
+    setFatalError(null)
+    setSendResults([])
+
+    const chunks: ParsedRow[][] = []
+    for (let i = 0; i < rows.length; i += IMPORT_CHUNK_SIZE) {
+      chunks.push(rows.slice(i, i + IMPORT_CHUNK_SIZE))
     }
+
+    setProgress({ done: 0, total: rows.length, phase: 'importing' })
+
+    const aggregate: ImportSummary = {
+      imported: 0,
+      skipped: 0,
+      conflicts: [],
+      warnings: [],
+      errors: [],
+      invitations: [],
+    }
+
+    let processedRows = 0
+    let stopped = false
+
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const chunk = chunks[ci]
+      try {
+        const res = await fetch('/api/migration/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rows: chunk,
+            classMap: mapping,
+            billingStartsAt: billingStartsAt || null,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setFatalError(`Chunk ${ci + 1}/${chunks.length} failed: ${data.error || `HTTP ${res.status}`}`)
+          stopped = true
+          break
+        }
+        const s: ImportSummary = data.summary
+        // Re-offset row numbers in conflicts/warnings/errors so they map to
+        // the original CSV row, not the chunk-local row.
+        const offset = ci * IMPORT_CHUNK_SIZE
+        for (const c of s.conflicts) aggregate.conflicts.push({ ...c, row: c.row + offset })
+        for (const w of (s.warnings || [])) aggregate.warnings.push({ ...w, row: w.row + offset })
+        for (const e of s.errors) aggregate.errors.push({ ...e, row: e.row + offset })
+        aggregate.imported += s.imported
+        aggregate.skipped += s.skipped
+        aggregate.invitations.push(...s.invitations)
+
+        processedRows += chunk.length
+        setProgress({ done: processedRows, total: rows.length, phase: 'importing' })
+      } catch (err) {
+        setFatalError(`Network error on chunk ${ci + 1}/${chunks.length}: ${err instanceof Error ? err.message : String(err)}`)
+        stopped = true
+        break
+      }
+    }
+
+    setResult(aggregate)
     setSubmitting(false)
+    setProgress({ done: processedRows, total: rows.length, phase: 'idle' })
+
+    if (!stopped) setStep('done')
+  }
+
+  /**
+   * Sends invitations in chunks of EMAIL_CHUNK_SIZE. Called by admin AFTER
+   * reviewing the import summary (so conflicts are visible BEFORE emails go
+   * out). Returns per-recipient sent/failed for transparency.
+   */
+  async function handleSendInvitations() {
+    if (!result || result.invitations.length === 0) return
+    setSending(true)
+    setProgress({ done: 0, total: result.invitations.length, phase: 'sending' })
+
+    // orgId is passed in by the parent server component (it's already loaded
+    // there from profile.organisation_id). The server route additionally
+    // validates that the caller's admin org matches this payload.
+
+    const allResults: SendResult[] = []
+    let processed = 0
+    const chunks: InvitationPayload[][] = []
+    for (let i = 0; i < result.invitations.length; i += EMAIL_CHUNK_SIZE) {
+      chunks.push(result.invitations.slice(i, i + EMAIL_CHUNK_SIZE))
+    }
+
+    for (const c of chunks) {
+      try {
+        const res = await fetch('/api/email/migration-invite-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orgId, invitations: c }),
+        })
+        const data = await res.json()
+        if (Array.isArray(data?.results)) allResults.push(...data.results)
+        processed += c.length
+        setProgress({ done: processed, total: result.invitations.length, phase: 'sending' })
+      } catch (err) {
+        // Network error on this chunk — record every invitation in the chunk
+        // as failed and continue.
+        const msg = err instanceof Error ? err.message : String(err)
+        for (const inv of c) allResults.push({ email: inv.email, token: inv.token, sent: false, error: `Network: ${msg}` })
+      }
+    }
+
+    setSendResults(allResults)
+    setSending(false)
+    setProgress({ done: processed, total: result.invitations.length, phase: 'idle' })
+  }
+
+  /**
+   * Download a CSV of conflicts + errors so admin can act on them without
+   * inspecting browser devtools.
+   */
+  function downloadIssuesCSV() {
+    if (!result) return
+    const lines = ['type,row,email,reason']
+    for (const c of result.conflicts) {
+      lines.push([
+        'conflict',
+        String(c.row),
+        csvEscape(c.email),
+        csvEscape(c.reason),
+      ].join(','))
+    }
+    for (const w of result.warnings) {
+      lines.push([
+        'warning_dob_mismatch',
+        String(w.row),
+        csvEscape(w.email),
+        csvEscape(w.reason),
+      ].join(','))
+    }
+    for (const e of result.errors) {
+      lines.push([
+        'error',
+        String(e.row),
+        csvEscape(e.email || ''),
+        csvEscape(e.error),
+      ].join(','))
+    }
+    for (const r of sendResults.filter((r) => !r.sent)) {
+      lines.push([
+        'email_failed',
+        '',
+        csvEscape(r.email),
+        csvEscape(r.error || 'unknown'),
+      ].join(','))
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `migration-issues-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function csvEscape(s: string): string {
+    if (s == null) return ''
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+    return s
   }
 
   const mappedCount = Object.values(mapping).filter((m) => m.groupId && m.planId).length
@@ -347,8 +601,8 @@ export default function MigrationWizard({
                 <p className="text-2xl font-bold text-[#4ecde6]">{mappedCount}</p>
               </div>
               <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
-                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Invitations</p>
-                <p className="text-2xl font-bold text-emerald-400">{sendInvitations ? rows.filter((r) => mapping[r.group_name]?.planId).length : 0}</p>
+                <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Pending invites</p>
+                <p className="text-2xl font-bold text-emerald-400">{rows.filter((r) => mapping[r.group_name]?.planId).length}</p>
               </div>
               <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Potential MRR</p>
@@ -362,21 +616,15 @@ export default function MigrationWizard({
               </div>
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer select-none py-3 px-4 rounded-xl border border-[#1e1e1e] bg-[#0a0a0a]">
-              <input
-                type="checkbox"
-                checked={sendInvitations}
-                onChange={(e) => setSendInvitations(e.target.checked)}
-                className="w-4 h-4 accent-[#4ecde6]"
-              />
-              <div>
-                <p className="text-sm font-semibold text-white">Send invitation emails immediately</p>
-                <p className="text-[11px] text-white/50">
-                  Parents get a branded email with a one-click link to confirm their payment details.
-                  Their subscription only activates once they click and complete Stripe checkout.
-                </p>
-              </div>
-            </label>
+            <div className="py-3 px-4 rounded-xl border border-cyan-500/30 bg-cyan-500/[0.05]">
+              <p className="text-sm font-semibold text-cyan-300 mb-1">Two-step send</p>
+              <p className="text-[11px] text-white/60">
+                Invitation emails are <strong>not</strong> sent during this import. After the
+                import finishes you&apos;ll see a summary including any cross-academy conflicts —
+                review those first, then click <strong>&ldquo;Send invitations&rdquo;</strong> on
+                the done screen to email parents.
+              </p>
+            </div>
 
             <div className="mt-3 py-3 px-4 rounded-xl border border-[#1e1e1e] bg-[#0a0a0a]">
               <p className="text-sm font-semibold text-white mb-1">Already paid you for the current term?</p>
@@ -397,10 +645,10 @@ export default function MigrationWizard({
             <div className="mt-5 bg-[#4ecde6]/5 border border-[#4ecde6]/15 rounded-xl p-4 text-xs text-white/70">
               <p className="font-semibold text-[#4ecde6] uppercase tracking-wider text-[10px] mb-1">What happens next</p>
               <ul className="space-y-1 pl-4 list-disc">
-                <li>All {rows.length} players are created with their parent accounts</li>
-                <li>Each is enrolled in the mapped class</li>
-                <li>Those with a matched plan get a &ldquo;pending&rdquo; subscription + unique invite link</li>
-                <li>{sendInvitations ? 'Parents are emailed with a one-click checkout link' : 'You can send invitation emails later from this page'}</li>
+                <li>Rows are imported in chunks of {IMPORT_CHUNK_SIZE} (progress shown live)</li>
+                <li>Each new parent + player + enrolment + pending subscription is created</li>
+                <li>Cross-academy collisions are flagged as conflicts and skipped — no profile is moved</li>
+                <li>You review the summary, then explicitly click &ldquo;Send invitations&rdquo;</li>
               </ul>
             </div>
           </div>
@@ -418,7 +666,9 @@ export default function MigrationWizard({
               disabled={submitting}
               className="px-8 py-3 rounded-full text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-50 transition-colors"
             >
-              {submitting ? 'Importing...' : `Import ${rows.length} players & send invitations`}
+              {submitting
+                ? `Importing ${progress.done}/${progress.total}…`
+                : `Import ${rows.length} players (chunked, no emails yet)`}
             </button>
           </div>
         </div>
@@ -427,19 +677,219 @@ export default function MigrationWizard({
       {/* Step 4: Done */}
       {step === 'done' && (
         <div className="space-y-4">
-          {result && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6">
-              <div className="text-3xl mb-2">🎉</div>
-              <h2 className="text-lg font-bold text-white mb-1">Migration complete</h2>
-              <p className="text-sm text-white/70">
-                <strong className="text-white">{result.imported}</strong> players imported ·
-                <strong className="text-emerald-400"> {result.invitationsQueued}</strong> invitation{result.invitationsQueued !== 1 ? 's' : ''} queued.
-                {result.errors.length > 0 && (
-                  <> <strong className="text-amber-400">{result.errors.length}</strong> errors.</>
-                )}
+          {fatalError && (
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-sm text-rose-300">
+              <p className="font-semibold text-rose-200 mb-1">Import stopped</p>
+              <p>{fatalError}</p>
+              <p className="mt-2 text-xs text-rose-300/70">
+                The successfully imported rows are saved. Re-upload the same CSV later to
+                resume — already-imported rows will be skipped.
               </p>
             </div>
           )}
+
+          {result && (
+            <>
+              {/* Import summary stat grid */}
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <SummaryStat label="Imported" value={result.imported} accent="emerald" />
+                <SummaryStat label="Skipped" value={result.skipped} accent="white" />
+                <SummaryStat label="Conflicts" value={result.conflicts.length} accent={result.conflicts.length > 0 ? 'amber' : 'white'} />
+                <SummaryStat label="DOB warnings" value={result.warnings.length} accent={result.warnings.length > 0 ? 'amber' : 'white'} />
+                <SummaryStat label="Errors" value={result.errors.length} accent={result.errors.length > 0 ? 'rose' : 'white'} />
+                <SummaryStat label="Pending invites" value={result.invitations.length} accent="cyan" />
+              </div>
+
+              {/* Send invitations panel — visible only when there are pending invites */}
+              {result.invitations.length > 0 && sendResults.length === 0 && (
+                <div className="bg-[#0e1820] border border-cyan-500/25 rounded-2xl p-5">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-cyan-200">
+                        {result.invitations.length} parent{result.invitations.length !== 1 ? 's' : ''} ready to be emailed
+                      </p>
+                      <p className="text-xs text-white/60 mt-1 max-w-lg">
+                        Review the conflicts table below first. When you&apos;re ready, click
+                        Send to email parents in chunks of {EMAIL_CHUNK_SIZE}. Each successful
+                        send is tracked immediately so partial batches never re-send.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleSendInvitations}
+                      disabled={sending}
+                      className="px-5 py-2.5 rounded-full text-sm font-bold bg-cyan-500 text-[#0a0a0a] hover:bg-cyan-400 disabled:opacity-50"
+                    >
+                      {sending ? `Sending ${progress.done}/${progress.total}…` : `Send ${result.invitations.length} invitations`}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Send results panel — appears after Send Invitations runs */}
+              {sendResults.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <SummaryStat label="Emails sent" value={sendResults.filter((r) => r.sent).length} accent="emerald" />
+                  <SummaryStat label="Emails failed" value={sendResults.filter((r) => !r.sent).length} accent={sendResults.some((r) => !r.sent) ? 'rose' : 'white'} />
+                </div>
+              )}
+
+              {/* Conflicts table */}
+              {result.conflicts.length > 0 && (
+                <div className="bg-amber-500/5 border border-amber-500/25 rounded-2xl p-5">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h3 className="text-sm font-semibold text-amber-200">
+                      Cross-academy conflicts ({result.conflicts.length})
+                    </h3>
+                    <button
+                      onClick={downloadIssuesCSV}
+                      className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline"
+                    >
+                      Download issues CSV
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/60 mb-3">
+                    These parent emails already exist in another academy. Their profile was
+                    NOT moved and no player/subscription was created. Handle each manually via
+                    Migrate Member or ask support.
+                  </p>
+                  <div className="max-h-64 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-[10px] uppercase tracking-wider text-white/40">
+                        <tr>
+                          <th className="text-left py-1.5 px-2 font-semibold">Row</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Email</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Existing academy</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.conflicts.map((c) => (
+                          <tr key={`${c.row}-${c.email}`} className="border-t border-white/5">
+                            <td className="py-1.5 px-2 text-white/60">{c.row}</td>
+                            <td className="py-1.5 px-2 text-white">{c.email}</td>
+                            <td className="py-1.5 px-2 text-amber-200">{c.existingAcademyName}</td>
+                            <td className="py-1.5 px-2 text-white/50">Migrate manually</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* DOB warnings table */}
+              {result.warnings.length > 0 && (
+                <div className="bg-amber-500/5 border border-amber-500/25 rounded-2xl p-5">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h3 className="text-sm font-semibold text-amber-200">
+                      DOB mismatches ({result.warnings.length})
+                    </h3>
+                    <button
+                      onClick={downloadIssuesCSV}
+                      className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline"
+                    >
+                      Download issues CSV
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/60 mb-3">
+                    These rows match an existing child by name and parent, but the DOB in
+                    the CSV differs from the DOB on file. The row was skipped — no player,
+                    enrolment, or subscription was created. Could be a typo, a corrected DOB,
+                    or a sibling with the same name. Handle each manually via Migrate Member.
+                  </p>
+                  <div className="max-h-64 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-[10px] uppercase tracking-wider text-white/40">
+                        <tr>
+                          <th className="text-left py-1.5 px-2 font-semibold">Row</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Email</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Child</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">DB DOB</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">CSV DOB</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.warnings.map((w) => (
+                          <tr key={`${w.row}-${w.existingPlayerId}`} className="border-t border-white/5">
+                            <td className="py-1.5 px-2 text-white/60">{w.row}</td>
+                            <td className="py-1.5 px-2 text-white">{w.email}</td>
+                            <td className="py-1.5 px-2 text-white">{w.childName}</td>
+                            <td className="py-1.5 px-2 text-amber-200">{w.existingDOB || '—'}</td>
+                            <td className="py-1.5 px-2 text-amber-200">{w.csvDOB || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Errors table */}
+              {result.errors.length > 0 && (
+                <div className="bg-rose-500/5 border border-rose-500/25 rounded-2xl p-5">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h3 className="text-sm font-semibold text-rose-200">Errors ({result.errors.length})</h3>
+                    <button
+                      onClick={downloadIssuesCSV}
+                      className="text-xs font-semibold text-rose-300 hover:text-rose-200 underline"
+                    >
+                      Download issues CSV
+                    </button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-[10px] uppercase tracking-wider text-white/40">
+                        <tr>
+                          <th className="text-left py-1.5 px-2 font-semibold">Row</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Email</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Error</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {result.errors.map((e, i) => (
+                          <tr key={`${e.row}-${i}`} className="border-t border-white/5">
+                            <td className="py-1.5 px-2 text-white/60">{e.row}</td>
+                            <td className="py-1.5 px-2 text-white/80">{e.email || '—'}</td>
+                            <td className="py-1.5 px-2 text-rose-200 font-mono text-[11px]">{e.error}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Send-failed table */}
+              {sendResults.some((r) => !r.sent) && (
+                <div className="bg-rose-500/5 border border-rose-500/25 rounded-2xl p-5">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <h3 className="text-sm font-semibold text-rose-200">
+                      Failed email sends ({sendResults.filter((r) => !r.sent).length})
+                    </h3>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-[10px] uppercase tracking-wider text-white/40">
+                        <tr>
+                          <th className="text-left py-1.5 px-2 font-semibold">Email</th>
+                          <th className="text-left py-1.5 px-2 font-semibold">Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sendResults.filter((r) => !r.sent).map((r, i) => (
+                          <tr key={`${r.token}-${i}`} className="border-t border-white/5">
+                            <td className="py-1.5 px-2 text-white">{r.email}</td>
+                            <td className="py-1.5 px-2 text-rose-200 font-mono text-[11px]">{r.error || 'unknown'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
 
           {/* Progress tracker */}
           <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">

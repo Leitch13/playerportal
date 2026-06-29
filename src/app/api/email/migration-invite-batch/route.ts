@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createClient as createSbClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+// Migration Safety Phase 1 — was 60s; bumped to 300 so larger batches survive
+// Resend latency. Wizard still chunks (~10 per call) so 300 is the safety net.
+export const maxDuration = 300
 
 /**
- * Sends migration invitation emails in bulk. Called by /api/migration/import
- * after creating pending subscriptions. Internal-only (shared secret check).
+ * Sends migration invitation emails in batch. Called by the migration wizard
+ * AFTER admin reviews import conflicts.
+ *
+ * Migration Safety Phase 1 changes:
+ *   • Per-email `invite_sent_at` update — was a single UPDATE...IN at the end
+ *     of the loop. If the function timed out mid-loop, NO subscriptions were
+ *     marked sent and re-running re-sent every email. Now each successful
+ *     send immediately stamps that subscription's invite_sent_at so a partial
+ *     batch leaves a clean record of who actually got an email.
+ *   • Returns per-recipient { email, sent, error? } results so the wizard can
+ *     show admin exactly which sends failed.
+ *   • Auth model switched from internal-secret to authenticated admin —
+ *     previously this was called server-to-server from /api/migration/import
+ *     fire-and-forget. The wizard now calls it directly from the browser
+ *     after admin reviews the import summary.
  */
 interface Invitation {
   email: string
@@ -18,10 +34,36 @@ interface Invitation {
   planName: string
 }
 
+interface SendResult {
+  email: string
+  token: string
+  sent: boolean
+  error?: string
+}
+
 export async function POST(request: NextRequest) {
-  // Internal auth — the calling API uses this header
-  const secret = request.headers.get('x-internal-secret')
-  if (!secret || secret !== (process.env.INTERNAL_API_SECRET || '')) {
+  // Auth — admin in the org. (Was internal-secret; now wizard calls this
+  // directly after reviewing conflicts.) The internal-secret header is still
+  // accepted as a fallback for any legacy server-side callers.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const headerSecret = request.headers.get('x-internal-secret')
+  const allowedViaSecret =
+    !!headerSecret && headerSecret === (process.env.INTERNAL_API_SECRET || '')
+
+  let callerOrgId: string | null = null
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organisation_id, role')
+      .eq('id', user.id)
+      .single()
+    if (profile?.role === 'admin' && profile.organisation_id) {
+      callerOrgId = profile.organisation_id
+    }
+  }
+  if (!callerOrgId && !allowedViaSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -32,6 +74,11 @@ export async function POST(request: NextRequest) {
 
   if (!orgId || !Array.isArray(invitations) || invitations.length === 0) {
     return NextResponse.json({ error: 'Missing orgId or invitations' }, { status: 400 })
+  }
+  // Admin caller must match the orgId in the payload — prevents one academy's
+  // admin from sending invitations branded as another academy.
+  if (callerOrgId && callerOrgId !== orgId) {
+    return NextResponse.json({ error: 'orgId mismatch' }, { status: 403 })
   }
 
   const admin = createSbClient(
@@ -61,9 +108,9 @@ export async function POST(request: NextRequest) {
   }
   const resend = new Resend(resendKey)
 
+  const results: SendResult[] = []
   let sent = 0
   let failed = 0
-  const sentTokens: string[] = []
 
   for (const inv of invitations) {
     try {
@@ -119,23 +166,27 @@ export async function POST(request: NextRequest) {
         html,
       })
 
+      // Per-email tracking (Migration Safety Phase 1) — was: a single
+      // UPDATE...IN AFTER the whole loop. If the function timed out mid-loop
+      // every sub stayed un-stamped and re-running re-sent every email.
+      // Now: immediately stamp this sub's invite_sent_at so a partial batch
+      // never re-sends to people who already got an email.
+      await admin
+        .from('subscriptions')
+        .update({ invite_sent_at: new Date().toISOString() })
+        .eq('invite_token', inv.token)
+
       sent++
-      sentTokens.push(inv.token)
+      results.push({ email: inv.email, token: inv.token, sent: true })
     } catch (err) {
-      console.error('Invitation email failed for', inv.email, err)
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      console.error('Invitation email failed for', inv.email, errorMsg)
       failed++
+      results.push({ email: inv.email, token: inv.token, sent: false, error: errorMsg })
     }
   }
 
-  // Mark subscriptions as invited
-  if (sentTokens.length > 0) {
-    await admin
-      .from('subscriptions')
-      .update({ invite_sent_at: new Date().toISOString() })
-      .in('invite_token', sentTokens)
-  }
-
-  return NextResponse.json({ ok: true, sent, failed })
+  return NextResponse.json({ ok: true, sent, failed, results })
 }
 
 function escapeHtml(s: string): string {
