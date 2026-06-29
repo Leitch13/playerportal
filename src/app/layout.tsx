@@ -40,13 +40,16 @@ export const metadata: Metadata = {
     siteName: 'Player Portal',
     title: 'Player Portal — Run Your Academy Like a Pro',
     description: 'Players. Progress. Payments. Parents. One platform that handles it all.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Player Portal' }],
+    // Branding hotfix — explicit `/og-image.png` reference removed. That file
+    // never existed in public/ and was returning 404 to every social crawler.
+    // Next.js automatically discovers the dynamic OG image from
+    // src/app/opengraph-image.tsx and adds the og:image meta tag; same for
+    // twitter:image (falls back to the OG image when not explicitly set).
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Player Portal — Run Your Academy Like a Pro',
     description: 'The all-in-one platform for football academies.',
-    images: ['/og-image.png'],
   },
   robots: {
     index: true,
