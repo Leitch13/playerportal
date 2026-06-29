@@ -4,12 +4,26 @@ import { createClient as createSbClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
 
 export const dynamic = 'force-dynamic'
+// Migration Safety Phase 1 — give the route headroom to process up to a 10-row
+// chunk safely without timing out on cold starts + auth signup latency. Chunking
+// in the client (10 rows / call) keeps each call well under this ceiling; the
+// 300s budget is the safety net, not the design.
+export const maxDuration = 300
 
 /**
  * Bulk migration wizard import. Creates players + parents + enrolments + pending
- * subscriptions with invitation tokens, then triggers a batch email to parents.
+ * subscriptions with invitation tokens for parents.
  *
- * Called after the academy has mapped each source class to a PP group + plan.
+ * Migration Safety Phase 1 changes:
+ *   • Cross-academy collision detection — if a parent email already belongs
+ *     to a DIFFERENT organisation, the row is rejected as a `conflict` and
+ *     no profile/player/enrolment/subscription writes occur. Previously this
+ *     path silently overwrote profiles.organisation_id (same bug pattern as
+ *     the booking write path hotfix 4ba6ed6).
+ *   • Returns conflicts[] in the summary so the wizard can show admin which
+ *     rows need manual handling.
+ *   • Returns invitations[] in the summary so the wizard can drive email
+ *     sending separately (after admin reviews conflicts).
  */
 interface ImportRow {
   first_name: string
@@ -26,6 +40,46 @@ interface ImportRow {
 interface ClassMapping {
   groupId: string | null
   planId: string | null
+}
+
+interface Invitation {
+  email: string
+  parentName: string
+  childName: string
+  token: string
+  planAmount: number
+  planName: string
+}
+
+interface ConflictRow {
+  row: number
+  email: string
+  existingAcademyId: string
+  existingAcademyName: string
+  reason: string
+}
+
+// Migration Safety Phase 1.1 — DOB mismatch on an otherwise-matching player.
+// Rather than silently reuse the existing player (could be a typo on the old
+// system OR a genuinely different child with the same name), we surface it
+// to the admin and write nothing for this row.
+interface WarningRow {
+  row: number
+  email: string
+  childName: string
+  existingPlayerId: string
+  existingDOB: string | null
+  csvDOB: string | null
+  reason: string
+}
+
+interface ImportSummary {
+  imported: number
+  skipped: number
+  conflicts: ConflictRow[]
+  warnings: WarningRow[]
+  errors: { row: number; email?: string; error: string }[]
+  invitations: Invitation[]
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +104,7 @@ export async function POST(request: NextRequest) {
 
   const orgId = profile.organisation_id
 
-  let body: { rows?: ImportRow[]; classMap?: Record<string, ClassMapping>; sendInvitations?: boolean; billingStartsAt?: string }
+  let body: { rows?: ImportRow[]; classMap?: Record<string, ClassMapping>; billingStartsAt?: string }
   try {
     body = await request.json()
   } catch {
@@ -59,7 +113,6 @@ export async function POST(request: NextRequest) {
 
   const rows = body.rows || []
   const classMap = body.classMap || {}
-  const sendInvitations = body.sendInvitations !== false
 
   // Optional: defer the first charge to when migrated members' existing
   // (prepaid) payment runs out, so we don't double-charge them on confirm.
@@ -79,22 +132,16 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const summary = {
+  const summary: ImportSummary = {
     imported: 0,
     skipped: 0,
-    errors: [] as { row: number; error: string }[],
-    invitationsQueued: 0,
+    conflicts: [],
+    warnings: [],
+    errors: [],
+    invitations: [],
   }
 
   const parentByEmail = new Map<string, string>()
-  const invitationsToSend: Array<{
-    email: string
-    parentName: string
-    childName: string
-    token: string
-    planAmount: number
-    planName: string
-  }> = []
 
   // Resolve plan details for email copy
   const planIds = Array.from(new Set(
@@ -104,6 +151,17 @@ export async function POST(request: NextRequest) {
     ? await admin.from('subscription_plans').select('id, name, amount').in('id', planIds)
     : { data: [] as { id: string; name: string; amount: number }[] }
   const planById = new Map((planRows || []).map((p) => [p.id as string, { name: p.name as string, amount: Number(p.amount) }]))
+
+  // Cache of org-name lookups for conflict error copy
+  const orgNameById = new Map<string, string>()
+  async function getOrgName(id: string): Promise<string> {
+    const cached = orgNameById.get(id)
+    if (cached) return cached
+    const { data } = await admin.from('organisations').select('name').eq('id', id).maybeSingle()
+    const name = (data as { name?: string } | null)?.name || 'another academy'
+    orgNameById.set(id, name)
+    return name
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i]
@@ -116,43 +174,68 @@ export async function POST(request: NextRequest) {
 
       const mapping = classMap[r.group_name] || { groupId: null, planId: null }
 
-      // Find-or-create parent: creates an auth user (auto-generates profile via trigger),
-      // then updates the profile row with org + name + phone.
+      // ─── Cross-academy collision detection (Migration Safety Phase 1) ───
+      // Lookup the existing profile WITH its organisation_id. The previous code
+      // SELECTed only the id and then UPDATEed organisation_id unconditionally,
+      // silently moving Jamie Allan / JSL parents to the importing academy.
+      // Now: same-org match is OK to reuse; different-org match is a hard stop.
       let parentId = parentByEmail.get(email) || null
       if (!parentId) {
         const { data: existing } = await admin
           .from('profiles')
-          .select('id')
+          .select('id, organisation_id, full_name, phone')
           .eq('email', email)
           .maybeSingle()
 
         if (existing?.id) {
-          parentId = existing.id
-          // Keep profile tied to the right org + make sure contact info is present
-          await admin
-            .from('profiles')
-            .update({
-              organisation_id: orgId,
-              full_name: r.parent_name || undefined,
-              phone: r.parent_phone || undefined,
-              role: 'parent',
+          const existingOrgId = (existing as { organisation_id?: string | null }).organisation_id ?? null
+          if (existingOrgId && existingOrgId !== orgId) {
+            const academyName = await getOrgName(existingOrgId)
+            summary.conflicts.push({
+              row: i + 1,
+              email,
+              existingAcademyId: existingOrgId,
+              existingAcademyName: academyName,
+              reason: `Parent email already exists in ${academyName}. Migrate manually or ask support.`,
             })
-            .eq('id', parentId)
+            // CRITICAL: skip ALL writes for this row — no profile update, no
+            // player, no enrolment, no subscription. The conflict is reported
+            // to the admin who can handle it via /dashboard/migrate-member
+            // (single-family flow) or contact support.
+            continue
+          }
+
+          // Same-org match (or NULL org): safe to reuse. Only update
+          // contact fields if the importing CSV provides better data. Do
+          // NOT overwrite organisation_id (the import CSV doesn't carry it
+          // and same-org reuse means it's already correct).
+          parentId = existing.id
+          const updates: Record<string, unknown> = { role: 'parent' }
+          if (r.parent_name && !(existing as { full_name?: string | null }).full_name) {
+            updates.full_name = r.parent_name
+          }
+          if (r.parent_phone && !(existing as { phone?: string | null }).phone) {
+            updates.phone = r.parent_phone
+          }
+          // Only fill organisation_id if it was null (orphan profile)
+          if (!existingOrgId) {
+            updates.organisation_id = orgId
+          }
+          await admin.from('profiles').update(updates).eq('id', parentId)
         } else {
-          // Create auth user — handle_new_user trigger (if present) creates the profile row.
-          // If no trigger, we upsert the profile manually below.
+          // No profile at all — create auth user. handle_new_user trigger
+          // (if present) creates the profile row; we upsert manually as fallback.
           const { data: authResult, error: authErr } = await admin.auth.admin.createUser({
             email,
             email_confirm: false, // parent confirms via magic link / signin later
             user_metadata: { full_name: r.parent_name || '', imported: true, source: 'classforkids' },
           })
           if (authErr || !authResult?.user) {
-            summary.errors.push({ row: i + 1, error: `Parent auth: ${authErr?.message || 'unknown'}` })
+            summary.errors.push({ row: i + 1, email, error: `Parent auth: ${authErr?.message || 'unknown'}` })
             continue
           }
           parentId = authResult.user.id
 
-          // Upsert the profile row (trigger may or may not have run)
           await admin
             .from('profiles')
             .upsert({
@@ -167,17 +250,46 @@ export async function POST(request: NextRequest) {
         if (parentId) parentByEmail.set(email, parentId)
       }
 
-      // Find-or-create player (idempotent — re-running this doesn't duplicate)
+      // ─── Find-or-create player (Migration Safety Phase 1.1) ───
+      // Match on org+parent+first_name+last_name (case-insensitive). When BOTH
+      // the existing player and the CSV row carry a DOB and those DOBs differ,
+      // emit a warning and SKIP all writes for this row — could be a same-name
+      // sibling, a corrected DOB on the existing record, or a typo in either
+      // source. Admin reviews each warning manually rather than silently
+      // merging two distinct children into one record.
       const { data: existingPlayer } = await admin
         .from('players')
-        .select('id')
+        .select('id, date_of_birth')
         .eq('organisation_id', orgId)
         .eq('parent_id', parentId)
         .ilike('first_name', r.first_name)
         .ilike('last_name', r.last_name || '')
         .maybeSingle()
 
-      let playerId: string | undefined = existingPlayer?.id as string | undefined
+      let playerId: string | undefined = (existingPlayer as { id?: string } | null)?.id
+
+      if (existingPlayer && playerId) {
+        const existingDOB = (existingPlayer as { date_of_birth?: string | null }).date_of_birth ?? null
+        const csvDOB = r.date_of_birth ? r.date_of_birth.trim() : ''
+        // Compare only when BOTH sides carry a DOB. Either-side-missing falls
+        // back to status-quo name match (no signal to validate against).
+        if (existingDOB && csvDOB && normalizeDOB(existingDOB) !== normalizeDOB(csvDOB)) {
+          summary.warnings.push({
+            row: i + 1,
+            email,
+            childName: `${r.first_name} ${r.last_name || ''}`.trim(),
+            existingPlayerId: playerId,
+            existingDOB,
+            csvDOB,
+            reason: `A player named "${r.first_name} ${r.last_name || ''}".trim() already exists under this parent with a different DOB (existing: ${existingDOB}, CSV: ${csvDOB}). Review manually.`,
+          })
+          // Skip player creation AND downstream enrolment/subscription writes
+          // for this row — we can't safely tell which child the CSV row refers
+          // to. Admin handles it via Migrate Member (single-family flow) once
+          // they've verified the correct DOB.
+          continue
+        }
+      }
 
       if (!playerId) {
         const { data: newPlayer, error: playerErr } = await admin
@@ -195,7 +307,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (playerErr || !newPlayer) {
-          summary.errors.push({ row: i + 1, error: `Player: ${playerErr?.message || 'unknown'}` })
+          summary.errors.push({ row: i + 1, email, error: `Player: ${playerErr?.message || 'unknown'}` })
           continue
         }
         playerId = newPlayer.id
@@ -225,7 +337,7 @@ export async function POST(request: NextRequest) {
       if (mapping.planId && playerId && parentId) {
         const { data: existingSub } = await admin
           .from('subscriptions')
-          .select('id, status')
+          .select('id, status, invite_token')
           .eq('player_id', playerId)
           .eq('plan_id', mapping.planId)
           .in('status', ['active', 'trialing', 'pending_migration'])
@@ -247,10 +359,10 @@ export async function POST(request: NextRequest) {
             })
 
           if (subErr) {
-            summary.errors.push({ row: i + 1, error: `Subscription: ${subErr.message}` })
-          } else if (sendInvitations) {
+            summary.errors.push({ row: i + 1, email, error: `Subscription: ${subErr.message}` })
+          } else {
             const planInfo = planById.get(mapping.planId)
-            invitationsToSend.push({
+            summary.invitations.push({
               email,
               parentName: r.parent_name || email.split('@')[0],
               childName: `${r.first_name} ${r.last_name || ''}`.trim(),
@@ -265,25 +377,34 @@ export async function POST(request: NextRequest) {
       summary.imported++
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      summary.errors.push({ row: i + 1, error: message })
+      summary.errors.push({ row: i + 1, email: (r.parent_email || '').trim().toLowerCase() || undefined, error: message })
     }
   }
 
-  // Queue invitation emails
-  if (sendInvitations && invitationsToSend.length > 0) {
-    const origin = request.headers.get('origin') || 'https://theplayerportal.net'
-    fetch(`${origin}/api/email/migration-invite-batch`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-internal-secret': process.env.INTERNAL_API_SECRET || '',
-      },
-      body: JSON.stringify({ orgId, invitations: invitationsToSend }),
-    }).catch((err) => console.error('Failed to queue invitations', err))
-    summary.invitationsQueued = invitationsToSend.length
-  }
-
+  // NOTE: Email sending is NOT triggered here any more. The previous
+  // fire-and-forget pattern made conflicts invisible to the parent (they'd
+  // already receive an email mentioning the wrong academy). Migration Safety
+  // Phase 1 returns invitations[] in the summary; the wizard sends them in a
+  // separate, explicitly-staged step after the admin has reviewed conflicts.
   return NextResponse.json({ ok: true, summary })
+}
+
+// Normalise a DOB string for comparison. Accepts ISO (YYYY-MM-DD) and a few
+// common UK formats (DD/MM/YYYY, DD-MM-YYYY). Returns YYYY-MM-DD or '' if it
+// can't parse — '' compares unequal to any normalised date, which keeps the
+// safer "treat as mismatch" behaviour for unparseable inputs.
+function normalizeDOB(input: string): string {
+  if (!input) return ''
+  const trimmed = input.trim()
+  // Already ISO?
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10)
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  if (m) {
+    const [, d, mo, y] = m
+    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+  return ''
 }
 
 // Fetch unique classes + their counts from pending rows — used by the wizard
