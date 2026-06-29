@@ -45,6 +45,7 @@ export default async function MigrationPage() {
 
   return (
     <MigrationWizard
+      orgId={orgId}
       groups={(groups || []).map((g) => ({
         id: g.id,
         name: g.name,
