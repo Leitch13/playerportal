@@ -201,7 +201,7 @@ function SummaryStat({
     emerald: 'text-emerald-400',
     amber: 'text-amber-400',
     rose: 'text-rose-400',
-    cyan: 'text-cyan-400',
+    cyan: 'text-[#4ecde6]',
     white: 'text-white',
   }[accent]
   return (
@@ -469,16 +469,21 @@ export default function MigrationWizard({
       </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-2">
+      {/* Mobile Polish: 4 steps × ~110px each overflows at 375px. Hide labels
+          below sm; on small screens the circle (current step is brand-coloured)
+          plus the connector lines communicate progress on their own. */}
+      <div className="flex items-center gap-2 sm:gap-2">
         {(['upload', 'map', 'review', 'done'] as WizardStep[]).map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+          <div key={s} className="flex items-center gap-1.5 sm:gap-2">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
               step === s ? 'bg-[#4ecde6] text-[#0a0a0a]'
                 : (['upload', 'map', 'review', 'done'].indexOf(step) > i) ? 'bg-emerald-500 text-white'
                 : 'bg-white/5 text-white/40'
             }`}>{i + 1}</div>
-            <span className={`text-xs font-medium capitalize ${step === s ? 'text-white' : 'text-white/50'}`}>{s}</span>
-            {i < 3 && <div className="w-4 h-px bg-white/10" />}
+            <span className={`hidden sm:inline text-xs font-medium capitalize ${step === s ? 'text-white' : 'text-white/50'}`}>{s}</span>
+            {/* Current-step label visible on mobile too, so users know where they are */}
+            {step === s && <span className="sm:hidden text-xs font-medium capitalize text-white">{s}</span>}
+            {i < 3 && <div className="w-3 sm:w-4 h-px bg-white/10 shrink-0" />}
           </div>
         ))}
       </div>
@@ -616,8 +621,8 @@ export default function MigrationWizard({
               </div>
             </div>
 
-            <div className="py-3 px-4 rounded-xl border border-cyan-500/30 bg-cyan-500/[0.05]">
-              <p className="text-sm font-semibold text-cyan-300 mb-1">Two-step send</p>
+            <div className="py-3 px-4 rounded-xl border border-[#4ecde6]/30 bg-[#4ecde6]/[0.05]">
+              <p className="text-sm font-semibold text-[#4ecde6] mb-1">Two-step send</p>
               <p className="text-[11px] text-white/60">
                 Invitation emails are <strong>not</strong> sent during this import. After the
                 import finishes you&apos;ll see a summary including any cross-academy conflicts —
@@ -690,8 +695,9 @@ export default function MigrationWizard({
 
           {result && (
             <>
-              {/* Import summary stat grid */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              {/* Import summary stat grid — Mobile Polish: flow 2→3→6 with an
+                  `sm` intermediate so 6 tiles don't crunch at narrow widths. */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                 <SummaryStat label="Imported" value={result.imported} accent="emerald" />
                 <SummaryStat label="Skipped" value={result.skipped} accent="white" />
                 <SummaryStat label="Conflicts" value={result.conflicts.length} accent={result.conflicts.length > 0 ? 'amber' : 'white'} />
@@ -702,10 +708,10 @@ export default function MigrationWizard({
 
               {/* Send invitations panel — visible only when there are pending invites */}
               {result.invitations.length > 0 && sendResults.length === 0 && (
-                <div className="bg-[#0e1820] border border-cyan-500/25 rounded-2xl p-5">
+                <div className="bg-[#0e1820] border border-[#4ecde6]/25 rounded-2xl p-5">
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-cyan-200">
+                      <p className="text-sm font-semibold text-[#4ecde6]">
                         {result.invitations.length} parent{result.invitations.length !== 1 ? 's' : ''} ready to be emailed
                       </p>
                       <p className="text-xs text-white/60 mt-1 max-w-lg">
@@ -717,7 +723,7 @@ export default function MigrationWizard({
                     <button
                       onClick={handleSendInvitations}
                       disabled={sending}
-                      className="px-5 py-2.5 rounded-full text-sm font-bold bg-cyan-500 text-[#0a0a0a] hover:bg-cyan-400 disabled:opacity-50"
+                      className="px-5 py-2.5 rounded-full text-sm font-bold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-50"
                     >
                       {sending ? `Sending ${progress.done}/${progress.total}…` : `Send ${result.invitations.length} invitations`}
                     </button>
@@ -752,8 +758,8 @@ export default function MigrationWizard({
                     NOT moved and no player/subscription was created. Handle each manually via
                     Migrate Member or ask support.
                   </p>
-                  <div className="max-h-64 overflow-y-auto">
-                    <table className="w-full text-xs">
+                  <div className="max-h-64 overflow-auto -mx-2 sm:mx-0">
+                    <table className="w-full text-xs min-w-[560px]">
                       <thead className="text-[10px] uppercase tracking-wider text-white/40">
                         <tr>
                           <th className="text-left py-1.5 px-2 font-semibold">Row</th>
@@ -797,8 +803,8 @@ export default function MigrationWizard({
                     enrolment, or subscription was created. Could be a typo, a corrected DOB,
                     or a sibling with the same name. Handle each manually via Migrate Member.
                   </p>
-                  <div className="max-h-64 overflow-y-auto">
-                    <table className="w-full text-xs">
+                  <div className="max-h-64 overflow-auto -mx-2 sm:mx-0">
+                    <table className="w-full text-xs min-w-[620px]">
                       <thead className="text-[10px] uppercase tracking-wider text-white/40">
                         <tr>
                           <th className="text-left py-1.5 px-2 font-semibold">Row</th>
@@ -836,8 +842,8 @@ export default function MigrationWizard({
                       Download issues CSV
                     </button>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    <table className="w-full text-xs">
+                  <div className="max-h-64 overflow-auto -mx-2 sm:mx-0">
+                    <table className="w-full text-xs min-w-[520px]">
                       <thead className="text-[10px] uppercase tracking-wider text-white/40">
                         <tr>
                           <th className="text-left py-1.5 px-2 font-semibold">Row</th>
@@ -867,8 +873,8 @@ export default function MigrationWizard({
                       Failed email sends ({sendResults.filter((r) => !r.sent).length})
                     </h3>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    <table className="w-full text-xs">
+                  <div className="max-h-64 overflow-auto -mx-2 sm:mx-0">
+                    <table className="w-full text-xs min-w-[480px]">
                       <thead className="text-[10px] uppercase tracking-wider text-white/40">
                         <tr>
                           <th className="text-left py-1.5 px-2 font-semibold">Email</th>
@@ -933,8 +939,8 @@ export default function MigrationWizard({
                   </div>
                 </div>
 
-                <div className="max-h-96 overflow-y-auto">
-                  <table className="w-full text-sm">
+                <div className="max-h-96 overflow-auto -mx-2 sm:mx-0">
+                  <table className="w-full text-sm min-w-[520px]">
                     <thead className="text-[11px] uppercase tracking-wider text-white/40">
                       <tr>
                         <th className="text-left py-2 px-2 font-semibold">Player</th>

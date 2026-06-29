@@ -44,7 +44,7 @@ export default function TermInfo({
 
   return (
     <div
-      className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 sm:p-5"
+      className="rounded-xl border border-[#4ecde6]/25 bg-[#4ecde6]/[0.06] p-4 sm:p-5"
       data-testid="term-info-block"
     >
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
