@@ -690,7 +690,7 @@ function ClassAssignmentSection({
         {canWrite && !picking && available.length > 0 && (
           <button
             onClick={() => setPicking(true)}
-            className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+            className="text-xs text-[#4ecde6] hover:text-[#7dddf0] transition"
           >
             + Assign classes
           </button>
@@ -712,7 +712,7 @@ function ClassAssignmentSection({
               className="flex items-center justify-between py-1.5 px-2 rounded bg-white/5 border border-white/10"
             >
               <div className="flex items-center gap-2 text-sm min-w-0">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[#4ecde6] shrink-0" />
                 <span className="text-white/80 font-medium truncate">{c.name}</span>
                 {(c.day_of_week || c.time_slot) && (
                   <span className="text-white/40 text-xs truncate">
@@ -757,7 +757,8 @@ function ClassAssignmentSection({
                       type="checkbox"
                       checked={picked.has(c.id)}
                       onChange={() => toggle(c.id)}
-                      className="rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50"
+                      className="rounded border-white/20 bg-white/5 focus:ring-[#4ecde6]/40"
+                      style={{ accentColor: '#4ecde6' }}
                     />
                     <span className="text-white/80 font-medium truncate">{c.name}</span>
                     {(c.day_of_week || c.time_slot) && (
@@ -779,7 +780,7 @@ function ClassAssignmentSection({
                 <button
                   onClick={handleAssign}
                   disabled={saving || picked.size === 0}
-                  className="text-xs px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-40 transition"
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#7dddf0] disabled:opacity-40 transition"
                 >
                   {saving ? 'Assigning…' : `Assign ${picked.size || 0}`}
                 </button>
@@ -949,8 +950,8 @@ function TermCard({
           </p>
         </div>
       ) : term.parent_message ? (
-        <div className="mb-3 px-3 py-2 rounded-lg border border-cyan-500/15 bg-cyan-500/[0.05]">
-          <p className="text-[10px] uppercase tracking-wider text-cyan-300/60 mb-1">
+        <div className="mb-3 px-3 py-2 rounded-lg border border-[#4ecde6]/20 bg-[#4ecde6]/[0.05]">
+          <p className="text-[10px] uppercase tracking-wider text-[#4ecde6]/70 mb-1">
             Parent message
           </p>
           <p className="text-xs text-white/70 whitespace-pre-wrap">

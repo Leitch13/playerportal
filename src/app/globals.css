@@ -247,4 +247,11 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
   .has-bottom-nav {
     padding-bottom: 4.5rem;
   }
+  /* Mobile Polish: any fixed-bottom element (StickyBookBar, trial-form CTA)
+     should respect the iOS home-indicator safe area so the button isn't
+     sitting under the bar. The existing safe-area-pb class was used in
+     StickyBookBar but never defined — this restores intended behaviour. */
+  .safe-area-pb {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
 }

@@ -238,7 +238,9 @@ export default function FinancialBreakdown({
       {/* ─── Parent Signup Funnel ─── */}
       <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
         <h3 className="text-sm font-semibold mb-4">Signup & Conversion Funnel</h3>
-        <div className="grid grid-cols-4 gap-2">
+        {/* Mobile Polish: 4 columns of FunnelStep ≈ 78px each at 375px and
+            squashed each step's label + value. Stack to 2-cols on mobile. */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <FunnelStep
             label="Signed Up"
             value={summary.totalParents}

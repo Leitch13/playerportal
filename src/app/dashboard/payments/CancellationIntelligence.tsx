@@ -92,7 +92,9 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
               <h3 className="text-sm font-bold text-white">Lost MRR</h3>
               <span className="text-[10px] text-white/40">Monthly value of cancelled subscriptions</span>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            {/* Mobile Polish: tighten gap on the 3-tile time-series row so
+                "£1,200" fits without clipping at 375px. */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <MetricTile
                 label="This month"
                 value={fmtGBP(lost.thisMonth)}
@@ -223,9 +225,10 @@ function MetricTile({
     tone === 'rose'    ? 'text-rose-400' :
     'text-white'
   return (
-    <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+    // Mobile Polish: p-3 on mobile gives the £-value 8px more breathing room.
+    <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3 sm:p-4">
       <div className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">{label}</div>
-      <div className={'text-2xl font-extrabold tabular-nums mt-1 ' + valueClass}>{value}</div>
+      <div className={'text-xl sm:text-2xl font-extrabold tabular-nums mt-1 ' + valueClass}>{value}</div>
       {sub && <div className="text-[10px] text-white/40 mt-0.5">{sub}</div>}
       {caption && <div className="text-[10px] text-white/40 mt-0.5 italic">{caption}</div>}
     </div>
