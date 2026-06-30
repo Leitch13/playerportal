@@ -901,7 +901,15 @@ export default function MigrationWizard({
                 </p>
               </div>
               <button
-                onClick={() => { setStep('upload'); setRows([]); setResult(null); setFileName('') }}
+                onClick={() => {
+                  setStep('upload')
+                  setRows([])
+                  setResult(null)
+                  setFileName('')
+                  setProgress({ done: 0, total: 0, phase: 'idle' })
+                  setSendResults([])
+                  setFatalError(null)
+                }}
                 className="px-4 py-2 rounded-full text-xs font-semibold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
               >
                 {existingInvitations.length > 0 ? 'Import another batch' : 'Start new migration'}
