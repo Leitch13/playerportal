@@ -450,14 +450,12 @@ export default function MigrationWizard({
                   Track which parents have confirmed their subscription.
                 </p>
               </div>
-              {existingInvitations.length === 0 && (
-                <button
-                  onClick={() => { setStep('upload'); setRows([]); setResult(null); setFileName('') }}
-                  className="px-4 py-2 rounded-full text-xs font-semibold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
-                >
-                  Start new migration
-                </button>
-              )}
+              <button
+                onClick={() => { setStep('upload'); setRows([]); setResult(null); setFileName('') }}
+                className="px-4 py-2 rounded-full text-xs font-semibold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
+              >
+                {existingInvitations.length > 0 ? 'Import another batch' : 'Start new migration'}
+              </button>
             </div>
 
             {existingInvitations.length === 0 ? (
