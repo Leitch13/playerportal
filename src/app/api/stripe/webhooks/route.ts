@@ -140,13 +140,18 @@ async function sendSignupEmails(
 ) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
-  // Parallel-load all the context we need
+  // Parallel-load all the context we need.
+  // Class fetch expanded to include day/time/location + coach_id + term_id so
+  // the scheduled-signup email can show class-context rows and a term ribbon
+  // when they exist. All new fields are optional in the template — missing
+  // rows are simply omitted, so this stays backward compatible for callers
+  // whose classes have no day/time/coach/term set.
   const [{ data: profile }, { data: plan }, { data: org }, { data: group }] = await Promise.all([
     sb.from('profiles').select('full_name, email').eq('id', args.userId).maybeSingle(),
     sb.from('subscription_plans').select('name, amount').eq('id', args.planId).maybeSingle(),
     sb.from('organisations').select('name, logo_url, contact_email').eq('id', args.orgId).maybeSingle(),
     args.classId
-      ? sb.from('training_groups').select('name').eq('id', args.classId).maybeSingle()
+      ? sb.from('training_groups').select('name, day_of_week, time_slot, location, coach_id, term_id').eq('id', args.classId).maybeSingle()
       : Promise.resolve({ data: null }),
   ])
 
@@ -163,9 +168,41 @@ async function sendSignupEmails(
   const planName = (plan?.name as string | undefined) ?? 'Subscription'
   const monthlyAmountNum = Number((plan as { amount?: number } | null)?.amount ?? 0)
   const monthlyAmount = `£${monthlyAmountNum.toFixed(2)}`
-  const className = (group as { name?: string } | null)?.name as string | undefined
+  const groupRow = group as {
+    name?: string
+    day_of_week?: string | null
+    time_slot?: string | null
+    location?: string | null
+    coach_id?: string | null
+    term_id?: string | null
+  } | null
+  const className = groupRow?.name || undefined
+  const classDay = groupRow?.day_of_week || undefined
+  const classTime = groupRow?.time_slot || undefined
+  const venue = groupRow?.location || undefined
   const activatesOnLabel = formatLongDate(args.activatesOn)
   const anchorLabel = anchorLabelFor(args.activatesOn)
+
+  // Coach + term lookups only run when the class row supplies the id. Both
+  // are best-effort — a failed lookup falls back to omitting the field, never
+  // blocks the email send.
+  let coachName: string | undefined
+  let term: { name: string; start_date: string; end_date: string; parent_message?: string | null } | null = null
+  if (groupRow?.coach_id) {
+    const { data: coach } = await sb.from('profiles').select('full_name').eq('id', groupRow.coach_id).maybeSingle()
+    coachName = (coach?.full_name as string | undefined) || undefined
+  }
+  if (groupRow?.term_id) {
+    const { data: termRow } = await sb.from('terms').select('name, start_date, end_date, parent_message').eq('id', groupRow.term_id).maybeSingle()
+    if (termRow?.name && termRow?.start_date && termRow?.end_date) {
+      term = {
+        name: termRow.name as string,
+        start_date: termRow.start_date as string,
+        end_date: termRow.end_date as string,
+        parent_message: (termRow.parent_message as string | null | undefined) ?? null,
+      }
+    }
+  }
 
   const { sendEmail } = await import('@/lib/email')
   const {
@@ -198,6 +235,7 @@ async function sendSignupEmails(
   } else if (args.billingModel === 'future_prorated') {
     parentEmailTpl = scheduledSignupConfirmationEmail({
       parentName, childName, academyName, planName, className,
+      classDay, classTime, venue, coachName, term,
       activatesOnLabel,
       monthlyAmount,
       anchorLabel,

@@ -2136,40 +2136,89 @@ export function scheduledSignupConfirmationEmail(params: {
   academyName: string
   planName: string
   className?: string
-  activatesOnLabel: string   // e.g. "Thu 4 June 2026"
+  activatesOnLabel: string   // membership start, e.g. "Thu 4 August 2026"
   monthlyAmount: string       // e.g. "£28.00"
-  estimatedFirstCharge?: string // optional, the cron will charge the prorated amount; if known, show it
-  anchorLabel?: string         // first of month AFTER activatesOn, e.g. "1 July 2026"
+  estimatedFirstCharge?: string // optional prorated first-charge amount
+  anchorLabel?: string         // e.g. "1 September 2026"
   dashboardUrl: string
   academyLogoUrl?: string
   academyContactEmail?: string
+  // Class-context (all optional — each row rendered only when present, so
+  // legacy callers omitting these produce the exact same email as before).
+  classDay?: string           // e.g. "Saturday"
+  classTime?: string          // e.g. "9:00 AM – 10:00 AM"
+  venue?: string              // e.g. "Millfield Pitches"
+  coachName?: string          // e.g. "Coach James"
+  firstSessionLabel?: string  // optional first-session date; falls back to activatesOnLabel
+  // Term context — rendered as a ribbon + detail card when present.
+  term?: {
+    name: string
+    start_date: string
+    end_date: string
+    parent_message?: string | null
+  } | null
 }) {
   const greetingName = params.parentName.split(' ')[0] || params.parentName
+  const firstSession = params.firstSessionLabel || params.activatesOnLabel
+  const anchorText = params.anchorLabel ?? 'the 1st of next month'
+
+  const termRibbon = params.term?.name
+    ? `<div style="text-align:center;margin:0 0 20px">
+         <div style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:6px 14px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase">${params.term.name}</div>
+       </div>`
+    : ''
+
+  const termDetail = params.term?.name && params.term.start_date && params.term.end_date
+    ? `<div style="background:#0f1820;border:1px solid #4ecde640;border-radius:12px;padding:16px;margin:20px 0">
+         <p style="margin:0 0 4px;font-size:11px;color:#4ecde6;font-weight:700;letter-spacing:1px;text-transform:uppercase">Term</p>
+         <p style="margin:0;font-size:16px;color:#ffffff;font-weight:600">${params.term.name}</p>
+         <p style="margin:4px 0 0;font-size:14px;color:#aaa">${new Date(params.term.start_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} – ${new Date(params.term.end_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+         ${params.term.parent_message?.trim() ? `<p style="margin:10px 0 0;font-size:14px;color:#cce">${params.term.parent_message.trim()}</p>` : ''}
+       </div>`
+    : ''
+
+  const classRows = [
+    params.className ? `<tr><td style="color:#888;width:140px">Class</td><td style="color:#fff;text-align:right">${params.className}</td></tr>` : '',
+    params.classDay ? `<tr><td style="color:#888">Day</td><td style="color:#fff;text-align:right">${params.classDay}</td></tr>` : '',
+    params.classTime ? `<tr><td style="color:#888">Time</td><td style="color:#fff;text-align:right">${params.classTime}</td></tr>` : '',
+    params.venue ? `<tr><td style="color:#888">Venue</td><td style="color:#fff;text-align:right">${params.venue}</td></tr>` : '',
+    params.coachName ? `<tr><td style="color:#888">Coach</td><td style="color:#fff;text-align:right">${params.coachName}</td></tr>` : '',
+  ].filter(Boolean).join('')
+
   const firstChargeLine = params.estimatedFirstCharge
     ? `<tr><td style="color:#888;width:140px">First charge</td><td style="color:#fff;text-align:right;font-weight:600">${params.estimatedFirstCharge}</td></tr>
-       <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ billed on ${params.activatesOnLabel}, pro-rata to ${params.anchorLabel ?? 'the 1st of next month'}</td></tr>`
+       <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ billed on ${params.activatesOnLabel}, pro-rata to ${anchorText}</td></tr>`
     : `<tr><td style="color:#888;width:140px">First charge</td><td style="color:#fff;text-align:right;font-weight:600">${params.activatesOnLabel}</td></tr>
-       <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ pro-rata for the days until ${params.anchorLabel ?? 'the 1st of next month'}</td></tr>`
+       <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ pro-rata for the days until ${anchorText}</td></tr>`
+
+  const subjectSuffix = params.term?.name
+    ? `${params.className ?? params.planName} — ${params.term.name}`
+    : `${params.className ?? params.planName} on ${params.activatesOnLabel}`
 
   return {
-    subject: `Your start date is confirmed — ${params.className ?? params.planName} on ${params.activatesOnLabel}`,
+    subject: `Your start date is confirmed — ${subjectSuffix}`,
     html: baseLayout(`
       ${params.academyLogoUrl ? `<div style="text-align:center;margin-bottom:20px"><img src="${params.academyLogoUrl}" alt="${params.academyName}" style="max-width:96px;max-height:96px;border-radius:14px" /></div>` : ''}
+
+      ${termRibbon}
+
       <h2 style="margin:0 0 8px;color:#ffffff;font-size:24px">Start date locked in 📅</h2>
       <p style="color:#aaa;margin:0 0 20px;line-height:1.6">
         Hi ${greetingName} — we've saved your card for <strong style="color:#fff">${params.academyName}</strong>.
-        ${params.childName ? `<strong style="color:#fff">${params.childName}</strong>'s` : 'Your'} first session is <strong style="color:#fff">${params.activatesOnLabel}</strong>.
+        ${params.childName ? `<strong style="color:#fff">${params.childName}</strong>'s` : 'Your'} first session is <strong style="color:#fff">${firstSession}</strong>.
         <strong style="color:#fff">No charge today</strong> — your subscription kicks off on your start date.
       </p>
+
+      ${termDetail}
 
       <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
         <p style="margin:0 0 12px;font-size:12px;color:#4ecde6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">💳 Your billing</p>
         <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
           <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
-          ${params.className ? `<tr><td style="color:#888">Class</td><td style="color:#fff;text-align:right">${params.className}</td></tr>` : ''}
+          ${classRows}
           <tr><td style="color:#888">Start date</td><td style="color:#fff;text-align:right;font-weight:600">${params.activatesOnLabel}</td></tr>
           ${firstChargeLine}
-          <tr><td style="color:#888;border-top:1px solid #2a2a2a;padding-top:12px">From ${params.anchorLabel ?? 'the 1st of next month'}</td><td style="color:#fff;text-align:right;font-weight:600;border-top:1px solid #2a2a2a;padding-top:12px">${params.monthlyAmount}/month</td></tr>
+          <tr><td style="color:#888;border-top:1px solid #2a2a2a;padding-top:12px">From ${anchorText}</td><td style="color:#fff;text-align:right;font-weight:600;border-top:1px solid #2a2a2a;padding-top:12px">${params.monthlyAmount}/month</td></tr>
           <tr><td colspan="2" style="color:#aaa;padding-top:0;font-size:13px">↳ then ${params.monthlyAmount} on the 1st of every month after that</td></tr>
         </table>
       </div>
