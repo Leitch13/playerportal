@@ -80,12 +80,12 @@ export default function CommunicationPanel({
 
       <div className="flex flex-wrap gap-2">
         {parentEmail && (
-          <a
-            href={`mailto:${parentEmail}`}
+          <Link
+            href={`/dashboard/messages?to=${parentId}`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-white/80 border border-white/[0.08] transition-colors"
           >
             <span aria-hidden>📧</span> Email
-          </a>
+          </Link>
         )}
         {parentPhone && (
           <a

@@ -296,7 +296,7 @@ function ParentRow({ r }: { r: ParentsTableRow }) {
           <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Message">✉️</RowActionLink>
           {r.parentPhone && <RowActionAnchor href={`tel:${r.parentPhone}`} title="Call">📞</RowActionAnchor>}
           {r.parentPhone && <RowActionAnchor href={`https://wa.me/${waNumber}`} title="WhatsApp" external>💬</RowActionAnchor>}
-          {r.parentEmail && <RowActionAnchor href={`mailto:${r.parentEmail}`} title="Email">📧</RowActionAnchor>}
+          {r.parentEmail && <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Email">📧</RowActionLink>}
           <ParentProfileEditor parent={r.editor} />
         </div>
       </td>
