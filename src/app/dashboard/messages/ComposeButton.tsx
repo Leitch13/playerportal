@@ -18,12 +18,21 @@ import { useRouter } from 'next/navigation'
  */
 export default function ComposeButton({
   recipients,
+  preSelectedRecipientId = '',
+  autoOpen = false,
 }: {
   recipients: { id: string; full_name: string; role: string }[]
+  /** When the page received a valid `?to=<id>` deep-link, this pre-fills the
+   *  recipient dropdown so the Send button enables as soon as a body is typed.
+   *  Server already verified the id is in `recipients` — treat as trusted. */
+  preSelectedRecipientId?: string
+  /** Auto-expand the composer on mount. Set together with
+   *  `preSelectedRecipientId` when the deep-link is honoured. */
+  autoOpen?: boolean
 }) {
   const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [recipientId, setRecipientId] = useState('')
+  const [open, setOpen] = useState(autoOpen)
+  const [recipientId, setRecipientId] = useState(preSelectedRecipientId)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)

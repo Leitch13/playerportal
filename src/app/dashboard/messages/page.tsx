@@ -136,6 +136,15 @@ export default async function MessagesPage({
   const validation = validateRecipientsParam(params.recipients, recipients)
   const showBulkPanel = validation.ids.length > 0
 
+  // Single-recipient deep-link (?to=<id>) — only honoured when the id is
+  // present in the caller's allowed recipient set (blocks cross-org /
+  // tampered ids). Silently coerces to '' when invalid so ComposeButton
+  // opens with an empty dropdown, matching the no-param behaviour.
+  const preSelectedRecipientId =
+    typeof params.to === 'string' && recipients.some(r => r.id === params.to)
+      ? params.to
+      : ''
+
   return (
     <div className="space-y-6 p-6 lg:p-8">
       <div>
@@ -153,7 +162,11 @@ export default async function MessagesPage({
           autoOpen
         />
       ) : (
-        <ComposeButton recipients={recipients} />
+        <ComposeButton
+          recipients={recipients}
+          preSelectedRecipientId={preSelectedRecipientId}
+          autoOpen={preSelectedRecipientId !== ''}
+        />
       )}
 
       <MessagesList currentUserId={user.id} threads={threads} />

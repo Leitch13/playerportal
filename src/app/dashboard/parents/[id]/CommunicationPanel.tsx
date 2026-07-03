@@ -31,8 +31,12 @@ export default function CommunicationPanel({
   messageCount,
   contactSignal,
 }: CommunicationProps) {
+  // Match the ParentsTable transform: strip non-digits, then convert a UK
+  // domestic leading 0 to 44 so `wa.me` gets a valid international format.
+  // Without the leading-0 substitution WhatsApp rejects the URL for parents
+  // whose phone is stored as `07XXXXXXXXX` (no country code).
   const whatsappHref = parentPhone
-    ? `https://wa.me/${parentPhone.replace(/[^\d]/g, '')}`
+    ? `https://wa.me/${parentPhone.replace(/[^\d]/g, '').replace(/^0/, '44')}`
     : null
 
   // Phase 2.5 — render the rolled-up contact stats. Pure derivation from
