@@ -51,6 +51,12 @@ Contaminated / archive. 65 commits ahead of `main`, 38 behind. Contains unrelate
 | Onboard signup WIP | Outstanding | Preserved in `stash@{1}`. Small onboard/signup change. |
 | Everything else on this branch | Rejected | Contaminated with 65 commits of mixed scope. Cherry-pick specific fixes on request only, do not consider the branch as a whole. |
 
+### Newly discovered on `main` (root fixes required)
+
+| Item | Origin | Status | Notes |
+|---|---|---|---|
+| Onboarding signup race can leave academy owner as `parent` | Observed on DUBAI FC signup 2026-07-03 | **Outstanding** | **Root cause**: `/api/onboard/signup` (`src/app/api/onboard/signup/route.ts:57-70`) uses `.single()` to check whether the `handle_new_user` trigger has already inserted the profile. When a replica-lag / read-your-writes gap makes the check return `null`, the route falls into the manual-insert branch, hits a primary-key conflict (trigger did insert), and silently swallows the error at line 68-70 (`// Don't fail the whole flow — the user exists, profile can be fixed later`). The trigger's hard-coded `role='parent'` (security-required per migration 091) then stays as the final value. **Required fix**: on `profileError` in the insert branch (or as a general post-condition), fall through to `UPDATE profiles SET role='admin', organisation_id=<org.id> WHERE id=<userId>` instead of returning success silently. **Protected area**: auth-adjacent onboarding — requires Phase 2 protected-system approval and Phase 3 build discipline. **Data mitigation applied**: Lamin Samateh's profile updated to `role='admin'` on 2026-07-03 via a direct DB `UPDATE` (one row) to unblock DUBAI FC. **Detection query for future orgs**: `SELECT p.id, p.email, p.organisation_id FROM profiles p JOIN auth.users u ON u.id = p.id WHERE (u.raw_user_meta_data->>'role') = 'admin' AND p.role <> 'admin';` |
+
 ---
 
 ## How to update this file
