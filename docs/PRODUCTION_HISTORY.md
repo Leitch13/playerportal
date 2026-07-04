@@ -10,6 +10,19 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-07-04
+
+### `f1bd9f4` — SEO hotfix: homepage discoverability (canonical, OG, JSON-LD, robots, sitemap)
+
+- **Deployment id**: `dpl_m2aoSn8froPsB1UUd165vgos9kSD`
+- **Deployment URL**: https://playerportallive-sv155shzx-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: Fixed the four things that were keeping the marketing homepage off Google: (1) `/robots.txt` and `/sitemap.xml` were being 307-redirected to `/auth/signin` by the middleware matcher — added both to the negative-lookahead so `updateSession()` no longer sees crawler requests as protected paths. (2) `public/robots.txt` was pointing its `Sitemap:` directive at the wrong domain (`playerportal.app`); now points at `https://www.theplayerportal.net/sitemap.xml`. (3) `src/app/sitemap.ts` was reading `NEXT_PUBLIC_APP_URL` (which drifts) and only listed 5 URLs; now hardcodes the www canonical base and lists all 8 public marketing pages (`/`, `/onboard`, `/how-it-works`, `/demo`, `/terms`, `/privacy`, `/dpa`, `/cookies`). (4) Root layout + homepage OG/Twitter metadata refreshed to Homepage V3 messaging ("The Operating System for Football Academies"), homepage canonical `<link>` added, and 3 JSON-LD blocks added on `/` (SoftwareApplication, Organization, FAQPage — FAQPage mirrors the 6 on-page FAQ answers verbatim so Google's rich-result eligibility check matches).
+- **Files**: `public/robots.txt`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/sitemap.ts`, `src/middleware.ts`
+- **Protected system touched**: Middleware — matcher-regex only. `updateSession()` auth logic is bit-identical. Change extends the existing exclusion list from `_next/static|_next/image|favicon.ico|*.(svg|png|jpg|jpeg|gif|webp)` to also include `robots\.txt|sitemap\.xml`.
+- **Rollback**: `git revert f1bd9f4 && vercel deploy --prod`
+
+---
+
 ## 2026-07-03
 
 ### `6785c9b` — Migration wizard: allow admins to import additional batches
