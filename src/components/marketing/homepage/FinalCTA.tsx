@@ -20,7 +20,7 @@ export default function FinalCTA() {
 
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            href="/auth/signup"
+            href="/onboard"
             className="inline-flex items-center gap-2 rounded-full bg-[#4ecde6] text-black px-8 py-4 text-base font-semibold hover:bg-[#6eddf2] transition-colors"
           >
             Try free for 14 days

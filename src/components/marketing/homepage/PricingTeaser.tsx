@@ -75,7 +75,7 @@ export default function PricingTeaser() {
               </ul>
               <div className="mt-8">
                 <Link
-                  href="/auth/signup"
+                  href="/onboard"
                   className={`block text-center rounded-full py-3 text-sm font-semibold transition-colors ${
                     t.featured
                       ? 'bg-[#4ecde6] text-black hover:bg-[#6eddf2]'

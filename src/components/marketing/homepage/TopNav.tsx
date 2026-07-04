@@ -17,7 +17,7 @@ export default function TopNav() {
 
         <div className="flex items-center gap-3">
           <Link href="/auth/signin" className="hidden sm:inline text-sm text-white/70 hover:text-white transition-colors">Log in</Link>
-          <Link href="/auth/signup" className="text-sm font-semibold text-black bg-[#4ecde6] hover:bg-[#6eddf2] px-4 py-2 rounded-full transition-colors">
+          <Link href="/onboard" className="text-sm font-semibold text-black bg-[#4ecde6] hover:bg-[#6eddf2] px-4 py-2 rounded-full transition-colors">
             Try free
           </Link>
         </div>

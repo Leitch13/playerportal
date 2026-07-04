@@ -27,7 +27,7 @@ export default function Hero() {
 
             <div className="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Link
-                href="/auth/signup"
+                href="/onboard"
                 className="inline-flex items-center gap-2 rounded-full bg-[#4ecde6] text-black px-7 py-3.5 text-[15px] font-semibold hover:bg-[#6eddf2] transition-colors"
               >
                 Try free for 14 days
