@@ -1,25 +1,27 @@
 import Link from 'next/link'
 
+// Kept in sync with platform_plans (DB) and src/app/onboard/page.tsx PLATFORM_PLANS.
+// Every tier includes unlimited players — the ladder is features, not member caps.
 const TIERS = [
   {
     name: 'Starter',
-    price: '£29',
-    tag: 'Up to 25 members',
-    features: ['All core features', 'Migration included', 'Stripe fee 2%'],
+    price: '£20',
+    tag: 'Everything to go live',
+    features: ['Unlimited players & classes', 'Bookings, payments & attendance', 'Migration from ClassForKids'],
     featured: false,
   },
   {
-    name: 'Growth',
-    price: '£59',
-    tag: 'Up to 200 members',
-    features: ['Everything in Starter', 'Reports + analytics', 'Priority support'],
+    name: 'Pro',
+    price: '£35',
+    tag: 'Retention & growth',
+    features: ['Everything in Starter', 'Waitlists, referrals, messaging', 'Progress reviews & analytics'],
     featured: true,
   },
   {
-    name: 'Pro',
-    price: '£119',
-    tag: 'Unlimited members',
-    features: ['Everything in Growth', 'Custom onboarding', 'Stripe fee 1.5%'],
+    name: 'Enterprise',
+    price: '£60',
+    tag: 'White-label & scale',
+    features: ['Everything in Pro', 'Custom branding, merch shop, API', 'Priority support & onboarding'],
     featured: false,
   },
 ]
@@ -33,9 +35,9 @@ export default function PricingTeaser() {
             PRICING
           </p>
           <h2 className="text-4xl sm:text-5xl leading-[1.05] tracking-[-0.02em] font-black text-white">
-            One price. Everything included.
+            Simple monthly pricing.
             <br />
-            <span className="text-white/50">No booking fees. Ever.</span>
+            <span className="text-white/50">No player limits.</span>
           </h2>
           <p className="mt-6 text-lg text-white/60">
             14-day free trial. Cancel any time. No card required to start.
