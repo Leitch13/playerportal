@@ -53,11 +53,11 @@ const softwareApplicationSchema = {
   description: DESCRIPTION,
   offers: {
     '@type': 'Offer',
-    price: '29',
+    price: '20',
     priceCurrency: 'GBP',
     priceSpecification: {
       '@type': 'UnitPriceSpecification',
-      price: '29',
+      price: '20',
       priceCurrency: 'GBP',
       unitText: 'MONTH',
     },
@@ -86,7 +86,7 @@ export default function Page() {
           subhead="Player Portal handles academy payment collection on Stripe: monthly memberships, family billing, failed-payment recovery, automatic renewals and payment reminders. You stop being the debt collector for £30 twice a month."
           primaryCta={{ label: 'Try free for 14 days', href: '/onboard' }}
           secondaryCta={{ label: 'See it in action', href: '/how-it-works' }}
-          trustDots={['Stripe-native billing', 'Family discounts', 'Failed payment recovery', 'No booking fees']}
+          trustDots={['Stripe-native billing', 'Family discounts', 'Failed payment recovery', 'Cancel any time']}
           visual={<PaymentsMock />}
         />
 
@@ -141,9 +141,9 @@ export default function Page() {
               sub: 'is what one recovered £30/month member is worth in a year of retained revenue. Multiply by your current failed-payment attrition.',
             },
             {
-              stat: '0%',
-              label: 'booking fees',
-              sub: 'Player Portal takes zero percent of what parents pay. Stripe fees (2%) go to Stripe. Everything else lands in your balance.',
+              stat: 'Unlimited',
+              label: 'players every tier',
+              sub: 'No cap at £20 (Starter), £35 (Pro) or £60 (Enterprise). Player Portal takes a transaction fee that steps down as you scale — 3.5% Starter, 2.5% Pro, 2% Enterprise. Stripe\'s own card fees apply separately.',
             },
           ]}
         />
@@ -191,7 +191,7 @@ export default function Page() {
             },
             {
               q: 'What fees does Player Portal take from each payment?',
-              a: 'Zero. Player Portal is a flat monthly subscription (£29/£59/£119). We do not take a percentage of what parents pay. Stripe\'s standard fees (currently 2% for Growth, 1.5% for Pro) go to Stripe directly, not to us.',
+              a: 'Player Portal is a flat monthly subscription (£20 Starter, £35 Pro, £60 Enterprise) plus a transaction fee on each payment that steps down as you scale (3.5% Starter, 2.5% Pro, 2% Enterprise). Stripe\'s own standard card fees apply separately. There\'s no per-booking surcharge on top of that.',
             },
             {
               q: 'What happens when a parent\'s card fails?',
@@ -218,7 +218,7 @@ export default function Page() {
           subhead="Player Portal handles the retry schedule, the branded reminders, the self-serve card updates and the family billing. You get the weekly number and your Sunday nights back. Free for 14 days."
           primaryCta={{ label: 'Try free for 14 days', href: '/onboard' }}
           secondaryCta={{ label: 'Book a demo', href: '/how-it-works' }}
-          microCopy="Zero per-booking fees. Stripe-native. UK-hosted. Cancel any time."
+          microCopy="Stripe-native. Unlimited players every tier. UK-hosted. Cancel any time."
         />
 
         <LandingInternalLinks currentSlug={SLUG} />

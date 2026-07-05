@@ -54,11 +54,11 @@ const softwareApplicationSchema = {
   description: DESCRIPTION,
   offers: {
     '@type': 'Offer',
-    price: '29',
+    price: '20',
     priceCurrency: 'GBP',
     priceSpecification: {
       '@type': 'UnitPriceSpecification',
-      price: '29',
+      price: '20',
       priceCurrency: 'GBP',
       unitText: 'MONTH',
     },
@@ -142,9 +142,9 @@ export default function Page() {
               sub: 'Export from ClassForKids, upload, confirm with parents, first real charge on the date you pick.',
             },
             {
-              stat: '£0',
-              label: 'booking fees',
-              sub: 'Flat monthly subscription. No 5% per-booking cut. What parents pay is what your academy sees.',
+              stat: 'Unlimited',
+              label: 'players every tier',
+              sub: 'No member cap at £20 (Starter), £35 (Pro) or £60 (Enterprise). The ladder is features, not headcount. Transaction fee steps down as you scale — 3.5% Starter, 2.5% Pro, 2% Enterprise.',
             },
           ]}
         />
@@ -191,7 +191,7 @@ export default function Page() {
             },
             {
               q: 'How is Player Portal priced compared to ClassForKids?',
-              a: 'Flat monthly subscription from £29/month for up to 25 members, £59/month for up to 200, £119/month unlimited. No per-booking fee. Stripe fees pass through at 2% (1.5% on Pro). ClassForKids typically charges 5% per booking on top of a base fee — for a 100-member academy taking £4,000/month, that is around £200/month in fees Player Portal doesn\'t take.',
+              a: 'Flat monthly subscription: £20 (Starter, everything you need to go live), £35 (Pro, adds retention and growth tooling), £60 (Enterprise, adds white-label and priority support). Unlimited players on every tier — the ladder is features, not member caps. Player Portal takes a transaction fee on each payment that steps down as you scale (3.5% Starter, 2.5% Pro, 2% Enterprise); Stripe\'s own card fees apply separately. ClassForKids typically charges around 5% per booking on top of a base fee — for a 100-member academy taking £4,000/month, moving to Player Portal Pro cuts platform fees roughly in half.',
             },
             {
               q: 'Do we have to migrate everything before we can start?',

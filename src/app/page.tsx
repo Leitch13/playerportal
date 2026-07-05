@@ -83,11 +83,11 @@ const softwareApplicationSchema = {
   description: HOMEPAGE_DESCRIPTION,
   offers: {
     '@type': 'Offer',
-    price: '29',
+    price: '20',
     priceCurrency: 'GBP',
     priceSpecification: {
       '@type': 'UnitPriceSpecification',
-      price: '29',
+      price: '20',
       priceCurrency: 'GBP',
       unitText: 'MONTH',
     },

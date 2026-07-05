@@ -53,11 +53,11 @@ const softwareApplicationSchema = {
   description: DESCRIPTION,
   offers: {
     '@type': 'Offer',
-    price: '29',
+    price: '20',
     priceCurrency: 'GBP',
     priceSpecification: {
       '@type': 'UnitPriceSpecification',
-      price: '29',
+      price: '20',
       priceCurrency: 'GBP',
       unitText: 'MONTH',
     },
@@ -86,7 +86,7 @@ export default function Page() {
           subhead="Player Portal's football booking system lets parents book classes, trials and camps at the URL you share. Capacity limits, automatic waitlists and instant confirmations — you stop being the phone tag."
           primaryCta={{ label: 'Try free for 14 days', href: '/onboard' }}
           secondaryCta={{ label: 'See how it works', href: '/how-it-works' }}
-          trustDots={['Public booking page', 'Waitlists included', 'Trial-to-member conversion', 'Zero booking fees']}
+          trustDots={['Public booking page', 'Waitlists included', 'Trial-to-member conversion', '14-day free trial']}
           visual={<CampsMock />}
         />
 
@@ -141,9 +141,9 @@ export default function Page() {
               sub: 'Parents book at 21:47 when they finally get five minutes. You don\'t have to be online to say yes.',
             },
             {
-              stat: '0%',
-              label: 'per-booking fee',
-              sub: 'Player Portal doesn\'t take a cut of each booking. Flat subscription. What parents pay is what your academy sees.',
+              stat: 'Unlimited',
+              label: 'players every tier',
+              sub: '£20 (Starter) gets you the whole booking system — pages, waitlists, trials, capacity — for unlimited players. Pro (£35) adds waitlist automation and referrals. Enterprise (£60) adds white-label. Transaction fee steps down as you scale (3.5% → 2%); no per-booking surcharge.',
             },
           ]}
         />
@@ -199,7 +199,7 @@ export default function Page() {
             },
             {
               q: 'Does the booking page take payment?',
-              a: 'Yes, through your connected Stripe account. Parents enter card details on the booking page (never on the phone) and the money lands in your Stripe balance. Player Portal never touches the money. There\'s no per-booking fee taken by Player Portal — Stripe\'s 2% is the only card fee.',
+              a: 'Yes, through your connected Stripe account. Parents enter card details on the booking page (never on the phone) and the money lands in your Stripe balance. Player Portal never touches the money. Player Portal takes a transaction fee that steps down by tier (3.5% Starter, 2.5% Pro, 2% Enterprise); Stripe\'s own card fee is separate. There\'s no per-booking surcharge on top of that.',
             },
             {
               q: 'Can I embed the booking on my own website?',
