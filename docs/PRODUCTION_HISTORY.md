@@ -10,6 +10,19 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-07-05
+
+### `b2b5fda` — Homepage pricing teaser: match live product truth
+
+- **Deployment id**: `dpl_qee6asxbi` (full: from `playerportallive-qee6asxbi-johnleitch970-1195s-projects.vercel.app`)
+- **Deployment URL**: https://playerportallive-qee6asxbi-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: Aligned the homepage `PricingTeaser` with the live `platform_plans` table + the onboard `PLATFORM_PLANS` constant, which had drifted since the 2026-05-25 tier redesign (migration 046). (1) **Prices**: £29 / £59 / £119 → **£20 / £35 / £60**. (2) **Plan names**: Starter / Growth / Pro → **Starter / Pro / Enterprise**. (3) **Killed the fake "Up to N members" caps** — there is no member cap on any tier — replaced with feature-based positioning ("Everything to go live" / "Retention & growth" / "White-label & scale"). (4) **Rewrote the 3-bullet-per-card copy** to reflect the actual feature ladder from `platform_plans.feature_keys` (Starter 8 keys → Pro adds 10 → Enterprise adds 8). (5) **Section headline** "No booking fees. Ever." → **"No player limits."** — transaction fees (3.5%/2.5%/2%) DO exist on every tier, so the old copy was effectively false advertising. Copy-only change; zero touches on Stripe, billing, onboarding, DB, feature gates, API, middleware, auth, dashboard, or the 3 P1 landing pages (they carry the same drift and will be aligned in a follow-up hotfix).
+- **Files**: `src/components/marketing/homepage/PricingTeaser.tsx` (+15 / -13)
+- **Protected system touched**: None. Copy-only change to a static React component.
+- **Rollback**: `git revert b2b5fda && vercel deploy --prod`
+
+---
+
 ## 2026-07-04
 
 ### `0d9a889` — P1 topical-authority landing pages + shared landing template
