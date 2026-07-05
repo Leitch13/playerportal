@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-white/5 bg-[#080808]">
       <div className="mx-auto max-w-7xl px-6 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <img src="/logo.png" alt="Player Portal" className="h-8 w-auto object-contain" />
@@ -18,6 +18,12 @@ export default function Footer() {
             { label: 'Attendance', href: '/how-it-works' },
             { label: 'Payments', href: '/how-it-works' },
             { label: 'Migration', href: '/how-it-works' },
+          ]} />
+          {/* Only lists LIVE landing pages. P2 slugs get added in Hotfix B. */}
+          <FooterCol title="Solutions" links={[
+            { label: 'Academy management', href: '/football-academy-management-software' },
+            { label: 'Booking system', href: '/football-booking-system' },
+            { label: 'Payment collection', href: '/academy-payment-collection' },
           ]} />
           <FooterCol title="Company" links={[
             { label: 'Why', href: '/how-it-works' },

@@ -41,7 +41,29 @@ export async function updateSession(request: NextRequest) {
     // If not signed in and trying to access protected routes, redirect to sign-in
     const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
     const isApiRoute = request.nextUrl.pathname.startsWith('/api')
-    const isPublicRoute = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/book') || request.nextUrl.pathname.startsWith('/embed') || request.nextUrl.pathname.startsWith('/terms') || request.nextUrl.pathname.startsWith('/onboard') || request.nextUrl.pathname.startsWith('/how-it-works') || request.nextUrl.pathname.startsWith('/privacy') || request.nextUrl.pathname.startsWith('/dpa') || request.nextUrl.pathname.startsWith('/cookies') || request.nextUrl.pathname.startsWith('/demo') || request.nextUrl.pathname.startsWith('/confirm-subscription')
+    // Public marketing surfaces. Landing-page slugs must be listed here or
+    // updateSession() 307-redirects unauthenticated crawler traffic to
+    // /auth/signin and Google indexes the sign-in page instead of the copy.
+    // When a new Hotfix B landing page ships, add its slug here.
+    const LANDING_SLUGS = [
+      '/football-academy-management-software',
+      '/football-booking-system',
+      '/academy-payment-collection',
+    ]
+    const path = request.nextUrl.pathname
+    const isPublicRoute =
+      path === '/' ||
+      path.startsWith('/book') ||
+      path.startsWith('/embed') ||
+      path.startsWith('/terms') ||
+      path.startsWith('/onboard') ||
+      path.startsWith('/how-it-works') ||
+      path.startsWith('/privacy') ||
+      path.startsWith('/dpa') ||
+      path.startsWith('/cookies') ||
+      path.startsWith('/demo') ||
+      path.startsWith('/confirm-subscription') ||
+      LANDING_SLUGS.includes(path)
 
     if (!user && !isAuthRoute && !isPublicRoute && !isApiRoute) {
       const url = request.nextUrl.clone()
