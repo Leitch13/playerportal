@@ -12,6 +12,15 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ## 2026-07-04
 
+### `0d9a889` — P1 topical-authority landing pages + shared landing template
+
+- **Deployment id**: `dpl_b9visbpta` (full: from `playerportallive-b9visbpta-johnleitch970-1195s-projects.vercel.app`)
+- **Deployment URL**: https://playerportallive-b9visbpta-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: Phase 2 SEO — build a topical-authority cluster around football-academy keywords. Ships three high-intent landing pages: `/football-academy-management-software`, `/football-booking-system`, `/academy-payment-collection`. Each page has a unique H1, title, meta description, canonical URL, OpenGraph + Twitter metadata, and page-specific JSON-LD (SoftwareApplication + FAQPage with 6 mirrored Q&As). Copy is topic-focused, not a homepage rewrite — booking-only on the booking page, payments-only on the payments page, whole-platform on the management page. Extracts a shared, props-driven landing template into `src/components/marketing/landing/` (Hero, Problem, WhyBar, Solution, FeatureGrid, FAQ, CTA, InternalLinks, plus a `LANDING_PAGES` registry) so Hotfix B's P2 pages can ship as thin `page.tsx` files feeding the same components. Sitemap gets the 3 new URLs at priority 0.9; Footer gets a new Solutions column linking only to live P1 pages. Homepage code and copy are untouched.
+- **Files**: 15 changed (12 new, 3 modified). New: 3 landing `page.tsx` files + 9 files under `src/components/marketing/landing/` (`types.ts`, `LandingHero`, `LandingProblem`, `LandingWhyBar`, `LandingSolution`, `LandingFeatureGrid`, `LandingFAQ`, `LandingCTA`, `LandingInternalLinks`). Modified: `src/app/sitemap.ts`, `src/components/marketing/homepage/Footer.tsx`, `src/lib/supabase/middleware.ts`.
+- **Protected system touched**: Middleware — `isPublicRoute` allowlist inside `updateSession()`. Added exactly three exact paths (`/football-academy-management-software`, `/football-booking-system`, `/academy-payment-collection`). Without this, unauthenticated crawler requests to the new pages 307-redirect to `/auth/signin` (Google would index the sign-in page instead of the copy — verified: before-change 307, after-change 200). Auth logic is bit-identical for every other path; no change to `getUser()`, cookie handling, or the redirect target.
+- **Rollback**: `git revert 0d9a889 && vercel deploy --prod`
+
 ### `f1bd9f4` — SEO hotfix: homepage discoverability (canonical, OG, JSON-LD, robots, sitemap)
 
 - **Deployment id**: `dpl_m2aoSn8froPsB1UUd165vgos9kSD`
