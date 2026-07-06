@@ -107,7 +107,7 @@ export default function Home() {
             <a href="#pricing" className="text-sm text-white/50 hover:text-white transition-colors font-medium">Pricing</a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/auth/signin" className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white/60 hover:text-white transition-all">
+            <Link href="/auth/signin" className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-full border border-white/30 text-white/90 hover:text-white hover:bg-white/10 transition-all md:rounded-none md:border-0 md:text-white/60 md:hover:bg-transparent">
               Log in
             </Link>
             <Link
