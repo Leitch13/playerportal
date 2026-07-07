@@ -26,6 +26,13 @@ import {
   campDayCount,
   type ScheduleDay,
 } from '@/lib/camps-edit'
+// Flexible Camps (Phase 1) — publish-blocked guard so editing a flexible-days
+// camp can never flip it to is_published=true before Phase 2 lands the
+// parent booking flow.
+import {
+  isFlexibleModePublishBlocked,
+  FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
+} from '@/lib/flexible-camps'
 import { amountError, instructionsError, formatRequestAmount, CAMP_MANUAL_PAYMENT_REQUEST_ENABLED } from '@/lib/camp-payment-request'
 
 type EditableCamp = {
@@ -48,6 +55,10 @@ type EditableCamp = {
   sibling_discount_percent: number | null
   training_group_id: string | null
   schedule: ScheduleDay[] | null
+  // Flexible Camps (Phase 1). Optional so callers that don't yet plumb it
+  // through render exactly as before. When 'flexible_days', publishing is
+  // locked (see below).
+  booking_mode?: string | null
 }
 
 type Props = {
@@ -101,7 +112,11 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [imageUrl, setImageUrl] = useState(camp.image_url || '')
   const [whatToBring, setWhatToBring] = useState(camp.what_to_bring || '')
   const [maxCapacity, setMaxCapacity] = useState(camp.max_capacity != null ? String(camp.max_capacity) : '30')
-  const [isPublished, setIsPublished] = useState(camp.is_published)
+  const publishBlocked = isFlexibleModePublishBlocked(camp.booking_mode)
+  // When publishing is blocked we force-clamp the checkbox state to false.
+  // Defence-in-depth against a starting-value of true (only possible if a
+  // camp was somehow published before this guard existed).
+  const [isPublished, setIsPublished] = useState(publishBlocked ? false : camp.is_published)
 
   // Additive structural state (Phase 2A).
   const origSchedule = cloneSchedule(camp.schedule)
@@ -202,7 +217,9 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
       image_url: imageUrl.trim() || null,
       what_to_bring: whatToBring.trim() || null,
       max_capacity: capValue,
-      is_published: isPublished,
+      // Production-safety guard: flexible camps are hard-forced unpublished
+      // in the save payload regardless of UI state.
+      is_published: publishBlocked ? false : isPublished,
     })
     // Additive allowlist (Phase 2A/2C) — only start_date/end_date/schedule, only
     // when a structural change is staged and the guard passes. The guard
@@ -553,11 +570,25 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
             <textarea value={whatToBring} onChange={(e) => setWhatToBring(e.target.value)} rows={3} placeholder="e.g. Football boots, shin pads, water bottle, packed lunch..." className={inputCls} />
           </div>
 
-          {/* Published (safe) */}
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="rounded border-[#1e1e1e]" />
-            <span className="text-white">Published (visible on booking page)</span>
-          </label>
+          {/* Published (safe) — locked for flexible camps until Phase 2. */}
+          {publishBlocked ? (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+              <div className="flex items-start gap-2">
+                <span className="text-amber-400 text-sm mt-0.5">&#9888;</span>
+                <div>
+                  <div className="text-sm font-medium text-amber-200">Publishing locked</div>
+                  <p className="text-xs text-amber-100/70 mt-1 leading-relaxed">
+                    {FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="rounded border-[#1e1e1e]" />
+              <span className="text-white">Published (visible on booking page)</span>
+            </label>
+          )}
 
           {error && <p className="text-sm text-rose-400">{error}</p>}
         </div>

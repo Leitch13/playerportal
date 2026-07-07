@@ -4,6 +4,16 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
+// Flexible Camps — Phase 1. When flexibleCampsEnabled is false, none of
+// the flexible-mode UI renders and every save takes the byte-identical
+// whole-camp path (no camp_days rows written, no new columns set on the
+// camps insert). When ON, the admin can opt into flexible-days mode.
+import {
+  BOOKING_MODE_FLEXIBLE_DAYS,
+  BOOKING_MODE_WHOLE_CAMP,
+  FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
+  type BookingMode,
+} from '@/lib/flexible-camps'
 
 type ScheduleDay = {
   day: string
@@ -40,6 +50,9 @@ type Props = {
   orgSlug?: string
   trainingGroups: { id: string; name: string }[]
   existingCamps?: CampData[]
+  // Flexible Camps flag (Phase 1). Default false ⇒ form renders and saves
+  // byte-identically to the whole-camp original.
+  flexibleCampsEnabled?: boolean
 }
 
 const DEFAULT_ACTIVITIES = [
@@ -69,7 +82,7 @@ function generateScheduleDays(startDate: string, endDate: string): ScheduleDay[]
   return days
 }
 
-export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps }: Props) {
+export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps, flexibleCampsEnabled = false }: Props) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -99,6 +112,21 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
   const [siblingDiscountPercent, setSiblingDiscountPercent] = useState('10')
   const [collectMedicalInfo, setCollectMedicalInfo] = useState(false)
   const [requireConsent, setRequireConsent] = useState(false)
+
+  // Flexible Camps (Phase 1). All state defaults leave the form in
+  // whole-camp shape. Only consumed when flexibleCampsEnabled === true.
+  const [bookingMode, setBookingMode] = useState<BookingMode>(BOOKING_MODE_WHOLE_CAMP)
+  const [flexPricePerDay, setFlexPricePerDay] = useState('')
+  const [flexMinDays, setFlexMinDays] = useState('')
+  // Availability per generated schedule day. Keyed by ISO date. Missing
+  // key ⇒ available. Only read when saving a flexible-days camp.
+  const [dayAvailability, setDayAvailability] = useState<Record<string, boolean>>({})
+
+  const useFlexibleMode = flexibleCampsEnabled && bookingMode === BOOKING_MODE_FLEXIBLE_DAYS
+
+  const toggleDayAvailability = (date: string) => {
+    setDayAvailability((prev) => ({ ...prev, [date]: prev[date] === false ? true : false }))
+  }
 
   const duration =
     startDate && endDate
@@ -169,10 +197,23 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
 
   const handleSave = async (publish?: boolean) => {
     if (!name.trim() || !startDate || !endDate) return
+    // Flexible mode requires a per-day price. Empty ⇒ blocked so we don't
+    // create a paid camp that parents can't check out against later.
+    if (useFlexibleMode && !flexPricePerDay) {
+      alert('Please enter a price per day for the flexible camp.')
+      return
+    }
+    // Production-safety guard: flexible camps cannot be published until the
+    // parent booking flow is implemented. Belt-and-braces against the
+    // hidden UI paths below (Published checkbox + Publish button).
+    if (useFlexibleMode && publish === true) {
+      alert(FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE)
+      return
+    }
     setSaving(true)
     try {
       const supabase = createClient()
-      const campData = {
+      const campData: Record<string, unknown> = {
         organisation_id: orgId,
         training_group_id: trainingGroupId || null,
         name: name.trim(),
@@ -183,18 +224,29 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
         daily_end_time: dailyEndTime,
         location: location.trim() || null,
         age_group: ageGroup.trim() || null,
-        price: price ? parseFloat(price) : null,
+        price: useFlexibleMode ? null : (price ? parseFloat(price) : null),
         max_capacity: maxCapacity ? parseInt(maxCapacity) : 30,
         image_url: imageUrl.trim() || null,
         what_to_bring: whatToBring.trim() || null,
         schedule: schedule.filter((d) => d.activities.length > 0),
-        is_published: publish !== undefined ? publish : isPublished,
+        // Production-safety guard: flexible camps forced unpublished until
+        // Phase 2 lands the parent booking flow.
+        is_published: useFlexibleMode ? false : (publish !== undefined ? publish : isPublished),
         early_bird_price: earlyBirdPrice ? parseFloat(earlyBirdPrice) : null,
         early_bird_deadline: earlyBirdDeadline || null,
         sibling_discount_enabled: siblingDiscountEnabled,
         sibling_discount_percent: siblingDiscountEnabled ? parseInt(siblingDiscountPercent) : null,
         collect_medical_info: collectMedicalInfo,
         require_consent: requireConsent,
+      }
+
+      // Flexible Camps (Phase 1) — only add new columns when the admin
+      // has explicitly chosen flexible mode. Whole-camp path stays byte-
+      // identical: booking_mode gets the DB default 'whole_camp'.
+      if (useFlexibleMode) {
+        campData.booking_mode = BOOKING_MODE_FLEXIBLE_DAYS
+        campData.flex_price_per_day = parseFloat(flexPricePerDay)
+        campData.flex_min_days = flexMinDays ? parseInt(flexMinDays) : null
       }
 
       const { data, error } = await supabase
@@ -205,15 +257,41 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
 
       if (error) {
         alert('Error saving camp: ' + error.message)
-      } else if (data) {
-        if (publish && orgSlug) {
-          const link = `${window.location.origin}/book/${orgSlug}/camps/${data.id}`
-          setShareLink(link)
-        } else {
-          setOpen(false)
-          resetForm()
-          router.refresh()
+        return
+      }
+      if (!data) return
+
+      // Flexible Camps (Phase 1) — insert one camp_days row per date in
+      // the range. Availability comes from the per-day toggles (default
+      // true if untoggled). If the days insert fails, delete the camp we
+      // just created so we don't leave a half-provisioned flexible camp.
+      if (useFlexibleMode) {
+        const days = generateScheduleDays(startDate, endDate)
+        const campDaysRows = days.map((d, idx) => ({
+          camp_id: data.id,
+          date: d.date,
+          is_available: dayAvailability[d.date] === false ? false : true,
+          sort_order: idx,
+        }))
+
+        const { error: daysError } = await supabase
+          .from('camp_days')
+          .insert(campDaysRows)
+
+        if (daysError) {
+          await supabase.from('camps').delete().eq('id', data.id)
+          alert('Error saving camp days: ' + daysError.message + '\n\nThe camp was rolled back — please try again.')
+          return
         }
+      }
+
+      if (publish && orgSlug) {
+        const link = `${window.location.origin}/book/${orgSlug}/camps/${data.id}`
+        setShareLink(link)
+      } else {
+        setOpen(false)
+        resetForm()
+        router.refresh()
       }
     } finally {
       setSaving(false)
@@ -255,6 +333,10 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
     setSiblingDiscountPercent('10')
     setCollectMedicalInfo(false)
     setRequireConsent(false)
+    setBookingMode(BOOKING_MODE_WHOLE_CAMP)
+    setFlexPricePerDay('')
+    setFlexMinDays('')
+    setDayAvailability({})
     setShareLink('')
     setShowPreview(false)
   }
@@ -369,6 +451,68 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
               />
             </div>
 
+            {/* Flexible Camps (Phase 1) — booking mode picker. Only
+                rendered when the feature flag is on. When off, the
+                form is identical to the whole-camp original. */}
+            {flexibleCampsEnabled && (
+              <div className="rounded-lg border border-[#1e1e1e] bg-[#0f0f0f] p-4 space-y-3">
+                <div>
+                  <div className="text-sm font-medium text-white">Booking Mode</div>
+                  <p className="text-xs text-[#888] mt-0.5">How parents will book this camp.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label
+                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                      bookingMode === BOOKING_MODE_WHOLE_CAMP
+                        ? 'border-accent bg-accent/10'
+                        : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        name="booking_mode"
+                        value={BOOKING_MODE_WHOLE_CAMP}
+                        checked={bookingMode === BOOKING_MODE_WHOLE_CAMP}
+                        onChange={() => setBookingMode(BOOKING_MODE_WHOLE_CAMP)}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-white">Whole Camp</div>
+                        <div className="text-xs text-[#888] mt-0.5">
+                          Parents book the entire camp for a single price.
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                  <label
+                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+                      bookingMode === BOOKING_MODE_FLEXIBLE_DAYS
+                        ? 'border-accent bg-accent/10'
+                        : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="radio"
+                        name="booking_mode"
+                        value={BOOKING_MODE_FLEXIBLE_DAYS}
+                        checked={bookingMode === BOOKING_MODE_FLEXIBLE_DAYS}
+                        onChange={() => setBookingMode(BOOKING_MODE_FLEXIBLE_DAYS)}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-white">Flexible Days</div>
+                        <div className="text-xs text-[#888] mt-0.5">
+                          Parents pick which days to attend and pay per day.
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
             {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -412,15 +556,49 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             <div className="border-t border-[#1e1e1e] pt-5">
               <h3 className="text-sm font-semibold text-white mb-3">Pricing</h3>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-1">Regular Price (&pound;)</label>
-                  <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 120" min="0" step="0.01" className={inputCls} />
-                </div>
+                {useFlexibleMode ? (
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Price per Day (&pound;) *</label>
+                    <input
+                      type="number"
+                      value={flexPricePerDay}
+                      onChange={(e) => setFlexPricePerDay(e.target.value)}
+                      placeholder="e.g. 25"
+                      min="0"
+                      step="0.01"
+                      className={inputCls}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-1">Regular Price (&pound;)</label>
+                    <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 120" min="0" step="0.01" className={inputCls} />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">Max Capacity</label>
                   <input type="number" value={maxCapacity} onChange={(e) => setMaxCapacity(e.target.value)} min="1" className={inputCls} />
                 </div>
               </div>
+
+              {/* Flexible Camps (Phase 1) — minimum booking days input.
+                  Optional; leave blank for no minimum. */}
+              {useFlexibleMode && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-white mb-1">Minimum Booking Days (optional)</label>
+                  <input
+                    type="number"
+                    value={flexMinDays}
+                    onChange={(e) => setFlexMinDays(e.target.value)}
+                    placeholder="e.g. 3"
+                    min="1"
+                    className="w-32 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
+                  />
+                  <p className="text-xs text-[#888] mt-1">
+                    Parents must select at least this many days to book. Leave blank for no minimum.
+                  </p>
+                </div>
+              )}
 
               {/* Early bird */}
               <div className="mt-4 space-y-3">
@@ -537,16 +715,30 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
               />
             </div>
 
-            {/* Published */}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={isPublished}
-                onChange={(e) => setIsPublished(e.target.checked)}
-                className="rounded border-[#1e1e1e]"
-              />
-              <span className="text-white">Published (visible on booking page)</span>
-            </label>
+            {/* Published — locked for flexible camps until parent booking ships */}
+            {useFlexibleMode ? (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400 text-sm mt-0.5">&#9888;</span>
+                  <div>
+                    <div className="text-sm font-medium text-amber-200">Publishing locked</div>
+                    <p className="text-xs text-amber-100/70 mt-1 leading-relaxed">
+                      {FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="rounded border-[#1e1e1e]"
+                />
+                <span className="text-white">Published (visible on booking page)</span>
+              </label>
+            )}
 
             {/* Schedule Builder */}
             <div className="border-t border-[#1e1e1e] pt-5">
@@ -579,17 +771,37 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
               )}
 
               <div className="space-y-4">
-                {schedule.map((day, dayIdx) => (
-                  <div key={dayIdx} className="border border-[#1e1e1e] rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-white mb-3">
-                      {day.day}{' '}
-                      <span className="text-[#888] font-normal">
-                        {new Date(day.date + 'T00:00:00').toLocaleDateString('en-GB', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
-                      </span>
-                    </h4>
+                {schedule.map((day, dayIdx) => {
+                  // Flexible Camps (Phase 1) — per-day availability.
+                  // Only consulted when useFlexibleMode is true. Default
+                  // available if not toggled off.
+                  const dayAvailable = dayAvailability[day.date] !== false
+                  return (
+                  <div key={dayIdx} className={`border rounded-lg p-4 ${useFlexibleMode && !dayAvailable ? 'border-[#2a2a2a] bg-[#0a0a0a] opacity-60' : 'border-[#1e1e1e]'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium text-white">
+                        {day.day}{' '}
+                        <span className="text-[#888] font-normal">
+                          {new Date(day.date + 'T00:00:00').toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short',
+                          })}
+                        </span>
+                      </h4>
+                      {useFlexibleMode && (
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={dayAvailable}
+                            onChange={() => toggleDayAvailability(day.date)}
+                            className="rounded border-[#1e1e1e]"
+                          />
+                          <span className={dayAvailable ? 'text-white' : 'text-[#888]'}>
+                            {dayAvailable ? 'Available for booking' : 'Excluded'}
+                          </span>
+                        </label>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {day.activities.map((activity, actIdx) => (
                         <div key={actIdx} className="flex items-center gap-2">
@@ -618,7 +830,8 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                       + Add Activity
                     </button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -730,7 +943,9 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             >
               {saving ? 'Saving...' : 'Save as Draft'}
             </button>
-            {orgSlug && (
+            {/* Publish & Share hidden for flexible camps until Phase 2 ships
+                the parent booking flow. Draft-only until then. */}
+            {orgSlug && !useFlexibleMode && (
               <button
                 onClick={handlePublishAndShare}
                 disabled={saving || !name.trim() || !startDate || !endDate}

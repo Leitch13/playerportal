@@ -9,6 +9,13 @@ import Link from 'next/link'
 // server passes editEnabled (gated by CAMP_EDIT_ENABLED). OFF ⇒ this component
 // renders exactly as before.
 import CampEditForm from './CampEditForm'
+// Flexible Camps (Phase 1) — publish-blocked guard so an admin can never
+// flip a flexible camp to is_published=true from the row-action menu before
+// Phase 2 lands the parent booking flow.
+import {
+  isFlexibleModePublishBlocked,
+  FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
+} from '@/lib/flexible-camps'
 
 type EditableCamp = {
   id: string
@@ -31,6 +38,9 @@ type EditableCamp = {
   training_group_id: string | null
   // Phase 2A — additive structural editing reads the schedule jsonb.
   schedule: { day: string; date: string; activities: string[] }[] | null
+  // Flexible Camps (Phase 1) — forwarded to CampEditForm so it can lock
+  // publishing for flexible drafts.
+  booking_mode?: string | null
 }
 
 type Props = {
@@ -45,9 +55,13 @@ type Props = {
   trainingGroups?: { id: string; name: string }[]
   // Phase 2A — structural-edit sub-gate (passed through to CampEditForm).
   structuralEnabled?: boolean
+  // Flexible Camps (Phase 1). When 'flexible_days', publishing is blocked
+  // until the parent booking flow ships. Optional so existing whole-camp
+  // rows render exactly as before (undefined ⇒ treated as whole-camp).
+  bookingMode?: string | null
 }
 
-export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled }: Props) {
+export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, bookingMode }: Props) {
   const [open, setOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canEdit = !!editEnabled && !!camp
@@ -79,7 +93,17 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
     setOpen(false)
   }
 
+  // Flexible-camp publish guard. Blocks the transition from
+  // unpublished → published for flexible camps. Unpublishing is always
+  // permitted (defensive: lets an admin retract a mis-flagged row).
+  const publishBlocked = !isPublished && isFlexibleModePublishBlocked(bookingMode)
+
   const handleTogglePublish = async () => {
+    if (publishBlocked) {
+      alert(FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE)
+      setOpen(false)
+      return
+    }
     setToggling(true)
     try {
       const supabase = createClient()
@@ -141,11 +165,21 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
                 Edit details
               </button>
             )}
-            <button onClick={handleTogglePublish} disabled={toggling} className={menuItem}>
+            <button
+              onClick={handleTogglePublish}
+              disabled={toggling || publishBlocked}
+              className={menuItem}
+              title={publishBlocked ? FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE : undefined}
+            >
               {isPublished
                 ? (toggling ? 'Unpublishing...' : 'Unpublish')
-                : (toggling ? 'Publishing...' : 'Publish')}
+                : (toggling ? 'Publishing...' : publishBlocked ? 'Publish (locked)' : 'Publish')}
             </button>
+            {publishBlocked && (
+              <p className="px-4 pb-2 text-[10px] text-amber-300/80 leading-snug">
+                Flexible Days camps can&apos;t publish until parent booking is released.
+              </p>
+            )}
             {orgSlug && (
               <button onClick={handleCopyLink} className={menuItem}>Copy Booking Link</button>
             )}

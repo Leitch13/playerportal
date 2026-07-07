@@ -59,6 +59,19 @@ export function parseBookingMode(v: unknown): BookingMode {
   return isValidBookingMode(v) ? v : BOOKING_MODE_WHOLE_CAMP
 }
 
+// Production-safety guard for Phase 1. The parent booking flow does not yet
+// support flexible-days camps, so publishing one before Phase 2 lands would
+// expose parents to a booking page they can't correctly check out against.
+// Every publish surface (CampForm, CampActions, CampEditForm) reads this
+// helper and blocks the publish when true. When Phase 2 ships the parent
+// flow, flip this to `return false` (or remove the callers).
+export function isFlexibleModePublishBlocked(mode: BookingMode | string | null | undefined): boolean {
+  return mode === BOOKING_MODE_FLEXIBLE_DAYS
+}
+
+export const FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE =
+  'Flexible Day camps cannot be published yet because the parent booking flow has not been completed. Save this camp as a draft until Flexible Booking is released.'
+
 // ─── Row shapes ───
 // Mirror the schema in `supabase/095_flexible_camps_phase_0.sql`. Named
 // `Row` because these represent Supabase `.select('*')` result shapes,

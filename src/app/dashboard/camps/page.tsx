@@ -9,6 +9,10 @@ import CampActions from './CampActions'
 // Camps Safe Edit — Phase 1A. Flag gates the Edit entry point; OFF ⇒ page
 // renders identically to the create-only original (no extra reads, no Edit item).
 import { CAMP_EDIT_ENABLED, CAMP_STRUCTURAL_EDIT_ENABLED } from '@/lib/camps-edit'
+// Flexible Camps — Phase 1. Flag gates the booking-mode picker inside
+// CampForm. OFF ⇒ CampForm renders and saves identically to the whole-camp
+// original (no mode toggle, no flex fields, no camp_days rows written).
+import { FLEXIBLE_CAMPS_ENABLED } from '@/lib/flexible-camps'
 
 type Camp = {
   id: string
@@ -35,6 +39,9 @@ type Camp = {
   collect_medical_info: boolean
   require_consent: boolean
   training_group_id: string | null
+  // Flexible Camps (Phase 0/1). Nullable so existing rows without the
+  // column (there shouldn't be any post-migration 095) still parse.
+  booking_mode: string | null
 }
 
 type CampBooking = {
@@ -185,6 +192,7 @@ export default async function CampsPage() {
             orgSlug={orgSlug}
             trainingGroups={trainingGroups}
             existingCamps={allCamps as unknown as Parameters<typeof CampForm>[0]['existingCamps']}
+            flexibleCampsEnabled={FLEXIBLE_CAMPS_ENABLED}
           />
         }
       >
@@ -296,10 +304,19 @@ export default async function CampsPage() {
                             schedule: Array.isArray(camp.schedule)
                               ? (camp.schedule as { day: string; date: string; activities: string[] }[])
                               : [],
+                            // Flexible Camps (Phase 1) — plumb the mode
+                            // through so CampEditForm can lock publishing
+                            // for flexible drafts.
+                            booking_mode: camp.booking_mode,
                           } : undefined}
                           bookedCount={CAMP_EDIT_ENABLED ? stats.bookingCount : undefined}
                           trainingGroups={CAMP_EDIT_ENABLED ? trainingGroups : undefined}
                           structuralEnabled={CAMP_EDIT_ENABLED && CAMP_STRUCTURAL_EDIT_ENABLED}
+                          // Flexible Camps (Phase 1) — CampActions uses this
+                          // to lock the row-action publish button. Passed
+                          // unconditionally so pre-existing flexible drafts
+                          // stay guarded even if the create flag is off.
+                          bookingMode={camp.booking_mode}
                         />
                       </td>
                     </tr>
