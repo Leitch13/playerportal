@@ -10,6 +10,19 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-07-07
+
+### `3090a64` — Hide cancelled enrolments from parents on player-detail page
+
+- **Deployment id**: `dpl_av718midm` (full: from `playerportallive-av718midm-johnleitch970-1195s-projects.vercel.app`)
+- **Deployment URL**: https://playerportallive-av718midm-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: The "Classes" card on `/dashboard/players/[id]` was rendering a "N cancelled enrolments" collapsible unconditionally. Parents can access this page for their own children (line 79 permits `parent → own kid`), so they were seeing the admin-only class-swap audit trail — e.g. Debbie Harley (parent) was seeing Craig Harley's two cancelled mis-slotted enrolments (Monday 5:15 · Michael Woods, Friday 3:45 · Bayview) alongside the one real active class (Friday 4:30 · Bayview). Gated the render block on the existing `isStaff` flag (already used to gate the sibling "Move class" action on line 753, plus 14 other staff-only controls in the same file). `isStaff = role === 'admin' || role === 'coach'`. Effect: parents see only active class rows and the "No active class enrolment found" fallback; admin/coach behaviour is unchanged (still see the collapsible with the full history for audit). The `ended` array (line 726) is still computed regardless of role — only the render is gated.
+- **Files**: `src/app/dashboard/players/[id]/page.tsx` (+1 / -1)
+- **Protected system touched**: None. Pure UI visibility gate. No changes to the DB query, `ended` construction, or any other file.
+- **Rollback**: `git revert 3090a64 && vercel deploy --prod`
+
+---
+
 ## 2026-07-05
 
 ### `b2b5fda` — Homepage pricing teaser: match live product truth
