@@ -775,7 +775,7 @@ export default async function PlayerDetailPage({
                     No active class enrolment found.
                   </p>
                 )}
-              {ended.length > 0 && (
+              {ended.length > 0 && isStaff && (
                 <details className="pt-2 border-t border-white/[0.06]">
                   <summary className="text-[11px] text-white/45 cursor-pointer hover:text-white/65 transition-colors">
                     {ended.length} cancelled enrolment{ended.length === 1 ? '' : 's'}
