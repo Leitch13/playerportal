@@ -125,6 +125,11 @@ export default async function CampDetailPage({
   const sp = await searchParams
   const bookedParam = sp.booked === '1'
   const bookingIdParam = typeof sp.booking === 'string' ? sp.booking : null
+  // Flexible Camps (Phase 3D) — Stripe's cancel_url includes ?cancelled=1.
+  // The picker renders a friendly banner so the parent knows nothing was
+  // charged. Whole-camp form doesn't consume this — its own cancel path
+  // is unchanged.
+  const cancelledParam = sp.cancelled === '1'
 
   // Cookie-aware client — used ONLY for the parent's auth session,
   // their profile (to confirm they belong to this org), and their own
@@ -402,11 +407,20 @@ export default async function CampDetailPage({
                   flow stays byte-identical. */}
               {isFlexibleCamp ? (
                 <CampFlexibleDayPicker
+                  campId={c.id}
+                  organisationId={c.organisation_id}
+                  slug={slug}
                   campName={c.name}
                   flexPricePerDay={c.flex_price_per_day ?? null}
                   flexMinDays={c.flex_min_days ?? null}
                   days={campDays}
                   primaryColor={primaryColor}
+                  collectMedicalInfo={c.collect_medical_info ?? false}
+                  requireConsent={c.require_consent ?? false}
+                  siblingDiscountEnabled={c.sibling_discount_enabled ?? false}
+                  siblingDiscountPercent={c.sibling_discount_percent ?? null}
+                  bookingId={bookedParam ? bookingIdParam : null}
+                  cancelled={cancelledParam}
                 />
               ) : (
                 <>
