@@ -482,9 +482,40 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .from('camp_bookings')
         .update({ payment_status: 'paid', stripe_session_id: session.id })
         .eq('id', session.metadata.camp_booking_id)
-        .select('id, organisation_id, parent_email, parent_name, child_name, amount_paid, camp_id')
+        .select('id, organisation_id, parent_email, parent_name, child_name, amount_paid, camp_id, booking_mode')
         .maybeSingle()
       if (campUpdErr) throw new Error(`camp_bookings.update failed: ${campUpdErr.message}`)
+
+      // ─── Flexible Camps (Phase 3B) — fetch the booked day list ───
+      // When booking_mode = 'flexible_days', load camp_booking_days ⨝
+      // camp_days so we can render "3 days: Mon 8 Jul, Tue 9 Jul, …"
+      // in the confirmation email + admin notification, and add a day
+      // count to the payments-row description. Whole-camp bookings
+      // (mode = 'whole_camp' or NULL for legacy rows) skip this
+      // entirely — every downstream branch stays byte-identical.
+      let flexibleSelectedDayLabels: string[] | null = null
+      if (booking?.id && (booking as { booking_mode?: string | null }).booking_mode === 'flexible_days') {
+        const { data: bdRows } = await supabase
+          .from('camp_booking_days')
+          .select('camp_day_id')
+          .eq('camp_booking_id', booking.id)
+        const dayIds = ((bdRows || []) as { camp_day_id: string }[]).map((r) => r.camp_day_id).filter(Boolean)
+        if (dayIds.length > 0) {
+          const { data: dayRows } = await supabase
+            .from('camp_days')
+            .select('date, sort_order')
+            .in('id', dayIds)
+            .order('sort_order', { ascending: true, nullsFirst: false })
+            .order('date', { ascending: true })
+          if (dayRows && dayRows.length > 0) {
+            flexibleSelectedDayLabels = (dayRows as { date: string }[]).map((d) =>
+              new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-GB', {
+                weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
+              }),
+            )
+          }
+        }
+      }
 
       // ─── Resolve camp + academy context once (shared by payments row + email) ───
       // Used by BOTH the payments-row insert and the confirmation email; one
@@ -530,7 +561,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           amount_paid: amt,
           status: 'paid',
           stripe_session_id: session.id,
-          description: `Camp: ${campName}${booking.child_name ? ` — ${booking.child_name}` : ''}`,
+          // Flexible Camps (Phase 3B) — append "(N days)" to the description
+          // for flexible bookings so the payments dashboard row makes it
+          // obvious this booking is per-day. Whole-camp bookings (mode !=
+          // 'flexible_days' OR NULL) render byte-identically.
+          description: `Camp: ${campName}${booking.child_name ? ` — ${booking.child_name}` : ''}${flexibleSelectedDayLabels ? ` (${flexibleSelectedDayLabels.length} days)` : ''}`,
           due_date: new Date().toISOString().split('T')[0],
           paid_date: new Date().toISOString().split('T')[0],
           created_at: new Date().toISOString(),
@@ -622,6 +657,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               academyContactPhone: academyPhone,
               whatsappUrl,
               bookingReference: booking.id,
+              // Flexible Camps (Phase 3B). Undefined for whole-camp
+              // bookings ⇒ template renders byte-identically.
+              selectedDays: flexibleSelectedDayLabels,
             })
 
             await sendEmail({
@@ -659,6 +697,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               campDates: datesLabel,
               amountPaid: amountLabel,
               dashboardUrl,
+              // Flexible Camps (Phase 3B). Undefined for whole-camp
+              // bookings ⇒ template renders byte-identically.
+              selectedDays: flexibleSelectedDayLabels,
             })
             await sendEmail({
               to: recipient,

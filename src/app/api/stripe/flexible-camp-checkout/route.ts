@@ -287,16 +287,121 @@ export async function POST(request: NextRequest) {
 
     // ─── 11. Free-camp short-circuit ────────────────────────────────
     // netTotal = 0 (all days had price 0, or discount reduced to 0).
-    // Mark paid inline. Emails are deliberately NOT sent here in
-    // Phase 3A — the existing templates don't yet know how to list
-    // selected days (that arrives in Phase 3C). Parent UI is still
-    // blocked in Phase 3A, so this path is only reachable by backend
-    // tests until 3C.
+    // Mark paid inline. Since Stripe is bypassed on the free path,
+    // the webhook never fires — so we must send the parent + admin
+    // emails inline here, mirroring the whole-camp free-camp branch
+    // in /api/stripe/camp-checkout. Phase 3B templates render the
+    // "Days (N)" list when `selectedDays` is provided.
+    //
+    // Errors are logged (not thrown): the booking is already inserted
+    // and marked paid, and a Resend failure must not roll back it.
     if (netTotal <= 0) {
       await supabase
         .from('camp_bookings')
         .update({ payment_status: 'paid' })
         .eq('id', bookingId)
+
+      const selectedDayLabels = orderedRows.map((row) =>
+        new Date(row.date + 'T00:00:00Z').toLocaleDateString('en-GB', {
+          weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
+        }),
+      )
+
+      try {
+        const [
+          { sendEmail },
+          { campBookingConfirmationEmail, newCampBookingAdminEmail },
+          { buildWhatsappUrl, WA_TEMPLATES },
+        ] = await Promise.all([
+          import('@/lib/email'),
+          import('@/lib/email-templates'),
+          import('@/lib/whatsapp'),
+        ])
+
+        const { data: orgRow } = await supabase
+          .from('organisations')
+          .select('name, contact_email, contact_phone')
+          .eq('id', organisationId)
+          .maybeSingle()
+        const academyName = (orgRow as { name?: string | null } | null)?.name || 'Your academy'
+        const academyEmail = (orgRow as { contact_email?: string | null } | null)?.contact_email || null
+        const academyPhone = (orgRow as { contact_phone?: string | null } | null)?.contact_phone || null
+
+        const fmtDate = (iso: string | null) =>
+          iso
+            ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', {
+                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+              })
+            : ''
+        const startDateLabel = fmtDate(camp.start_date as string | null)
+        const endDateLabel = fmtDate(camp.end_date as string | null) || startDateLabel
+
+        const whatsappUrl = academyPhone
+          ? buildWhatsappUrl(
+              academyPhone,
+              WA_TEMPLATES.parentToAcademyHi({ academyName, childName: childName || undefined }),
+            )
+          : null
+
+        try {
+          const tpl = campBookingConfirmationEmail({
+            parentName: parentName || 'there',
+            childName: childName || 'your child',
+            campName: camp.name as string,
+            startDate: startDateLabel,
+            endDate: endDateLabel,
+            amountPaid: 'Free',
+            academyName,
+            academyContactEmail: academyEmail,
+            academyContactPhone: academyPhone,
+            whatsappUrl,
+            bookingReference: bookingId,
+            selectedDays: selectedDayLabels,
+          })
+          await sendEmail({
+            to: parentEmail,
+            subject: tpl.subject,
+            html: tpl.html,
+            fromName: academyName,
+            replyTo: academyEmail || undefined,
+          })
+        } catch (emailErr) {
+          console.error('[flexible-camp-checkout:free_parent_confirmation_email] failed:', emailErr)
+        }
+
+        try {
+          const recipient =
+            academyEmail ||
+            process.env.ADMIN_NOTIFICATION_EMAIL ||
+            'johnleitch970@gmail.com'
+          const origin = request.headers.get('origin') || 'https://theplayerportal.net'
+          const dashboardUrl = `${origin}/dashboard/camps/${campId}`
+          const adminTpl = newCampBookingAdminEmail({
+            academyName,
+            parentName: parentName || '—',
+            parentEmail,
+            parentPhone: parentPhone || null,
+            childName: childName || '—',
+            campName: camp.name as string,
+            campDates: startDateLabel
+              ? (endDateLabel && endDateLabel !== startDateLabel ? `${startDateLabel} → ${endDateLabel}` : startDateLabel)
+              : null,
+            amountPaid: 'Free',
+            dashboardUrl,
+            selectedDays: selectedDayLabels,
+          })
+          await sendEmail({
+            to: recipient,
+            subject: adminTpl.subject,
+            html: adminTpl.html,
+          })
+        } catch (emailErr) {
+          console.error('[flexible-camp-checkout:free_admin_notification_email] failed:', emailErr)
+        }
+      } catch (emailBlockErr) {
+        console.error('[flexible-camp-checkout:free_email_block] failed:', emailBlockErr)
+      }
+
       return NextResponse.json({
         success: true,
         free: true,

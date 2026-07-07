@@ -2305,11 +2305,19 @@ export function campBookingConfirmationEmail(params: {
   academyContactPhone: string | null
   whatsappUrl?: string | null   // pre-built via @/lib/whatsapp (Sprint 6)
   bookingReference?: string | null   // camp_bookings.id surfaces here for support
+  // Flexible Camps (Phase 3B). Optional — when provided (flexible-days
+  // bookings), the single "Date"/"Dates" row is replaced by a "Days (N)"
+  // row listing each booked day. When absent/empty (whole-camp), the
+  // template renders byte-identically to before.
+  selectedDays?: string[] | null   // pre-formatted "Mon 8 Jul" strings, one per booked day
 }) {
+  const isFlexible = Array.isArray(params.selectedDays) && params.selectedDays.length > 0
   const sameDay = params.startDate === params.endDate
-  const dateRow = sameDay
-    ? `<tr><td style="color:#888">Date</td><td style="text-align:right;color:#fff;font-weight:600">${params.startDate}</td></tr>`
-    : `<tr><td style="color:#888">Dates</td><td style="text-align:right;color:#fff;font-weight:600">${params.startDate} → ${params.endDate}</td></tr>`
+  const dateRow = isFlexible
+    ? `<tr><td style="color:#888;vertical-align:top">Days (${params.selectedDays!.length})</td><td style="text-align:right;color:#fff;font-weight:600;line-height:1.6">${params.selectedDays!.join('<br>')}</td></tr>`
+    : sameDay
+      ? `<tr><td style="color:#888">Date</td><td style="text-align:right;color:#fff;font-weight:600">${params.startDate}</td></tr>`
+      : `<tr><td style="color:#888">Dates</td><td style="text-align:right;color:#fff;font-weight:600">${params.startDate} → ${params.endDate}</td></tr>`
 
   const contactRows = [
     params.academyContactEmail
@@ -2389,11 +2397,20 @@ export function newCampBookingAdminEmail(params: {
   campDates: string | null      // pre-formatted "Mon 21 Jul → Wed 23 Jul 2026" (or just start when single-day)
   amountPaid: string            // pre-formatted "£60.00" or "Free"
   dashboardUrl: string
+  // Flexible Camps (Phase 3B). Optional — when provided (flexible-days
+  // bookings), the "Dates" row is replaced by a "Days" row showing
+  // "N days: {list}". When absent/empty (whole-camp), the template
+  // renders byte-identically to before.
+  selectedDays?: string[] | null
 }) {
   const detailRow = (label: string, value: string | null | undefined) =>
     value
       ? `<tr><td style="padding:6px 0;color:#666;font-size:13px;width:120px">${label}</td><td style="padding:6px 0;color:#fff;font-size:14px">${value}</td></tr>`
       : ''
+  const isFlexible = Array.isArray(params.selectedDays) && params.selectedDays.length > 0
+  const daysLine = isFlexible
+    ? `${params.selectedDays!.length} days: ${params.selectedDays!.join(', ')}`
+    : null
   return {
     subject: `New camp booking — ${params.childName} on ${params.campName} (${params.academyName})`,
     html: baseLayout(`
@@ -2403,7 +2420,7 @@ export function newCampBookingAdminEmail(params: {
         <table style="width:100%;border-collapse:collapse">
           ${detailRow('Camp', params.campName)}
           ${detailRow('Child', params.childName)}
-          ${detailRow('Dates', params.campDates)}
+          ${isFlexible ? detailRow('Days', daysLine) : detailRow('Dates', params.campDates)}
           ${detailRow('Amount paid', params.amountPaid)}
           ${detailRow('Parent', params.parentName)}
           ${detailRow('Email', params.parentEmail)}
