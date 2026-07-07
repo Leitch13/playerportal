@@ -411,7 +411,7 @@ export default function Navigation({
   return (
     <>
       {/* ── Top Bar ── */}
-      <nav className="sticky top-0 z-40 bg-primary border-b border-white/5">
+      <nav className="sticky top-0 z-40 bg-primary border-b border-white/5 safe-top">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">

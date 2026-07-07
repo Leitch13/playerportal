@@ -296,3 +296,33 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 body[data-keyboard-open="true"] .mobile-bottom-nav {
   display: none;
 }
+
+/* Phase 1 production hardening — capability-based hover reveals.
+   Replaces the earlier `sm:opacity-0 sm:group-hover:opacity-100` pattern,
+   which used screen size as a proxy for hover capability. That broke
+   touch-only iPads (which are >= sm: but have no `:hover`), leaving the
+   revealed UI unreachable. Gating on `(hover: hover) and (pointer: fine)`
+   is the correct capability check: mice / trackpads / stylus-with-hover
+   get the reveal-on-hover behaviour; everything else (touch phones,
+   touch tablets, touch laptops) sees the element by default. */
+.hover-only { opacity: 1; }
+.hover-only-btn-corner {
+  width: 2.75rem; /* 44px — Apple HIG touch target on non-hover devices */
+  height: 2.75rem;
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hover-only {
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+  .group:hover .hover-only { opacity: 1; }
+
+  .hover-only-btn-corner {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+  .group:hover .hover-only-btn-corner { opacity: 1; }
+}

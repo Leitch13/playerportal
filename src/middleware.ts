@@ -17,6 +17,10 @@ export const config = {
   // fallback. Adding them to this negative lookahead is a matcher-only
   // change; the auth logic in updateSession is unchanged.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.json|sw\\.js|offline|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // `offline$` is end-anchored — matches only the exact `/offline` route
+    // (the SW's offline fallback page). Without the `$`, the alternation
+    // would also exempt siblings like `/offline-legacy` from auth, which
+    // would be a silent bypass if anyone ever added such a route.
+    '/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|manifest\\.json|sw\\.js|offline$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
