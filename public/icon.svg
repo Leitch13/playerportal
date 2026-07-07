@@ -1,6 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#0a0a0a"/>
-  <circle cx="256" cy="210" r="90" fill="none" stroke="#4ecde6" stroke-width="8"/>
-  <path d="M256 120 L273 175 L330 175 L283 210 L300 265 L256 235 L212 265 L229 210 L182 175 L239 175 Z" fill="#4ecde6" opacity="0.3"/>
-  <text x="256" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="60" font-weight="700" fill="#4ecde6">PP</text>
+  <!--
+    Player Portal app-icon source (single canonical SVG).
+    Design intent: the segmented Player Portal ring — brand mark from
+    the "O" in PORTAL — centred on a flat dark background.
+
+    Layout math for maskable safety:
+      - Icon canvas 512×512
+      - Maskable safe zone: circle centred at (256, 256), radius 204.8px
+      - Ring outer edge = r=155 + stroke/2 = 155 + 21 = 176
+      - Margin from safe-zone boundary: 204.8 − 176 = 28.8px  → safe.
+      - Ring inner edge = 155 − 21 = 134 → hollow enough to read as a ring.
+
+    Segment structure: pathLength=1200 with dasharray 80 20 gives
+    exactly 12 segments (80 stroke + 20 gap per period × 12 = 1200).
+    rotate(-90 …) starts the pattern at the top of the ring (12 o'clock).
+    stroke-linecap defaults to butt for crisp segment edges.
+
+    Same SVG powers every install surface — iOS applies its own corner
+    mask to the square background, Android's adaptive-icon layer
+    masks the same square via the maskable variant.
+  -->
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <circle
+    cx="256" cy="256"
+    r="155"
+    pathLength="1200"
+    fill="none"
+    stroke="#4ecde6"
+    stroke-width="42"
+    stroke-dasharray="80 20"
+    transform="rotate(-90 256 256)"
+  />
 </svg>
