@@ -42,6 +42,9 @@ type Camp = {
   // Flexible Camps (Phase 0/1). Nullable so existing rows without the
   // column (there shouldn't be any post-migration 095) still parse.
   booking_mode: string | null
+  // Flexible Camps (Phase 3E). Per-day price surfaces on the camps list
+  // when the camp is flexible. Nullable for whole-camp rows.
+  flex_price_per_day: number | null
 }
 
 type CampBooking = {
@@ -237,13 +240,28 @@ export default async function CampsPage() {
                           {camp.age_group && (
                             <span className="text-xs text-white/30">{camp.age_group}</span>
                           )}
+                          {/* Flexible Camps (Phase 3E). Clear pill so
+                              admins can distinguish flexible camps at
+                              a glance. Absent for whole-camp rows. */}
+                          {camp.booking_mode === 'flexible_days' && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#4ecde6]/15 text-[#4ecde6]">
+                              Flexible
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-white/60 text-xs">
                         {formatDateRange(camp.start_date, camp.end_date)}
                       </td>
                       <td className="px-6 py-4 text-white/60">
-                        {camp.price != null ? `\u00A3${Number(camp.price).toFixed(0)}` : '-'}
+                        {/* Flexible Camps (Phase 3E). Show per-day price
+                            for flexible camps; whole-camp price
+                            rendering is byte-identical. */}
+                        {camp.booking_mode === 'flexible_days' ? (
+                          camp.flex_price_per_day != null
+                            ? `\u00A3${Number(camp.flex_price_per_day).toFixed(0)}/day`
+                            : '-'
+                        ) : camp.price != null ? `\u00A3${Number(camp.price).toFixed(0)}` : '-'}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">

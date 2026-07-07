@@ -52,12 +52,16 @@ export default async function CampPrintRegisterPage({
   }
   const orgId = profile.organisation_id as string
 
+  // Flexible Camps (Phase 3E) — booking_mode is added so the register
+  // can render one page per day for flexible camps. Existing whole-camp
+  // read of camps.* stays functionally identical (extra column ignored).
   const { data: camp } = await supabase
     .from('camps')
-    .select('id, organisation_id, name, start_date, end_date, location')
+    .select('id, organisation_id, name, start_date, end_date, location, booking_mode')
     .eq('id', campId)
     .maybeSingle()
   if (!camp || camp.organisation_id !== orgId) redirect('/dashboard/camps')
+  const isFlexibleCamp = (camp as { booking_mode?: string | null }).booking_mode === 'flexible_days'
 
   const { data: orgRow } = await supabase
     .from('organisations')
@@ -86,6 +90,55 @@ export default async function CampPrintRegisterPage({
   const rows = ((bookingsRaw || []) as Row[]).sort((a, b) =>
     (a.child_name || '').localeCompare(b.child_name || ''),
   )
+
+  // Flexible Camps (Phase 3E) — build per-day register pages.
+  // Whole-camp registers are byte-identical; the perDay list stays
+  // empty and none of the flexible-mode markup renders.
+  type PerDayPage = {
+    dayId: string
+    label: string
+    rows: Row[]
+  }
+  const perDayPages: PerDayPage[] = []
+  if (isFlexibleCamp && rows.length > 0) {
+    const { data: dayRows } = await supabase
+      .from('camp_days')
+      .select('id, date, is_available, sort_order')
+      .eq('camp_id', campId)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('date', { ascending: true })
+    const days = (dayRows || []) as {
+      id: string; date: string; is_available: boolean; sort_order: number | null
+    }[]
+
+    const activeIds = rows.map((r) => r.id)
+    const { data: bd } = await supabase
+      .from('camp_booking_days')
+      .select('camp_booking_id, camp_day_id')
+      .in('camp_booking_id', activeIds)
+    const bookingDaysRows = (bd || []) as { camp_booking_id: string; camp_day_id: string }[]
+
+    const rowById = new Map(rows.map((r) => [r.id, r]))
+    const bookingsByDay = new Map<string, Row[]>()
+    for (const bd of bookingDaysRows) {
+      const row = rowById.get(bd.camp_booking_id)
+      if (!row) continue
+      const arr = bookingsByDay.get(bd.camp_day_id) || []
+      arr.push(row)
+      bookingsByDay.set(bd.camp_day_id, arr)
+    }
+
+    for (const d of days) {
+      if (!d.is_available) continue    // skip excluded days from the register
+      const dayLabel = new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-GB', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+      })
+      const dayChildren = (bookingsByDay.get(d.id) || []).sort((a, b) =>
+        (a.child_name || '').localeCompare(b.child_name || ''),
+      )
+      perDayPages.push({ dayId: d.id, label: dayLabel, rows: dayChildren })
+    }
+  }
 
   return (
     <>
@@ -124,9 +177,62 @@ export default async function CampPrintRegisterPage({
           {camp.location ? ` · ${camp.location}` : ''}
           {academyName ? ` · ${academyName}` : ''}
           {' · '}{rows.length} child{rows.length === 1 ? '' : 'ren'}
+          {isFlexibleCamp ? ' · Flexible days' : ''}
         </p>
 
-        {rows.length === 0 ? (
+        {/* Flexible Camps (Phase 3E). For flexible camps, render ONE
+            register per day so coaches on that day only see the
+            children who booked that day. Excluded days are skipped
+            server-side. Whole-camp registers render exactly as
+            before (single flat table). */}
+        {isFlexibleCamp ? (
+          perDayPages.length === 0 ? (
+            <p style={{ color: '#888', fontStyle: 'italic' }}>No active bookings on this camp.</p>
+          ) : (
+            perDayPages.map((day, dIdx) => (
+              <div key={day.dayId} style={{ pageBreakAfter: dIdx < perDayPages.length - 1 ? 'always' : 'auto', marginBottom: 24 }}>
+                <h2 style={{ fontSize: 16, marginTop: 0, marginBottom: 8 }}>
+                  {day.label} — {day.rows.length} child{day.rows.length === 1 ? '' : 'ren'}
+                </h2>
+                {day.rows.length === 0 ? (
+                  <p style={{ color: '#888', fontStyle: 'italic', fontSize: 12 }}>No bookings on this day.</p>
+                ) : (
+                  <table className="print-table" data-testid="print-register-day-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '4%' }}>#</th>
+                        <th style={{ width: '22%' }}>Child</th>
+                        <th style={{ width: '4%' }}>Age</th>
+                        <th style={{ width: '20%' }}>Parent</th>
+                        <th style={{ width: '14%' }}>Phone</th>
+                        <th style={{ width: '20%' }}>Medical</th>
+                        <th style={{ width: '16%' }}>Signature</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {day.rows.map((r, i) => {
+                        const hasMedical = !!(r.medical_info && r.medical_info.trim())
+                        return (
+                          <tr key={r.id}>
+                            <td>{i + 1}</td>
+                            <td>{r.child_name || '—'}</td>
+                            <td>{r.child_age != null ? r.child_age : '—'}</td>
+                            <td>{r.parent_name || '—'}</td>
+                            <td>{r.parent_phone || '—'}</td>
+                            <td className={hasMedical ? 'medical' : ''}>
+                              {hasMedical ? (r.medical_info as string) : <span className="medical-empty">None</span>}
+                            </td>
+                            <td className="signature">{/* empty for sign-in */}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            ))
+          )
+        ) : rows.length === 0 ? (
           <p style={{ color: '#888', fontStyle: 'italic' }}>No active bookings on this camp.</p>
         ) : (
           <table className="print-table" data-testid="print-register-table">

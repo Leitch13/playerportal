@@ -36,6 +36,20 @@ export interface CampRosterBooking {
   payment_status: string
   booking_source: string | null
   created_at: string
+  // Flexible Camps (Phase 3E). Ordered list of formatted date labels
+  // for flexible bookings ("Mon 8 Jul", ...). Null/undefined for
+  // whole-camp bookings. Server-side ordered by camp_days sort order.
+  selected_day_labels?: string[] | null
+}
+
+// Flexible Camps (Phase 3E). Per-day roster grouping — one entry per
+// camp_days row. Passed only when isFlexibleCamp; empty otherwise.
+export interface CampPerDayGroup {
+  dayId: string
+  date: string     // ISO YYYY-MM-DD
+  label: string    // pre-formatted "Mon 8 Jul"
+  isAvailable: boolean
+  children: { bookingId: string; childName: string | null }[]
 }
 
 export interface EligibleTargetCamp {
@@ -57,6 +71,10 @@ export default function RosterClient({
   eligibleTargetCamps = [],
   sourceCampPrice = 0,
   callerIsAdmin = false,
+  // Flexible Camps (Phase 3E). Both default to whole-camp-shaped so
+  // existing call sites remain byte-identical.
+  isFlexibleCamp = false,
+  perDayGroups = [],
 }: {
   campId: string
   campName: string
@@ -65,6 +83,8 @@ export default function RosterClient({
   eligibleTargetCamps?: EligibleTargetCamp[]
   sourceCampPrice?: number
   callerIsAdmin?: boolean
+  isFlexibleCamp?: boolean
+  perDayGroups?: CampPerDayGroup[]
 }) {
   const [search, setSearch] = useState('')
   const [resendingId, setResendingId] = useState<string | null>(null)
@@ -166,20 +186,33 @@ export default function RosterClient({
     : null
 
   // ─── CSV export ───
+  // Flexible Camps (Phase 3E) — adds a "Booked days" column ONLY when
+  // the current camp is flexible. Whole-camp exports are byte-identical
+  // to today's CSV format.
   function downloadCsv() {
-    const headers = ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Booked at', 'Amount paid (£)', 'Payment status', 'Source']
-    const rows = filtered.map((b) => [
-      b.child_name || '',
-      b.child_age != null ? String(b.child_age) : '',
-      b.parent_name || '',
-      b.parent_email || '',
-      b.parent_phone || '',
-      b.medical_info || '',
-      b.created_at,
-      (b.amount_paid != null ? Number(b.amount_paid).toFixed(2) : '0.00'),
-      b.payment_status,
-      b.booking_source === 'admin_created' ? 'Added by admin' : 'Online booking',
-    ])
+    const headers = isFlexibleCamp
+      ? ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Booked at', 'Booked days', 'Amount paid (£)', 'Payment status', 'Source']
+      : ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Booked at', 'Amount paid (£)', 'Payment status', 'Source']
+    const rows = filtered.map((b) => {
+      const base = [
+        b.child_name || '',
+        b.child_age != null ? String(b.child_age) : '',
+        b.parent_name || '',
+        b.parent_email || '',
+        b.parent_phone || '',
+        b.medical_info || '',
+        b.created_at,
+      ]
+      const daysCol = isFlexibleCamp
+        ? [(b.selected_day_labels || []).join('; ')]
+        : []
+      const tail = [
+        (b.amount_paid != null ? Number(b.amount_paid).toFixed(2) : '0.00'),
+        b.payment_status,
+        b.booking_source === 'admin_created' ? 'Added by admin' : 'Online booking',
+      ]
+      return [...base, ...daysCol, ...tail]
+    })
     const escape = (v: string) => `"${v.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`
     const csv = [headers, ...rows].map((r) => r.map(escape).join(',')).join('\r\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
@@ -329,6 +362,12 @@ export default function RosterClient({
                   <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Contact</th>
                   <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Medical</th>
                   <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Booked</th>
+                  {/* Flexible Camps (Phase 3E) — extra Days column when
+                      the camp is flexible; whole-camp roster is byte-
+                      identical (column absent). */}
+                  {isFlexibleCamp && (
+                    <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Days</th>
+                  )}
                   <th className="text-right px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Amount</th>
                   <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Status</th>
                   <th className="text-right px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Actions</th>
@@ -374,6 +413,22 @@ export default function RosterClient({
                         )}
                       </td>
                       <td className="px-6 py-3 text-white/55 text-xs">{fmtBookedAt(b.created_at)}</td>
+                      {isFlexibleCamp && (
+                        <td className="px-6 py-3 text-white/70 text-xs align-top">
+                          {b.selected_day_labels && b.selected_day_labels.length > 0 ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] uppercase tracking-wider text-white/40 font-bold">
+                                {b.selected_day_labels.length} day{b.selected_day_labels.length === 1 ? '' : 's'}
+                              </span>
+                              <span className="text-white/70">
+                                {b.selected_day_labels.join(', ')}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-white/25">—</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-6 py-3 text-right">
                         {Number(b.amount_paid || 0) > 0 ? (
                           <span className="text-emerald-400 font-semibold">£{Number(b.amount_paid).toFixed(2)}</span>
@@ -479,6 +534,53 @@ export default function RosterClient({
           </div>
         )}
       </div>
+
+      {/* Flexible Camps (Phase 3E) — per-day breakdown.
+          Coaches use this as the day's register: only children who
+          BOOKED a specific day appear on that day's list. When the
+          camp is whole-camp, this section is not rendered — the flat
+          roster above IS the register. */}
+      {isFlexibleCamp && perDayGroups.length > 0 && (
+        <div className="rounded-xl border border-white/[0.08] bg-[#141414] mt-4">
+          <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.05]">
+            <h3 className="text-sm font-bold text-white">Who&apos;s attending each day</h3>
+            <span className="text-[10px] uppercase tracking-wider text-[#4ecde6] font-bold">Flexible days</span>
+          </div>
+          <div className="divide-y divide-white/[0.04]">
+            {perDayGroups.map((day) => (
+              <div key={day.dayId} className="px-6 py-4" data-testid="camp-perday-group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">{day.label}</span>
+                    {!day.isAvailable && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/40">
+                        Excluded
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-white/40 uppercase tracking-wider font-bold">
+                    {day.children.length} attending
+                  </span>
+                </div>
+                {day.children.length === 0 ? (
+                  <p className="text-xs text-white/40 italic">No bookings yet</p>
+                ) : (
+                  <ul className="flex flex-wrap gap-1.5" data-testid="camp-perday-list">
+                    {day.children.map((c) => (
+                      <li
+                        key={c.bookingId}
+                        className="px-2.5 py-1 rounded-md text-xs text-white bg-white/[0.06] border border-white/[0.08]"
+                      >
+                        {c.childName || '—'}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Move Camp Booking Phase 1 — modal */}
       {moveOpen && (

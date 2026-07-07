@@ -50,15 +50,20 @@ export default async function CampDetailPage({
   }
   const orgId = profile.organisation_id as string
 
-  // Camp + cross-tenant guard
+  // Camp + cross-tenant guard.
+  // Flexible Camps (Phase 3E) — booking_mode + flex_price_per_day are
+  // added to the SELECT so the roster header + per-day breakdown can
+  // render correctly. Both are nullable (default 'whole_camp' + null
+  // via Phase 0 migration 095) so whole-camp reads remain unaffected.
   const { data: camp } = await supabase
     .from('camps')
-    .select('id, organisation_id, name, start_date, end_date, location, max_capacity, price, is_published')
+    .select('id, organisation_id, name, start_date, end_date, location, max_capacity, price, is_published, booking_mode, flex_price_per_day')
     .eq('id', campId)
     .maybeSingle()
   if (!camp || camp.organisation_id !== orgId) {
     redirect('/dashboard/camps')
   }
+  const isFlexibleCamp = (camp as { booking_mode?: string | null }).booking_mode === 'flexible_days'
 
   // Roster — newest first. Sprint 10: also pulls medical_info + child_age
   // for the workspace's safety badge + age column. Forward-compatible with
@@ -95,6 +100,98 @@ export default async function CampDetailPage({
     bookingsRaw = (firstAttempt.data || []) as unknown[]
   }
   const bookings = (bookingsRaw || []) as BookingRow[]
+
+  // ─── Flexible Camps (Phase 3E) — per-booking day data ─────────────
+  // When the camp is flexible, load camp_days + camp_booking_days so
+  // we can:
+  //   • Show a list of booked dates on each booking row
+  //   • Render a per-day breakdown ("who's coming Wednesday?")
+  //   • Print a per-day register
+  //
+  // Whole-camp reads (booking_mode='whole_camp' or NULL) skip the
+  // fetches entirely and downstream renders stay byte-identical.
+  const bookingDayLabels = new Map<string, string[]>()
+  type PerDayGroup = {
+    dayId: string
+    date: string
+    label: string
+    isAvailable: boolean
+    children: { bookingId: string; childName: string | null }[]
+  }
+  const perDayGroups: PerDayGroup[] = []
+  if (isFlexibleCamp) {
+    const { data: campDayRows } = await supabase
+      .from('camp_days')
+      .select('id, date, is_available, sort_order')
+      .eq('camp_id', campId)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('date', { ascending: true })
+    const dayRows = (campDayRows || []) as {
+      id: string; date: string; is_available: boolean; sort_order: number | null
+    }[]
+
+    // Only load booking_days for bookings that are pending or paid —
+    // cancelled/refunded shouldn't populate the register.
+    const activeBookingIds = bookings
+      .filter((b) => b.payment_status === 'pending' || b.payment_status === 'paid')
+      .map((b) => b.id)
+    let bookingDaysRows: { camp_booking_id: string; camp_day_id: string }[] = []
+    if (activeBookingIds.length > 0) {
+      const { data: bd } = await supabase
+        .from('camp_booking_days')
+        .select('camp_booking_id, camp_day_id')
+        .in('camp_booking_id', activeBookingIds)
+      bookingDaysRows = (bd || []) as { camp_booking_id: string; camp_day_id: string }[]
+    }
+
+    const bookingById = new Map(bookings.map((b) => [b.id, b]))
+    const fmtDay = (iso: string) =>
+      new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', {
+        weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',
+      })
+
+    // Build per-booking day label list.
+    const dayLabelById = new Map(dayRows.map((d) => [d.id, fmtDay(d.date)]))
+    for (const row of bookingDaysRows) {
+      const label = dayLabelById.get(row.camp_day_id)
+      if (!label) continue
+      const arr = bookingDayLabels.get(row.camp_booking_id) || []
+      arr.push(label)
+      bookingDayLabels.set(row.camp_booking_id, arr)
+    }
+    // Sort each booking's label list by date order (they came in
+    // via arbitrary join order — re-sort using the day-index we know).
+    const dayIndexById = new Map(dayRows.map((d, i) => [d.id, i]))
+    for (const [bookingId, _labels] of bookingDayLabels) {
+      const rowsForBooking = bookingDaysRows.filter((r) => r.camp_booking_id === bookingId)
+      rowsForBooking.sort((a, b) => (dayIndexById.get(a.camp_day_id) ?? 0) - (dayIndexById.get(b.camp_day_id) ?? 0))
+      bookingDayLabels.set(
+        bookingId,
+        rowsForBooking
+          .map((r) => dayLabelById.get(r.camp_day_id))
+          .filter((v): v is string => !!v),
+      )
+    }
+
+    // Build per-day groups for the "who's attending Wednesday" breakdown.
+    const bookingsByDay = new Map<string, { bookingId: string; childName: string | null }[]>()
+    for (const row of bookingDaysRows) {
+      const booking = bookingById.get(row.camp_booking_id)
+      if (!booking) continue
+      const arr = bookingsByDay.get(row.camp_day_id) || []
+      arr.push({ bookingId: booking.id, childName: booking.child_name })
+      bookingsByDay.set(row.camp_day_id, arr)
+    }
+    for (const d of dayRows) {
+      perDayGroups.push({
+        dayId: d.id,
+        date: d.date,
+        label: fmtDay(d.date),
+        isAvailable: d.is_available,
+        children: bookingsByDay.get(d.id) || [],
+      })
+    }
+  }
 
   // Sprint 10 — resolve parent profile IDs by email for the Send-to-all
   // deep-link. Same iLIKE-equivalent semantics as the webhook handler.
@@ -140,6 +237,9 @@ export default async function CampDetailPage({
     payment_status: b.payment_status,
     booking_source: b.booking_source,
     created_at: b.created_at,
+    // Flexible Camps (Phase 3E) — day list for flexible bookings.
+    // Undefined for whole-camp bookings; RosterClient renders "—".
+    selected_day_labels: bookingDayLabels.get(b.id) || null,
   }))
 
   // Move Camp Booking Phase 1 — load every other published, future camp in
@@ -246,7 +346,14 @@ export default async function CampDetailPage({
           <div className="flex items-center gap-3 mt-1 text-sm text-white/55 flex-wrap">
             <span>{fmtDateRange(camp.start_date as string, camp.end_date as string)}</span>
             {camp.location && <span>· {camp.location}</span>}
-            {camp.price != null && <span>· £{Number(camp.price).toFixed(0)} per place</span>}
+            {isFlexibleCamp && (camp as { flex_price_per_day?: number | null }).flex_price_per_day != null ? (
+              <span>· £{Number((camp as { flex_price_per_day: number }).flex_price_per_day).toFixed(0)} per day</span>
+            ) : camp.price != null ? (
+              <span>· £{Number(camp.price).toFixed(0)} per place</span>
+            ) : null}
+            {isFlexibleCamp && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#4ecde6]/15 text-[#4ecde6]">Flexible days</span>
+            )}
             {!camp.is_published && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300">Draft</span>
             )}
@@ -278,6 +385,11 @@ export default async function CampDetailPage({
         eligibleTargetCamps={eligibleTargetCamps}
         sourceCampPrice={(camp.price as number | null) ?? 0}
         callerIsAdmin={profile.role === 'admin'}
+        // Flexible Camps (Phase 3E). isFlexibleCamp gates the per-day
+        // breakdown section + the "Days" column in the roster. When
+        // false (whole-camp), RosterClient renders exactly as before.
+        isFlexibleCamp={isFlexibleCamp}
+        perDayGroups={isFlexibleCamp ? perDayGroups : []}
       />
     </div>
   )
