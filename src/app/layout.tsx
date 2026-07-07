@@ -30,8 +30,12 @@ export const metadata: Metadata = {
     title: 'Player Portal',
   },
   icons: {
-    icon: '/icon.svg',
-    apple: '/icon.svg',
+    icon: [
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon-32.png',
   },
   openGraph: {
     type: 'website',
@@ -54,8 +58,17 @@ export const metadata: Metadata = {
   },
 }
 
+// PWA Phase 1a — mobile viewport foundation.
+// `viewportFit: 'cover'` lets iOS Safari render edge-to-edge (into the notch
+// and home-indicator zones). Content near those edges must use CSS
+// `env(safe-area-inset-*)` (see globals.css) to avoid collision.
+// `userScalable` is deliberately NOT disabled — pinch-to-zoom stays enabled
+// for accessibility.
 export const viewport: Viewport = {
   themeColor: '#4ecde6',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
