@@ -12,6 +12,16 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ## 2026-07-07
 
+### `0cab8ca` — PWA Phase 1d: refresh app icons with brand ring
+
+- **Deployment id**: `dpl_etfupeuqd` (full: from `playerportallive-etfupeuqd-johnleitch970-1195s-projects.vercel.app`)
+- **Deployment URL**: https://playerportallive-etfupeuqd-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: Replaced the placeholder "PP + star" app-icon mark with the segmented Player Portal ring (the "O" from the horizontal "THE PLAYER PORTAL" logo). Ring only — no text, no wordmark, no decoration — centred on a flat `#0a0a0a` background with the `#4ecde6` brand accent. Same brand identity now renders on every install surface: browser favicon, iOS home-screen (apple-touch-icon), Android install ("any" purpose), Android adaptive icon (maskable purpose). Also delivers the original Phase 1d scope of adding maskable variants for Android adaptive-icon support — segments fit inside the 40%-radius safe zone with a 28.8 px margin, guaranteed to render whole under any Android launcher mask (circle, squircle, teardrop).
+- **Files**: 8 assets under `public/` (7 icon files + `manifest.json`). Regenerated `icon.svg`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, `favicon-32.png` from the single new canonical SVG source. Added `icon-maskable-192.png` + `icon-maskable-512.png`. Manifest updated to declare both maskable entries alongside the existing three `any` entries (icons array now has 5 total; 3 `any` + 2 `maskable`).
+- **Protected system touched**: None. **Zero application code changed** — every touched file is under `public/`. No changes to service worker logic, authentication, middleware, dashboard, booking, billing, Stripe, onboarding, emails, API routes, database, or `src/app/layout.tsx`.
+- **Note**: Existing installed PWAs will continue to show the previous launcher icon until they are re-installed or their OS refreshes the icon opportunistically. This is standard Android/iOS behaviour — home-screen icons are cached at install time. New installations show the new ring icon immediately.
+- **Rollback**: `git revert 0cab8ca && vercel deploy --prod`
+
 ### `588b4b6` — Mobile App Phase 1 foundation release (PWA install + offline + mobile UX)
 
 - **Deployment id**: `dpl_7785800pc` (full: from `playerportallive-7785800pc-johnleitch970-1195s-projects.vercel.app`)
