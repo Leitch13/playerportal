@@ -35,7 +35,7 @@ function BeforeCard() {
     { icon: '📊', label: 'Google Sheets', tail: 'v14_final.xlsx' },
     { icon: '💬', label: 'WhatsApp — U8s parents', tail: '48 unread' },
     { icon: '📧', label: 'Mailchimp', tail: 'not synced' },
-    { icon: '🗓️', label: 'ClassForKids', tail: 'bookings' },
+    { icon: '🗓️', label: 'Booking provider', tail: 'bookings' },
     { icon: '📱', label: 'Personal phone', tail: 'chasing at 21:30' },
   ]
   return (

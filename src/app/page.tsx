@@ -48,8 +48,8 @@ export const metadata: Metadata = {
 // matches the on-page answers verbatim.
 const FAQ_ITEMS = [
   {
-    q: 'Can I migrate my members from ClassForKids?',
-    a: 'Yes. Export your ClassForKids CSV, upload it, and Player Portal matches parents, players, classes and plans automatically. Every parent gets a one-click confirmation link. First real charge lands on the date you choose. Zero double-charges. Usually done in an afternoon.',
+    q: 'Can I migrate my members from another provider?',
+    a: 'Yes. Export your current provider\'s CSV, upload it, and Player Portal matches parents, players, classes and plans automatically. Existing memberships, enrolments and billing information are preserved wherever possible to make switching straightforward.',
   },
   {
     q: "What happens if my Stripe account isn't set up?",

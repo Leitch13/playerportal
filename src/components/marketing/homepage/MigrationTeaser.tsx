@@ -11,7 +11,7 @@ export default function MigrationTeaser() {
               THE SWITCH
             </p>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-[-0.02em] font-black text-white">
-              Coming from ClassForKids?
+              Coming from another provider?
               <br />
               <span className="text-white/50">We&apos;ve done that migration. Twice.</span>
             </h2>

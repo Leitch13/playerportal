@@ -33,7 +33,7 @@ export default function BentoGrid() {
           </BentoCell>
 
           {/* Migration — 3 cols */}
-          <BentoCell label="Migration" tagline="Bring your ClassForKids members over in one afternoon." className="md:col-span-3">
+          <BentoCell label="Migration" tagline="Bring your existing members over in one afternoon." className="md:col-span-3">
             <MigrationMock />
           </BentoCell>
 

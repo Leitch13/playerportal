@@ -15,7 +15,7 @@ export default function FinalCTA() {
           <span className="text-white/50">Start growing your academy.</span>
         </h2>
         <p className="mt-10 text-lg lg:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
-          Try Player Portal free for 14 days. Bring your ClassForKids members over in an afternoon. Cancel any time.
+          Try Player Portal free for 14 days. Bring your existing members over in an afternoon. Cancel any time.
         </p>
 
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">

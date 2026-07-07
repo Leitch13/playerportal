@@ -7,7 +7,7 @@ const TIERS = [
     name: 'Starter',
     price: '£20',
     tag: 'Everything to go live',
-    features: ['Unlimited players & classes', 'Bookings, payments & attendance', 'Migration from ClassForKids'],
+    features: ['Unlimited players & classes', 'Bookings, payments & attendance', 'Free migration included'],
     featured: false,
   },
   {
