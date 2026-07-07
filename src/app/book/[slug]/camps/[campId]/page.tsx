@@ -10,6 +10,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ShareButton from './ShareButton'
 import CampBookingForm from './CampBookingForm'
+// Flexible Camps (Phase 2) — parent-facing day picker. Rendered instead
+// of CampBookingForm when the camp is booking_mode='flexible_days' AND
+// FLEXIBLE_CAMPS_ENABLED is on. Purely view-only: no Stripe, no
+// checkout, no writes.
+import CampFlexibleDayPicker from './CampFlexibleDayPicker'
+import { BOOKING_MODE_FLEXIBLE_DAYS, FLEXIBLE_CAMPS_ENABLED } from '@/lib/flexible-camps'
 
 type ScheduleDay = {
   day: string
@@ -40,6 +46,23 @@ type Camp = {
   sibling_discount_percent: number | null
   collect_medical_info: boolean
   require_consent: boolean
+  // Flexible Camps (Phase 0/1/2). Optional so existing whole-camp rows
+  // (booking_mode='whole_camp' via Phase 0 default) render exactly as
+  // before — none of these are read for the whole-camp branch.
+  booking_mode?: string | null
+  flex_price_per_day?: number | null
+  flex_min_days?: number | null
+}
+
+// Flexible Camps (Phase 2) — parent-side view of a camp_days row. Read
+// via the "Public read camp_days for published camps" RLS policy on the
+// anon client. NEVER written by this page.
+type CampDayRow = {
+  id: string
+  date: string
+  price: number | null
+  is_available: boolean
+  sort_order: number | null
 }
 
 function formatDateRange(start: string, end: string): string {
@@ -128,6 +151,32 @@ export default async function CampDetailPage({
   if (!camp) notFound()
 
   const c = camp as Camp
+  // Flexible Camps (Phase 2) — when the row is a flexible-days camp we
+  // hard-guard the parent page. Flexible camps are supposed to be
+  // publish-locked by Phase 1's guards, so `is_published=true` on a
+  // flexible row should be impossible in production. Belt-and-braces
+  // for the case where a row was force-published via direct DB edit
+  // for testing:
+  //   - Flag OFF ⇒ notFound() so no half-implemented flow ever renders.
+  //   - Flag ON  ⇒ fall through and render the day picker instead of
+  //                CampBookingForm.
+  const isFlexibleCamp = c.booking_mode === BOOKING_MODE_FLEXIBLE_DAYS
+  if (isFlexibleCamp && !FLEXIBLE_CAMPS_ENABLED) notFound()
+
+  // Fetch camp_days ONLY for flexible camps + only when the flag is on.
+  // Whole-camp code path issues zero new queries — byte-identical read
+  // pattern to today.
+  let campDays: CampDayRow[] = []
+  if (isFlexibleCamp && FLEXIBLE_CAMPS_ENABLED) {
+    const { data: cdData } = await publicSupabase
+      .from('camp_days')
+      .select('id, date, price, is_available, sort_order')
+      .eq('camp_id', c.id)
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('date', { ascending: true })
+    campDays = (cdData || []) as CampDayRow[]
+  }
+
   const primaryColor = org.primary_color || '#4ecde6'
   const days = getDurationDays(c.start_date, c.end_date)
   const schedule: ScheduleDay[] = Array.isArray(c.schedule) ? c.schedule : []
@@ -346,35 +395,52 @@ export default async function CampDetailPage({
               className="sticky top-6 rounded-2xl border bg-white/[0.04] backdrop-blur-sm p-5 sm:p-6"
               style={{ borderColor: `${primaryColor}25`, boxShadow: `0 10px 40px ${primaryColor}10` }}
             >
-              <h3 className="text-lg font-bold text-white mb-1">Book Your Place</h3>
-              <div className="h-0.5 w-10 rounded-full mb-4" style={{ backgroundColor: primaryColor }} />
-              <CampBookingForm
-                camp={{
-                  id: c.id,
-                  organisation_id: c.organisation_id,
-                  name: c.name,
-                  start_date: c.start_date,
-                  end_date: c.end_date,
-                  daily_start_time: c.daily_start_time,
-                  daily_end_time: c.daily_end_time,
-                  location: c.location,
-                  price: c.price,
-                  early_bird_price: c.early_bird_price ?? null,
-                  early_bird_deadline: c.early_bird_deadline ?? null,
-                  sibling_discount_enabled: c.sibling_discount_enabled ?? false,
-                  sibling_discount_percent: c.sibling_discount_percent ?? null,
-                  collect_medical_info: c.collect_medical_info ?? false,
-                  require_consent: c.require_consent ?? false,
-                  max_capacity: c.max_capacity,
-                }}
-                slug={slug}
-                spotsLeft={spotsLeft}
-                primaryColor={primaryColor}
-                bookingId={bookedParam ? bookingIdParam : null}
-                loggedInParent={loggedInParent}
-                existingChildren={existingChildren}
-                signInUrl={signInUrl}
-              />
+              {/* Flexible Camps (Phase 2) — parents on a flexible-days
+                  camp see the view-only day picker. The whole-camp
+                  form + its "Book Your Place" heading are only
+                  rendered for whole-camp bookings, so today's parent
+                  flow stays byte-identical. */}
+              {isFlexibleCamp ? (
+                <CampFlexibleDayPicker
+                  campName={c.name}
+                  flexPricePerDay={c.flex_price_per_day ?? null}
+                  flexMinDays={c.flex_min_days ?? null}
+                  days={campDays}
+                  primaryColor={primaryColor}
+                />
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold text-white mb-1">Book Your Place</h3>
+                  <div className="h-0.5 w-10 rounded-full mb-4" style={{ backgroundColor: primaryColor }} />
+                  <CampBookingForm
+                    camp={{
+                      id: c.id,
+                      organisation_id: c.organisation_id,
+                      name: c.name,
+                      start_date: c.start_date,
+                      end_date: c.end_date,
+                      daily_start_time: c.daily_start_time,
+                      daily_end_time: c.daily_end_time,
+                      location: c.location,
+                      price: c.price,
+                      early_bird_price: c.early_bird_price ?? null,
+                      early_bird_deadline: c.early_bird_deadline ?? null,
+                      sibling_discount_enabled: c.sibling_discount_enabled ?? false,
+                      sibling_discount_percent: c.sibling_discount_percent ?? null,
+                      collect_medical_info: c.collect_medical_info ?? false,
+                      require_consent: c.require_consent ?? false,
+                      max_capacity: c.max_capacity,
+                    }}
+                    slug={slug}
+                    spotsLeft={spotsLeft}
+                    primaryColor={primaryColor}
+                    bookingId={bookedParam ? bookingIdParam : null}
+                    loggedInParent={loggedInParent}
+                    existingChildren={existingChildren}
+                    signInUrl={signInUrl}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>
