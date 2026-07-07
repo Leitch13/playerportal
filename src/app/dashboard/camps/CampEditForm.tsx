@@ -59,6 +59,9 @@ type EditableCamp = {
   // through render exactly as before. When 'flexible_days', publishing is
   // locked (see below).
   booking_mode?: string | null
+  // Flexible Camps (Phase 3E pilot gate). Optional so pre-allowlist
+  // callers still fall through to "blocked" for flexible camps.
+  organisation_id?: string | null
 }
 
 type Props = {
@@ -112,7 +115,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [imageUrl, setImageUrl] = useState(camp.image_url || '')
   const [whatToBring, setWhatToBring] = useState(camp.what_to_bring || '')
   const [maxCapacity, setMaxCapacity] = useState(camp.max_capacity != null ? String(camp.max_capacity) : '30')
-  const publishBlocked = isFlexibleModePublishBlocked(camp.booking_mode)
+  const publishBlocked = isFlexibleModePublishBlocked(camp.booking_mode, camp.organisation_id)
   // When publishing is blocked we force-clamp the checkbox state to false.
   // Defence-in-depth against a starting-value of true (only possible if a
   // camp was somehow published before this guard existed).

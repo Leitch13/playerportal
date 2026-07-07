@@ -59,18 +59,62 @@ export function parseBookingMode(v: unknown): BookingMode {
   return isValidBookingMode(v) ? v : BOOKING_MODE_WHOLE_CAMP
 }
 
-// Production-safety guard for Phase 1. The parent booking flow does not yet
-// support flexible-days camps, so publishing one before Phase 2 lands would
-// expose parents to a booking page they can't correctly check out against.
-// Every publish surface (CampForm, CampActions, CampEditForm) reads this
-// helper and blocks the publish when true. When Phase 2 ships the parent
-// flow, flip this to `return false` (or remove the callers).
-export function isFlexibleModePublishBlocked(mode: BookingMode | string | null | undefined): boolean {
-  return mode === BOOKING_MODE_FLEXIBLE_DAYS
+// ─── Pilot publish allowlist (Phase 3E follow-up) ───
+//
+// Comma-separated list of organisation ids permitted to publish
+// flexible-days camps. Empty/missing = nobody allowed (fail-safe
+// default). Whitespace-trimmed; empty entries filtered so a stray
+// comma or space cannot accidentally allow "" through as a wildcard.
+//
+// This is SEPARATE from FLEXIBLE_CAMPS_ENABLED:
+//   FLEXIBLE_CAMPS_ENABLED=true                    ⇒ feature UI +
+//     checkout route become available (staging QA + admins can
+//     create + parents can round-trip).
+//   FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST=<org1>,<org2> ⇒ ONLY those orgs
+//     can flip `is_published=true` on a flexible camp in production.
+//
+// A staging environment typically sets ENABLED=true with no allowlist
+// so QA can run end-to-end without the "publish → parents can book"
+// step being available. The pilot org gets added to the allowlist to
+// go live for real bookings.
+function parsePublishAllowlist(raw: string | undefined): ReadonlySet<string> {
+  if (!raw) return new Set<string>()
+  return new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0),
+  )
+}
+
+export const FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST: ReadonlySet<string> =
+  parsePublishAllowlist(process.env.FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST)
+
+// Publish-lock guard used by every camp publish surface (CampForm,
+// CampActions row menu, CampEditForm).
+//
+//   Whole-camp:                  always allowed to publish → false
+//   Flexible + allowlisted org:  allowed → false
+//   Flexible + everyone else:    blocked → true
+//   Flexible + no org id passed: blocked → true (fail-safe: if a
+//                                caller forgets the arg, we stay
+//                                locked rather than silently allow)
+//
+// The organisationId argument is optional so pre-allowlist callers
+// keep returning `true` (blocked) for flexible camps — matches the
+// Phase 1 default of "flexible = locked" until a caller opts in by
+// passing an id we can check.
+export function isFlexibleModePublishBlocked(
+  mode: BookingMode | string | null | undefined,
+  organisationId?: string | null,
+): boolean {
+  if (mode !== BOOKING_MODE_FLEXIBLE_DAYS) return false
+  if (!organisationId) return true
+  return !FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST.has(organisationId)
 }
 
 export const FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE =
-  'Flexible Day camps cannot be published yet because the parent booking flow has not been completed. Save this camp as a draft until Flexible Booking is released.'
+  'Flexible Day camps aren’t publish-enabled for this academy yet. Please save as a draft.'
 
 // ─── Row shapes ───
 // Mirror the schema in `supabase/095_flexible_camps_phase_0.sql`. Named

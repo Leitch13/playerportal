@@ -41,6 +41,9 @@ type EditableCamp = {
   // Flexible Camps (Phase 1) — forwarded to CampEditForm so it can lock
   // publishing for flexible drafts.
   booking_mode?: string | null
+  // Flexible Camps (Phase 3E pilot gate) — forwarded to CampEditForm
+  // so the same allowlist check applies inside the edit modal.
+  organisation_id?: string | null
 }
 
 type Props = {
@@ -59,9 +62,15 @@ type Props = {
   // until the parent booking flow ships. Optional so existing whole-camp
   // rows render exactly as before (undefined ⇒ treated as whole-camp).
   bookingMode?: string | null
+  // Flexible Camps (Phase 3E pilot gate). The camp's organisation id is
+  // consulted against FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST so allowlisted
+  // pilot orgs can publish flexible camps while everyone else stays
+  // locked. Optional so pre-allowlist callers still get "blocked" for
+  // flexible camps — the helper fail-safes when no org id is passed.
+  organisationId?: string | null
 }
 
-export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, bookingMode }: Props) {
+export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, bookingMode, organisationId }: Props) {
   const [open, setOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canEdit = !!editEnabled && !!camp
@@ -94,9 +103,10 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
   }
 
   // Flexible-camp publish guard. Blocks the transition from
-  // unpublished → published for flexible camps. Unpublishing is always
-  // permitted (defensive: lets an admin retract a mis-flagged row).
-  const publishBlocked = !isPublished && isFlexibleModePublishBlocked(bookingMode)
+  // unpublished → published for flexible camps that aren't allowlisted
+  // for the pilot. Unpublishing is always permitted (defensive: lets
+  // an admin retract a mis-flagged row).
+  const publishBlocked = !isPublished && isFlexibleModePublishBlocked(bookingMode, organisationId)
 
   const handleTogglePublish = async () => {
     if (publishBlocked) {

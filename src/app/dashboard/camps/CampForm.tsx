@@ -12,6 +12,7 @@ import {
   BOOKING_MODE_FLEXIBLE_DAYS,
   BOOKING_MODE_WHOLE_CAMP,
   FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
+  isFlexibleModePublishBlocked,
   type BookingMode,
 } from '@/lib/flexible-camps'
 
@@ -123,6 +124,10 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
   const [dayAvailability, setDayAvailability] = useState<Record<string, boolean>>({})
 
   const useFlexibleMode = flexibleCampsEnabled && bookingMode === BOOKING_MODE_FLEXIBLE_DAYS
+  // Phase 3E pilot gate — allowlisted orgs can publish flexible camps;
+  // everyone else stays locked. Whole-camp mode always returns false
+  // (helper short-circuits on mode !== 'flexible_days').
+  const publishBlocked = isFlexibleModePublishBlocked(bookingMode, orgId)
 
   const toggleDayAvailability = (date: string) => {
     setDayAvailability((prev) => ({ ...prev, [date]: prev[date] === false ? true : false }))
@@ -203,10 +208,11 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
       alert('Please enter a price per day for the flexible camp.')
       return
     }
-    // Production-safety guard: flexible camps cannot be published until the
-    // parent booking flow is implemented. Belt-and-braces against the
-    // hidden UI paths below (Published checkbox + Publish button).
-    if (useFlexibleMode && publish === true) {
+    // Publish-lock guard: flexible camps cannot be published unless the
+    // academy's org id is in FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST. Belt-and-
+    // braces against the hidden UI paths below (Published checkbox +
+    // Publish button).
+    if (publishBlocked && publish === true) {
       alert(FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE)
       return
     }
@@ -229,9 +235,10 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
         image_url: imageUrl.trim() || null,
         what_to_bring: whatToBring.trim() || null,
         schedule: schedule.filter((d) => d.activities.length > 0),
-        // Production-safety guard: flexible camps forced unpublished until
-        // Phase 2 lands the parent booking flow.
-        is_published: useFlexibleMode ? false : (publish !== undefined ? publish : isPublished),
+        // Publish-lock guard: force-clamp is_published=false when this
+        // camp isn't publish-permitted (whole-camp always passes;
+        // flexible-not-allowlisted always clamps to draft).
+        is_published: publishBlocked ? false : (publish !== undefined ? publish : isPublished),
         early_bird_price: earlyBirdPrice ? parseFloat(earlyBirdPrice) : null,
         early_bird_deadline: earlyBirdDeadline || null,
         sibling_discount_enabled: siblingDiscountEnabled,
@@ -715,8 +722,10 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
               />
             </div>
 
-            {/* Published — locked for flexible camps until parent booking ships */}
-            {useFlexibleMode ? (
+            {/* Published — checkbox for whole-camp + allowlisted-flexible.
+                Amber locked banner for flexible camps whose org isn't
+                on the pilot allowlist. */}
+            {publishBlocked ? (
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
                 <div className="flex items-start gap-2">
                   <span className="text-amber-400 text-sm mt-0.5">&#9888;</span>
@@ -943,9 +952,10 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             >
               {saving ? 'Saving...' : 'Save as Draft'}
             </button>
-            {/* Publish & Share hidden for flexible camps until Phase 2 ships
-                the parent booking flow. Draft-only until then. */}
-            {orgSlug && !useFlexibleMode && (
+            {/* Publish & Share hidden when publishing is locked
+                (flexible camps whose org isn't on the pilot allowlist).
+                Whole-camp + allowlisted-flexible see the button. */}
+            {orgSlug && !publishBlocked && (
               <button
                 onClick={handlePublishAndShare}
                 disabled={saving || !name.trim() || !startDate || !endDate}

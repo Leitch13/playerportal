@@ -326,6 +326,10 @@ export default async function CampsPage() {
                             // through so CampEditForm can lock publishing
                             // for flexible drafts.
                             booking_mode: camp.booking_mode,
+                            // Flexible Camps (Phase 3E pilot gate) — org
+                            // id is consulted against the allowlist
+                            // inside the CampEditForm.
+                            organisation_id: camp.organisation_id,
                           } : undefined}
                           bookedCount={CAMP_EDIT_ENABLED ? stats.bookingCount : undefined}
                           trainingGroups={CAMP_EDIT_ENABLED ? trainingGroups : undefined}
@@ -335,6 +339,10 @@ export default async function CampsPage() {
                           // unconditionally so pre-existing flexible drafts
                           // stay guarded even if the create flag is off.
                           bookingMode={camp.booking_mode}
+                          // Flexible Camps (Phase 3E pilot gate) — org
+                          // id is consulted against the allowlist
+                          // inside the row-action publish handler.
+                          organisationId={camp.organisation_id}
                         />
                       </td>
                     </tr>
