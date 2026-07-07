@@ -1,4 +1,5 @@
 // Flexible Camp Booking Mode — Phase 0 (Foundation).
+// Build trigger: 2026-07-07 evening
 //
 // This module introduces the *types* and *feature flag* needed to later
 // support per-day camp bookings alongside the existing whole-camp booking
