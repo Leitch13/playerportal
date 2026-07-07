@@ -564,7 +564,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                           )}
                         </div>
                         {/* Quick move buttons */}
-                        <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 mt-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           {STATUSES.indexOf(status) > 0 && (
                             <button
                               onClick={(e) => { e.stopPropagation(); moveStatus(lead, 'backward') }}

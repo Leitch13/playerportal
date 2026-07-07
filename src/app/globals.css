@@ -272,3 +272,27 @@ a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PWA Phase 1c — universal 100vh → 100dvh upgrade.
+   Mobile Safari's `100vh` includes the URL bar height even when it's not
+   visible, so `min-h-screen` overshoots by the URL-bar chrome on iOS. `dvh`
+   is dynamic viewport height — the correct value at every moment. This
+   @supports gate keeps the fallback for browsers that don't understand
+   `dvh` (Safari <15.4, Chrome <108). Applies to every `.min-h-screen` /
+   `.h-screen` Tailwind utility in the app in one place — no per-component
+   sweep required.
+   ───────────────────────────────────────────────────────────────────────── */
+@supports (min-height: 100dvh) {
+  .min-h-screen { min-height: 100dvh; }
+  .h-screen { height: 100dvh; }
+}
+
+/* PWA Phase 1c — hide the mobile bottom-nav while a soft-keyboard is open.
+   Toggled by src/components/KeyboardAwareBottomNav.tsx, which sets
+   `data-keyboard-open="true"` on <body> using the visualViewport API.
+   Kept as a display:none instead of a transform so page content beneath
+   the nav automatically reflows into the reclaimed space. */
+body[data-keyboard-open="true"] .mobile-bottom-nav {
+  display: none;
+}

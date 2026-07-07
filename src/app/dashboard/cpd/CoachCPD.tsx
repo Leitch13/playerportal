@@ -423,7 +423,7 @@ function CertificationsSection({
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pt-1 opacity-0 group-hover:opacity-100 transition">
+              <div className="flex gap-2 pt-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
                 <button
                   onClick={() => openEdit(cert)}
                   className="text-[11px] text-white/30 hover:text-white/60 transition"

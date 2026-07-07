@@ -146,7 +146,7 @@ export default function UpsellCard({ type, className = '', childName, planName, 
         {/* Dismiss */}
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-text-light/40 hover:text-text-light hover:bg-black/5 transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute top-2 right-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-text-light/40 hover:text-text-light hover:bg-black/5 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
           aria-label="Dismiss"
         >
           <svg width="12" height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">

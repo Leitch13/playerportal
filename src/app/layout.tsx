@@ -6,6 +6,7 @@ import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import InstallPrompt from '@/components/InstallPrompt'
 import CookieConsent from '@/components/CookieConsent'
 import NavigationProgress from '@/components/NavigationProgress'
+import KeyboardAwareBottomNav from '@/components/KeyboardAwareBottomNav'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -64,11 +65,18 @@ export const metadata: Metadata = {
 // `env(safe-area-inset-*)` (see globals.css) to avoid collision.
 // `userScalable` is deliberately NOT disabled — pinch-to-zoom stays enabled
 // for accessibility.
+//
+// PWA Phase 1c — `interactiveWidget: 'resizes-content'` tells modern
+// mobile browsers (Chrome 108+, Safari 17+) to shrink the layout viewport
+// when the soft keyboard opens, so fixed-bottom elements stay above it
+// naturally. Older browsers ignore the directive; a JS fallback in
+// KeyboardAwareBottomNav handles them (see globals.css).
 export const viewport: Viewport = {
   themeColor: '#4ecde6',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
 }
 
 export default function RootLayout({
@@ -83,6 +91,7 @@ export default function RootLayout({
           <NavigationProgress />
         </Suspense>
         {children}
+        <KeyboardAwareBottomNav />
         <ServiceWorkerRegister />
         <InstallPrompt />
         <CookieConsent />

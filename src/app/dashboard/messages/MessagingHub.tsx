@@ -670,7 +670,7 @@ export default function MessagingHub({
                                 >
                                   {msg.content}
                                 </div>
-                                <p className="text-[10px] text-white/20 mt-0.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[10px] text-white/20 mt-0.5 px-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                   {formatTime(msg.created_at)}
                                 </p>
                               </div>
