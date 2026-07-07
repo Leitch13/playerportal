@@ -12,6 +12,16 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ## 2026-07-07
 
+### `d54d104` — Homepage: genericise ClassForKids copy to "any provider"
+
+- **Deployment id**: `dpl_llylsn0hr` (full: from `playerportallive-llylsn0hr-johnleitch970-1195s-projects.vercel.app`)
+- **Deployment URL**: https://playerportallive-llylsn0hr-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: The homepage over-indexed on ClassForKids as the assumed prior tool. Genericised 7 mentions across 6 components so academies coming from LoveAdmin, TeamFeePay, Coacha, spreadsheets or anything else feel equally welcome. Changes: (1) FinalCTA "Bring your ClassForKids members over" → "Bring your existing members over". (2) BentoGrid Migration tagline: same treatment. (3) MigrationTeaser section headline "Coming from ClassForKids?" → "Coming from another provider?" — provider chip list at line 29 explicitly preserved (`['ClassForKids', 'LoveAdmin', 'TeamFeePay', 'Coacha']`) as positive "we support these" evidence. (4) PricingTeaser Starter feature "Migration from ClassForKids" → "Free migration included". (5) FAQ.tsx Q + A genericised to "migrate my members from another provider" / "Export your current provider's CSV". (6) `src/app/page.tsx` JSON-LD FAQPage schema mirrored to the same wording so structured data matches visible copy. (7) ProblemSection Before-card chaos-icon "ClassForKids — bookings" → "Booking provider — bookings". Copy-only.
+- **Files**: `src/app/page.tsx`, `src/components/marketing/homepage/{BentoGrid,FAQ,FinalCTA,MigrationTeaser,PricingTeaser,ProblemSection}.tsx` (7 files, +9 / -9)
+- **Protected system touched**: None. Copy-only. No touches on migration functionality, provider chip list, styling, layout, analytics, API, DB, auth, billing or Stripe.
+- **Note**: The meta-keywords list in `src/app/layout.tsx` still includes "ClassForKids alternative" as an SEO signal for people Googling for a ClassForKids replacement. Out of scope for this hotfix; positive SEO signal, not visible copy.
+- **Rollback**: `git revert d54d104 && vercel deploy --prod`
+
 ### `3090a64` — Hide cancelled enrolments from parents on player-detail page
 
 - **Deployment id**: `dpl_av718midm` (full: from `playerportallive-av718midm-johnleitch970-1195s-projects.vercel.app`)
