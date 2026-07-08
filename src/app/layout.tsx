@@ -7,6 +7,7 @@ import InstallPrompt from '@/components/InstallPrompt'
 import CookieConsent from '@/components/CookieConsent'
 import NavigationProgress from '@/components/NavigationProgress'
 import KeyboardAwareBottomNav from '@/components/KeyboardAwareBottomNav'
+import AnalyticsGate from '@/components/AnalyticsGate'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -57,6 +58,15 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // Growth Phase 1A — Google Search Console verification via env var.
+  // Unset ⇒ no meta tag rendered. Setting the value is opt-in per env.
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+        },
+      }
+    : {}),
 }
 
 // PWA Phase 1a — mobile viewport foundation.
@@ -95,6 +105,7 @@ export default function RootLayout({
         <ServiceWorkerRegister />
         <InstallPrompt />
         <CookieConsent />
+        <AnalyticsGate />
       </body>
     </html>
   )

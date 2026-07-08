@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { CONSENT_CHANGED_EVENT, CONSENT_STORAGE_KEY } from '@/lib/analytics'
 
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const consent = localStorage.getItem('cookie-consent')
+    const consent = localStorage.getItem(CONSENT_STORAGE_KEY)
     if (!consent) {
       const timer = setTimeout(() => setVisible(true), 500)
       return () => clearTimeout(timer)
@@ -15,8 +16,14 @@ export default function CookieConsent() {
   }, [])
 
   function accept(level: 'all' | 'essential') {
-    localStorage.setItem('cookie-consent', level)
+    localStorage.setItem(CONSENT_STORAGE_KEY, level)
     setVisible(false)
+    // Notify AnalyticsGate (and any other subscriber) so analytics
+    // scripts can mount immediately without a page reload when the user
+    // chose 'all', or stay dark when they chose 'essential'.
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(CONSENT_CHANGED_EVENT))
+    }
   }
 
   if (!visible) return null
