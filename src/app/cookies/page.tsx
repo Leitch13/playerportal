@@ -13,7 +13,7 @@ export default function CookiePolicyPage() {
         <div className="max-w-3xl mx-auto">
           <Link href="/" className="text-white/50 text-sm hover:text-white mb-4 inline-block">&larr; Back</Link>
           <h1 className="text-3xl font-bold">Cookie Policy</h1>
-          <p className="text-white/60 mt-2">Last updated: April 2026</p>
+          <p className="text-white/60 mt-2">Last updated: 8 July 2026</p>
         </div>
       </div>
 
@@ -32,9 +32,10 @@ export default function CookiePolicyPage() {
           <section>
             <h2 className="text-lg font-bold mb-3 text-white">2. How we use cookies</h2>
             <p>
-              Player Portal uses a minimal set of cookies, focused on keeping the platform working and secure.
-              We do <strong>not</strong> use advertising cookies, behavioural tracking cookies, or any cookies
-              that build a profile of you or your child for marketing purposes.
+              Player Portal uses a minimal set of cookies. Some are essential to keeping you signed in and the
+              platform working; some are strictly optional and only load when you accept &ldquo;All&rdquo; on
+              the cookie banner. We do <strong>not</strong> use advertising cookies, and we do not build
+              marketing profiles of you or your child.
             </p>
           </section>
 
@@ -62,8 +63,40 @@ export default function CookiePolicyPage() {
               </div>
 
               <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-5">
-                <h3 className="font-bold text-white mb-1">Analytics cookies (not currently in use)</h3>
-                <p className="text-xs text-white/60 mb-3">We don't use analytics cookies at this time. If we add them in future, you'll be asked to opt in.</p>
+                <h3 className="font-bold text-white mb-1">Analytics cookies (opt-in only)</h3>
+                <p className="text-xs text-white/60 mb-3">
+                  These help us understand which pages people visit, how they arrived, and where we&apos;re
+                  losing them, so we can improve the platform. We only load these when you accept
+                  &ldquo;All&rdquo; on the cookie banner. Accepting &ldquo;Essential Only&rdquo; keeps
+                  them off entirely.
+                </p>
+                <ul className="text-xs space-y-1 text-white/70 list-disc pl-5">
+                  <li>
+                    <strong className="text-white">Google Analytics 4</strong> ·
+                    <code className="text-emerald-400 mx-1">_ga</code>,
+                    <code className="text-emerald-400 mx-1">_ga_&lt;id&gt;</code> ·
+                    aggregate page views and traffic sources
+                  </li>
+                  <li>
+                    <strong className="text-white">Microsoft Clarity</strong> ·
+                    <code className="text-emerald-400 mx-1">_clck</code>,
+                    <code className="text-emerald-400 mx-1">_clsk</code>,
+                    <code className="text-emerald-400 mx-1">CLID</code>,
+                    <code className="text-emerald-400 mx-1">ANONCHK</code>,
+                    <code className="text-emerald-400 mx-1">MR</code>,
+                    <code className="text-emerald-400 mx-1">SM</code> ·
+                    anonymised session recordings and heatmaps
+                  </li>
+                  <li>
+                    <strong className="text-white">Vercel Analytics + Speed Insights</strong> ·
+                    first-party session token · anonymised page-view counts and Core Web Vitals
+                  </li>
+                </ul>
+                <p className="text-xs text-white/60 mt-3">
+                  None of these track your child. None are used for advertising. None are shared with
+                  third parties for marketing. You can withdraw consent at any time by clearing your
+                  browser&apos;s site data — the banner will return on your next visit.
+                </p>
               </div>
 
               <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-5">
@@ -82,6 +115,9 @@ export default function CookiePolicyPage() {
             <ul className="mt-2 list-disc pl-5 space-y-1">
               <li><strong className="text-white">Stripe</strong> — for secure payment processing and fraud prevention</li>
               <li><strong className="text-white">Supabase</strong> — for authentication and session management</li>
+              <li><strong className="text-white">Google (Analytics 4)</strong> — opt-in only via the cookie banner</li>
+              <li><strong className="text-white">Microsoft (Clarity)</strong> — opt-in only via the cookie banner</li>
+              <li><strong className="text-white">Vercel (Analytics + Speed Insights)</strong> — opt-in only via the cookie banner</li>
             </ul>
             <p className="mt-3">
               These providers have their own privacy policies and are contractually bound under our Data Processing Agreement.
