@@ -91,10 +91,23 @@ function parsePublishAllowlist(raw: string | undefined): ReadonlySet<string> {
 export const FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST: ReadonlySet<string> =
   parsePublishAllowlist(process.env.FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST)
 
+// ─── Global publish bypass ───
+//
+// Setting FLEXIBLE_CAMPS_ALLOW_ALL=true opens flexible-days publishing
+// to EVERY academy — no allowlist consulted. Intended as the graduation
+// switch once the pilot has validated the flow end-to-end and we're
+// ready for broad rollout.
+//
+// Default false. When false, the pilot allowlist gate below is the
+// authoritative check (preserves Phase 3E behaviour byte-for-byte).
+export const FLEXIBLE_CAMPS_ALLOW_ALL_PUBLISH =
+  process.env.FLEXIBLE_CAMPS_ALLOW_ALL === 'true'
+
 // Publish-lock guard used by every camp publish surface (CampForm,
 // CampActions row menu, CampEditForm).
 //
 //   Whole-camp:                  always allowed to publish → false
+//   ALLOW_ALL=true + flexible:   allowed → false (global bypass)
 //   Flexible + allowlisted org:  allowed → false
 //   Flexible + everyone else:    blocked → true
 //   Flexible + no org id passed: blocked → true (fail-safe: if a
@@ -110,6 +123,7 @@ export function isFlexibleModePublishBlocked(
   organisationId?: string | null,
 ): boolean {
   if (mode !== BOOKING_MODE_FLEXIBLE_DAYS) return false
+  if (FLEXIBLE_CAMPS_ALLOW_ALL_PUBLISH) return false
   if (!organisationId) return true
   return !FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST.has(organisationId)
 }
