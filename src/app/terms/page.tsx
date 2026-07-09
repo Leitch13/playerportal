@@ -1,8 +1,33 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+// Growth Phase 1B — SEO hygiene: previously missing description +
+// canonical + OG + Twitter. Absolute title bypasses the layout's
+// " | Player Portal" template.
+const CANONICAL = 'https://www.theplayerportal.net/terms'
+const TITLE_ABS = 'Terms & Conditions — Player Portal'
+const DESCRIPTION =
+  'The terms governing use of Player Portal — subscriptions, payments, cancellations, safeguarding, media, liability, and UK governing law.'
+
 export const metadata: Metadata = {
-  title: 'Terms & Conditions',
+  title: { absolute: TITLE_ABS },
+  description: DESCRIPTION,
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: CANONICAL,
+    siteName: 'Player Portal',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Player Portal — terms and conditions' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 }
 
 export default function TermsAndConditionsPage() {

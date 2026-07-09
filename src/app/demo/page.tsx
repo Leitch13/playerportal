@@ -1,9 +1,34 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+// Growth Phase 1B — SEO hygiene: absolute title bypasses the layout's
+// " | Player Portal" template so the approved head-keyword string is
+// rendered as-is. Per-page canonical + OG + Twitter reuse the pattern
+// established on the money-page landings.
+const CANONICAL = 'https://www.theplayerportal.net/demo'
+const TITLE_ABS = 'Player Portal Demo | Football Academy Software'
+const DESCRIPTION =
+  'Explore Player Portal as a parent, coach, or academy admin without signing up. See how bookings, payments, and the parent hub work in under two minutes.'
+
 export const metadata: Metadata = {
-  title: 'Try the Demo — Player Portal',
-  description: 'Explore Player Portal from the perspective of a parent, coach, or academy admin. No signup required.',
+  title: { absolute: TITLE_ABS },
+  description: DESCRIPTION,
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: CANONICAL,
+    siteName: 'Player Portal',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Player Portal — interactive demo' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 }
 
 const roles = [

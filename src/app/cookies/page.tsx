@@ -1,9 +1,33 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
+// Growth Phase 1B — SEO hygiene: expanded description covers the four
+// tools now documented in the policy body. Absolute title bypasses
+// the layout's " | Player Portal" template.
+const CANONICAL = 'https://www.theplayerportal.net/cookies'
+const TITLE_ABS = 'Cookie Policy — Player Portal'
+const DESCRIPTION =
+  'How Player Portal uses cookies — essential for auth and payments, opt-in for GA4, Microsoft Clarity, and Vercel Analytics. No advertising cookies.'
+
 export const metadata: Metadata = {
-  title: 'Cookie Policy',
-  description: 'How Player Portal uses cookies and similar technologies.',
+  title: { absolute: TITLE_ABS },
+  description: DESCRIPTION,
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: CANONICAL,
+    siteName: 'Player Portal',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Player Portal — cookie policy' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 }
 
 export default function CookiePolicyPage() {

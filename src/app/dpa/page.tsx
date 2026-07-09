@@ -1,9 +1,33 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
+// Growth Phase 1B — SEO hygiene: expanded description +
+// canonical + OG + Twitter. Absolute title bypasses the layout's
+// " | Player Portal" template.
+const CANONICAL = 'https://www.theplayerportal.net/dpa'
+const TITLE_ABS = 'Data Processing Agreement — Player Portal'
+const DESCRIPTION =
+  'The Data Processing Agreement between Player Portal and subscribing academies under UK GDPR Article 28 — scope, sub-processors, breach notification.'
+
 export const metadata: Metadata = {
-  title: 'Data Processing Agreement — Player Portal',
-  description: 'Data Processing Agreement between Player Portal and subscribing organisations.',
+  title: { absolute: TITLE_ABS },
+  description: DESCRIPTION,
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: CANONICAL,
+    siteName: 'Player Portal',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Player Portal — Data Processing Agreement' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 }
 
 export default function DPAPage() {

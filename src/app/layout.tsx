@@ -95,7 +95,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en-GB" className={inter.variable}>
       <body className="min-h-screen antialiased">
         <Suspense fallback={null}>
           <NavigationProgress />

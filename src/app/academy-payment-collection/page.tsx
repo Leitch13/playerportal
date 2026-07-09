@@ -10,6 +10,7 @@ import LandingFeatureGrid from '@/components/marketing/landing/LandingFeatureGri
 import LandingFAQ from '@/components/marketing/landing/LandingFAQ'
 import LandingCTA from '@/components/marketing/landing/LandingCTA'
 import LandingInternalLinks from '@/components/marketing/landing/LandingInternalLinks'
+import BreadcrumbSchema from '@/components/seo/BreadcrumbSchema'
 import { PaymentsMock } from '@/components/marketing/homepage/mocks'
 import { canonicalFor } from '@/components/marketing/landing/types'
 
@@ -76,6 +77,12 @@ export default function Page() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: 'https://www.theplayerportal.net' },
+          { name: 'Academy Payment Collection', url: CANONICAL },
+        ]}
       />
       <TopNav />
       <main className="pt-16">

@@ -2,9 +2,33 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import PricingCalculator from '@/components/PricingCalculator'
 
+// Growth Phase 1B — SEO hygiene: absolute title bypasses the layout's
+// " | Player Portal" template. Canonical + OG + Twitter mirror the
+// pattern used on the money-page landings.
+const CANONICAL = 'https://www.theplayerportal.net/how-it-works'
+const TITLE_ABS = 'How Player Portal Works | Football Academy Management Software'
+const DESCRIPTION =
+  'See how Player Portal replaces bookings, memberships, payments, attendance, camps, and parent comms with one platform. Setup in under 10 minutes.'
+
 export const metadata: Metadata = {
-  title: 'How It Works',
-  description: 'Sign up, set up your academy, and go live in under 10 minutes. See how Player Portal works step by step.',
+  title: { absolute: TITLE_ABS },
+  description: DESCRIPTION,
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: CANONICAL,
+    siteName: 'Player Portal',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'How Player Portal works — Football academy management software' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 }
 
 /* ── Data ── */

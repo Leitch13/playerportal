@@ -1,9 +1,33 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
+// Growth Phase 1B — SEO hygiene: absolute title bypasses the layout's
+// " | Player Portal" template. Canonical + OG + Twitter added for
+// social-preview parity with money-page landings.
+const CANONICAL = 'https://www.theplayerportal.net/privacy'
+const TITLE_ABS = 'Privacy Policy — How Player Portal Handles Your Data'
+const DESCRIPTION =
+  'How Player Portal collects, stores, and protects academy, parent, and player data under UK GDPR. UK-hosted on Supabase in London.'
+
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'Player Portal privacy policy — how we collect, use, and protect your data.',
+  title: { absolute: TITLE_ABS },
+  description: DESCRIPTION,
+  alternates: { canonical: CANONICAL },
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: CANONICAL,
+    siteName: 'Player Portal',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Player Portal — privacy policy' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE_ABS,
+    description: DESCRIPTION,
+    images: ['/og-image.png'],
+  },
 }
 
 export default function PrivacyPolicyPage() {
