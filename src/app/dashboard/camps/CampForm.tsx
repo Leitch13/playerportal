@@ -12,7 +12,7 @@ import {
   BOOKING_MODE_FLEXIBLE_DAYS,
   BOOKING_MODE_WHOLE_CAMP,
   FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
-  isFlexibleModePublishBlocked,
+  isFlexiblePublishLocked,
   type BookingMode,
 } from '@/lib/flexible-camps'
 
@@ -54,6 +54,11 @@ type Props = {
   // Flexible Camps flag (Phase 1). Default false ⇒ form renders and saves
   // byte-identically to the whole-camp original.
   flexibleCampsEnabled?: boolean
+  // Global Rollout hotfix — publish permission evaluated SERVER-SIDE
+  // (dashboard/camps/page.tsx) from FLEXIBLE_CAMPS_ALLOW_ALL / the
+  // allowlist, which don't exist in client bundles. Default false ⇒
+  // fail-safe locked, same as the original guard's no-org fallback.
+  flexiblePublishAllowed?: boolean
 }
 
 const DEFAULT_ACTIVITIES = [
@@ -83,7 +88,7 @@ function generateScheduleDays(startDate: string, endDate: string): ScheduleDay[]
   return days
 }
 
-export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps, flexibleCampsEnabled = false }: Props) {
+export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps, flexibleCampsEnabled = false, flexiblePublishAllowed = false }: Props) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -124,10 +129,11 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
   const [dayAvailability, setDayAvailability] = useState<Record<string, boolean>>({})
 
   const useFlexibleMode = flexibleCampsEnabled && bookingMode === BOOKING_MODE_FLEXIBLE_DAYS
-  // Phase 3E pilot gate — allowlisted orgs can publish flexible camps;
-  // everyone else stays locked. Whole-camp mode always returns false
-  // (helper short-circuits on mode !== 'flexible_days').
-  const publishBlocked = isFlexibleModePublishBlocked(bookingMode, orgId)
+  // Publish permission comes from the server as a prop (Global Rollout
+  // hotfix) — the env-reading guard evaluates wrongly in client bundles.
+  // Whole-camp mode always returns false (helper short-circuits on
+  // mode !== 'flexible_days').
+  const publishBlocked = isFlexiblePublishLocked(bookingMode, flexiblePublishAllowed)
 
   const toggleDayAvailability = (date: string) => {
     setDayAvailability((prev) => ({ ...prev, [date]: prev[date] === false ? true : false }))

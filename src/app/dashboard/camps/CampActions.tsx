@@ -10,10 +10,11 @@ import Link from 'next/link'
 // renders exactly as before.
 import CampEditForm from './CampEditForm'
 // Flexible Camps (Phase 1) — publish-blocked guard so an admin can never
-// flip a flexible camp to is_published=true from the row-action menu before
-// Phase 2 lands the parent booking flow.
+// flip a flexible camp to is_published=true from the row-action menu
+// without permission. Permission is evaluated server-side and arrives as
+// the flexiblePublishAllowed prop (Global Rollout hotfix).
 import {
-  isFlexibleModePublishBlocked,
+  isFlexiblePublishLocked,
   FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
 } from '@/lib/flexible-camps'
 
@@ -62,15 +63,18 @@ type Props = {
   // until the parent booking flow ships. Optional so existing whole-camp
   // rows render exactly as before (undefined ⇒ treated as whole-camp).
   bookingMode?: string | null
-  // Flexible Camps (Phase 3E pilot gate). The camp's organisation id is
-  // consulted against FLEXIBLE_CAMPS_PUBLISH_ALLOWLIST so allowlisted
-  // pilot orgs can publish flexible camps while everyone else stays
-  // locked. Optional so pre-allowlist callers still get "blocked" for
-  // flexible camps — the helper fail-safes when no org id is passed.
+  // Flexible Camps (Phase 3E pilot gate). Retained for prop compatibility;
+  // the publish decision now arrives pre-evaluated from the server via
+  // flexiblePublishAllowed (the allowlist env var is unreadable in client
+  // bundles, so consulting it here always produced "blocked").
   organisationId?: string | null
+  // Global Rollout hotfix — publish permission evaluated SERVER-SIDE in
+  // dashboard/camps/page.tsx. Default false ⇒ fail-safe locked for
+  // flexible camps, matching the original guard's fallback.
+  flexiblePublishAllowed?: boolean
 }
 
-export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, bookingMode, organisationId }: Props) {
+export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, bookingMode, flexiblePublishAllowed = false }: Props) {
   const [open, setOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canEdit = !!editEnabled && !!camp
@@ -103,10 +107,10 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
   }
 
   // Flexible-camp publish guard. Blocks the transition from
-  // unpublished → published for flexible camps that aren't allowlisted
-  // for the pilot. Unpublishing is always permitted (defensive: lets
-  // an admin retract a mis-flagged row).
-  const publishBlocked = !isPublished && isFlexibleModePublishBlocked(bookingMode, organisationId)
+  // unpublished → published for flexible camps unless the server granted
+  // permission via the flexiblePublishAllowed prop. Unpublishing is
+  // always permitted (defensive: lets an admin retract a mis-flagged row).
+  const publishBlocked = !isPublished && isFlexiblePublishLocked(bookingMode, flexiblePublishAllowed)
 
   const handleTogglePublish = async () => {
     if (publishBlocked) {
@@ -220,6 +224,7 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
           trainingGroups={trainingGroups || []}
           onClose={() => setEditOpen(false)}
           structuralEnabled={!!structuralEnabled}
+          flexiblePublishAllowed={flexiblePublishAllowed}
         />
       )}
     </>

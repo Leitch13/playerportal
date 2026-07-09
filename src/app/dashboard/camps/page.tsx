@@ -12,7 +12,17 @@ import { CAMP_EDIT_ENABLED, CAMP_STRUCTURAL_EDIT_ENABLED } from '@/lib/camps-edi
 // Flexible Camps — Phase 1. Flag gates the booking-mode picker inside
 // CampForm. OFF ⇒ CampForm renders and saves identically to the whole-camp
 // original (no mode toggle, no flex fields, no camp_days rows written).
-import { FLEXIBLE_CAMPS_ENABLED } from '@/lib/flexible-camps'
+//
+// Global Rollout hotfix — the publish-permission decision reads
+// FLEXIBLE_CAMPS_ALLOW_ALL / the allowlist from process.env, which only
+// exist server-side. This page (a server component) evaluates it once
+// and passes `flexiblePublishAllowed` down; the client components never
+// read the env vars themselves.
+import {
+  BOOKING_MODE_FLEXIBLE_DAYS,
+  FLEXIBLE_CAMPS_ENABLED,
+  isFlexibleModePublishBlocked,
+} from '@/lib/flexible-camps'
 
 type Camp = {
   id: string
@@ -153,6 +163,17 @@ export default async function CampsPage() {
 
   const trainingGroups = (groups || []) as { id: string; name: string }[]
 
+  // Global Rollout hotfix — evaluate the flexible-publish permission HERE,
+  // server-side, where FLEXIBLE_CAMPS_ALLOW_ALL and the allowlist actually
+  // exist. "Would a flexible-days camp belonging to this org be allowed to
+  // publish?" All camps on this page belong to orgId, so one boolean covers
+  // every row. Client components receive it as a prop and never consult
+  // process.env themselves.
+  const flexiblePublishAllowed = !isFlexibleModePublishBlocked(
+    BOOKING_MODE_FLEXIBLE_DAYS,
+    orgId,
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -196,6 +217,7 @@ export default async function CampsPage() {
             trainingGroups={trainingGroups}
             existingCamps={allCamps as unknown as Parameters<typeof CampForm>[0]['existingCamps']}
             flexibleCampsEnabled={FLEXIBLE_CAMPS_ENABLED}
+            flexiblePublishAllowed={flexiblePublishAllowed}
           />
         }
       >
@@ -343,6 +365,10 @@ export default async function CampsPage() {
                           // id is consulted against the allowlist
                           // inside the row-action publish handler.
                           organisationId={camp.organisation_id}
+                          // Global Rollout hotfix — server-evaluated
+                          // publish permission (see above). Client code
+                          // cannot read the env vars this derives from.
+                          flexiblePublishAllowed={flexiblePublishAllowed}
                         />
                       </td>
                     </tr>

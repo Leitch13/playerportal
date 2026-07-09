@@ -131,6 +131,35 @@ export function isFlexibleModePublishBlocked(
 export const FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE =
   'Flexible Day camps aren’t publish-enabled for this academy yet. Please save as a draft.'
 
+// ─── Client-safe publish lock (Global Rollout hotfix) ───
+//
+// isFlexibleModePublishBlocked() reads FLEXIBLE_CAMPS_ALLOW_ALL and the
+// allowlist from process.env — SERVER-ONLY values. In a 'use client'
+// bundle Next.js only inlines NEXT_PUBLIC_* vars, so both read as
+// undefined and the guard evaluates to "blocked for everyone" no matter
+// what is set in Vercel. That silently defeated the ALLOW_ALL rollout
+// switch in every dashboard publish surface (CampForm, CampEditForm,
+// CampActions row menu).
+//
+// Fix pattern (mirrors flexibleCampsEnabled): the SERVER component
+// (dashboard/camps/page.tsx) evaluates the env-based decision once and
+// passes `flexiblePublishAllowed` down as a prop. Client components call
+// this PURE helper — a function of its arguments only, no env reads —
+// so the browser bundle can never disagree with the server's decision.
+//
+//   Whole-camp mode:        never blocked → false
+//   Flexible + allowed:     not blocked  → false
+//   Flexible + not allowed: blocked      → true
+//   publishAllowed omitted: blocked      → true (fail-safe, same
+//                           default as the original allowlist guard)
+export function isFlexiblePublishLocked(
+  mode: BookingMode | string | null | undefined,
+  publishAllowed: boolean | undefined,
+): boolean {
+  if (mode !== BOOKING_MODE_FLEXIBLE_DAYS) return false
+  return !publishAllowed
+}
+
 // ─── Row shapes ───
 // Mirror the schema in `supabase/095_flexible_camps_phase_0.sql`. Named
 // `Row` because these represent Supabase `.select('*')` result shapes,

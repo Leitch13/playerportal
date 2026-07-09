@@ -27,10 +27,11 @@ import {
   type ScheduleDay,
 } from '@/lib/camps-edit'
 // Flexible Camps (Phase 1) — publish-blocked guard so editing a flexible-days
-// camp can never flip it to is_published=true before Phase 2 lands the
-// parent booking flow.
+// camp can never flip it to is_published=true without permission. Permission
+// is evaluated server-side and forwarded through CampActions as the
+// flexiblePublishAllowed prop (Global Rollout hotfix).
 import {
-  isFlexibleModePublishBlocked,
+  isFlexiblePublishLocked,
   FLEXIBLE_CAMPS_PUBLISH_BLOCKED_MESSAGE,
 } from '@/lib/flexible-camps'
 import { amountError, instructionsError, formatRequestAmount, CAMP_MANUAL_PAYMENT_REQUEST_ENABLED } from '@/lib/camp-payment-request'
@@ -71,6 +72,10 @@ type Props = {
   onClose: () => void
   // Phase 2A — when false, dates + schedule stay locked (Phase 1A behaviour).
   structuralEnabled?: boolean
+  // Global Rollout hotfix — publish permission evaluated SERVER-SIDE in
+  // dashboard/camps/page.tsx and forwarded via CampActions. Default false
+  // ⇒ fail-safe locked for flexible camps.
+  flexiblePublishAllowed?: boolean
 }
 
 const inputCls =
@@ -92,7 +97,7 @@ function cloneSchedule(s: ScheduleDay[] | null | undefined): ScheduleDay[] {
   return s.map((d) => ({ day: d.day, date: d.date, activities: [...(d.activities || [])] }))
 }
 
-export default function CampEditForm({ camp, bookedCount, trainingGroups, onClose, structuralEnabled = false }: Props) {
+export default function CampEditForm({ camp, bookedCount, trainingGroups, onClose, structuralEnabled = false, flexiblePublishAllowed = false }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -115,7 +120,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [imageUrl, setImageUrl] = useState(camp.image_url || '')
   const [whatToBring, setWhatToBring] = useState(camp.what_to_bring || '')
   const [maxCapacity, setMaxCapacity] = useState(camp.max_capacity != null ? String(camp.max_capacity) : '30')
-  const publishBlocked = isFlexibleModePublishBlocked(camp.booking_mode, camp.organisation_id)
+  const publishBlocked = isFlexiblePublishLocked(camp.booking_mode, flexiblePublishAllowed)
   // When publishing is blocked we force-clamp the checkbox state to false.
   // Defence-in-depth against a starting-value of true (only possible if a
   // camp was somehow published before this guard existed).
