@@ -42,6 +42,8 @@ interface GroupData {
   what_to_bring?: string | null
   image_url?: string | null
   is_featured?: boolean | null
+  // Phase 1B — optional link to public.terms.
+  term_id?: string | null
 }
 
 export default function GroupCard({
@@ -53,6 +55,7 @@ export default function GroupCard({
   orgId,
   waitlistCount = 0,
   orgSlug = '',
+  terms = [],
 }: {
   group: GroupData
   coachName: string | null
@@ -62,6 +65,8 @@ export default function GroupCard({
   orgId: string
   waitlistCount?: number
   orgSlug?: string
+  // Phase 1B — passed through to inline edit form.
+  terms?: { id: string; name: string; start_date: string; end_date: string }[]
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -141,6 +146,7 @@ export default function GroupCard({
         orgId={orgId}
         editGroup={group}
         onClose={() => setEditing(false)}
+        terms={terms}
       />
     )
   }

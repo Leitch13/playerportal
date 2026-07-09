@@ -9,6 +9,7 @@ import ShareButton from './ShareButton'
 import StickyBookBar from './StickyBookBar'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import ClassWaitlistCTA from './ClassWaitlistCTA'
+import TermInfo from '@/components/TermInfo'
 
 const CLASS_TYPE_CONFIG: Record<string, { label: string; gradient: string; color: string }> = {
   group: { label: 'Group Session', gradient: 'from-blue-600/30 via-blue-900/20 to-transparent', color: '#3b82f6' },
@@ -56,10 +57,24 @@ export default async function ClassBookingPage({
   // Get the specific class with new fields
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, trial_price, class_type, short_description, long_description, benefits, suitable_for, what_to_bring, image_url, is_featured, coach:profiles!training_groups_coach_id_fkey(full_name)')
+    .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, trial_price, class_type, short_description, long_description, benefits, suitable_for, what_to_bring, image_url, is_featured, term_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
     .single()
+
+  // Phase 1B — fetch the class's term (if any) for display alongside dates.
+  // Anon SELECT policy on terms (migration 092) is gated to published orgs.
+  type ClassTermRow = { id: string; name: string; start_date: string; end_date: string; parent_message: string | null }
+  let classTerm: ClassTermRow | null = null
+  const classTermId = (group as unknown as { term_id?: string | null } | null)?.term_id ?? null
+  if (classTermId) {
+    const { data: termRow } = await supabase
+      .from('terms')
+      .select('id, name, start_date, end_date, parent_message')
+      .eq('id', classTermId)
+      .maybeSingle()
+    classTerm = (termRow as ClassTermRow | null) ?? null
+  }
 
   if (!group) {
     return (
@@ -377,6 +392,18 @@ export default async function ClassBookingPage({
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6">
               <p className="text-sm sm:text-base text-white/70 leading-relaxed">{whatToBring}</p>
             </div>
+          </div>
+        )}
+
+        {/* Phase 1B — Term block (only when class has a term) */}
+        {classTerm && (
+          <div className="mb-6 sm:mb-10">
+            <TermInfo
+              name={classTerm.name}
+              start_date={classTerm.start_date}
+              end_date={classTerm.end_date}
+              parent_message={classTerm.parent_message}
+            />
           </div>
         )}
 

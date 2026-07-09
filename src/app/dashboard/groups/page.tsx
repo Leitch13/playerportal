@@ -56,6 +56,14 @@ export default async function GroupsPage() {
     .in('role', ['admin', 'coach'])
     .order('full_name')
 
+  // Phase 1B — load active+upcoming terms so the class form can offer them
+  // in its Term dropdown. Read-only; absent term column is fine (defaults []).
+  const { data: termsForDropdown } = await supabase
+    .from('terms')
+    .select('id, name, start_date, end_date')
+    .eq('organisation_id', orgId)
+    .order('start_date', { ascending: true })
+
   // Get enrolment counts per group
   const groupIds = (groups || []).map((g) => g.id)
   const { data: enrolments } = groupIds.length > 0
@@ -182,7 +190,7 @@ export default async function GroupsPage() {
       <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
       {/* Create new class (admin only) */}
-      {isAdmin && <GroupForm coaches={coaches || []} orgId={orgId} />}
+      {isAdmin && <GroupForm coaches={coaches || []} orgId={orgId} terms={termsForDropdown || []} />}
 
       {/* Classes by day */}
       {(groups || []).length === 0 ? (
@@ -229,6 +237,8 @@ export default async function GroupsPage() {
                         what_to_bring: (g as unknown as { what_to_bring: string | null }).what_to_bring,
                         image_url: (g as unknown as { image_url: string | null }).image_url,
                         is_featured: (g as unknown as { is_featured: boolean | null }).is_featured,
+                        // Phase 1B — passed through so GroupForm's edit mode preselects the term.
+                        term_id: (g as unknown as { term_id: string | null }).term_id ?? null,
                       }}
                       coachName={coach?.full_name || null}
                       enrolled={enrolled}
@@ -236,6 +246,7 @@ export default async function GroupsPage() {
                       coaches={coaches || []}
                       orgId={orgId}
                       orgSlug={orgSlug}
+                      terms={termsForDropdown || []}
                     />
                   )
                 })}

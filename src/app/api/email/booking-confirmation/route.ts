@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   // Get class details
   const { data: group } = await supabase
     .from('training_groups')
-    .select('name, day_of_week, time_slot, location, organisation_id')
+    .select('name, day_of_week, time_slot, location, organisation_id, term_id')
     .eq('id', groupId)
     .single()
 
@@ -43,6 +43,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Data not found' }, { status: 404 })
   }
 
+  // Phase 1B — fetch term (if class has one) for the confirmation email's
+  // optional term section. Read-only; absent term ⇒ section omitted.
+  let term: { name: string; start_date: string; end_date: string; parent_message: string | null } | null = null
+  const groupTermId = (group as { term_id?: string | null }).term_id ?? null
+  if (groupTermId) {
+    const { data: termRow } = await supabase
+      .from('terms')
+      .select('name, start_date, end_date, parent_message')
+      .eq('id', groupTermId)
+      .maybeSingle()
+    term = (termRow ?? null) as typeof term
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
   const template = bookingConfirmationEmail({
@@ -53,6 +66,7 @@ export async function POST(request: NextRequest) {
     location: group.location || 'TBA',
     academyName: org?.name || 'Your Academy',
     dashboardUrl: `${appUrl}/dashboard/schedule`,
+    term,
   })
 
   const result = await sendEmail({

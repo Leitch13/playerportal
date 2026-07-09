@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { Term, Holiday } from './page'
+import type { Term, Holiday, ClassRow } from './page'
 
 /* ── helpers ── */
 
@@ -628,6 +628,179 @@ function AddHolidayForm({
   )
 }
 
+/* ── Class Assignment Section (Phase 1B) ── */
+
+function ClassAssignmentSection({
+  termId,
+  allClasses,
+  onRefresh,
+  canWrite,
+}: {
+  termId: string
+  allClasses: ClassRow[]
+  onRefresh: () => void
+  canWrite: boolean
+}) {
+  const [picking, setPicking] = useState(false)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+
+  const assigned = useMemo(
+    () => allClasses.filter((c) => c.term_id === termId),
+    [allClasses, termId],
+  )
+  const available = useMemo(
+    () => allClasses.filter((c) => c.term_id == null || c.term_id !== termId),
+    [allClasses, termId],
+  )
+
+  function toggle(id: string) {
+    const next = new Set(picked)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setPicked(next)
+  }
+
+  async function handleAssign() {
+    if (picked.size === 0) return
+    setSaving(true)
+    const supabase = createClient()
+    await supabase
+      .from('training_groups')
+      .update({ term_id: termId })
+      .in('id', Array.from(picked))
+    setSaving(false)
+    setPicked(new Set())
+    setPicking(false)
+    onRefresh()
+  }
+
+  async function handleRemove(classId: string) {
+    const supabase = createClient()
+    await supabase.from('training_groups').update({ term_id: null }).eq('id', classId)
+    onRefresh()
+  }
+
+  return (
+    <div className="mt-3 mb-3 pt-3 border-t border-white/5">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-medium text-white/40 uppercase tracking-wider">
+          Assigned Classes ({assigned.length})
+        </h4>
+        {canWrite && !picking && available.length > 0 && (
+          <button
+            onClick={() => setPicking(true)}
+            className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+          >
+            + Assign classes
+          </button>
+        )}
+      </div>
+
+      {assigned.length === 0 && !picking && (
+        <p className="text-xs text-white/35 italic">
+          No classes assigned. Parents won&apos;t see this term anywhere until you
+          assign at least one class.
+        </p>
+      )}
+
+      {assigned.length > 0 && (
+        <div className="space-y-1">
+          {assigned.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between py-1.5 px-2 rounded bg-white/5 border border-white/10"
+            >
+              <div className="flex items-center gap-2 text-sm min-w-0">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                <span className="text-white/80 font-medium truncate">{c.name}</span>
+                {(c.day_of_week || c.time_slot) && (
+                  <span className="text-white/40 text-xs truncate">
+                    {c.day_of_week}
+                    {c.day_of_week && c.time_slot ? ' · ' : ''}
+                    {c.time_slot}
+                  </span>
+                )}
+              </div>
+              {canWrite && (
+                <button
+                  onClick={() => handleRemove(c.id)}
+                  className="text-white/40 hover:text-red-400 text-xs transition shrink-0"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {picking && (
+        <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10 space-y-2">
+          {available.length === 0 ? (
+            <p className="text-xs text-white/40 italic">
+              No unassigned classes available.
+            </p>
+          ) : (
+            <>
+              <p className="text-[11px] text-white/50">
+                Tick the classes you want to assign to this term. Classes already
+                in another term will be moved.
+              </p>
+              <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
+                {available.map((c) => (
+                  <label
+                    key={c.id}
+                    className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-white/5 cursor-pointer text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={picked.has(c.id)}
+                      onChange={() => toggle(c.id)}
+                      className="rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50"
+                    />
+                    <span className="text-white/80 font-medium truncate">{c.name}</span>
+                    {(c.day_of_week || c.time_slot) && (
+                      <span className="text-white/40 text-xs truncate">
+                        {c.day_of_week}
+                        {c.day_of_week && c.time_slot ? ' · ' : ''}
+                        {c.time_slot}
+                      </span>
+                    )}
+                    {c.term_id && c.term_id !== termId && (
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 shrink-0">
+                        in another term
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAssign}
+                  disabled={saving || picked.size === 0}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-40 transition"
+                >
+                  {saving ? 'Assigning…' : `Assign ${picked.size || 0}`}
+                </button>
+                <button
+                  onClick={() => {
+                    setPicking(false)
+                    setPicked(new Set())
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Term Card ── */
 
 function TermCard({
@@ -635,16 +808,21 @@ function TermCard({
   holidays,
   orgId,
   onRefresh,
+  classes,
+  canWrite,
 }: {
   term: Term
   holidays: Holiday[]
   orgId: string
   onRefresh: () => void
+  classes: ClassRow[]
+  canWrite: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(term.name)
   const [startDate, setStartDate] = useState(term.start_date)
   const [endDate, setEndDate] = useState(term.end_date)
+  const [parentMessage, setParentMessage] = useState(term.parent_message || '')
   const [saving, setSaving] = useState(false)
 
   const termWeeks = weeksBetween(term.start_date, term.end_date)
@@ -656,7 +834,12 @@ function TermCard({
     const supabase = createClient()
     await supabase
       .from('terms')
-      .update({ name, start_date: startDate, end_date: endDate })
+      .update({
+        name,
+        start_date: startDate,
+        end_date: endDate,
+        parent_message: parentMessage.trim() ? parentMessage.trim() : null,
+      })
       .eq('id', term.id)
     setSaving(false)
     setEditing(false)
@@ -714,7 +897,7 @@ function TermCard({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge active={term.is_active} />
-          {!term.is_active && (
+          {canWrite && !term.is_active && (
             <button
               onClick={handleSetActive}
               className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/50 hover:text-white hover:bg-white/20 transition"
@@ -747,6 +930,35 @@ function TermCard({
         </p>
       )}
 
+      {/* Parent message (Phase 1B) */}
+      {editing ? (
+        <div className="mb-3">
+          <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1">
+            Parent message (optional)
+          </label>
+          <textarea
+            value={parentMessage}
+            onChange={(e) => setParentMessage(e.target.value)}
+            maxLength={1000}
+            rows={3}
+            placeholder="Shown to parents on the booking page, dashboard, and emails. e.g. ‘No classes during July while our Summer Camp runs.’"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+          />
+          <p className="text-[10px] text-white/35 mt-1 text-right">
+            {parentMessage.length}/1000
+          </p>
+        </div>
+      ) : term.parent_message ? (
+        <div className="mb-3 px-3 py-2 rounded-lg border border-cyan-500/15 bg-cyan-500/[0.05]">
+          <p className="text-[10px] uppercase tracking-wider text-cyan-300/60 mb-1">
+            Parent message
+          </p>
+          <p className="text-xs text-white/70 whitespace-pre-wrap">
+            {term.parent_message}
+          </p>
+        </div>
+      ) : null}
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-white/5 rounded-lg p-3 text-center">
@@ -774,54 +986,67 @@ function TermCard({
       )}
 
       {/* Add holiday */}
-      <AddHolidayForm
+      {canWrite && (
+        <AddHolidayForm
+          termId={term.id}
+          orgId={orgId}
+          termStart={term.start_date}
+          termEnd={term.end_date}
+          onAdded={onRefresh}
+        />
+      )}
+
+      {/* Class assignment (Phase 1B) */}
+      <ClassAssignmentSection
         termId={term.id}
-        orgId={orgId}
-        termStart={term.start_date}
-        termEnd={term.end_date}
-        onAdded={onRefresh}
+        allClasses={classes}
+        onRefresh={onRefresh}
+        canWrite={canWrite}
       />
 
       {/* Actions */}
-      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
-        {editing ? (
-          <>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="text-xs px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-40 transition"
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-            <button
-              onClick={() => {
-                setEditing(false)
-                setName(term.name)
-                setStartDate(term.start_date)
-                setEndDate(term.end_date)
-              }}
-              className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => setEditing(true)}
-              className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
-            >
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/20 transition"
-            >
-              Delete
-            </button>
-          </>
-        )}
-      </div>
+      {canWrite && (
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
+          {editing ? (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="text-xs px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-40 transition"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={() => {
+                  setEditing(false)
+                  setName(term.name)
+                  setStartDate(term.start_date)
+                  setEndDate(term.end_date)
+                  setParentMessage(term.parent_message || '')
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setEditing(true)}
+                className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
+              >
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/20 transition"
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -832,14 +1057,19 @@ export default function TermManager({
   orgId,
   initialTerms,
   initialHolidays,
+  initialClasses,
+  canWrite,
 }: {
   orgId: string
   initialTerms: Term[]
   initialHolidays: Holiday[]
+  initialClasses: ClassRow[]
+  canWrite: boolean
 }) {
   const router = useRouter()
   const [terms, setTerms] = useState(initialTerms)
   const [holidays, setHolidays] = useState(initialHolidays)
+  const [classes, setClasses] = useState(initialClasses)
 
   // Add term form
   const [showAdd, setShowAdd] = useState(false)
@@ -847,6 +1077,7 @@ export default function TermManager({
   const [newStart, setNewStart] = useState('')
   const [newEnd, setNewEnd] = useState('')
   const [newActive, setNewActive] = useState(false)
+  const [newParentMessage, setNewParentMessage] = useState('')
   const [saving, setSaving] = useState(false)
 
   const [view, setView] = useState<'cards' | 'calendar'>('cards')
@@ -884,6 +1115,14 @@ export default function TermManager({
       .then(({ data }) => {
         if (data) setHolidays(data as Holiday[])
       })
+    supabase
+      .from('training_groups')
+      .select('id, name, day_of_week, time_slot, term_id')
+      .eq('organisation_id', orgId)
+      .order('name', { ascending: true })
+      .then(({ data }) => {
+        if (data) setClasses(data as ClassRow[])
+      })
   }
 
   async function handleAddTerm() {
@@ -904,6 +1143,7 @@ export default function TermManager({
       start_date: newStart,
       end_date: newEnd,
       is_active: newActive,
+      parent_message: newParentMessage.trim() ? newParentMessage.trim() : null,
     })
 
     setSaving(false)
@@ -912,6 +1152,7 @@ export default function TermManager({
     setNewStart('')
     setNewEnd('')
     setNewActive(false)
+    setNewParentMessage('')
     refresh()
   }
 
@@ -1021,16 +1262,18 @@ export default function TermManager({
             Calendar
           </button>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="text-sm px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 transition font-medium"
-        >
-          + Add Term
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="text-sm px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 transition font-medium"
+          >
+            + Add Term
+          </button>
+        )}
       </div>
 
       {/* Add term form */}
-      {showAdd && (
+      {canWrite && showAdd && (
         <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-semibold text-white">New Term</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1054,6 +1297,22 @@ export default function TermManager({
               onChange={(e) => setNewEnd(e.target.value)}
               className="bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 [color-scheme:dark]"
             />
+          </div>
+          <div>
+            <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1">
+              Parent message (optional)
+            </label>
+            <textarea
+              value={newParentMessage}
+              onChange={(e) => setNewParentMessage(e.target.value)}
+              maxLength={1000}
+              rows={3}
+              placeholder="Shown to parents on the booking page, dashboard, and emails. e.g. ‘No classes during July while our Summer Camp runs.’"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+            />
+            <p className="text-[10px] text-white/35 mt-1 text-right">
+              {newParentMessage.length}/1000
+            </p>
           </div>
           <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
             <input
@@ -1097,6 +1356,8 @@ export default function TermManager({
                 holidays={termHolidayMap[t.id] || []}
                 orgId={orgId}
                 onRefresh={refresh}
+                classes={classes}
+                canWrite={canWrite}
               />
             ))}
           </div>
