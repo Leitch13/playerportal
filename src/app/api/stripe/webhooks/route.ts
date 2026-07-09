@@ -339,7 +339,12 @@ async function resolveSessionContext(session: Stripe.Checkout.Session) {
     plan = data
   }
 
-  const orgId = profile?.organisation_id ?? plan?.organisation_id ?? null
+  // Cross-academy fix — the PLAN's org is authoritative for what was bought.
+  // Profile-first attributed the subscription to the parent's home academy
+  // when they booked into a different one (money still routed correctly via
+  // Connect, but the sub row + auto-enrol landed on the wrong org and the
+  // enrol RPC then failed on its org/group consistency check).
+  const orgId = plan?.organisation_id ?? profile?.organisation_id ?? null
 
   if (orgId) {
     const { data } = await supabase
@@ -997,7 +1002,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .select('id, name, organisation_id')
       .eq('id', planId)
       .single()
-    const orgId = profile?.organisation_id || plan?.organisation_id || null
+    // Cross-academy fix — plan-first, same rationale as resolveSessionContext.
+    const orgId = plan?.organisation_id || profile?.organisation_id || null
     const { data: org } = orgId
       ? await supabase.from('organisations').select('name, slug, logo_url, contact_email').eq('id', orgId).single()
       : { data: null }
