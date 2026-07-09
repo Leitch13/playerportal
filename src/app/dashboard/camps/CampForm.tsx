@@ -71,19 +71,28 @@ const DEFAULT_ACTIVITIES = [
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+// Camp dates are CALENDAR dates, not instants — all arithmetic must be
+// timezone-independent. The previous implementation parsed local midnight
+// (`new Date(iso + 'T00:00:00')`) but serialised via UTC toISOString(),
+// which shifted every date back one day for any browser ahead of UTC
+// (all UK academies during BST): an admin entering 20–24 July stored
+// camp_days/schedule rows dated 19–23 July. Anchoring both the parse and
+// the serialisation to UTC (mirroring generateScheduleDays in
+// src/lib/camps-edit.ts, which CampEditForm already uses) makes the
+// output identical in every timezone.
 function generateScheduleDays(startDate: string, endDate: string): ScheduleDay[] {
   if (!startDate || !endDate) return []
-  const start = new Date(startDate + 'T00:00:00')
-  const end = new Date(endDate + 'T00:00:00')
+  const s = Date.parse(startDate + 'T00:00:00Z')
+  const e = Date.parse(endDate + 'T00:00:00Z')
+  if (isNaN(s) || isNaN(e) || e < s) return []
   const days: ScheduleDay[] = []
-  const current = new Date(start)
-  while (current <= end) {
+  for (let t = s; t <= e; t += 86_400_000) {
+    const d = new Date(t)
     days.push({
-      day: DAYS_OF_WEEK[current.getDay()],
-      date: current.toISOString().split('T')[0],
+      day: DAYS_OF_WEEK[d.getUTCDay()],
+      date: d.toISOString().split('T')[0],
       activities: [],
     })
-    current.setDate(current.getDate() + 1)
   }
   return days
 }
