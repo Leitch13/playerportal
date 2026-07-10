@@ -212,13 +212,13 @@ export default async function PublicBookingPage({
     termById.set(t.id, t)
   }
 
-  // Don't advertise "Free Trial" prominently if any of this academy's classes
-  // actually charge for a trial (e.g. Jamie's £15 1-2-1s). For mixed academies
-  // we keep the trial CTAs but drop the "Free" word so parents aren't misled
-  // when they're really interested in a paid-trial class.
-  const hasAnyPaidTrial = (groups || []).some(g => Number(g.trial_price ?? 0) > 0)
-  const trialWord = hasAnyPaidTrial ? 'Trial' : 'Free Trial'
-  const trialCtaShort = hasAnyPaidTrial ? 'Book Trial' : 'Try Free'
+  // Trial copy is deliberately NEUTRAL — never "free", never "no payment".
+  // Academies mix free and paid trials per class (G&G's 1-2-1 trials are £48;
+  // Jamie's are £15), and the old conditional word-swap still leaked "free"
+  // through several hardcoded strings. The class page / trial form shows the
+  // actual price (if any) at booking time — the CTAs just invite the trial.
+  const trialWord = 'Trial'
+  const trialCtaShort = 'Book Trial'
 
   // Class-card capacity counts include 'pending' (Stage 3 future-start) so
   // the seat is reserved at signup even before billing activates. Booking
@@ -401,7 +401,7 @@ export default async function PublicBookingPage({
           </section>
         )}
 
-        {/* Free Trial CTA Banner */}
+        {/* Trial CTA Banner — neutral copy, never implies free/no-payment */}
         <section>
           <Link
             href={`/book/${slug}/trial/quick`}
@@ -416,10 +416,9 @@ export default async function PublicBookingPage({
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">New</span>
-                  {!hasAnyPaidTrial && <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">Free</span>}
                 </div>
                 <h3 className="text-base sm:text-xl font-extrabold">Book a {trialWord} Session</h3>
-                <p className="text-white/70 text-xs sm:text-sm mt-0.5">No account needed. No payment. Takes 20 seconds to book.</p>
+                <p className="text-white/70 text-xs sm:text-sm mt-0.5">No account needed. Takes 20 seconds to book.</p>
               </div>
               <div className="shrink-0 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
                 {trialCtaShort} &rarr;
@@ -638,8 +637,8 @@ export default async function PublicBookingPage({
         <section className="relative overflow-hidden rounded-2xl p-4 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor} 100%)` }}>
           <div className="relative z-10">
             <span className="text-2xl sm:text-3xl block mb-2">&#9917;</span>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Not sure yet? Try a free session!</h2>
-            <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">Book a free taster session for your child — no commitment, no payment needed.</p>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Not sure yet? Book a trial session.</h2>
+            <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">See if it&apos;s the right fit for your child — no commitment needed.</p>
             <Link href={`/book/${slug}/trial/quick`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book a {trialWord} &rarr;</Link>
           </div>
         </section>
@@ -698,7 +697,7 @@ export default async function PublicBookingPage({
               { q: 'What happens if it rains?', a: 'Sessions run in all weather unless conditions are unsafe. If a session is cancelled due to extreme weather, we will notify you in advance and offer a make-up session.' },
               { q: 'Can I change sessions?', a: 'Yes! You can switch between available sessions at any time by contacting us or through your parent portal. Subject to availability.' },
               { q: 'What age groups do you cater for?', a: 'We offer classes for children of all ages, from toddlers through to teens. Check our weekly schedule above to find the right group for your child.' },
-              { q: 'Is there a trial session available?', a: hasAnyPaidTrial ? 'Yes — most classes offer a trial session so your child can experience our coaching before committing. Some 1-to-1s and specialist sessions are paid trials; the price (if any) will be shown on the class page. Tap "Book a Trial" to get started.' : 'Absolutely! We offer a free trial session so your child can experience our coaching before committing. Click the "Book a Free Trial" button to get started.' },
+              { q: 'Is there a trial session available?', a: 'Yes — most classes offer a trial session so your child can experience our coaching before committing. The trial price (if any) is shown on the class page when you book. Tap "Book a Trial" to get started.' },
             ].map((faq) => (
               <details key={faq.q} className="group rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden">
                 <summary className="flex cursor-pointer items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-semibold text-white select-none list-none [&::-webkit-details-marker]:hidden">

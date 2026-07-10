@@ -174,7 +174,7 @@ export default function BookingPageHero({
             href={`/book/${slug}/trial/quick`}
             className="inline-block px-7 py-3.5 sm:px-10 sm:py-4 rounded-full text-base sm:text-lg font-extrabold bg-white text-[#0a0a0a] transition-all hover:scale-[1.05] active:scale-[0.98] hover:shadow-2xl"
           >
-            Try Free Session
+            Book Your Trial
           </Link>
         </div>
 
