@@ -242,6 +242,16 @@ export default async function PublicBookingPage({
     }
   }
 
+  // Anon-safe player count for the hero trust badge. The direct enrolments
+  // count below (parentCount) is RLS-zeroed for anonymous and cross-org
+  // viewers (077b), which made EVERY academy's hero show "Newly launched ·
+  // Be one of the first" to actual parents — even Jamie Allan at 105 players.
+  // The 078 seat-count RPC is already fetched above, is org-scoped inside
+  // the function, and exposes aggregates only — summing it gives visitors
+  // the real number. Same seats-not-distinct-players semantics as
+  // parentCount, so the badge's meaning is unchanged.
+  const anonVisiblePlayers = [...countByGroup.values()].reduce((a, b) => a + b, 0)
+
   // Fetch ALL active plans for the org (we need them to show prices on class cards too)
   const { data: allPlans } = await publicSupabase
     .from('subscription_plans')
@@ -368,7 +378,7 @@ export default async function PublicBookingPage({
         orgLogo={org.logo_url as string | null}
         orgHeroImage={org.hero_image_url as string | null}
         primaryColor={primaryColor as string}
-        totalPlayers={parentCount || 0}
+        totalPlayers={Math.max(parentCount || 0, anonVisiblePlayers)}
         totalSessions={sessionCount || 0}
         totalClasses={(groups || []).length}
       />

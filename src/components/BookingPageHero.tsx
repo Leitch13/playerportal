@@ -33,10 +33,19 @@ export default function BookingPageHero({
   totalSessions: number
   totalClasses: number
 }) {
-  const showTrust = totalPlayers >= 1 || totalSessions >= 1
-  // For brand-new academies with zero activity yet — show a "fresh launch" badge
-  // instead of looking empty. Same visual weight, different message.
-  const isFreshLaunch = !showTrust
+  // Trust-badge graduation ladder — academies move up automatically as they
+  // grow, no per-academy config:
+  //   • ≥10 players (or ≥20 sessions)  → "Trusted by N+ players" social proof
+  //   • 1–9 players                    → NO badge. "Trusted by 3+ players"
+  //     undersells and "Newly launched" is untrue — neutral silence beats both.
+  //   • 0 players & 0 sessions         → "Newly launched · Be one of the first"
+  //     (honest and charming for a genuinely brand-new academy)
+  // Counts arrive anon-safe from the 078 seat-count RPC (aggregates only),
+  // so real visitors see real numbers — previously RLS zeroed these for
+  // everyone but the academy's own admin and every academy showed the
+  // fresh-launch copy to actual parents.
+  const showTrust = totalPlayers >= 10 || totalSessions >= 20
+  const isFreshLaunch = totalPlayers === 0 && totalSessions === 0
 
   // Animated counters
   const [playersCount, setPlayersCount] = useState(0)
@@ -112,14 +121,14 @@ export default function BookingPageHero({
                 : `${totalSessions}+ sessions delivered`}
             </span>
           </div>
-        ) : (
+        ) : isFreshLaunch ? (
           <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/[0.06] border border-white/[0.12] backdrop-blur-sm mb-4 sm:mb-6 animate-fade-in">
             <span className="text-sm sm:text-base">✨</span>
             <span className="text-[11px] sm:text-xs font-semibold text-white/80">
               Newly launched · Be one of the first
             </span>
           </div>
-        )}
+        ) : null /* 1–9 players: neutral, no badge */}
 
         {orgLogo && (
           <div className="mb-4 sm:mb-6 flex justify-center animate-fade-in">
@@ -171,7 +180,10 @@ export default function BookingPageHero({
 
         {/* Animated stats row */}
         {showTrust && (
-          <div className="grid grid-cols-3 gap-3 sm:gap-8 max-w-2xl mx-auto mt-8 sm:mt-12 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          // Sessions are RLS-zeroed for anonymous viewers (unlike the player
+          // count, which is anon-safe via the 078 RPC) — drop the tile rather
+          // than show "0 Sessions Delivered" next to real player numbers.
+          <div className={`grid ${totalSessions > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-3 sm:gap-8 max-w-2xl mx-auto mt-8 sm:mt-12 animate-slide-up`} style={{ animationDelay: '0.3s' }}>
             <div className="text-center">
               <div className="text-3xl sm:text-5xl font-black tracking-tight tabular-nums" style={{ color: primaryColor }}>
                 {playersCount.toLocaleString()}
@@ -189,15 +201,17 @@ export default function BookingPageHero({
                 Weekly Classes
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl sm:text-5xl font-black tracking-tight text-emerald-400 tabular-nums">
-                {sessionsCount.toLocaleString()}
-                {totalSessions > 9 && '+'}
+            {totalSessions > 0 && (
+              <div className="text-center">
+                <div className="text-3xl sm:text-5xl font-black tracking-tight text-emerald-400 tabular-nums">
+                  {sessionsCount.toLocaleString()}
+                  {totalSessions > 9 && '+'}
+                </div>
+                <div className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mt-1 font-bold">
+                  Sessions Delivered
+                </div>
               </div>
-              <div className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mt-1 font-bold">
-                Sessions Delivered
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
