@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { logAudit } from '@/lib/audit'
 import GroupForm from './GroupForm'
 
 const CLASS_TYPE_BADGES: Record<string, { label: string; bg: string; text: string }> = {
@@ -132,9 +133,26 @@ export default function GroupCard({
     const supabase = createClient()
     const { error } = await supabase.from('training_groups').delete().eq('id', group.id)
     if (error) {
-      alert(error.message)
+      // 23503 = foreign-key violation: the 097 RESTRICT constraints block
+      // deleting a class that still has enrolment / attendance / session-note
+      // history (and NO ACTION FKs like targeted announcements surface the
+      // same code).
+      if (error.code === '23503') {
+        alert(
+          `"${group.name}" can't be deleted because it has enrolment, attendance or other history linked to it. ` +
+          'Move or remove its members first — or unpublish the class to hide it instead.'
+        )
+      } else {
+        alert(error.message)
+      }
       setDeleting(false)
     } else {
+      await logAudit({
+        action: 'group.deleted',
+        entityType: 'group',
+        entityId: group.id,
+        details: { name: group.name },
+      })
       router.refresh()
     }
   }
