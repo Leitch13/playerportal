@@ -10,6 +10,7 @@ import EnquiryButton from './EnquiryButton'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import BookingPageHero from '@/components/BookingPageHero'
 import TermInfo from '@/components/TermInfo'
+import GroupedClassList from './GroupedClassList'
 
 export async function generateMetadata({
   params,
@@ -352,6 +353,103 @@ export default async function PublicBookingPage({
 
   const primaryColor = org.primary_color || '#4ecde6'
 
+  // ── Grouped classes view (busy academies only) ──
+  // Above this many classes, one full-size card per bookable slot makes the
+  // page a wall (G&G: 52 cards / ~18 screens, 14 of them named "1-2-1").
+  // Group into one card per (normalised programme name, term) with the slots
+  // as chips. Presentational only: chips link to the same class pages, seat
+  // counts come from the same anon-safe countByGroup, and small academies
+  // keep the original rich cards below the threshold.
+  const GROUPED_VIEW_THRESHOLD = 12
+  const useGroupedView = sortedGroups.length > GROUPED_VIEW_THRESHOLD
+  type ProgrammeGroupT = import('./GroupedClassList').ProgrammeGroup
+  let programmeGroups: ProgrammeGroupT[] = []
+  if (useGroupedView) {
+    const byKey = new Map<string, ProgrammeGroupT & { _prices: { v: number; unit: string }[] }>()
+    for (const group of sortedGroups) {
+      const g = group as unknown as {
+        id: string; name: string; day_of_week: string | null; time_slot: string | null
+        location: string | null; max_capacity: number; class_type: string | null
+        is_featured: boolean; price_per_session: number | null; age_group: string | null
+        short_description: string | null; term_id: string | null
+      }
+      const normName = g.name.trim().replace(/\s+/g, ' ')
+      // Alphanumeric-only key so admin spelling variants group together
+      // ("Small Group 9-11yrs" / "9-11 yrs" / "9-11" are one programme).
+      // Different digits (ages, B4/B5) still keep programmes apart.
+      const key = `${normName.toLowerCase().replace(/[^a-z0-9]/g, '')}|${g.term_id || ''}`
+      const typeConfig = CLASS_TYPE_CONFIG[g.class_type || 'group'] || CLASS_TYPE_CONFIG.group
+      const count = countByGroup.get(g.id) || 0
+      const capacity = g.max_capacity || 20
+      const spotsLeft = Math.max(0, capacity - count)
+      // Same price source as the single-card view: per-session price when
+      // set, else the cheapest matching plan's monthly amount.
+      let price: { v: number; unit: string } | null = null
+      if (g.price_per_session != null && Number(g.price_per_session) > 0) {
+        price = { v: Number(g.price_per_session), unit: '/session' }
+      } else {
+        const plan = findCheapestPlanFor(g.id, g.class_type)
+        if (plan) price = { v: Number(plan.amount), unit: '/mo' }
+      }
+      let entry = byKey.get(key)
+      if (!entry) {
+        const term = g.term_id ? termById.get(g.term_id) || null : null
+        entry = {
+          key,
+          name: normName,
+          typeLabel: typeConfig.label,
+          typeColor: typeConfig.color,
+          ageGroups: [],
+          priceLabel: null,
+          shortDesc: g.short_description,
+          isFeatured: false,
+          term: term ? { name: term.name, start_date: term.start_date, end_date: term.end_date, parent_message: term.parent_message } : null,
+          slots: [],
+          _prices: [],
+        }
+        byKey.set(key, entry)
+      }
+      if (g.age_group && !entry.ageGroups.includes(g.age_group)) entry.ageGroups.push(g.age_group)
+      if (g.is_featured) entry.isFeatured = true
+      if (!entry.shortDesc && g.short_description) entry.shortDesc = g.short_description
+      if (price) entry._prices.push(price)
+      entry.slots.push({
+        id: g.id,
+        day: g.day_of_week,
+        time: g.time_slot,
+        location: g.location,
+        spotsLeft,
+        capacity,
+        isFull: spotsLeft <= 0,
+      })
+    }
+    programmeGroups = [...byKey.values()].map((e) => {
+      const { _prices, ...rest } = e
+      let priceLabel: string | null = null
+      if (_prices.length > 0) {
+        const units = new Set(_prices.map((p) => p.unit))
+        const vals = _prices.map((p) => p.v)
+        const min = Math.min(...vals)
+        const max = Math.max(...vals)
+        if (units.size === 1) {
+          const unit = _prices[0].unit
+          priceLabel = min === max ? `£${min.toFixed(0)}${unit}` : `£${min.toFixed(0)}–£${max.toFixed(0)}${unit}`
+        } else {
+          priceLabel = `from £${min.toFixed(0)}`
+        }
+      }
+      rest.slots.sort((a, b) => {
+        const dA = DAY_ORDER.indexOf(a.day || ''); const dB = DAY_ORDER.indexOf(b.day || '')
+        if (dA !== dB) return (dA === -1 ? 99 : dA) - (dB === -1 ? 99 : dB)
+        return (a.time || '').localeCompare(b.time || '')
+      })
+      return { ...rest, priceLabel }
+    }).sort((a, b) => {
+      if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1
+      return b.slots.length - a.slots.length
+    })
+  }
+
   // Convert hex to r,g,b for CSS variable
   const hexToRgb = (hex: string) => {
     const h = hex.replace('#', '')
@@ -455,6 +553,9 @@ export default async function PublicBookingPage({
         <section>
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
           <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Our regular training schedule</p>
+          {useGroupedView ? (
+            <GroupedClassList groups={programmeGroups} primaryColor={primaryColor} slug={slug} />
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {sortedGroups.map((group) => {
               const count = countByGroup.get(group.id) || 0
@@ -595,6 +696,7 @@ export default async function PublicBookingPage({
               )
             })}
           </div>
+          )}
         </section>
 
         {(events || []).length > 0 && (
