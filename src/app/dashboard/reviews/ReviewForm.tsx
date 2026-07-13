@@ -45,6 +45,11 @@ export default function ReviewForm({
   const [newFieldName, setNewFieldName] = useState('')
   const [newFieldDesc, setNewFieldDesc] = useState('')
   const [savingField, setSavingField] = useState(false)
+  // Field-manager feedback: which template is mid-apply, and the last
+  // result. The old modal gave NO feedback and swallowed errors — users
+  // clicked templates repeatedly thinking the button was dead.
+  const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null)
+  const [fieldMsg, setFieldMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
   // Per-class-type scoring: admin picks which class context this review is for.
   // 'all' = show universal categories only (default — most reviews are generic)
@@ -174,6 +179,7 @@ export default function ReviewForm({
   async function addCustomField() {
     if (!newFieldName.trim()) return
     setSavingField(true)
+    setFieldMsg(null)
     const supabase = createClient()
     const nextOrder = dbCategories.length > 0
       ? Math.max(...dbCategories.map(c => c.sort_order)) + 1
@@ -192,51 +198,208 @@ export default function ReviewForm({
       .single()
 
     if (error) {
-      alert(`Couldn't add field: ${error.message}\n\nIf this looks like a permissions issue, make sure migration 053 has been run in Supabase.`)
+      setFieldMsg({ kind: 'err', text: `Couldn't add field: ${error.message}. If this looks like a permissions issue, make sure migration 053 has been run in Supabase.` })
     } else if (!inserted) {
-      alert('Custom field was silently rejected — likely an RLS policy issue. Run migration 053 in Supabase to fix.')
+      setFieldMsg({ kind: 'err', text: 'Field was silently rejected — likely an RLS policy issue. Run migration 053 in Supabase to fix.' })
     } else {
+      const added = newFieldName.trim()
       setNewFieldName('')
       setNewFieldDesc('')
       await fetchCategories()
+      setFieldMsg({ kind: 'ok', text: `"${added}" added` })
     }
     setSavingField(false)
   }
 
-  async function removeField(id: string) {
+  async function removeField(id: string, name: string) {
+    setFieldMsg(null)
     const supabase = createClient()
-    await supabase.from('scoring_categories').update({ is_active: false }).eq('id', id)
+    const { error } = await supabase.from('scoring_categories').update({ is_active: false }).eq('id', id)
+    if (error) {
+      setFieldMsg({ kind: 'err', text: `Couldn't remove "${name}": ${error.message}` })
+      return
+    }
     await fetchCategories()
+    setFieldMsg({ kind: 'ok', text: `"${name}" removed` })
   }
 
-  async function loadTemplate(template: { name: string; icon: string; description: string }[]) {
+  async function loadTemplate(templateName: string, template: { name: string; icon: string; description: string }[]) {
     setSavingField(true)
+    setApplyingTemplate(templateName)
+    setFieldMsg(null)
     const supabase = createClient()
-
-    // Deactivate existing
-    if (dbCategories.length > 0) {
-      await supabase
+    try {
+      // Deactivate the current set. Every step is error-checked — the old
+      // version discarded results, so failures looked like a dead button.
+      const { error: deErr } = await supabase
         .from('scoring_categories')
         .update({ is_active: false })
         .eq('organisation_id', orgId)
+      if (deErr) throw new Error(deErr.message)
+
+      // Reuse this org's existing rows where names match instead of always
+      // inserting — repeated template clicks used to pile up dead rows.
+      const { error: exErr, data: existing } = await supabase
+        .from('scoring_categories')
+        .select('id, name')
+        .eq('organisation_id', orgId)
+      if (exErr) throw new Error(exErr.message)
+      const idByName = new Map((existing || []).map(r => [r.name as string, r.id as string]))
+
+      const reactivate: { id: string; sort: number }[] = []
+      const insert: Record<string, unknown>[] = []
+      template.forEach((t, i) => {
+        const id = idByName.get(t.name)
+        if (id) reactivate.push({ id, sort: i + 1 })
+        else insert.push({ organisation_id: orgId, name: t.name, description: t.description, icon: t.icon, sort_order: i + 1, is_active: true })
+      })
+      for (const r of reactivate) {
+        const { error } = await supabase.from('scoring_categories').update({ is_active: true, sort_order: r.sort }).eq('id', r.id)
+        if (error) throw new Error(error.message)
+      }
+      if (insert.length > 0) {
+        const { error } = await supabase.from('scoring_categories').insert(insert)
+        if (error) throw new Error(error.message)
+      }
+
+      await fetchCategories()
+      setFieldMsg({ kind: 'ok', text: `${templateName} template applied — ${template.length} fields` })
+    } catch (err) {
+      setFieldMsg({ kind: 'err', text: `Couldn't apply the ${templateName} template: ${err instanceof Error ? err.message : String(err)}` })
+    } finally {
+      setSavingField(false)
+      setApplyingTemplate(null)
     }
-
-    // Insert template
-    const rows = template.map((t, i) => ({
-      organisation_id: orgId,
-      name: t.name,
-      description: t.description,
-      icon: t.icon,
-      sort_order: i + 1,
-      is_active: true,
-    }))
-
-    await supabase.from('scoring_categories').insert(rows)
-    await fetchCategories()
-    setSavingField(false)
   }
 
   const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-colors'
+
+  // ── Scoring-fields manager (single shared modal) ──
+  // Previously duplicated inline in two places with no feedback states.
+  const TEMPLATES: { key: string; icon: string; blurb: string; fields: { name: string; icon: string; description: string }[] }[] = [
+    { key: 'Football', icon: '⚽', blurb: 'Outfield fundamentals', fields: FOOTBALL_DEFAULTS },
+    { key: 'Goalkeeper', icon: '🧤', blurb: 'Keeper-specific skills', fields: GOALKEEPER_DEFAULTS },
+    { key: 'General Sport', icon: '🏅', blurb: 'Sport-agnostic development', fields: CUSTOM_SPORT_DEFAULTS },
+  ]
+  const activeNames = new Set(dbCategories.map(d => d.name))
+  const isTemplateActive = (t: (typeof TEMPLATES)[number]) =>
+    dbCategories.length === t.fields.length && t.fields.every(f => activeNames.has(f.name))
+
+  function closeFieldManager() {
+    setShowFieldManager(false)
+    setFieldMsg(null)
+  }
+
+  const renderFieldManager = () => (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={closeFieldManager}>
+      <div className="bg-[#111214] border border-[#232527] rounded-2xl w-full max-w-xl shadow-2xl shadow-black/50 overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-5 border-b border-[#1e2022]">
+          <div>
+            <h2 className="text-lg font-bold text-white">Scoring fields</h2>
+            <p className="text-xs text-white/45 mt-0.5">Used by every coach in your academy when writing player reports</p>
+          </div>
+          <button onClick={closeFieldManager} aria-label="Close" className="w-8 h-8 -mr-1 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors text-base leading-none">✕</button>
+        </div>
+
+        <div className="px-6 py-5 space-y-6 max-h-[65vh] overflow-y-auto">
+          {/* Feedback banner — success or error, never silent */}
+          {fieldMsg && (
+            <div className={`flex items-center gap-2 text-xs font-medium rounded-xl px-3.5 py-2.5 border ${fieldMsg.kind === 'ok' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+              <span aria-hidden="true">{fieldMsg.kind === 'ok' ? '✓' : '⚠'}</span>
+              <span>{fieldMsg.text}</span>
+            </div>
+          )}
+
+          {/* Templates */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-2.5">Start from a template</p>
+            <div className="grid grid-cols-3 gap-2">
+              {TEMPLATES.map((t) => {
+                const active = isTemplateActive(t)
+                const applying = applyingTemplate === t.key
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => loadTemplate(t.key, t.fields)}
+                    disabled={savingField || active}
+                    className={`relative text-left rounded-xl border p-3 transition-all ${active ? 'border-primary/60 bg-primary/[0.07]' : 'border-[#26282b] bg-[#17181a] hover:border-primary/35 hover:bg-[#1b1d1f]'} disabled:cursor-default`}
+                  >
+                    <div className="text-xl mb-1.5">{applying ? <span className="inline-block animate-spin">◌</span> : t.icon}</div>
+                    <div className="text-[13px] font-semibold text-white leading-tight">{t.key}</div>
+                    <div className="text-[11px] text-white/40 mt-0.5 leading-snug">{applying ? 'Applying…' : t.blurb}</div>
+                    <div className="text-[10px] text-white/30 mt-1.5">{t.fields.length} fields</div>
+                    {active && (
+                      <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5">In use</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Active fields */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-2.5">Active fields ({categories.length})</p>
+            <div className="space-y-1.5">
+              {categories.map((cat) => {
+                const dbCat = dbCategories.find(d => d.name === cat.label)
+                return (
+                  <div key={cat.key} className="group flex items-center gap-3 bg-[#17181a] border border-[#232527] rounded-xl px-3.5 py-2.5 hover:border-[#2e3033] transition-colors">
+                    <span className="w-8 h-8 shrink-0 rounded-lg bg-[#1f2124] border border-[#2a2c2f] flex items-center justify-center text-sm">{cat.icon || '•'}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-white leading-tight">{cat.label}</div>
+                      {dbCat?.description && <div className="text-[11px] text-white/35 truncate">{dbCat.description}</div>}
+                    </div>
+                    {dbCat && (
+                      <button onClick={() => removeField(dbCat.id, cat.label)} disabled={savingField} className="text-[11px] font-medium text-white/25 hover:text-red-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all disabled:opacity-30">
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Add custom field */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/40 mb-2.5">Add your own</p>
+            <div className="flex gap-2">
+              <input
+                value={newFieldName}
+                onChange={e => setNewFieldName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomField() } }}
+                placeholder="e.g. Leadership"
+                className="flex-1 bg-[#17181a] border border-[#26282b] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button
+                onClick={addCustomField}
+                disabled={savingField || !newFieldName.trim()}
+                className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-40 transition-colors"
+              >
+                {savingField && !applyingTemplate ? 'Adding…' : 'Add'}
+              </button>
+            </div>
+            <input
+              value={newFieldDesc}
+              onChange={e => setNewFieldDesc(e.target.value)}
+              placeholder="Short description shown to coaches (optional)"
+              className="w-full mt-2 bg-[#17181a] border border-[#26282b] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#1e2022] bg-[#0e0f11]">
+          <p className="text-[11px] text-white/30">Changes apply immediately for all coaches</p>
+          <button onClick={closeFieldManager} className="px-5 py-2 bg-[#1c1e20] border border-[#2a2c2f] text-white/80 rounded-xl text-sm font-semibold hover:bg-[#232527] hover:text-white transition-colors">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
   if (!open) {
     return (
@@ -254,80 +417,8 @@ export default function ReviewForm({
           Customise Fields
         </button>
 
-        {/* Custom Fields Manager (inline) */}
-        {showFieldManager && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowFieldManager(false)}>
-            <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6 w-full max-w-lg space-y-5" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white">Scoring Categories</h2>
-                <button onClick={() => setShowFieldManager(false)} className="text-white/40 hover:text-white text-sm">Close</button>
-              </div>
-
-              <p className="text-xs text-white/50">Customise the scoring fields used in player reports. These apply to all coaches in your academy.</p>
-
-              {/* Templates */}
-              <div>
-                <p className="text-xs font-medium text-white/60 mb-2">Load a template</p>
-                <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => loadTemplate(FOOTBALL_DEFAULTS)} disabled={savingField} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-white/70 hover:text-white hover:border-primary/30 transition-colors disabled:opacity-50">
-                    Football
-                  </button>
-                  <button onClick={() => loadTemplate(GOALKEEPER_DEFAULTS)} disabled={savingField} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-white/70 hover:text-white hover:border-primary/30 transition-colors disabled:opacity-50">
-                    Goalkeeper
-                  </button>
-                  <button onClick={() => loadTemplate(CUSTOM_SPORT_DEFAULTS)} disabled={savingField} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-white/70 hover:text-white hover:border-primary/30 transition-colors disabled:opacity-50">
-                    General Sport
-                  </button>
-                </div>
-              </div>
-
-              {/* Current fields */}
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-white/60">Active categories ({categories.length})</p>
-                {categories.map((cat) => {
-                  const dbCat = dbCategories.find(d => d.name === cat.label)
-                  return (
-                    <div key={cat.key} className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        {cat.icon && <span className="text-sm">{cat.icon}</span>}
-                        <span className="text-sm font-medium text-white">{cat.label}</span>
-                      </div>
-                      {dbCat && (
-                        <button onClick={() => removeField(dbCat.id)} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Remove</button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Add new field */}
-              <div className="border-t border-[#1e1e1e] pt-4 space-y-3">
-                <p className="text-xs font-medium text-white/60">Add custom field</p>
-                <div className="flex gap-2">
-                  <input
-                    value={newFieldName}
-                    onChange={e => setNewFieldName(e.target.value)}
-                    placeholder="e.g. Leadership"
-                    className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                  <button
-                    onClick={addCustomField}
-                    disabled={savingField || !newFieldName.trim()}
-                    className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                  >
-                    Add
-                  </button>
-                </div>
-                <input
-                  value={newFieldDesc}
-                  onChange={e => setNewFieldDesc(e.target.value)}
-                  placeholder="Description (optional)"
-                  className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Scoring-fields manager (shared) */}
+        {showFieldManager && renderFieldManager()}
       </div>
     )
   }
@@ -500,81 +591,8 @@ export default function ReviewForm({
         </div>
       </form>
 
-      {/* Custom Fields Manager Modal */}
-      {showFieldManager && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowFieldManager(false)}>
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6 w-full max-w-lg space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Scoring Categories</h2>
-              <button onClick={() => setShowFieldManager(false)} className="text-white/40 hover:text-white text-sm">Close</button>
-            </div>
-
-            <p className="text-xs text-white/50">Customise the scoring fields used in player reports. These apply to all coaches in your academy.</p>
-
-            {/* Templates */}
-            <div>
-              <p className="text-xs font-medium text-white/60 mb-2">Load a template</p>
-              <div className="flex gap-2 flex-wrap">
-                <button onClick={() => loadTemplate(FOOTBALL_DEFAULTS)} disabled={savingField} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-white/70 hover:text-white hover:border-primary/30 transition-colors disabled:opacity-50">
-                  Football
-                </button>
-                <button onClick={() => loadTemplate(GOALKEEPER_DEFAULTS)} disabled={savingField} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-white/70 hover:text-white hover:border-primary/30 transition-colors disabled:opacity-50">
-                  Goalkeeper
-                </button>
-                <button onClick={() => loadTemplate(CUSTOM_SPORT_DEFAULTS)} disabled={savingField} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-white/70 hover:text-white hover:border-primary/30 transition-colors disabled:opacity-50">
-                  General Sport
-                </button>
-              </div>
-            </div>
-
-            {/* Current fields */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-white/60">Active categories ({categories.length})</p>
-              {categories.map((cat) => {
-                const dbCat = dbCategories.find(d => d.name === cat.label)
-                return (
-                  <div key={cat.key} className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      {cat.icon && <span className="text-sm">{cat.icon}</span>}
-                      <span className="text-sm font-medium text-white">{cat.label}</span>
-                    </div>
-                    {dbCat && (
-                      <button onClick={() => removeField(dbCat.id)} className="text-xs text-red-400/60 hover:text-red-400 transition-colors">Remove</button>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Add new field */}
-            <div className="border-t border-[#1e1e1e] pt-4 space-y-3">
-              <p className="text-xs font-medium text-white/60">Add custom field</p>
-              <div className="flex gap-2">
-                <input
-                  value={newFieldName}
-                  onChange={e => setNewFieldName(e.target.value)}
-                  placeholder="e.g. Leadership"
-                  className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomField() } }}
-                />
-                <button
-                  onClick={addCustomField}
-                  disabled={savingField || !newFieldName.trim()}
-                  className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-              <input
-                value={newFieldDesc}
-                onChange={e => setNewFieldDesc(e.target.value)}
-                placeholder="Description (optional)"
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Scoring-fields manager (shared) */}
+      {showFieldManager && renderFieldManager()}
     </div>
   )
 }
