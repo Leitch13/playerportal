@@ -17,8 +17,12 @@ function baseLayout(content: string, accentColor = '#4ecde6', academyName?: stri
   // Premium Polish Pass: real white logo (never the ⚽ emoji), palette + radius +
   // hairlines aligned to adminWelcomeEmail, readable footer contrast. Academy
   // name stays prominent for white-label parent emails (logo sits above it).
-  const logo = `${appUrl}/logo-white.png`
-  const logoW = academyName ? 120 : 168
+  // logo.png is the post-rebrand "THE PLAYER PORTAL" wordmark — white on
+  // transparent, made for this dark header. logo-white.png is the OLD
+  // pre-rebrand mark; do not use it. The wordmark is ~4:1 wide, so widths
+  // run larger than the old square-ish mark to keep the same visual weight.
+  const logo = `${appUrl}/logo.png`
+  const logoW = academyName ? 150 : 200
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#050608;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e5e5e5">
@@ -1280,7 +1284,7 @@ export function progressReportEmailPremiumV2(params: {
        </table>`
     : `<p style="margin:0;font-size:14px;color:#475569;line-height:1.5">Baseline set — next month you&rsquo;ll see exactly what improved. 🎯</p>`
 
-  const logo = `${appUrl}/logo-white.png`
+  const logo = `${appUrl}/logo.png` // post-rebrand wordmark — logo-white.png is the OLD mark
   const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><style>.sr{position:absolute;left:-9999px}</style></head>
 <body style="margin:0;padding:0;background:#050608;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e5e5e5">
@@ -1797,7 +1801,7 @@ export function adminWelcomeEmail(params: { adminName: string; academyName: stri
   const slug = params.academySlug || params.academyName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
   const dash = params.dashboardUrl
   const bookingUrl = `${appUrl}/book/${slug}`
-  const logo = `${appUrl}/logo-white.png`
+  const logo = `${appUrl}/logo.png` // post-rebrand wordmark — logo-white.png is the OLD mark
   const founder = `${appUrl}/founder-john.png`
 
   const feat = (b: string, t: string, d: string) => `<tr><td style="padding:0 0 12px"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#10151d;border:1px solid #1f2937;border-radius:14px"><tr>
