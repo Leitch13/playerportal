@@ -174,29 +174,35 @@ export default async function ReferralsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Referrals</h1>
 
-      {/* Owner → owner: refer another academy to Player Portal (098) */}
-      <ReferAcademyCard orgSlug={orgSlug} orgName={orgName} />
+      {/* Owner → owner: refer another academy to Player Portal (098).
+          Owner-only — the reward is the owner's decision, so coaches don't
+          see the referral card or the referred-academies list. */}
+      {role === 'admin' && (
+        <>
+          <ReferAcademyCard orgSlug={orgSlug} orgName={orgName} />
 
-      {(referredOrgs || []).length > 0 && (
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Academies you&rsquo;ve referred</h2>
-          <div className="space-y-2">
-            {(referredOrgs || []).map((r) => (
-              <div key={`${r.name}-${r.created_at}`} className="flex items-center justify-between bg-[#141414] border border-[#232527] rounded-xl px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-white">{r.name}</p>
-                  <p className="text-xs text-white/40">Joined {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
-                </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${r.platform_subscription_status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'}`}>
-                  {r.platform_subscription_status === 'active' ? 'Live — reward due' : 'On trial'}
-                </span>
+          {(referredOrgs || []).length > 0 && (
+            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+              <h2 className="text-lg font-semibold text-white mb-4">Academies you&rsquo;ve referred</h2>
+              <div className="space-y-2">
+                {(referredOrgs || []).map((r) => (
+                  <div key={`${r.name}-${r.created_at}`} className="flex items-center justify-between bg-[#141414] border border-[#232527] rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-white">{r.name}</p>
+                      <p className="text-xs text-white/40">Joined {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
+                    </div>
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${r.platform_subscription_status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                      {r.platform_subscription_status === 'active' ? 'Live — reward due' : 'On trial'}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
 
-      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+        </>
+      )}
       <h2 className="text-lg font-semibold text-white">Parent referrals</h2>
 
       {/* Admin stats */}
