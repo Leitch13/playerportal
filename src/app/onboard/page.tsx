@@ -97,6 +97,28 @@ export default function OnboardPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // ── Owner → owner referral capture (098) ──
+  // /onboard?ref=<academy-slug> — captured once on mount, resolved to a
+  // display name via the anon-readable published-orgs policy, stamped on
+  // the new org by /api/onboard. Invalid/unknown refs are silently ignored.
+  const [refSlug, setRefSlug] = useState<string | null>(null)
+  const [referrerName, setReferrerName] = useState<string | null>(null)
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get('ref')
+    if (!raw) return
+    const clean = raw.trim().toLowerCase().slice(0, 80)
+    if (!/^[a-z0-9-]+$/.test(clean)) return
+    setRefSlug(clean)
+    createClient()
+      .from('organisations')
+      .select('name')
+      .eq('slug', clean)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.name) setReferrerName(data.name)
+      })
+  }, [])
+
   // Step 1: Academy Details
   const [academyName, setAcademyName] = useState('')
   const [slug, setSlug] = useState('')
@@ -279,6 +301,7 @@ export default function OnboardPage() {
         logoUrl,
         heroImageUrl,
         platformPlan: selectedPlan,
+        ...(refSlug ? { referredBy: refSlug } : {}),
         // Consent fields — /api/onboard rejects the request with 400 if
         // any of these is not strictly true.
         termsAccepted,
@@ -432,6 +455,12 @@ export default function OnboardPage() {
           {/* Step 1: Academy Details */}
           {step === 0 && (
             <div className="space-y-5">
+              {referrerName && (
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#4ecde6]/[0.08] border border-[#4ecde6]/25">
+                  <svg className="w-4 h-4 text-[#4ecde6] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <p className="text-sm text-white/80">Recommended by <span className="font-semibold text-white">{referrerName}</span> — you&apos;ll both get a free month when you go live.</p>
+                </div>
+              )}
               <div>
                 <h2 className="text-2xl font-extrabold text-white mb-1">Let&apos;s start with the basics</h2>
                 <p className="text-white/50 text-sm">A few details about your academy — this powers your booking page.</p>

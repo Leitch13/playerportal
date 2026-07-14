@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       termsAccepted,
       dpaAccepted,
       authorityConfirmed,
+      referredBy,
     } = await request.json()
 
     if (!name || !slug || !contactEmail) {
@@ -89,6 +90,25 @@ export async function POST(request: NextRequest) {
       platformPlanId = planRow.id
     }
 
+    // ── Owner → owner referral attribution (098) ──
+    // ?ref=<slug> from the onboarding wizard. Resolve to an org id; unknown
+    // or malformed refs are silently ignored (never block a signup over a
+    // bad referral param). Self-referral is impossible here: the new slug
+    // is unique-checked above, so it can't equal an existing org's slug.
+    let referredByOrgId: string | null = null
+    let referrerName: string | null = null
+    if (typeof referredBy === 'string' && /^[a-z0-9-]{1,80}$/.test(referredBy)) {
+      const { data: refOrg } = await supabase
+        .from('organisations')
+        .select('id, name')
+        .eq('slug', referredBy)
+        .maybeSingle()
+      if (refOrg) {
+        referredByOrgId = refOrg.id
+        referrerName = refOrg.name
+      }
+    }
+
     // Calculate trial end date: 14 days from now
     const trialEndsAt = new Date()
     trialEndsAt.setDate(trialEndsAt.getDate() + 14)
@@ -120,6 +140,7 @@ export async function POST(request: NextRequest) {
         terms_version: TERMS_VERSION,
         accepted_ip: acceptedIp,
         accepted_user_agent: acceptedUserAgent,
+        referred_by_org_id: referredByOrgId,
       })
       .select('id')
       .single()
@@ -157,6 +178,7 @@ export async function POST(request: NextRequest) {
       contactPhone: contactPhone || null,
       location: location || null,
       platformPlan: platformPlan || 'starter',
+      referrerName,
     }).catch((err) => console.error('Admin notification failed:', err))
 
     return NextResponse.json({ orgId: org.id })
@@ -173,6 +195,7 @@ async function notifyNewAcademy(info: {
   contactPhone: string | null
   location: string | null
   platformPlan: string
+  referrerName: string | null
 }) {
   const apiKey = process.env.RESEND_API_KEY
   const to = process.env.ADMIN_NOTIFICATION_EMAIL
@@ -206,6 +229,7 @@ async function notifyNewAcademy(info: {
         <tr><td style="padding:6px 0;color:#888;">Email</td><td><a href="mailto:${escapeHtml(info.contactEmail)}" style="color:#0066cc;">${escapeHtml(info.contactEmail)}</a></td></tr>
         ${info.contactPhone ? `<tr><td style="padding:6px 0;color:#888;">Phone</td><td>${escapeHtml(info.contactPhone)}</td></tr>` : ''}
         ${info.location ? `<tr><td style="padding:6px 0;color:#888;">Location</td><td>${escapeHtml(info.location)}</td></tr>` : ''}
+        ${info.referrerName ? `<tr><td style="padding:6px 0;color:#888;">Referred by</td><td><strong>${escapeHtml(info.referrerName)}</strong> — give-a-month/get-a-month due when they pay their first invoice</td></tr>` : ''}
       </table>
       <p style="margin:24px 0 16px;font-size:14px;">
         <a href="https://www.theplayerportal.net/book/${encodeURIComponent(info.slug)}" style="color:#0066cc;">View their booking page →</a>

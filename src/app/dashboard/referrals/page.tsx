@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { requireFeature } from '@/lib/features'
 import StatusBadge from '@/components/StatusBadge'
 import EmptyState from '@/components/EmptyState'
 import type { UserRole } from '@/lib/types'
 import ReferralLink from './ReferralLink'
+import ReferAcademyCard from './ReferAcademyCard'
 
 // Local, on-brand status chip for the parent referral list (does NOT touch the
 // shared StatusBadge component, which other pages rely on).
@@ -38,11 +40,12 @@ export default async function ReferralsPage() {
   // Get org slug for building referral link
   const { data: org } = await supabase
     .from('organisations')
-    .select('slug')
+    .select('slug, name')
     .eq('id', orgId)
     .single()
 
   const orgSlug = org?.slug || ''
+  const orgName = org?.name || 'our academy'
 
   if (role === 'parent') {
     // Parent view: their own referrals
@@ -146,6 +149,21 @@ export default async function ReferralsPage() {
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
 
+  // Owner → owner referrals (098): academies that signed up through this
+  // academy's /onboard?ref=<slug> link. 077a locks organisations SELECT to
+  // own-org for authenticated sessions, so this one read uses the service
+  // role — scoped hard to rows this org referred, minimal fields, after the
+  // auth + requireFeature gates above.
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+  const { data: referredOrgs } = await serviceClient
+    .from('organisations')
+    .select('name, created_at, platform_subscription_status')
+    .eq('referred_by_org_id', orgId)
+    .order('created_at', { ascending: false })
+
   const totalReferrals = allReferrals?.length || 0
   const pendingCount = allReferrals?.filter((r) => r.status === 'signed_up').length || 0
   const rewardedCount = allReferrals?.filter((r) => r.status === 'rewarded').length || 0
@@ -155,6 +173,31 @@ export default async function ReferralsPage() {
     <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Referrals</h1>
+
+      {/* Owner → owner: refer another academy to Player Portal (098) */}
+      <ReferAcademyCard orgSlug={orgSlug} orgName={orgName} />
+
+      {(referredOrgs || []).length > 0 && (
+        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Academies you&rsquo;ve referred</h2>
+          <div className="space-y-2">
+            {(referredOrgs || []).map((r) => (
+              <div key={`${r.name}-${r.created_at}`} className="flex items-center justify-between bg-[#141414] border border-[#232527] rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-white">{r.name}</p>
+                  <p className="text-xs text-white/40">Joined {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${r.platform_subscription_status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                  {r.platform_subscription_status === 'active' ? 'Live — reward due' : 'On trial'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+      <h2 className="text-lg font-semibold text-white">Parent referrals</h2>
 
       {/* Admin stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
