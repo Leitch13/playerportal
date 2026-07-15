@@ -152,14 +152,13 @@ export async function POST(request: NextRequest) {
     if (camp.organisation_id !== organisationId) {
       return NextResponse.json({ error: 'Organisation mismatch.' }, { status: 400 })
     }
-    if (camp.start_date) {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const startDate = new Date(`${camp.start_date}T00:00:00`)
-      if (!isNaN(startDate.getTime()) && startDate < today) {
-        return NextResponse.json({ error: 'This camp has already started.' }, { status: 400 })
-      }
-    }
+    // NOTE: flexible-days camps are booked per-day, so we do NOT block the
+    // whole camp once its overall start_date has passed — a camp mid-run can
+    // still be booked for the days that haven't happened yet. Past days are
+    // rejected individually below (after the day rows are fetched), using the
+    // UK calendar date. The whole-camp "already started" block still applies
+    // to whole_camp bookings, but that lives in the separate camp-checkout
+    // route — not here.
 
     // ─── 5. Fetch camp_days (pre-lock; RPC re-verifies inside lock) ─
     const { data: dayRowsRaw, error: daysError } = await supabase
@@ -180,6 +179,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         error: 'Some selected days are no longer available. Please refresh and try again.',
         unavailableDayIds: unavailable.map((d) => d.id),
+      }, { status: 400 })
+    }
+
+    // ─── Past-day guard (replaces the old whole-camp "already started" block) ─
+    // A day is bookable if it is today or later. "today" is the UK calendar
+    // date (Europe/London via en-CA → "YYYY-MM-DD"), NOT a UTC timestamp — so
+    // a booking made late-evening UK time (when UTC has already rolled to the
+    // next day) doesn't wrongly treat today as past, and a day that IS today
+    // stays bookable. camp_days.date is a plain "YYYY-MM-DD" string, so a
+    // lexical string compare is a correct date-only comparison (no time-of-day).
+    const ukToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())
+    const pastDays = dayRows.filter((d) => String(d.date) < ukToday)
+    if (pastDays.length) {
+      return NextResponse.json({
+        error: 'One or more selected days have already passed and can no longer be booked.',
+        unavailableDayIds: pastDays.map((d) => d.id),
       }, { status: 400 })
     }
 

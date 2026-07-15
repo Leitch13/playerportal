@@ -110,8 +110,16 @@ export default function CampFlexibleDayPicker({
   const priceFor = (day: CampDay): number =>
     day.price != null ? Number(day.price) : pricePerDay
 
+  // UK calendar date ("YYYY-MM-DD" via Europe/London) so a day is only "past"
+  // when its date is strictly before today's UK date — a day that IS today
+  // stays bookable. Mirrors the server guard in flexible-camp-checkout so the
+  // picker never offers a day the checkout would reject. camp_days.date is a
+  // plain date string, so a lexical compare is a correct date-only comparison.
+  const ukToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())
+  const isPastDay = (day: CampDay): boolean => String(day.date) < ukToday
+
   const isEffectivelyUnavailable = (day: CampDay): boolean =>
-    !day.is_available || locallyFullDayIds.has(day.id)
+    !day.is_available || locallyFullDayIds.has(day.id) || isPastDay(day)
 
   const toggle = (day: CampDay) => {
     if (isEffectivelyUnavailable(day)) return
