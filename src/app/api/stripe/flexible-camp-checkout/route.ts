@@ -198,6 +198,41 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // ─── Already-booked-day guard (double-submit protection) ────────
+    // A child cannot hold the same day on the same camp twice. Without this,
+    // a double-submit (or a parent re-running the form) creates a second
+    // booking covering identical days, double-counting the seat on the
+    // register. Matched on camp + child name + parent email, case/space
+    // insensitive, against live bookings only (pending/paid) so a cancelled
+    // booking can be re-made. Days NOT already held are still allowed, so a
+    // parent legitimately returning to add extra days is unaffected.
+    const { data: priorRows, error: priorError } = await supabase
+      .from('camp_bookings')
+      .select('id, camp_booking_days(camp_day_id)')
+      .eq('camp_id', campId)
+      .in('payment_status', ['pending', 'paid'])
+      .ilike('child_name', childName.trim())
+      .ilike('parent_email', parentEmail.trim())
+    if (priorError) {
+      return NextResponse.json({ error: 'Could not verify existing bookings.' }, { status: 500 })
+    }
+    const heldDayIds = new Set(
+      (priorRows || []).flatMap((b) =>
+        ((b as { camp_booking_days?: { camp_day_id: string }[] }).camp_booking_days || [])
+          .map((d) => d.camp_day_id)
+      )
+    )
+    const alreadyBooked = dayRows.filter((d) => heldDayIds.has(d.id))
+    if (alreadyBooked.length) {
+      return NextResponse.json({
+        error:
+          alreadyBooked.length === dedupedIds.length
+            ? 'This child is already booked on the day(s) you selected.'
+            : 'This child is already booked on some of the day(s) you selected. Please deselect those days.',
+        unavailableDayIds: alreadyBooked.map((d) => d.id),
+      }, { status: 409 })
+    }
+
     // ─── 6. Minimum-days requirement ────────────────────────────────
     if (camp.flex_min_days != null && dedupedIds.length < Number(camp.flex_min_days)) {
       return NextResponse.json({
