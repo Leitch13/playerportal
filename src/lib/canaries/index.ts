@@ -259,11 +259,85 @@ export function canary5FlagCoherence(): CanaryResult {
   }
 }
 
+/**
+ * CANARY 6 — Duplicate camp day booking (Jamie's "the duplicates are back").
+ * The same child (camp + child name + parent email) holding the SAME camp day
+ * on two live bookings. One seat, counted twice on the register.
+ *
+ * Fired for real on 2026-07-13: a double-submit put one child on the same four
+ * charity-camp days twice. The checkout now blocks re-booking a held day
+ * (5054c06), so this canary covers the other way it can happen — rows arriving
+ * by any path that isn't the guarded checkout (manual insert, restore, import).
+ *
+ * Deliberately day-level, not booking-level: a parent legitimately returning to
+ * book EXTRA days creates a second booking, and that is not a duplicate. Only an
+ * overlapping day is. Whole-camp bookings have no camp_booking_days rows and so
+ * are out of scope here by construction.
+ */
+async function canary6DuplicateCampDay(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const bookings = await fetchAll<{
+    id: string; camp_id: string; organisation_id: string
+    child_name: string | null; parent_email: string | null; payment_status: string
+  }>((f, t) =>
+    sb.from('camp_bookings')
+      .select('id, camp_id, organisation_id, child_name, parent_email, payment_status')
+      .in('payment_status', ['pending', 'paid'])
+      .range(f, t))
+  if (!bookings.length) return { rowCount: 0, lines: [] }
+
+  const days = await fetchAll<{ camp_booking_id: string; camp_day_id: string }>((f, t) =>
+    sb.from('camp_booking_days').select('camp_booking_id, camp_day_id').range(f, t))
+  if (!days.length) return { rowCount: 0, lines: [] }
+
+  const bookingById = new Map(bookings.map((b) => [b.id, b]))
+  const daysByBooking = new Map<string, string[]>()
+  for (const d of days) {
+    if (!bookingById.has(d.camp_booking_id)) continue // skip cancelled/refunded parents
+    const list = daysByBooking.get(d.camp_booking_id) ?? []
+    list.push(d.camp_day_id)
+    daysByBooking.set(d.camp_booking_id, list)
+  }
+
+  // key = camp + child + parent + day → any key held by >1 booking is a dup
+  const holders = new Map<string, string[]>()
+  for (const [bookingId, dayIds] of daysByBooking) {
+    const b = bookingById.get(bookingId)!
+    const who = `${b.camp_id}|${(b.child_name ?? '').trim().toLowerCase()}|${(b.parent_email ?? '').trim().toLowerCase()}`
+    for (const dayId of dayIds) {
+      const key = `${who}|${dayId}`
+      const list = holders.get(key) ?? []
+      list.push(bookingId)
+      holders.set(key, list)
+    }
+  }
+  const dupes = [...holders.entries()].filter(([, ids]) => ids.length > 1)
+  if (!dupes.length) return { rowCount: 0, lines: [] }
+
+  const dayIds = dupes.map(([k]) => k.split('|')[3])
+  const dayRows = await fetchAll<{ id: string; date: string }>((f, t) =>
+    sb.from('camp_days').select('id, date').in('id', [...new Set(dayIds)]).range(f, t))
+  const dayDate = new Map(dayRows.map((d) => [d.id, d.date]))
+  const campRows = await fetchAll<{ id: string; name: string }>((f, t) =>
+    sb.from('camps').select('id, name').in('id', [...new Set(dupes.map(([k]) => k.split('|')[0]))]).range(f, t))
+  const campName = new Map(campRows.map((c) => [c.id, c.name]))
+  const orgs = await orgNames(sb, dupes.map(([, ids]) => bookingById.get(ids[0])!.organisation_id))
+
+  return {
+    rowCount: dupes.length,
+    lines: dupes.map(([key, ids]) => {
+      const [campId, child, , dayId] = key.split('|')
+      const b = bookingById.get(ids[0])!
+      return `${orgs.get(b.organisation_id) ?? b.organisation_id}: ${child} booked ${dayDate.get(dayId) ?? dayId} on "${campName.get(campId) ?? campId}" ${ids.length}× — bookings ${ids.join(', ')}`
+    }),
+  }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
   { id: 3, name: 'paying but not enrolled', run: canary3PayingNotEnrolled },
   { id: 4, name: 'cross-academy attribution', run: canary4CrossAcademy },
+  { id: 6, name: 'duplicate camp day booking', run: canary6DuplicateCampDay },
 ]
 
 /**
