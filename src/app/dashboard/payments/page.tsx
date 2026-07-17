@@ -21,7 +21,6 @@ import ManageBillingButton from './ManageBillingButton'
 import SubscriptionPlanManager from './SubscriptionPlanManager'
 import AssignSubscription from './AssignSubscription'
 import SubscriptionActions from './SubscriptionActions'
-import PaymentLinkGenerator from './PaymentLinkGenerator'
 import Link from 'next/link'
 import FinancialBreakdown from './FinancialBreakdown'
 import CancellationIntelligence from './CancellationIntelligence'
@@ -1318,7 +1317,12 @@ async function AdminPayments({
             <AssignSubscription plans={activePlans} players={playersForAssign} orgId={orgId} />
           )}
 
-          <PaymentLinkGenerator />
+          {/* PaymentLinkGenerator disabled 2026-07-17: the payment-link route
+              creates links on the PLATFORM Stripe account (no Connect routing,
+              no application fee, no ledger row) so funds would bypass the
+              academy entirely. Never used in production (verified via Stripe:
+              zero payment links). Re-enable once /api/stripe/payment-link
+              gets the standard Connect treatment. */}
 
           <PaymentManager parents={allParents || []} players={allPlayers || []} autoOpen={autoOpen} orgId={orgId} />
         </>

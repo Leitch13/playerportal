@@ -1,70 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Only admins/coaches can create payment links
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['admin', 'coach'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const { description, amount, type } = await request.json()
-
-    if (!description || !amount) {
-      return NextResponse.json({ error: 'Missing description or amount' }, { status: 400 })
-    }
-
-    if (type === 'subscription') {
-      // Create a recurring payment link from a plan
-      const { planId } = await request.json()
-      // For subscriptions, use the subscribe flow instead
-      return NextResponse.json({ error: 'Use subscribe endpoint for subscriptions' }, { status: 400 })
-    }
-
-    // Create a one-time Stripe product + price
-    const product = await stripe.products.create({
-      name: description,
-    })
-
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: Math.round(Number(amount) * 100),
-      currency: 'gbp',
-    })
-
-    // Create payment link
-    const paymentLink = await stripe.paymentLinks.create({
-      line_items: [{ price: price.id, quantity: 1 }],
-      payment_method_types: ['card', 'bacs_debit'],
-      after_completion: {
-        type: 'redirect',
-        redirect: {
-          url: `${request.headers.get('origin') || 'https://theplayerportal.net'}/dashboard/payments?success=1`,
-        },
-      },
-    })
-
-    return NextResponse.json({ url: paymentLink.url })
-  } catch {
-    return NextResponse.json(
-      { error: 'Failed to create payment link' },
-      { status: 500 }
-    )
-  }
+// Disabled 2026-07-17: this route created Stripe Payment Links on the
+// PLATFORM account — no Connect routing to the academy (no on_behalf_of /
+// transfer_data), no application fee, and no payments-ledger row. Any funds
+// paid through such a link would land on the platform entity and be invisible
+// in the app. Never used in production (verified: zero payment links on the
+// live Stripe account).
+//
+// Re-enable by restoring the original handler (git history, pre-2026-07-17)
+// plus the standard Connect block used by every other parent-paying route:
+//   • isConnectChargeReady pre-flight (src/lib/connect-readiness.ts)
+//   • fee rate from platform_plans.transaction_fee_percent
+//   • on_behalf_of + transfer_data.destination = org stripe_account_id
+//   • a payments row so the link shows in the app's ledger
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Payment links are temporarily unavailable.' },
+    { status: 503 }
+  )
 }
