@@ -112,6 +112,21 @@ export default async function PassportPage({
     .order('review_date', { ascending: false })
     .limit(10)
 
+  // Admin-only: recent payments for this player, so owners can check a
+  // family's payment picture without leaving the passport. Read-only —
+  // RLS ("Staff see org payments") already permits this SELECT; the
+  // role gate here just keeps the panel off coach and parent views.
+  let payments = null
+  if (role === 'admin') {
+    const { data } = await supabase
+      .from('payments')
+      .select('id, description, amount, amount_paid, status, due_date, paid_date, created_at')
+      .eq('player_id', id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    payments = data || []
+  }
+
   return (
     <ProgressionPassport
       player={player}
@@ -121,6 +136,7 @@ export default async function PassportPage({
       reviews={reviews || []}
       isStaff={isStaff}
       orgId={orgId}
+      payments={payments}
     />
   )
 }

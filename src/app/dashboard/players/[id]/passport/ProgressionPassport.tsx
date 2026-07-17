@@ -53,6 +53,17 @@ interface Review {
   [key: string]: unknown
 }
 
+interface PaymentRow {
+  id: string
+  description: string | null
+  amount: number
+  amount_paid: number
+  status: string
+  due_date: string | null
+  paid_date: string | null
+  created_at: string
+}
+
 /* ---------- helpers ---------- */
 const LEVEL_TIERS = [
   { min: 1, max: 3, label: 'Beginner', tier: 'Bronze', color: '#CD7F32', bg: 'bg-amber-900/20', ring: 'ring-amber-700/40' },
@@ -550,6 +561,79 @@ function UpdateSkillsForm({
   )
 }
 
+/* ---------- admin payments panel (read-only) ---------- */
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  paid: 'bg-green-500/15 text-green-400',
+  partial: 'bg-amber-500/15 text-amber-400',
+  pending: 'bg-yellow-500/15 text-yellow-300',
+  unpaid: 'bg-yellow-500/15 text-yellow-300',
+  overdue: 'bg-red-500/15 text-red-400',
+  refunded: 'bg-white/10 text-white/50',
+  waived: 'bg-white/10 text-white/50',
+}
+
+function fmtGBP(n: number) {
+  return `£${Number(n).toFixed(2)}`
+}
+
+function PassportPayments({ payments }: { payments: PaymentRow[] }) {
+  // Outstanding across the rows shown (recent 10) — an at-a-glance chase
+  // signal, not a full statement; "View all" links to the payments page.
+  const outstanding = payments.reduce((sum, p) => {
+    if (['paid', 'refunded', 'waived', 'cancelled'].includes(p.status)) return sum
+    return sum + Math.max(0, Number(p.amount) - Number(p.amount_paid || 0))
+  }, 0)
+
+  return (
+    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-white">
+          {'💳'} Payments
+          <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-white/10 text-white/50 font-medium align-middle">
+            Admin only
+          </span>
+        </h3>
+        <Link href="/dashboard/payments" className="text-xs text-[#4ecde6] hover:underline">
+          View all {'→'}
+        </Link>
+      </div>
+      {outstanding > 0 && (
+        <div className="mb-3 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/25 text-sm text-red-300">
+          Outstanding (recent): <span className="font-semibold">{fmtGBP(outstanding)}</span>
+        </div>
+      )}
+      {payments.length === 0 ? (
+        <p className="text-sm text-white/40">No payments recorded for this player yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {payments.map((p) => (
+            <div key={p.id} className="flex items-center gap-3 text-sm">
+              <div className="flex-1 min-w-0">
+                <p className="text-white truncate">{p.description || 'Payment'}</p>
+                <p className="text-xs text-white/40">
+                  {new Date(p.paid_date || p.due_date || p.created_at).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+              <span className="text-white/80 font-medium whitespace-nowrap">{fmtGBP(Number(p.amount))}</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize whitespace-nowrap ${
+                  PAYMENT_STATUS_STYLES[p.status] || 'bg-white/10 text-white/60'
+                }`}
+              >
+                {p.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ---------- main component ---------- */
 export default function ProgressionPassport({
   player,
@@ -559,6 +643,7 @@ export default function ProgressionPassport({
   reviews,
   isStaff,
   orgId,
+  payments = null,
 }: {
   player: Player
   skillLevels: SkillLevel[]
@@ -567,6 +652,8 @@ export default function ProgressionPassport({
   reviews: Review[]
   isStaff: boolean
   orgId: string
+  /** Admin-only recent payments; null hides the panel (coach/parent views). */
+  payments?: PaymentRow[] | null
 }) {
   const [skills, setSkills] = useState<SkillLevel[]>(initialSkills)
   const [showAssessment, setShowAssessment] = useState(false)
@@ -659,6 +746,9 @@ export default function ProgressionPassport({
 
       {/* Overall level badge */}
       <OverallLevelBadge level={avgLevel} totalXp={avgXp} totalXpToNext={avgXpToNext} />
+
+      {/* Admin-only payments panel */}
+      {payments !== null && <PassportPayments payments={payments} />}
 
       {/* Skills Grid */}
       <div>
