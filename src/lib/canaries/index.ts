@@ -332,12 +332,78 @@ async function canary6DuplicateCampDay(sb: Supabase): Promise<Omit<CanaryResult,
   }
 }
 
+/**
+ * CANARY 7 — Enrolled without paying (paywall-bypass regression guard).
+ * A recent `active` enrolment whose parent has NO subscription — of ANY of
+ * 'active' / 'trialing' / 'pending_migration' — in that org. That is the exact
+ * signature of the paywall bug: a self-serve parent enrolling a child into a
+ * class with no subscription behind it.
+ *
+ * History: migration 058 added the DB paywall; the 077b cross-tenant lockdown
+ * silently dropped it; it stayed open ~7 weeks and a stranger enrolled a dummy
+ * child into 40 classes at G&G before it was caught by hand. Migration 100
+ * restored the paywall — this canary is the guard so it can't silently rot a
+ * FOURTH time: if the check ever comes off again, junk enrolments reappear and
+ * this fires the next morning.
+ *
+ * Scoped to enrolments in the last 14 days to catch live exploitation without
+ * flagging legacy rows. Excludes `pending_migration` members (imported, they
+ * hold a pending_migration sub) and PILOT/demo orgs (seeded with players and no
+ * real subscriptions — noise, not a bypass). A staff-comped player with no sub
+ * at a real academy could still show up — that's a fair thing to surface too.
+ */
+async function canary7EnrolledNotPaying(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const cutoff = new Date(Date.now() - 14 * 86400 * 1000).toISOString()
+  const enrols = await fetchAll<{ id: string; player_id: string; organisation_id: string; enrolled_at: string }>((f, t) =>
+    sb.from('enrolments')
+      .select('id, player_id, organisation_id, enrolled_at')
+      .eq('status', 'active')
+      .gte('enrolled_at', cutoff)
+      .range(f, t))
+  if (!enrols.length) return { rowCount: 0, lines: [] }
+
+  // Exclude pilot/demo orgs — they carry seeded no-sub enrolments by design.
+  const pilots = await fetchAll<{ id: string }>((f, t) =>
+    sb.from('organisations').select('id').eq('pilot', true).range(f, t))
+  const pilotOrgs = new Set(pilots.map((o) => o.id))
+
+  // player → parent
+  const players = await fetchAll<{ id: string; parent_id: string | null }>((f, t) =>
+    sb.from('players').select('id, parent_id').in('id', [...new Set(enrols.map((e) => e.player_id))]).range(f, t))
+  const parentOf = new Map(players.map((p) => [p.id, p.parent_id]))
+
+  // every (parent|org) pair that holds an acceptable subscription
+  const subs = await fetchAll<{ parent_id: string; organisation_id: string }>((f, t) =>
+    sb.from('subscriptions')
+      .select('parent_id, organisation_id')
+      .in('status', ['active', 'trialing', 'pending_migration'])
+      .range(f, t))
+  const paid = new Set(subs.map((s) => `${s.parent_id}|${s.organisation_id}`))
+
+  const offenders = enrols.filter((e) => {
+    if (pilotOrgs.has(e.organisation_id)) return false // demo/pilot noise
+    const parent = parentOf.get(e.player_id)
+    if (!parent) return false // no parent (admin/legacy) — not the self-serve signature
+    return !paid.has(`${parent}|${e.organisation_id}`)
+  })
+  if (!offenders.length) return { rowCount: 0, lines: [] }
+
+  const orgs = await orgNames(sb, offenders.map((e) => e.organisation_id))
+  const names = await playerNames(sb, offenders.map((e) => e.player_id))
+  return {
+    rowCount: offenders.length,
+    lines: offenders.map((e) =>
+      `${orgs.get(e.organisation_id) ?? e.organisation_id}: ${names.get(e.player_id) ?? e.player_id} — enrolled ${e.enrolled_at?.slice(0, 10)} with NO active/trialing/pending subscription (paywall bypass?)`),
+  }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
   { id: 3, name: 'paying but not enrolled', run: canary3PayingNotEnrolled },
   { id: 4, name: 'cross-academy attribution', run: canary4CrossAcademy },
   { id: 6, name: 'duplicate camp day booking', run: canary6DuplicateCampDay },
+  { id: 7, name: 'enrolled without paying', run: canary7EnrolledNotPaying },
 ]
 
 /**
