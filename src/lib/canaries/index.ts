@@ -75,8 +75,13 @@ async function playerNames(sb: Supabase, ids: string[]): Promise<Map<string, str
 /**
  * CANARY 1 — Term/billing anchor mismatch (Emma's complaint).
  * A live subscription whose booked class belongs to a term, where the next
- * charge (current_period_end) lands BEFORE the term starts: the parent is
- * being billed for a period the term doesn't cover.
+ * charge lands in an EARLIER CALENDAR MONTH than the term starts: the parent is
+ * billed for a whole month (or more) before the term the class belongs to.
+ *
+ * Deliberately month-granular, not day: billing at the START of the month a
+ * term begins in is a legitimate, business-intended model (confirmed 2026-07-23
+ * for G&G — charge 1 Aug for a term starting 17 Aug is correct; the business
+ * needs the 1st-of-month revenue). Only an earlier *month* is a real mismatch.
  */
 async function canary1TermAnchorMismatch(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
   const groups = await fetchAll<{ id: string; name: string; term_id: string }>((f, t) =>
@@ -118,7 +123,9 @@ async function canary1TermAnchorMismatch(sb: Supabase): Promise<Omit<CanaryResul
     for (const e of enrolsByPlayer.get(s.player_id as string) ?? []) {
       const term = termById.get(groupById.get(e.group_id)?.term_id ?? '')
       if (!term) continue
-      if (anchor < term.start_date) {
+      // Compare year-month, not full date: billing at the start of the term's
+      // month is intended (see canary header). Only an EARLIER month is a bug.
+      if (anchor.slice(0, 7) < term.start_date.slice(0, 7)) {
         const key = `${s.id}:${term.id}`
         if (seen.has(key)) continue
         seen.add(key)
