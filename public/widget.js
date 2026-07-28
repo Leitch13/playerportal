@@ -5,7 +5,7 @@
 
   var color = script.getAttribute('data-color') || '#4ecde6';
   var position = script.getAttribute('data-position') || 'bottom-right';
-  var url = 'https://theplayerportal.net/book/' + slug;
+  var url = 'https://www.theplayerportal.net/book/' + slug;
 
   var btn = document.createElement('a');
   btn.href = url;

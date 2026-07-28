@@ -82,7 +82,7 @@ export default async function EmbedBookingPage({
   })
 
   const primaryColor = org.primary_color || '#4ecde6'
-  const baseUrl = 'https://theplayerportal.net'
+  const baseUrl = 'https://www.theplayerportal.net'
 
   // Theme colours
   const bg = isDark ? '#0a0a0a' : '#ffffff'

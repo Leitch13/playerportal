@@ -10,7 +10,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [color, setColor] = useState('#4ecde6')
 
-  const baseUrl = 'https://theplayerportal.net'
+  const baseUrl = 'https://www.theplayerportal.net'
   const embedUrl = `${baseUrl}/embed/${slug}${theme === 'dark' ? '?theme=dark' : ''}`
   const bookUrl = `${baseUrl}/book/${slug}`
 
