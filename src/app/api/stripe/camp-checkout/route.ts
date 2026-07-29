@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
+import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 
 // Use service-role client since public users (no auth) can book camps
 function getServiceClient() {
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
       medicalInfo,
       consentGiven,
       siblingDiscount,
+      promoCode,
       slug,
     } = body
 
@@ -99,6 +101,28 @@ export async function POST(request: NextRequest) {
     // Apply sibling discount if applicable
     if (siblingDiscount && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
       price = price * (1 - Number(camp.sibling_discount_percent) / 100)
+    }
+
+    // Apply a promo code if one was entered. A camp is a one-off charge applied
+    // directly to the line-item amount (no Stripe single-coupon limit), so a
+    // valid code STACKS on top of any early-bird/sibling reduction. Validated
+    // server-side via the shared rules so the quoted price can't be gamed.
+    // appliedPromoId rides in the session metadata; the webhook bumps
+    // current_uses only once the payment actually succeeds.
+    let appliedPromoId: string | null = null
+    if (promoCode) {
+      const codeUpper = String(promoCode).toUpperCase().trim()
+      const { data: promoRow } = await supabase
+        .from('promo_codes')
+        .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, applies_to, active')
+        .eq('organisation_id', organisationId)
+        .eq('code', codeUpper)
+        .maybeSingle()
+      const check = evaluatePromo(promoRow as PromoRow | null, 'one_off')
+      if (check.valid && promoRow) {
+        price = applyPromoPence(Math.round(price * 100), promoRow as PromoRow) / 100
+        appliedPromoId = (promoRow as PromoRow).id
+      }
     }
 
     price = Math.round(price * 100) / 100 // round to 2 decimal places
@@ -341,6 +365,7 @@ export async function POST(request: NextRequest) {
         camp_booking_id: booking.id,
         camp_id: campId,
         child_name: childName,
+        ...(appliedPromoId ? { promo_code_id: appliedPromoId } : {}),
       },
     })
 

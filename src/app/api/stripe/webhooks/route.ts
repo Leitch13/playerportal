@@ -491,6 +491,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .maybeSingle()
       if (campUpdErr) throw new Error(`camp_bookings.update failed: ${campUpdErr.message}`)
 
+      // Promo redemption — bump the code's use counter now that the camp
+      // payment has actually succeeded (never at checkout-creation, so an
+      // abandoned checkout can't burn a code's max_uses). Best-effort: a
+      // failure here must not fail the webhook or unpay the booking.
+      const campPromoId = session.metadata?.promo_code_id
+      if (campPromoId) {
+        const { error: promoIncErr } = await supabase.rpc('increment_promo_use', {
+          p_promo_id: campPromoId,
+        })
+        if (promoIncErr) console.error('[webhook:camp_promo_increment] failed:', promoIncErr.message)
+      }
+
       // ─── Flexible Camps (Phase 3B) — fetch the booked day list ───
       // When booking_mode = 'flexible_days', load camp_booking_days ⨝
       // camp_days so we can render "3 days: Mon 8 Jul, Tue 9 Jul, …"

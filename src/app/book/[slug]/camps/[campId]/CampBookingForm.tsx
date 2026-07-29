@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { applyPromoPence, type PromoRow } from '@/lib/promo'
 import Link from 'next/link'
 
 type Camp = {
@@ -72,6 +73,10 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
   const [medicalInfo, setMedicalInfo] = useState('')
   const [consentGiven, setConsentGiven] = useState(false)
   const [siblingDiscount, setSiblingDiscount] = useState(false)
+  const [promoInput, setPromoInput] = useState('')
+  const [promoApplied, setPromoApplied] = useState<{ code: string; discount_type: 'percentage' | 'fixed'; discount_value: number } | null>(null)
+  const [promoMsg, setPromoMsg] = useState('')
+  const [promoChecking, setPromoChecking] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -98,7 +103,41 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
   }
   currentPrice = Math.round(currentPrice * 100) / 100
 
+  // Promo code stacks on top of the early-bird/sibling price for the preview.
+  // The server re-validates + re-computes on checkout, so this is display-only.
+  const finalPrice = promoApplied
+    ? applyPromoPence(Math.round(currentPrice * 100), {
+        discount_type: promoApplied.discount_type,
+        discount_value: promoApplied.discount_value,
+      } as PromoRow) / 100
+    : currentPrice
+
   const isFull = spotsLeft !== null && spotsLeft <= 0
+
+  const applyPromo = async () => {
+    const code = promoInput.trim()
+    if (!code) return
+    setPromoChecking(true)
+    setPromoMsg('')
+    try {
+      const res = await fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, context: 'one_off', slug, amountPence: Math.round(currentPrice * 100) }),
+      })
+      const d = await res.json()
+      if (d.valid) {
+        setPromoApplied({ code: d.code, discount_type: d.discount_type, discount_value: d.discount_value })
+      } else {
+        setPromoApplied(null)
+        setPromoMsg(d.reason || 'Invalid code')
+      }
+    } catch {
+      setPromoMsg('Could not check that code')
+    } finally {
+      setPromoChecking(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,6 +166,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
           medicalInfo,
           consentGiven,
           siblingDiscount,
+          promoCode: promoApplied?.code,
           slug,
         }),
       })
@@ -212,7 +252,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
               </>
             ) : (
               <span className="text-2xl font-bold text-white">
-                {currentPrice > 0 ? <>&#163;{currentPrice.toFixed(0)}</> : 'Free'}
+                {finalPrice > 0 ? <>&#163;{finalPrice.toFixed(0)}</> : 'Free'}
               </span>
             )}
           </div>
@@ -355,6 +395,41 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
         </label>
       )}
 
+      {/* Promo code */}
+      <div>
+        {!promoApplied ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={promoInput}
+              onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoMsg('') }}
+              placeholder="Promo code"
+              className="flex-1 rounded-xl bg-[#1a1a1a] border border-white/20 px-4 py-3 text-sm text-white uppercase placeholder:normal-case placeholder:text-white/40"
+            />
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={promoChecking || !promoInput.trim()}
+              className="px-4 py-3 rounded-xl text-sm font-semibold border border-white/20 text-white/80 hover:text-white disabled:opacity-40"
+            >
+              {promoChecking ? '…' : 'Apply'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400">
+            <span>Code {promoApplied.code} applied</span>
+            <button
+              type="button"
+              onClick={() => { setPromoApplied(null); setPromoInput('') }}
+              className="text-green-400/70 hover:text-green-400 underline"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+        {promoMsg && <p className="mt-2 text-sm text-red-400">{promoMsg}</p>}
+      </div>
+
       {/* Consent */}
       {camp.require_consent && (
         <label className="flex items-start gap-3 cursor-pointer">
@@ -387,7 +462,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
         className="w-full py-4 rounded-xl text-base font-bold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
         style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
       >
-        {loading ? 'Processing...' : isFull ? 'Camp Full' : `Book Camp${currentPrice > 0 ? ` \u2014 \u00A3${currentPrice.toFixed(0)}` : ''}`}
+        {loading ? 'Processing...' : isFull ? 'Camp Full' : `Book Camp${finalPrice > 0 ? ` \u2014 \u00A3${finalPrice.toFixed(0)}` : ''}`}
       </button>
     </form>
   )
