@@ -65,6 +65,21 @@ export default function PromoCodeManager({
         >
           {copied ? 'Copied!' : 'Copy'}
         </button>
+        <button
+          onClick={async () => {
+            if (!confirm('Delete this promo code permanently? This cannot be undone.')) return
+            setLoading(true)
+            const supabase = createClient()
+            const { error } = await supabase.from('promo_codes').delete().eq('id', toggleCodeId)
+            if (error) alert(error.message)
+            router.refresh()
+            setLoading(false)
+          }}
+          disabled={loading}
+          className="text-xs px-2 py-1 rounded font-medium bg-red-50 text-danger hover:bg-red-100"
+        >
+          Delete
+        </button>
       </div>
     )
   }
@@ -175,13 +190,13 @@ export default function PromoCodeManager({
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="percentage">Percentage (%)</option>
-                  <option value="fixed">Fixed Amount ($)</option>
+                  <option value="fixed">Fixed Amount (£)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Discount Value {discountType === 'percentage' ? '(%)' : '($)'}
+                  Discount Value {discountType === 'percentage' ? '(%)' : '(£)'}
                 </label>
                 <input
                   type="number"
