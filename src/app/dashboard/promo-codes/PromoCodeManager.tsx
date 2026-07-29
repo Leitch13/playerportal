@@ -30,6 +30,7 @@ export default function PromoCodeManager({
   const [validFrom, setValidFrom] = useState('')
   const [validUntil, setValidUntil] = useState('')
   const [appliesTo, setAppliesTo] = useState<'all' | 'subscription' | 'one_off' | 'trial'>('all')
+  const [duration, setDuration] = useState<'once' | 'repeating_3' | 'repeating_6' | 'forever'>('once')
 
   // If this instance is for the action buttons (toggle + copy)
   if (toggleCodeId) {
@@ -106,6 +107,7 @@ export default function PromoCodeManager({
       valid_from: validFrom || null,
       valid_until: validUntil || null,
       applies_to: appliesTo,
+      discount_duration: duration,
       active: true,
     })
 
@@ -121,6 +123,7 @@ export default function PromoCodeManager({
       setValidFrom('')
       setValidUntil('')
       setAppliesTo('all')
+      setDuration('once')
       router.refresh()
       setTimeout(() => {
         setSuccess('')
@@ -255,6 +258,22 @@ export default function PromoCodeManager({
                   <option value="subscription">Subscription</option>
                   <option value="one_off">One-off Payment</option>
                   <option value="trial">Trial</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Discount lasts</label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value as typeof duration)}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="once">First payment only</option>
+                  <option value="repeating_3">3 months</option>
+                  <option value="repeating_6">6 months</option>
+                  <option value="forever">Forever</option>
                 </select>
               </div>
             </div>
