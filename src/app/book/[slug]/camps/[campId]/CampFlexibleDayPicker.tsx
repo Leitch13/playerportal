@@ -28,6 +28,7 @@
 //     keep this UI unreachable in production until QA + pilot land
 
 import { useMemo, useState } from 'react'
+import { applyPromoPence, type PromoRow } from '@/lib/promo'
 
 type CampDay = {
   id: string
@@ -101,6 +102,10 @@ export default function CampFlexibleDayPicker({
   const [medicalInfo, setMedicalInfo] = useState('')
   const [consentGiven, setConsentGiven] = useState(false)
   const [siblingDiscount, setSiblingDiscount] = useState(false)
+  const [promoInput, setPromoInput] = useState('')
+  const [promoApplied, setPromoApplied] = useState<{ code: string; discount_type: 'percentage' | 'fixed'; discount_value: number } | null>(null)
+  const [promoMsg, setPromoMsg] = useState('')
+  const [promoChecking, setPromoChecking] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -153,6 +158,36 @@ export default function CampFlexibleDayPicker({
     displayTotal = grossTotal * (1 - Number(siblingDiscountPercent) / 100)
   }
   displayTotal = Math.round(displayTotal * 100) / 100
+
+  // Promo code stacks on the sibling-discounted total (display-only preview;
+  // the server re-validates + recomputes authoritatively at checkout).
+  const finalTotal = promoApplied
+    ? applyPromoPence(Math.round(displayTotal * 100), {
+        discount_type: promoApplied.discount_type,
+        discount_value: promoApplied.discount_value,
+      } as PromoRow) / 100
+    : displayTotal
+
+  const applyPromo = async () => {
+    const code = promoInput.trim()
+    if (!code) return
+    setPromoChecking(true)
+    setPromoMsg('')
+    try {
+      const res = await fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, context: 'one_off', slug, amountPence: Math.round(displayTotal * 100) }),
+      })
+      const d = await res.json()
+      if (d.valid) setPromoApplied({ code: d.code, discount_type: d.discount_type, discount_value: d.discount_value })
+      else { setPromoApplied(null); setPromoMsg(d.reason || 'Invalid code') }
+    } catch {
+      setPromoMsg('Could not check that code')
+    } finally {
+      setPromoChecking(false)
+    }
+  }
 
   const minDaysUnmet =
     flexMinDays != null && flexMinDays > 0 && selectedCount < flexMinDays
@@ -217,6 +252,7 @@ export default function CampFlexibleDayPicker({
           medicalInfo,
           consentGiven,
           siblingDiscount,
+          promoCode: promoApplied?.code,
           slug,
           selectedCampDayIds: Array.from(selected),
         }),
@@ -395,7 +431,7 @@ export default function CampFlexibleDayPicker({
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-wider text-white/40">Total</div>
           <div className="text-lg font-bold text-white">
-            {formatGBP(displayTotal)}
+            {formatGBP(finalTotal)}
           </div>
         </div>
       </div>
@@ -491,6 +527,35 @@ export default function CampFlexibleDayPicker({
         )}
       </div>
 
+      {/* Promo code */}
+      <div>
+        {!promoApplied ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={promoInput}
+              onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoMsg('') }}
+              placeholder="Promo code"
+              className="flex-1 rounded-lg bg-white/5 border border-white/15 px-3 py-2 text-sm text-white uppercase placeholder:normal-case placeholder:text-white/40"
+            />
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={promoChecking || !promoInput.trim()}
+              className="px-4 py-2 rounded-lg text-sm font-semibold border border-white/15 text-white/80 hover:text-white disabled:opacity-40"
+            >
+              {promoChecking ? '…' : 'Apply'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-sm text-emerald-300">
+            <span>Code {promoApplied.code} applied</span>
+            <button type="button" onClick={() => { setPromoApplied(null); setPromoInput('') }} className="text-emerald-300/70 hover:text-emerald-300 underline">Remove</button>
+          </div>
+        )}
+        {promoMsg && <p className="mt-2 text-xs text-rose-300">{promoMsg}</p>}
+      </div>
+
       {error && (
         <p className="text-xs text-rose-300" role="alert">
           {error}
@@ -506,7 +571,7 @@ export default function CampFlexibleDayPicker({
           color: canContinue ? '#0a0a0a' : undefined,
         }}
       >
-        {loading ? 'Redirecting to payment…' : displayTotal > 0 ? `Continue to Payment · ${formatGBP(displayTotal)}` : 'Continue'}
+        {loading ? 'Redirecting to payment…' : finalTotal > 0 ? `Continue to Payment · ${formatGBP(finalTotal)}` : 'Continue'}
       </button>
 
       <p className="text-[10px] text-white/30 text-center leading-relaxed">

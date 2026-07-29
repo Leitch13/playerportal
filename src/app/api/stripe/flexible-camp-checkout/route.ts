@@ -26,6 +26,7 @@ import { createClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import { FLEXIBLE_CAMPS_ENABLED, BOOKING_MODE_FLEXIBLE_DAYS } from '@/lib/flexible-camps'
+import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 
 // Same service-role pattern as /api/stripe/camp-checkout. Anon parents
 // can book, and RLS is bypassed by the connection so nothing about the
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
       medicalInfo,
       consentGiven,
       siblingDiscount,
+      promoCode,
       slug,
       selectedCampDayIds,
     } = body
@@ -266,6 +268,30 @@ export async function POST(request: NextRequest) {
     if (siblingDiscount && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
       discountAmount = grossTotal * (Number(camp.sibling_discount_percent) / 100)
     }
+
+    // Promo code — stacks on top of the sibling discount. Fold it into
+    // discountAmount BEFORE netTotal so the RPC amount, platform fee and the
+    // per-day apportioning downstream all stay consistent. Validated
+    // server-side; appliedPromoId rides in session metadata → the existing
+    // camp_booking_id webhook branch bumps current_uses on payment success.
+    let appliedPromoId: string | null = null
+    if (promoCode) {
+      const codeUpper = String(promoCode).toUpperCase().trim()
+      const { data: promoRow } = await supabase
+        .from('promo_codes')
+        .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, applies_to, active')
+        .eq('organisation_id', organisationId)
+        .eq('code', codeUpper)
+        .maybeSingle()
+      const check = evaluatePromo(promoRow as PromoRow | null, 'one_off')
+      if (check.valid && promoRow) {
+        const postSiblingPence = Math.round((grossTotal - discountAmount) * 100)
+        const promoedPence = applyPromoPence(postSiblingPence, promoRow as PromoRow)
+        discountAmount += (postSiblingPence - promoedPence) / 100
+        appliedPromoId = (promoRow as PromoRow).id
+      }
+    }
+
     const netTotal = Math.round((grossTotal - discountAmount) * 100) / 100
     if (netTotal < 0) {
       return NextResponse.json({ error: 'Discount produced a negative total.' }, { status: 400 })
@@ -564,6 +590,7 @@ export async function POST(request: NextRequest) {
           camp_booking_id: bookingId,
           camp_id: campId,
           child_name: childName,
+          ...(appliedPromoId ? { promo_code_id: appliedPromoId } : {}),
           // NEW for flexible bookings — Phase 3C will branch on this in
           // the webhook to fetch selected days for the email + payments
           // description.

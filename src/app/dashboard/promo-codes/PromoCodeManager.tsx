@@ -144,7 +144,7 @@ export default function PromoCodeManager({
           + Create Promo Code
         </button>
       ) : (
-        <div className="bg-white rounded-xl border border-border p-6">
+        <div className="bg-white text-gray-900 rounded-xl border border-border p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">New Promo Code</h2>
             <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">
