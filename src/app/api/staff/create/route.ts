@@ -149,7 +149,17 @@ async function sendStaffEmail(
         email,
         options: { redirectTo: `${appUrl}/auth/reset-password` },
       })
-      actionLink = (linkData?.properties as { action_link?: string } | undefined)?.action_link || null
+      // Build the link ourselves from the token_hash and point it at our
+      // /auth/confirm bridge (verifyOtp), NOT at Supabase's default
+      // action_link. The default action_link routes through Supabase's verify
+      // endpoint and — under the PKCE flow this app uses — redirects with a
+      // `?code=` that an admin-generated link has no verifier to exchange, so
+      // the recipient lands on the reset page with no session ("Auth session
+      // missing"). token_hash + verifyOtp needs no verifier and works.
+      const props = linkData?.properties as { hashed_token?: string } | undefined
+      actionLink = props?.hashed_token
+        ? `${appUrl}/auth/confirm?token_hash=${props.hashed_token}&type=recovery&next=${encodeURIComponent('/auth/reset-password')}`
+        : null
     } catch { /* fall back to Forgot-password instructions */ }
 
     const { sendEmail } = await import('@/lib/email')

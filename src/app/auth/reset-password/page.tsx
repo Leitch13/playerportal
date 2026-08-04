@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+
+const EXPIRED_LINK_MESSAGE =
+  'This password link has expired or was already used. Request a fresh one from “Forgot password”.'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -10,7 +14,20 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  // null = still checking, true = valid recovery session, false = none.
+  const [linkValid, setLinkValid] = useState<boolean | null>(null)
   const accent = '#4ecde6'
+
+  // The /auth/confirm bridge establishes the recovery session before this page
+  // loads. If it's still absent here, the link was bad/expired/replayed — fail
+  // CLOSED: hide the password form and show a resend prompt, rather than a
+  // field that dies on submit with "Auth session missing".
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data }) => {
+      setLinkValid(!!data.session)
+    })
+  }, [])
 
   // Light password strength indicator — purely visual feedback, not enforced
   const strength = (() => {
@@ -45,7 +62,7 @@ export default function ResetPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password })
 
     if (updateError) {
-      setError(updateError.message)
+      setError(/session/i.test(updateError.message) ? EXPIRED_LINK_MESSAGE : updateError.message)
       setLoading(false)
     } else {
       setSuccess(true)
@@ -65,10 +82,10 @@ export default function ResetPasswordPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain mx-auto mb-3" />
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-1 tracking-tight">
-            {success ? 'All done!' : 'Set a new password'}
+            {success ? 'All done!' : linkValid === false ? 'Link expired' : 'Set a new password'}
           </h1>
           <p className="text-sm text-white/40">
-            {success ? 'Redirecting you to sign in…' : 'Pick something only you would know'}
+            {success ? 'Redirecting you to sign in…' : linkValid === false ? 'Let’s get you a fresh one' : 'Pick something only you would know'}
           </p>
         </div>
 
@@ -90,6 +107,21 @@ export default function ResetPasswordPage() {
                 .animate-pop-in { animation: pop-in 0.5s ease-out; }
               `}</style>
             </div>
+          ) : linkValid === false ? (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)' }}>
+                <svg className="w-9 h-9" fill="none" stroke="#f87171" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+              </div>
+              <p className="text-sm text-white/70 mb-6">{EXPIRED_LINK_MESSAGE}</p>
+              <Link href="/auth/forgot-password" className="block w-full py-3.5 rounded-xl font-bold text-base text-center transition-all hover:scale-[1.01]" style={{ background: 'white', color: '#0a0a0a', boxShadow: `0 0 28px ${accent}40` }}>
+                Request a new link
+              </Link>
+              <Link href="/auth/signin" className="inline-block mt-4 text-xs text-white/40 hover:text-white/70 transition-colors">
+                Back to sign in
+              </Link>
+            </div>
+          ) : linkValid === null ? (
+            <div className="text-center py-10 text-sm text-white/40">Checking your link…</div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

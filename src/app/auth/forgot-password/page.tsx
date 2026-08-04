@@ -18,7 +18,11 @@ export default function ForgotPasswordPage() {
     setError('')
     const supabase = createClient()
     const { error: rpError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      // Route through /auth/confirm so the emailed code is exchanged for a
+      // session BEFORE the reset page loads. Landing straight on
+      // /auth/reset-password leaves updateUser() with no session ("Auth
+      // session missing"). Supabase appends the code to this redirect.
+      redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent('/auth/reset-password')}`,
     })
     if (rpError) {
       setError(rpError.message)
@@ -33,7 +37,7 @@ export default function ForgotPasswordPage() {
     setResending(true)
     const supabase = createClient()
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent('/auth/reset-password')}`,
     })
     setResending(false)
   }
