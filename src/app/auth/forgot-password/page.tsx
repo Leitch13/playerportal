@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -16,25 +15,28 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const supabase = createClient()
-    const { error: rpError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
-    if (rpError) {
-      setError(rpError.message)
-      setLoading(false)
-    } else {
+    // token_hash reset via our server route — works on any device (unlike the
+    // old PKCE flow). Enumeration-safe, so it always reports "sent".
+    try {
+      await fetch('/api/auth/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
       setSent(true)
-      setLoading(false)
+    } catch {
+      setError('Something went wrong sending your reset link. Please try again.')
     }
+    setLoading(false)
   }
 
   async function handleResend() {
     setResending(true)
-    const supabase = createClient()
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
+    await fetch('/api/auth/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).catch(() => {})
     setResending(false)
   }
 

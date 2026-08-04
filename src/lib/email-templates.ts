@@ -1789,6 +1789,20 @@ export function staffInviteEmail(params: {
   }
 }
 
+export function passwordResetEmail(params: { actionLink: string; signinUrl: string }) {
+  return {
+    subject: 'Reset your Player Portal password',
+    html: baseLayout(`
+      <div style="text-align:center;margin-bottom:20px">
+        <h2 style="margin:0 0 4px;color:#ffffff;font-size:22px;font-weight:800">Reset your password</h2>
+      </div>
+      <p style="color:#aaa;margin:0 0 20px">We got a request to reset your Player Portal password. Click below to set a new one — the link works on any device (phone or computer) and expires in about an hour.</p>
+      ${ctaButton('Set a new password', params.actionLink)}
+      <p style="color:#8a98a8;font-size:13px;text-align:center;margin:16px 0 0">Didn&apos;t ask for this? You can safely ignore this email — your password won&apos;t change. You can always sign in at <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a>.</p>
+    `),
+  }
+}
+
 export function adminWelcomeEmail(params: { adminName: string; academyName: string; academySlug?: string; dashboardUrl: string }) {
   // Premium "red carpet" onboarding welcome. Bespoke full-document layout (does
   // not use baseLayout) — hosted white logo + founder photo in /public, real
