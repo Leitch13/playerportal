@@ -1,7 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+
+const EXPIRED_LINK_MESSAGE =
+  'This password link has expired or was already used. Request a fresh one from “Forgot password”.'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -11,6 +14,16 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const accent = '#4ecde6'
+
+  // The /auth/confirm bridge establishes the recovery session before this page
+  // loads. If it's still absent here, the link was bad/expired/replayed — say
+  // so up front rather than letting updateUser() throw "Auth session missing".
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) setError(EXPIRED_LINK_MESSAGE)
+    })
+  }, [])
 
   // Light password strength indicator — purely visual feedback, not enforced
   const strength = (() => {
@@ -45,7 +58,7 @@ export default function ResetPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password })
 
     if (updateError) {
-      setError(updateError.message)
+      setError(/session/i.test(updateError.message) ? EXPIRED_LINK_MESSAGE : updateError.message)
       setLoading(false)
     } else {
       setSuccess(true)

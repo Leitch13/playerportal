@@ -78,7 +78,10 @@ function SignInForm() {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${origin}/dashboard` },
+      // Land on /auth/confirm so the magic-link code is exchanged for a
+      // session before /dashboard renders; otherwise the first authenticated
+      // request has no session and bounces back to sign-in.
+      options: { emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent('/dashboard')}` },
     })
     if (otpError) {
       setError(otpError.message)
