@@ -234,6 +234,22 @@ export default async function GroupDetailPage({
               </svg>
               Session Plans
             </Link>
+            {/* Message class — reuses the Messages page's existing
+                ?recipients=<csv> deep-link (same contract as the camp
+                roster's "Send to all"). parentIds is already the de-duped
+                set of ACTIVE-enrolment parents for this class. */}
+            {parentIds.length > 0 && (
+              <Link
+                href={`/dashboard/messages?recipients=${encodeURIComponent(parentIds.join(','))}`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#141414] border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors"
+              >
+                <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 21l1.8-4A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Message class
+                <span className="text-[10px] text-white/40">({parentIds.length})</span>
+              </Link>
+            )}
           </div>
         )}
 
