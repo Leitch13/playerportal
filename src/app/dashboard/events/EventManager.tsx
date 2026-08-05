@@ -101,7 +101,7 @@ export default function EventManager({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-white text-gray-900 rounded-xl border border-border p-6">
       <h2 className="text-lg font-semibold mb-4">New Event</h2>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
