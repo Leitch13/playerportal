@@ -139,8 +139,8 @@ export default function GroupCard({
       // same code).
       if (error.code === '23503') {
         alert(
-          `"${group.name}" can't be deleted because it has enrolment, attendance or other history linked to it. ` +
-          'Move or remove its members first — or unpublish the class to hide it instead.'
+          `"${group.name}" can't be deleted — it has attendance/register history from past sessions, which is kept on purpose. ` +
+          'Unpublish the class instead to hide it from parents; its records stay intact.'
         )
       } else {
         alert(error.message)
