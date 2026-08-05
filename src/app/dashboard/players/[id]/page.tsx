@@ -21,6 +21,7 @@ import PlayerLevelEditor from './PlayerLevelEditor'
 import ArchivePlayerModal from './ArchivePlayerModal'
 import RestorePlayerButton from './RestorePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
+import RequestPaymentButton from './RequestPaymentButton'
 // Sprint 8b v1 — Move Class action surfaced per active enrolment row.
 import MoveClassAction from './MoveClassAction'
 // Sprint 12 — pure derive layer (no I/O, no Stripe call).
@@ -141,6 +142,22 @@ export default async function PlayerDetailPage({
     .eq('player_id', id)
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
+
+  // Request Payment (admin) — org's active membership plans, plus whether this
+  // player already has an active/pending subscription. If they do, the action
+  // is hidden so it can never create a duplicate (anti-double-billing).
+  const { data: orgPlans } = await supabase
+    .from('subscription_plans')
+    .select('id, name, amount')
+    .eq('organisation_id', orgId)
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+  const requestPaymentPlans = (orgPlans || []) as { id: string; name: string; amount: number | null }[]
+  const hasActiveOrPendingSub = (playerSubscriptions || []).some((s) =>
+    ['active', 'trialing', 'past_due', 'pending_migration'].includes(
+      String((s as { status: string | null }).status)
+    )
+  )
 
   // Fetch documents
   const { data: documents } = await supabase
@@ -471,6 +488,16 @@ export default async function PlayerDetailPage({
           </div>
         </Card>
       </div>
+
+      {role === 'admin' && !hasActiveOrPendingSub && requestPaymentPlans.length > 0 && (
+        <div className="flex justify-end">
+          <RequestPaymentButton
+            playerId={id}
+            playerFirstName={player.first_name || 'this player'}
+            plans={requestPaymentPlans}
+          />
+        </div>
+      )}
 
       {/* ─── Sprint 12: Membership card ────────────────────────────────
           Read-only display of all subscription rows attached to this
