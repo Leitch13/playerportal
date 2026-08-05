@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit } from '@/lib/rate-limit'
+import { orgIsClaimableByFirstAdmin } from '@/lib/onboard-claim'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit — this endpoint is unauthenticated by necessity (pre-account).
+    // Mirror the sibling /api/onboard limiter so it can't be hammered to probe
+    // slugs or brute-create accounts.
+    const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
+    const { success } = rateLimit(`onboard-signup:${ip}`, 20, 3600000)
+    if (!success) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
+
     const { email, password, fullName, orgSlug } = await request.json()
 
     if (!email || !password || !fullName || !orgSlug) {
@@ -25,6 +36,24 @@ export async function POST(request: NextRequest) {
 
     if (!org) {
       return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
+    }
+
+    // ── SECURITY: onboarding may only create the FIRST admin of an academy ──
+    // Slugs are public, so without this an anonymous caller could POST an
+    // existing academy's slug and be written in as its admin (tenant takeover
+    // exposing children's data). A genuinely new academy (created moments ago
+    // by /api/onboard) has zero admins and passes; an already-claimed academy
+    // is rejected. Additional staff use the authenticated /api/staff/create.
+    const { count: adminCount } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('organisation_id', org.id)
+      .eq('role', 'admin')
+    if (!orgIsClaimableByFirstAdmin(adminCount ?? 0)) {
+      return NextResponse.json(
+        { error: 'This academy already has an owner. Ask them to add you from Settings → Staff.' },
+        { status: 409 }
+      )
     }
 
     // Create the user via admin API
