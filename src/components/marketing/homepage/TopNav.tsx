@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import MobileNav from './MobileNav'
 
 export default function TopNav() {
   return (
@@ -16,13 +17,14 @@ export default function TopNav() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/auth/signin" className="hidden sm:inline text-sm text-white/70 hover:text-white transition-colors">Log in</Link>
-          <Link href="/book-demo" className="hidden sm:inline text-sm font-semibold text-white/90 hover:text-white border border-white/15 hover:border-white/30 px-4 py-2 rounded-full transition-colors">
+          <Link href="/auth/signin" className="hidden md:inline text-sm text-white/70 hover:text-white transition-colors">Log in</Link>
+          <Link href="/book-demo" className="hidden md:inline text-sm font-semibold text-white/90 hover:text-white border border-white/15 hover:border-white/30 px-4 py-2 rounded-full transition-colors">
             Book a demo
           </Link>
           <Link href="/onboard" className="text-sm font-semibold text-black bg-[#4ecde6] hover:bg-[#6eddf2] px-4 py-2 rounded-full transition-colors">
             Try free
           </Link>
+          <MobileNav />
         </div>
       </div>
     </nav>
