@@ -250,6 +250,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
       { href: '/dashboard/players', label: 'Players', icon: 'football' },
       { href: '/dashboard/parents', label: 'Parents', icon: 'users' },
+      { href: '/dashboard/contacts', label: 'Contacts', icon: 'users' },
       { href: '/dashboard/enrolments', label: 'Enrolments', icon: 'clipboard-list' },
       // Phase 2.7 placement fix — surface the trial booking management
       // surface in the sidebar so academy owners can reach conversion
