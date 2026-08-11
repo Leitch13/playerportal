@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export type AuditAction =
   | 'player.created' | 'player.updated' | 'player.deleted'
-  | 'group.created' | 'group.updated' | 'group.deleted'
+  | 'group.created' | 'group.updated' | 'group.deleted' | 'group.published' | 'group.unpublished'
   | 'enrolment.created' | 'enrolment.cancelled'
   | 'payment.created' | 'payment.refunded'
   | 'announcement.sent'

@@ -60,6 +60,7 @@ export default async function ClassBookingPage({
     .select('id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, trial_price, class_type, short_description, long_description, benefits, suitable_for, what_to_bring, image_url, is_featured, term_id, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
+    .eq('is_published', true) // migration 103 — unpublished => no row => "Class Not Found"
     .single()
 
   // Phase 1B — fetch the class's term (if any) for display alongside dates.

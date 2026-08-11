@@ -239,6 +239,8 @@ export default async function GroupsPage() {
                         is_featured: (g as unknown as { is_featured: boolean | null }).is_featured,
                         // Phase 1B — passed through so GroupForm's edit mode preselects the term.
                         term_id: (g as unknown as { term_id: string | null }).term_id ?? null,
+                        // Migration 103 — publish state (absent/true => visible).
+                        is_published: (g as unknown as { is_published: boolean | null }).is_published ?? true,
                       }}
                       coachName={coach?.full_name || null}
                       enrolled={enrolled}

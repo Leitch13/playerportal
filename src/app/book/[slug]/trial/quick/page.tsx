@@ -59,6 +59,7 @@ export default async function QuickTrialPage({
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, age_group, class_type, trial_price, price_per_session')
     .eq('organisation_id', org.id)
+    .eq('is_published', true) // migration 103 — hide unpublished classes
     .order('name')
 
   // 1-2-1 / 2-1 / intensity are inherently paid sessions — they belong on

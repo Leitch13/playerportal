@@ -188,16 +188,17 @@ export default async function PublicBookingPage({
     }
   }
 
-  // NOTE: training_groups does NOT have an is_published column — that gate
-  // only exists on `camps`. An earlier "consistency" patch added
-  // `.neq('is_published', false)` here which silently returned ZERO rows
-  // because the column doesn't exist, so the whole Weekly Classes section
-  // appeared empty on every academy's booking page. Do not re-add a
-  // published filter until/unless the column is migrated in.
+  // is_published gate (migration 103): hide classes an admin has unpublished.
+  // HISTORY: an earlier patch added this filter BEFORE the column existed,
+  // which errored the query -> zero rows -> every academy's Weekly Classes
+  // section went blank. Safe now only because 103 added the column with
+  // DEFAULT true (so every existing class stays visible). This filter and the
+  // migration must ship together, migration first.
   const { data: groups } = await publicSupabase
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, trial_price, age_group, short_description, image_url, term_id')
     .eq('organisation_id', org.id)
+    .eq('is_published', true)
     .order('name')
 
   // Phase 1B — fetch terms for the org so class cards can render term info

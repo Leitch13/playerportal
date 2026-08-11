@@ -45,6 +45,10 @@ interface GroupData {
   is_featured?: boolean | null
   // Phase 1B — optional link to public.terms.
   term_id?: string | null
+  // Class publish/unpublish (migration 103). false => hidden from public
+  // booking surfaces; records and enrolled families keep working. Absent/true
+  // => visible, so existing classes behave exactly as before.
+  is_published?: boolean | null
 }
 
 export default function GroupCard({
@@ -72,7 +76,10 @@ export default function GroupCard({
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Absent column (pre-migration) or true => published. Only an explicit false hides it.
+  const isPublished = group.is_published !== false
   const [linkCopied, setLinkCopied] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -128,6 +135,29 @@ export default function GroupCard({
 
   const typeBadge = CLASS_TYPE_BADGES[group.class_type || 'group'] || CLASS_TYPE_BADGES.group
 
+  async function handleTogglePublish() {
+    setPublishing(true)
+    const supabase = createClient()
+    const next = !isPublished
+    const { error } = await supabase
+      .from('training_groups')
+      .update({ is_published: next })
+      .eq('id', group.id)
+    if (error) {
+      alert(error.message)
+    } else {
+      await logAudit({
+        action: next ? 'group.published' : 'group.unpublished',
+        entityType: 'group',
+        entityId: group.id,
+        details: { name: group.name },
+      })
+      setMenuOpen(false)
+      router.refresh()
+    }
+    setPublishing(false)
+  }
+
   async function handleDelete() {
     setDeleting(true)
     const supabase = createClient()
@@ -140,7 +170,7 @@ export default function GroupCard({
       if (error.code === '23503') {
         alert(
           `"${group.name}" can't be deleted — it has attendance/register history from past sessions, which is kept on purpose. ` +
-          'Unpublish the class instead to hide it from parents; its records stay intact.'
+          'Use "Unpublish class" from the menu instead to hide it from parents; its records stay intact.'
         )
       } else {
         alert(error.message)
@@ -199,6 +229,9 @@ export default function GroupCard({
           )}
         </div>
         <div className="flex items-center gap-1.5">
+          {!isPublished && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-white/60 border border-white/20">HIDDEN</span>
+          )}
           {statusChip}
           {isAdmin && (
             <div ref={menuRef} className="relative">
@@ -243,6 +276,18 @@ export default function GroupCard({
                     QR check-in
                   </Link>
                   <div className="h-px bg-white/5 my-1" />
+                  <button
+                    onClick={handleTogglePublish}
+                    disabled={publishing}
+                    className={`w-full text-left px-3 py-2 hover:bg-white/5 flex items-center gap-2 disabled:opacity-50 ${isPublished ? 'text-white/80' : 'text-[#4ecde6]'}`}
+                  >
+                    {isPublished ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    )}
+                    {publishing ? '...' : isPublished ? 'Unpublish class' : 'Publish class'}
+                  </button>
                   {!confirmDelete ? (
                     <button
                       onClick={() => setConfirmDelete(true)}

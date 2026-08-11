@@ -28,6 +28,7 @@ export default async function PaidTrialPage({
     .select('id, name, day_of_week, time_slot, location, trial_price, price_per_session, age_group, class_type')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
+    .eq('is_published', true) // migration 103 — unpublished => no row => notFound()
     .single()
 
   if (!group) notFound()

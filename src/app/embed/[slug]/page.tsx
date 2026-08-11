@@ -55,6 +55,7 @@ export default async function EmbedBookingPage({
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, location, max_capacity, coach:profiles!training_groups_coach_id_fkey(full_name), class_type, is_featured, price_per_session, age_group, short_description, image_url')
     .eq('organisation_id', org.id)
+    .eq('is_published', true) // migration 103 — hide unpublished classes
     .order('name')
 
   const groupIds = (groups || []).map((g) => g.id)

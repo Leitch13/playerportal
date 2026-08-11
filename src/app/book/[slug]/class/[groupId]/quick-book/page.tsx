@@ -50,6 +50,7 @@ export default async function QuickBookPage({
     )
     .eq('id', groupId)
     .eq('organisation_id', org.id)
+    .eq('is_published', true) // migration 103 — unpublished => no row => "Class Not Found"
     .single()
 
   if (!group) {

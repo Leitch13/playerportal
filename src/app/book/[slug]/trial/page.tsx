@@ -48,6 +48,7 @@ export default async function TrialBookingPage({
     .from('training_groups')
     .select('id, name, day_of_week, time_slot, trial_price, class_type')
     .eq('organisation_id', org.id)
+    .eq('is_published', true) // migration 103 — hide unpublished classes
     .order('name')
 
   // This page is the FREE-trial form — paid-trial classes (£15 1-2-1s) and
