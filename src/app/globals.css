@@ -29,6 +29,71 @@
   --animate-shimmer: shimmer 2s linear infinite;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   PLAYER PORTAL DESIGN TOKENS — "Cyan Shell" direction (Concept B)
+   ---------------------------------------------------------------------------
+   A namespaced (--pp-*) token layer that formalises the brand palette:
+   a cyan SHELL (brand chrome — sidebar, login, marketing frame) wrapped
+   around a calm dark-navy WORKSPACE (where owners actually work), with the
+   already-established brand cyan (--brand-primary #4ecde6) as the accent.
+
+   Additive & collision-free: this block introduces new tokens only — it does
+   NOT override any existing selector, --color-* token, or utility. Raw values
+   live on :root; the @theme block re-exports the colours as Tailwind
+   utilities (bg-pp-surface, text-pp-ink, border-pp-hair, …). Nothing consumes
+   these yet, so adding them changes no rendered pixel — they are the
+   foundation we apply surface-by-surface.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* ── Shell — the cyan brand chrome ── */
+  --pp-shell:            #0b8299;              /* solid fallback */
+  --pp-shell-from:       #12a2bd;              /* gradient top   */
+  --pp-shell-to:         #0b7f96;              /* gradient bottom*/
+  --pp-shell-grad:       linear-gradient(170deg, var(--pp-shell-from), var(--pp-shell-to));
+  --pp-shell-ink:        #ffffff;
+  --pp-shell-ink-mut:    rgba(255, 255, 255, 0.78);
+  --pp-shell-ink-faint:  rgba(255, 255, 255, 0.52);
+  --pp-shell-hair:       rgba(255, 255, 255, 0.16);   /* dividers on cyan */
+  --pp-shell-hover:      rgba(255, 255, 255, 0.10);   /* nav item hover   */
+  --pp-shell-active:     rgba(255, 255, 255, 0.16);   /* nav item active  */
+
+  /* ── Workspace — the calm dark navy the owner works in ── */
+  --pp-bg:         #080e18;   /* page ground        */
+  --pp-surface:    #0f1a2b;   /* card / panel       */
+  --pp-surface-2:  #142236;   /* elevated / hover   */
+  --pp-hair:       #1d2c42;   /* hairline divider   */
+  --pp-hair-2:     #293b58;   /* stronger border    */
+  --pp-ink:        #eef2f9;   /* primary text       */
+  --pp-mut:        #93a2ba;   /* secondary text     */
+  --pp-faint:      #5b6c86;   /* labels / captions  */
+
+  /* ── Accent + semantic (accent reuses the established brand cyan) ── */
+  --pp-accent:      #4ecde6;
+  --pp-accent-ink:  #04141a;  /* text on an accent-filled surface */
+  --pp-gold:        #d8a95a;  /* matchday warmth · near-full · warning */
+  --pp-pos:         #67c79a;  /* positive · paid · trending up          */
+  --pp-danger:      #e0736d;  /* full · overdue · error                 */
+
+  --pp-radius:      15px;
+}
+
+@theme inline {
+  --color-pp-shell:      var(--pp-shell);
+  --color-pp-shell-ink:  var(--pp-shell-ink);
+  --color-pp-bg:         var(--pp-bg);
+  --color-pp-surface:    var(--pp-surface);
+  --color-pp-surface-2:  var(--pp-surface-2);
+  --color-pp-hair:       var(--pp-hair);
+  --color-pp-hair-2:     var(--pp-hair-2);
+  --color-pp-ink:        var(--pp-ink);
+  --color-pp-mut:        var(--pp-mut);
+  --color-pp-faint:      var(--pp-faint);
+  --color-pp-accent:     var(--pp-accent);
+  --color-pp-gold:       var(--pp-gold);
+  --color-pp-pos:        var(--pp-pos);
+  --color-pp-danger:     var(--pp-danger);
+}
+
 /* ─── Keyframes ─── */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
