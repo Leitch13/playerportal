@@ -382,14 +382,16 @@ export default async function PublicBookingPage({
       const count = countByGroup.get(g.id) || 0
       const capacity = g.max_capacity || 20
       const spotsLeft = Math.max(0, capacity - count)
-      // Same price source as the single-card view: per-session price when
-      // set, else the cheapest matching plan's monthly amount.
+      // Classes are sold as MONTHLY memberships (that's what checkout charges),
+      // so show the cheapest matching plan's monthly amount to match the price
+      // the parent actually pays on the next page. Fall back to a per-session
+      // price only for classes with no monthly plan (genuine drop-in/one-off).
       let price: { v: number; unit: string } | null = null
-      if (g.price_per_session != null && Number(g.price_per_session) > 0) {
+      const plan = findCheapestPlanFor(g.id, g.class_type)
+      if (plan) {
+        price = { v: Number(plan.amount), unit: '/mo' }
+      } else if (g.price_per_session != null && Number(g.price_per_session) > 0) {
         price = { v: Number(g.price_per_session), unit: '/session' }
-      } else {
-        const plan = findCheapestPlanFor(g.id, g.class_type)
-        if (plan) price = { v: Number(plan.amount), unit: '/mo' }
       }
       let entry = byKey.get(key)
       if (!entry) {
