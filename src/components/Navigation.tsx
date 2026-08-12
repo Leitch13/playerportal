@@ -519,7 +519,8 @@ export default function Navigation({
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed top-14 left-0 z-30 h-[calc(100vh-3.5rem)] w-64 bg-[#0a0a0a] border-r border-white/[0.06] overflow-y-auto transition-transform duration-200 ease-out ${
+        style={{ background: 'var(--pp-shell-grad)' }}
+        className={`fixed top-14 left-0 z-30 h-[calc(100vh-3.5rem)] w-64 border-r border-[var(--pp-shell-hair)] overflow-y-auto transition-transform duration-200 ease-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -535,11 +536,11 @@ export default function Navigation({
                     onClick={() => toggleGroup(group.title)}
                     className="w-full flex items-center justify-between px-3 pt-4 pb-1 group"
                   >
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40 group-hover:text-white/60 transition-colors">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--pp-shell-ink-faint)] group-hover:text-[var(--pp-shell-ink-mut)] transition-colors">
                       {group.title}
                     </span>
                     <svg
-                      className={`w-3 h-3 text-white/30 transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}
+                      className={`w-3 h-3 text-[var(--pp-shell-ink-faint)] transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}
                       fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -564,12 +565,12 @@ export default function Navigation({
                         onClick={() => setSidebarOpen(false)}
                         className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                           active
-                            ? 'bg-accent/10 text-accent shadow-sm shadow-accent/5'
-                            : 'text-white/60 hover:bg-white/5 hover:text-white/80'
+                            ? 'bg-[var(--pp-shell-active)] text-[var(--pp-shell-ink)]'
+                            : 'text-[var(--pp-shell-ink-mut)] hover:bg-[var(--pp-shell-hover)] hover:text-[var(--pp-shell-ink)]'
                         }`}
                       >
                         {active && (
-                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent rounded-r-full" />
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--pp-shell-ink)] rounded-r-full" />
                         )}
                         <span className="w-5 flex items-center justify-center">{icons[item.icon] || item.icon}</span>
                         <span className="flex-1">{item.label}</span>
@@ -595,8 +596,8 @@ export default function Navigation({
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                 pathname === '/platform'
-                  ? 'bg-indigo-500/15 text-indigo-400'
-                  : 'text-indigo-400/60 hover:bg-indigo-500/10 hover:text-indigo-400'
+                  ? 'bg-[var(--pp-shell-active)] text-[var(--pp-shell-ink)]'
+                  : 'text-[var(--pp-shell-ink-mut)] hover:bg-[var(--pp-shell-hover)] hover:text-[var(--pp-shell-ink)]'
               }`}
             >
               <span className="w-5 flex items-center justify-center">
@@ -605,19 +606,19 @@ export default function Navigation({
                 </svg>
               </span>
               <span className="flex-1">Platform Admin</span>
-              <span className="text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded">Super</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white px-1.5 py-0.5 rounded">Super</span>
             </Link>
           </div>
         )}
 
         {/* Sidebar footer */}
-        <div className="p-3 mt-2 border-t border-white/[0.06] sm:hidden">
+        <div className="p-3 mt-2 border-t border-[var(--pp-shell-hair)] sm:hidden">
           <div className="flex items-center justify-between px-3 py-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-accent">{firstName[0]?.toUpperCase()}</span>
+              <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+                <span className="text-xs font-bold text-white">{firstName[0]?.toUpperCase()}</span>
               </div>
-              <span className="text-sm font-medium text-white/80">{firstName}</span>
+              <span className="text-sm font-medium text-[var(--pp-shell-ink-mut)]">{firstName}</span>
             </div>
             <button
               onClick={handleSignOut}
@@ -633,7 +634,7 @@ export default function Navigation({
       </aside>
 
       {/* ── Mobile bottom tab bar ── */}
-      <div className="mobile-bottom-nav lg:hidden bg-[#0a0a0a] border-t border-white/[0.06]">
+      <div style={{ background: 'var(--pp-shell-grad)' }} className="mobile-bottom-nav lg:hidden border-t border-[var(--pp-shell-hair)]">
         <div className="flex justify-around items-center h-14">
           {/* Sprint M1.1 — iterate `mobileTabs` (the role's bottom-nav source
               of truth) instead of the feature-filtered `mobileItems`, so
@@ -649,7 +650,7 @@ export default function Navigation({
                   type="button"
                   onClick={() => setSidebarOpen(true)}
                   aria-label="More"
-                  className="flex flex-col items-center gap-0.5 px-3 py-1 relative transition-all duration-150 text-white/50 active:scale-95"
+                  className="flex flex-col items-center gap-0.5 px-3 py-1 relative transition-all duration-150 text-[var(--pp-shell-ink-mut)] active:scale-95"
                 >
                   <span className="flex items-center justify-center">{icons['ellipsis-horizontal']}</span>
                   <span className="text-[10px] font-medium leading-tight">More</span>
@@ -677,11 +678,11 @@ export default function Navigation({
                 key={item.href}
                 href={resolvedHref}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-all duration-150 ${
-                  active ? 'text-accent' : 'text-white/50 active:scale-95'
+                  active ? 'text-[var(--pp-shell-ink)]' : 'text-[var(--pp-shell-ink-mut)] active:scale-95'
                 }`}
               >
                 {active && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-5 h-[3px] bg-accent rounded-b-full" />
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-5 h-[3px] bg-[var(--pp-shell-ink)] rounded-b-full" />
                 )}
                 <span className="flex items-center justify-center">{icons[mobileIcon] || mobileIcon}</span>
                 <span className="text-[10px] font-medium leading-tight">{mobileLabel}</span>
