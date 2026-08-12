@@ -412,7 +412,7 @@ export default function Navigation({
   return (
     <>
       {/* ── Top Bar ── */}
-      <nav className="sticky top-0 z-40 bg-primary border-b border-white/5 safe-top">
+      <nav style={{ background: 'var(--pp-shell-from)' }} className="sticky top-0 z-40 border-b border-[var(--pp-shell-hair)] safe-top">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
@@ -476,12 +476,12 @@ export default function Navigation({
 
               {/* User */}
               <div className="hidden sm:flex items-center gap-2 ml-1 pl-2 border-l border-white/10">
-                <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
-                  <span className="text-xs font-bold text-accent">{firstName[0]?.toUpperCase()}</span>
+                <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
+                  <span className="text-xs font-bold text-white">{firstName[0]?.toUpperCase()}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-medium text-white/80 leading-none">{firstName}</span>
-                  <span className="text-[10px] text-accent/70 capitalize leading-tight">{role}</span>
+                  <span className="text-xs font-medium text-white/90 leading-none">{firstName}</span>
+                  <span className="text-[10px] text-white/70 capitalize leading-tight">{role}</span>
                 </div>
               </div>
 
