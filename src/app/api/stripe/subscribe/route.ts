@@ -996,9 +996,27 @@ export async function POST(request: NextRequest) {
     }
 
     if (useTonightPlusSub) {
-      // ─── New flow: charge tonight's session as a one-off, then create the
-      //     subscription via webhook with trial_end = 1st of next month ───
-      const platformFeePence = PLATFORM_FEE_RATE > 0 ? Math.round(perSessionPence * PLATFORM_FEE_RATE) : 0
+      // ─── Charge for ALL the sessions left this month as a one-off, then
+      //     create the subscription via webhook with trial_end = 1st of next
+      //     month. Mid-month joiners pay per-session for what's left of the
+      //     month (capped at one full month), then the proper monthly term
+      //     from the 1st. This is the confirmed business rule (see
+      //     lib/billing/sessions) — the old "one session flat" was an
+      //     undercharging approximation that leaked money on mid-month
+      //     signups. Falls back to a single session when the class has no
+      //     set day_of_week (can't count), so nothing ever charges LESS
+      //     than before. ───
+      const { countSessionsBetween } = await import('@/lib/billing/sessions')
+      const bridgeAnchorIso = new Date(standardAnchor * 1000).toISOString().split('T')[0]
+      const monthlyPence = Math.max(0, Math.round(Number(plan.amount) * 100))
+      const remainingSessions = classDayOfWeek
+        ? countSessionsBetween(activatesOnIso, bridgeAnchorIso, classDayOfWeek)
+        : 0
+      const bridgePence = remainingSessions > 0
+        ? Math.min(remainingSessions * perSessionPence, monthlyPence)
+        : perSessionPence
+      const bridgeSessionCount = remainingSessions > 0 ? remainingSessions : 1
+      const platformFeePence = PLATFORM_FEE_RATE > 0 ? Math.round(bridgePence * PLATFORM_FEE_RATE) : 0
 
       const tonightSession = await stripe.checkout.sessions.create({
         customer: customerId,
@@ -1008,10 +1026,10 @@ export async function POST(request: NextRequest) {
           {
             price_data: {
               currency: 'gbp',
-              unit_amount: perSessionPence,
+              unit_amount: bridgePence,
               product_data: {
-                name: `Your first session — ${plan.name}`,
-                description: `One session today. Your £${Number(plan.amount).toFixed(2)}/month membership starts ${new Date(standardAnchor * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`,
+                name: `Sessions this month — ${plan.name}`,
+                description: `${bridgeSessionCount} ${bridgeSessionCount === 1 ? 'session' : 'sessions'} this month. Your £${Number(plan.amount).toFixed(2)}/month membership starts ${new Date(standardAnchor * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`,
               },
             },
             quantity: 1,
@@ -1063,7 +1081,7 @@ export async function POST(request: NextRequest) {
         billing: 'monthly',
         billingModel: 'tonight_then_sub',
         firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
-        tonightAmount: (perSessionPence / 100).toFixed(2),
+        tonightAmount: (bridgePence / 100).toFixed(2),
         nextBillingDate: new Date(standardAnchor * 1000).toISOString().split('T')[0],
         nextBillingAmount: Number(plan.amount).toFixed(2),
         siblingDiscountApplied: !!siblingCouponId,

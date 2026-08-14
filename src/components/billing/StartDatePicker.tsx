@@ -36,7 +36,7 @@ import {
   isStartInCurrentMonth,
 } from '@/lib/billing/anchor'
 import { isoDate, latestAllowedStartDate, nextSessionDate } from '@/lib/billing/next-session'
-import { estimateBridgePence, generateSessionDates } from '@/lib/billing/sessions'
+import { countSessionsBetween, estimateBridgePence, generateSessionDates } from '@/lib/billing/sessions'
 
 interface Props {
   /** ISO date "YYYY-MM-DD". Empty string = no selection yet. */
@@ -102,6 +102,22 @@ export function StartDatePicker({
   const selectedDate = useMemo(() => new Date(effectiveValue + 'T00:00:00Z'), [effectiveValue])
   const todayDate = useMemo(() => new Date(todayIso + 'T00:00:00Z'), [todayIso])
 
+  // Single source of truth for the "pay today" amount. Mirrors the server
+  // charge (subscribe route, tonight_then_sub) EXACTLY: the sessions left
+  // this month × per-session (monthly÷4), capped at one full month; a
+  // single-session fallback when the class has no set day. Both preview
+  // layouts below call this, so the picker can never display a number
+  // different from what Stripe actually charges (the mismatch that got the
+  // earlier flow killed).
+  const payTodayPence = (fromIso: string): number => {
+    const anchorL = new Date(firstOfNextMonthUnix(new Date(fromIso + 'T00:00:00Z')) * 1000)
+      .toISOString().slice(0, 10)
+    const perSessP = Math.round((monthlyAmount / 4) * 100)
+    const monthlyP = Math.round(monthlyAmount * 100)
+    const left = classDayOfWeek ? countSessionsBetween(fromIso, anchorL, classDayOfWeek) : 0
+    return left > 0 ? Math.min(left * perSessP, monthlyP) : perSessP
+  }
+
   // ──────────────────────────────────────────────────────────────────
   // Today-only mode (Option B clamp / Stage 3 not enabled)
   // ──────────────────────────────────────────────────────────────────
@@ -115,7 +131,7 @@ export function StartDatePicker({
     void todayDate
 
     const startDate = new Date(todayIso + 'T00:00:00Z')
-    const todayChargePence = estimateProratedPence(monthlyAmount, startDate)
+    const todayChargePence = payTodayPence(todayIso)
     const anchorLabel = firstOfNextMonthLabel(startDate)
 
     return (
@@ -189,7 +205,7 @@ export function StartDatePicker({
   //   3. Next-month future: start in a future calendar month → SetupIntent, first full charge on start_date (which IS the 1st in that month, typically)
   // The cost preview must reflect the chosen mode.
   const startsToday = isStartInCurrentMonth(selectedDate, todayDate) && selectedDate <= todayDate
-  const todayChargePence = startsToday ? estimateProratedPence(monthlyAmount, selectedDate) : 0
+  const todayChargePence = startsToday ? payTodayPence(effectiveValue) : 0
   const anchorLabel = firstOfNextMonthLabel(selectedDate)
 
   // Class-day-constrained dates: every class-day occurrence inside the
