@@ -36,7 +36,7 @@ import {
   isStartInCurrentMonth,
 } from '@/lib/billing/anchor'
 import { isoDate, latestAllowedStartDate, nextSessionDate } from '@/lib/billing/next-session'
-import { countSessionsBetween, estimateBridgePence, generateSessionDates } from '@/lib/billing/sessions'
+import { estimateBridgePence, generateSessionDates, tonightBridge } from '@/lib/billing/sessions'
 
 interface Props {
   /** ISO date "YYYY-MM-DD". Empty string = no selection yet. */
@@ -112,10 +112,7 @@ export function StartDatePicker({
   const payTodayPence = (fromIso: string): number => {
     const anchorL = new Date(firstOfNextMonthUnix(new Date(fromIso + 'T00:00:00Z')) * 1000)
       .toISOString().slice(0, 10)
-    const perSessP = Math.round((monthlyAmount / 4) * 100)
-    const monthlyP = Math.round(monthlyAmount * 100)
-    const left = classDayOfWeek ? countSessionsBetween(fromIso, anchorL, classDayOfWeek) : 0
-    return left > 0 ? Math.min(left * perSessP, monthlyP) : perSessP
+    return tonightBridge(monthlyAmount, fromIso, anchorL, classDayOfWeek).pence
   }
 
   // ──────────────────────────────────────────────────────────────────

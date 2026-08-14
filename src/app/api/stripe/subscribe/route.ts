@@ -1006,16 +1006,11 @@ export async function POST(request: NextRequest) {
       //     signups. Falls back to a single session when the class has no
       //     set day_of_week (can't count), so nothing ever charges LESS
       //     than before. ───
-      const { countSessionsBetween } = await import('@/lib/billing/sessions')
+      const { tonightBridge } = await import('@/lib/billing/sessions')
       const bridgeAnchorIso = new Date(standardAnchor * 1000).toISOString().split('T')[0]
-      const monthlyPence = Math.max(0, Math.round(Number(plan.amount) * 100))
-      const remainingSessions = classDayOfWeek
-        ? countSessionsBetween(activatesOnIso, bridgeAnchorIso, classDayOfWeek)
-        : 0
-      const bridgePence = remainingSessions > 0
-        ? Math.min(remainingSessions * perSessionPence, monthlyPence)
-        : perSessionPence
-      const bridgeSessionCount = remainingSessions > 0 ? remainingSessions : 1
+      const bridge = tonightBridge(Number(plan.amount), activatesOnIso, bridgeAnchorIso, classDayOfWeek)
+      const bridgePence = bridge.pence
+      const bridgeSessionCount = bridge.sessions > 0 ? bridge.sessions : 1
       const platformFeePence = PLATFORM_FEE_RATE > 0 ? Math.round(bridgePence * PLATFORM_FEE_RATE) : 0
 
       const tonightSession = await stripe.checkout.sessions.create({

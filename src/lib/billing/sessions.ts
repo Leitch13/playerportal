@@ -196,3 +196,36 @@ export function estimateBridgePence(args: {
     capApplied: uncappedPence > monthlyPence,
   }
 }
+
+/**
+ * "Tonight bridge" — the amount charged at signup on the legacy
+ * `tonight_then_sub` path (used whenever the start-date flow is disabled).
+ *
+ * Unlike estimateBridgePence (which needs plan.sessions_per_month), this uses
+ * the platform per-session convention monthly÷4 and only needs the class day,
+ * so it works for orgs that never set sessions_per_month (e.g. G&G).
+ *
+ * Rule: charge the sessions left this month × per-session, capped at one full
+ * month. Single-session fallback when the class has no set day (can't count) —
+ * so it never charges LESS than the old flat behaviour.
+ *
+ * SINGLE SOURCE OF TRUTH: both the server charge (subscribe/route.ts) and the
+ * StartDatePicker "pay today" preview call this, so the preview can never show
+ * a number different from what Stripe charges.
+ *
+ * @param monthlyPounds plan.amount in POUNDS
+ * @param startISO      YYYY-MM-DD coverage start (inclusive)
+ * @param anchorISO     YYYY-MM-DD first-of-next-month billing anchor (exclusive)
+ */
+export function tonightBridge(
+  monthlyPounds: number,
+  startISO: string,
+  anchorISO: string,
+  classDayOfWeek: string | null,
+): { pence: number; sessions: number; perSessionPence: number } {
+  const perSessionPence = Math.max(0, Math.round((monthlyPounds / 4) * 100))
+  const monthlyPence = Math.max(0, Math.round(monthlyPounds * 100))
+  const sessions = classDayOfWeek ? countSessionsBetween(startISO, anchorISO, classDayOfWeek) : 0
+  const pence = sessions > 0 ? Math.min(sessions * perSessionPence, monthlyPence) : perSessionPence
+  return { pence, sessions, perSessionPence }
+}
