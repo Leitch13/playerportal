@@ -3,18 +3,18 @@ export default function ProblemSection() {
     <section className="relative">
       <div className="mx-auto max-w-7xl px-6 py-32">
         <div className="max-w-4xl">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[#4ecde6] font-semibold mb-6">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#0a97b6] font-semibold mb-6">
             THE PROBLEM
           </p>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-[-0.02em] font-black text-white">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.05] tracking-[-0.02em] font-black text-[#0d1b2b]">
             You know that feeling on a Sunday night
             <br />
-            <span className="text-white/50">when you&apos;re chasing 12 parents for £30?</span>
+            <span className="text-[#93a2ad]">when you&apos;re chasing 12 parents for £30?</span>
           </h2>
-          <p className="mt-8 text-lg text-white/60 max-w-2xl leading-relaxed">
+          <p className="mt-8 text-lg text-[#5a6b7c] max-w-2xl leading-relaxed">
             Multiply it by 47 parents. Add a lost spreadsheet. Add three WhatsApp groups. Add a coach asking &ldquo;who&apos;s coming to training tomorrow?&rdquo;
           </p>
-          <p className="mt-3 text-lg text-white/80 max-w-2xl leading-relaxed font-medium">
+          <p className="mt-3 text-lg text-[#0d1b2b] max-w-2xl leading-relaxed font-medium">
             That&apos;s what running an academy on six different tools looks like.
           </p>
         </div>
@@ -39,15 +39,15 @@ function BeforeCard() {
     { icon: '📱', label: 'Personal phone', tail: 'chasing at 21:30' },
   ]
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0f0f0f] p-8">
-      <p className="text-xs uppercase tracking-widest text-white/40 font-semibold mb-4">Before</p>
-      <p className="text-lg font-bold text-white mb-6">Six tabs. Zero clarity.</p>
+    <div className="rounded-2xl border border-[#e3ebf0] bg-white p-8 shadow-[0_1px_3px_rgba(13,40,54,0.05),0_10px_24px_-18px_rgba(13,40,54,0.18)]">
+      <p className="text-xs uppercase tracking-widest text-[#93a2ad] font-semibold mb-4">Before</p>
+      <p className="text-lg font-bold text-[#0d1b2b] mb-6">Six tabs. Zero clarity.</p>
       <div className="space-y-2">
         {chaos.map((c) => (
-          <div key={c.label} className="flex items-center gap-3 rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2.5">
+          <div key={c.label} className="flex items-center gap-3 rounded-lg bg-[#eef4f7] border border-[#e3ebf0] px-3 py-2.5">
             <span className="text-lg grayscale opacity-60">{c.icon}</span>
-            <span className="text-sm text-white/80 flex-1 font-medium">{c.label}</span>
-            <span className="text-xs text-white/40 font-mono">{c.tail}</span>
+            <span className="text-sm text-[#0d1b2b] flex-1 font-medium">{c.label}</span>
+            <span className="text-xs text-[#93a2ad] font-mono">{c.tail}</span>
           </div>
         ))}
       </div>
@@ -57,12 +57,13 @@ function BeforeCard() {
 
 function AfterCard() {
   return (
-    <div className="rounded-2xl border border-[#4ecde6]/25 bg-gradient-to-br from-[#4ecde6]/[0.03] to-transparent p-8 relative overflow-hidden">
-      <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(circle, #4ecde6 0%, transparent 70%)' }} />
+    <div className="rounded-2xl border border-[#0a97b6]/30 bg-white p-8 relative overflow-hidden shadow-[0_1px_3px_rgba(13,40,54,0.05),0_10px_24px_-18px_rgba(13,40,54,0.18)]">
+      <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-15 blur-3xl" style={{ background: 'radial-gradient(circle, #14a7c2 0%, transparent 70%)' }} />
       <div className="relative">
-        <p className="text-xs uppercase tracking-widest text-[#4ecde6] font-semibold mb-4">After</p>
-        <p className="text-lg font-bold text-white mb-6">One tab. Everything.</p>
-        <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-4">
+        <p className="text-xs uppercase tracking-widest text-[#0a97b6] font-semibold mb-4">After</p>
+        <p className="text-lg font-bold text-[#0d1b2b] mb-6">One tab. Everything.</p>
+        {/* Product-mock interior stays dark — a screenshot on a light page */}
+        <div className="rounded-xl border border-[#1d2c42] bg-[#080e18] p-4">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-6 h-6 rounded-md bg-[#4ecde6]/20 flex items-center justify-center">
               <span className="text-[10px] font-black text-[#4ecde6]">P</span>
@@ -78,7 +79,7 @@ function AfterCard() {
             ))}
           </div>
         </div>
-        <p className="mt-6 text-sm text-white/60">
+        <p className="mt-6 text-sm text-[#5a6b7c]">
           Same data. Same permissions. Same login. Same place.
         </p>
       </div>

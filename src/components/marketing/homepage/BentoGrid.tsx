@@ -5,13 +5,13 @@ export default function BentoGrid() {
     <section id="product" className="relative scroll-mt-16">
       <div className="mx-auto max-w-7xl px-6 py-32">
         <div className="max-w-3xl mb-16">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[#4ecde6] font-semibold mb-6">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#0a97b6] font-semibold mb-6">
             EVERYTHING YOU NEED
           </p>
-          <h2 className="text-4xl sm:text-5xl leading-[1.05] tracking-[-0.02em] font-black text-white">
+          <h2 className="text-4xl sm:text-5xl leading-[1.05] tracking-[-0.02em] font-black text-[#0d1b2b]">
             The whole platform.
             <br />
-            <span className="text-white/50">In one place.</span>
+            <span className="text-[#93a2ad]">In one place.</span>
           </h2>
         </div>
 
@@ -59,10 +59,10 @@ function BentoCell({ label, tagline, children, className = '' }: {
   className?: string
 }) {
   return (
-    <div className={`group relative rounded-3xl border border-white/10 bg-[#0a0a0a] p-6 transition-colors hover:border-[#4ecde6]/30 ${className}`}>
+    <div className={`group relative rounded-3xl border border-[#e3ebf0] bg-white p-6 transition-colors hover:border-[#0a97b6]/40 shadow-[0_1px_3px_rgba(13,40,54,0.05),0_10px_24px_-18px_rgba(13,40,54,0.18)] ${className}`}>
       <div className="mb-6">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-[#4ecde6] font-semibold">{label}</p>
-        <p className="text-xl lg:text-2xl font-bold text-white mt-2 leading-tight">{tagline}</p>
+        <p className="text-[10px] uppercase tracking-[0.2em] text-[#0a97b6] font-semibold">{label}</p>
+        <p className="text-xl lg:text-2xl font-bold text-[#0d1b2b] mt-2 leading-tight">{tagline}</p>
       </div>
       <div className="opacity-95 group-hover:opacity-100 transition-opacity">
         {children}

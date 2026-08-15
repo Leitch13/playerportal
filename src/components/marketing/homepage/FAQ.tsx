@@ -30,13 +30,13 @@ export default function FAQ() {
     <section className="relative">
       <div className="mx-auto max-w-5xl px-6 py-32">
         <div className="max-w-3xl mb-16">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[#4ecde6] font-semibold mb-6">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#0a97b6] font-semibold mb-6">
             THE OBVIOUS QUESTIONS
           </p>
-          <h2 className="text-4xl sm:text-5xl leading-[1.05] tracking-[-0.02em] font-black text-white">
+          <h2 className="text-4xl sm:text-5xl leading-[1.05] tracking-[-0.02em] font-black text-[#0d1b2b]">
             Direct answers.
             <br />
-            <span className="text-white/50">No marketing padding.</span>
+            <span className="text-[#93a2ad]">No marketing padding.</span>
           </h2>
         </div>
 
@@ -44,16 +44,16 @@ export default function FAQ() {
           {QUESTIONS.map((qa, i) => (
             <details
               key={qa.q}
-              className="group rounded-2xl border border-white/10 bg-[#0a0a0a] overflow-hidden [&_summary]:list-none open:border-[#4ecde6]/25 transition-colors"
+              className="group rounded-2xl border border-[#e3ebf0] bg-white overflow-hidden [&_summary]:list-none open:border-[#0a97b6]/40 transition-colors shadow-[0_1px_3px_rgba(13,40,54,0.05),0_10px_24px_-18px_rgba(13,40,54,0.18)]"
               open={i === 0}
             >
-              <summary className="cursor-pointer flex items-center justify-between gap-6 px-6 py-5 hover:bg-white/[0.02] transition-colors">
-                <span className="text-lg font-semibold text-white leading-snug">{qa.q}</span>
-                <span className="w-8 h-8 shrink-0 rounded-full border border-white/15 flex items-center justify-center group-open:rotate-45 group-open:border-[#4ecde6]/50 group-open:text-[#4ecde6] transition-all">
+              <summary className="cursor-pointer flex items-center justify-between gap-6 px-6 py-5 hover:bg-[#f6f9fb] transition-colors">
+                <span className="text-lg font-semibold text-[#0d1b2b] leading-snug">{qa.q}</span>
+                <span className="w-8 h-8 shrink-0 rounded-full border border-[#d3dfe6] text-[#5a6b7c] flex items-center justify-center group-open:rotate-45 group-open:border-[#0a97b6]/50 group-open:text-[#0a97b6] transition-all">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </span>
               </summary>
-              <div className="px-6 pb-6 pt-1 text-base text-white/70 leading-relaxed max-w-3xl">
+              <div className="px-6 pb-6 pt-1 text-base text-[#5a6b7c] leading-relaxed max-w-3xl">
                 {qa.a}
               </div>
             </details>

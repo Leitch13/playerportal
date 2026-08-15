@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function BookDemoPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <TopNav />
+      <TopNav variant="dark" />
       <main className="mx-auto max-w-2xl px-6 pt-28 pb-20">
         <div className="text-center mb-8">
           <p className="text-[11px] uppercase tracking-[0.2em] text-[#4ecde6] font-bold mb-3">Talk to us</p>
@@ -31,7 +31,7 @@ export default function BookDemoPage() {
           </p>
         </div>
       </main>
-      <Footer />
+      <Footer variant="dark" />
     </div>
   )
 }

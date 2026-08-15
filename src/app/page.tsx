@@ -126,7 +126,7 @@ const faqPageSchema = {
 
 export default function HomePage() {
   return (
-    <div className="bg-[#0a0a0a] text-white min-h-screen">
+    <div className="bg-[#f6f9fb] text-[#0d1b2b] min-h-screen">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationSchema) }}
@@ -139,8 +139,9 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema) }}
       />
+      {/* Light TopNav sits absolutely over the cyan hero — no pt-16 needed */}
       <TopNav />
-      <main className="pt-16">
+      <main>
         <Hero />
         <TrustStrip />
         <ProblemSection />

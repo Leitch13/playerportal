@@ -84,7 +84,7 @@ export default function Page() {
           { name: 'Academy Payment Collection', url: CANONICAL },
         ]}
       />
-      <TopNav />
+      <TopNav variant="dark" />
       <main className="pt-16">
         <LandingHero
           eyebrow="ACADEMY PAYMENT COLLECTION"
@@ -97,7 +97,7 @@ export default function Page() {
           visual={<PaymentsMock />}
         />
 
-        <TrustStrip />
+        <TrustStrip variant="dark" />
 
         <LandingProblem
           eyebrow="THE PAYMENTS PROBLEM"
@@ -230,7 +230,7 @@ export default function Page() {
 
         <LandingInternalLinks currentSlug={SLUG} />
       </main>
-      <Footer />
+      <Footer variant="dark" />
     </div>
   )
 }

@@ -84,7 +84,7 @@ export default function Page() {
           { name: 'Football Booking System', url: CANONICAL },
         ]}
       />
-      <TopNav />
+      <TopNav variant="dark" />
       <main className="pt-16">
         <LandingHero
           eyebrow="FOOTBALL BOOKING SYSTEM"
@@ -97,7 +97,7 @@ export default function Page() {
           visual={<CampsMock />}
         />
 
-        <TrustStrip />
+        <TrustStrip variant="dark" />
 
         <LandingProblem
           eyebrow="THE BOOKING PROBLEM"
@@ -230,7 +230,7 @@ export default function Page() {
 
         <LandingInternalLinks currentSlug={SLUG} />
       </main>
-      <Footer />
+      <Footer variant="dark" />
     </div>
   )
 }

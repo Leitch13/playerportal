@@ -85,7 +85,7 @@ export default function Page() {
           { name: 'Football Academy Management Software', url: CANONICAL },
         ]}
       />
-      <TopNav />
+      <TopNav variant="dark" />
       <main className="pt-16">
         <LandingHero
           eyebrow="FOOTBALL ACADEMY MANAGEMENT SOFTWARE"
@@ -98,7 +98,7 @@ export default function Page() {
           visual={<ParentHubMock />}
         />
 
-        <TrustStrip />
+        <TrustStrip variant="dark" />
 
         <LandingProblem
           eyebrow="WHY ACADEMY OWNERS SWITCH"
@@ -230,7 +230,7 @@ export default function Page() {
 
         <LandingInternalLinks currentSlug={SLUG} />
       </main>
-      <Footer />
+      <Footer variant="dark" />
     </div>
   )
 }
