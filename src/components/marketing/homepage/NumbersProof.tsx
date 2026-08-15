@@ -3,7 +3,7 @@
 // to look stale — see docs/RELEASE_BACKLOG.md for the review cadence.
 // The hero proof strip (Hero.tsx) mirrors three of these — keep in sync.
 const STATS = [
-  { number: '£9,464', suffix: '', label: 'collected in the last 30 days on Player Portal', detail: 'Live Stripe. Verified. Growing every week.' },
+  { number: '£23k', suffix: '+', label: 'processed through Player Portal since launch', detail: 'Live Stripe. £9.4k of it in the last 30 days.' },
   { number: '180', suffix: '+', label: 'members migrated for one academy in one afternoon', detail: 'Zero double-charges. Zero downtime.' },
   { number: '100', suffix: '%', label: 'of subscriptions collected via auto-billing', detail: '110 of 110 active subs — nobody chases anyone.' },
   { number: '£6,431', suffix: '', label: 'real single-day take on the platform', detail: 'Live Stripe. Verified. Not a projection.' },
