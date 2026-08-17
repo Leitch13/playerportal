@@ -11,6 +11,8 @@ import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import BookingPageHero from '@/components/BookingPageHero'
 import TermInfo from '@/components/TermInfo'
 import GroupedClassList from './GroupedClassList'
+import PremiumBookingView, { type PremiumClassCard } from './PremiumBookingView'
+import { isPremiumBookingOrg } from '@/lib/premium-booking'
 
 export async function generateMetadata({
   params,
@@ -457,6 +459,63 @@ export default async function PublicBookingPage({
     const h = hex.replace('#', '')
     const num = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16)
     return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`
+  }
+
+  // ─── Premium booking view (allowlisted orgs only — see src/lib/premium-booking.ts) ───
+  // Single gated early-return so every non-allowlisted academy renders the
+  // page below byte-identically. Flat (non-grouped) path only: the premium
+  // re-skin covers ≤12-class academies; a premium org that ever crossed the
+  // grouped-view threshold would fall back to the grouped view unchanged.
+  // All numbers are REUSED from the computations above — seat counts from the
+  // 078 RPC (countByGroup), prices via the exact same precedence as the
+  // standard flat card (price_per_session first, else findCheapestPlanFor
+  // monthly amount), and CTAs link to the same class-detail hrefs.
+  if (!useGroupedView && isPremiumBookingOrg(org.id as string)) {
+    const premiumClasses: PremiumClassCard[] = sortedGroups.map((group) => {
+      const count = countByGroup.get(group.id) || 0
+      const capacity = (group as unknown as { max_capacity: number }).max_capacity || 20
+      const spotsLeft = capacity - count
+      const isFull = spotsLeft <= 0
+      const price = group.price_per_session as number | null
+      const matchedPlan = findCheapestPlanFor(group.id, (group.class_type as string) || 'group')
+      let priceValue: string | null = null
+      let priceUnit: string | null = null
+      if (price != null && Number(price) > 0) {
+        priceValue = `£${Number(price).toFixed(0)}`
+        priceUnit = '/session'
+      } else if (matchedPlan) {
+        priceValue = `£${Number(matchedPlan.amount).toFixed(0)}`
+        priceUnit = '/mo'
+      }
+      return {
+        id: group.id,
+        name: group.name,
+        day: group.day_of_week,
+        time: group.time_slot,
+        location: group.location,
+        ageGroup: group.age_group as string | null,
+        shortDesc: group.short_description as string | null,
+        count,
+        capacity,
+        spotsLeft,
+        isFull,
+        priceValue,
+        priceUnit,
+        href: `/book/${slug}/class/${group.id}`,
+      }
+    })
+    const venues = [...new Set(premiumClasses.map((c) => c.location).filter((v): v is string => !!v))]
+    return (
+      <PremiumBookingView
+        orgName={org.name as string}
+        logoUrl={org.logo_url as string | null}
+        primaryColor={primaryColor as string}
+        classes={premiumClasses}
+        venues={venues}
+        trialHref={`/book/${slug}/trial/quick`}
+        isOwnerPreview={isOwnerPreview}
+      />
+    )
   }
 
   return (
