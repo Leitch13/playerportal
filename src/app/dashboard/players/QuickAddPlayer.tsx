@@ -14,6 +14,12 @@ interface Group {
   name: string
 }
 
+interface Plan {
+  id: string
+  name: string
+  amount: number
+}
+
 const inputCls = 'w-full px-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'
 const labelCls = 'block text-xs font-medium text-white/60 mb-1.5'
 const selectCls = inputCls + ' appearance-none'
@@ -21,11 +27,13 @@ const selectCls = inputCls + ' appearance-none'
 export default function QuickAddPlayer({
   parents,
   groups,
+  plans = [],
   autoOpen,
   orgId,
 }: {
   parents: Parent[]
   groups: Group[]
+  plans?: Plan[]
   autoOpen: boolean
   orgId: string
 }) {
@@ -46,6 +54,13 @@ export default function QuickAddPlayer({
   const [parentEmail, setParentEmail] = useState('')
   const [parentPhone, setParentPhone] = useState('')
 
+  // Payment request — close the "added to a register, money never asked for"
+  // gap: ticking this fires the existing Request Payment machinery right after
+  // the player is created, so add-and-bill is one motion.
+  const [sendPayReq, setSendPayReq] = useState(false)
+  const [payPlanId, setPayPlanId] = useState('')
+  const [payFirstBilling, setPayFirstBilling] = useState<'today' | 'next_month'>('today')
+
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
@@ -56,15 +71,19 @@ export default function QuickAddPlayer({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError('')
     setSuccess('')
+    if (sendPayReq && !payPlanId) {
+      setError('Choose a membership plan for the payment request (or untick it).')
+      return
+    }
+    setLoading(true)
 
     // Server-side route so the admin's session is never replaced by a
     // client-side auth.signUp() of the new parent. The route uses the service
     // role to create the parent account, ensure the profile, insert the
     // player, and optionally auto-enrol — all in one trip.
-    let data: { success?: boolean; error?: string; warning?: string } = {}
+    let data: { success?: boolean; error?: string; warning?: string; playerId?: string } = {}
     try {
       const res = await fetch('/api/admin/players', {
         method: 'POST',
@@ -96,7 +115,27 @@ export default function QuickAddPlayer({
       return
     }
 
-    setSuccess(`${firstName} ${lastName} added!${data.warning ? ` (${data.warning})` : ''}`)
+    // Optional follow-through: fire the existing Request Payment flow for the
+    // player we just created. A failure here must NOT undo the add — surface
+    // it and point at the player-profile button as the retry path.
+    let payNote = ''
+    if (sendPayReq && data.playerId) {
+      try {
+        const pr = await fetch(`/api/admin/players/${data.playerId}/request-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: payPlanId, firstBilling: payFirstBilling }),
+        })
+        const prData = await pr.json().catch(() => ({}))
+        payNote = pr.ok
+          ? ' Payment request sent to the parent.'
+          : ` Player added, but the payment request failed: ${prData.error || 'unknown error'} — use Request Payment on their profile.`
+      } catch {
+        payNote = ' Player added, but the payment request failed to send — use Request Payment on their profile.'
+      }
+    }
+
+    setSuccess(`${firstName} ${lastName} added!${data.warning ? ` (${data.warning})` : ''}${payNote}`)
     setFirstName('')
     setLastName('')
     setDob('')
@@ -108,10 +147,13 @@ export default function QuickAddPlayer({
     setParentName('')
     setParentEmail('')
     setParentPhone('')
+    setSendPayReq(false)
+    setPayPlanId('')
+    setPayFirstBilling('today')
     router.refresh()
     setLoading(false)
 
-    setTimeout(() => setSuccess(''), 3000)
+    setTimeout(() => setSuccess(''), payNote ? 8000 : 3000)
   }
 
   if (!open) {
@@ -229,6 +271,53 @@ export default function QuickAddPlayer({
             ))}
           </select>
         </div>
+
+        {/* Payment request — make add-and-bill one motion */}
+        {plans.length > 0 && (
+          <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]/50 p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendPayReq}
+                onChange={(e) => setSendPayReq(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-[#2a2a2a] bg-[#1a1a1a] accent-[#4ecde6]"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-white">Send payment request to parent</span>
+                <span className="block text-xs text-white/50 mt-0.5">
+                  Emails the parent a one-tap link to set up their membership. No link sent = the player trains unbilled until you request payment from their profile.
+                </span>
+              </span>
+            </label>
+
+            {sendPayReq && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <div>
+                  <label className={labelCls}>Membership Plan *</label>
+                  <select value={payPlanId} onChange={(e) => setPayPlanId(e.target.value)} className={selectCls}>
+                    <option value="" className="bg-[#1a1a1a]">Select plan...</option>
+                    {plans.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-[#1a1a1a]">
+                        {p.name} — £{Number(p.amount).toFixed(2)}/mo
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>First Charge</label>
+                  <select
+                    value={payFirstBilling}
+                    onChange={(e) => setPayFirstBilling(e.target.value === 'next_month' ? 'next_month' : 'today')}
+                    className={selectCls}
+                  >
+                    <option value="today" className="bg-[#1a1a1a]">Today · sessions left this month</option>
+                    <option value="next_month" className="bg-[#1a1a1a]">1st of next month · £0 today</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && <p className="text-sm text-red-400">{error}</p>}
         {success && <p className="text-sm text-[#4ecde6] font-medium">{success}</p>}

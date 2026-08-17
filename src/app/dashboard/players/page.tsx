@@ -271,9 +271,10 @@ export default async function PlayersPage({
     paymentIssues:  tableRows.filter(r => r.subStatus === 'past_due').length,
   }
 
-  // ── 7. QuickAdd reference data — parents + groups, org-scoped ──
-  // (Same shape the existing QuickAddPlayer component expects.)
-  const [{ data: parents }, { data: groups }] = await Promise.all([
+  // ── 7. QuickAdd reference data — parents + groups + plans, org-scoped ──
+  // (Same shape the existing QuickAddPlayer component expects. Plans feed the
+  // optional "send payment request" step so add-and-bill is one motion.)
+  const [{ data: parents }, { data: groups }, { data: qaPlans }] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, full_name, email')
@@ -283,6 +284,11 @@ export default async function PlayersPage({
     supabase
       .from('training_groups')
       .select('id, name')
+      .eq('organisation_id', orgId)
+      .order('name'),
+    supabase
+      .from('subscription_plans')
+      .select('id, name, amount')
       .eq('organisation_id', orgId)
       .order('name'),
   ])
@@ -296,6 +302,7 @@ export default async function PlayersPage({
           <QuickAddPlayer
             parents={parents || []}
             groups={groups || []}
+            plans={qaPlans || []}
             autoOpen={params.add === '1'}
             orgId={orgId}
           />
