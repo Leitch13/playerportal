@@ -318,11 +318,16 @@ export default function CommandCentre(props: CommandCentreProps) {
           {isLive && (
             <div className="overflow-hidden rounded-2xl border border-[#1d2c42]">
               <div className="grid grid-cols-2 gap-px bg-[#1d2c42] md:grid-cols-3 lg:grid-cols-6">
+                {/* Guided zero-states fire whenever the tile genuinely has
+                    nothing yet (no paying members), not only on day one — an
+                    academy with imported contacts but £0 collecting (JSI)
+                    deserves guidance, not a bold wall of failure. Any academy
+                    with a single active sub renders exactly as before. */}
                 <StatCard
                   label="Recurring Revenue"
                   value={formatGBP(recurringRevenue)}
-                  ghosted={isFirstRun && recurringRevenue === 0}
-                  sub={isFirstRun && recurringRevenue === 0
+                  ghosted={activeSubs === 0 && recurringRevenue === 0}
+                  sub={activeSubs === 0 && recurringRevenue === 0
                     ? 'Collects itself every month once your first member joins.'
                     : `from ${activeSubs} active sub${activeSubs === 1 ? '' : 's'}`}
                   href="/dashboard/payments"
@@ -330,18 +335,18 @@ export default function CommandCentre(props: CommandCentreProps) {
                 <StatCard
                   label="Collected This Month"
                   value={formatGBP(collectedThisMonth)}
-                  ghosted={isFirstRun && collectedThisMonth === 0}
+                  ghosted={activeSubs === 0 && collectedThisMonth === 0}
                   sub={collectedSub}
                   href="/dashboard/payments"
                 />
                 <StatCard
                   label="Active Players"
                   value={String(activePlayers)}
-                  ghosted={isFirstRun && activePlayers === 0}
-                  sub={isFirstRun && activePlayers === 0
+                  ghosted={activePlayers === 0}
+                  sub={activePlayers === 0
                     ? <>Invite your contacts to enrol →</>
                     : `of ${totalPlayers} · enrolled & paying`}
-                  href={isFirstRun && activePlayers === 0 ? '/dashboard/contacts' : '/dashboard/players'}
+                  href={activePlayers === 0 ? '/dashboard/contacts' : '/dashboard/players'}
                 />
                 <StatCard
                   label="Outstanding"
