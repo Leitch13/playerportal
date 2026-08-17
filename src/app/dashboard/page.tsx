@@ -693,12 +693,12 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">{greeting}, {name}</h1>
-            <p className="text-xs sm:text-sm text-white/40 mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            <p className="text-xs sm:text-sm text-[#5b6c86] mt-0.5">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           </div>
-          <Link href="/dashboard/messages" className="relative w-9 h-9 sm:w-10 sm:h-10 bg-[#0f1a2b] border border-[#1d2c42] rounded-xl flex items-center justify-center hover:border-[#4ecde6]/30 transition-colors">
+          <Link href="/dashboard/messages" className="relative w-9 h-9 sm:w-10 sm:h-10 bg-[#0f1a2b] border border-[#1d2c42] rounded-xl flex items-center justify-center hover:border-[#3a4f6e] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             {(unreadCount || 0) > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#e0736d] rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
             )}
           </Link>
         </div>
@@ -743,29 +743,29 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         {(players || []).length === 0 && (
           <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6">
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] rounded-xl flex items-center justify-center border border-[#1d2c42]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-white">Welcome! Get started by adding your child</h2>
-                <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">Three quick steps to get up and running</p>
+                <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-0.5">Three quick steps to get up and running</p>
               </div>
             </div>
             <div className="space-y-2.5 sm:space-y-3 mb-3 sm:mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6] flex-shrink-0">1</div>
-                <span className="text-xs sm:text-sm text-white/70">Add your child</span>
+                <span className="text-xs sm:text-sm text-[#93a2ba]">Add your child</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">2</div>
-                <span className="text-xs sm:text-sm text-white/40">Book a session</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#142236] border border-[#1d2c42] flex items-center justify-center text-xs font-bold text-[#5b6c86] flex-shrink-0">2</div>
+                <span className="text-xs sm:text-sm text-[#5b6c86]">Book a session</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white/30 flex-shrink-0">3</div>
-                <span className="text-xs sm:text-sm text-white/40">Track their progress</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#142236] border border-[#1d2c42] flex items-center justify-center text-xs font-bold text-[#5b6c86] flex-shrink-0">3</div>
+                <span className="text-xs sm:text-sm text-[#5b6c86]">Track their progress</span>
               </div>
             </div>
-            <Link href="/dashboard/children" className="inline-block px-4 sm:px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+            <Link href="/dashboard/children" className="inline-block px-4 sm:px-5 py-2.5 bg-[#4ecde6] text-[#04141a] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
               Add Your Child
             </Link>
           </div>
@@ -778,24 +778,24 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               <Link
                 key={p.id}
                 href={`/dashboard/players/${p.id}`}
-                className="flex items-center gap-2 bg-[#0f1a2b] border border-[#1d2c42] rounded-full pl-1 pr-3 sm:pr-3.5 py-1 hover:border-[#4ecde6]/30 transition-all flex-shrink-0 group"
+                className="flex items-center gap-2 bg-[#0f1a2b] border border-[#1d2c42] rounded-full pl-1 pr-3 sm:pr-3.5 py-1 hover:border-[#3a4f6e] transition-all flex-shrink-0 group"
               >
                 {p.photo_url ? (
                   <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="xs" />
                 ) : (
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-[10px] sm:text-xs font-bold flex-shrink-0">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#142236] border border-[#293b58] flex items-center justify-center text-white text-[10px] sm:text-xs font-bold flex-shrink-0">
                     {p.first_name.charAt(0)}
                   </div>
                 )}
-                <span className="text-[11px] sm:text-xs font-medium text-white/70 group-hover:text-[#4ecde6] transition-colors whitespace-nowrap">{p.first_name}</span>
+                <span className="text-[11px] sm:text-xs font-medium text-[#93a2ba] group-hover:text-[#4ecde6] transition-colors whitespace-nowrap">{p.first_name}</span>
               </Link>
             ))}
             <Link
               href="/dashboard/children"
-              className="flex items-center gap-1.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 hover:border-[#4ecde6]/40 transition-all flex-shrink-0"
+              className="flex items-center gap-1.5 bg-transparent border border-[#293b58] rounded-full px-3 sm:px-4 py-2 sm:py-2.5 hover:border-[#3a4f6e] transition-all flex-shrink-0"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span className="text-[11px] sm:text-xs font-semibold text-[#4ecde6] whitespace-nowrap">Add Child</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span className="text-[11px] sm:text-xs font-semibold text-[#93a2ba] whitespace-nowrap">Add Child</span>
             </Link>
           </div>
         )}
@@ -805,81 +805,81 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           <div className="space-y-2.5 sm:space-y-3 mb-0">
             {(overdueCount || 0) > 0 && (
               <Link href="/dashboard/payments" className="block group">
-                <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 group-hover:border-red-500/40 transition-all">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-red-500/20 rounded-xl flex items-center justify-center text-red-400 flex-shrink-0">
+                <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 group-hover:border-[#3a4f6e] transition-all">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] rounded-xl flex items-center justify-center text-[#e0736d] flex-shrink-0">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-red-400">{overdueCount} Overdue Payment{overdueCount !== 1 ? 's' : ''}</p>
-                    <p className="text-[11px] sm:text-xs text-red-400/60">Tap to view and pay</p>
+                    <p className="text-xs sm:text-sm font-bold text-[#e0736d]">{overdueCount} Overdue Payment{overdueCount !== 1 ? 's' : ''}</p>
+                    <p className="text-[11px] sm:text-xs text-[#5b6c86]">Tap to view and pay</p>
                   </div>
-                  <span className="text-red-400/60">&rarr;</span>
+                  <span className="text-[#5b6c86]">&rarr;</span>
                 </div>
               </Link>
             )}
             {(unreadCount || 0) > 0 && (
               <Link href="/dashboard/messages" className="block group">
-                <div className="bg-[#4ecde6]/10 backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 group-hover:border-[#4ecde6]/40 transition-all">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4ecde6]/20 rounded-xl flex items-center justify-center text-[#4ecde6] flex-shrink-0">
+                <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 group-hover:border-[#3a4f6e] transition-all">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] rounded-xl flex items-center justify-center text-[#4ecde6] flex-shrink-0">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
                   <div className="flex-1">
                     <p className="text-xs sm:text-sm font-bold text-[#4ecde6]">{unreadCount} New Message{unreadCount !== 1 ? 's' : ''}</p>
-                    <p className="text-[11px] sm:text-xs text-[#4ecde6]/60">Tap to read</p>
+                    <p className="text-[11px] sm:text-xs text-[#5b6c86]">Tap to read</p>
                   </div>
-                  <span className="text-[#4ecde6]/60">&rarr;</span>
+                  <span className="text-[#5b6c86]">&rarr;</span>
                 </div>
               </Link>
             )}
           </div>
         )}
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+        <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
 
         {/* ═══ NEXT SESSION CARD ═══ */}
         {nextSession ? (
           <>
             <Link href="/dashboard/schedule" className="block group">
-              <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-4 sm:p-5 shadow-[0_0_20px_rgba(78,205,230,0.1)]">
+              <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5 transition-all hover:border-[#3a4f6e]">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#142236] rounded-xl flex items-center justify-center border border-[#1d2c42]">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-[10px] sm:text-xs text-white/40 font-medium uppercase tracking-wider">Next Session</p>
+                    <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Next Session</p>
                     <p className="text-base sm:text-lg font-bold text-white mt-0.5">{nextSession.day} {nextSession.time}</p>
-                    <p className="text-xs sm:text-sm text-white/60">{nextSession.group}</p>
+                    <p className="text-xs sm:text-sm text-[#93a2ba]">{nextSession.group}</p>
                     {nextSession.location && (
-                      <p className="text-[11px] sm:text-xs text-white/40 mt-1 flex items-center gap-1">
+                      <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-1 flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         {nextSession.location}
                       </p>
                     )}
                   </div>
-                  <span className="text-[#4ecde6]/60 text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
+                  <span className="text-[#5b6c86] text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
                 </div>
                 <p className="text-[11px] sm:text-xs text-[#4ecde6] font-medium mt-3 group-hover:underline">View Details &gt;</p>
               </div>
             </Link>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+            <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
           </>
         ) : (players || []).length > 0 ? (
           <>
             <Link href="/dashboard/schedule" className="block group">
-              <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5 hover:border-[#4ecde6]/30 transition-all">
+              <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5 hover:border-[#3a4f6e] transition-all">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/[0.04] rounded-xl flex items-center justify-center border border-white/[0.08]">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#142236] rounded-xl flex items-center justify-center border border-[#1d2c42]">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs sm:text-sm font-semibold text-white/60">No sessions today</p>
-                    <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">Check the timetable to book your next one</p>
+                    <p className="text-xs sm:text-sm font-semibold text-[#93a2ba]">No sessions today</p>
+                    <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-0.5">Check the timetable to book your next one</p>
                   </div>
-                  <span className="text-[#4ecde6]/60 text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
+                  <span className="text-[#5b6c86] text-lg group-hover:translate-x-1 transition-transform">&rarr;</span>
                 </div>
               </div>
             </Link>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+            <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
           </>
         ) : null}
 
@@ -893,7 +893,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               groupId={suggestedGroupId || undefined}
               groupName={suggestedGroupName || undefined}
             />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+            <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
           </>
         )}
 
@@ -905,56 +905,58 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               childName={reviewPromptData.childName}
               googleReviewUrl={reviewPromptData.googleReviewUrl}
             />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+            <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
           </>
         )}
 
         {/* ═══ MERCH UPSELL ═══ */}
         <Link href="/dashboard/shop" className="block group">
-          <div className="bg-gradient-to-r from-[#4ecde6]/[0.08] to-transparent backdrop-blur-xl border border-[#4ecde6]/[0.15] rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-[#4ecde6]/30 transition-all">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#4ecde6]/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl sm:text-2xl">👕</span>
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:border-[#3a4f6e] transition-all">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#142236] border border-[#1d2c42] flex items-center justify-center flex-shrink-0">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#4ecde6]" />
             </div>
             <div className="min-w-0">
               <p className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#4ecde6] transition-colors">Get your academy kit!</p>
-              <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">Personalised training tops, kits &amp; equipment</p>
+              <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-0.5">Personalised training tops, kits &amp; equipment</p>
             </div>
-            <svg className="w-5 h-5 text-white/20 flex-shrink-0 ml-auto group-hover:text-[#4ecde6] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[#5b6c86] flex-shrink-0 ml-auto group-hover:text-[#4ecde6] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </Link>
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+        <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
 
         {/* ═══ QUICK STATS ═══ */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-[11px] sm:text-xs text-white/40 font-medium">Children</p>
-            <p className="text-xl sm:text-2xl font-bold text-[#4ecde6] mt-1">{(players || []).length}</p>
-            <p className="text-[10px] text-white/30 mt-0.5">{(players || []).length === 1 ? 'Registered child' : 'Registered children'}</p>
-          </div>
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-[11px] sm:text-xs text-white/40 font-medium">Attendance</p>
-            <div className="flex items-center gap-2 sm:gap-2.5 mt-1">
-              <p className="text-xl sm:text-2xl font-bold text-emerald-400">{overallAttendanceRate}%</p>
-              <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0">
-                <svg className="w-9 h-9 sm:w-10 sm:h-10 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="15" fill="none" stroke={overallAttendanceRate >= 80 ? '#22c55e' : overallAttendanceRate >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(overallAttendanceRate / 100) * 94.2} 94.2`} />
-                </svg>
-              </div>
+        <div className="overflow-hidden rounded-2xl border border-[#1d2c42]">
+          <div className="grid grid-cols-2 gap-px bg-[#1d2c42]">
+            <div className="bg-[#0f1a2b] p-3 sm:p-4">
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Children</p>
+              <p className="text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{(players || []).length}</p>
+              <p className="text-[11px] text-[#5b6c86] mt-0.5">{(players || []).length === 1 ? 'Registered child' : 'Registered children'}</p>
             </div>
-            <p className="text-[10px] text-white/30 mt-0.5">Overall rate</p>
-          </div>
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-[11px] sm:text-xs text-white/40 font-medium">Session Streak</p>
-            <p className="text-xl sm:text-2xl font-bold text-amber-400 mt-1">{attendanceStreak > 0 ? attendanceStreak : '---'}</p>
-            <p className="text-[10px] text-white/30 mt-0.5">Consecutive</p>
-          </div>
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-[11px] sm:text-xs text-white/40 font-medium">New Reviews</p>
-            <p className="text-xl sm:text-2xl font-bold text-purple-400 mt-1">{newReviewCount || 0}</p>
-            <p className="text-[10px] text-white/30 mt-0.5">This week</p>
+            <div className="bg-[#0f1a2b] p-3 sm:p-4">
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Attendance</p>
+              <div className="flex items-center gap-2 sm:gap-2.5 mt-1">
+                <p className="text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{overallAttendanceRate}%</p>
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0">
+                  <svg className="w-9 h-9 sm:w-10 sm:h-10 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15" fill="none" stroke={overallAttendanceRate >= 80 ? '#67c79a' : overallAttendanceRate >= 50 ? '#d8a95a' : '#e0736d'} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(overallAttendanceRate / 100) * 94.2} 94.2`} />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-[11px] text-[#5b6c86] mt-0.5">Overall rate</p>
+            </div>
+            <div className="bg-[#0f1a2b] p-3 sm:p-4">
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Session Streak</p>
+              <p className="text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{attendanceStreak > 0 ? attendanceStreak : '---'}</p>
+              <p className="text-[11px] text-[#5b6c86] mt-0.5">Consecutive</p>
+            </div>
+            <div className="bg-[#0f1a2b] p-3 sm:p-4">
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">New Reviews</p>
+              <p className="text-xl sm:text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{newReviewCount || 0}</p>
+              <p className="text-[11px] text-[#5b6c86] mt-0.5">This week</p>
+            </div>
           </div>
         </div>
 
@@ -971,7 +973,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           />
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+        <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
 
         {/* ═══ CHILDREN PROGRESS CARDS ═══ */}
         <div>
@@ -995,14 +997,14 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   .map(e => e.group!)
 
                 return (
-                  <div key={p.id} className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 sm:p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+                  <div key={p.id} className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5">
                     {/* Player header */}
                     <div className="flex items-start gap-3 sm:gap-4">
                       <div className="relative flex-shrink-0">
                         {p.photo_url ? (
                           <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="lg" />
                         ) : (
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-[#4ecde6] to-purple-500 flex items-center justify-center text-white text-lg sm:text-xl font-bold">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#142236] border border-[#293b58] flex items-center justify-center text-white text-lg sm:text-xl font-bold">
                             {p.first_name.charAt(0)}
                           </div>
                         )}
@@ -1016,10 +1018,10 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                         <h3 className="text-sm sm:text-base font-bold text-white">{p.first_name} {p.last_name}</h3>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1 sm:mt-1.5">
                           {p.age_group && (
-                            <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#4ecde6]/10 text-[#4ecde6] border border-[#4ecde6]/20">{p.age_group}</span>
+                            <span className="px-2 sm:px-2.5 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-wider text-[#93a2ba] border border-[#1d2c42]">{p.age_group}</span>
                           )}
                           {p.position && (
-                            <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">{p.position}</span>
+                            <span className="px-2 sm:px-2.5 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-wider text-[#93a2ba] border border-[#1d2c42]">{p.position}</span>
                           )}
                         </div>
                       </div>
@@ -1028,9 +1030,9 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                         <div className="flex-shrink-0 relative w-12 h-12 sm:w-14 sm:h-14">
                           <svg className="w-12 h-12 sm:w-14 sm:h-14 -rotate-90" viewBox="0 0 90 90">
                             <circle cx="45" cy="45" r="40" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
-                            <circle cx="45" cy="45" r="40" fill="none" stroke={attRate >= 80 ? '#22c55e' : attRate >= 50 ? '#f59e0b' : '#ef4444'} strokeWidth="5" strokeLinecap="round" strokeDasharray="251.2" strokeDashoffset={251.2 - attStrokeDash} />
+                            <circle cx="45" cy="45" r="40" fill="none" stroke={attRate >= 80 ? '#67c79a' : attRate >= 50 ? '#d8a95a' : '#e0736d'} strokeWidth="5" strokeLinecap="round" strokeDasharray="251.2" strokeDashoffset={251.2 - attStrokeDash} />
                           </svg>
-                          <span className={`absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-bold ${attRate >= 80 ? 'text-emerald-400' : attRate >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{attRate}%</span>
+                          <span className={`absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-bold ${attRate >= 80 ? 'text-[#67c79a]' : attRate >= 50 ? 'text-[#d8a95a]' : 'text-[#e0736d]'}`}>{attRate}%</span>
                         </div>
                       )}
                     </div>
@@ -1038,11 +1040,11 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                     {/* Recent attendance dots */}
                     {recentAtt.length > 0 && (
                       <div className="mt-3 sm:mt-4 flex items-center gap-1.5">
-                        <span className="text-[10px] text-white/40 font-medium mr-1">Recent:</span>
+                        <span className="text-[10px] text-[#5b6c86] font-medium mr-1">Recent:</span>
                         {[...recentAtt].reverse().map((a, i) => (
                           <div
                             key={i}
-                            className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 ${a.present ? 'bg-emerald-400 border-emerald-500/30' : 'bg-red-400 border-red-500/30'}`}
+                            className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 ${a.present ? 'bg-[#67c79a] border-[#67c79a]/30' : 'bg-[#e0736d] border-[#e0736d]/30'}`}
                             title={`${a.session_date} - ${a.present ? 'Present' : 'Absent'}`}
                           />
                         ))}
@@ -1053,7 +1055,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                     {activeGroups.length > 0 && (
                       <div className="mt-2.5 sm:mt-3 flex flex-wrap gap-1.5">
                         {activeGroups.slice(0, 3).map((g, i) => (
-                          <span key={i} className="text-[10px] bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full px-2 sm:px-2.5 py-1 font-medium text-[#4ecde6]">
+                          <span key={i} className="text-[10px] border border-[#1d2c42] rounded-full px-2 sm:px-2.5 py-1 font-mono uppercase tracking-wider text-[#93a2ba]">
                             {g.name} · {g.day_of_week}
                           </span>
                         ))}
@@ -1062,19 +1064,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
 
                     {/* Latest review snippet */}
                     {reviewSnippet && (
-                      <div className="mt-2.5 sm:mt-3 bg-[#0f1a2b]/[0.03] border-l-2 border-[#4ecde6]/40 rounded-r-xl px-3 py-2.5">
-                        <p className="text-[11px] sm:text-xs text-white/60 italic leading-relaxed">
+                      <div className="mt-2.5 sm:mt-3 border-l-2 border-[#1d2c42] rounded-r-xl px-3 py-2.5">
+                        <p className="text-[11px] sm:text-xs text-[#93a2ba] italic leading-relaxed">
                           &ldquo;{reviewSnippet.length > 100 ? reviewSnippet.substring(0, 100) + '...' : reviewSnippet}&rdquo;
                         </p>
                       </div>
                     )}
 
                     {/* Action buttons */}
-                    <div className="mt-3 sm:mt-4 pt-3 border-t border-white/[0.06] flex items-center gap-2">
-                      <Link href={`/dashboard/players/${p.id}`} className="flex-1 text-center px-3 py-2 bg-[#4ecde6]/10 text-[#4ecde6] rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-[#4ecde6]/20 transition-colors border border-[#4ecde6]/20">
+                    <div className="mt-3 sm:mt-4 pt-3 border-t border-[#1d2c42] flex items-center gap-2">
+                      <Link href={`/dashboard/players/${p.id}`} className="flex-1 text-center px-3 py-2 bg-transparent text-[#93a2ba] rounded-xl text-[11px] sm:text-xs font-semibold hover:text-white hover:border-[#3a4f6e] transition-colors border border-[#293b58]">
                         View Profile
                       </Link>
-                      <Link href={`/dashboard/feedback?player=${p.id}`} className="flex-1 text-center px-3 py-2 bg-[#0f1a2b]/[0.05] text-white/60 rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-[#0f1a2b]/[0.1] transition-colors border border-white/[0.08]">
+                      <Link href={`/dashboard/feedback?player=${p.id}`} className="flex-1 text-center px-3 py-2 bg-transparent text-[#93a2ba] rounded-xl text-[11px] sm:text-xs font-semibold hover:text-white hover:border-[#3a4f6e] transition-colors border border-[#293b58]">
                         Progress Report
                       </Link>
                     </div>
@@ -1083,19 +1085,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               })}
             </div>
           ) : (
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 sm:p-8 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#0f1a2b]/[0.05] rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6 sm:p-8 text-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#142236] rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
               </div>
-              <p className="text-xs sm:text-sm text-white/40">No children registered yet.</p>
-              <Link href="/dashboard/children" className="inline-block mt-3 px-4 sm:px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+              <p className="text-xs sm:text-sm text-[#5b6c86]">No children registered yet.</p>
+              <Link href="/dashboard/children" className="inline-block mt-3 px-4 sm:px-5 py-2.5 bg-[#4ecde6] text-[#04141a] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors">
                 Add Your Child
               </Link>
             </div>
           )}
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+        <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
 
         {/* ═══ THIS WEEK DIGEST ═══ */}
         {(players || []).length > 0 && (() => {
@@ -1105,19 +1107,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           if (!hasAnyActivity) return null
           return (
             <>
-              <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 sm:p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+              <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5">
                 <div className="flex items-center gap-3 mb-3 sm:mb-4">
-                  <div className="w-8 h-8 bg-[#4ecde6]/10 rounded-lg flex items-center justify-center border border-[#4ecde6]/20">
+                  <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center border border-[#1d2c42]">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                   </div>
                   <div>
-                    <h2 className="text-xs sm:text-sm font-bold text-white">This Week&apos;s Report</h2>
-                    <p className="text-[10px] sm:text-[11px] text-white/30">
+                    <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">This Week&apos;s Report</h2>
+                    <p className="text-[10px] sm:text-[11px] text-[#5b6c86]">
                       Week of {new Date(weekStartStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
                 </div>
-                <div className="space-y-2.5 sm:space-y-3">
+                <div className="divide-y divide-[#1d2c42]">
                   {(players || []).map((p) => {
                     const data = weekDataByPlayer.get(p.id)
                     const attended = data?.attendance.filter((a) => a.present).length || 0
@@ -1128,36 +1130,36 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                     if (!hasActivity) return null
 
                     return (
-                      <div key={p.id} className="bg-[#0f1a2b]/[0.03] border border-white/[0.06] rounded-xl p-3 sm:p-4">
+                      <div key={p.id} className="py-3 sm:py-4 first:pt-0 last:pb-0">
                         <div className="flex items-center gap-2 mb-2.5 sm:mb-3">
                           <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="xs" />
                           <span className="text-xs sm:text-sm font-semibold text-white">{p.first_name}</span>
                         </div>
                         <div className="space-y-2 sm:space-y-2.5">
                           {total > 0 && (
-                            <div className={`rounded-lg px-3 py-2 flex items-center justify-between ${attended === total ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-amber-500/10 border border-amber-500/20'}`}>
-                              <span className={`text-xs sm:text-sm font-medium ${attended === total ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            <div className="flex items-center justify-between py-1">
+                              <span className={`text-xs sm:text-sm font-medium ${attended === total ? 'text-[#67c79a]' : 'text-[#d8a95a]'}`}>
                                 {attended}/{total} sessions
                               </span>
                               <div className="flex gap-1">
                                 {data?.attendance.map((a, i) => (
-                                  <span key={i} className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${a.present ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                                  <span key={i} className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ${a.present ? 'bg-[#67c79a]' : 'bg-[#e0736d]'}`} />
                                 ))}
                               </div>
                             </div>
                           )}
                           {hasReviews && data?.reviews.map((r, i) => (
-                            <div key={i} className="bg-[#0f1a2b]/[0.03] border-l-2 border-[#4ecde6]/40 rounded-r-lg px-3 py-2">
+                            <div key={i} className="border-l-2 border-[#1d2c42] rounded-r-lg px-3 py-2">
                               {r.parent_summary && (
-                                <p className="text-xs sm:text-sm text-white/60 italic">&ldquo;{r.parent_summary}&rdquo;</p>
+                                <p className="text-xs sm:text-sm text-[#93a2ba] italic">&ldquo;{r.parent_summary}&rdquo;</p>
                               )}
-                              <p className="text-[11px] sm:text-xs text-white/30 mt-1">&mdash; {r.coachName}</p>
+                              <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-1">&mdash; {r.coachName}</p>
                             </div>
                           ))}
                           {hasAchievements && (
                             <div className="flex flex-wrap gap-2">
                               {data?.achievements.map((a, i) => (
-                                <span key={i} className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold">
+                                <span key={i} className="inline-flex items-center gap-1 border border-[#1d2c42] text-[#93a2ba] rounded-full px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold">
                                   {a.emoji} {a.name}
                                 </span>
                               ))}
@@ -1169,7 +1171,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                   })}
                 </div>
               </div>
-              <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+              <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
             </>
           )
         })()}
@@ -1179,21 +1181,19 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           <>
             <div>
               <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 flex items-center gap-2 text-white">
-                <span className="relative w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-400 rounded-full">
-                  <span className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-75" />
-                </span>
+                <span className="w-1.5 h-1.5 bg-[#67c79a] rounded-full" />
                 Today&apos;s Classes
               </h2>
               <div className="space-y-2.5 sm:space-y-3">
                 {todaysSessions.map((s, i) => (
                   <Link key={i} href="/dashboard/schedule" className="block group">
-                    <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#4ecde6]/20">
+                    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl px-4 sm:px-5 py-3 sm:py-4 flex items-center gap-3 sm:gap-4 hover:border-[#3a4f6e] transition-all">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] rounded-xl flex items-center justify-center flex-shrink-0 border border-[#1d2c42]">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs sm:text-sm font-bold text-white group-hover:text-[#4ecde6] transition-colors">{s.groupName}</p>
-                        <p className="text-[11px] sm:text-xs text-white/40 mt-0.5">{s.playerName}{s.location ? ` · ${s.location}` : ''}</p>
+                        <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-0.5">{s.playerName}{s.location ? ` · ${s.location}` : ''}</p>
                       </div>
                       {s.timeSlot && (
                         <div className="text-right flex-shrink-0">
@@ -1207,7 +1207,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                 ))}
               </div>
             </div>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+            <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
           </>
         )}
 
@@ -1223,30 +1223,30 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
           return (
             <>
               <Link href={`/dashboard/feedback${playerForReview ? `?player=${playerForReview.id}` : ''}`} className="block group">
-                <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5 hover:border-purple-500/30 transition-all">
+                <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 sm:p-5 hover:border-[#3a4f6e] transition-all">
                   <div className="flex items-center justify-between mb-2.5 sm:mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center border border-purple-500/20">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center border border-[#1d2c42]">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                       </div>
                       <div>
-                        <h2 className="text-xs sm:text-sm font-bold text-white">Latest Progress Review</h2>
+                        <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Latest Progress Review</h2>
                         {playerForReview && (
-                          <p className="text-[10px] sm:text-[11px] text-white/40">{playerForReview.first_name} &middot; {new Date(reviewToShow.review_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{isThisWeek ? ' (this week)' : ''}</p>
+                          <p className="text-[10px] sm:text-[11px] text-[#5b6c86]">{playerForReview.first_name} &middot; {new Date(reviewToShow.review_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}{isThisWeek ? ' (this week)' : ''}</p>
                         )}
                       </div>
                     </div>
-                    <span className="text-purple-400/60 text-sm group-hover:translate-x-1 transition-transform">&rarr;</span>
+                    <span className="text-[#5b6c86] text-sm group-hover:translate-x-1 transition-transform">&rarr;</span>
                   </div>
-                  <div className="bg-purple-500/[0.05] border-l-2 border-purple-400/40 rounded-r-xl px-3 py-2.5">
-                    <p className="text-xs sm:text-sm text-white/60 italic leading-relaxed">
+                  <div className="border-l-2 border-[#1d2c42] rounded-r-xl px-3 py-2.5">
+                    <p className="text-xs sm:text-sm text-[#93a2ba] italic leading-relaxed">
                       &ldquo;{reviewToShow.parent_summary!.length > 150 ? reviewToShow.parent_summary!.substring(0, 150) + '...' : reviewToShow.parent_summary}&rdquo;
                     </p>
                   </div>
-                  <p className="text-[11px] sm:text-xs text-white/30 mt-2">&mdash; {coachName}</p>
+                  <p className="text-[11px] sm:text-xs text-[#5b6c86] mt-2">&mdash; {coachName}</p>
                 </div>
               </Link>
-              <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+              <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
             </>
           )
         })()}
@@ -1254,11 +1254,11 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
         {/* ═══ MESSAGES & PAYMENTS ═══ */}
         <div className="space-y-3 sm:space-y-4">
           {/* Messages */}
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-white/[0.06] flex items-center justify-between">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+            <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-[#1d2c42] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <h2 className="text-xs sm:text-sm font-bold text-white">Messages</h2>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Messages</h2>
               </div>
               <Link href="/dashboard/messages" className="text-[11px] sm:text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
             </div>
@@ -1267,16 +1267,16 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                 <div className="space-y-2.5 sm:space-y-3">
                   {(messages || []).map((m) => (
                     <Link key={m.id} href="/dashboard/messages" className="block group">
-                      <div className={`flex items-start gap-3 rounded-xl px-3 py-2.5 -mx-1 hover:bg-[#0f1a2b]/[0.03] transition-colors ${!m.read ? 'bg-[#4ecde6]/5' : ''}`}>
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-purple-500/20 to-[#4ecde6]/10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-[#4ecde6] flex-shrink-0 mt-0.5">
+                      <div className={`flex items-start gap-3 rounded-xl px-3 py-2.5 -mx-1 hover:bg-[#142236]/40 transition-colors ${!m.read ? 'bg-[#4ecde6]/5' : ''}`}>
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-[#142236] rounded-full flex items-center justify-center text-xs sm:text-sm font-bold text-[#4ecde6] flex-shrink-0 mt-0.5">
                           {(m.sender as unknown as { full_name: string })?.full_name?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span className={`text-xs sm:text-sm text-white ${!m.read ? 'font-bold' : 'font-medium'}`}>{m.subject || 'Message'}</span>
-                            <span className="text-[10px] text-white/30 flex-shrink-0 ml-2">{new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                            <span className="text-[10px] text-[#5b6c86] flex-shrink-0 ml-2">{new Date(m.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
                           </div>
-                          <p className="text-[11px] sm:text-xs text-white/40 truncate mt-0.5">{m.body}</p>
+                          <p className="text-[11px] sm:text-xs text-[#5b6c86] truncate mt-0.5">{m.body}</p>
                         </div>
                         {!m.read && <div className="w-2 h-2 bg-[#4ecde6] rounded-full mt-2 flex-shrink-0" />}
                       </div>
@@ -1286,18 +1286,18 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
               ) : (
                 <div className="text-center py-5 sm:py-6">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  <p className="text-[11px] sm:text-xs text-white/30">No messages yet</p>
+                  <p className="text-[11px] sm:text-xs text-[#5b6c86]">No messages yet</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Payments */}
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-white/[0.06] flex items-center justify-between">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+            <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-[#1d2c42] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                <h2 className="text-xs sm:text-sm font-bold text-white">Payments</h2>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Payments</h2>
               </div>
               <Link href="/dashboard/payments" className="text-[11px] sm:text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
             </div>
@@ -1308,17 +1308,17 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                     const owing = Number(p.amount) - Number(p.amount_paid || 0)
                     return (
                       <div key={p.id} className="flex items-center gap-3 rounded-xl">
-                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status === 'overdue' ? 'bg-red-500/10 border border-red-500/20' : 'bg-amber-500/10 border border-amber-500/20'}`}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={p.status === 'overdue' ? '#ef4444' : '#f59e0b'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status === 'overdue' ? 'bg-[#142236] border border-[#1d2c42]' : 'bg-[#142236] border border-[#1d2c42]'}`}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={p.status === 'overdue' ? '#e0736d' : '#d8a95a'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs sm:text-sm font-medium text-white">{p.description || 'Payment'}</p>
-                          <p className="text-[11px] sm:text-xs text-white/40">
+                          <p className="text-[11px] sm:text-xs text-[#5b6c86]">
                             {p.due_date ? new Date(p.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'No due date'}
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className={`text-xs sm:text-sm font-bold ${p.status === 'overdue' ? 'text-red-400' : 'text-white'}`}>
+                          <p className={`text-xs sm:text-sm font-bold ${p.status === 'overdue' ? 'text-[#e0736d]' : 'text-white'}`}>
                             &pound;{owing.toFixed(2)}
                           </p>
                           <Link href="/dashboard/payments" className="text-[10px] text-[#4ecde6] font-semibold hover:underline">
@@ -1331,128 +1331,128 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
                 </div>
               ) : (
                 <div className="text-center py-5 sm:py-6">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(34,197,94,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <p className="text-[11px] sm:text-xs text-white/30">All payments up to date</p>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(103,199,154,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <p className="text-[11px] sm:text-xs text-[#5b6c86]">All payments up to date</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+        <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
 
         {/* ═══ REFER A FRIEND ═══ */}
         {referralCode && (
           <>
             <ReferralLink orgSlug={orgSlug} referralCode={referralCode} compact />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+            <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
           </>
         )}
 
         {/* ═══ QUICK ACTIONS GRID ═══ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
           <Link href="/dashboard/schedule" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-3 sm:p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
-              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Schedule</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-[#93a2ba]">Schedule</p>
             </div>
           </Link>
           <Link href="/dashboard/payments" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-3 sm:p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               </div>
-              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Payments</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-[#93a2ba]">Payments</p>
             </div>
           </Link>
           <Link href="/dashboard/messages" className="block group">
-            <div className="relative bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <div className="relative bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-3 sm:p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               </div>
               {(unreadCount || 0) > 0 && (
-                <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
+                <span className="absolute top-2 right-2 w-4 h-4 bg-[#e0736d] rounded-full text-[9px] text-white flex items-center justify-center font-bold">{unreadCount}</span>
               )}
-              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Messages</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-[#93a2ba]">Messages</p>
             </div>
           </Link>
           <Link href="/dashboard/feedback" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-3 sm:p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-3 sm:p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               </div>
-              <p className="text-[11px] sm:text-xs font-semibold text-white/60">Progress</p>
+              <p className="text-[11px] sm:text-xs font-semibold text-[#93a2ba]">Progress</p>
             </div>
           </Link>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-4 sm:my-6" />
+        <div className="h-px bg-[#1d2c42] my-4 sm:my-6" />
 
         {/* ═══ MORE ACTIONS ═══ */}
         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
           <Link href="/dashboard/upgrade" className="block group">
-            <div className="bg-[#4ecde6]/10 rounded-xl border border-[#4ecde6]/20 p-3 text-center hover:border-[#4ecde6]/40 transition-all">
-              <div className="w-8 h-8 bg-[#4ecde6]/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
               </div>
-              <p className="text-[10px] font-semibold text-[#4ecde6]">Upgrade</p>
+              <p className="text-[10px] font-semibold text-[#93a2ba]">Upgrade</p>
             </div>
           </Link>
           <Link href="/dashboard/achievements" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
-              <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
               </div>
-              <p className="text-[10px] font-medium text-white/40">Awards</p>
+              <p className="text-[10px] font-medium text-[#5b6c86]">Awards</p>
             </div>
           </Link>
           <Link href="/dashboard/gallery" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
-              <div className="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               </div>
-              <p className="text-[10px] font-medium text-white/40">Gallery</p>
+              <p className="text-[10px] font-medium text-[#5b6c86]">Gallery</p>
             </div>
           </Link>
           <Link href="/dashboard/events" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
-              <div className="w-8 h-8 bg-pink-500/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
               </div>
-              <p className="text-[10px] font-medium text-white/40">Events</p>
+              <p className="text-[10px] font-medium text-[#5b6c86]">Events</p>
             </div>
           </Link>
           <Link href="/dashboard/waivers" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
-              <div className="w-8 h-8 bg-teal-500/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               </div>
-              <p className="text-[10px] font-medium text-white/40">Waivers</p>
+              <p className="text-[10px] font-medium text-[#5b6c86]">Waivers</p>
             </div>
           </Link>
           <Link href="/dashboard/referrals" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
-              <div className="w-8 h-8 bg-rose-500/10 rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               </div>
-              <p className="text-[10px] font-medium text-white/40">Refer</p>
+              <p className="text-[10px] font-medium text-[#5b6c86]">Refer</p>
             </div>
           </Link>
           <Link href="/dashboard/account" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] rounded-xl border border-white/[0.08] p-3 text-center hover:border-white/[0.15] transition-all">
+            <div className="bg-transparent rounded-xl border border-[#293b58] p-3 text-center hover:border-[#3a4f6e] transition-all">
               <div className="w-8 h-8 bg-[#142236] rounded-lg flex items-center justify-center mx-auto mb-1 group-hover:scale-110 transition-transform">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               </div>
-              <p className="text-[10px] font-medium text-white/40">Account</p>
+              <p className="text-[10px] font-medium text-[#5b6c86]">Account</p>
             </div>
           </Link>
         </div>
 
         {/* ═══ BOOK SESSION CTA ═══ */}
         <div className="pt-3 sm:pt-4">
-          <Link href={`/book/${orgSlug}`} className="block w-full text-center py-3.5 sm:py-4 bg-[#4ecde6] text-[#0a0a0a] rounded-2xl text-sm sm:text-base font-bold hover:bg-[#4ecde6]/90 transition-colors shadow-[0_0_20px_rgba(78,205,230,0.3)]">
+          <Link href={`/book/${orgSlug}`} className="block w-full text-center py-3.5 sm:py-4 bg-[#4ecde6] text-[#04141a] rounded-2xl text-sm sm:text-base font-bold hover:bg-[#4ecde6]/90 transition-colors">
             Book Next Session
           </Link>
         </div>
@@ -1960,7 +1960,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
               hasPlayers={hasPlayers}
               bookingUrl={bookingUrl}
             />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-[#1d2c42] my-6" />
           </>
         )}
 
@@ -1987,38 +1987,38 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           />
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ TODAY'S FOCUS ═══ */}
-        <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-5 shadow-[0_0_20px_rgba(78,205,230,0.1)]">
+        <div className="bg-[#142236] border border-[#4ecde6]/20 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-white/40 font-medium uppercase tracking-wider">Today&apos;s Focus</p>
-            <span className="px-2.5 py-0.5 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-full text-[10px] font-semibold text-[#4ecde6]">Sessions</span>
+            <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Today&apos;s Focus</p>
+            <span className="inline-flex items-center px-2.5 py-1 border border-[#1d2c42] rounded-full font-mono text-[10px] uppercase tracking-wider text-[#93a2ba]">Sessions</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center border border-[#4ecde6]/20">
+            <div className="w-12 h-12 bg-[#142236] rounded-xl flex items-center justify-center border border-[#1d2c42]">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div>
-              <p className="text-xs text-white/40">Sessions booked</p>
+              <p className="text-xs text-[#5b6c86]">Sessions booked</p>
               <p className="text-3xl font-bold text-white">{(todaysGroups || []).length}</p>
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ REVENUE CARD ═══ */}
         <Link href="/dashboard/payments" className="block">
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-            <p className="text-xs text-white/40 font-medium uppercase tracking-wider mb-1">Monthly Revenue</p>
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 hover:border-[#3a4f6e] transition-all">
+            <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86] mb-1">Monthly Revenue</p>
             <p className="text-3xl font-bold text-white">&pound;{monthlyRevenue.toFixed(0)}</p>
             {revenueTrend !== 0 && (
               <div className="flex items-center gap-1 mt-1">
-                <span className={`text-xs font-semibold ${revenueTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                <span className={`text-xs font-semibold ${revenueTrend > 0 ? 'text-[#67c79a]' : 'text-[#e0736d]'}`}>
                   {revenueTrend > 0 ? '+' : ''}{revenueTrend}%
                 </span>
-                <span className="text-[10px] text-white/30">vs last month</span>
+                <span className="text-[10px] text-[#5b6c86]">vs last month</span>
               </div>
             )}
             {/* Mini sparkline */}
@@ -2033,123 +2033,127 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                 )
               })}
             </div>
-            <p className="text-[10px] text-white/30 mt-2">Weekly revenue (last 4 weeks)</p>
-            <div className="mt-3 h-1 bg-[#0f1a2b]/[0.06] rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#4ecde6]/60 to-[#4ecde6] rounded-full" style={{ width: `${Math.min((monthlyRevenue / Math.max(prevRevenue, 1)) * 50, 100)}%` }} />
+            <p className="text-[10px] text-[#5b6c86] mt-2">Weekly revenue (last 4 weeks)</p>
+            <div className="mt-3 h-1 bg-[#142236] rounded-full overflow-hidden">
+              <div className="h-full bg-[#4ecde6] rounded-full" style={{ width: `${Math.min((monthlyRevenue / Math.max(prevRevenue, 1)) * 50, 100)}%` }} />
             </div>
           </div>
         </Link>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ STAT CARDS ROW ═══ */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/dashboard/players" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">Active Players</p>
-              <p className="text-2xl font-bold text-[#4ecde6] mt-1">{totalPlayers || 0}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">Total players</p>
-              {playerTrend !== 0 && (
-                <span className={`text-[10px] font-semibold ${playerTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {playerTrend > 0 ? '+' : ''}{playerTrend}%
-                </span>
-              )}
-            </div>
-          </Link>
-          <Link href="/dashboard/schedule" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">Sessions Today</p>
-              <p className="text-2xl font-bold text-[#4ecde6] mt-1">{(todaysGroups || []).length}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">Total classes</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/parents" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">Parents</p>
-              <p className="text-2xl font-bold text-purple-400 mt-1">{totalParents || 0}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">Registered</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/subscriptions" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">Active Subs</p>
-              <p className="text-2xl font-bold text-emerald-400 mt-1">{activeSubs || 0}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">Subscriptions</p>
-            </div>
-          </Link>
+        <div className="overflow-hidden rounded-2xl border border-[#1d2c42]">
+          <div className="grid grid-cols-2 gap-px bg-[#1d2c42]">
+            <Link href="/dashboard/players" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Active Players</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{totalPlayers || 0}</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">Total players</p>
+                {playerTrend !== 0 && (
+                  <span className={`text-[10px] font-semibold ${playerTrend > 0 ? 'text-[#67c79a]' : 'text-[#e0736d]'}`}>
+                    {playerTrend > 0 ? '+' : ''}{playerTrend}%
+                  </span>
+                )}
+              </div>
+            </Link>
+            <Link href="/dashboard/schedule" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Sessions Today</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{(todaysGroups || []).length}</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">Total classes</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/parents" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Parents</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{totalParents || 0}</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">Registered</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/subscriptions" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Active Subs</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{activeSubs || 0}</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">Subscriptions</p>
+              </div>
+            </Link>
+          </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ SECONDARY STATS ═══ */}
-        <div className="grid grid-cols-3 gap-3">
-          <Link href="/dashboard/attendance" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">Attendance</p>
-              <p className={`text-2xl font-bold mt-1 ${attendanceRate >= 80 ? 'text-emerald-400' : attendanceRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{attendanceRate}%</p>
-              <p className="text-[10px] text-white/30 mt-0.5">Last 30 days</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/leads" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">New Leads</p>
-              <p className="text-2xl font-bold text-[#4ecde6] mt-1">{newLeadsThisWeek || 0}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">This week</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/payments?status=overdue" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-red-500/20 transition-all">
-              <p className="text-xs text-white/40 font-medium">Overdue</p>
-              <p className={`text-2xl font-bold mt-1 ${(overdueCount || 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>{overdueCount || 0}</p>
-              <p className="text-[10px] text-white/30 mt-0.5">Payments</p>
-            </div>
-          </Link>
+        <div className="overflow-hidden rounded-2xl border border-[#1d2c42]">
+          <div className="grid grid-cols-3 gap-px bg-[#1d2c42]">
+            <Link href="/dashboard/attendance" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Attendance</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{attendanceRate}%</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">Last 30 days</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/leads" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">New Leads</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{newLeadsThisWeek || 0}</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">This week</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/payments?status=overdue" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Overdue</p>
+                <p className="text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9] mt-1">{overdueCount || 0}</p>
+                <p className="text-[11px] text-[#5b6c86] mt-0.5">Payments</p>
+              </div>
+            </Link>
+          </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ OVERDUE ALERT ═══ */}
         {(overdueCount || 0) > 0 && (
           <>
             <Link href="/dashboard/payments?status=overdue" className="block group">
-              <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-2xl px-5 py-4 flex items-center justify-between hover:border-red-500/40 transition-all">
+              <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl px-5 py-4 flex items-center justify-between hover:border-[#3a4f6e] transition-all">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <div className="w-10 h-10 bg-[#142236] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e0736d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                   </div>
-                  <span className="text-sm font-semibold text-red-400">
+                  <span className="text-sm font-semibold text-[#e0736d]">
                     {overdueCount} overdue payment{overdueCount !== 1 ? 's' : ''} require attention
                   </span>
                 </div>
-                <span className="text-red-400/60 text-sm group-hover:translate-x-1 transition-transform">&rarr;</span>
+                <span className="text-[#5b6c86] text-sm group-hover:translate-x-1 transition-transform">&rarr;</span>
               </div>
             </Link>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-[#1d2c42] my-6" />
           </>
         )}
 
         {/* ═══ TODAY'S SCHEDULE ═══ */}
-        <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#1d2c42] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <h2 className="text-sm font-bold text-white">Today&apos;s Schedule</h2>
+              <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Today&apos;s Schedule</h2>
             </div>
             <Link href="/dashboard/schedule" className="text-xs text-[#4ecde6] hover:underline font-medium">Full schedule</Link>
           </div>
           <div className="p-5">
             {(todaysGroups || []).length > 0 ? (
-              <div className="space-y-3">
+              <div className="divide-y divide-[#1d2c42]">
                 {(todaysGroups || []).map((g, i) => {
                   const playerCount = groupPlayerCounts.get(g.id) || 0
                   return (
-                    <div key={g.id} className="flex items-center gap-4 bg-[#0f1a2b]/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 hover:border-[#4ecde6]/20 transition-all">
-                      <div className="w-10 h-10 bg-[#4ecde6]/10 rounded-xl flex items-center justify-center flex-shrink-0 border border-[#4ecde6]/20">
+                    <div key={g.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0 transition-all">
+                      <div className="w-10 h-10 bg-[#142236] rounded-xl flex items-center justify-center flex-shrink-0 border border-[#1d2c42]">
                         <div className="w-3 h-3 rounded-full bg-[#4ecde6]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-white">{g.name}</p>
-                        <p className="text-xs text-white/40 mt-0.5">
+                        <p className="text-xs text-[#5b6c86] mt-0.5">
                           {(g.coach as unknown as { full_name: string })?.full_name || 'No coach assigned'}
                           {g.location ? ` · ${g.location}` : ''}
                         </p>
@@ -2158,15 +2162,15 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                         <div className="text-right">
                           {g.time_slot && <p className="text-sm font-bold text-[#4ecde6]">{g.time_slot}</p>}
                           <div className="flex items-center gap-1 mt-1">
-                            <div className="w-14 h-1.5 bg-[#0f1a2b]/[0.06] rounded-full overflow-hidden">
+                            <div className="w-14 h-1.5 bg-[#142236] rounded-full overflow-hidden">
                               <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / (g.max_capacity || 20)) * 100, 100)}%` }} />
                             </div>
-                            <span className="text-[10px] text-white/40 font-medium">{playerCount}</span>
+                            <span className="font-mono text-[12px] tabular-nums text-[#93a2ba]">{playerCount}</span>
                           </div>
                         </div>
                         <Link
                           href={`/dashboard/session/${g.id}/live`}
-                          className="px-3 py-1.5 bg-[#4ecde6]/15 text-[#4ecde6] rounded-lg text-xs font-bold hover:bg-[#4ecde6]/25 transition-colors"
+                          className="px-3 py-1.5 bg-transparent border border-[#293b58] text-[#93a2ba] rounded-xl text-xs font-semibold hover:text-white hover:border-[#3a4f6e] transition-colors"
                         >
                           Start
                         </Link>
@@ -2178,107 +2182,107 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
             ) : (
               <div className="text-center py-8">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <p className="text-xs text-white/30">No classes scheduled for today.</p>
+                <p className="text-xs text-[#5b6c86]">No classes scheduled for today.</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ ACTIVITY FEED ═══ */}
-        <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#1d2c42] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-              <h2 className="text-sm font-bold text-white">Recent Activity</h2>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Recent Activity</h2>
             </div>
             <div className="flex gap-2">
               <Link href="/dashboard/enrolments" className="text-[10px] text-[#4ecde6] hover:underline font-medium">Enrolments</Link>
-              <span className="text-white/10">|</span>
+              <span className="text-[#1d2c42]">|</span>
               <Link href="/dashboard/payments" className="text-[10px] text-[#4ecde6] hover:underline font-medium">Payments</Link>
-              <span className="text-white/10">|</span>
+              <span className="text-[#1d2c42]">|</span>
               <Link href="/dashboard/messages" className="text-[10px] text-[#4ecde6] hover:underline font-medium">Messages</Link>
             </div>
           </div>
-          <div className="divide-y divide-white/[0.04]">
+          <div className="divide-y divide-[#1d2c42]">
             {activityFeed.length > 0 ? (
               activityFeed.slice(0, 10).map((item, i) => (
-                <Link key={`${item.type}-${i}`} href={item.link} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#0f1a2b]/[0.02] transition-colors">
+                <Link key={`${item.type}-${i}`} href={item.link} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#142236]/40 transition-colors">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    item.type === 'enrolment' ? 'bg-emerald-500/10 border border-emerald-500/20' :
-                    item.type === 'payment' ? 'bg-blue-500/10 border border-blue-500/20' :
-                    item.type === 'trial' ? 'bg-amber-500/10 border border-amber-500/20' :
-                    item.type === 'attendance' ? 'bg-green-500/10 border border-green-500/20' :
-                    'bg-purple-500/10 border border-purple-500/20'
+                    item.type === 'enrolment' ? 'bg-[#142236] border border-[#1d2c42]' :
+                    item.type === 'payment' ? 'bg-[#142236] border border-[#1d2c42]' :
+                    item.type === 'trial' ? 'bg-[#142236] border border-[#1d2c42]' :
+                    item.type === 'attendance' ? 'bg-[#142236] border border-[#1d2c42]' :
+                    'bg-[#142236] border border-[#1d2c42]'
                   }`}>
                     {item.type === 'enrolment' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                     )}
                     {item.type === 'payment' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     )}
                     {item.type === 'message' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     )}
                     {item.type === 'trial' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     )}
                     {item.type === 'attendance' && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white">{item.name}</p>
-                    <p className="text-xs text-white/40 truncate">{item.detail}</p>
+                    <p className="text-xs text-[#5b6c86] truncate">{item.detail}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     {item.amount && <p className="text-xs font-semibold text-white">{item.amount}</p>}
                     {item.status && <StatusBadge status={item.status} />}
-                    <p className="text-[10px] text-white/30 mt-0.5">{relativeTime(item.date)}</p>
+                    <p className="text-[10px] text-[#5b6c86] mt-0.5">{relativeTime(item.date)}</p>
                   </div>
                 </Link>
               ))
             ) : (
               <div className="px-5 py-8 text-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                <p className="text-xs text-white/30">No recent activity.</p>
+                <p className="text-xs text-[#5b6c86]">No recent activity.</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ ACTION BUTTONS ═══ */}
         <div className="grid grid-cols-2 gap-3">
           <Link href="/dashboard/players?add=1" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl py-3.5 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)] flex items-center justify-center gap-2">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl py-3.5 text-center hover:border-[#3a4f6e] transition-all flex items-center justify-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span className="text-sm font-semibold text-[#4ecde6]">Add Player</span>
             </div>
           </Link>
           <Link href="/dashboard/leads" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl py-3.5 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)] flex items-center justify-center gap-2">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl py-3.5 text-center hover:border-[#3a4f6e] transition-all flex items-center justify-center gap-2">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               <span className="text-sm font-semibold text-[#4ecde6]">View Leads</span>
             </div>
           </Link>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ CLASSFORKIDS IMPORT ═══ */}
         {(totalPlayers || 0) < 5 && (
           <Link href="/dashboard/players/import/switch" className="block group">
-            <div className="bg-gradient-to-r from-[#4ecde6]/10 to-transparent backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl p-4 hover:border-[#4ecde6]/40 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 hover:border-[#3a4f6e] transition-all">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl flex items-center justify-center flex-shrink-0">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white">Already have players? Import from ClassForKids</p>
-                  <p className="text-xs text-white/40 mt-0.5">Migrate all your data in minutes</p>
+                  <p className="text-xs text-[#5b6c86] mt-0.5">Migrate all your data in minutes</p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
@@ -2286,40 +2290,40 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
           </Link>
         )}
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ QUICK ACTIONS ═══ */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Link href="/dashboard/messages?add=1" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-10 h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Announce</p>
+              <p className="text-xs font-semibold text-[#93a2ba]">Announce</p>
             </div>
           </Link>
           <Link href="/dashboard/reports" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-10 h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Analytics</p>
+              <p className="text-xs font-semibold text-[#93a2ba]">Analytics</p>
             </div>
           </Link>
           <Link href="/dashboard/payments" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-10 h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Payments</p>
+              <p className="text-xs font-semibold text-[#93a2ba]">Payments</p>
             </div>
           </Link>
           <Link href="/dashboard/schedule" className="block group">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center hover:border-[#4ecde6]/20 transition-all shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-              <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 text-center hover:border-[#3a4f6e] transition-all">
+              <div className="w-10 h-10 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               </div>
-              <p className="text-xs font-semibold text-white/60">Schedule</p>
+              <p className="text-xs font-semibold text-[#93a2ba]">Schedule</p>
             </div>
           </Link>
         </div>
@@ -2588,7 +2592,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
         {/* ═══ HEADER ═══ */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Hi {name}</h1>
-          <p className="text-sm text-white/40 mt-1">
+          <p className="text-sm text-[#5b6c86] mt-1">
             You have {todaysClasses.length} class{todaysClasses.length !== 1 ? 'es' : ''} today
             {(unreadCount || 0) > 0 && ` and ${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}`}.
           </p>
@@ -2599,18 +2603,16 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
           const sessionPlayers = classPlayersMap.get(nextSession.id) || []
           return (
             <Link href={'/dashboard/session/' + nextSession.id + '/live'} className="block group mb-6">
-              <div className="relative overflow-hidden bg-gradient-to-br from-[#4ecde6]/20 via-[#4ecde6]/10 to-[#080e18] border-2 border-[#4ecde6]/40 rounded-2xl p-6 shadow-[0_0_30px_rgba(78,205,230,0.15)] hover:shadow-[0_0_40px_rgba(78,205,230,0.25)] hover:border-[#4ecde6]/60 transition-all">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#4ecde6]/5 rounded-full -translate-y-8 translate-x-8" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#4ecde6]/5 rounded-full translate-y-6 -translate-x-6" />
+              <div className="relative overflow-hidden bg-[#0f1a2b] border border-[#293b58] rounded-2xl p-6 transition-all hover:border-[#3a4f6e]">
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#4ecde6]/20 border border-[#4ecde6]/30 rounded-full text-[10px] font-bold text-[#4ecde6] uppercase tracking-wider">
-                      <span className="w-1.5 h-1.5 bg-[#4ecde6] rounded-full animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#1d2c42] rounded-full font-mono text-[10px] uppercase tracking-wider text-[#93a2ba]">
+                      <span className="h-[5px] w-[5px] bg-[#67c79a] rounded-full" />
                       Next Up
                     </span>
                   </div>
                   <h3 className="text-lg font-bold text-white mb-1">{nextSession.name}</h3>
-                  <div className="flex items-center gap-3 text-sm text-white/50 mb-4">
+                  <div className="flex items-center gap-3 text-sm text-[#93a2ba] mb-4">
                     {nextSession.time_slot && (
                       <span className="flex items-center gap-1">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2628,7 +2630,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
                       </span>
                     )}
                   </div>
-                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold shadow-[0_0_20px_rgba(78,205,230,0.3)] group-hover:shadow-[0_0_30px_rgba(78,205,230,0.5)] group-hover:bg-[#5fd8f0] transition-all animate-[pulse-glow_2s_ease-in-out_infinite]">
+                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-[#4ecde6] text-[#04141a] rounded-xl text-sm font-semibold transition-all group-hover:opacity-90">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     Start Session &rarr;
                   </div>
@@ -2637,112 +2639,113 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
             </Link>
           )
         })() : todaysClasses.length === 0 ? (
-          <div className="mb-6 bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <p className="text-3xl mb-2">&#127958;</p>
-            <p className="text-sm text-white/50">No sessions today &mdash; enjoy your day off!</p>
+          <div className="mb-6 bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6 text-center">
+            <p className="text-sm text-[#93a2ba]">No sessions today &mdash; enjoy your day off!</p>
           </div>
         ) : null}
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ COACH STATS ═══ */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link href="/dashboard/schedule" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <div className="w-9 h-9 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div className="overflow-hidden rounded-2xl border border-[#1d2c42]">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#1d2c42]">
+            <Link href="/dashboard/schedule" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 text-center transition hover:bg-[#142236]/40">
+                <div className="w-9 h-9 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <p className="text-xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{(myGroups || []).length}</p>
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86] mt-0.5">My Groups</p>
               </div>
-              <p className="text-xl font-bold text-[#4ecde6]">{(myGroups || []).length}</p>
-              <p className="text-[10px] text-white/40 mt-0.5">My Groups</p>
+            </Link>
+            <div className="h-full bg-[#0f1a2b] p-4 text-center">
+              <div className="w-9 h-9 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <p className="text-xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{todaysClasses.length}</p>
+              <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86] mt-0.5">Today&apos;s Classes</p>
             </div>
-          </Link>
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="w-9 h-9 bg-[#4ecde6]/10 border border-[#4ecde6]/20 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <p className="text-xl font-bold text-[#4ecde6]">{todaysClasses.length}</p>
-            <p className="text-[10px] text-white/40 mt-0.5">Today&apos;s Classes</p>
+            <Link href="/dashboard/reviews" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 text-center transition hover:bg-[#142236]/40">
+                <div className="w-9 h-9 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <p className="text-xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{(recentReviews || []).length}</p>
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86] mt-0.5">Reviews</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/attendance" className="block h-full">
+              <div className="h-full bg-[#0f1a2b] p-4 text-center transition hover:bg-[#142236]/40">
+                <div className="w-9 h-9 bg-[#142236] border border-[#1d2c42] rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#93a2ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <p className="text-xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{attendanceStreak}</p>
+                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86] mt-0.5">Streak</p>
+              </div>
+            </Link>
           </div>
-          <Link href="/dashboard/reviews" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <div className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              </div>
-              <p className="text-xl font-bold text-emerald-400">{(recentReviews || []).length}</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Reviews</p>
-            </div>
-          </Link>
-          <Link href="/dashboard/attendance" className="block">
-            <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/20 transition-all">
-              <div className="w-9 h-9 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center justify-center mx-auto mb-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              </div>
-              <p className="text-xl font-bold text-orange-400">{attendanceStreak}</p>
-              <p className="text-[10px] text-white/40 mt-0.5">Streak</p>
-            </div>
-          </Link>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ UNREAD MESSAGES ALERT ═══ */}
         {(unreadCount || 0) > 0 && (
           <>
             <Link href="/dashboard/messages" className="block group">
-              <div className="bg-[#4ecde6]/10 backdrop-blur-xl border border-[#4ecde6]/20 rounded-2xl px-5 py-4 flex items-center justify-between hover:border-[#4ecde6]/40 transition-all">
+              <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl px-5 py-4 flex items-center justify-between hover:border-[#3a4f6e] transition-all">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#4ecde6]/20 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-[#142236] rounded-xl flex items-center justify-center">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ecde6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </div>
                   <span className="text-sm font-medium text-[#4ecde6]">
                     {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <span className="text-[#4ecde6]/60 text-sm group-hover:translate-x-1 transition-transform">View &rarr;</span>
+                <span className="text-[#5b6c86] text-sm group-hover:translate-x-1 transition-transform">View &rarr;</span>
               </div>
             </Link>
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-[#1d2c42] my-6" />
           </>
         )}
 
         {/* ═══ TODAY'S CLASSES ═══ */}
-        <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">My Classes Today</h2>
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#1d2c42] flex items-center justify-between">
+            <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">My Classes Today</h2>
             <Link href="/dashboard/schedule" className="text-xs text-[#4ecde6] hover:underline font-medium">Full schedule</Link>
           </div>
           <div className="p-5">
             {todaysClasses.length > 0 ? (
-              <div className="space-y-4">
+              <div className="divide-y divide-[#1d2c42]">
                 {todaysClasses.map((g) => {
                   const players = classPlayersMap.get(g.id) || []
                   return (
-                    <div key={g.id} className="bg-[#0f1a2b]/[0.03] border border-white/[0.06] rounded-xl p-4">
+                    <div key={g.id} className="py-4 first:pt-0 last:pb-0">
                       <div className="flex items-center justify-between mb-2">
                         <div>
                           <p className="text-sm font-semibold text-white">{g.name}</p>
-                          {g.location && <p className="text-xs text-white/40">{g.location}</p>}
+                          {g.location && <p className="text-xs text-[#5b6c86]">{g.location}</p>}
                         </div>
                         {g.time_slot && <p className="text-sm font-bold text-[#4ecde6]">{g.time_slot}</p>}
                       </div>
                       {players.length > 0 ? (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {players.map((p) => (
-                            <div key={p.id} className="flex items-center gap-1.5 px-2 py-1 bg-[#0f1a2b]/[0.05] border border-white/[0.08] rounded-full text-xs text-white/60">
+                            <div key={p.id} className="flex items-center gap-1.5 px-2 py-1 bg-[#142236] border border-[#1d2c42] rounded-full text-xs text-[#93a2ba]">
                               <PlayerAvatar photoUrl={p.photo_url} firstName={p.first_name} lastName={p.last_name} size="xs" />
                               {p.first_name} {p.last_name}
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-white/30 mt-1">No players enrolled.</p>
+                        <p className="text-xs text-[#5b6c86] mt-1">No players enrolled.</p>
                       )}
                       <div className="mt-3 flex items-center gap-2">
-                        <Link href={'/dashboard/session/' + g.id + '/live'} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-xs font-semibold hover:bg-[#4ecde6]/90 transition-colors">
+                        <Link href={'/dashboard/session/' + g.id + '/live'} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#293b58] text-[#93a2ba] rounded-xl text-xs font-semibold hover:text-white hover:border-[#3a4f6e] transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                           Start Session
                         </Link>
-                        <Link href={'/dashboard/session/' + g.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0f1a2b] border border-[#1d2c42] text-white/70 rounded-lg text-xs font-semibold hover:border-[#4ecde6]/40 hover:text-[#4ecde6] transition-colors">
+                        <Link href={'/dashboard/session/' + g.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-[#293b58] text-[#93a2ba] rounded-xl text-xs font-semibold hover:text-white hover:border-[#3a4f6e] transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                           Review Players
                         </Link>
@@ -2754,51 +2757,51 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
             ) : (
               <div className="text-center py-6">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <p className="text-xs text-white/30">No classes scheduled for today.</p>
+                <p className="text-xs text-[#5b6c86]">No classes scheduled for today.</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         {/* ═══ BIRTHDAYS (delight widget — only renders if any) ═══ */}
         {birthdayPlayers.length > 0 && (
           <>
             <BirthdaysThisWeek players={birthdayPlayers} />
-            <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+            <div className="h-px bg-[#1d2c42] my-6" />
           </>
         )}
 
         {/* ═══ PLAYERS NEEDING ATTENTION ═══ */}
         <PlayersNeedingAttention players={attentionPlayersTop} />
 
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+        <div className="h-px bg-[#1d2c42] my-6" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* ═══ RECENT REVIEWS ═══ */}
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white">Recent Reviews</h2>
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#1d2c42] flex items-center justify-between">
+              <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Recent Reviews</h2>
               <Link href="/dashboard/reviews" className="text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
             </div>
             <div className="p-5">
               {(recentReviews || []).length > 0 ? (
                 <div className="space-y-3">
                   {(recentReviews || []).map((r) => (
-                    <div key={r.id} className="border-b border-white/[0.06] pb-3 last:border-0 last:pb-0">
+                    <div key={r.id} className="border-b border-[#1d2c42] pb-3 last:border-0 last:pb-0">
                       <div className="flex items-center justify-between mb-1">
                         <Link href={'/dashboard/players/' + r.player_id} className="text-sm font-medium text-white hover:text-[#4ecde6] transition-colors">
                           {(r.player as unknown as { first_name: string; last_name: string })?.first_name}{' '}
                           {(r.player as unknown as { first_name: string; last_name: string })?.last_name}
                         </Link>
-                        <span className="text-xs text-white/30">{new Date(r.review_date).toLocaleDateString()}</span>
+                        <span className="text-xs text-[#5b6c86]">{new Date(r.review_date).toLocaleDateString()}</span>
                       </div>
                       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
                         {scoringCategories.map((cat) => (
                           <div key={cat.key} className="flex flex-col items-center gap-0.5">
                             <ScoreBadge score={((r as Record<string, unknown>).scores as Record<string, number> | null)?.[cat.key] ?? (r as Record<string, unknown>)[cat.key] as number} />
-                            <span className="text-[9px] text-white/30">{cat.label.substring(0, 4)}</span>
+                            <span className="text-[9px] text-[#5b6c86]">{cat.label.substring(0, 4)}</span>
                           </div>
                         ))}
                       </div>
@@ -2808,16 +2811,16 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
               ) : (
                 <div className="text-center py-6">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  <p className="text-xs text-white/30">No reviews written yet.</p>
+                  <p className="text-xs text-[#5b6c86]">No reviews written yet.</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* ═══ UNREAD MESSAGES ═══ */}
-          <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
-            <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white">Unread Messages</h2>
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#1d2c42] flex items-center justify-between">
+              <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Unread Messages</h2>
               <Link href="/dashboard/messages" className="text-xs text-[#4ecde6] hover:underline font-medium">View all</Link>
             </div>
             <div className="p-5">
@@ -2825,16 +2828,16 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
                 <div className="space-y-3">
                   {(unreadMessages || []).map((m) => (
                     <Link key={m.id} href="/dashboard/messages" className="block group">
-                      <div className="flex items-center gap-3 rounded-xl px-2 py-2 -mx-1 hover:bg-[#0f1a2b]/[0.03] transition-colors">
+                      <div className="flex items-center gap-3 rounded-xl px-2 py-2 -mx-1 hover:bg-[#142236]/40 transition-colors">
                         <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 text-[#4ecde6] text-xs font-bold flex-shrink-0">
                           {(m.sender as unknown as { full_name: string })?.full_name?.charAt(0) || '?'}
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-white">{m.subject || 'Message'}</span>
-                            <span className="text-[10px] text-white/30 font-normal">{new Date(m.created_at).toLocaleDateString()}</span>
+                            <span className="text-[10px] text-[#5b6c86] font-normal">{new Date(m.created_at).toLocaleDateString()}</span>
                           </div>
-                          <p className="text-white/40 text-xs truncate font-normal">{m.body}</p>
+                          <p className="text-[#5b6c86] text-xs truncate font-normal">{m.body}</p>
                         </div>
                       </div>
                     </Link>
@@ -2843,7 +2846,7 @@ async function CoachDashboard({ userId, name, orgId }: { userId: string; name: s
               ) : (
                 <div className="text-center py-6">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  <p className="text-xs text-white/30">No unread messages.</p>
+                  <p className="text-xs text-[#5b6c86]">No unread messages.</p>
                 </div>
               )}
             </div>

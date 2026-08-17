@@ -28,16 +28,19 @@ export interface AcademyHealthBarProps {
 
 type Tone = 'good' | 'warn' | 'bad' | 'neutral'
 
-const TONE: Record<Tone, string> = {
-  good: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-  warn: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-  bad: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
-  neutral: 'border-white/10 bg-white/[0.04] text-white/70',
+// Quiet chips — hairline border, muted mono text; state expressed via a
+// small semantic dot only (no filled backgrounds).
+const DOT: Record<Tone, string | null> = {
+  good: 'bg-[#67c79a]',
+  warn: 'bg-[#d8a95a]',
+  bad: 'bg-[#e0736d]',
+  neutral: null,
 }
 
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${TONE[tone]}`}>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1d2c42] px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-[#93a2ba]">
+      {DOT[tone] && <span aria-hidden className={`h-[5px] w-[5px] shrink-0 rounded-full ${DOT[tone]}`} />}
       {children}
     </span>
   )
@@ -64,10 +67,9 @@ export default function AcademyHealthBar({
     (stripeNotReady && !isPilot ? 1 : 0)
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-[#0f1a2b] px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] px-4 py-2.5">
       {/* Live status */}
       <Chip tone={isLive ? 'good' : 'warn'}>
-        <span aria-hidden>{isLive ? '●' : '◐'}</span>
         {isLive ? 'Live' : 'Not live yet'}
       </Chip>
 
@@ -92,7 +94,6 @@ export default function AcademyHealthBar({
       <div className="ml-auto">
         {alertCount > 0 ? (
           <Chip tone="bad">
-            <span aria-hidden>⚠</span>
             {alertCount} alert{alertCount === 1 ? '' : 's'}
             {overdueCount > 0 ? ` · ${formatGBP(overdueAmount)} overdue` : ''}
           </Chip>

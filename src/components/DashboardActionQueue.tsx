@@ -30,25 +30,25 @@ interface RowDef {
   key: keyof ActionQueueCounts
   label: string
   href: string
-  emoji: string
-  tone: 'rose' | 'amber' | 'yellow'
+  tone: 'danger' | 'warn'
 }
 
-// Static palette — Tailwind JIT-safe (no string-built class names).
-const TONE: Record<RowDef['tone'], { dot: string; chip: string; bar: string }> = {
-  rose:   { dot: 'bg-rose-500',   chip: 'bg-rose-500/15  text-rose-300  border border-rose-500/30',  bar: 'before:bg-rose-500/60' },
-  amber:  { dot: 'bg-amber-500',  chip: 'bg-amber-500/15 text-amber-300 border border-amber-500/30', bar: 'before:bg-amber-500/60' },
-  yellow: { dot: 'bg-yellow-500', chip: 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30', bar: 'before:bg-yellow-500/60' },
+// Static palette — Tailwind JIT-safe (no string-built class names). Severity
+// is expressed by a small 6px dot + a semantic-coloured count (no filled
+// badge blobs, no emoji).
+const TONE: Record<RowDef['tone'], { dot: string; count: string }> = {
+  danger: { dot: 'bg-[#e0736d]', count: 'text-[#e0736d]' },
+  warn:   { dot: 'bg-[#d8a95a]', count: 'text-[#d8a95a]' },
 }
 
-// Row order matches the spec example: 🔴 Trial → 🔴 Payment → 🟠 At-Risk
-// → 🟠 Attendance → 🟡 Reviews. Stable + deterministic.
+// Row order matches the spec example: Trial → Payment → At-Risk
+// → Attendance → Reviews. Stable + deterministic.
 const ROWS: RowDef[] = [
-  { key: 'trialFollowUps',   label: 'Trial Follow-Ups',  href: '/dashboard/enrolments#trial-followup',        emoji: '🔴', tone: 'rose'   },
-  { key: 'paymentIssues',    label: 'Payment Issues',     href: '/dashboard/parents?filter=payment_issues',    emoji: '🔴', tone: 'rose'   },
-  { key: 'atRiskFamilies',   label: 'At-Risk Families',   href: '/dashboard/parents?filter=needs_attention',   emoji: '🟠', tone: 'amber'  },
-  { key: 'attendanceRisks',  label: 'Attendance Risks',   href: '/dashboard/players?filter=attendance_risk',   emoji: '🟠', tone: 'amber'  },
-  { key: 'reviewsDue',       label: 'Reviews Due',        href: '/dashboard/reviews',                          emoji: '🟡', tone: 'yellow' },
+  { key: 'trialFollowUps',   label: 'Trial Follow-Ups',  href: '/dashboard/enrolments#trial-followup',        tone: 'danger' },
+  { key: 'paymentIssues',    label: 'Payment Issues',     href: '/dashboard/parents?filter=payment_issues',    tone: 'danger' },
+  { key: 'atRiskFamilies',   label: 'At-Risk Families',   href: '/dashboard/parents?filter=needs_attention',   tone: 'warn'   },
+  { key: 'attendanceRisks',  label: 'Attendance Risks',   href: '/dashboard/players?filter=attendance_risk',   tone: 'warn'   },
+  { key: 'reviewsDue',       label: 'Reviews Due',        href: '/dashboard/reviews',                          tone: 'warn'   },
 ]
 
 export default function DashboardActionQueue({
@@ -69,20 +69,12 @@ export default function DashboardActionQueue({
   const visibleRows = orderedRows.filter(r => (counts[r.key] ?? 0) > 0)
 
   return (
-    <section className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+    <section className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-base" aria-hidden>🎯</span>
-          <h2 className="text-sm font-bold text-white">Today</h2>
-        </div>
-        <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-            counts.total === 0
-              ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-              : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-          }`}
-        >
+      <div className="px-5 py-3 border-b border-[#1d2c42] flex items-center justify-between">
+        <h2 className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Today</h2>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#1d2c42] font-mono text-[10px] uppercase tracking-wider text-[#93a2ba]">
+          {counts.total === 0 && <span aria-hidden className="h-[5px] w-[5px] shrink-0 rounded-full bg-[#67c79a]" />}
           {counts.total === 0 ? 'All clear' : `${counts.total} ${counts.total === 1 ? 'action' : 'actions'}`}
         </span>
       </div>
@@ -90,13 +82,13 @@ export default function DashboardActionQueue({
       {/* Body */}
       {visibleRows.length === 0 ? (
         <div className="px-5 py-8 text-center">
-          <p className="text-sm text-white/60">Nothing requires attention today</p>
-          <p className="text-[11px] text-white/30 mt-1">
+          <p className="text-sm text-[#93a2ba]">Nothing requires attention today</p>
+          <p className="text-[11px] text-[#5b6c86] mt-1">
             Every cohort is empty — trial follow-ups, payment issues, at-risk families, attendance risks and reviews due
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-white/[0.05]">
+        <div className="divide-y divide-[#1d2c42]">
           {visibleRows.map(r => {
             const count = counts[r.key]
             const tone = TONE[r.tone]
@@ -107,14 +99,14 @@ export default function DashboardActionQueue({
                 // String href only. NEVER pass onClick or function props
                 // to <Link> from a server component (Phase 1 crash root
                 // cause — see post-mortem in commit 9efc83d).
-                className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-white/[0.03]"
+                className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[#142236]/40"
               >
-                <span className="text-lg shrink-0" aria-hidden>{r.emoji}</span>
+                <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{r.label}</p>
-                  <p className="text-[11px] text-white/40 truncate">Tap to review →</p>
+                  <p className="text-[13px] font-medium text-[#eef2f9] truncate">{r.label}</p>
+                  <p className="text-[11px] text-[#5b6c86] truncate">Tap to review →</p>
                 </div>
-                <span className={`px-2 py-1 rounded-md text-xs font-bold tabular-nums shrink-0 ${tone.chip}`}>
+                <span className={`shrink-0 text-right font-mono text-[13px] tabular-nums ${tone.count}`}>
                   {count}
                 </span>
               </Link>

@@ -44,12 +44,12 @@ export default function BookingShareBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="flex-1 truncate rounded-lg bg-black/30 border border-white/10 px-3 py-2 text-xs text-white/70">
+        <div className="flex-1 truncate rounded-xl bg-[#142236] border border-[#1d2c42] px-3 py-2 text-xs text-[#93a2ba]">
           {bookingUrl}
         </div>
         <button
           onClick={handleCopy}
-          className="shrink-0 rounded-lg bg-[#4ecde6] px-3 py-2 text-xs font-semibold text-black transition hover:opacity-90"
+          className="shrink-0 rounded-xl bg-[#4ecde6] px-3 py-2 text-xs font-semibold text-[#04141a] transition hover:opacity-90"
         >
           {copied ? 'Copied!' : 'Copy Link'}
         </button>
@@ -59,7 +59,7 @@ export default function BookingShareBar({
           href={waHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-green-500/30 bg-green-500/10 px-2 py-2 text-center text-xs font-medium text-green-300 transition hover:bg-green-500/20"
+          className="rounded-xl border border-[#293b58] bg-transparent px-2 py-2 text-center text-xs font-medium text-[#93a2ba] transition hover:border-[#3a4f6e] hover:text-white"
         >
           WhatsApp
         </a>
@@ -67,13 +67,13 @@ export default function BookingShareBar({
           href={fbHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-2 text-center text-xs font-medium text-blue-300 transition hover:bg-blue-500/20"
+          className="rounded-xl border border-[#293b58] bg-transparent px-2 py-2 text-center text-xs font-medium text-[#93a2ba] transition hover:border-[#3a4f6e] hover:text-white"
         >
           Facebook
         </a>
         <a
           href={mailHref}
-          className="rounded-lg border border-white/15 bg-white/5 px-2 py-2 text-center text-xs font-medium text-white/70 transition hover:bg-white/10"
+          className="rounded-xl border border-[#293b58] bg-transparent px-2 py-2 text-center text-xs font-medium text-[#93a2ba] transition hover:border-[#3a4f6e] hover:text-white"
         >
           Email
         </a>
