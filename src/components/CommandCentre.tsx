@@ -62,22 +62,165 @@ export interface CommandCentreProps {
 // KPI cell — lives inside a single hairline-divided container (the grid
 // supplies gap-px dividers). Values are always white; semantic colour is
 // reserved for small delta/count spans inside `sub`.
+//
+// First-run: `ghosted` renders a zero value muted (not a bold white
+// failure) and promotes the sub-line to guidance copy. Defaults to false,
+// so every existing call site renders byte-identically.
 function StatCard({
-  label, value, sub, href,
+  label, value, sub, href, ghosted = false,
 }: {
   label: string
   value: string
   sub?: React.ReactNode
   href?: string
+  ghosted?: boolean
 }) {
   const inner = (
     <div className="h-full bg-[#0f1a2b] p-4 transition hover:bg-[#142236]/40">
       <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">{label}</p>
-      <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{value}</p>
-      {sub && <p className="mt-0.5 text-[11px] text-[#5b6c86]">{sub}</p>}
+      {ghosted ? (
+        <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-[#5b6c86]">{value}</p>
+      ) : (
+        <p className="mt-1 text-2xl font-bold tracking-tight tabular-nums text-[#eef2f9]">{value}</p>
+      )}
+      {sub && (ghosted
+        ? <p className="mt-1 text-[11px] leading-relaxed text-[#93a2ba]">{sub}</p>
+        : <p className="mt-0.5 text-[11px] text-[#5b6c86]">{sub}</p>)}
     </div>
   )
   return href ? <Link href={href} className="block h-full">{inner}</Link> : inner
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// First-run setup journey — renders INSTEAD of the action queue while the
+// academy has zero classes OR zero players (dead-£0 state). Disappears
+// entirely once both exist, at which point the dashboard is byte-identical
+// to today. Pure presentation over props already computed in page.tsx:
+// no new queries, no writes.
+//   Step 2 done  = readiness.stripeReadiness === 'ready_to_take_payments'
+//   Step 3 done  = weekSessions.length > 0   (all training_groups rows)
+//   Step 4 done  = totalPlayers > 0          (a signup proves sharing worked)
+// Exactly ONE cyan primary — the current (first incomplete) step. Later
+// incomplete steps render a ghost "After step N" non-link.
+// ════════════════════════════════════════════════════════════════════════
+function FirstRunJourney({
+  stripeReady, hasClasses, hasAnyPlayers, bookingUrl,
+}: {
+  stripeReady: boolean
+  hasClasses: boolean
+  hasAnyPlayers: boolean
+  bookingUrl: string
+}) {
+  const steps: Array<{
+    title: string
+    desc: string
+    done: boolean
+    cta: { label: string; href: string } | null
+  }> = [
+    {
+      title: 'Create your account',
+      desc: 'Done — welcome aboard',
+      done: true,
+      cta: null,
+    },
+    {
+      title: 'Connect Stripe so parents can pay you',
+      desc: stripeReady
+        ? 'Done — payouts go straight to your bank'
+        : 'Payouts go straight to your bank — no invoices to chase.',
+      done: stripeReady,
+      cta: { label: 'Connect Stripe', href: '/dashboard/settings?tab=billing' },
+    },
+    {
+      title: 'Create your first class',
+      desc: 'Name, day, time, price — 2 minutes. Everything else hangs off this.',
+      done: hasClasses,
+      cta: { label: 'Create a class', href: '/dashboard/groups' },
+    },
+    {
+      title: 'Share your booking page',
+      desc: 'Parents book & pay themselves — no forms, no chasing.',
+      done: hasAnyPlayers,
+      // Anchor-scrolls to the existing share bar panel below (or Settings
+      // when no booking slug exists yet, since the share panel is hidden).
+      cta: { label: 'Share your page', href: bookingUrl ? '#share-booking-page' : '/dashboard/settings' },
+    },
+  ]
+
+  const doneCount = steps.filter((s) => s.done).length
+  const currentIdx = steps.findIndex((s) => !s.done)
+  const pct = Math.round((doneCount / steps.length) * 100)
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[#1d2c42] bg-[#0f1a2b]">
+      {/* Header — title + progress */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1d2c42] px-4 py-3.5 sm:px-5">
+        <p className="text-sm font-semibold text-[#eef2f9]">Get set up — about 10 minutes</p>
+        <span className="flex items-center gap-2.5">
+          <span className="h-1 w-[120px] overflow-hidden rounded-full bg-[#1d2c42]">
+            <span className="block h-full rounded-full bg-[#4ecde6]" style={{ width: `${pct}%` }} />
+          </span>
+          <span className="font-mono text-[10px] tabular-nums text-[#5b6c86]">{doneCount}/{steps.length}</span>
+        </span>
+      </div>
+
+      {steps.map((step, i) => {
+        const isCurrent = i === currentIdx
+        const isFutureTodo = !step.done && !isCurrent
+        return (
+          <div
+            key={step.title}
+            className={`grid grid-cols-[26px_1fr_auto] items-center gap-3 px-4 py-3 sm:px-5 ${i > 0 ? 'border-t border-[#1d2c42]' : ''}`}
+          >
+            {/* Status circle */}
+            {step.done ? (
+              <span aria-hidden className="grid h-[22px] w-[22px] place-items-center rounded-full bg-[#67c79a]/15 font-mono text-[10px] text-[#67c79a]">✓</span>
+            ) : isCurrent ? (
+              <span aria-hidden className="grid h-[22px] w-[22px] place-items-center rounded-full bg-[#4ecde6]/15 font-mono text-[10px] text-[#4ecde6] shadow-[0_0_0_4px_rgba(78,205,230,0.06)]">{i + 1}</span>
+            ) : (
+              <span aria-hidden className="grid h-[22px] w-[22px] place-items-center rounded-full border border-[#293b58] font-mono text-[10px] text-[#5b6c86]">{i + 1}</span>
+            )}
+
+            {/* Title + description */}
+            <div className="min-w-0">
+              <p className={step.done
+                ? 'text-[13px] font-semibold text-[#93a2ba] line-through decoration-[#93a2ba]/40'
+                : 'text-[13px] font-semibold text-[#eef2f9]'}
+              >
+                {step.title}
+              </p>
+              <p className="mt-px text-[11px] text-[#5b6c86]">{step.desc}</p>
+            </div>
+
+            {/* Right-hand action — one cyan primary per moment (the current step) */}
+            {step.done ? (
+              <span className="font-mono text-[9.5px] uppercase tracking-[0.08em] text-[#67c79a]">Done</span>
+            ) : isCurrent && step.cta ? (
+              step.cta.href.startsWith('#') ? (
+                <a
+                  href={step.cta.href}
+                  className="shrink-0 rounded-[9px] bg-[#4ecde6] px-3.5 py-1.5 text-[11.5px] font-bold text-[#04141a] transition hover:opacity-90"
+                >
+                  {step.cta.label}
+                </a>
+              ) : (
+                <Link
+                  href={step.cta.href}
+                  className="shrink-0 rounded-[9px] bg-[#4ecde6] px-3.5 py-1.5 text-[11.5px] font-bold text-[#04141a] transition hover:opacity-90"
+                >
+                  {step.cta.label}
+                </Link>
+              )
+            ) : isFutureTodo ? (
+              <span className="shrink-0 rounded-[9px] border border-[#293b58] px-3.5 py-1.5 text-[11.5px] font-semibold text-[#93a2ba]">
+                After step {currentIdx + 1}
+              </span>
+            ) : null}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function CommandCentre(props: CommandCentreProps) {
@@ -104,6 +247,17 @@ export default function CommandCentre(props: CommandCentreProps) {
     }
 
   const sessionsWithTimes = weekSessions.filter((s) => s.time)
+
+  // ── First-run derivations — all from props already computed in page.tsx ──
+  // weekSessions is built from EVERY training_groups row for the org (not
+  // just timed ones), so its length is the academy's class count.
+  // totalPlayers (any player row) rather than activePlayers (enrolled AND
+  // paying) gates the journey, so an established academy whose subs lapse
+  // can never regress into the setup card.
+  const hasClasses = weekSessions.length > 0
+  const hasAnyPlayers = totalPlayers > 0
+  const isFirstRun = !hasClasses || !hasAnyPlayers
+  const stripeReady = readiness.stripeReadiness === 'ready_to_take_payments'
 
   // ════════════════════════════════════════════════════════════════════════
   // Phase 2A · Phase 1A — Health Bar + 6-card Snapshot + promoted Action
@@ -167,20 +321,27 @@ export default function CommandCentre(props: CommandCentreProps) {
                 <StatCard
                   label="Recurring Revenue"
                   value={formatGBP(recurringRevenue)}
-                  sub={`from ${activeSubs} active sub${activeSubs === 1 ? '' : 's'}`}
+                  ghosted={isFirstRun && recurringRevenue === 0}
+                  sub={isFirstRun && recurringRevenue === 0
+                    ? 'Collects itself every month once your first member joins.'
+                    : `from ${activeSubs} active sub${activeSubs === 1 ? '' : 's'}`}
                   href="/dashboard/payments"
                 />
                 <StatCard
                   label="Collected This Month"
                   value={formatGBP(collectedThisMonth)}
+                  ghosted={isFirstRun && collectedThisMonth === 0}
                   sub={collectedSub}
                   href="/dashboard/payments"
                 />
                 <StatCard
                   label="Active Players"
                   value={String(activePlayers)}
-                  sub={`of ${totalPlayers} · enrolled & paying`}
-                  href="/dashboard/players"
+                  ghosted={isFirstRun && activePlayers === 0}
+                  sub={isFirstRun && activePlayers === 0
+                    ? <>Invite your contacts to enrol →</>
+                    : `of ${totalPlayers} · enrolled & paying`}
+                  href={isFirstRun && activePlayers === 0 ? '/dashboard/contacts' : '/dashboard/players'}
                 />
                 <StatCard
                   label="Outstanding"
@@ -199,7 +360,12 @@ export default function CommandCentre(props: CommandCentreProps) {
                 <StatCard
                   label="Attendance"
                   value={attendanceRate > 0 ? `${attendanceRate}%` : '—'}
-                  sub={attendanceRate > 0 ? 'last 30 days' : 'no sessions yet'}
+                  ghosted={isFirstRun && attendanceRate === 0}
+                  sub={attendanceRate > 0
+                    ? 'last 30 days'
+                    : isFirstRun
+                      ? 'Registers appear here after your first session · 30-second tap-to-mark.'
+                      : 'no sessions yet'}
                   href="/dashboard/attendance"
                 />
               </div>
@@ -209,11 +375,44 @@ export default function CommandCentre(props: CommandCentreProps) {
           {/* ── SECTION 3: Action Centre — promoted full-width anchor ──
               Ranking: revenue risk → revenue opportunity → retention risk →
               operations. Reuses DashboardActionQueue with an order override;
-              the component default (and the flag-OFF path) is unchanged. */}
-          <DashboardActionQueue
-            counts={actionQueueCounts}
-            order={['paymentIssues', 'trialFollowUps', 'atRiskFamilies', 'attendanceRisks', 'reviewsDue']}
-          />
+              the component default (and the flag-OFF path) is unchanged.
+              First-run (live but no classes or no players yet): the queue has
+              nothing real to say, so the setup journey renders in its place
+              and retires itself once classes AND players both exist. */}
+          {isLive && isFirstRun ? (
+            <FirstRunJourney
+              stripeReady={stripeReady}
+              hasClasses={hasClasses}
+              hasAnyPlayers={hasAnyPlayers}
+              bookingUrl={bookingUrl}
+            />
+          ) : (
+            <DashboardActionQueue
+              counts={actionQueueCounts}
+              order={['paymentIssues', 'trialFollowUps', 'atRiskFamilies', 'attendanceRisks', 'reviewsDue']}
+            />
+          )}
+
+          {/* ── First-run: no classes yet — a dashed invitation, not a blank.
+              Ghost button (the journey card above holds this moment's one
+              cyan primary). Renders only pre-first-class; gone forever after. ── */}
+          {isLive && !hasClasses && (
+            <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
+              <p className="mb-4 text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">This Week&apos;s Sessions</p>
+              <div className="rounded-xl border border-dashed border-[#293b58] px-5 py-6 text-center">
+                <p className="text-[13.5px] font-semibold text-[#eef2f9]">No classes yet</p>
+                <p className="mx-auto mt-1 max-w-[40ch] text-[11.5px] text-[#5b6c86]">
+                  Create your first class and your weekly timetable builds itself — capacity, registers, the lot.
+                </p>
+                <Link
+                  href="/dashboard/groups"
+                  className="mt-3 inline-block rounded-[9px] border border-[#293b58] px-3.5 py-1.5 text-[11.5px] font-semibold text-[#93a2ba] transition hover:border-[#3a4f6e] hover:text-white"
+                >
+                  Create your first class
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* ── This week's sessions (operations, below the fold) ── */}
           {sessionsWithTimes.length > 0 && (
@@ -238,9 +437,14 @@ export default function CommandCentre(props: CommandCentreProps) {
 
           {/* ── Booking share + leads (below the fold; status now lives in the Health Bar) ── */}
           {bookingUrl && (
-            <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
+            <div id="share-booking-page" className="scroll-mt-24 rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
               <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Share Your Booking Page</p>
               <BookingShareBar bookingUrl={bookingUrl} academyName={orgName} />
+              {!hasAnyPlayers && (
+                <p className="mt-3 text-[11px] leading-relaxed text-[#5b6c86]">
+                  This link is your shop window — parents pick a class, pay, and appear in your dashboard automatically.
+                </p>
+              )}
               {newLeadsThisWeek > 0 && (
                 <Link href="/dashboard/leads" className="mt-3 inline-block text-xs font-medium text-[#4ecde6] hover:underline">
                   {newLeadsThisWeek} new lead{newLeadsThisWeek === 1 ? '' : 's'} this week →
