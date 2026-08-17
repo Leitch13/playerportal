@@ -45,17 +45,22 @@
    foundation we apply surface-by-surface.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
-  /* ── Shell — the cyan brand chrome ── */
-  --pp-shell:            #0b8299;              /* solid fallback */
-  --pp-shell-from:       #12a2bd;              /* gradient top   */
-  --pp-shell-to:         #0b7f96;              /* gradient bottom*/
+  /* ── Shell — navy chrome, cyan only in the details ──
+     v2 (2026-08-16): the full-cyan chrome read as flat colour blocks at real
+     scale (31 nav items, full-height sidebar). Premium = the chrome sits a
+     touch above the workspace in the same navy family, faintly cyan-tinted,
+     and the brand cyan appears only as accents (active item, indicator bars,
+     logo ring) — never as a slab. */
+  --pp-shell:            #0c1a2c;              /* solid fallback */
+  --pp-shell-from:       #0e1f33;              /* gradient top — faint cyan-navy lift */
+  --pp-shell-to:         #0a1322;              /* gradient bottom */
   --pp-shell-grad:       linear-gradient(170deg, var(--pp-shell-from), var(--pp-shell-to));
   --pp-shell-ink:        #ffffff;
-  --pp-shell-ink-mut:    rgba(255, 255, 255, 0.78);
-  --pp-shell-ink-faint:  rgba(255, 255, 255, 0.52);
-  --pp-shell-hair:       rgba(255, 255, 255, 0.16);   /* dividers on cyan */
-  --pp-shell-hover:      rgba(255, 255, 255, 0.10);   /* nav item hover   */
-  --pp-shell-active:     rgba(255, 255, 255, 0.16);   /* nav item active  */
+  --pp-shell-ink-mut:    rgba(255, 255, 255, 0.72);
+  --pp-shell-ink-faint:  rgba(255, 255, 255, 0.42);
+  --pp-shell-hair:       rgba(255, 255, 255, 0.07);   /* hairline dividers */
+  --pp-shell-hover:      rgba(255, 255, 255, 0.05);   /* nav item hover    */
+  --pp-shell-active:     rgba(78, 205, 230, 0.12);    /* nav item active — cyan tint */
 
   /* ── Workspace — the calm dark navy the owner works in ── */
   --pp-bg:         #080e18;   /* page ground        */

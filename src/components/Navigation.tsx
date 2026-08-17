@@ -565,12 +565,12 @@ export default function Navigation({
                         onClick={() => setSidebarOpen(false)}
                         className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
                           active
-                            ? 'bg-[var(--pp-shell-active)] text-[var(--pp-shell-ink)]'
+                            ? 'bg-[var(--pp-shell-active)] text-[var(--pp-accent)]'
                             : 'text-[var(--pp-shell-ink-mut)] hover:bg-[var(--pp-shell-hover)] hover:text-[var(--pp-shell-ink)]'
                         }`}
                       >
                         {active && (
-                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--pp-shell-ink)] rounded-r-full" />
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--pp-accent)] rounded-r-full" />
                         )}
                         <span className="w-5 flex items-center justify-center">{icons[item.icon] || item.icon}</span>
                         <span className="flex-1">{item.label}</span>
@@ -596,7 +596,7 @@ export default function Navigation({
               onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                 pathname === '/platform'
-                  ? 'bg-[var(--pp-shell-active)] text-[var(--pp-shell-ink)]'
+                  ? 'bg-[var(--pp-shell-active)] text-[var(--pp-accent)]'
                   : 'text-[var(--pp-shell-ink-mut)] hover:bg-[var(--pp-shell-hover)] hover:text-[var(--pp-shell-ink)]'
               }`}
             >
@@ -678,11 +678,11 @@ export default function Navigation({
                 key={item.href}
                 href={resolvedHref}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-all duration-150 ${
-                  active ? 'text-[var(--pp-shell-ink)]' : 'text-[var(--pp-shell-ink-mut)] active:scale-95'
+                  active ? 'text-[var(--pp-accent)]' : 'text-[var(--pp-shell-ink-mut)] active:scale-95'
                 }`}
               >
                 {active && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-5 h-[3px] bg-[var(--pp-shell-ink)] rounded-b-full" />
+                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-5 h-[3px] bg-[var(--pp-accent)] rounded-b-full" />
                 )}
                 <span className="flex items-center justify-center">{icons[mobileIcon] || mobileIcon}</span>
                 <span className="text-[10px] font-medium leading-tight">{mobileLabel}</span>
