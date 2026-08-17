@@ -110,6 +110,30 @@ const css = `
 .pb-powered svg{width:11px;height:11px}
 .pb-preview{max-width:520px;margin:0 auto 14px;text-align:center;font-size:12px;color:#fcd34d;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:10px 14px}
 .pb-preview a{color:#fde68a;font-weight:600}
+
+/* ── Desktop: a proper stage, not a phone column in a void ──
+   ≥900px the shell widens, the header becomes a hero band, and classes flow
+   into a two-column grid with bottom-aligned CTAs. Mobile (<900px) is
+   untouched — everything above renders exactly as verified. */
+@media (min-width:900px){
+  .pb-page{max-width:1000px}
+  .pb-preview{max-width:1000px}
+  .pb-head{padding:34px 32px 24px}
+  .pb-org{gap:16px}
+  .pb-crest{width:58px;height:58px;border-radius:17px;font-size:18px}
+  .pb-nm{font-size:24px}
+  .pb-sub{font-size:11px;margin-top:3px}
+  .pb-trust{margin-top:16px}
+  .pb-chip{font-size:9.5px;padding:5px 12px}
+  .pb-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:22px 24px 26px}
+  .pb-seclab,.pb-micro,.pb-ghost{grid-column:1/-1}
+  .pb-card{display:flex;flex-direction:column;padding:17px 18px}
+  .pb-n{font-size:15px}
+  .pb-pr{font-size:15px}
+  .pb-slot{margin-bottom:12px}
+  .pb-card .pb-cta{margin-top:auto}
+  .pb-powered{padding:14px}
+}
 `
 
 export default function PremiumBookingView({
