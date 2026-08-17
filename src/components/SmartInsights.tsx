@@ -136,7 +136,7 @@ export default function SmartInsights(props: SmartInsightsProps) {
       {insights.map((insight, i) => (
         <div
           key={i}
-          className={`bg-[#141414] border border-[#1e1e1e] border-l-[3px] ${borderColors[insight.type]} rounded-xl px-4 py-3 flex items-start gap-3`}
+          className={`bg-[#0f1a2b] border border-[#1d2c42] border-l-[3px] ${borderColors[insight.type]} rounded-xl px-4 py-3 flex items-start gap-3`}
         >
           <div className="mt-0.5 shrink-0">{icons[insight.type]}</div>
           <div className="flex-1 min-w-0">

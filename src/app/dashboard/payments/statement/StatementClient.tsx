@@ -87,7 +87,7 @@ export default function StatementClient({
   }
 
   return (
-    <div className="statement-page max-w-4xl mx-auto bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen print:bg-white print:m-0 print:p-0 print:min-h-0">
+    <div className="statement-page max-w-4xl mx-auto bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen print:bg-white print:m-0 print:p-0 print:min-h-0">
       {/* Action buttons - hidden when printing */}
       <div className="mb-8 no-print">
         <div className="flex flex-wrap items-center gap-3">
@@ -123,14 +123,14 @@ export default function StatementClient({
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+            className="px-3 py-1.5 bg-[#142236] border border-[#293b58] rounded-lg text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
           />
           <span className="text-white/40">to</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+            className="px-3 py-1.5 bg-[#142236] border border-[#293b58] rounded-lg text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
           />
         </div>
       </div>

@@ -23,7 +23,7 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
           <div
             key={photo.id}
             onClick={() => setSelected(photo)}
-            className="bg-[#141414] rounded-xl border border-[#1e1e1e] overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
+            className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
           >
             <div className="aspect-[4/3] relative bg-white/5">
               <img
@@ -63,7 +63,7 @@ export default function GalleryGrid({ photos, isStaff }: { photos: GalleryPhoto[
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-[#141414] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
+            className="bg-[#0f1a2b] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative">

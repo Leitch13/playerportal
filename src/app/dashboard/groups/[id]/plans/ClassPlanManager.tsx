@@ -171,8 +171,8 @@ export default function ClassPlanManager({
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`bg-[#141414] border rounded-2xl p-5 transition-all duration-200 ${
-                plan.is_active ? 'border-[#1e1e1e] hover:border-[#2a2a2a]' : 'border-[#1e1e1e]/50 opacity-60'
+              className={`bg-[#0f1a2b] border rounded-2xl p-5 transition-all duration-200 ${
+                plan.is_active ? 'border-[#1d2c42] hover:border-[#293b58]' : 'border-[#1d2c42]/50 opacity-60'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ export default function ClassPlanManager({
           ))}
         </div>
       ) : (
-        <div className="bg-[#141414] border border-dashed border-[#1e1e1e] rounded-2xl p-8 text-center">
+        <div className="bg-[#0f1a2b] border border-dashed border-[#1d2c42] rounded-2xl p-8 text-center">
           <div className="text-3xl mb-3">💰</div>
           <h3 className="font-bold text-lg text-white mb-1">No plans yet for {groupName}</h3>
           <p className="text-white/40 text-sm mb-4">
@@ -237,7 +237,7 @@ export default function ClassPlanManager({
 
       {/* Add plan form */}
       {showAdd ? (
-        <div className="bg-[#141414] border border-[#4ecde6]/30 rounded-2xl p-5 space-y-4">
+        <div className="bg-[#0f1a2b] border border-[#4ecde6]/30 rounded-2xl p-5 space-y-4">
           <h3 className="font-bold text-white">Add New Plan</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -247,7 +247,7 @@ export default function ClassPlanManager({
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="e.g. 1 Session / Week"
-                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+                className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               />
             </div>
             <div>
@@ -258,7 +258,7 @@ export default function ClassPlanManager({
                 onChange={(e) => setNewAmount(e.target.value)}
                 placeholder="30"
                 step="0.01"
-                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+                className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               />
             </div>
             <div>
@@ -266,7 +266,7 @@ export default function ClassPlanManager({
               <select
                 value={newSessions}
                 onChange={(e) => setNewSessions(e.target.value)}
-                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+                className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               >
                 <option value="1">1 session</option>
                 <option value="2">2 sessions</option>
@@ -283,7 +283,7 @@ export default function ClassPlanManager({
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Optional description"
-                className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+                className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] rounded-xl text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
               />
             </div>
           </div>

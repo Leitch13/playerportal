@@ -378,11 +378,11 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
   if (shareLink) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] w-full max-w-md p-8 text-center space-y-4">
+        <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] w-full max-w-md p-8 text-center space-y-4">
           <div className="text-4xl">&#9989;</div>
           <h2 className="text-lg font-bold text-white">Camp Published!</h2>
           <p className="text-sm text-[#888]">Share this link with parents to start collecting bookings.</p>
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-xs text-accent break-all">
+          <div className="bg-[#142236] border border-[#293b58] rounded-lg p-3 text-xs text-accent break-all">
             {shareLink}
           </div>
           <div className="flex gap-3">
@@ -394,7 +394,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             </button>
             <button
               onClick={() => { setOpen(false); resetForm(); router.refresh() }}
-              className="flex-1 px-4 py-2.5 border border-[#2a2a2a] text-[#888] rounded-lg text-sm font-medium hover:text-white"
+              className="flex-1 px-4 py-2.5 border border-[#293b58] text-[#888] rounded-lg text-sm font-medium hover:text-white"
             >
               Done
             </button>
@@ -404,17 +404,17 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
     )
   }
 
-  const inputCls = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30'
+  const inputCls = 'w-full bg-[#142236] border border-[#293b58] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30'
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto py-8">
-      <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] w-full max-w-4xl mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-[#1e1e1e]">
+      <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] w-full max-w-4xl mx-4">
+        <div className="flex items-center justify-between p-6 border-b border-[#1d2c42]">
           <h2 className="text-lg font-semibold text-white">Create Camp</h2>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#2a2a2a] text-[#888] hover:text-white hover:bg-[#1e1e1e] transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#293b58] text-[#888] hover:text-white hover:bg-[#1d2c42] transition-colors"
             >
               {showPreview ? 'Hide Preview' : 'Preview'}
             </button>
@@ -427,12 +427,12 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
           </div>
         </div>
 
-        <div className={`flex ${showPreview ? 'divide-x divide-[#1e1e1e]' : ''}`}>
+        <div className={`flex ${showPreview ? 'divide-x divide-[#1d2c42]' : ''}`}>
           {/* Form column */}
           <div className={`p-6 space-y-5 max-h-[70vh] overflow-y-auto ${showPreview ? 'w-1/2' : 'w-full'}`}>
             {/* Duplicate from last camp */}
             {existingCamps && existingCamps.length > 0 && (
-              <div className="rounded-lg border border-dashed border-[#2a2a2a] p-3">
+              <div className="rounded-lg border border-dashed border-[#293b58] p-3">
                 <p className="text-xs text-[#888] mb-2">Duplicate from an existing camp:</p>
                 <div className="flex flex-wrap gap-2">
                   {existingCamps.slice(0, 5).map((ec) => (
@@ -440,7 +440,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                       key={ec.id}
                       type="button"
                       onClick={() => handleDuplicateFrom(ec)}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] text-white/60 hover:text-white hover:border-accent/50 transition-colors truncate max-w-[200px]"
+                      className="px-3 py-1.5 text-xs rounded-lg bg-[#142236] border border-[#293b58] text-white/60 hover:text-white hover:border-accent/50 transition-colors truncate max-w-[200px]"
                     >
                       {ec.name}
                     </button>
@@ -477,7 +477,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                 rendered when the feature flag is on. When off, the
                 form is identical to the whole-camp original. */}
             {flexibleCampsEnabled && (
-              <div className="rounded-lg border border-[#1e1e1e] bg-[#0f0f0f] p-4 space-y-3">
+              <div className="rounded-lg border border-[#1d2c42] bg-[#0f1a2b] p-4 space-y-3">
                 <div>
                   <div className="text-sm font-medium text-white">Booking Mode</div>
                   <p className="text-xs text-[#888] mt-0.5">How parents will book this camp.</p>
@@ -487,7 +487,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       bookingMode === BOOKING_MODE_WHOLE_CAMP
                         ? 'border-accent bg-accent/10'
-                        : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+                        : 'border-[#293b58] hover:border-[#3a3a3a]'
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -511,7 +511,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       bookingMode === BOOKING_MODE_FLEXIBLE_DAYS
                         ? 'border-accent bg-accent/10'
-                        : 'border-[#2a2a2a] hover:border-[#3a3a3a]'
+                        : 'border-[#293b58] hover:border-[#3a3a3a]'
                     }`}
                   >
                     <div className="flex items-start gap-2">
@@ -575,7 +575,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             </div>
 
             {/* Pricing Section */}
-            <div className="border-t border-[#1e1e1e] pt-5">
+            <div className="border-t border-[#1d2c42] pt-5">
               <h3 className="text-sm font-semibold text-white mb-3">Pricing</h3>
               <div className="grid grid-cols-2 gap-4">
                 {useFlexibleMode ? (
@@ -614,7 +614,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     onChange={(e) => setFlexMinDays(e.target.value)}
                     placeholder="e.g. 3"
                     min="1"
-                    className="w-32 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
+                    className="w-32 bg-[#142236] border border-[#293b58] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
                   />
                   <p className="text-xs text-[#888] mt-1">
                     Parents must select at least this many days to book. Leave blank for no minimum.
@@ -649,7 +649,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     type="checkbox"
                     checked={siblingDiscountEnabled}
                     onChange={(e) => setSiblingDiscountEnabled(e.target.checked)}
-                    className="rounded border-[#1e1e1e]"
+                    className="rounded border-[#1d2c42]"
                   />
                   <span className="text-white">Enable Sibling Discount</span>
                 </label>
@@ -662,7 +662,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                       onChange={(e) => setSiblingDiscountPercent(e.target.value)}
                       min="1"
                       max="100"
-                      className="w-24 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
+                      className="w-24 bg-[#142236] border border-[#293b58] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
                     />
                     <span className="text-xs text-[#888] ml-2">%</span>
                   </div>
@@ -671,7 +671,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             </div>
 
             {/* Data Collection */}
-            <div className="border-t border-[#1e1e1e] pt-5">
+            <div className="border-t border-[#1d2c42] pt-5">
               <h3 className="text-sm font-semibold text-white mb-3">Booking Options</h3>
               <div className="space-y-3">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -679,7 +679,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     type="checkbox"
                     checked={collectMedicalInfo}
                     onChange={(e) => setCollectMedicalInfo(e.target.checked)}
-                    className="rounded border-[#1e1e1e]"
+                    className="rounded border-[#1d2c42]"
                   />
                   <span className="text-white">Collect medical / allergy information</span>
                 </label>
@@ -688,7 +688,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     type="checkbox"
                     checked={requireConsent}
                     onChange={(e) => setRequireConsent(e.target.checked)}
-                    className="rounded border-[#1e1e1e]"
+                    className="rounded border-[#1d2c42]"
                   />
                   <span className="text-white">Require consent form / declaration</span>
                 </label>
@@ -758,14 +758,14 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                   type="checkbox"
                   checked={isPublished}
                   onChange={(e) => setIsPublished(e.target.checked)}
-                  className="rounded border-[#1e1e1e]"
+                  className="rounded border-[#1d2c42]"
                 />
                 <span className="text-white">Published (visible on booking page)</span>
               </label>
             )}
 
             {/* Schedule Builder */}
-            <div className="border-t border-[#1e1e1e] pt-5">
+            <div className="border-t border-[#1d2c42] pt-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>
                 <div className="flex gap-2">
@@ -773,7 +773,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                     type="button"
                     onClick={handleGenerateDays}
                     disabled={!startDate || !endDate}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#1e1e1e] text-[#888] hover:bg-[#1e1e1e] disabled:opacity-40 transition-colors"
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[#1d2c42] text-[#888] hover:bg-[#1d2c42] disabled:opacity-40 transition-colors"
                   >
                     Generate Days
                   </button>
@@ -801,7 +801,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                   // available if not toggled off.
                   const dayAvailable = dayAvailability[day.date] !== false
                   return (
-                  <div key={dayIdx} className={`border rounded-lg p-4 ${useFlexibleMode && !dayAvailable ? 'border-[#2a2a2a] bg-[#0a0a0a] opacity-60' : 'border-[#1e1e1e]'}`}>
+                  <div key={dayIdx} className={`border rounded-lg p-4 ${useFlexibleMode && !dayAvailable ? 'border-[#293b58] bg-[#080e18] opacity-60' : 'border-[#1d2c42]'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium text-white">
                         {day.day}{' '}
@@ -818,7 +818,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                             type="checkbox"
                             checked={dayAvailable}
                             onChange={() => toggleDayAvailability(day.date)}
-                            className="rounded border-[#1e1e1e]"
+                            className="rounded border-[#1d2c42]"
                           />
                           <span className={dayAvailable ? 'text-white' : 'text-[#888]'}>
                             {dayAvailable ? 'Available for booking' : 'Excluded'}
@@ -834,7 +834,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                             value={activity}
                             onChange={(e) => updateActivity(dayIdx, actIdx, e.target.value)}
                             placeholder="e.g. 09:00 - Warm Up & Skills"
-                            className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
+                            className="flex-1 bg-[#142236] border border-[#293b58] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30"
                           />
                           <button
                             type="button"
@@ -862,7 +862,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
 
           {/* Preview column */}
           {showPreview && (
-            <div className="w-1/2 p-6 max-h-[70vh] overflow-y-auto bg-[#0a0a0a]">
+            <div className="w-1/2 p-6 max-h-[70vh] overflow-y-auto bg-[#080e18]">
               <p className="text-xs text-[#888] uppercase tracking-wider mb-4">Preview (public booking page)</p>
               <div className="space-y-4">
                 {/* Preview hero */}
@@ -952,7 +952,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 p-6 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-between gap-3 p-6 border-t border-[#1d2c42]">
           <button
             onClick={() => { setOpen(false); resetForm() }}
             className="px-4 py-2 text-sm font-medium text-[#888] hover:text-white/90 transition-colors"
@@ -963,7 +963,7 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
             <button
               onClick={() => handleSave()}
               disabled={saving || !name.trim() || !startDate || !endDate}
-              className="px-6 py-2 border border-[#2a2a2a] text-white rounded-lg text-sm font-medium hover:bg-[#1e1e1e] disabled:opacity-50 transition-colors"
+              className="px-6 py-2 border border-[#293b58] text-white rounded-lg text-sm font-medium hover:bg-[#1d2c42] disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving...' : 'Save as Draft'}
             </button>

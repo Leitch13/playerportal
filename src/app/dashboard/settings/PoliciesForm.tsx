@@ -77,10 +77,10 @@ export default function PoliciesForm({
     }
   }
 
-  const inputCls = 'w-full px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30'
+  const inputCls = 'w-full px-4 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30'
 
   return (
-    <form onSubmit={handleSave} className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6 space-y-6">
+    <form onSubmit={handleSave} className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6 space-y-6">
       <div>
         <h2 className="text-lg font-bold text-white">Academy Policies</h2>
         <p className="text-sm text-white/50 mt-1">

@@ -186,7 +186,7 @@ export default function EngagementPage(props: EngagementPageProps) {
   const offset = circumference - (animatedScore / 100) * circumference
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-lg mx-auto space-y-6">
         {/* Header */}
         <div>
@@ -227,7 +227,7 @@ export default function EngagementPage(props: EngagementPageProps) {
         </div>
 
         {/* Score breakdown */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <h2 className="text-base font-bold text-white mb-5">Score Breakdown</h2>
           <div className="space-y-5">
             <BreakdownBar label="Attendance Rate" value={attendancePoints} max={40} color="#10b981" suffix={`/40`} />
@@ -283,7 +283,7 @@ export default function EngagementPage(props: EngagementPageProps) {
         </div>
 
         {/* Attendance calendar */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <h2 className="text-base font-bold text-white mb-4">Attendance Calendar</h2>
           <CalendarHeatmap data={props.calendarData} />
           <div className="mt-4 grid grid-cols-3 gap-3 pt-4 border-t border-white/[0.06]">
@@ -303,7 +303,7 @@ export default function EngagementPage(props: EngagementPageProps) {
         </div>
 
         {/* Streak history */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <h2 className="text-base font-bold text-white mb-4">Streak History</h2>
           <div className="flex items-center gap-6 mb-5">
             <div>
@@ -338,7 +338,7 @@ export default function EngagementPage(props: EngagementPageProps) {
         </div>
 
         {/* Achievements */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-white">Achievements</h2>
             <span className="text-xs text-white/40">{unlockedCount}/{achievements.length} unlocked</span>
@@ -362,7 +362,7 @@ export default function EngagementPage(props: EngagementPageProps) {
         </div>
 
         {/* Leaderboard */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <h2 className="text-base font-bold text-white mb-3">Leaderboard</h2>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#4ecde6]/20 to-purple-500/20 border border-[#4ecde6]/20 flex items-center justify-center">

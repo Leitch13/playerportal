@@ -31,7 +31,7 @@ export default function RegisterTabs({ groupId }: { groupId: string }) {
 
   return (
     <div
-      className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e]"
+      className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#080e18] border border-[#1d2c42]"
       data-testid="register-tabs"
     >
       {tabs.map((t) => {

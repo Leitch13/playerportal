@@ -213,7 +213,7 @@ export default function SessionMode({
 
   if (screen === 'done') {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#080e18] text-white flex items-center justify-center p-6">
         <div className="text-center space-y-4">
           <div className="text-6xl">&#127881;</div>
           <h1 className="text-3xl font-bold">Session Complete!</h1>
@@ -227,7 +227,7 @@ export default function SessionMode({
 
   if (screen === 'attendance') {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white pb-48">
+      <div className="min-h-screen bg-[#080e18] text-white pb-48">
         {/* Header */}
         <div className="px-4 pt-5 pb-3">
           <h1 className="text-xl font-bold">{groupName}</h1>
@@ -253,7 +253,7 @@ export default function SessionMode({
                 className={`flex items-center gap-3 min-h-[56px] px-3 py-3 rounded-xl border transition-all active:scale-[0.96] ${
                   present
                     ? 'bg-green-500/20 border-green-500/30 text-green-400'
-                    : 'bg-[#141414] border-[#1e1e1e] text-white'
+                    : 'bg-[#0f1a2b] border-[#1d2c42] text-white'
                 }`}
               >
                 <div
@@ -282,7 +282,7 @@ export default function SessionMode({
         )}
 
         {/* Bottom buttons */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a] border-t border-white/5 px-4 py-4 space-y-2 safe-bottom">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#080e18] border-t border-white/5 px-4 py-4 space-y-2 safe-bottom">
           <button
             onClick={markAllPresent}
             className="w-full py-4 bg-green-500/15 text-green-400 rounded-2xl text-base font-bold active:scale-[0.97] transition-transform"
@@ -304,7 +304,7 @@ export default function SessionMode({
   /* ─── Screen 2: Quick Ratings ─── */
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-32">
+    <div className="min-h-screen bg-[#080e18] text-white pb-32">
       {/* Header */}
       <div className="px-4 pt-5 pb-3">
         <h1 className="text-xl font-bold">{groupName}</h1>
@@ -320,7 +320,7 @@ export default function SessionMode({
           return (
             <div
               key={p.id}
-              className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-4"
+              className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-4"
             >
               <p className="text-sm font-semibold text-white mb-3">
                 {p.first_name} {p.last_name}
@@ -341,7 +341,7 @@ export default function SessionMode({
                             className={`w-8 h-8 rounded-full text-xs font-bold transition-all active:scale-90 ${
                               currentRating === val
                                 ? 'bg-[#4ecde6] text-[#0a0a0a]'
-                                : 'bg-[#1a1a1a] border border-[#2a2a2a] text-white/40'
+                                : 'bg-[#142236] border border-[#293b58] text-white/40'
                             }`}
                           >
                             {val}
@@ -359,7 +359,7 @@ export default function SessionMode({
                 value={notes[p.id] || ''}
                 onChange={(e) => setNote(p.id, e.target.value)}
                 placeholder="Quick note (optional)"
-                className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-[#4ecde6]/40"
+                className="w-full bg-[#080e18] border border-[#1d2c42] rounded-lg px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-[#4ecde6]/40"
               />
             </div>
           )
@@ -375,7 +375,7 @@ export default function SessionMode({
       )}
 
       {/* Bottom button */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a0a] border-t border-white/5 px-4 py-4 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#080e18] border-t border-white/5 px-4 py-4 safe-bottom">
         <button
           onClick={saveReviewsAndFinish}
           disabled={saving}

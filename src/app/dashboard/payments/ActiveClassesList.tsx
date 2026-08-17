@@ -67,7 +67,7 @@ export default function ActiveClassesList({
         <h2 className="text-sm font-bold uppercase tracking-wider text-white/50">Active classes</h2>
         <span className="text-xs text-white/40">{classes.length} {classes.length === 1 ? 'class' : 'classes'}</span>
       </div>
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden divide-y divide-[#1e1e1e]">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden divide-y divide-[#1d2c42]">
         {classes.map(c => (
           <div key={c.id} className="p-4 flex items-center justify-between gap-3 flex-wrap" data-testid="active-classes-row">
             <div className="flex-1 min-w-0">

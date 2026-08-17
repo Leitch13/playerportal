@@ -39,7 +39,7 @@ export default async function TrialFunnelPage() {
   }))
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -59,7 +59,7 @@ export default async function TrialFunnelPage() {
         </div>
         <Link
           href="/dashboard/trials"
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#141414] border border-[#1e1e1e] text-white/60 hover:text-white transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0f1a2b] border border-[#1d2c42] text-white/60 hover:text-white transition-colors"
         >
           Back to Trials
         </Link>

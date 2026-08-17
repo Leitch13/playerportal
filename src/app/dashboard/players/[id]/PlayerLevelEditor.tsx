@@ -53,7 +53,7 @@ export default function PlayerLevelEditor({ playerId, playingLevel, leagueLevel 
         value={playingLevel || ''}
         onChange={(e) => handleChange('playing_level', e.target.value)}
         disabled={saving === 'playing_level'}
-        className="appearance-none px-2 py-0.5 rounded-full text-xs font-medium bg-[#141414] border border-[#1e1e1e] text-white cursor-pointer hover:border-[#4ecde6]/40 focus:border-[#4ecde6] focus:outline-none transition-colors"
+        className="appearance-none px-2 py-0.5 rounded-full text-xs font-medium bg-[#0f1a2b] border border-[#1d2c42] text-white cursor-pointer hover:border-[#4ecde6]/40 focus:border-[#4ecde6] focus:outline-none transition-colors"
       >
         <option value="">Playing Level</option>
         {PLAYING_LEVELS.map((l) => (
@@ -64,7 +64,7 @@ export default function PlayerLevelEditor({ playerId, playingLevel, leagueLevel 
         value={leagueLevel || ''}
         onChange={(e) => handleChange('league_level', e.target.value)}
         disabled={saving === 'league_level'}
-        className="appearance-none px-2 py-0.5 rounded-full text-xs font-medium bg-[#141414] border border-[#1e1e1e] text-white cursor-pointer hover:border-[#4ecde6]/40 focus:border-[#4ecde6] focus:outline-none transition-colors"
+        className="appearance-none px-2 py-0.5 rounded-full text-xs font-medium bg-[#0f1a2b] border border-[#1d2c42] text-white cursor-pointer hover:border-[#4ecde6]/40 focus:border-[#4ecde6] focus:outline-none transition-colors"
       >
         <option value="">League Level</option>
         {LEAGUE_LEVELS.map((l) => (

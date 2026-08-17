@@ -312,7 +312,7 @@ export default async function PlayerDetailPage({
   return (
     <div className="space-y-6">
       {/* ═══ CINEMATIC HEADER ═══ */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#0e1518] via-[#0a0a0a] to-[#0a0a0a] p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#0e1518] via-[#080e18] to-[#080e18] p-6 sm:p-8">
         {/* Ambient brand glow */}
         <div className="absolute -top-24 -right-20 w-[400px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none bg-[#4ecde6]" />
         <div className="absolute -bottom-24 -left-20 w-[300px] h-[300px] rounded-full blur-[120px] opacity-10 pointer-events-none bg-purple-500" />

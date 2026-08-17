@@ -135,7 +135,7 @@ export default function SettingsForm({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
+  const inputClass = 'w-full bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
 
   return (
     <div className="space-y-6">
@@ -159,7 +159,7 @@ export default function SettingsForm({
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold text-left whitespace-nowrap transition-all ${
-                tab === t ? 'bg-primary text-white' : 'text-white/60 hover:bg-[#1e1e1e] hover:text-white'
+                tab === t ? 'bg-primary text-white' : 'text-white/60 hover:bg-[#1d2c42] hover:text-white'
               }`}
             >
               {t}
@@ -170,7 +170,7 @@ export default function SettingsForm({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {tab === 'General' && (
-            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+            <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
               <h2 className="font-bold text-lg">General Information</h2>
               <div>
                 <label className="text-xs font-medium text-white/70 block mb-1.5">Academy Name</label>
@@ -179,7 +179,7 @@ export default function SettingsForm({
               <div>
                 <label className="text-xs font-medium text-white/70 block mb-1.5">Booking URL (Your Academy ID)</label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888]">
+                  <div className="flex-1 bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-[#888]">
                     /book/<strong className="text-primary">{form.slug}</strong>
                   </div>
                   <button onClick={copySlug} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
@@ -221,7 +221,7 @@ export default function SettingsForm({
           )}
 
           {tab === 'Branding' && (
-            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+            <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
               <h2 className="font-bold text-lg">Branding</h2>
               <div>
                 <label className="text-xs font-medium text-white/70 block mb-1.5">Primary Colour</label>
@@ -272,11 +272,11 @@ export default function SettingsForm({
           )}
 
           {tab === 'Team' && (
-            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+            <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
               <h2 className="font-bold text-lg">Team Members</h2>
               <div className="space-y-2">
                 {team.map(m => (
-                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors">
+                  <div key={m.id} className="flex items-center justify-between p-3 rounded-xl border border-[#1d2c42] hover:bg-[#142236] transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-sm font-bold text-accent">
                         {m.name.charAt(0).toUpperCase()}
@@ -307,7 +307,7 @@ export default function SettingsForm({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-[#1e1e1e] space-y-5">
+              <div className="pt-4 border-t border-[#1d2c42] space-y-5">
                 <div>
                   <h3 className="font-semibold text-sm mb-1">Add a Staff Member</h3>
                   <p className="text-xs text-[#888] mb-3">Add a coach or admin to your academy. They&apos;ll get an email to set their password and sign in. Admins can manage everything — payments, settings and billing — so only add admins you fully trust.</p>
@@ -351,7 +351,7 @@ export default function SettingsForm({
                   <h3 className="font-semibold text-sm mb-1">Parent Booking Link</h3>
                   <p className="text-xs text-[#888] mb-3">This is the link you give to parents to subscribe their kids to your classes.</p>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
+                    <div className="flex-1 bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-[#888] truncate">
                       /book/{form.slug}
                     </div>
                     <a
@@ -390,7 +390,7 @@ export default function SettingsForm({
               <StripeSetup />
 
               {/* Sibling Discount */}
-              <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+              <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="font-bold text-lg text-white">Sibling Discount</h2>
@@ -406,7 +406,7 @@ export default function SettingsForm({
                       onChange={(e) => setForm({ ...form, sibling_discount_enabled: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-[#2a2a2a] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
+                    <div className="w-11 h-6 bg-[#293b58] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
                   </label>
                 </div>
 
@@ -456,7 +456,7 @@ export default function SettingsForm({
               </div>
 
               {/* Quarterly (3-month prepay) billing */}
-              <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+              <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="font-bold text-lg text-white">Quarterly Billing (3-Month Prepay)</h2>
@@ -472,7 +472,7 @@ export default function SettingsForm({
                       onChange={(e) => setForm({ ...form, quarterly_billing_enabled: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-[#2a2a2a] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
+                    <div className="w-11 h-6 bg-[#293b58] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
                   </label>
                 </div>
 
@@ -525,7 +525,7 @@ export default function SettingsForm({
               </div>
 
               {/* Cancellation retention offer */}
-              <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+              <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="font-bold text-lg text-white">Cancellation Retention Offer</h2>
@@ -541,7 +541,7 @@ export default function SettingsForm({
                       onChange={(e) => setForm({ ...form, retention_offer_enabled: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-[#2a2a2a] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
+                    <div className="w-11 h-6 bg-[#293b58] peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4ecde6]"></div>
                   </label>
                 </div>
 
@@ -652,9 +652,9 @@ export default function SettingsForm({
           {tab === 'Website Embed' && org && <EmbedCode slug={form.slug} />}
 
           {tab === 'Data & Backups' && (
-            <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+            <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
               <h2 className="font-bold text-lg">Data & Backups</h2>
-              <div className="p-4 rounded-xl border border-[#1e1e1e] space-y-3">
+              <div className="p-4 rounded-xl border border-[#1d2c42] space-y-3">
                 <div>
                   <p className="font-semibold text-sm">Export All Data</p>
                   <p className="text-xs text-[#888]">Download a backup of all your academy data as JSON</p>
@@ -669,14 +669,14 @@ export default function SettingsForm({
               <h2 className="font-bold text-lg text-red-400">Danger Zone</h2>
               <p className="text-sm text-[#888]">These actions are irreversible. Please be careful.</p>
 
-              <div className="p-4 rounded-xl border border-[#1e1e1e] space-y-3">
+              <div className="p-4 rounded-xl border border-[#1d2c42] space-y-3">
                 <div>
                   <p className="font-semibold text-sm">Export All Data</p>
                   <p className="text-xs text-[#888]">Download all your academy data as CSV files</p>
                 </div>
                 <a
                   href="/dashboard/exports"
-                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold border border-[#2a2a2a] hover:bg-[#1e1e1e] transition-colors"
+                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold border border-[#293b58] hover:bg-[#1d2c42] transition-colors"
                 >
                   Go to Exports
                 </a>
@@ -692,7 +692,7 @@ export default function SettingsForm({
                     Type <strong className="text-red-600">{form.name}</strong> to confirm
                   </label>
                   <input
-                    className="w-full bg-[#1a1a1a] border border-red-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                    className="w-full bg-[#142236] border border-red-500/30 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500/30"
                     value={deleteConfirm}
                     onChange={e => setDeleteConfirm(e.target.value)}
                     placeholder={form.name}

@@ -385,7 +385,7 @@ async function ParentPayments({
     )
 
     const paymentMethodPanel = (
-      <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+      <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
         <p className="mb-2 text-xs font-medium uppercase tracking-wider text-white/40">Payment Method</p>
         <p className="text-sm text-white/70">Your payment method is managed securely via Stripe.</p>
         {hasStripeCustomer ? (
@@ -415,7 +415,7 @@ async function ParentPayments({
     )
 
     const trustBar = (
-      <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-[#141414] p-4 text-xs text-white/60 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-[#0f1a2b] p-4 text-xs text-white/60 sm:grid-cols-4">
         <div><span className="block font-semibold text-white">🛡 Cancel anytime</span>No long-term contracts</div>
         <div><span className="block font-semibold text-white">🔒 Secure payments</span>Powered by Stripe</div>
         <div><span className="block font-semibold text-white">📈 Save with longer plans</span>Ask about quarterly billing</div>
@@ -433,7 +433,7 @@ async function ParentPayments({
             {quarterlyExplainer}
           </div>
           <div className="space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
               <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">What you get</p>
               <ul className="space-y-2 text-sm text-white/80">
                 {whatYouGet.map((f) => (
@@ -441,7 +441,7 @@ async function ParentPayments({
                 ))}
               </ul>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
               <p className="mb-1 text-sm font-semibold text-white">Need help?</p>
               <p className="mb-3 text-xs text-white/50">Contact the academy about your membership.</p>
               <Link href="/dashboard/messages" className="inline-flex items-center gap-2 rounded-lg bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#0a0a0a] transition hover:opacity-90">💬 Message Academy</Link>
@@ -472,7 +472,7 @@ async function ParentPayments({
     }
     const billingHistoryPanel = (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+        <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
           <p className="mb-4 text-xs font-medium uppercase tracking-wider text-white/40">Billing summary</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-white/60">Last payment</dt><dd className="font-semibold text-white">{fmtGBP(billingFacts.lastPaymentAmount)} · {fmtDate(billingFacts.lastPaymentDate)}</dd></div>
@@ -487,7 +487,7 @@ async function ParentPayments({
     )
 
     return (
-      <div className="min-h-screen -m-6 bg-[#0a0a0a] p-4 text-white sm:p-6 lg:-m-8 lg:p-8">
+      <div className="min-h-screen -m-6 bg-[#080e18] p-4 text-white sm:p-6 lg:-m-8 lg:p-8">
         <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -508,7 +508,7 @@ async function ParentPayments({
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     {/* Sprint M1 (MF-3) — Header compressed on mobile so Membership Overview
         sits above the fold at 375/390/430px. Tighter vertical spacing
         (space-y-3 sm:space-y-6), smaller h1 (text-lg → text-2xl @ sm:),
@@ -1028,7 +1028,7 @@ async function AdminPayments({
   ]
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Payments & Subscriptions</h1>
 

@@ -83,7 +83,7 @@ export default function ProgressTrend({
           {dataPoints[dataPoints.length - 1].scores.map((s) => (
             <div
               key={s.label}
-              className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#0a0a0a] text-xs"
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#080e18] text-xs"
             >
               <span className="font-medium">{s.label}:</span>
               <span

@@ -118,14 +118,14 @@ export default async function FeedbackPage({
     const selectedId =
       journeys.find((j) => j.playerId === sp?.child)?.playerId ?? journeys[0]?.playerId ?? ''
     return (
-      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+      <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
         <ParentProgressV2 journeys={journeys} selectedId={selectedId} />
       </div>
     )
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Progress Feedback</h1>
 

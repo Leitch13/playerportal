@@ -78,7 +78,7 @@ export default async function LiveSessionPage({
     .eq('session_date', today)
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 min-h-screen">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 min-h-screen">
       <SessionMode
         groupId={group.id}
         groupName={group.name}

@@ -73,13 +73,13 @@ export default function AddChildForm({
   }
 
   return (
-    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
       <h2 className="text-lg font-semibold text-white mb-4">Add a Child</h2>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Photo upload — spans both columns */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-white/70 mb-2">Photo (optional)</label>
-          <div className="flex items-center gap-4 p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e]">
+          <div className="flex items-center gap-4 p-3 rounded-xl bg-[#080e18] border border-[#1d2c42]">
             <PlayerAvatar
               photoUrl={photoUrl}
               firstName={firstName || '?'}
@@ -114,7 +114,7 @@ export default function AddChildForm({
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -124,7 +124,7 @@ export default function AddChildForm({
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             required
-            className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -133,7 +133,7 @@ export default function AddChildForm({
             type="date"
             value={dob}
             onChange={(e) => setDob(e.target.value)}
-            className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -143,7 +143,7 @@ export default function AddChildForm({
             value={ageGroup}
             onChange={(e) => setAgeGroup(e.target.value)}
             placeholder="e.g. U10"
-            className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 bg-[#142236] border border-[#293b58] text-white placeholder:text-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         {error && (
@@ -160,7 +160,7 @@ export default function AddChildForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-[#2a2a2a] text-white/70 rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
+            className="px-4 py-2 border border-[#293b58] text-white/70 rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>

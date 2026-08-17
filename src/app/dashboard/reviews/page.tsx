@@ -88,7 +88,7 @@ export default async function ReviewsPage({
             return (
               <div
                 key={review.id}
-                className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 space-y-4"
+                className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 space-y-4"
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-4">
@@ -131,7 +131,7 @@ export default async function ReviewsPage({
                     const score = jsonScores?.[cat.key] ?? (review as Record<string, unknown>)[cat.key] as number
                     if (score == null) return null
                     return (
-                      <div key={cat.key} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e]">
+                      <div key={cat.key} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-[#080e18] border border-[#1d2c42]">
                         <ScoreBadge score={score} />
                         <span className="text-[10px] text-white/40 text-center leading-tight">{cat.label}</span>
                       </div>

@@ -71,7 +71,7 @@ export default function WeeklyCalendar({
                   ? 'bg-primary text-white shadow-md'
                   : isToday
                     ? 'bg-accent/10 text-accent border border-accent/30'
-                    : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5'
+                    : 'bg-[#0f1a2b] border border-[#1d2c42] hover:bg-white/5'
               }`}
             >
               <span className="text-xs font-medium">{SHORT_DAYS[i]}</span>
@@ -108,7 +108,7 @@ export default function WeeklyCalendar({
         </h3>
 
         {selectedSessions.length === 0 ? (
-          <div className="bg-[#0a0a0a] rounded-xl p-6 text-center">
+          <div className="bg-[#080e18] rounded-xl p-6 text-center">
             <p className="text-sm text-white/60">No classes on {selectedDay}</p>
           </div>
         ) : (
@@ -119,7 +119,7 @@ export default function WeeklyCalendar({
                 className={`rounded-xl border p-4 ${
                   session.isBooked
                     ? 'border-accent/30 bg-accent/5'
-                    : 'border-[#1e1e1e] bg-[#141414]'
+                    : 'border-[#1d2c42] bg-[#0f1a2b]'
                 }`}
               >
                 <div className="flex items-start justify-between">

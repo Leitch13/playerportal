@@ -81,7 +81,7 @@ export default function AdminHero({
   const trendIcon = revenueTrend > 0 ? '↗' : revenueTrend < 0 ? '↘' : '→'
 
   return (
-    <div className="relative mb-8 overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#0e1518] via-[#0a0a0a] to-[#0a0a0a] p-6 sm:p-8">
+    <div className="relative mb-8 overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#0e1518] via-[#080e18] to-[#080e18] p-6 sm:p-8">
       {/* Ambient brand-colour glow */}
       <div
         className="absolute -top-32 -right-24 w-[500px] h-[500px] rounded-full blur-[120px] opacity-25 pointer-events-none"
@@ -147,7 +147,7 @@ export default function AdminHero({
             <img
               src={orgLogo}
               alt={orgName || 'Academy'}
-              className="w-14 h-14 rounded-xl object-cover border border-white/[0.08] bg-[#1a1a1a] flex-shrink-0"
+              className="w-14 h-14 rounded-xl object-cover border border-white/[0.08] bg-[#142236] flex-shrink-0"
             />
           ) : (
             <div

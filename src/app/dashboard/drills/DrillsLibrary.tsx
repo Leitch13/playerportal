@@ -73,7 +73,7 @@ export default function DrillsLibrary({
     'bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#4ecde6]/50 transition'
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] -m-6 p-6 space-y-6">
+    <div className="min-h-screen bg-[#080e18] -m-6 p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Drill Library</h1>
         {!showForm && (

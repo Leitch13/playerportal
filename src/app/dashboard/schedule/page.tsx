@@ -182,7 +182,7 @@ async function AdminSchedule({
   const todayPlayerCount = todayClasses.reduce((sum, s) => sum + s.playerCount, 0)
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -567,17 +567,17 @@ async function ParentSchedule({
 
   return (
     <div
-      className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white"
+      className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white"
       style={{ ['--brand' as string]: brandColor }}
     >
     <div className="space-y-5 sm:space-y-6">
       {/* Branded hero — academy logo + name + personalised greeting */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-[#1e1e1e] p-4 sm:p-8"
+        className="relative overflow-hidden rounded-3xl border border-[#1d2c42] p-4 sm:p-8"
         style={{
           background: academyHero
-            ? `linear-gradient(135deg, ${brandColor}20 0%, rgba(10,10,10,0.7) 50%, #0a0a0a 100%)`
-            : `linear-gradient(135deg, ${brandColor}15 0%, ${brandColor}05 50%, #0a0a0a 100%)`,
+            ? `linear-gradient(135deg, ${brandColor}20 0%, rgba(8,14,24,0.7) 50%, #080e18 100%)`
+            : `linear-gradient(135deg, ${brandColor}15 0%, ${brandColor}05 50%, #080e18 100%)`,
         }}
       >
         {academyHero && (
@@ -681,7 +681,7 @@ async function ParentSchedule({
 
       {/* Stat cards — punchier than the old generic boxes */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#4ecde6]/10 via-[#0f1818] to-[#0a0a0a] p-3 sm:p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#4ecde6]/10 via-[#0f1818] to-[#080e18] p-3 sm:p-4">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-[#4ecde6]/10 blur-2xl pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div>
@@ -696,7 +696,7 @@ async function ParentSchedule({
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#0a0a0a] p-3 sm:p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#080e18] p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{totalClasses}</p>
@@ -713,7 +713,7 @@ async function ParentSchedule({
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#0a0a0a] p-3 sm:p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-white/[0.04] via-[#0f1416] to-[#080e18] p-3 sm:p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{(myPlayers || []).length}</p>
@@ -728,7 +728,7 @@ async function ParentSchedule({
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-purple-500/10 via-[#0f1418] to-[#0a0a0a] p-3 sm:p-4">
+        <div className="relative overflow-hidden rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-purple-500/10 via-[#0f1418] to-[#080e18] p-3 sm:p-4">
           <div className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-purple-500/10 blur-2xl pointer-events-none" />
           <div className="relative flex items-center justify-between">
             <div>
@@ -824,7 +824,7 @@ async function ParentSchedule({
                       return (
                         <div
                           key={group.id}
-                          className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] p-3 sm:p-4 transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)]"
+                          className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] p-3 sm:p-4 transition-all hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)]"
                           style={{
                             borderColor: allBooked ? `${brandColor}55` : '#1e1e1e',
                             boxShadow: allBooked ? `inset 0 0 20px ${brandColor}10` : undefined,
@@ -1028,7 +1028,7 @@ async function ParentSchedule({
                     href={`/book/${academySlug}/camps/${camp.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex gap-3 rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] to-[#0a0a0a] p-3 transition-all hover:-translate-y-0.5"
+                    className="group flex gap-3 rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] to-[#080e18] p-3 transition-all hover:-translate-y-0.5"
                     style={{ ['--tw-ring-color' as string]: brandColor }}
                   >
                     {/* Thumbnail */}
@@ -1036,7 +1036,7 @@ async function ParentSchedule({
                       className="shrink-0 w-20 h-20 rounded-xl bg-cover bg-center relative overflow-hidden"
                       style={camp.image_url
                         ? { backgroundImage: `url(${camp.image_url})` }
-                        : { background: `linear-gradient(135deg, #060606, ${brandColor}66)` }}
+                        : { background: `linear-gradient(135deg, #080e18, ${brandColor}66)` }}
                     >
                       {isEarlyBird && (
                         <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase bg-green-500 text-white">Early</span>
@@ -1062,7 +1062,7 @@ async function ParentSchedule({
       )}
 
       {/* Help footer — compact */}
-      <div className="rounded-2xl border border-[#1e1e1e] bg-white/[0.02] p-3 sm:p-4 text-center">
+      <div className="rounded-2xl border border-[#1d2c42] bg-white/[0.02] p-3 sm:p-4 text-center">
         <p className="text-[11px] sm:text-xs text-white/40">
           Need help? Message your coach via{' '}
           <a href="/dashboard/messages" className="font-semibold hover:underline" style={{ color: brandColor }}>Messages</a>

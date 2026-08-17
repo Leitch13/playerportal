@@ -113,7 +113,7 @@ export default function PaymentStatusToggleClient({
             max={amountDue}
             value={amountPaid}
             onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
-            className="w-20 text-xs px-2 py-1 border border-[#1e1e1e] rounded focus:outline-none focus:ring-1 focus:ring-primary/20"
+            className="w-20 text-xs px-2 py-1 border border-[#1d2c42] rounded focus:outline-none focus:ring-1 focus:ring-primary/20"
             autoFocus
           />
           <button

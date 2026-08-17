@@ -54,7 +54,7 @@ export default function AttendanceStreak({ currentStreak, bestStreak, rate }: At
 
   return (
     <div
-      className="relative bg-gradient-to-br from-[#141414] to-[#1a1a1a] rounded-xl border border-white/[0.08] p-6 overflow-hidden"
+      className="relative bg-gradient-to-br from-[#0f1a2b] to-[#142236] rounded-xl border border-white/[0.08] p-6 overflow-hidden"
       style={{ boxShadow: `0 0 40px ${glowColor}` }}
     >
       {/* Subtle radial glow accent */}

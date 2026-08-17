@@ -171,7 +171,7 @@ export default async function RegisterReportPage({
       `}</style>
 
       {/* Screen controls */}
-      <div className="no-print bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 text-white">
+      <div className="no-print bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 text-white">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold">Attendance Report</h1>
@@ -197,7 +197,7 @@ export default async function RegisterReportPage({
               type="date"
               name="from"
               defaultValue={from}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+              className="bg-[#142236] border border-[#293b58] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             />
           </div>
           <div>
@@ -206,7 +206,7 @@ export default async function RegisterReportPage({
               type="date"
               name="to"
               defaultValue={to}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+              className="bg-[#142236] border border-[#293b58] rounded-lg px-3 py-1.5 text-sm text-white [color-scheme:dark] focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             />
           </div>
           <button

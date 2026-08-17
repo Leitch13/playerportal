@@ -82,7 +82,7 @@ export default async function ReviewFeedbackPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4"
           >
             <p className="text-xs text-white/40 font-medium">{stat.label}</p>
             <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
@@ -106,7 +106,7 @@ export default async function ReviewFeedbackPage() {
               return (
                 <div
                   key={p.id}
-                  className="bg-[#141414] border border-red-500/20 rounded-2xl p-5 space-y-3"
+                  className="bg-[#0f1a2b] border border-red-500/20 rounded-2xl p-5 space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -131,7 +131,7 @@ export default async function ReviewFeedbackPage() {
                       </a>
                     )}
                   </div>
-                  <p className="text-sm text-white/70 bg-[#1a1a1a] rounded-xl p-3 border border-[#2a2a2a]">
+                  <p className="text-sm text-white/70 bg-[#142236] rounded-xl p-3 border border-[#293b58]">
                     {p.feedback}
                   </p>
                 </div>
@@ -142,8 +142,8 @@ export default async function ReviewFeedbackPage() {
       )}
 
       {/* All Prompts Table */}
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-[#1e1e1e]">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-[#1d2c42]">
           <h2 className="font-bold text-sm">All Review Prompts</h2>
         </div>
         {allPrompts.length === 0 ? (
@@ -154,7 +154,7 @@ export default async function ReviewFeedbackPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1e1e1e] text-left text-xs text-white/40">
+                <tr className="border-b border-[#1d2c42] text-left text-xs text-white/40">
                   <th className="p-3 font-medium">Parent</th>
                   <th className="p-3 font-medium">Child</th>
                   <th className="p-3 font-medium">Status</th>
@@ -174,7 +174,7 @@ export default async function ReviewFeedbackPage() {
                     dismissed: 'bg-white/[0.05] text-white/30',
                   }
                   return (
-                    <tr key={p.id} className="border-b border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors">
+                    <tr key={p.id} className="border-b border-[#1d2c42] hover:bg-[#142236] transition-colors">
                       <td className="p-3 text-white/80">{parent?.full_name || '—'}</td>
                       <td className="p-3 text-white/80">{player?.first_name} {player?.last_name}</td>
                       <td className="p-3">

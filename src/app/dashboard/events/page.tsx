@@ -127,7 +127,7 @@ async function AdminEvents({
   )
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -274,7 +274,7 @@ async function AdminEvents({
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-[#1e1e1e]">
+                            <tr className="border-b border-[#1d2c42]">
                               <th className="text-left py-1.5 font-medium text-xs">Player</th>
                               <th className="text-left py-1.5 font-medium text-xs">Parent</th>
                               <th className="text-left py-1.5 font-medium text-xs">Payment</th>
@@ -282,7 +282,7 @@ async function AdminEvents({
                           </thead>
                           <tbody>
                             {confirmedBookings.map((booking) => (
-                              <tr key={booking.id} className="border-b border-[#1e1e1e] last:border-0">
+                              <tr key={booking.id} className="border-b border-[#1d2c42] last:border-0">
                                 <td className="py-1.5 text-xs">
                                   {booking.player
                                     ? `${booking.player.first_name} ${booking.player.last_name}`
@@ -459,7 +459,7 @@ async function ParentEvents({
   const totalBooked = bookings.filter((b) => b.status === 'confirmed').length
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -595,7 +595,7 @@ async function ParentEvents({
                   className={`rounded-xl border p-4 ${
                     allBooked
                       ? 'border-[#4ecde6]/30 bg-[#4ecde6]/5'
-                      : 'border-[#1e1e1e] bg-[#141414]'
+                      : 'border-[#1d2c42] bg-[#0f1a2b]'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -740,7 +740,7 @@ async function ParentEvents({
                     style={
                       camp.image_url
                         ? { backgroundImage: `url(${camp.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                        : { background: `linear-gradient(135deg, #060606 0%, ${orgPrimary}66 100%)` }
+                        : { background: `linear-gradient(135deg, #080e18 0%, ${orgPrimary}66 100%)` }
                     }
                   >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />

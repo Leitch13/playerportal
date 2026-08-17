@@ -87,7 +87,7 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
       ) : (
         <>
           {/* ─── A · Lost MRR ─── */}
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-3" data-testid="lost-mrr-panel">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-3" data-testid="lost-mrr-panel">
             <div className="flex items-baseline justify-between">
               <h3 className="text-sm font-bold text-white">Lost MRR</h3>
               <span className="text-[10px] text-white/40">Monthly value of cancelled subscriptions</span>
@@ -115,7 +115,7 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
           </div>
 
           {/* ─── B · Saved MRR ─── */}
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-3" data-testid="saved-mrr-panel">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-3" data-testid="saved-mrr-panel">
             <div className="flex items-baseline justify-between">
               <h3 className="text-sm font-bold text-white">Saved MRR</h3>
               <span className="text-[10px] text-white/40">Retained via accepted offers</span>
@@ -135,7 +135,7 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
           </div>
 
           {/* ─── C · Retention Offer ROI ─── */}
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-4" data-testid="offer-roi-panel">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-4" data-testid="offer-roi-panel">
             <div className="flex items-baseline justify-between">
               <h3 className="text-sm font-bold text-white">Retention Offer ROI</h3>
               <span className="text-[10px] text-white/40">Programme effectiveness</span>
@@ -169,7 +169,7 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
           </div>
 
           {/* ─── D · Cancellation Reasons ─── */}
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-3" data-testid="reason-breakdown-panel">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-3" data-testid="reason-breakdown-panel">
             <div className="flex items-baseline justify-between">
               <h3 className="text-sm font-bold text-white">Cancellation reasons</h3>
               <span className="text-[10px] text-white/40">Last 90 days</span>
@@ -186,7 +186,7 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
           </div>
 
           {/* ─── E · Trend ─── */}
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-4" data-testid="trend-panel">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-4" data-testid="trend-panel">
             <h3 className="text-sm font-bold text-white">Cancellation trend</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <TrendBlock label="Last 30 days" buckets={trend30} />
@@ -223,7 +223,7 @@ function MetricTile({
     tone === 'rose'    ? 'text-rose-400' :
     'text-white'
   return (
-    <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+    <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-4">
       <div className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">{label}</div>
       <div className={'text-2xl font-extrabold tabular-nums mt-1 ' + valueClass}>{value}</div>
       {sub && <div className="text-[10px] text-white/40 mt-0.5">{sub}</div>}
@@ -255,7 +255,7 @@ function TrendBlock({ label, buckets }: { label: string; buckets: { date: string
   const total = buckets.reduce((s, b) => s + b.count, 0)
   const peak = buckets.reduce((m, b) => Math.max(m, b.count), 0)
   return (
-    <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3">
+    <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-3">
       <div className="flex items-baseline justify-between mb-2">
         <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">{label}</span>
         <span className="text-xs font-semibold text-white tabular-nums">{total}</span>

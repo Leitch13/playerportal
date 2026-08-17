@@ -31,7 +31,7 @@ export default async function ClassPlansPage({ params }: { params: Promise<{ id:
     .order('amount', { ascending: true })
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">

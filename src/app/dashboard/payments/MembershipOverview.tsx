@@ -60,7 +60,7 @@ export default function MembershipOverview({
   // ─── Empty state — no active sub ───
   if (subCount === 0) {
     return (
-      <section className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl" data-testid="membership-overview-empty">
+      <section className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl" data-testid="membership-overview-empty">
         <h2 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-3">Your membership</h2>
         <h3 className="text-2xl font-bold text-white mb-2">You don&apos;t have an active membership yet</h3>
         <p className="text-sm text-white/60 mb-6 max-w-md">
@@ -124,10 +124,10 @@ export default function MembershipOverview({
             key={sub.id}
             className={`relative overflow-hidden rounded-3xl border p-6 sm:p-8 shadow-2xl ${
               isPastDue
-                ? 'bg-gradient-to-br from-rose-500/10 via-[#1a0a0a] to-[#0a0a0a] border-rose-500/30'
+                ? 'bg-gradient-to-br from-rose-500/10 via-[#1a0a0a] to-[#080e18] border-rose-500/30'
                 : willCancel
-                  ? 'bg-gradient-to-br from-amber-500/10 via-[#1a1610] to-[#0a0a0a] border-amber-500/30'
-                  : 'bg-gradient-to-br from-[#4ecde6]/8 via-[#0f1820] to-[#0a0a0a] border-[#4ecde6]/30'
+                  ? 'bg-gradient-to-br from-amber-500/10 via-[#1a1610] to-[#080e18] border-amber-500/30'
+                  : 'bg-gradient-to-br from-[#4ecde6]/8 via-[#0f1820] to-[#080e18] border-[#4ecde6]/30'
             }`}
             data-testid="membership-card"
           >

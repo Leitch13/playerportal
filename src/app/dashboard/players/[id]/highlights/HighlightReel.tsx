@@ -137,7 +137,7 @@ export default function HighlightReel({ data }: { data: HighlightData }) {
           style={{
             width: isStory ? 420 : 420,
             height: isStory ? 746 : 420,
-            background: `linear-gradient(145deg, #0a0a0a 0%, #111111 40%, ${data.brandColor}15 100%)`,
+            background: `linear-gradient(145deg, #080e18 0%, #0f1a2b 40%, ${data.brandColor}15 100%)`,
             position: 'relative',
             overflow: 'hidden',
             borderRadius: 24,

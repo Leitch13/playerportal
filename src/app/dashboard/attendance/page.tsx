@@ -98,7 +98,7 @@ async function ParentAttendance({ userId }: { userId: string }) {
   const bestStreaks = [...streakMap.values()].filter((s) => s.streak >= 2).sort((a, b) => b.streak - a.streak)
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Attendance</h1>
 
@@ -277,7 +277,7 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-start justify-between gap-3">
           <div>

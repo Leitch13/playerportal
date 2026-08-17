@@ -90,7 +90,7 @@ export default function SendMessageForm({
     // sliding off the visible area. Max height caps the panel so the
     // recipient/subject/textarea region scrolls instead of pushing the
     // Send button down.
-    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-4 sm:p-6 flex flex-col max-h-[calc(100dvh-8rem)]">
+    <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-4 sm:p-6 flex flex-col max-h-[calc(100dvh-8rem)]">
       <h2 className="text-lg font-semibold mb-4 shrink-0">New Message</h2>
       <form onSubmit={handleSubmit} className="space-y-4 flex flex-col min-h-0 flex-1">
         <div>
@@ -99,7 +99,7 @@ export default function SendMessageForm({
             value={recipientId}
             onChange={(e) => setRecipientId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select parent...</option>
             {parents.map((p) => (
@@ -115,7 +115,7 @@ export default function SendMessageForm({
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -146,7 +146,7 @@ export default function SendMessageForm({
             onChange={(e) => setBody(e.target.value)}
             required
             rows={4}
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[112px] sm:min-h-[140px] max-h-[40dvh] resize-y"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[112px] sm:min-h-[140px] max-h-[40dvh] resize-y"
           />
         </div>
         {/* MF-5 — inline error + soft-fail warning. Error stays until
@@ -166,7 +166,7 @@ export default function SendMessageForm({
             mobile so the Send button is always thumb-reachable above the
             soft keyboard. The negative margins extend the sticky band to
             the panel edges. */}
-        <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 px-4 sm:px-6 py-3 mt-auto bg-[#141414] border-t border-white/5 flex gap-2 flex-wrap shrink-0">
+        <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 px-4 sm:px-6 py-3 mt-auto bg-[#0f1a2b] border-t border-white/5 flex gap-2 flex-wrap shrink-0">
           <button
             type="submit"
             disabled={loading}
@@ -186,7 +186,7 @@ export default function SendMessageForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2.5 sm:py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors min-h-[44px]"
+            className="px-4 py-2.5 sm:py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors min-h-[44px]"
           >
             Cancel
           </button>

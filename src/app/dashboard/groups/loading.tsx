@@ -3,8 +3,8 @@ export default function GroupsLoading() {
     <div className="space-y-6">
       {/* Header with title + add button */}
       <div className="flex items-center justify-between">
-        <div className="h-8 w-36 bg-[#141414] rounded-lg animate-pulse" />
-        <div className="h-9 w-36 bg-[#141414] rounded-lg animate-pulse" />
+        <div className="h-8 w-36 bg-[#0f1a2b] rounded-lg animate-pulse" />
+        <div className="h-9 w-36 bg-[#0f1a2b] rounded-lg animate-pulse" />
       </div>
 
       {/* Group cards grid */}
@@ -12,7 +12,7 @@ export default function GroupsLoading() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-5 space-y-3 animate-pulse"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-5 space-y-3 animate-pulse"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="flex items-center justify-between">

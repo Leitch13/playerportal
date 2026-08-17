@@ -69,7 +69,7 @@ export default async function SessionPlansPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] -m-6 p-6 space-y-6">
+    <div className="min-h-screen bg-[#080e18] -m-6 p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Session Plans</h1>
       </div>

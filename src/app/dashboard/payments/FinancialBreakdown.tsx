@@ -95,7 +95,7 @@ export default function FinancialBreakdown({
       </div>
 
       {/* ─── Monthly Income Chart ─── */}
-      <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
+      <div className="bg-[#0f1a2b] dark:bg-white/5 rounded-xl border border-[#1d2c42] p-5">
         <h3 className="text-sm font-semibold mb-4">Monthly Income Breakdown</h3>
 
         {/* Legend */}
@@ -171,7 +171,7 @@ export default function FinancialBreakdown({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ─── Plan Breakdown ─── */}
-        <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
+        <div className="bg-[#0f1a2b] dark:bg-white/5 rounded-xl border border-[#1d2c42] p-5">
           <h3 className="text-sm font-semibold mb-4">Revenue by Plan</h3>
           {planBreakdown.length === 0 ? (
             <p className="text-sm text-white/60">No active plans yet.</p>
@@ -202,7 +202,7 @@ export default function FinancialBreakdown({
         </div>
 
         {/* ─── Revenue by Parent ─── */}
-        <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
+        <div className="bg-[#0f1a2b] dark:bg-white/5 rounded-xl border border-[#1d2c42] p-5">
           <h3 className="text-sm font-semibold mb-4">Top Parents by Revenue</h3>
           {topParents.length === 0 ? (
             <p className="text-sm text-white/60">No revenue data yet.</p>
@@ -211,7 +211,7 @@ export default function FinancialBreakdown({
               {topParents.map((parent, i) => (
                 <div
                   key={parent.name}
-                  className="flex items-center justify-between py-1.5 border-b border-[#1e1e1e] last:border-0"
+                  className="flex items-center justify-between py-1.5 border-b border-[#1d2c42] last:border-0"
                 >
                   <div className="flex items-center gap-2">
                     <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
@@ -236,7 +236,7 @@ export default function FinancialBreakdown({
       </div>
 
       {/* ─── Parent Signup Funnel ─── */}
-      <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-5">
+      <div className="bg-[#0f1a2b] dark:bg-white/5 rounded-xl border border-[#1d2c42] p-5">
         <h3 className="text-sm font-semibold mb-4">Signup & Conversion Funnel</h3>
         <div className="grid grid-cols-4 gap-2">
           <FunnelStep
@@ -281,7 +281,7 @@ function MetricCard({
   color: string
 }) {
   return (
-    <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-3 text-center">
+    <div className="bg-[#0f1a2b] dark:bg-white/5 rounded-xl border border-[#1d2c42] p-3 text-center">
       <div className={`text-xl font-bold ${color}`}>{value}</div>
       <div className="text-xs font-medium mt-0.5">{label}</div>
       <div className="text-[10px] text-white/60">{subtext}</div>

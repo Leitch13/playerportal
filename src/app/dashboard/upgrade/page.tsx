@@ -91,7 +91,7 @@ export default async function UpgradePage() {
     .order('sort_order')
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8 max-w-4xl mx-auto">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-xs font-semibold mb-4">
@@ -136,8 +136,8 @@ export default async function UpgradePage() {
                 <div
                   key={plan.id as string}
                   className={`
-                    relative bg-[#141414] rounded-2xl border p-6 transition-all duration-200 hover:border-[#2a2a2a]
-                    ${isPopular ? 'border-[#4ecde6] ring-1 ring-[#4ecde6]/20' : 'border-[#1e1e1e]'}
+                    relative bg-[#0f1a2b] rounded-2xl border p-6 transition-all duration-200 hover:border-[#293b58]
+                    ${isPopular ? 'border-[#4ecde6] ring-1 ring-[#4ecde6]/20' : 'border-[#1d2c42]'}
                   `}
                 >
                   {isPopular && (
@@ -232,7 +232,7 @@ export default async function UpgradePage() {
       </div>
 
       {/* FAQ */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
         <h2 className="text-lg font-bold text-white mb-4">Frequently Asked Questions</h2>
         <div className="space-y-4">
           {[

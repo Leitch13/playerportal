@@ -307,7 +307,7 @@ export default async function ParentDetailPage({
                    :                                    { label: 'No subscription', cls: 'bg-white/[0.04] text-white/50 border-white/[0.10]',       emoji: '·'  }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
         {/* ── Breadcrumb ── */}
         <div className="text-xs text-white/40">

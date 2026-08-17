@@ -205,7 +205,7 @@ function SummaryStat({
     white: 'text-white',
   }[accent]
   return (
-    <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+    <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-4">
       <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">{label}</p>
       <p className={`text-2xl font-bold tabular-nums ${colour}`}>{value}</p>
     </div>
@@ -485,7 +485,7 @@ export default function MigrationWizard({
 
       {/* Step 1: Upload */}
       {step === 'upload' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-8 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-8 text-center">
           <div className="text-4xl mb-3">📥</div>
           <h2 className="text-lg font-bold text-white mb-2">Upload your player CSV</h2>
           <p className="text-sm text-white/50 max-w-md mx-auto mb-6">
@@ -503,7 +503,7 @@ export default function MigrationWizard({
       {/* Step 2: Map classes */}
       {step === 'map' && (
         <div className="space-y-4">
-          <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+          <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="font-bold text-white">Map each source class to a Player Portal class + plan</h2>
@@ -524,7 +524,7 @@ export default function MigrationWizard({
               {uniqueClasses.map((uc) => {
                 const m = mapping[uc.name] || { groupId: null, planId: null }
                 return (
-                  <div key={uc.name} className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr] gap-2 items-center">
+                  <div key={uc.name} className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-3 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr] gap-2 items-center">
                     <div>
                       <p className="text-sm font-semibold text-white">{uc.name || '(no class)'}</p>
                       <p className="text-[11px] text-white/40">{uc.count} player{uc.count !== 1 ? 's' : ''}</p>
@@ -533,7 +533,7 @@ export default function MigrationWizard({
                     <select
                       value={m.groupId || ''}
                       onChange={(e) => setMapping({ ...mapping, [uc.name]: { ...m, groupId: e.target.value || null } })}
-                      className="bg-[#141414] border border-[#2a2a2a] rounded-lg px-3 py-2 text-xs text-white"
+                      className="bg-[#0f1a2b] border border-[#293b58] rounded-lg px-3 py-2 text-xs text-white"
                     >
                       <option value="">— Choose class —</option>
                       {groups.map((g) => (
@@ -545,7 +545,7 @@ export default function MigrationWizard({
                     <select
                       value={m.planId || ''}
                       onChange={(e) => setMapping({ ...mapping, [uc.name]: { ...m, planId: e.target.value || null } })}
-                      className="bg-[#141414] border border-[#2a2a2a] rounded-lg px-3 py-2 text-xs text-white"
+                      className="bg-[#0f1a2b] border border-[#293b58] rounded-lg px-3 py-2 text-xs text-white"
                     >
                       <option value="">— Choose plan —</option>
                       {plans.map((p) => (
@@ -588,23 +588,23 @@ export default function MigrationWizard({
       {/* Step 3: Review & confirm */}
       {step === 'review' && (
         <div className="space-y-4">
-          <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+          <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
             <h2 className="font-bold text-white mb-4">Review before importing</h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+              <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Players</p>
                 <p className="text-2xl font-bold text-white">{rows.length}</p>
               </div>
-              <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+              <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Classes mapped</p>
                 <p className="text-2xl font-bold text-[#4ecde6]">{mappedCount}</p>
               </div>
-              <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+              <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Pending invites</p>
                 <p className="text-2xl font-bold text-emerald-400">{rows.filter((r) => mapping[r.group_name]?.planId).length}</p>
               </div>
-              <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4">
+              <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-4">
                 <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold mb-1">Potential MRR</p>
                 <p className="text-2xl font-bold text-white">
                   £{rows.reduce((sum, r) => {
@@ -626,7 +626,7 @@ export default function MigrationWizard({
               </p>
             </div>
 
-            <div className="mt-3 py-3 px-4 rounded-xl border border-[#1e1e1e] bg-[#0a0a0a]">
+            <div className="mt-3 py-3 px-4 rounded-xl border border-[#1d2c42] bg-[#080e18]">
               <p className="text-sm font-semibold text-white mb-1">Already paid you for the current term?</p>
               <p className="text-[11px] text-white/50 mb-2.5">
                 If these members have already prepaid (e.g. via ClassForKids), set the date their
@@ -638,7 +638,7 @@ export default function MigrationWizard({
                 value={billingStartsAt}
                 min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
                 onChange={(e) => setBillingStartsAt(e.target.value)}
-                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#141414] border border-[#1e1e1e] text-white text-sm focus:outline-none focus:border-[#4ecde6]/40 [color-scheme:dark]"
+                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#0f1a2b] border border-[#1d2c42] text-white text-sm focus:outline-none focus:border-[#4ecde6]/40 [color-scheme:dark]"
               />
             </div>
 
@@ -892,7 +892,7 @@ export default function MigrationWizard({
 
 
           {/* Progress tracker */}
-          <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+          <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="font-bold text-white">Invitation Progress</h2>
@@ -921,19 +921,19 @@ export default function MigrationWizard({
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-3 mb-5">
-                  <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3">
+                  <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-3">
                     <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Confirmed</p>
                     <p className="text-2xl font-bold text-emerald-400">
                       {existingInvitations.filter((i) => i.inviteConfirmedAt).length}
                     </p>
                   </div>
-                  <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3">
+                  <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-3">
                     <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Pending</p>
                     <p className="text-2xl font-bold text-amber-400">
                       {existingInvitations.filter((i) => !i.inviteConfirmedAt && i.status === 'pending_migration').length}
                     </p>
                   </div>
-                  <div className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3">
+                  <div className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-3">
                     <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Total</p>
                     <p className="text-2xl font-bold text-white">{existingInvitations.length}</p>
                   </div>

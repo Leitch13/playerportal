@@ -57,7 +57,7 @@ export default async function QRCodePage({
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white max-w-2xl mx-auto">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white max-w-2xl mx-auto">
       {/* Sprint 11a — Back to live register link. Hidden in fullscreen
           via the .no-print + QRDisplay's own fullscreen background. */}
       <div className="no-print mb-3" data-testid="qr-back-to-live-register">

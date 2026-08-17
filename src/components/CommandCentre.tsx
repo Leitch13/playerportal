@@ -74,7 +74,7 @@ function StatCard({
         : tone === 'bad' ? 'text-red-400'
           : 'text-white'
   const inner = (
-    <div className="h-full rounded-2xl border border-white/10 bg-[#141414] p-4 transition hover:border-white/20">
+    <div className="h-full rounded-2xl border border-white/10 bg-[#0f1a2b] p-4 transition hover:border-white/20">
       <p className="text-[11px] font-medium uppercase tracking-wider text-white/40">{label}</p>
       <p className={`mt-1 text-2xl font-bold ${valueColor}`}>{value}</p>
       {sub && <p className="mt-0.5 text-[11px] text-white/40">{sub}</p>}
@@ -126,7 +126,7 @@ export default function CommandCentre(props: CommandCentreProps) {
       attendanceRate <= 0 ? 'neutral' : attendanceRate >= 80 ? 'good' : attendanceRate >= 60 ? 'warn' : 'bad'
 
     return (
-      <div className="min-h-screen -m-6 bg-[#0a0a0a] p-6 text-white lg:-m-8 lg:p-8">
+      <div className="min-h-screen -m-6 bg-[#080e18] p-6 text-white lg:-m-8 lg:p-8">
         <div className="mx-auto max-w-5xl space-y-6">
           {/* ── Greeting ── */}
           <header className="flex flex-wrap items-end justify-between gap-3">
@@ -220,7 +220,7 @@ export default function CommandCentre(props: CommandCentreProps) {
 
           {/* ── This week's sessions (operations, below the fold) ── */}
           {sessionsWithTimes.length > 0 && (
-            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-xs font-medium uppercase tracking-wider text-white/40">This Week&apos;s Sessions</p>
                 <Link href="/dashboard/calendar" className="text-xs font-medium text-[#4ecde6] hover:underline">Full timetable →</Link>
@@ -241,7 +241,7 @@ export default function CommandCentre(props: CommandCentreProps) {
 
           {/* ── Booking share + leads (below the fold; status now lives in the Health Bar) ── */}
           {bookingUrl && (
-            <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+            <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
               <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">Share Your Booking Page</p>
               <BookingShareBar bookingUrl={bookingUrl} academyName={orgName} />
               {newLeadsThisWeek > 0 && (
@@ -257,7 +257,7 @@ export default function CommandCentre(props: CommandCentreProps) {
   }
 
   return (
-    <div className="min-h-screen -m-6 bg-[#0a0a0a] p-6 text-white lg:-m-8 lg:p-8">
+    <div className="min-h-screen -m-6 bg-[#080e18] p-6 text-white lg:-m-8 lg:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
         {/* ── Greeting ── */}
         <header className="flex flex-wrap items-end justify-between gap-3">
@@ -326,7 +326,7 @@ export default function CommandCentre(props: CommandCentreProps) {
           </div>
 
           {/* Revenue overview triad */}
-          <div className="rounded-2xl border border-white/10 bg-[#141414] p-5 lg:col-span-1">
+          <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5 lg:col-span-1">
             <p className="mb-4 text-xs font-medium uppercase tracking-wider text-white/40">Revenue Overview</p>
             <div className="space-y-3">
               <div className="flex items-baseline justify-between">
@@ -348,7 +348,7 @@ export default function CommandCentre(props: CommandCentreProps) {
           </div>
 
           {/* Academy Live + share */}
-          <div className="rounded-2xl border border-white/10 bg-[#141414] p-5 lg:col-span-1">
+          <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5 lg:col-span-1">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-white/40">Academy Live</p>
               {isLive && (
@@ -371,7 +371,7 @@ export default function CommandCentre(props: CommandCentreProps) {
 
         {/* ── Tier 4: operations — this week's sessions (adaptive) ── */}
         {sessionsWithTimes.length > 0 && (
-          <div className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+          <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-white/40">This Week&apos;s Sessions</p>
               <Link href="/dashboard/calendar" className="text-xs font-medium text-[#4ecde6] hover:underline">Full timetable →</Link>

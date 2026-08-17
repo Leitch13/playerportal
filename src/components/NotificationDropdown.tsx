@@ -218,14 +218,14 @@ export default function NotificationDropdown({
 
       {/* Dropdown */}
       <div
-        className={`absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-[#141414] rounded-xl shadow-2xl border border-gray-200 dark:border-[#1e1e1e] z-50 overflow-hidden transition-all duration-200 ease-out origin-top-right ${
+        className={`absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-[#0f1a2b] rounded-xl shadow-2xl border border-gray-200 dark:border-[#1d2c42] z-50 overflow-hidden transition-all duration-200 ease-out origin-top-right ${
           open
             ? 'opacity-100 scale-100 translate-y-0'
             : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#1e1e1e]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-[#1d2c42]">
           <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
             Notifications
           </h3>
@@ -271,14 +271,14 @@ export default function NotificationDropdown({
           ) : (
             grouped.map((group) => (
               <div key={group.label}>
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-[#1a1a1a] sticky top-0">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-[#142236] sticky top-0">
                   {group.label}
                 </div>
                 {group.items.map((notification) => (
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1e1e1e] transition-colors border-l-[3px] ${
+                    className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#1d2c42] transition-colors border-l-[3px] ${
                       !notification.read
                         ? 'border-l-[#4ecde6] bg-blue-50/50 dark:bg-[#4ecde6]/5'
                         : 'border-l-transparent'

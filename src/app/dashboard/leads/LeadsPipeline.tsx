@@ -360,26 +360,26 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
           <button
             onClick={importTrials}
             disabled={importing}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-[#1e1e1e] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            className="px-3 py-2 rounded-lg text-sm font-semibold bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-[#1d2c42] transition-colors flex items-center gap-1.5 disabled:opacity-50"
           >
             <IconDownload /> {importing ? 'Importing...' : 'Import Trials'}
           </button>
           <button
             onClick={() => setShowOverdueOnly(prev => !prev)}
-            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors flex items-center gap-1.5 ${showOverdueOnly ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-white/5 border-[#1e1e1e] text-white/70 hover:text-white hover:bg-white/10'}`}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors flex items-center gap-1.5 ${showOverdueOnly ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-white/5 border-[#1d2c42] text-white/70 hover:text-white hover:bg-white/10'}`}
           >
             {showOverdueOnly ? 'Show All' : 'Overdue Only'}
           </button>
-          <div className="flex bg-[#141414] rounded-lg p-1 border border-[#1e1e1e]">
+          <div className="flex bg-[#0f1a2b] rounded-lg p-1 border border-[#1d2c42]">
             <button
               onClick={() => setView('pipeline')}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${view === 'pipeline' ? 'bg-[#1e1e1e] text-white shadow-sm' : 'text-white/40 hover:text-white/70'}`}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${view === 'pipeline' ? 'bg-[#1d2c42] text-white shadow-sm' : 'text-white/40 hover:text-white/70'}`}
             >
               <IconBoard /> Board
             </button>
             <button
               onClick={() => setView('list')}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${view === 'list' ? 'bg-[#1e1e1e] text-white shadow-sm' : 'text-white/40 hover:text-white/70'}`}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${view === 'list' ? 'bg-[#1d2c42] text-white shadow-sm' : 'text-white/40 hover:text-white/70'}`}
             >
               <IconList /> List
             </button>
@@ -395,7 +395,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
 
       {/* Import result banner */}
       {importResult && (
-        <div className="bg-[#141414] rounded-xl border border-[#4ecde6]/30 px-4 py-3 flex items-center justify-between">
+        <div className="bg-[#0f1a2b] rounded-xl border border-[#4ecde6]/30 px-4 py-3 flex items-center justify-between">
           <p className="text-sm text-[#4ecde6]">{importResult}</p>
           <button onClick={() => setImportResult(null)} className="text-white/40 hover:text-white"><IconClose /></button>
         </div>
@@ -403,19 +403,19 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4">
           <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">This Month</p>
           <p className="text-2xl font-bold text-[#4ecde6]">{stats.thisMonth}</p>
           <p className="text-[10px] text-white/40 mt-0.5">new leads</p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4">
           <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">Conversion</p>
           <p className="text-2xl font-bold text-emerald-400">{stats.conversionRate}%</p>
           <p className="text-[10px] text-white/40 mt-0.5">
             {stats.avgDaysToConvert > 0 ? `~${stats.avgDaysToConvert} days avg` : 'first enrolments coming'}
           </p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4">
           <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">Follow-ups</p>
           <div className="flex items-center gap-3 mt-0.5">
             {stats.dueTodayCount > 0 && (
@@ -438,7 +438,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
             {stats.dueTodayCount === 0 && stats.overdueCount === 0 ? 'all clear' : 'need your attention'}
           </p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4">
           <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-1">Top Source</p>
           {Object.entries(stats.sourceCounts).length > 0 ? (
             (() => {
@@ -462,7 +462,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
 
       {/* Pipeline View */}
       {view === 'pipeline' && filteredLeads.length === 0 && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
           <div className="text-5xl mb-3">📥</div>
           <h3 className="text-lg font-bold text-white mb-1">
             {showOverdueOnly ? 'No overdue follow-ups' : 'No leads yet'}
@@ -508,7 +508,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                     const overdue = isOverdue(lead.follow_up_date)
                     const borderClass = followUpDue
                       ? overdue ? 'border-red-500/50' : 'border-orange-500/50'
-                      : 'border-[#1e1e1e]'
+                      : 'border-[#1d2c42]'
                     return (
                     <div key={lead.id} className="relative">
                       {/* Checkbox */}
@@ -520,7 +520,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                       </div>
                       <button
                         onClick={() => setDetailLead(lead)}
-                        className={`w-full text-left bg-[#141414] rounded-xl border ${borderClass} p-3 pl-8 hover:border-[#2e2e2e] transition-all group`}
+                        className={`w-full text-left bg-[#0f1a2b] rounded-xl border ${borderClass} p-3 pl-8 hover:border-[#2e2e2e] transition-all group`}
                       >
                         <div className="flex items-start justify-between mb-1.5">
                           <p className="text-sm font-semibold text-white truncate">
@@ -600,11 +600,11 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
 
       {/* List View */}
       {view === 'list' && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1e1e1e] text-white/50 text-xs">
+                <tr className="border-b border-[#1d2c42] text-white/50 text-xs">
                   <th className="w-10 px-4 py-3"><span className="sr-only">Select</span></th>
                   <th className="text-left px-4 py-3 font-medium">Name</th>
                   <th className="text-left px-4 py-3 font-medium">Child</th>
@@ -624,7 +624,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                     <tr
                       key={lead.id}
                       onClick={() => setDetailLead(lead)}
-                      className={`border-b hover:bg-white/[0.02] cursor-pointer transition-colors ${followUpDue ? (overdue ? 'border-red-500/30 bg-red-500/[0.03]' : 'border-orange-500/30 bg-orange-500/[0.03]') : 'border-[#1e1e1e]'}`}
+                      className={`border-b hover:bg-white/[0.02] cursor-pointer transition-colors ${followUpDue ? (overdue ? 'border-red-500/30 bg-red-500/[0.03]' : 'border-orange-500/30 bg-orange-500/[0.03]') : 'border-[#1d2c42]'}`}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <div
@@ -665,7 +665,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                           className={`text-xs font-semibold px-2 py-1 rounded-lg border-0 ${config.bg} ${config.color} bg-opacity-20 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#4ecde6]/50`}
                         >
                           {STATUSES.map(s => (
-                            <option key={s} value={s} className="bg-[#1a1a1a] text-white">{STATUS_CONFIG[s].label}</option>
+                            <option key={s} value={s} className="bg-[#142236] text-white">{STATUS_CONFIG[s].label}</option>
                           ))}
                         </select>
                       </td>
@@ -708,16 +708,16 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
 
       {/* Bulk Action Bar */}
       {selectedLeads.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#141414] border border-[#1e1e1e] rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4">
           <span className="text-sm font-semibold text-white">{selectedLeads.size} selected</span>
           <select
             value={bulkStatus}
             onChange={e => setBulkStatus(e.target.value)}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#4ecde6]/50"
+            className="bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-[#4ecde6]/50"
           >
-            <option value="" className="bg-[#1a1a1a]">Move to...</option>
+            <option value="" className="bg-[#142236]">Move to...</option>
             {STATUSES.map(s => (
-              <option key={s} value={s} className="bg-[#1a1a1a]">{STATUS_CONFIG[s].label}</option>
+              <option key={s} value={s} className="bg-[#142236]">{STATUS_CONFIG[s].label}</option>
             ))}
           </select>
           <button
@@ -769,7 +769,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
           onClick={() => !saving && setShowQuickAdd(false)}
         >
           <div
-            className="w-full max-w-sm bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 shadow-2xl"
+            className="w-full max-w-sm bg-[#0f1a2b] border border-[#293b58] rounded-2xl p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
@@ -802,7 +802,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                   required
                   inputMode="text"
                   autoCapitalize="words"
-                  className="w-full px-4 py-3 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a] text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50"
+                  className="w-full px-4 py-3 rounded-lg bg-[#080e18] border border-[#293b58] text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50"
                   placeholder="Jane Smith"
                 />
               </div>
@@ -813,7 +813,7 @@ export default function LeadsPipeline({ leads: initialLeads, teamMembers, traini
                   value={quickPhone}
                   onChange={(e) => setQuickPhone(e.target.value)}
                   inputMode="tel"
-                  className="w-full px-4 py-3 rounded-lg bg-[#0a0a0a] border border-[#2a2a2a] text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50"
+                  className="w-full px-4 py-3 rounded-lg bg-[#080e18] border border-[#293b58] text-white text-base placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50"
                   placeholder="07..."
                 />
               </div>
@@ -874,8 +874,8 @@ function AddLeadModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#141414] rounded-2xl border border-[#1e1e1e] w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e1e1e]">
+      <div className="relative bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1d2c42]">
           <h2 className="text-lg font-bold">Add New Lead</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><IconClose /></button>
         </div>
@@ -885,7 +885,7 @@ function AddLeadModal({
               <label className="block text-xs text-white/50 font-medium mb-1">First Name *</label>
               <input
                 value={form.first_name} onChange={e => set('first_name', e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
                 required
               />
             </div>
@@ -893,7 +893,7 @@ function AddLeadModal({
               <label className="block text-xs text-white/50 font-medium mb-1">Last Name</label>
               <input
                 value={form.last_name} onChange={e => set('last_name', e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
               />
             </div>
           </div>
@@ -902,14 +902,14 @@ function AddLeadModal({
               <label className="block text-xs text-white/50 font-medium mb-1">Email</label>
               <input
                 type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
               />
             </div>
             <div>
               <label className="block text-xs text-white/50 font-medium mb-1">Phone</label>
               <input
                 value={form.phone} onChange={e => set('phone', e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
               />
             </div>
           </div>
@@ -918,14 +918,14 @@ function AddLeadModal({
               <label className="block text-xs text-white/50 font-medium mb-1">Child Name</label>
               <input
                 value={form.child_name} onChange={e => set('child_name', e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
               />
             </div>
             <div>
               <label className="block text-xs text-white/50 font-medium mb-1">Child Age</label>
               <input
                 type="number" min="3" max="18" value={form.child_age} onChange={e => set('child_age', e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
               />
             </div>
           </div>
@@ -933,26 +933,26 @@ function AddLeadModal({
             <label className="block text-xs text-white/50 font-medium mb-1">Interested In</label>
             <select
               value={form.interested_in} onChange={e => set('interested_in', e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              <option value="" className="bg-[#1a1a1a] text-white">Select a group...</option>
-              {trainingGroups.map(g => <option key={g.id} value={g.name} className="bg-[#1a1a1a] text-white">{g.name}</option>)}
+              <option value="" className="bg-[#142236] text-white">Select a group...</option>
+              {trainingGroups.map(g => <option key={g.id} value={g.name} className="bg-[#142236] text-white">{g.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs text-white/50 font-medium mb-1">Source</label>
             <select
               value={form.source} onChange={e => set('source', e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              {SOURCES.map(s => <option key={s} value={s} className="bg-[#1a1a1a] text-white">{SOURCE_LABELS[s]}</option>)}
+              {SOURCES.map(s => <option key={s} value={s} className="bg-[#142236] text-white">{SOURCE_LABELS[s]}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs text-white/50 font-medium mb-1">Notes</label>
             <textarea
               value={form.notes} onChange={e => set('notes', e.target.value)} rows={3}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors resize-none"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors resize-none"
             />
           </div>
           <div className="flex justify-end gap-3 pt-2">
@@ -1023,9 +1023,9 @@ function LeadDetailPanel({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#0f0f0f] w-full max-w-md h-full overflow-y-auto border-l border-[#1e1e1e] animate-slide-in">
+      <div className="relative bg-[#0f1a2b] w-full max-w-md h-full overflow-y-auto border-l border-[#1d2c42] animate-slide-in">
         {/* Header */}
-        <div className="sticky top-0 bg-[#0f0f0f] border-b border-[#1e1e1e] px-6 py-4 z-10">
+        <div className="sticky top-0 bg-[#0f1a2b] border-b border-[#1d2c42] px-6 py-4 z-10">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-bold">{lead.first_name} {lead.last_name || ''}</h2>
             <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><IconClose /></button>
@@ -1095,10 +1095,10 @@ function LeadDetailPanel({
             <select
               value={lead.interested_in || ''}
               onChange={e => onUpdate(lead.id, { interested_in: e.target.value || null })}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              <option value="" className="bg-[#1a1a1a] text-white">None selected</option>
-              {trainingGroups.map(g => <option key={g.id} value={g.name} className="bg-[#1a1a1a] text-white">{g.name}</option>)}
+              <option value="" className="bg-[#142236] text-white">None selected</option>
+              {trainingGroups.map(g => <option key={g.id} value={g.name} className="bg-[#142236] text-white">{g.name}</option>)}
             </select>
           </section>
 
@@ -1108,10 +1108,10 @@ function LeadDetailPanel({
             <select
               value={lead.assigned_to || ''}
               onChange={e => onUpdate(lead.id, { assigned_to: e.target.value || null })}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
             >
-              <option value="" className="bg-[#1a1a1a] text-white">Unassigned</option>
-              {teamMembers.map(m => <option key={m.id} value={m.id} className="bg-[#1a1a1a] text-white">{m.full_name}</option>)}
+              <option value="" className="bg-[#142236] text-white">Unassigned</option>
+              {teamMembers.map(m => <option key={m.id} value={m.id} className="bg-[#142236] text-white">{m.full_name}</option>)}
             </select>
           </section>
 
@@ -1124,7 +1124,7 @@ function LeadDetailPanel({
               type="date"
               value={lead.follow_up_date || ''}
               onChange={e => onUpdate(lead.id, { follow_up_date: e.target.value || null })}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors [color-scheme:dark]"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors [color-scheme:dark]"
             />
           </section>
 
@@ -1132,7 +1132,7 @@ function LeadDetailPanel({
           <section>
             <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-3">Notes</h3>
             {lead.notes && (
-              <div className="bg-[#1a1a1a] rounded-lg p-3 mb-3 text-xs text-white/60 whitespace-pre-wrap max-h-40 overflow-y-auto border border-[#2a2a2a]">
+              <div className="bg-[#142236] rounded-lg p-3 mb-3 text-xs text-white/60 whitespace-pre-wrap max-h-40 overflow-y-auto border border-[#293b58]">
                 {lead.notes}
               </div>
             )}
@@ -1142,7 +1142,7 @@ function LeadDetailPanel({
                 onChange={e => setEditNotes(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && appendNote()}
                 placeholder="Add a note..."
-                className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
+                className="flex-1 bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#4ecde6]/50 transition-colors"
               />
               <button
                 onClick={appendNote}
@@ -1188,7 +1188,7 @@ function LeadDetailPanel({
         {showLostModal && (
           <div className="absolute inset-0 z-20 flex items-center justify-center p-6">
             <div className="absolute inset-0 bg-black/40" onClick={() => setShowLostModal(false)} />
-            <div className="relative bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 w-full max-w-sm">
+            <div className="relative bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 w-full max-w-sm">
               <h3 className="text-base font-bold mb-4">Why was this lead lost?</h3>
               <div className="space-y-2 mb-4">
                 {LOST_REASONS.map(reason => (
@@ -1198,7 +1198,7 @@ function LeadDetailPanel({
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border ${
                       lostReason === reason
                         ? 'border-red-500/50 bg-red-500/10 text-red-400'
-                        : 'border-[#2a2a2a] bg-[#1a1a1a] text-white/60 hover:text-white hover:bg-white/5'
+                        : 'border-[#293b58] bg-[#142236] text-white/60 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     {reason}

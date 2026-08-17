@@ -3,14 +3,14 @@ export default function ReviewsLoading() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="h-8 w-40 bg-[#141414] rounded-lg animate-pulse" />
-        <div className="h-9 w-32 bg-[#141414] rounded-lg animate-pulse" />
+        <div className="h-8 w-40 bg-[#0f1a2b] rounded-lg animate-pulse" />
+        <div className="h-9 w-32 bg-[#0f1a2b] rounded-lg animate-pulse" />
       </div>
 
       {/* Filter bar */}
       <div className="flex gap-3 animate-pulse">
-        <div className="h-9 w-40 bg-[#141414] rounded-lg" />
-        <div className="h-9 w-32 bg-[#141414] rounded-lg" />
+        <div className="h-9 w-40 bg-[#0f1a2b] rounded-lg" />
+        <div className="h-9 w-32 bg-[#0f1a2b] rounded-lg" />
       </div>
 
       {/* Review cards list */}
@@ -18,7 +18,7 @@ export default function ReviewsLoading() {
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-5 animate-pulse"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-5 animate-pulse"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="flex items-center justify-between mb-3">

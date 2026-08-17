@@ -121,7 +121,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
     <div className="space-y-6">
       {/* Time filter */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1 bg-[#141414] rounded-lg p-1 border border-[#1e1e1e]">
+        <div className="flex gap-1 bg-[#0f1a2b] rounded-lg p-1 border border-[#1d2c42]">
           {([
             { key: 'week', label: 'This Week' },
             { key: 'month', label: 'This Month' },
@@ -132,7 +132,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
               onClick={() => setTimeFilter(tab.key)}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 timeFilter === tab.key
-                  ? 'bg-[#1e1e1e] text-white shadow-sm'
+                  ? 'bg-[#1d2c42] text-white shadow-sm'
                   : 'text-white/40 hover:text-white/70'
               }`}
             >
@@ -144,7 +144,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
       </div>
 
       {/* Funnel visualization */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
         <h2 className="text-lg font-bold text-white mb-6">Conversion Funnel</h2>
         <div className="space-y-3">
           {STAGES.map((stage, i) => {
@@ -166,7 +166,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
                     <p className="text-xs text-white/40">{stage.desc}</p>
                   </div>
                   <div className="flex-1 relative">
-                    <div className="h-10 bg-[#1a1a1a] rounded-xl overflow-hidden">
+                    <div className="h-10 bg-[#142236] rounded-xl overflow-hidden">
                       <div
                         className="h-full rounded-xl transition-all duration-500 flex items-center px-3"
                         style={{ width: `${barWidth}%`, backgroundColor: stage.color }}
@@ -190,7 +190,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
         </div>
 
         {/* Conversion rate summary */}
-        <div className="mt-6 pt-4 border-t border-[#1e1e1e] flex items-center gap-6">
+        <div className="mt-6 pt-4 border-t border-[#1d2c42] flex items-center gap-6">
           <div>
             <p className="text-xs text-white/40">Overall conversion</p>
             <p className="text-2xl font-bold text-[#4ecde6]">
@@ -218,8 +218,8 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
 
       {/* Expanded stage list */}
       {expandedStage && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
-          <div className="px-4 py-3 border-b border-[#1e1e1e] flex items-center justify-between">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#1d2c42] flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white">
               {STAGES.find(s => s.key === expandedStage)?.label} — {getTrialsInStage(expandedStage).length} trials
             </h3>
@@ -230,7 +230,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1e1e1e]">
+                <tr className="border-b border-[#1d2c42]">
                   <th className="text-left px-4 py-2 font-medium text-white/50 text-xs">Child</th>
                   <th className="text-left px-4 py-2 font-medium text-white/50 text-xs">Parent</th>
                   <th className="text-left px-4 py-2 font-medium text-white/50 text-xs hidden md:table-cell">Date</th>
@@ -240,7 +240,7 @@ export default function FunnelDashboard({ trials }: { trials: Trial[] }) {
               </thead>
               <tbody>
                 {getTrialsInStage(expandedStage).map(t => (
-                  <tr key={t.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/[0.02]">
+                  <tr key={t.id} className="border-b border-[#1d2c42]/50 hover:bg-white/[0.02]">
                     <td className="px-4 py-2.5 text-white font-medium">{t.childName}</td>
                     <td className="px-4 py-2.5">
                       <p className="text-white/80">{t.parentName}</p>

@@ -178,7 +178,7 @@ export default function CancelFlow({
 
       {/* ═══ STEP 1: Reason ═══ */}
       {step === 'reason' && (
-        <div className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl">
+        <div className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
               😔
@@ -197,7 +197,7 @@ export default function CancelFlow({
                 className={`w-full flex items-center gap-3 p-3.5 rounded-xl text-left text-sm transition-all ${
                   reason === r.id
                     ? 'bg-[#4ecde6]/10 border-2 border-[#4ecde6] text-white font-semibold shadow-[0_0_24px_rgba(78,205,230,0.15)]'
-                    : 'border-2 border-[#1e1e1e] bg-white/[0.02] hover:border-[#4ecde6]/30 hover:bg-white/[0.04] text-white/80'
+                    : 'border-2 border-[#1d2c42] bg-white/[0.02] hover:border-[#4ecde6]/30 hover:bg-white/[0.04] text-white/80'
                 }`}
               >
                 <span className="text-xl">{r.icon}</span>
@@ -224,7 +224,7 @@ export default function CancelFlow({
                 placeholder={reason === 'other'
                   ? 'Help us understand — we read every response.'
                   : 'Optional. Helps your academy improve.'}
-                className="w-full p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-white resize-none h-20 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
+                className="w-full p-3 rounded-xl bg-[#080e18] border border-[#1d2c42] text-sm text-white resize-none h-20 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
                 data-testid="reason-detail-textarea"
               />
             </div>
@@ -256,7 +256,7 @@ export default function CancelFlow({
 
       {/* ═══ STEP 2: Cancellation Policy ═══ */}
       {step === 'policy' && (
-        <div className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl" data-testid="policy-step">
+        <div className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl" data-testid="policy-step">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
               📄
@@ -330,7 +330,7 @@ export default function CancelFlow({
 
       {/* ═══ STEP 2: Retention Offer (the showstopper) ═══ */}
       {step === 'offer' && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#0a1c1e] via-[#0a1416] to-[#0a0a0a] rounded-3xl border-2 border-[#4ecde6]/30 p-6 sm:p-8 shadow-[0_20px_60px_rgba(78,205,230,0.15)]">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#0a1c1e] via-[#0a1416] to-[#080e18] rounded-3xl border-2 border-[#4ecde6]/30 p-6 sm:p-8 shadow-[0_20px_60px_rgba(78,205,230,0.15)]">
           {/* Decorative glows */}
           <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#4ecde6]/10 blur-[80px] pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-emerald-500/8 blur-[80px] pointer-events-none" />
@@ -420,7 +420,7 @@ export default function CancelFlow({
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-[#080e18]/30 border-t-[#080e18] rounded-full animate-spin" />
                   Applying discount...
                 </span>
               ) : (
@@ -440,7 +440,7 @@ export default function CancelFlow({
 
       {/* ═══ STEP 3: Final Confirmation ═══ */}
       {step === 'confirm' && (
-        <div className="bg-gradient-to-br from-[#141414] via-[#161010] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl">
+        <div className="bg-gradient-to-br from-[#0f1a2b] via-[#161010] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-3 text-2xl">
               ⚠️
@@ -555,7 +555,7 @@ export default function CancelFlow({
 
       {/* ═══ RETAINED: Accepted the offer ═══ */}
       {step === 'retained' && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/10 via-[#0a1614] to-[#0a0a0a] rounded-3xl border-2 border-emerald-500/40 p-6 sm:p-8 shadow-[0_20px_60px_rgba(16,185,129,0.2)] text-center">
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/10 via-[#0a1614] to-[#080e18] rounded-3xl border-2 border-emerald-500/40 p-6 sm:p-8 shadow-[0_20px_60px_rgba(16,185,129,0.2)] text-center">
           <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-emerald-500/15 blur-[60px] pointer-events-none" />
           <div className="relative">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-500/15 border-2 border-emerald-500/40 mb-4 text-4xl">
@@ -605,7 +605,7 @@ export default function CancelFlow({
 
       {/* ═══ CANCELLED: Subscription ended ═══ */}
       {step === 'cancelled' && (
-        <div className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] rounded-3xl border border-[#1e1e1e] p-6 sm:p-8 shadow-2xl text-center">
+        <div className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
             👋
           </div>

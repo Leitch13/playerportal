@@ -40,7 +40,7 @@ export default function ThreadView({
   profileMap: Map<string, ProfileLite>
 }) {
   return (
-    <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-2xl p-4 space-y-4" data-testid="thread-view">
+    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 space-y-4" data-testid="thread-view">
       {messages.map(m => {
         const isMine = m.sender_id === currentUserId
         const sender = profileMap.get(m.sender_id)
@@ -50,7 +50,7 @@ export default function ThreadView({
         })
         return (
           <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] min-w-[180px] rounded-2xl px-4 py-2.5 ${isMine ? 'bg-[#1a2a2e] border border-[#4ecde6]/20' : 'bg-[#1a1a1a] border border-[#252525]'}`}>
+            <div className={`max-w-[80%] min-w-[180px] rounded-2xl px-4 py-2.5 ${isMine ? 'bg-[#1a2a2e] border border-[#4ecde6]/20' : 'bg-[#142236] border border-[#252525]'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-[10px] uppercase tracking-wider font-bold ${isMine ? 'text-[#4ecde6]' : 'text-white/60'}`}>{senderName}</span>
                 {!isMine && sender?.role && (

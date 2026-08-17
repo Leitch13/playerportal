@@ -63,7 +63,7 @@ export default function ContactsClient({ contacts }: { contacts: Contact[]; orgS
   ]
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-2xl font-bold text-white">Contacts</h1>

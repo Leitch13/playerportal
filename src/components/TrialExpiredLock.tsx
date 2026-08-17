@@ -59,7 +59,7 @@ export default function TrialExpiredLock({
   }
 
   return (
-    <div className="min-h-screen bg-[#060606] text-white flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-[#080e18] text-white flex items-center justify-center px-4 py-10">
       {/* Ambient brand glow */}
       <div
         className="fixed inset-x-0 top-0 h-72 opacity-30 pointer-events-none"
@@ -100,7 +100,7 @@ export default function TrialExpiredLock({
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className="rounded-2xl border border-white/[0.08] bg-[#141414] p-4 sm:p-6 flex flex-col"
+                className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-4 sm:p-6 flex flex-col"
               >
                 <h3 className="text-base sm:text-lg font-bold">{plan.name}</h3>
                 {plan.price_monthly != null && (

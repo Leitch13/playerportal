@@ -118,7 +118,7 @@ export default function CheckInForm({
               className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
                 isChecked
                   ? 'bg-emerald-500/10 border-emerald-500/30'
-                  : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#4ecde6]/30'
+                  : 'bg-[#142236] border-[#293b58] hover:border-[#4ecde6]/30'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function CheckInForm({
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-[#0a0a0a] border-t-transparent" />
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-[#080e18] border-t-transparent" />
                       Checking in...
                     </span>
                   ) : (

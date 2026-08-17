@@ -37,7 +37,7 @@ export default async function AccountPage() {
     : { data: null }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">My Account</h1>
 
@@ -81,7 +81,7 @@ export default async function AccountPage() {
             children. Your coach will update training-related info like position
             and age group.
           </p>
-          <div className="divide-y divide-[#1e1e1e]">
+          <div className="divide-y divide-[#1d2c42]">
             {(players || []).map((child) => (
               <div key={child.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between">
@@ -136,7 +136,7 @@ export default async function AccountPage() {
             Share this signup link so others can join your organisation:
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 px-3 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg text-sm font-mono break-all text-white">
+            <code className="flex-1 px-3 py-2 bg-[#142236] border border-[#293b58] rounded-lg text-sm font-mono break-all text-white">
               {process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/auth/signup?org={org.slug}
             </code>
           </div>

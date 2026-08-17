@@ -160,7 +160,7 @@ function SkillCard({
   const icon = SKILL_ICONS[skill.skill_name] || '\u2B50'
 
   return (
-    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-4 hover:border-white/20 transition-all group">
+    <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-4 hover:border-white/20 transition-all group">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-xl">{icon}</span>
@@ -213,7 +213,7 @@ function SkillTreeVisualization({ skills }: { skills: SkillLevel[] }) {
   const radius = 120
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Skill Tree</h3>
       <div className="flex justify-center overflow-x-auto">
         <svg
@@ -350,7 +350,7 @@ function RecentXpGains({
   if (items.length === 0) return null
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Recent XP Gains</h3>
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {items.slice(0, 15).map((item, i) => (
@@ -405,7 +405,7 @@ function PassportAchievements({ achievements }: { achievements: Achievement[] })
   )
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Progression Badges</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {progressionBadges.map((badge) => {
@@ -500,7 +500,7 @@ function UpdateSkillsForm({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-white">Quick Skill Assessment</h3>
           <button onClick={onClose} className="text-white/40 hover:text-white text-xl">
@@ -585,7 +585,7 @@ function PassportPayments({ payments }: { payments: PaymentRow[] }) {
   }, 0)
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-white">
           {'💳'} Payments

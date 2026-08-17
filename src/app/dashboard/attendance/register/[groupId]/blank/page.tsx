@@ -115,7 +115,7 @@ export default async function BlankRegisterPage({
       `}</style>
 
       {/* Screen controls */}
-      <div className="no-print bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 text-white">
+      <div className="no-print bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 text-white">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold">Blank Register</h1>

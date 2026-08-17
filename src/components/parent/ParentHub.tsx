@@ -72,7 +72,7 @@ export default function ParentHub(props: ParentHubProps) {
   } = props
 
   const ScheduleCard = (
-    <section className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+    <section className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wider text-white/40">Schedule</p>
         <Link href="/dashboard/schedule" className="text-xs font-medium text-emerald-400 hover:underline">Full schedule →</Link>
@@ -94,7 +94,7 @@ export default function ParentHub(props: ParentHubProps) {
   )
 
   const ProgressCard = (
-    <section className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+    <section className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wider text-white/40">Progress</p>
         <Link href="/dashboard/feedback" className="text-xs font-medium text-emerald-400 hover:underline">View reports →</Link>
@@ -119,7 +119,7 @@ export default function ParentHub(props: ParentHubProps) {
   )
 
   const ActionCentreCard = (
-    <section className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+    <section className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
       <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">Action Centre</p>
       <ul className="space-y-2">
         {actions.map((a) => {
@@ -137,10 +137,10 @@ export default function ParentHub(props: ParentHubProps) {
   )
 
   return (
-    <div className="min-h-screen -m-6 bg-[#0a0a0a] p-6 text-white lg:-m-8 lg:p-8">
+    <div className="min-h-screen -m-6 bg-[#080e18] p-6 text-white lg:-m-8 lg:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
         {/* ── Hero ── */}
-        <section className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-[#0f1a14] via-[#0d1311] to-[#0a0a0a] p-6 sm:p-8">
+        <section className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-[#0f1a14] via-[#0d1311] to-[#080e18] p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm text-emerald-300/80">Welcome back,</p>
@@ -195,7 +195,7 @@ export default function ParentHub(props: ParentHubProps) {
               <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">My Children</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {kids.map((c) => (
-                  <div key={c.id} className="rounded-2xl border border-white/10 bg-[#141414] p-4">
+                  <div key={c.id} className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm font-bold">
                         {c.photoUrl ? <img src={c.photoUrl} alt="" className="h-full w-full object-cover" /> : (c.name[0] || '?')}
@@ -230,7 +230,7 @@ export default function ParentHub(props: ParentHubProps) {
 
         {/* ── Messages · Announcements (full width) ── */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+          <section className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-white/40">Messages</p>
               <Link href="/dashboard/messages" className="text-xs font-medium text-emerald-400 hover:underline">View all →</Link>
@@ -250,7 +250,7 @@ export default function ParentHub(props: ParentHubProps) {
             )}
           </section>
 
-          <section className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+          <section className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-white/40">Academy Announcements</p>
               <Link href="/dashboard/announcements" className="text-xs font-medium text-emerald-400 hover:underline">View all →</Link>
@@ -269,7 +269,7 @@ export default function ParentHub(props: ParentHubProps) {
         </div>
 
         {/* ── Quick Actions ── */}
-        <section className="rounded-2xl border border-white/10 bg-[#141414] p-5">
+        <section className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">Quick Actions</p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {[

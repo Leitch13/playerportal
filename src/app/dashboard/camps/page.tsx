@@ -188,15 +188,15 @@ export default async function CampsPage() {
       {/* Revenue summary cards */}
       {allCamps.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-white/[0.08] bg-[#141414] p-5">
+          <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-5">
             <div className="text-xs text-white/40 uppercase tracking-wider">Total Camp Revenue</div>
             <div className="text-2xl font-bold text-green-400 mt-1">&pound;{totalRevenue.toFixed(0)}</div>
           </div>
-          <div className="rounded-xl border border-white/[0.08] bg-[#141414] p-5">
+          <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-5">
             <div className="text-xs text-white/40 uppercase tracking-wider">Total Bookings</div>
             <div className="text-2xl font-bold text-white mt-1">{totalBookings}</div>
           </div>
-          <div className="rounded-xl border border-white/[0.08] bg-[#141414] p-5">
+          <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-5">
             <div className="text-xs text-white/40 uppercase tracking-wider">Active Camps</div>
             <div className="text-2xl font-bold text-accent mt-1">
               {allCamps.filter((c) => {

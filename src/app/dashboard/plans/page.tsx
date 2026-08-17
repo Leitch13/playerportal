@@ -20,7 +20,7 @@ export default async function PlansPage() {
     .order('amount', { ascending: true })
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Subscription Plans</h1>
         <p className="text-white/50 text-sm mt-1">Create plans by class type — they automatically apply to all classes of that type</p>

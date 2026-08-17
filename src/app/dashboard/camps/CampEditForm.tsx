@@ -79,9 +79,9 @@ type Props = {
 }
 
 const inputCls =
-  'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30'
+  'w-full bg-[#142236] border border-[#293b58] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30'
 const lockedCls =
-  'w-full bg-[#0f0f0f] border border-[#1e1e1e] rounded-lg px-3 py-2 text-sm text-white/40 cursor-not-allowed select-none'
+  'w-full bg-[#0f1a2b] border border-[#1d2c42] rounded-lg px-3 py-2 text-sm text-white/40 cursor-not-allowed select-none'
 
 function formatDate(d: string): string {
   return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -336,8 +336,8 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[120] flex items-start justify-center overflow-y-auto py-8">
-      <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] w-full max-w-2xl mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-[#1e1e1e]">
+      <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] w-full max-w-2xl mx-4">
+        <div className="flex items-center justify-between p-6 border-b border-[#1d2c42]">
           <div>
             <h2 className="text-lg font-semibold text-white">Edit Camp</h2>
             <p className="text-xs text-[#888] mt-0.5 truncate max-w-[24rem]">{camp.name}</p>
@@ -376,7 +376,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           </div>
 
           {/* Locked / additive: dates + price */}
-          <div className="rounded-lg border border-dashed border-[#2a2a2a] p-3 space-y-3">
+          <div className="rounded-lg border border-dashed border-[#293b58] p-3 space-y-3">
             <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
               <span aria-hidden>&#128274;</span>
               {structuralEnabled ? 'Price stays locked' : 'Locked — editable in a future update'}
@@ -430,7 +430,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
 
           {/* Additive schedule (Phase 2A) */}
           {structuralEnabled && !campEnded && (
-            <div className="rounded-lg border border-[#1e1e1e] p-3 space-y-3">
+            <div className="rounded-lg border border-[#1d2c42] p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>
                 {(endDate > camp.end_date || startDate < camp.start_date) && (
@@ -452,7 +452,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                   const lockedCount = origActivityCount.get(day.date) ?? 0
                   const isNewDay = !origDates.has(day.date)
                   return (
-                    <div key={`${day.date}-${dayIdx}`} className="border border-[#1e1e1e] rounded-lg p-3">
+                    <div key={`${day.date}-${dayIdx}`} className="border border-[#1d2c42] rounded-lg p-3">
                       <h4 className="text-xs font-medium text-white mb-2">
                         {day.date ? formatDate(day.date) : day.day}
                         {isNewDay && <span className="ml-2 text-[10px] text-accent">new</span>}
@@ -593,7 +593,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
             </div>
           ) : (
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="rounded border-[#1e1e1e]" />
+              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="rounded border-[#1d2c42]" />
               <span className="text-white">Published (visible on booking page)</span>
             </label>
           )}
@@ -602,7 +602,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-[#1e1e1e]">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-[#1d2c42]">
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-[#888] hover:text-white/90 transition-colors">
             Cancel
           </button>
@@ -619,7 +619,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
       {/* Impact summary — shown before a structural change on a booked camp */}
       {showImpact && (
         <div className="fixed inset-0 bg-black/60 z-[130] flex items-center justify-center p-4">
-          <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] w-full max-w-md p-6 space-y-4">
+          <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] w-full max-w-md p-6 space-y-4">
             <h3 className="text-base font-semibold text-white">You&rsquo;re growing this camp</h3>
             <ul className="text-sm text-white/80 space-y-1.5">
               <li>• Affects <span className="font-semibold text-white">{bookedCount}</span> booked {bookedCount === 1 ? 'family' : 'families'}</li>
@@ -651,7 +651,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                     <p className="text-xs text-emerald-300">No additional charge will be made. No refunds are required.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 rounded-lg border border-[#2a2a2a] p-3">
+                  <div className="space-y-3 rounded-lg border border-[#293b58] p-3">
                     <div>
                       <label className="block text-xs text-white/60 mb-1">Amount (£)</label>
                       <input type="number" min="0" step="0.01" value={requestAmount} onChange={(e) => setRequestAmount(e.target.value)} placeholder="e.g. 40" className={`${inputCls} ${amtErr ? 'border-rose-500/60' : ''}`} />
@@ -671,7 +671,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                       </button>
                     </div>
                     {showEmailPreview && (
-                      <div className="rounded-lg bg-[#0f0f0f] border border-[#1e1e1e] p-3 text-xs text-white/70 space-y-1">
+                      <div className="rounded-lg bg-[#0f1a2b] border border-[#1d2c42] p-3 text-xs text-white/70 space-y-1">
                         <p className="text-white/90 font-medium">{camp.name} has been extended</p>
                         <p>Hi [parent] — we&rsquo;ve added more to {camp.name}.</p>
                         <p>Was {formatDate(camp.start_date)}–{formatDate(camp.end_date)} → now {formatDate(startDate)}–{formatDate(endDate)}.</p>

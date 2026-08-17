@@ -52,7 +52,7 @@ export default function AwardWall({ awards, orgName }: { awards: Award[]; orgNam
 
   if (!awards || awards.length === 0) {
     return (
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
         <p className="text-5xl mb-4">&#127942;</p>
         <h3 className="text-lg font-semibold text-white/70 mb-2">No awards yet</h3>
         <p className="text-sm text-white/40">Keep training — awards are coming!</p>
@@ -62,7 +62,7 @@ export default function AwardWall({ awards, orgName }: { awards: Award[]; orgNam
 
   return (
     <div className="space-y-6">
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
         <h2 className="text-lg font-semibold text-white mb-1">Trophy Wall</h2>
         <p className="text-sm text-white/40 mb-6">Tap a trophy to view the full certificate</p>
 
@@ -90,7 +90,7 @@ export default function AwardWall({ awards, orgName }: { awards: Award[]; orgNam
                 </button>
 
                 {isExpanded && (
-                  <div className="absolute z-10 left-0 right-0 top-full mt-2 bg-[#1a1a1a] border border-white/10 rounded-xl p-4 shadow-2xl animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute z-10 left-0 right-0 top-full mt-2 bg-[#142236] border border-white/10 rounded-xl p-4 shadow-2xl animate-in fade-in slide-in-from-top-2">
                     <div className="text-center mb-3">
                       <span className="text-5xl">{icon}</span>
                     </div>

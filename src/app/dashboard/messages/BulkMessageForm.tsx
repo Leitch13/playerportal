@@ -176,7 +176,7 @@ export default function BulkMessageForm({
   return (
     // Sprint M1 (MF-1) — flex column + max-height so the action row sticks
     // to the bottom of the panel above the soft keyboard on mobile.
-    <div className="bg-[#141414] dark:bg-white/5 rounded-xl border border-[#1e1e1e] p-4 sm:p-6 flex flex-col max-h-[calc(100dvh-8rem)]">
+    <div className="bg-[#0f1a2b] dark:bg-white/5 rounded-xl border border-[#1d2c42] p-4 sm:p-6 flex flex-col max-h-[calc(100dvh-8rem)]">
       <h2 className="text-lg font-semibold mb-4 shrink-0">
         {hasCustom
           ? `Message ${customRecipientIds!.length} ${customRecipientIds!.length === 1 ? 'recipient' : 'recipients'}`
@@ -223,7 +223,7 @@ export default function BulkMessageForm({
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg bg-[#0f1a2b] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Choose a group...</option>
               {groups.map((g) => (
@@ -236,7 +236,7 @@ export default function BulkMessageForm({
         {mode === 'custom' && hasCustom && (
           <div>
             <label className="block text-sm font-medium mb-1">Recipients ({customRecipientIds!.length})</label>
-            <div className="flex flex-wrap gap-1.5 p-3 rounded-lg border border-[#1e1e1e] bg-white/[0.02] max-h-32 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5 p-3 rounded-lg border border-[#1d2c42] bg-white/[0.02] max-h-32 overflow-y-auto">
               {customNames.map((n, i) => (
                 <span key={i} className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#4ecde6]/15 text-[#4ecde6] border border-[#4ecde6]/30">
                   {n}
@@ -254,7 +254,7 @@ export default function BulkMessageForm({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder=""
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg bg-[#0f1a2b] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
@@ -269,7 +269,7 @@ export default function BulkMessageForm({
             required
             rows={5}
             placeholder="Write your message here..."
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg bg-[#141414] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[120px] sm:min-h-[150px] max-h-[40dvh] resize-y"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg bg-[#0f1a2b] dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[120px] sm:min-h-[150px] max-h-[40dvh] resize-y"
           />
         </div>
 
@@ -287,7 +287,7 @@ export default function BulkMessageForm({
         )}
 
         {/* MF-1 — sticky action row above mobile keyboard. */}
-        <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 px-4 sm:px-6 py-3 mt-auto bg-[#141414] dark:bg-[#141414] border-t border-white/5 flex gap-2 flex-wrap shrink-0">
+        <div className="sticky bottom-0 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 px-4 sm:px-6 py-3 mt-auto bg-[#0f1a2b] dark:bg-[#0f1a2b] border-t border-white/5 flex gap-2 flex-wrap shrink-0">
           <button
             type="submit"
             disabled={loading}
@@ -311,7 +311,7 @@ export default function BulkMessageForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2.5 sm:py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors min-h-[44px]"
+            className="px-4 py-2.5 sm:py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors min-h-[44px]"
           >
             Cancel
           </button>

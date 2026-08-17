@@ -133,7 +133,7 @@ export default function ParentProgressV2({
                 </div>
               )}
 
-              <div className="rounded-2xl border border-white/10 bg-[#141414] p-4" data-testid="engagement-strip">
+              <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-4" data-testid="engagement-strip">
                 <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">Engagement &amp; value</p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div>

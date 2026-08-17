@@ -108,7 +108,7 @@ export default async function GroupDetailPage({
   const isNearFull = fillPercent >= 70 && !isFull
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-white/50">
@@ -147,25 +147,25 @@ export default async function GroupDetailPage({
         {/* Info cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {group.day_of_week && (
-            <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
               <div className="text-xs text-white/50 mb-1">Day</div>
               <div className="text-sm font-semibold">{group.day_of_week}</div>
             </div>
           )}
           {group.time_slot && (
-            <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
               <div className="text-xs text-white/50 mb-1">Time</div>
               <div className="text-sm font-semibold">{group.time_slot}</div>
             </div>
           )}
           {group.location && (
-            <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
               <div className="text-xs text-white/50 mb-1">Location</div>
               <div className="text-sm font-semibold">{group.location}</div>
             </div>
           )}
           {coach && (
-            <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
               <div className="text-xs text-white/50 mb-1">Coach</div>
               <div className="text-sm font-semibold">{coach.full_name}</div>
             </div>
@@ -173,7 +173,7 @@ export default async function GroupDetailPage({
         </div>
 
         {/* Capacity */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-white">Capacity</h2>
             <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export default async function GroupDetailPage({
               </span>
             </div>
           </div>
-          <div className="w-full bg-[#1a1a1a] rounded-full h-3">
+          <div className="w-full bg-[#142236] rounded-full h-3">
             <div
               className={`h-3 rounded-full transition-all duration-500 ${
                 isFull
@@ -209,7 +209,7 @@ export default async function GroupDetailPage({
           <div className="flex items-center gap-3 flex-wrap">
             <Link
               href={`/dashboard/attendance/register/${group.id}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#141414] border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#0f1a2b] border border-[#1d2c42] hover:bg-[#142236] transition-colors"
             >
               <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -218,7 +218,7 @@ export default async function GroupDetailPage({
             </Link>
             <Link
               href={`/dashboard/attendance/qr/${group.id}`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#141414] border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#0f1a2b] border border-[#1d2c42] hover:bg-[#142236] transition-colors"
             >
               <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zm-11 11h7v7H3v-7zm14 3.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 0v3.5m0-10V7" />
@@ -227,7 +227,7 @@ export default async function GroupDetailPage({
             </Link>
             <Link
               href={`/dashboard/groups/${group.id}/plans`}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#141414] border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#0f1a2b] border border-[#1d2c42] hover:bg-[#142236] transition-colors"
             >
               <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -241,7 +241,7 @@ export default async function GroupDetailPage({
             {parentIds.length > 0 && (
               <Link
                 href={`/dashboard/messages?recipients=${encodeURIComponent(parentIds.join(','))}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#141414] border border-[#1e1e1e] hover:bg-[#1a1a1a] transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#0f1a2b] border border-[#1d2c42] hover:bg-[#142236] transition-colors"
               >
                 <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 21l1.8-4A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -263,7 +263,7 @@ export default async function GroupDetailPage({
           </h2>
 
           {players.length === 0 ? (
-            <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-8 text-center">
+            <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-8 text-center">
               <div className="text-3xl mb-2">👥</div>
               <p className="text-sm text-white/50">No players enrolled in this class yet</p>
             </div>
@@ -305,14 +305,14 @@ export default async function GroupDetailPage({
                     <Link
                       key={player.id}
                       href={`/dashboard/players/${player.id}`}
-                      className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-4 flex items-center gap-3 hover:bg-[#1a1a1a] hover:border-[#4ecde6]/30 transition-all group"
+                      className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-4 flex items-center gap-3 hover:bg-[#142236] hover:border-[#4ecde6]/30 transition-all group"
                     >
                       {player.photo_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={player.photo_url}
                           alt=""
-                          className="w-9 h-9 rounded-full object-cover border border-[#1e1e1e]"
+                          className="w-9 h-9 rounded-full object-cover border border-[#1d2c42]"
                         />
                       ) : (
                         <div className="w-9 h-9 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6]">

@@ -60,7 +60,7 @@ export default function CertificateView({
   }, [awardId, awardLabel, orgName, playerName])
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       {/* Action buttons — hidden on print */}
       <div className="flex items-center gap-3 mb-6 print:hidden">
         <Link
@@ -90,7 +90,7 @@ export default function CertificateView({
         className="certificate-container max-w-3xl mx-auto print:max-w-none"
       >
         {/* Screen version */}
-        <div className="print:hidden relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#1a1a1a] via-[#141414] to-[#0f0f0f]">
+        <div className="print:hidden relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#142236] via-[#0f1a2b] to-[#0f1a2b]">
           {/* Decorative gold border effect */}
           <div className="absolute inset-0 rounded-2xl border-2 border-transparent" style={{ borderImage: `linear-gradient(135deg, ${orgColor}40, transparent, ${orgColor}20) 1` }} />
 

@@ -56,7 +56,7 @@ export default function AcademySearch({ onSelect, inputClassName }: AcademySearc
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const defaultInputCls = inputClassName || "w-full px-4 py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
+  const defaultInputCls = inputClassName || "w-full px-4 py-3 rounded-xl bg-[#142236] border border-[#293b58] text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all"
 
   return (
     <div ref={containerRef} className="relative">
@@ -81,7 +81,7 @@ export default function AcademySearch({ onSelect, inputClassName }: AcademySearc
       </div>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute z-50 w-full mt-1.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-2xl overflow-hidden">
+        <div className="absolute z-50 w-full mt-1.5 rounded-xl bg-[#142236] border border-[#293b58] shadow-2xl overflow-hidden">
           {results.map((academy) => (
             <button
               key={academy.id}
@@ -91,12 +91,12 @@ export default function AcademySearch({ onSelect, inputClassName }: AcademySearc
                 setQuery('')
                 setIsOpen(false)
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#222] transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#1d2c42] transition-colors text-left"
             >
               {academy.logo_url ? (
-                <img src={academy.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0 bg-[#2a2a2a]" />
+                <img src={academy.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0 bg-[#293b58]" />
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-[#293b58] flex items-center justify-center flex-shrink-0">
                   <span className="text-xs font-bold text-white/40">{academy.name.charAt(0)}</span>
                 </div>
               )}
@@ -110,7 +110,7 @@ export default function AcademySearch({ onSelect, inputClassName }: AcademySearc
       )}
 
       {query.length >= 2 && !loading && results.length === 0 && (
-        <div className="absolute z-50 w-full mt-1.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-2xl px-4 py-3">
+        <div className="absolute z-50 w-full mt-1.5 rounded-xl bg-[#142236] border border-[#293b58] shadow-2xl px-4 py-3">
           <p className="text-sm text-white/40">No academies found</p>
         </div>
       )}

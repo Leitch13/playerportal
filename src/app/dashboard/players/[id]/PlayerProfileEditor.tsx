@@ -96,7 +96,7 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
   return (
     <div className="space-y-3">
       {/* Photo upload */}
-      <div className="flex items-center gap-4 p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e]">
+      <div className="flex items-center gap-4 p-3 rounded-xl bg-[#080e18] border border-[#1d2c42]">
         <PlayerAvatar
           photoUrl={photoUrl}
           firstName={player.first_name}

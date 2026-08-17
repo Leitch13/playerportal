@@ -33,7 +33,7 @@ export default function MembershipTabs({
       <div
         role="tablist"
         aria-label="Membership sections"
-        className="inline-flex rounded-xl border border-white/10 bg-[#141414] p-1 text-sm"
+        className="inline-flex rounded-xl border border-white/10 bg-[#0f1a2b] p-1 text-sm"
       >
         {TABS.map((t) => {
           const active = tab === t.id

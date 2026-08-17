@@ -195,7 +195,7 @@ function FileUploadZone({
           ? 'border-[#4ecde6]/60 bg-[#4ecde6]/5'
           : file
           ? 'border-emerald-500/40 bg-emerald-500/5'
-          : 'border-[#1e1e1e] hover:border-[#4ecde6]/30'
+          : 'border-[#1d2c42] hover:border-[#4ecde6]/30'
       }`}
       onDragOver={(e) => {
         e.preventDefault()
@@ -477,7 +477,7 @@ export default function MigrateForm() {
                   ? 'bg-[#4ecde6] text-black'
                   : step > s
                   ? 'bg-emerald-500 text-white'
-                  : 'bg-[#1a1a1a] text-[#888] border border-[#1e1e1e]'
+                  : 'bg-[#142236] text-[#888] border border-[#1d2c42]'
               }`}
             >
               {step > s ? (
@@ -491,7 +491,7 @@ export default function MigrateForm() {
             <span className={`text-sm font-medium ${step === s ? 'text-white' : 'text-[#888]'}`}>
               {s === 1 ? 'Upload' : s === 2 ? 'Map Columns' : 'Import'}
             </span>
-            {s < 3 && <div className="w-12 h-px bg-[#1e1e1e]" />}
+            {s < 3 && <div className="w-12 h-px bg-[#1d2c42]" />}
           </div>
         ))}
       </div>
@@ -499,7 +499,7 @@ export default function MigrateForm() {
       {/* ═══ STEP 1: Upload ═══ */}
       {step === 1 && (
         <div className="space-y-6">
-          <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+          <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
             <h2 className="text-lg font-semibold text-white mb-2">Upload Your Export Files</h2>
             <p className="text-sm text-[#888] mb-6">
               In ClassForKids, go to Reports &rarr; Export Data &rarr; Download CSV
@@ -531,32 +531,32 @@ export default function MigrateForm() {
           </div>
 
           {playersFile.file && (
-            <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+            <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
               <h3 className="text-sm font-semibold text-white mb-3">Detected Data</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="p-3 bg-[#1a1a1a] rounded-lg border border-[#1e1e1e]">
+                <div className="p-3 bg-[#142236] rounded-lg border border-[#1d2c42]">
                   <div className="text-xl font-bold text-white">{playersFile.rows.length}</div>
                   <div className="text-xs text-[#888]">Players</div>
                 </div>
-                <div className="p-3 bg-[#1a1a1a] rounded-lg border border-[#1e1e1e]">
+                <div className="p-3 bg-[#142236] rounded-lg border border-[#1d2c42]">
                   <div className="text-xl font-bold text-white">{playersFile.headers.length}</div>
                   <div className="text-xs text-[#888]">Columns</div>
                 </div>
-                <div className="p-3 bg-[#1a1a1a] rounded-lg border border-[#1e1e1e]">
+                <div className="p-3 bg-[#142236] rounded-lg border border-[#1d2c42]">
                   <div className="text-xl font-bold text-white">{parentsFile.rows.length || '--'}</div>
                   <div className="text-xs text-[#888]">Parents</div>
                 </div>
-                <div className="p-3 bg-[#1a1a1a] rounded-lg border border-[#1e1e1e]">
+                <div className="p-3 bg-[#142236] rounded-lg border border-[#1d2c42]">
                   <div className="text-xl font-bold text-white">{classesFile.rows.length || '--'}</div>
                   <div className="text-xs text-[#888]">Classes</div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-[#1e1e1e]">
+              <div className="mt-4 pt-4 border-t border-[#1d2c42]">
                 <p className="text-xs text-[#888] mb-2">Detected columns:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {playersFile.headers.map((h) => (
-                    <span key={h} className="px-2 py-1 bg-[#1a1a1a] border border-[#1e1e1e] rounded text-xs text-[#888]">
+                    <span key={h} className="px-2 py-1 bg-[#142236] border border-[#1d2c42] rounded text-xs text-[#888]">
                       {h}
                     </span>
                   ))}
@@ -579,7 +579,7 @@ export default function MigrateForm() {
       {/* ═══ STEP 2: Map Columns ═══ */}
       {step === 2 && (
         <div className="space-y-6">
-          <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+          <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
             <h2 className="text-lg font-semibold text-white mb-2">Map Your Columns</h2>
             <p className="text-sm text-[#888] mb-6">
               We have auto-detected common ClassForKids columns. Review and adjust the mapping below.
@@ -588,7 +588,7 @@ export default function MigrateForm() {
             <div className="space-y-3">
               {mappings.map((m, idx) => (
                 <div key={m.csvHeader} className="flex items-center gap-3">
-                  <div className="flex-1 px-3 py-2 bg-[#1a1a1a] border border-[#1e1e1e] rounded-lg text-sm text-white">
+                  <div className="flex-1 px-3 py-2 bg-[#142236] border border-[#1d2c42] rounded-lg text-sm text-white">
                     {m.csvHeader}
                   </div>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
@@ -598,9 +598,9 @@ export default function MigrateForm() {
                   <select
                     value={m.portalField}
                     onChange={(e) => updateMapping(idx, e.target.value as PortalField)}
-                    className={`flex-1 px-3 py-2 bg-[#1a1a1a] border rounded-lg text-sm appearance-none cursor-pointer ${
+                    className={`flex-1 px-3 py-2 bg-[#142236] border rounded-lg text-sm appearance-none cursor-pointer ${
                       m.portalField === '__skip__'
-                        ? 'border-[#1e1e1e] text-[#888]'
+                        ? 'border-[#1d2c42] text-[#888]'
                         : 'border-[#4ecde6]/30 text-white'
                     }`}
                   >
@@ -623,12 +623,12 @@ export default function MigrateForm() {
 
           {/* Preview */}
           {mappedPreview.length > 0 && (
-            <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+            <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
               <h3 className="text-sm font-semibold text-white mb-3">Preview (first 5 rows)</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#1e1e1e]">
+                    <tr className="border-b border-[#1d2c42]">
                       {mappings
                         .filter((m) => m.portalField !== '__skip__')
                         .map((m) => (
@@ -640,7 +640,7 @@ export default function MigrateForm() {
                   </thead>
                   <tbody>
                     {mappedPreview.map((row, idx) => (
-                      <tr key={idx} className="border-b border-[#1e1e1e] last:border-0">
+                      <tr key={idx} className="border-b border-[#1d2c42] last:border-0">
                         {mappings
                           .filter((m) => m.portalField !== '__skip__')
                           .map((m) => (
@@ -659,7 +659,7 @@ export default function MigrateForm() {
           <div className="flex justify-between">
             <button
               onClick={() => setStep(1)}
-              className="px-5 py-2.5 bg-[#1a1a1a] text-white border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-[#222] transition-colors"
+              className="px-5 py-2.5 bg-[#142236] text-white border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#1d2c42] transition-colors"
             >
               Back
             </button>
@@ -679,7 +679,7 @@ export default function MigrateForm() {
         <div className="space-y-6">
           {!stats && (
             <>
-              <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+              <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
                 <h2 className="text-lg font-semibold text-white mb-2">Ready to Import</h2>
                 <p className="text-sm text-[#888] mb-6">
                   Review the summary below and start your import.
@@ -714,13 +714,13 @@ export default function MigrateForm() {
                 </div>
 
                 {/* Welcome emails option */}
-                <div className="mt-6 pt-4 border-t border-[#1e1e1e]">
+                <div className="mt-6 pt-4 border-t border-[#1d2c42]">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={sendWelcomeEmails}
                       onChange={(e) => setSendWelcomeEmails(e.target.checked)}
-                      className="w-4 h-4 rounded border-[#1e1e1e] bg-[#1a1a1a] text-[#4ecde6] focus:ring-[#4ecde6] focus:ring-offset-0"
+                      className="w-4 h-4 rounded border-[#1d2c42] bg-[#142236] text-[#4ecde6] focus:ring-[#4ecde6] focus:ring-offset-0"
                     />
                     <div>
                       <span className="text-sm text-white font-medium">Send welcome emails to imported parents</span>
@@ -736,7 +736,7 @@ export default function MigrateForm() {
                 <button
                   onClick={() => setStep(2)}
                   disabled={importing}
-                  className="px-5 py-2.5 bg-[#1a1a1a] text-white border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-[#222] disabled:opacity-50 transition-colors"
+                  className="px-5 py-2.5 bg-[#142236] text-white border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#1d2c42] disabled:opacity-50 transition-colors"
                 >
                   Back
                 </button>
@@ -753,12 +753,12 @@ export default function MigrateForm() {
 
           {/* Progress Bar */}
           {importing && (
-            <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+            <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
               <div className="flex items-center justify-between text-sm mb-3">
                 <span className="text-white font-medium">Importing your data...</span>
                 <span className="text-[#888]">{progress}%</span>
               </div>
-              <div className="w-full bg-[#1a1a1a] rounded-full h-2.5">
+              <div className="w-full bg-[#142236] rounded-full h-2.5">
                 <div
                   className="bg-[#4ecde6] h-2.5 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
@@ -773,7 +773,7 @@ export default function MigrateForm() {
           {/* Results */}
           {stats && (
             <div className="space-y-6">
-              <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+              <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">Import Complete</h2>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   <div className="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
@@ -821,7 +821,7 @@ export default function MigrateForm() {
                 </a>
                 <a
                   href="/dashboard/players/import/migrate"
-                  className="px-5 py-2.5 bg-[#1a1a1a] text-white border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-[#222] transition-colors"
+                  className="px-5 py-2.5 bg-[#142236] text-white border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#1d2c42] transition-colors"
                 >
                   Import More
                 </a>

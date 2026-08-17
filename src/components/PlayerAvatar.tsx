@@ -29,7 +29,7 @@ export default function PlayerAvatar({
       <img
         src={photoUrl}
         alt={`${firstName} ${lastName}`}
-        className={`${sizeClass} rounded-full object-cover border-2 border-[#1e1e1e] ${className}`}
+        className={`${sizeClass} rounded-full object-cover border-2 border-[#1d2c42] ${className}`}
       />
     )
   }

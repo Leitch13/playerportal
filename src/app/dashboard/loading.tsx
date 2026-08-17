@@ -3,8 +3,8 @@ export default function DashboardLoading() {
     <div className="space-y-6">
       {/* Page title skeleton */}
       <div className="flex items-center justify-between">
-        <div className="h-8 w-48 bg-[#141414] rounded-lg animate-pulse" />
-        <div className="h-9 w-32 bg-[#141414] rounded-lg animate-pulse" />
+        <div className="h-8 w-48 bg-[#0f1a2b] rounded-lg animate-pulse" />
+        <div className="h-9 w-32 bg-[#0f1a2b] rounded-lg animate-pulse" />
       </div>
 
       {/* Stat cards skeleton */}
@@ -12,7 +12,7 @@ export default function DashboardLoading() {
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-5 space-y-3 animate-pulse"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-5 space-y-3 animate-pulse"
             style={{ animationDelay: `${i * 100}ms` }}
           >
             <div className="flex items-center justify-between">
@@ -28,7 +28,7 @@ export default function DashboardLoading() {
       {/* Content area skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left panel */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-6 space-y-4 animate-pulse" style={{ animationDelay: '200ms' }}>
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-6 space-y-4 animate-pulse" style={{ animationDelay: '200ms' }}>
           <div className="flex items-center justify-between">
             <div className="h-5 w-32 bg-white/[0.06] rounded" />
             <div className="h-4 w-16 bg-white/[0.04] rounded" />
@@ -47,14 +47,14 @@ export default function DashboardLoading() {
         </div>
 
         {/* Right panel */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-6 space-y-4 animate-pulse" style={{ animationDelay: '300ms' }}>
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-6 space-y-4 animate-pulse" style={{ animationDelay: '300ms' }}>
           <div className="flex items-center justify-between">
             <div className="h-5 w-32 bg-white/[0.06] rounded" />
             <div className="h-4 w-16 bg-white/[0.04] rounded" />
           </div>
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-[#1e1e1e] last:border-0">
+              <div key={i} className="flex items-center justify-between py-2 border-b border-[#1d2c42] last:border-0">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 bg-white/[0.06] rounded-lg" />
                   <div className="space-y-1.5">

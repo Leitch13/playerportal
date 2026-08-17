@@ -54,7 +54,7 @@ export default function MyChildrenList({ children }: { children: ChildSummary[] 
         <h2 className="text-sm font-bold uppercase tracking-wider text-white/50">My children</h2>
         <span className="text-xs text-white/40">{children.length} {children.length === 1 ? 'child' : 'children'}</span>
       </div>
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden divide-y divide-[#1e1e1e]">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden divide-y divide-[#1d2c42]">
         {children.map(c => {
           const age = computeAge(c.date_of_birth)
           return (

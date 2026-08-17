@@ -166,7 +166,7 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
         <>
           <div className="fixed inset-0 z-[100]" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-[101] w-48 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] shadow-2xl py-1"
+            className="fixed z-[101] w-48 rounded-xl border border-[#293b58] bg-[#142236] shadow-2xl py-1"
             style={{ top: coords.top, right: coords.right }}
           >
             {/* Sprint 9 — View roster (admin per-camp page) */}

@@ -64,7 +64,7 @@ export default function AcademyHealthBar({
     (stripeNotReady && !isPilot ? 1 : 0)
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-[#141414] px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-[#0f1a2b] px-4 py-2.5">
       {/* Live status */}
       <Chip tone={isLive ? 'good' : 'warn'}>
         <span aria-hidden>{isLive ? '●' : '◐'}</span>

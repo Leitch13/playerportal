@@ -132,7 +132,7 @@ export default function ParentWelcomeModal({
       onClick={handleDismiss}
     >
       <div
-        className="w-full max-w-md bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
+        className="w-full max-w-md bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top accent bar */}

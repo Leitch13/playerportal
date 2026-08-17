@@ -137,7 +137,7 @@ export default function ParentOnboardingChecklist({
   const allDone = completed === total
 
   return (
-    <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 mb-6 relative">
+    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 mb-6 relative">
       {/* Header */}
       <div className="flex items-start justify-between mb-4 gap-3">
         <div>
@@ -167,7 +167,7 @@ export default function ParentOnboardingChecklist({
       </div>
 
       {/* Progress bar */}
-      <div className="w-full bg-[#0a0a0a] rounded-full h-1.5 mb-4">
+      <div className="w-full bg-[#080e18] rounded-full h-1.5 mb-4">
         <div
           className="h-1.5 rounded-full transition-all duration-500"
           style={{ width: `${(completed / total) * 100}%`, backgroundColor: primaryColor }}
@@ -182,7 +182,7 @@ export default function ParentOnboardingChecklist({
             className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
               item.done
                 ? 'bg-emerald-500/5 border-emerald-500/15'
-                : 'bg-[#0a0a0a] border-[#1e1e1e]'
+                : 'bg-[#080e18] border-[#1d2c42]'
             }`}
           >
             <div className="flex items-center gap-3 flex-1 min-w-0">

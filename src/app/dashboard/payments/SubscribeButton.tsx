@@ -56,7 +56,7 @@ export default function SubscribeButton({
     <div className="space-y-2">
       {/* Billing toggle — hidden while quarterly billing is disabled */}
       {quarterlyEnabled && (
-        <div className="flex rounded-lg bg-[#0a0a0a] overflow-hidden border border-[#1e1e1e]">
+        <div className="flex rounded-lg bg-[#080e18] overflow-hidden border border-[#1d2c42]">
           <button
             type="button"
             onClick={() => setBillingOption('monthly')}

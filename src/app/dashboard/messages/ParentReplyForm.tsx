@@ -72,7 +72,7 @@ export default function ParentReplyForm({
   }
 
   return (
-    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
       <h2 className="text-lg font-semibold mb-4">Send a Message</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -81,7 +81,7 @@ export default function ParentReplyForm({
             value={recipientId}
             onChange={(e) => setRecipientId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           >
             <option value="">Select recipient...</option>
             {staffMembers.map((s) => (
@@ -98,7 +98,7 @@ export default function ParentReplyForm({
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="e.g. Absence notification, Question about training"
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div>
@@ -127,7 +127,7 @@ export default function ParentReplyForm({
             required
             rows={4}
             placeholder="Type your message here..."
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div className="flex gap-2">
@@ -141,7 +141,7 @@ export default function ParentReplyForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-[#1e1e1e] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
           >
             Cancel
           </button>

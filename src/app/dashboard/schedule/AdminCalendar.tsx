@@ -83,7 +83,7 @@ export default function AdminCalendar({
                   ? 'bg-primary text-white shadow-md'
                   : isToday
                     ? 'bg-accent/10 text-accent border border-accent/30'
-                    : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5'
+                    : 'bg-[#0f1a2b] border border-[#1d2c42] hover:bg-white/5'
               }`}
             >
               <span className="text-xs font-medium">{SHORT_DAYS[i]}</span>
@@ -128,7 +128,7 @@ export default function AdminCalendar({
 
       {/* Selected day's sessions */}
       {selectedSessions.length === 0 ? (
-        <div className="bg-[#0a0a0a] rounded-xl p-8 text-center">
+        <div className="bg-[#080e18] rounded-xl p-8 text-center">
           <p className="text-sm text-white/60">No classes scheduled on {selectedDay}</p>
         </div>
       ) : (
@@ -139,12 +139,12 @@ export default function AdminCalendar({
             return (
               <div
                 key={session.id}
-                className="rounded-xl border border-[#1e1e1e] bg-[#141414] overflow-hidden transition-all"
+                className="rounded-xl border border-[#1d2c42] bg-[#0f1a2b] overflow-hidden transition-all"
               >
                 {/* Session header — clickable to expand */}
                 <button
                   onClick={() => setExpandedGroup(isExpanded ? null : session.id)}
-                  className="w-full p-4 text-left hover:bg-[#0a0a0a]/50 transition-colors"
+                  className="w-full p-4 text-left hover:bg-[#080e18]/50 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -153,7 +153,7 @@ export default function AdminCalendar({
                         <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                           session.playerCount > 0
                             ? 'bg-accent/10 text-accent'
-                            : 'bg-[#0a0a0a] text-gray-500'
+                            : 'bg-[#080e18] text-gray-500'
                         }`}>
                           {session.playerCount} player{session.playerCount !== 1 ? 's' : ''}
                         </span>
@@ -181,7 +181,7 @@ export default function AdminCalendar({
 
                 {/* Expanded player list */}
                 {isExpanded && (
-                  <div className="border-t border-[#1e1e1e] px-4 py-3 bg-[#0a0a0a]/30">
+                  <div className="border-t border-[#1d2c42] px-4 py-3 bg-[#080e18]/30">
                     {session.players.length === 0 ? (
                       <p className="text-xs text-white/60 text-center py-2">No players enrolled yet</p>
                     ) : (
@@ -217,7 +217,7 @@ export default function AdminCalendar({
       )}
 
       {/* Week summary */}
-      <div className="flex items-center justify-between text-xs text-white/60 border-t border-[#1e1e1e] pt-3">
+      <div className="flex items-center justify-between text-xs text-white/60 border-t border-[#1d2c42] pt-3">
         <span>This week: {totalSessionsThisWeek} classes · {totalPlayersThisWeek} total enrolments</span>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">

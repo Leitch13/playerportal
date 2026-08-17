@@ -210,7 +210,7 @@ export default function GroupCard({
   )
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 hover:border-[#2a2a2a] transition-all relative flex flex-col min-h-[320px]">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 hover:border-[#293b58] transition-all relative flex flex-col min-h-[320px]">
       {/* Top row — badges + overflow menu */}
       <div className="flex items-start justify-between mb-3 gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -245,7 +245,7 @@ export default function GroupCard({
                 </svg>
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-9 z-20 w-44 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl py-1 text-sm">
+                <div className="absolute right-0 top-9 z-20 w-44 bg-[#142236] border border-[#293b58] rounded-xl shadow-xl py-1 text-sm">
                   <button
                     onClick={() => { setEditing(true); setMenuOpen(false) }}
                     className="w-full text-left px-3 py-2 hover:bg-white/5 text-white/80 flex items-center gap-2"
@@ -377,7 +377,7 @@ export default function GroupCard({
             {enrolled}/{group.max_capacity}
           </span>
         </div>
-        <div className="w-full bg-[#0a0a0a] rounded-full h-2">
+        <div className="w-full bg-[#080e18] rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all duration-500 ${
               isFull || isWarning
@@ -399,7 +399,7 @@ export default function GroupCard({
 
       {/* Share — one tidy row, admin only */}
       {isAdmin && orgSlug && (
-        <div className="mt-4 pt-3 border-t border-[#1e1e1e] flex items-center gap-2">
+        <div className="mt-4 pt-3 border-t border-[#1d2c42] flex items-center gap-2">
           <button
             onClick={handleCopyLink}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-[#4ecde6]/10 text-[#4ecde6] hover:bg-[#4ecde6]/20 transition-colors"

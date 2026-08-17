@@ -246,7 +246,7 @@ export default function RosterClient({
   return (
     <div className="space-y-3">
       {/* ─── TOOLBAR ─── */}
-      <div className="rounded-xl border border-white/[0.08] bg-[#141414] p-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between" data-testid="camp-roster-toolbar">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between" data-testid="camp-roster-toolbar">
         <div className="flex-1 max-w-md">
           <div className="relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -258,7 +258,7 @@ export default function RosterClient({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by child, parent, or email…"
               data-testid="camp-roster-search"
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] text-white placeholder-white/30 focus:border-[#4ecde6] focus:outline-none"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-[#080e18] border border-[#1d2c42] text-white placeholder-white/30 focus:border-[#4ecde6] focus:outline-none"
             />
           </div>
         </div>
@@ -327,7 +327,7 @@ export default function RosterClient({
       </div>
 
       {/* ─── TABLE ─── */}
-      <div className="rounded-xl border border-white/[0.08] bg-[#141414] overflow-hidden" data-testid="camp-roster">
+      <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] overflow-hidden" data-testid="camp-roster">
         <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-white/70">Booked players</h2>
           <span className="text-[11px] text-white/40" data-testid="camp-roster-count">
@@ -541,7 +541,7 @@ export default function RosterClient({
           camp is whole-camp, this section is not rendered — the flat
           roster above IS the register. */}
       {isFlexibleCamp && perDayGroups.length > 0 && (
-        <div className="rounded-xl border border-white/[0.08] bg-[#141414] mt-4">
+        <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] mt-4">
           <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.05]">
             <h3 className="text-sm font-bold text-white">Who&apos;s attending each day</h3>
             <span className="text-[10px] uppercase tracking-wider text-[#4ecde6] font-bold">Flexible days</span>
@@ -589,7 +589,7 @@ export default function RosterClient({
           onClick={closeMove}
         >
           <div
-            className="bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6"
+            className="bg-[#080e18] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -633,7 +633,7 @@ export default function RosterClient({
               disabled={moveBusy}
               className="w-full px-3 py-2 mb-3 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-white/20"
             >
-              <option value="" className="bg-[#111]">— Select a camp —</option>
+              <option value="" className="bg-[#0f1a2b]">— Select a camp —</option>
               {eligibleTargetCamps.map((c) => {
                 const full = c.capacity > 0 && c.booked >= c.capacity
                 const dates = c.start_date
@@ -641,7 +641,7 @@ export default function RosterClient({
                   : 'TBD'
                 const cap = c.capacity > 0 ? `${c.booked}/${c.capacity}` : `${c.booked}`
                 return (
-                  <option key={c.id} value={c.id} disabled={full} className="bg-[#111]">
+                  <option key={c.id} value={c.id} disabled={full} className="bg-[#0f1a2b]">
                     {c.name} · {dates} · £{c.effective_price.toFixed(2)} · {cap}{full ? ' · FULL' : ''}
                   </option>
                 )

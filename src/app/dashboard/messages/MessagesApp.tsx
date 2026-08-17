@@ -278,7 +278,7 @@ export default function MessagesApp({
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-0 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-0 min-h-screen text-white">
       <div className="h-screen flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 px-4 lg:px-6 py-4 border-b border-white/[0.06]">

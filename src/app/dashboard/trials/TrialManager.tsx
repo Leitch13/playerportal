@@ -181,13 +181,13 @@ export default function TrialManager({
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 bg-[#141414] rounded-lg p-1 w-fit border border-[#1e1e1e]">
+      <div className="flex gap-1 mb-4 bg-[#0f1a2b] rounded-lg p-1 w-fit border border-[#1d2c42]">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              filter === tab.key ? 'bg-[#1e1e1e] text-white shadow-sm' : 'text-white/40 hover:text-white/70'
+              filter === tab.key ? 'bg-[#1d2c42] text-white shadow-sm' : 'text-white/40 hover:text-white/70'
             }`}
           >
             {tab.label}
@@ -196,15 +196,15 @@ export default function TrialManager({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
           <p className="text-white/40">No trial bookings {filter !== 'all' ? `with status "${filter}"` : 'yet'}</p>
         </div>
       ) : (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1e1e1e]">
+                <tr className="border-b border-[#1d2c42]">
                   <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Child</th>
                   <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Parent</th>
                   <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden md:table-cell">Class</th>
@@ -220,7 +220,7 @@ export default function TrialManager({
                   const stage = stageById.get(t.id) ?? 'upcoming'
                   const badge = getReminderBadge(t, stage)
                   return (
-                    <tr key={t.id} className="border-b border-[#1e1e1e]/50 hover:bg-white/[0.02]">
+                    <tr key={t.id} className="border-b border-[#1d2c42]/50 hover:bg-white/[0.02]">
                       <td className="px-4 py-3">
                         <p className="font-medium text-white">{t.childName}</p>
                         {t.childAge && <p className="text-xs text-white/40">Age {t.childAge}</p>}

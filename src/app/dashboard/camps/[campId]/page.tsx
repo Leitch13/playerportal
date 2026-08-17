@@ -415,7 +415,7 @@ function StatCard({
   } as Record<typeof tone, string>
   return (
     <div
-      className="rounded-xl border border-white/[0.08] bg-[#141414] p-4"
+      className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-4"
       data-testid={testId}
     >
       <div className="text-[10px] text-white/40 uppercase tracking-wider font-bold">{label}</div>

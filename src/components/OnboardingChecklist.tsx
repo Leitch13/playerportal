@@ -144,7 +144,7 @@ export default function OnboardingChecklist({
 
   return (
     <div
-      className={`bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 transition-all duration-500 ${
+      className={`bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 transition-all duration-500 ${
         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
     >

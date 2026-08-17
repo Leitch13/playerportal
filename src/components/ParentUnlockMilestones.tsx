@@ -105,7 +105,7 @@ export default function ParentUnlockMilestones({
 
   return (
     <div
-      className="bg-gradient-to-br from-[#141414] to-[#181818] rounded-2xl border border-white/[0.08] p-6 overflow-hidden relative"
+      className="bg-gradient-to-br from-[#0f1a2b] to-[#142236] rounded-2xl border border-white/[0.08] p-6 overflow-hidden relative"
       style={{ boxShadow: `0 0 40px ${brandColor}15` }}
     >
       <div className="flex items-center justify-between mb-1">

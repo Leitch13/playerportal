@@ -369,7 +369,7 @@ export default function WeekCalendar({ groups, role, locations, classTypes }: Pr
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         {/* View Toggle */}
         <div className="flex items-center gap-2">
-          <div className="inline-flex bg-[#141414] border border-[#1e1e1e] rounded-lg p-0.5">
+          <div className="inline-flex bg-[#0f1a2b] border border-[#1d2c42] rounded-lg p-0.5">
             <button
               onClick={() => setViewMode('week')}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
@@ -437,11 +437,11 @@ export default function WeekCalendar({ groups, role, locations, classTypes }: Pr
             <select
               value={filterLocation}
               onChange={(e) => setFilterLocation(e.target.value)}
-              className="bg-[#141414] border border-[#1e1e1e] rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-[#4ecde6]/50 appearance-none cursor-pointer"
+              className="bg-[#0f1a2b] border border-[#1d2c42] rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-[#4ecde6]/50 appearance-none cursor-pointer"
             >
-              <option value="" className="bg-[#1a1a1a] text-white">All Locations</option>
+              <option value="" className="bg-[#142236] text-white">All Locations</option>
               {locations.map((loc) => (
-                <option key={loc} value={loc} className="bg-[#1a1a1a] text-white">{loc}</option>
+                <option key={loc} value={loc} className="bg-[#142236] text-white">{loc}</option>
               ))}
             </select>
           )}
@@ -477,7 +477,7 @@ export default function WeekCalendar({ groups, role, locations, classTypes }: Pr
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
         {viewMode === 'week' ? (
           <WeekView
             days={DAYS}
@@ -563,7 +563,7 @@ function WeekView({
   return (
     <div className="flex flex-col">
       {/* Day headers */}
-      <div className="flex border-b border-[#1e1e1e]">
+      <div className="flex border-b border-[#1d2c42]">
         <div className="w-16 shrink-0" />
         {days.map((day, i) => {
           const isToday = day === todayName
@@ -571,7 +571,7 @@ function WeekView({
           return (
             <div
               key={day}
-              className={`flex-1 min-w-[100px] py-3 px-2 text-center border-l border-[#1e1e1e] cursor-pointer hover:bg-white/[0.02] transition-colors ${
+              className={`flex-1 min-w-[100px] py-3 px-2 text-center border-l border-[#1d2c42] cursor-pointer hover:bg-white/[0.02] transition-colors ${
                 isToday ? 'bg-[#4ecde6]/[0.04]' : ''
               }`}
               onClick={() => onSwitchToDay(day)}
@@ -618,7 +618,7 @@ function WeekView({
             return (
               <div
                 key={day}
-                className={`flex-1 min-w-[100px] relative border-l border-[#1e1e1e] ${
+                className={`flex-1 min-w-[100px] relative border-l border-[#1d2c42] ${
                   isToday ? 'bg-[#4ecde6]/[0.02]' : ''
                 }`}
               >
@@ -626,7 +626,7 @@ function WeekView({
                 {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
                   <div
                     key={i}
-                    className="absolute left-0 right-0 border-t border-[#1e1e1e]"
+                    className="absolute left-0 right-0 border-t border-[#1d2c42]"
                     style={{ top: i * SLOT_HEIGHT }}
                   />
                 ))}
@@ -634,7 +634,7 @@ function WeekView({
                 {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
                   <div
                     key={`half-${i}`}
-                    className="absolute left-0 right-0 border-t border-[#1e1e1e]/40"
+                    className="absolute left-0 right-0 border-t border-[#1d2c42]/40"
                     style={{ top: i * SLOT_HEIGHT + HALF_SLOT }}
                   />
                 ))}
@@ -755,7 +755,7 @@ function DayView({
       onTouchEnd={onTouchEnd}
     >
       {/* Day header */}
-      <div className="flex border-b border-[#1e1e1e]">
+      <div className="flex border-b border-[#1d2c42]">
         <div className="w-16 shrink-0" />
         <div className={`flex-1 py-3 px-4 ${isToday ? 'bg-[#4ecde6]/[0.04]' : ''}`}>
           <div className="flex items-center gap-2">
@@ -794,12 +794,12 @@ function DayView({
           </div>
 
           {/* Single day column */}
-          <div className={`flex-1 relative border-l border-[#1e1e1e] ${isToday ? 'bg-[#4ecde6]/[0.02]' : ''}`}>
+          <div className={`flex-1 relative border-l border-[#1d2c42] ${isToday ? 'bg-[#4ecde6]/[0.02]' : ''}`}>
             {/* Hour lines */}
             {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
               <div
                 key={i}
-                className="absolute left-0 right-0 border-t border-[#1e1e1e]"
+                className="absolute left-0 right-0 border-t border-[#1d2c42]"
                 style={{ top: i * SLOT_HEIGHT }}
               />
             ))}
@@ -807,7 +807,7 @@ function DayView({
             {Array.from({ length: END_HOUR - START_HOUR }, (_, i) => (
               <div
                 key={`half-${i}`}
-                className="absolute left-0 right-0 border-t border-[#1e1e1e]/40"
+                className="absolute left-0 right-0 border-t border-[#1d2c42]/40"
                 style={{ top: i * SLOT_HEIGHT + HALF_SLOT }}
               />
             ))}
@@ -973,7 +973,7 @@ function ClassDetailModal({
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-md bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden"
+        className="relative w-full max-w-md bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Color top bar */}
@@ -1082,14 +1082,14 @@ function ClassDetailModal({
                 <div className="flex gap-2">
                   <a
                     href="/dashboard/groups"
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.05] border border-[#1e1e1e] text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.05] border border-[#1d2c42] text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <IconEdit />
                     Edit Class
                   </a>
                   <a
                     href="/dashboard/attendance"
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.05] border border-[#1e1e1e] text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.05] border border-[#1d2c42] text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <IconClipboard />
                     Attendance
@@ -1107,7 +1107,7 @@ function ClassDetailModal({
                     {group.enrolledPlayers.map((p) => (
                       <div
                         key={p.id}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-[#1e1e1e]/50"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-[#1d2c42]/50"
                       >
                         <div
                           className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white"

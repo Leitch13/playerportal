@@ -89,7 +89,7 @@ export default function AssignSubscription({
   }
 
   return (
-    <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-5">
+    <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-sm">Assign Subscription to Player</h3>
         <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white text-sm">Close</button>
@@ -101,7 +101,7 @@ export default function AssignSubscription({
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select player...</option>
             {players.map((p) => (
@@ -117,7 +117,7 @@ export default function AssignSubscription({
             value={planId}
             onChange={(e) => setPlanId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-[#1e1e1e] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select plan...</option>
             {plans.map((p) => (

@@ -45,7 +45,7 @@ export default function RevenueForecast({
   if (!hasRevenue) {
     // Empty state — common for newly onboarded academies
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] via-[#0f1716] to-[#0a0a0a] p-6">
+      <div className="relative overflow-hidden rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] via-[#0f1716] to-[#080e18] p-6">
         <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-3">
@@ -87,7 +87,7 @@ export default function RevenueForecast({
 
   // Has revenue — full forecast view
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] via-[#0f1716] to-[#0a0a0a] p-6">
+    <div className="relative overflow-hidden rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] via-[#0f1716] to-[#080e18] p-6">
       <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
       <div className="relative">
         <div className="flex items-center justify-between mb-4">

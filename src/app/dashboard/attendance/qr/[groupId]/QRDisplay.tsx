@@ -132,7 +132,7 @@ export default function QRDisplay({
       </div>
 
       {/* QR Code */}
-      <div className="bg-white rounded-2xl border-2 border-[#1e1e1e] p-6 shadow-lg">
+      <div className="bg-white rounded-2xl border-2 border-[#1d2c42] p-6 shadow-lg">
         {qrDataUrl ? (
           <img
             src={qrDataUrl}

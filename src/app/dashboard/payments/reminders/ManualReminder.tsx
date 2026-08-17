@@ -107,7 +107,7 @@ export default function ManualReminder({
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 w-full max-w-md space-y-4">
+          <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-lg text-white">Send Manual Reminder</h2>
               <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white text-xl">×</button>
@@ -116,7 +116,7 @@ export default function ManualReminder({
             <div>
               <label className="text-xs font-medium text-white/40 block mb-1.5">Select Parent</label>
               <select
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+                className="w-full bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
                 value={selectedId}
                 onChange={e => setSelectedId(e.target.value)}
               >
@@ -130,7 +130,7 @@ export default function ManualReminder({
             </div>
 
             {selected && (
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 text-sm">
+              <div className="bg-[#142236] border border-[#293b58] rounded-xl p-3 text-sm">
                 <p className="text-white font-medium">{selected.name}</p>
                 <p className="text-white/40">{selected.email}</p>
                 <p className="text-red-400 font-semibold mt-1">£{selected.amount.toFixed(2)} overdue</p>
@@ -140,7 +140,7 @@ export default function ManualReminder({
             <div>
               <label className="text-xs font-medium text-white/40 block mb-1.5">Custom Message (optional)</label>
               <textarea
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+                className="w-full bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
                 rows={3}
                 placeholder="Leave blank for default reminder message"
                 value={message}

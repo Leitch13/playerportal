@@ -45,7 +45,7 @@ export default function ReferAcademyCard({ orgSlug, orgName }: { orgSlug: string
           readOnly
           value={link}
           onFocus={(e) => e.currentTarget.select()}
-          className="flex-1 min-w-[240px] bg-[#141414] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
+          className="flex-1 min-w-[240px] bg-[#0f1a2b] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
         />
         <button
           onClick={copy}

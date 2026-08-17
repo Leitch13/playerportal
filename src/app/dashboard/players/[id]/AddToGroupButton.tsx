@@ -91,7 +91,7 @@ export default function AddToGroupButton({ playerId, groups, existingGroupIds }:
             key={g.id}
             onClick={() => handleAdd(g.id)}
             disabled={saving}
-            className="flex items-center justify-between px-3 py-2 text-sm rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] hover:border-[#4ecde6]/40 transition-colors text-left disabled:opacity-50"
+            className="flex items-center justify-between px-3 py-2 text-sm rounded-lg bg-[#080e18] border border-[#1d2c42] hover:border-[#4ecde6]/40 transition-colors text-left disabled:opacity-50"
           >
             <span className="font-medium text-white">{g.name}</span>
             <span className="text-xs text-white/50">

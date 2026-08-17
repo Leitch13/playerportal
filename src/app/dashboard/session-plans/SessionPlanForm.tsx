@@ -109,11 +109,11 @@ export default function SessionPlanForm({
   }
 
   const inputCls =
-    'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 transition'
+    'w-full bg-[#142236] border border-[#293b58] rounded-lg px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 transition'
   const labelCls = 'block text-xs font-medium text-white/50 mb-1'
 
   return (
-    <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-6 space-y-5">
+    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-6 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-white font-semibold">
           {editPlan ? 'Edit Session Plan' : 'New Session Plan'}
@@ -190,7 +190,7 @@ export default function SessionPlanForm({
 
       {/* Structured sections */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-white/60 border-b border-[#1e1e1e] pb-2">Session Structure</h3>
+        <h3 className="text-sm font-medium text-white/60 border-b border-[#1d2c42] pb-2">Session Structure</h3>
 
         <div>
           <label className={labelCls}>Warm Up</label>
@@ -239,7 +239,7 @@ export default function SessionPlanForm({
 
       {/* Attachments */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-white/60 border-b border-[#1e1e1e] pb-2">Attachments</h3>
+        <h3 className="text-sm font-medium text-white/60 border-b border-[#1d2c42] pb-2">Attachments</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FileUpload

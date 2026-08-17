@@ -134,7 +134,7 @@ export default async function RegisterPage({
   }))
 
   return (
-    <div className="space-y-4 p-6 lg:p-8 bg-[#0a0a0a] -m-6 lg:-m-8 min-h-screen text-white pb-24">
+    <div className="space-y-4 p-6 lg:p-8 bg-[#080e18] -m-6 lg:-m-8 min-h-screen text-white pb-24">
       {/* ─── Breadcrumb ─── */}
       <div className="flex items-center gap-2 text-sm text-white/50">
         <Link href="/dashboard/groups" className="hover:text-[#4ecde6] transition-colors">Classes</Link>

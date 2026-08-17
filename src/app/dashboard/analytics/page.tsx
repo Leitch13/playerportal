@@ -662,7 +662,7 @@ export default async function AnalyticsPage() {
   })
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Analytics</h1>
@@ -696,7 +696,7 @@ export default async function AnalyticsPage() {
 
       {/* Retention, Churn & Revenue per player */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 transition-all duration-200 hover:border-[#293b58]">
           <p className="text-xs font-medium text-white/40 mb-1">Player Retention</p>
           <div className="flex items-center gap-2">
             <p className="text-2xl font-bold" style={{ color: retentionColor }}>{retentionRate}%</p>
@@ -715,7 +715,7 @@ export default async function AnalyticsPage() {
           </p>
         </div>
 
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 transition-all duration-200 hover:border-[#293b58]">
           <p className="text-xs font-medium text-white/40 mb-1">Churn</p>
           <p className="text-2xl font-bold" style={{ color: churnRate > 10 ? '#ef4444' : churnRate > 5 ? '#f59e0b' : '#059669' }}>
             {churnCount} <span className="text-sm font-medium text-white/40">cancelled</span>
@@ -725,7 +725,7 @@ export default async function AnalyticsPage() {
           </p>
         </div>
 
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 transition-all duration-200 hover:border-[#293b58]">
           <p className="text-xs font-medium text-white/40 mb-1">Revenue per Player</p>
           <p className="text-2xl font-bold" style={{ color: '#8b5cf6' }}>
             &pound;{revenuePerPlayer.toLocaleString()}
@@ -738,12 +738,12 @@ export default async function AnalyticsPage() {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
           <h3 className="font-bold text-white mb-1">Revenue</h3>
           <p className="text-xs text-white/40 mb-4">Monthly revenue over the last 6 months</p>
           <BarChart data={revenueData} prefix="£" barColor="#059669" />
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
           <h3 className="font-bold text-white mb-1">Player Growth</h3>
           <p className="text-xs text-white/40 mb-4">Cumulative player count over time</p>
           <LineChart data={growthData} lineColor="#4ecde6" />
@@ -752,13 +752,13 @@ export default async function AnalyticsPage() {
 
       {/* Heatmap + Top Classes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
           <h3 className="font-bold text-white mb-1">Attendance by Day</h3>
           <p className="text-xs text-white/40 mb-4">Which days are busiest</p>
           <AttendanceHeatmap data={heatmapData} />
         </div>
 
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
           <h3 className="font-bold text-white mb-1">Top Classes</h3>
           <p className="text-xs text-white/40 mb-4">Sorted by fill rate</p>
           <div className="space-y-3">
@@ -795,7 +795,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Top Classes by Attendance Rate */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <h3 className="font-bold text-white mb-1">Top Classes by Attendance</h3>
         <p className="text-xs text-white/40 mb-4">Ranked by attendance rate over the last 6 months</p>
         <div className="space-y-3">
@@ -844,7 +844,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* T7.1 — Coach activity dashboard */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-white">Coach Activity</h3>
           <span className="text-[10px] uppercase tracking-wider text-white/40">Last 90 days</span>
@@ -894,7 +894,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* T7.2 — Class fill rate heatmap */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <h3 className="font-bold text-white mb-1">Class Fill Rate Heatmap</h3>
         <p className="text-xs text-white/40 mb-4">Average fill % across all classes that run in each slot — empty cells = no class scheduled</p>
         <div className="overflow-x-auto">
@@ -953,7 +953,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* T7.3 — Parent engagement scoring + at-risk list */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-white">Parent Engagement</h3>
           <span className="text-[10px] uppercase tracking-wider text-white/40">Heuristic 0–100</span>
@@ -1017,7 +1017,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* T7.4 — Funnel analytics */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-white">Signup Funnel</h3>
           <span className="text-[10px] uppercase tracking-wider text-white/40">Last 60 days</span>
@@ -1082,7 +1082,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* T7.5 — Cohort retention */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-bold text-white">Cohort Retention</h3>
           <span className="text-[10px] uppercase tracking-wider text-white/40">Last 6 months</span>
@@ -1143,7 +1143,7 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Recent Signups */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 transition-all duration-200 hover:border-[#2a2a2a]">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 transition-all duration-200 hover:border-[#293b58]">
         <h3 className="font-bold text-white mb-1">Recent Signups</h3>
         <p className="text-xs text-white/40 mb-4">Last 10 players who joined</p>
         <div className="overflow-x-auto">
@@ -1186,7 +1186,7 @@ export default async function AnalyticsPage() {
 
 function MetricCard({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 transition-all duration-200 hover:border-[#2a2a2a]">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 transition-all duration-200 hover:border-[#293b58]">
       <p className="text-xs font-medium text-white/40 mb-1">{label}</p>
       <p className="text-2xl font-bold" style={{ color }}>{value}</p>
       <p className="text-[10px] text-white/40 mt-0.5">{sub}</p>

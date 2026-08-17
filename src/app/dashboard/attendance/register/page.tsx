@@ -52,7 +52,7 @@ export default async function RegisterListPage() {
   })
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -69,7 +69,7 @@ export default function ThreadReplyForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4 space-y-3" data-testid="thread-reply-form">
+    <form onSubmit={handleSubmit} className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 space-y-3" data-testid="thread-reply-form">
       <label className="block">
         <span className="text-[11px] uppercase tracking-wider font-bold text-white/40">
           Reply to {recipientName}
@@ -80,7 +80,7 @@ export default function ThreadReplyForm({
           required
           rows={4}
           placeholder={`Write your reply to ${recipientName}…`}
-          className="mt-2 w-full px-3 py-2 bg-[#0f0f0f] border border-[#252525] rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#4ecde6]/40"
+          className="mt-2 w-full px-3 py-2 bg-[#0f1a2b] border border-[#252525] rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#4ecde6]/40"
         />
       </label>
       <div className="flex items-center justify-between gap-3 flex-wrap">

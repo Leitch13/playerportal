@@ -61,7 +61,7 @@ export default async function TrialsPage() {
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Trial Bookings</h1>
@@ -90,23 +90,23 @@ export default async function TrialsPage() {
           them as "pending"). Both reads come from the same query, no
           drift risk. */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 text-center">
           <p className="text-2xl font-bold text-yellow-500">{stats.pending}</p>
           <p className="text-xs text-white/60 font-medium">Pending</p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 text-center">
           <p className="text-2xl font-bold text-blue-500">{stats.confirmed}</p>
           <p className="text-xs text-white/60 font-medium">Confirmed</p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 text-center">
           <p className="text-2xl font-bold text-emerald-500">{stats.attended}</p>
           <p className="text-xs text-white/60 font-medium">Attended</p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 text-center">
           <p className="text-2xl font-bold">{stats.total}</p>
           <p className="text-xs text-white/60 font-medium">Total</p>
         </div>
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 text-center">
           <p className="text-2xl font-bold text-[#4ecde6]">{stats.conversionRate}%</p>
           <p className="text-xs text-white/60 font-medium">Conversion</p>
         </div>

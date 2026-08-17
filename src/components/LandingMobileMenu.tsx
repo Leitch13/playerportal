@@ -21,7 +21,7 @@ export default function LandingMobileMenu() {
       </button>
 
       {open && (
-        <div className="absolute top-16 left-0 right-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/[0.06] p-4 space-y-3 animate-slide-down z-50">
+        <div className="absolute top-16 left-0 right-0 bg-[#080e18]/95 backdrop-blur-xl border-b border-white/[0.06] p-4 space-y-3 animate-slide-down z-50">
           <a href="#features" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">Features</a>
           <Link href="/how-it-works" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">How It Works</Link>
           <a href="#pricing" onClick={() => setOpen(false)} className="block py-2 text-white/60 hover:text-white text-sm font-medium">Pricing</a>

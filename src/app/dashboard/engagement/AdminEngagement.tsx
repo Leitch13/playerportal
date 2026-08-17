@@ -70,7 +70,7 @@ export default function AdminEngagement({ parents, orgName }: AdminEngagementPro
   const maxDistribution = Math.max(...Object.values(distribution), 1)
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div>
@@ -80,22 +80,22 @@ export default function AdminEngagement({ parents, orgName }: AdminEngagementPro
 
         {/* Overview stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
             <p className="text-xs text-white/40 font-medium">Total Parents</p>
             <p className="text-2xl font-bold text-[#4ecde6] mt-1">{parentScores.length}</p>
           </div>
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
             <p className="text-xs text-white/40 font-medium">Average Score</p>
             <p className="text-2xl font-bold text-white mt-1">{avgScore}</p>
             <p className="text-[10px] text-white/30">out of 100</p>
           </div>
-          <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4">
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4">
             <p className="text-xs text-white/40 font-medium">Avg Level</p>
             <p className={`text-2xl font-bold mt-1 ${getLevel(avgScore).color}`}>{getLevel(avgScore).emoji} {getLevel(avgScore).level}</p>
           </div>
           <button
             onClick={() => setFilter('at_risk')}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4 text-left hover:border-red-500/30 transition-colors"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 text-left hover:border-red-500/30 transition-colors"
           >
             <p className="text-xs text-white/40 font-medium">At Risk</p>
             <p className="text-2xl font-bold text-red-400 mt-1">{atRiskCount}</p>
@@ -104,7 +104,7 @@ export default function AdminEngagement({ parents, orgName }: AdminEngagementPro
         </div>
 
         {/* Score distribution chart */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <h2 className="text-base font-bold text-white mb-4">Score Distribution</h2>
           <div className="space-y-3">
             {([
@@ -141,7 +141,7 @@ export default function AdminEngagement({ parents, orgName }: AdminEngagementPro
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#4ecde6]/40"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#4ecde6]/40"
           >
             <option value="score_asc">Score: Low to High</option>
             <option value="score_desc">Score: High to Low</option>
@@ -151,7 +151,7 @@ export default function AdminEngagement({ parents, orgName }: AdminEngagementPro
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as typeof filter)}
-            className="bg-[#141414] border border-[#1e1e1e] rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#4ecde6]/40"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl px-3 py-2 text-sm text-white/80 focus:outline-none focus:border-[#4ecde6]/40"
           >
             <option value="all">All Parents</option>
             <option value="at_risk">At Risk</option>
@@ -165,7 +165,7 @@ export default function AdminEngagement({ parents, orgName }: AdminEngagementPro
         </div>
 
         {/* Parents table */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

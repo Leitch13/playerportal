@@ -143,7 +143,7 @@ export default function ClassRosterRow({
       <div
         data-testid="class-roster-row"
         data-enrolment-id={enrolmentId}
-        className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-4 flex items-center gap-3 hover:bg-[#1a1a1a] hover:border-[#4ecde6]/30 transition-all group"
+        className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-4 flex items-center gap-3 hover:bg-[#142236] hover:border-[#4ecde6]/30 transition-all group"
       >
         {/* Photo or initials. Stays as a link to the profile so the existing
             click-through behaviour is preserved as the default action. */}
@@ -153,7 +153,7 @@ export default function ClassRosterRow({
             <img
               src={playerPhotoUrl}
               alt=""
-              className="w-9 h-9 rounded-full object-cover border border-[#1e1e1e]"
+              className="w-9 h-9 rounded-full object-cover border border-[#1d2c42]"
             />
           ) : (
             <div className="w-9 h-9 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-xs font-bold text-[#4ecde6]">
@@ -192,7 +192,7 @@ export default function ClassRosterRow({
           {menuOpen && (
             <div
               data-testid="roster-row-menu"
-              className="absolute right-0 top-9 z-20 w-52 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl py-1 text-sm"
+              className="absolute right-0 top-9 z-20 w-52 bg-[#142236] border border-[#293b58] rounded-xl shadow-xl py-1 text-sm"
             >
               <Link
                 href={`/dashboard/players/${playerId}`}
@@ -272,7 +272,7 @@ export default function ClassRosterRow({
           onClick={() => !removing && setConfirmOpen(false)}
         >
           <div
-            className="bg-[#141414] border border-[#1e1e1e] rounded-2xl max-w-md w-full p-6 space-y-4"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl max-w-md w-full p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div>

@@ -184,9 +184,9 @@ export default function AttendanceManager({
   const selectedGroup = groups.find((g) => g.id === groupId)
 
   return (
-    <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
       {/* Header: pick session */}
-      <div className="p-5 border-b border-[#1e1e1e] bg-gradient-to-br from-[#4ecde6]/[0.04] to-transparent">
+      <div className="p-5 border-b border-[#1d2c42] bg-gradient-to-br from-[#4ecde6]/[0.04] to-transparent">
         <h2 className="text-base font-bold text-white mb-3">Mark Attendance</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -194,7 +194,7 @@ export default function AttendanceManager({
             <select
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-[#0a0a0a] border border-[#2a2a2a] text-sm text-white focus:outline-none focus:border-[#4ecde6]/50"
+              className="w-full px-3 py-2.5 rounded-xl bg-[#080e18] border border-[#293b58] text-sm text-white focus:outline-none focus:border-[#4ecde6]/50"
             >
               <option value="">— Choose a class —</option>
               {groups.map((g) => (
@@ -210,7 +210,7 @@ export default function AttendanceManager({
               type="date"
               value={sessionDate}
               onChange={(e) => setSessionDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-[#0a0a0a] border border-[#2a2a2a] text-sm text-white focus:outline-none focus:border-[#4ecde6]/50"
+              className="w-full px-3 py-2.5 rounded-xl bg-[#080e18] border border-[#293b58] text-sm text-white focus:outline-none focus:border-[#4ecde6]/50"
             />
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function AttendanceManager({
           when groupId is selected. Read from trial_bookings only — no
           enrolment row is created, no attendance row is written. */}
       {groupId && todaysTrials.length > 0 && (
-        <div className="px-5 pt-4 pb-3 border-b border-[#1e1e1e] bg-amber-500/[0.03]" data-testid="trial-guests-section">
+        <div className="px-5 pt-4 pb-3 border-b border-[#1d2c42] bg-amber-500/[0.03]" data-testid="trial-guests-section">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="text-[11px] uppercase tracking-wider text-amber-300/90 font-bold">Trial Guests</h3>
             <span className="text-[10px] text-white/40">{todaysTrials.length} expected</span>
@@ -283,7 +283,7 @@ export default function AttendanceManager({
       {/* Bulk action toolbar + player list */}
       {groupId && enrolledPlayers.length > 0 && (
         <>
-          <div className="px-5 py-3 border-b border-[#1e1e1e] flex items-center justify-between gap-2 bg-[#0a0a0a]/50">
+          <div className="px-5 py-3 border-b border-[#1d2c42] flex items-center justify-between gap-2 bg-[#080e18]/50">
             <div className="text-xs text-white/50">
               <strong className="text-white">{counts.total}</strong> enrolled ·{' '}
               <strong className="text-emerald-400">{counts.present}</strong> present ·{' '}
@@ -318,7 +318,7 @@ export default function AttendanceManager({
                   className={`relative rounded-xl border p-3 sm:p-4 transition-colors ${
                     state === 'present' ? 'bg-emerald-500/5 border-emerald-500/30' :
                     state === 'absent' ? 'bg-red-500/5 border-red-500/30' :
-                    'bg-[#0a0a0a] border-[#1e1e1e]'
+                    'bg-[#080e18] border-[#1d2c42]'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -373,7 +373,7 @@ export default function AttendanceManager({
           </div>
 
           {/* Sticky save bar */}
-          <div className="sticky bottom-0 px-4 py-3 bg-[#141414] border-t border-[#1e1e1e] flex items-center justify-between gap-3">
+          <div className="sticky bottom-0 px-4 py-3 bg-[#0f1a2b] border-t border-[#1d2c42] flex items-center justify-between gap-3">
             <div className="text-xs text-white/50">
               {existingLoaded && Object.keys(attendance).length > 0 ? (
                 <>Loaded existing · edit and re-save</>

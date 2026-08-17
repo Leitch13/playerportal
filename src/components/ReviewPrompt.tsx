@@ -68,7 +68,7 @@ export default function ReviewPrompt({ promptId, childName, googleReviewUrl }: R
   if (dismissed) return null
 
   return (
-    <div className="relative bg-gradient-to-br from-[#141414] to-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-5 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="relative bg-gradient-to-br from-[#0f1a2b] to-[#142236] border border-[#293b58] rounded-2xl p-5 shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-500">
       {/* Dismiss X */}
       <button
         onClick={handleDismiss}
@@ -174,7 +174,7 @@ export default function ReviewPrompt({ promptId, childName, googleReviewUrl }: R
             onChange={(e) => setFeedback(e.target.value)}
             placeholder="What could we do better?"
             rows={3}
-            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50 transition-all placeholder:text-white/30 resize-none"
+            className="w-full bg-[#142236] border border-[#293b58] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50 transition-all placeholder:text-white/30 resize-none"
           />
           <div className="flex justify-end gap-2">
             <button

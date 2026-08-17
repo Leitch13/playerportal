@@ -42,7 +42,7 @@ export default function BillingPanel({ facts }: { facts: BillingFacts }) {
         </Link>
       </div>
 
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-4">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-4">
         {/* Update method CTA */}
         {facts.hasStripeCustomer && (
           <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-white/[0.06]">

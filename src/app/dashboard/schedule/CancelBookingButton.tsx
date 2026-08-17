@@ -213,7 +213,7 @@ export default function CancelBookingButton({
             onClick={() => { setShowSubPrompt(false); router.refresh() }}
           >
             <div
-              className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] border border-amber-500/30 rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-scale-in"
+              className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] border border-amber-500/30 rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-scale-in"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center mb-5">
@@ -297,7 +297,7 @@ export default function CancelBookingButton({
         onClick={() => !loading && setStep('idle')}
       >
         <div
-          className="bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] border border-[#1e1e1e] rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in"
+          className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] border border-[#1d2c42] rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Step 1: Why are you cancelling ── */}
@@ -319,7 +319,7 @@ export default function CancelBookingButton({
                     className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm text-left transition-all ${
                       reason === r.id
                         ? 'bg-[#4ecde6]/10 border-2 border-[#4ecde6] text-white font-semibold shadow-[0_0_20px_rgba(78,205,230,0.15)]'
-                        : 'bg-white/[0.02] border-2 border-[#1e1e1e] hover:border-[#4ecde6]/30 hover:bg-white/[0.04] text-white/80'
+                        : 'bg-white/[0.02] border-2 border-[#1d2c42] hover:border-[#4ecde6]/30 hover:bg-white/[0.04] text-white/80'
                     }`}
                   >
                     <span className="text-lg">{r.icon}</span>
@@ -342,7 +342,7 @@ export default function CancelBookingButton({
                     value={reasonDetail}
                     onChange={(e) => setReasonDetail(e.target.value)}
                     placeholder={reason === 'other' ? 'Help us understand — we read every response.' : 'Optional. Helps your academy improve.'}
-                    className="w-full p-3 rounded-xl bg-[#0a0a0a] border border-[#1e1e1e] text-sm text-white resize-none h-16 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
+                    className="w-full p-3 rounded-xl bg-[#080e18] border border-[#1d2c42] text-sm text-white resize-none h-16 focus:outline-none focus:border-[#4ecde6]/50 placeholder:text-white/30"
                   />
                 </div>
               )}
@@ -424,7 +424,7 @@ export default function CancelBookingButton({
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-[#080e18]/30 border-t-[#080e18] rounded-full animate-spin" />
                       Applying discount...
                     </span>
                   ) : (

@@ -168,7 +168,7 @@ export default function ManageShopClient({
     'w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30'
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -250,7 +250,7 @@ export default function ManageShopClient({
                     className={inputClasses}
                   >
                     {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value} className="bg-[#1a1a1a]">
+                      <option key={c.value} value={c.value} className="bg-[#142236]">
                         {c.label}
                       </option>
                     ))}

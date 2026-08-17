@@ -74,7 +74,7 @@ function GlassCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-[#1e1e1e] bg-[#141414] p-6 transition-all duration-200 hover:border-[#2a2a2a] ${className}`}
+      className={`rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-6 transition-all duration-200 hover:border-[#293b58] ${className}`}
     >
       {title && (
         <h2 className="text-base font-semibold text-white/90 mb-4">{title}</h2>

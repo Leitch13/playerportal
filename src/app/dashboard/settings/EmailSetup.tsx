@@ -18,7 +18,7 @@ export default function EmailSetup({
   ]
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-6">
       <div>
         <h2 className="font-bold text-lg">Email</h2>
         <p className="text-sm text-white/40 mt-1">Player Portal sends all your emails for you — nothing to set up.</p>
@@ -43,7 +43,7 @@ export default function EmailSetup({
         <h3 className="font-semibold text-sm text-white/70">Sent automatically on your behalf</h3>
         <div className="space-y-2">
           {emailsSent.map((e, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-[#1e1e1e] bg-white/[0.02]">
+            <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-[#1d2c42] bg-white/[0.02]">
               <span className="flex-shrink-0 mt-0.5 w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

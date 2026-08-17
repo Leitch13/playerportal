@@ -107,7 +107,7 @@
 @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(78,205,230,0.3); } 50% { box-shadow: 0 0 35px rgba(78,205,230,0.5); } }
 
 body {
-  background: #060606;
+  background: #080e18;
   color: var(--color-text);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   letter-spacing: -0.011em;

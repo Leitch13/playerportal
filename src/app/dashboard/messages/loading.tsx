@@ -3,14 +3,14 @@ export default function MessagesLoading() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="h-8 w-36 bg-[#141414] rounded-lg animate-pulse" />
-        <div className="h-9 w-36 bg-[#141414] rounded-lg animate-pulse" />
+        <div className="h-8 w-36 bg-[#0f1a2b] rounded-lg animate-pulse" />
+        <div className="h-9 w-36 bg-[#0f1a2b] rounded-lg animate-pulse" />
       </div>
 
       {/* Two-column messaging layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[500px]">
         {/* Conversation list */}
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-xl p-4 space-y-2 animate-pulse">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-4 space-y-2 animate-pulse">
           <div className="h-9 w-full bg-white/[0.06] rounded-lg mb-3" />
           {[...Array(6)].map((_, i) => (
             <div
@@ -29,7 +29,7 @@ export default function MessagesLoading() {
         </div>
 
         {/* Message thread area */}
-        <div className="lg:col-span-2 bg-[#141414] border border-[#1e1e1e] rounded-xl p-6 flex flex-col justify-between animate-pulse" style={{ animationDelay: '200ms' }}>
+        <div className="lg:col-span-2 bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-6 flex flex-col justify-between animate-pulse" style={{ animationDelay: '200ms' }}>
           <div className="space-y-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>

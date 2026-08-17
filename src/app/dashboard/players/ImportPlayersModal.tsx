@@ -277,7 +277,7 @@ export default function ImportPlayersModal() {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center pt-16 px-4 overflow-y-auto" onClick={() => !importing && setOpen(false)}>
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl w-full max-w-2xl p-6 space-y-5 mb-16" onClick={e => e.stopPropagation()}>
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl w-full max-w-2xl p-6 space-y-5 mb-16" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-white">Import Players</h2>
@@ -295,7 +295,7 @@ export default function ImportPlayersModal() {
           <>
             {/* File upload */}
             <label className="block cursor-pointer">
-              <div className="flex items-center justify-center w-full h-28 border-2 border-dashed border-[#2a2a2a] rounded-xl hover:border-primary/50 transition-colors">
+              <div className="flex items-center justify-center w-full h-28 border-2 border-dashed border-[#293b58] rounded-xl hover:border-primary/50 transition-colors">
                 <div className="text-center">
                   <svg className="mx-auto h-7 w-7 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -331,7 +331,7 @@ export default function ImportPlayersModal() {
             <div className="overflow-x-auto max-h-60 overflow-y-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-[#1e1e1e] text-white/50">
+                  <tr className="border-b border-[#1d2c42] text-white/50">
                     <th className="text-left py-2 font-medium">#</th>
                     <th className="text-left py-2 font-medium">Status</th>
                     <th className="text-left py-2 font-medium">Name</th>
@@ -341,7 +341,7 @@ export default function ImportPlayersModal() {
                 </thead>
                 <tbody>
                   {validatedRows.slice(0, 15).map(v => (
-                    <tr key={v.rowIndex} className="border-b border-[#1e1e1e]/50">
+                    <tr key={v.rowIndex} className="border-b border-[#1d2c42]/50">
                       <td className="py-1.5 text-white/30">{v.rowIndex}</td>
                       <td className="py-1.5">{v.valid ? <span className="text-green-400">&#10003;</span> : <span className="text-red-400" title={v.errors.join(', ')}>&#10007;</span>}</td>
                       <td className="py-1.5 text-white">{v.row.first_name} {v.row.last_name}</td>
@@ -373,7 +373,7 @@ export default function ImportPlayersModal() {
             <div className="flex justify-between text-xs text-white/50">
               <span>Importing...</span><span>{progress}%</span>
             </div>
-            <div className="w-full bg-[#1a1a1a] rounded-full h-1.5">
+            <div className="w-full bg-[#142236] rounded-full h-1.5">
               <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
             </div>
           </div>
@@ -400,7 +400,7 @@ export default function ImportPlayersModal() {
               </div>
             )}
             <div className="flex gap-3">
-              <button onClick={() => { reset(); }} className="px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm text-white/60 hover:text-white">Import More</button>
+              <button onClick={() => { reset(); }} className="px-4 py-2 bg-[#142236] border border-[#293b58] rounded-xl text-sm text-white/60 hover:text-white">Import More</button>
               <button onClick={() => { setOpen(false); reset(); window.location.reload() }} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90">Done</button>
             </div>
           </div>

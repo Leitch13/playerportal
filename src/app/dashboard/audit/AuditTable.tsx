@@ -120,7 +120,7 @@ export default function AuditTable({
 
   if (entries.length === 0) {
     return (
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
         <div className="text-4xl mb-3">📋</div>
         <h3 className="text-lg font-semibold text-white mb-1">No audit entries</h3>
         <p className="text-sm text-white/40">
@@ -133,7 +133,7 @@ export default function AuditTable({
   }
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -181,7 +181,7 @@ export default function AuditTable({
                 </tr>
                 {expandedId === entry.id && Object.keys(entry.details || {}).length > 0 && (
                   <tr className="border-b border-white/[0.04]">
-                    <td colSpan={5} className="px-4 py-3 bg-[#0a0a0a]">
+                    <td colSpan={5} className="px-4 py-3 bg-[#080e18]">
                       <pre className="text-xs text-white/40 font-mono whitespace-pre-wrap break-all max-w-full overflow-hidden">
                         {JSON.stringify(entry.details, null, 2)}
                       </pre>

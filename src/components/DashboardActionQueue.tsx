@@ -69,7 +69,7 @@ export default function DashboardActionQueue({
   const visibleRows = orderedRows.filter(r => (counts[r.key] ?? 0) > 0)
 
   return (
-    <section className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+    <section className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
       {/* Header */}
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-2">

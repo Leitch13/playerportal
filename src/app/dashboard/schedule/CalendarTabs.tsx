@@ -117,7 +117,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Tab bar — segmented control with brand color active state */}
-      <div className="inline-flex p-1 rounded-2xl bg-[#0a0a0a] border border-[#1e1e1e] overflow-x-auto -mx-1 px-1 max-w-full">
+      <div className="inline-flex p-1 rounded-2xl bg-[#080e18] border border-[#1d2c42] overflow-x-auto -mx-1 px-1 max-w-full">
         {tabs.map(tab => {
           const isActive = activeTab === tab
           return (
@@ -176,7 +176,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
         <div className="space-y-4">
           {/* Week navigation */}
           <div className="flex items-center justify-between">
-            <button onClick={() => setWeekOffset(o => o - 1)} className="px-3 py-1.5 rounded-lg border border-[#1e1e1e] text-sm hover:bg-white/5 transition-colors">
+            <button onClick={() => setWeekOffset(o => o - 1)} className="px-3 py-1.5 rounded-lg border border-[#1d2c42] text-sm hover:bg-white/5 transition-colors">
               ← Prev
             </button>
             <div className="text-center">
@@ -191,7 +191,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                   Today
                 </button>
               )}
-              <button onClick={() => setWeekOffset(o => o + 1)} className="px-3 py-1.5 rounded-lg border border-[#1e1e1e] text-sm hover:bg-white/5 transition-colors">
+              <button onClick={() => setWeekOffset(o => o + 1)} className="px-3 py-1.5 rounded-lg border border-[#1d2c42] text-sm hover:bg-white/5 transition-colors">
                 Next →
               </button>
             </div>
@@ -215,7 +215,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                       ? 'text-[#0a0a0a] shadow-lg'
                       : isToday
                         ? ''
-                        : 'bg-[#141414] border border-[#1e1e1e] hover:bg-white/5 hover:shadow-sm'
+                        : 'bg-[#0f1a2b] border border-[#1d2c42] hover:bg-white/5 hover:shadow-sm'
                   }`}
                   style={
                     isSelected
@@ -262,7 +262,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
             </div>
 
             {(byDay[selectedDay] || []).length === 0 ? (
-              <div className="bg-[#0a0a0a]/50 rounded-2xl p-10 text-center">
+              <div className="bg-[#080e18]/50 rounded-2xl p-10 text-center">
                 <div className="text-3xl mb-2">😴</div>
                 <p className="text-sm text-white/60">No classes on {selectedDay}</p>
               </div>
@@ -295,10 +295,10 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
               const total = groupSessions.reduce((s, ss) => s + ss.playerCount, 0)
 
               return (
-                <div key={name} className="rounded-2xl border border-[#1e1e1e] overflow-hidden">
+                <div key={name} className="rounded-2xl border border-[#1d2c42] overflow-hidden">
                   <button
                     onClick={() => setExpandedId(expandedId === `group-${name}` ? null : `group-${name}`)}
-                    className="w-full p-4 text-left bg-[#141414] hover:bg-white/[0.03] transition-colors"
+                    className="w-full p-4 text-left bg-[#0f1a2b] hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -319,7 +319,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                     </div>
                     {/* Capacity bar */}
                     <div className="mt-3 flex items-center gap-2">
-                      <div className="flex-1 bg-[#0a0a0a] rounded-full h-2">
+                      <div className="flex-1 bg-[#080e18] rounded-full h-2">
                         <div
                           className="h-2 rounded-full transition-all bg-accent"
                           style={{ width: `${Math.min(100, (total / (first?.maxCapacity || 20)) * 100)}%` }}
@@ -330,7 +330,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                   </button>
 
                   {expandedId === `group-${name}` && (
-                    <div className="border-t border-[#1e1e1e] bg-[#0a0a0a]/40 p-4 space-y-3">
+                    <div className="border-t border-[#1d2c42] bg-[#080e18]/40 p-4 space-y-3">
                       {groupSessions.map(session => (
                         <div key={session.id} className="space-y-2">
                           <div className="flex items-center gap-2 text-sm">
@@ -363,10 +363,10 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
               const days = [...new Set(coachSessions.map(s => s.day))]
 
               return (
-                <div key={coach} className="rounded-2xl border border-[#1e1e1e] overflow-hidden">
+                <div key={coach} className="rounded-2xl border border-[#1d2c42] overflow-hidden">
                   <button
                     onClick={() => setExpandedId(expandedId === `coach-${coach}` ? null : `coach-${coach}`)}
-                    className="w-full p-4 text-left bg-[#141414] hover:bg-white/[0.03] transition-colors"
+                    className="w-full p-4 text-left bg-[#0f1a2b] hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -396,7 +396,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                   </button>
 
                   {expandedId === `coach-${coach}` && (
-                    <div className="border-t border-[#1e1e1e] bg-[#0a0a0a]/40 divide-y divide-[#1e1e1e]">
+                    <div className="border-t border-[#1d2c42] bg-[#080e18]/40 divide-y divide-[#1d2c42]">
                       {coachSessions.map(session => (
                         <div key={session.id} className="p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -433,10 +433,10 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
               const uniqueGroups = new Set(locSessions.map(s => s.groupName)).size
 
               return (
-                <div key={loc} className="rounded-2xl border border-[#1e1e1e] overflow-hidden">
+                <div key={loc} className="rounded-2xl border border-[#1d2c42] overflow-hidden">
                   <button
                     onClick={() => setExpandedId(expandedId === `loc-${loc}` ? null : `loc-${loc}`)}
-                    className="w-full p-4 text-left bg-[#141414] hover:bg-white/[0.03] transition-colors"
+                    className="w-full p-4 text-left bg-[#0f1a2b] hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -455,7 +455,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                   </button>
 
                   {expandedId === `loc-${loc}` && (
-                    <div className="border-t border-[#1e1e1e] bg-[#0a0a0a]/40 divide-y divide-[#1e1e1e]">
+                    <div className="border-t border-[#1d2c42] bg-[#080e18]/40 divide-y divide-[#1d2c42]">
                       {locSessions.map(session => (
                         <div key={session.id} className="p-4">
                           <div className="flex items-center justify-between mb-1">
@@ -522,7 +522,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(byDay[day] || []).map(session => (
-                    <div key={session.id} className="rounded-xl border border-[#1e1e1e] p-4 bg-[#141414] hover:shadow-md transition-shadow">
+                    <div key={session.id} className="rounded-xl border border-[#1d2c42] p-4 bg-[#0f1a2b] hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="font-semibold text-sm">{session.groupName}</div>
@@ -545,7 +545,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                         {session.coachName && <span>👤 {session.coachName}</span>}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 bg-[#0a0a0a] rounded-full h-1.5">
+                        <div className="flex-1 bg-[#080e18] rounded-full h-1.5">
                           <div
                             className="h-1.5 rounded-full bg-accent transition-all"
                             style={{ width: `${Math.min(100, (session.playerCount / session.maxCapacity) * 100)}%` }}
@@ -575,10 +575,10 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
               const spotsLeft = event.max_capacity - event.bookingCount
 
               return (
-                <div key={event.id} className="rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden hover:shadow-md transition-shadow">
+                <div key={event.id} className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] overflow-hidden hover:shadow-md transition-shadow">
                   <div className="flex">
                     {/* Date badge */}
-                    <div className="w-20 flex-shrink-0 bg-[#4ecde6]/10 flex flex-col items-center justify-center p-3 border-r border-[#1e1e1e]">
+                    <div className="w-20 flex-shrink-0 bg-[#4ecde6]/10 flex flex-col items-center justify-center p-3 border-r border-[#1d2c42]">
                       <span className="text-xs font-medium text-primary uppercase">
                         {startDate.toLocaleDateString('en-GB', { month: 'short' })}
                       </span>
@@ -616,7 +616,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                       </div>
                       {/* Capacity bar */}
                       <div className="mt-2 flex items-center gap-2">
-                        <div className="flex-1 bg-[#0a0a0a] rounded-full h-1.5">
+                        <div className="flex-1 bg-[#080e18] rounded-full h-1.5">
                           <div
                             className="h-1.5 rounded-full transition-all"
                             style={{
@@ -660,10 +660,10 @@ function SessionCard({
 
   return (
     <div
-      className="rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] via-[#0f1416] to-[#0a0a0a] overflow-hidden transition-all"
+      className="rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] overflow-hidden transition-all"
       style={{ ['--brand' as string]: brandColor }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${brandColor}50`; e.currentTarget.style.boxShadow = `0 0 20px ${brandColor}15` }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.boxShadow = '' }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#1d2c42'; e.currentTarget.style.boxShadow = '' }}
     >
       <button onClick={onToggle} className="w-full p-4 text-left transition-colors">
         <div className="flex items-center gap-4">
@@ -735,7 +735,7 @@ function SessionCard({
       </button>
 
       {expanded && session.players.length > 0 && (
-        <div className="border-t border-[#1e1e1e] px-4 py-3 bg-[#0a0a0a]/40">
+        <div className="border-t border-[#1d2c42] px-4 py-3 bg-[#080e18]/40">
           <div className="text-[10px] font-medium text-white/60 uppercase tracking-wider mb-2">Enrolled Players</div>
           <div className="space-y-1.5">
             {session.players.map(p => (
@@ -757,7 +757,7 @@ function SessionCard({
       )}
 
       {expanded && session.players.length === 0 && (
-        <div className="border-t border-[#1e1e1e] px-4 py-4 bg-[#0a0a0a]/40 text-center">
+        <div className="border-t border-[#1d2c42] px-4 py-4 bg-[#080e18]/40 text-center">
           <p className="text-xs text-white/60">No players enrolled yet</p>
         </div>
       )}
@@ -770,7 +770,7 @@ function PlayerChips({ players }: { players: { id: string; name: string; parentN
   return (
     <div className="flex flex-wrap gap-1.5">
       {players.map(p => (
-        <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 bg-[#141414] border border-[#1e1e1e] rounded-full text-xs" title={p.parentName}>
+        <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 bg-[#0f1a2b] border border-[#1d2c42] rounded-full text-xs" title={p.parentName}>
           <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           {p.name}
         </span>
@@ -789,7 +789,7 @@ function Chevron({ open }: { open: boolean }) {
 
 function EmptyBox({ message }: { message: string }) {
   return (
-    <div className="bg-[#0a0a0a]/50 rounded-2xl p-10 text-center">
+    <div className="bg-[#080e18]/50 rounded-2xl p-10 text-center">
       <div className="text-3xl mb-2">📭</div>
       <p className="text-sm text-white/60">{message}</p>
     </div>

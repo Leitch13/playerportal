@@ -32,7 +32,7 @@ const CLASS_TYPES = [
   { value: 'intensity', label: 'Intensity Training', color: 'bg-red-500/15 text-red-400' },
 ]
 
-const inputCls = 'w-full px-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'
+const inputCls = 'w-full px-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'
 
 export default function PlanManager({ orgId, existingPlans }: { orgId: string; existingPlans: Plan[] }) {
   const router = useRouter()
@@ -159,7 +159,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {typePlans.map(plan => (
-                <div key={plan.id} className={`bg-[#141414] border rounded-2xl p-4 transition-all ${plan.is_active ? 'border-[#1e1e1e]' : 'border-[#1e1e1e] opacity-50'}`}>
+                <div key={plan.id} className={`bg-[#0f1a2b] border rounded-2xl p-4 transition-all ${plan.is_active ? 'border-[#1d2c42]' : 'border-[#1d2c42] opacity-50'}`}>
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h3 className="font-bold text-white text-sm">{plan.name}</h3>
@@ -174,7 +174,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
                   <p className="text-xs text-white/30 mb-3">
                     {plan.sessions_per_week === 0 ? 'Unlimited sessions' : `${plan.sessions_per_week} session${(plan.sessions_per_week || 0) > 1 ? 's' : ''}/week`}
                   </p>
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#1e1e1e]">
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#1d2c42]">
                     <button onClick={() => handleDuplicate(plan)} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.06] text-white/50 hover:bg-white/[0.1] transition-colors">Duplicate</button>
                     <button onClick={() => handleToggle(plan.id, plan.is_active)} className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${plan.is_active ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'}`}>
                       {plan.is_active ? 'Deactivate' : 'Activate'}
@@ -199,14 +199,14 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
 
       {/* Add plan form */}
       {showAdd ? (
-        <div className="bg-[#141414] border border-[#4ecde6]/20 rounded-2xl p-5 space-y-4">
+        <div className="bg-[#0f1a2b] border border-[#4ecde6]/20 rounded-2xl p-5 space-y-4">
           <h3 className="font-bold text-white">New Plan</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1.5">Class Type *</label>
               <select value={newClassType} onChange={(e) => setNewClassType(e.target.value)} className={inputCls + ' appearance-none'}>
                 {CLASS_TYPES.map(t => (
-                  <option key={t.value} value={t.value} className="bg-[#1a1a1a]">{t.label}</option>
+                  <option key={t.value} value={t.value} className="bg-[#142236]">{t.label}</option>
                 ))}
               </select>
             </div>
@@ -221,11 +221,11 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
             <div>
               <label className="block text-xs font-medium text-white/60 mb-1.5">Sessions / Week</label>
               <select value={newSessions} onChange={(e) => setNewSessions(e.target.value)} className={inputCls + ' appearance-none'}>
-                <option value="1" className="bg-[#1a1a1a]">1 session</option>
-                <option value="2" className="bg-[#1a1a1a]">2 sessions</option>
-                <option value="3" className="bg-[#1a1a1a]">3 sessions</option>
-                <option value="4" className="bg-[#1a1a1a]">4 sessions</option>
-                <option value="0" className="bg-[#1a1a1a]">Unlimited</option>
+                <option value="1" className="bg-[#142236]">1 session</option>
+                <option value="2" className="bg-[#142236]">2 sessions</option>
+                <option value="3" className="bg-[#142236]">3 sessions</option>
+                <option value="4" className="bg-[#142236]">4 sessions</option>
+                <option value="0" className="bg-[#142236]">Unlimited</option>
               </select>
             </div>
             <div className="sm:col-span-2">
@@ -247,7 +247,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
       )}
 
       {/* Applies to info */}
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5">
         <h3 className="font-bold text-sm mb-3">How plans apply to classes</h3>
         <div className="space-y-2 text-xs text-white/50">
           <p>1. If a class has <strong className="text-white/70">class-specific plans</strong> (set from Classes → Plans), those show first</p>

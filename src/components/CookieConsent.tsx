@@ -42,7 +42,7 @@ export default function CookieConsent() {
         }
       `}</style>
 
-      <div className="border-t border-[#1e1e1e] bg-[#141414]/95 backdrop-blur-md">
+      <div className="border-t border-[#1d2c42] bg-[#0f1a2b]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-3 sm:flex-row sm:justify-between sm:gap-6">
           <p className="text-sm text-neutral-400">
             We use cookies to improve your experience. Essential cookies are
@@ -55,7 +55,7 @@ export default function CookieConsent() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => accept('essential')}
-              className="rounded-md border border-[#1e1e1e] bg-transparent px-4 py-1.5 text-sm text-neutral-300 transition-colors hover:border-[#4ecde6]/40 hover:text-white"
+              className="rounded-md border border-[#1d2c42] bg-transparent px-4 py-1.5 text-sm text-neutral-300 transition-colors hover:border-[#4ecde6]/40 hover:text-white"
             >
               Essential Only
             </button>

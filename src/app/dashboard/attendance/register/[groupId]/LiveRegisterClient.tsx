@@ -183,7 +183,7 @@ export default function LiveRegisterClient({
   return (
     <div className="space-y-3" data-testid="live-register">
       {/* ─── Toolbar: date + counts + bulk actions ─── */}
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3 flex-wrap">
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-white/40 font-bold mb-1">Session date</label>
@@ -191,7 +191,7 @@ export default function LiveRegisterClient({
               type="date"
               value={sessionDate}
               onChange={(e) => setSessionDate(e.target.value)}
-              className="bg-[#0a0a0a] border border-[#1e1e1e] text-white text-sm rounded-lg px-3 py-1.5 [color-scheme:dark] focus:border-[#4ecde6] focus:outline-none"
+              className="bg-[#080e18] border border-[#1d2c42] text-white text-sm rounded-lg px-3 py-1.5 [color-scheme:dark] focus:border-[#4ecde6] focus:outline-none"
               data-testid="live-register-date"
             />
           </div>
@@ -266,8 +266,8 @@ export default function LiveRegisterClient({
       )}
 
       {/* ─── Player list ─── */}
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-[#1e1e1e] flex items-center justify-between">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden">
+        <div className="px-5 py-3 border-b border-[#1d2c42] flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-white/70">Enrolled players</h2>
           <span className="text-[11px] text-white/40">{players.length} on register</span>
         </div>
@@ -296,7 +296,7 @@ export default function LiveRegisterClient({
                   className={`rounded-xl border p-3 transition-colors ${
                     state === 'present' ? 'bg-emerald-500/5 border-emerald-500/30'
                     : state === 'absent' ? 'bg-red-500/5 border-red-500/30'
-                    : 'bg-[#0a0a0a] border-[#1e1e1e]'
+                    : 'bg-[#080e18] border-[#1d2c42]'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -317,7 +317,7 @@ export default function LiveRegisterClient({
                           <img
                             src={p.photo_url}
                             alt=""
-                            className="w-11 h-11 rounded-full object-cover border border-[#1e1e1e]"
+                            className="w-11 h-11 rounded-full object-cover border border-[#1d2c42]"
                             data-testid="live-register-row-photo"
                           />
                         ) : (
@@ -413,7 +413,7 @@ export default function LiveRegisterClient({
       {/* ─── Sticky save bar ─── */}
       {players.length > 0 && (
         <div
-          className="sticky bottom-0 z-10 bg-[#141414] border border-[#1e1e1e] rounded-2xl p-3 flex items-center justify-between gap-3"
+          className="sticky bottom-0 z-10 bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-3 flex items-center justify-between gap-3"
           data-testid="live-register-save-bar"
         >
           <div className="text-xs text-white/55">

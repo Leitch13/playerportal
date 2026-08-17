@@ -154,7 +154,7 @@ export default function RefundButton({
           onClick={close}
         >
           <div
-            className="bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6"
+            className="bg-[#080e18] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">

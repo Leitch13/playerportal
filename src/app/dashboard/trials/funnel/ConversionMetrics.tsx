@@ -38,7 +38,7 @@ export default function ConversionMetrics({
   const grossCaption = smallSampleCaption(rates.grossSampleN)
 
   return (
-    <section className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-5 space-y-5">
+    <section className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 space-y-5">
       <header>
         <h2 className="text-sm font-bold text-white">Conversion metrics</h2>
         <p className="text-[11px] text-white/40 mt-0.5">

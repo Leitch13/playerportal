@@ -135,7 +135,7 @@ export default async function BillingPage({
               className={`relative rounded-2xl p-6 flex flex-col transition-all duration-300 ${
                 isFeatured
                   ? 'bg-gradient-to-b from-[#4ecde6]/[0.08] to-[#4ecde6]/[0.02] border-2 border-[#4ecde6]/30 shadow-lg'
-                  : 'bg-[#141414] border border-[#1e1e1e]'
+                  : 'bg-[#0f1a2b] border border-[#1d2c42]'
               }`}
             >
               {isFeatured && (
@@ -218,7 +218,7 @@ export default async function BillingPage({
 
       {/* Current plan details */}
       {featureCtx.planName && !featureCtx.pilot && (
-        <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-6">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-6">
           <h2 className="text-lg font-bold text-white mb-4">What you have access to</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {Array.from(featureCtx.features).map(fk => (

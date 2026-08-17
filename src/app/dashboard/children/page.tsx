@@ -44,7 +44,7 @@ export default async function ChildrenPage() {
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">My Children</h1>
@@ -161,7 +161,7 @@ export default async function ChildrenPage() {
 
                   {/* Training groups */}
                   {activeGroups.length > 0 && (
-                    <div className="pt-3 border-t border-[#1e1e1e]">
+                    <div className="pt-3 border-t border-[#1d2c42]">
                       <p className="font-medium text-xs mb-2 text-white/40 uppercase tracking-wide">
                         Sessions
                       </p>

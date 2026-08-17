@@ -35,7 +35,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
   ]
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-6">
       <div>
         <h2 className="font-bold text-lg">Website Embed</h2>
         <p className="text-sm text-[#888] mt-1">Add booking to your own website. Copy the code and paste it into your site&apos;s HTML.</p>
@@ -48,7 +48,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === t.key ? 'bg-primary text-white' : 'text-white/60 hover:bg-[#1e1e1e] hover:text-white'
+              activeTab === t.key ? 'bg-primary text-white' : 'text-white/60 hover:bg-[#1d2c42] hover:text-white'
             }`}
           >
             {t.label}
@@ -66,7 +66,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
             <select
               value={theme}
               onChange={e => setTheme(e.target.value as 'light' | 'dark')}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="bg-[#142236] border border-[#293b58] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -85,7 +85,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
             <input
               value={color}
               onChange={e => setColor(e.target.value)}
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white w-24 focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="bg-[#142236] border border-[#293b58] rounded-lg px-3 py-1.5 text-sm text-white w-24 focus:outline-none focus:ring-2 focus:ring-accent/50"
             />
           </div>
         )}
@@ -93,7 +93,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
 
       {/* Code block */}
       <div className="relative">
-        <pre className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-4 text-xs text-green-400 overflow-x-auto whitespace-pre-wrap break-all font-mono">
+        <pre className="bg-[#080e18] border border-[#293b58] rounded-xl p-4 text-xs text-green-400 overflow-x-auto whitespace-pre-wrap break-all font-mono">
           {codes[activeTab]}
         </pre>
         <button
@@ -107,7 +107,7 @@ export default function EmbedCode({ slug }: { slug: string }) {
       {/* Preview */}
       <div>
         <h3 className="text-sm font-semibold text-white/70 mb-3">Preview</h3>
-        <div className="rounded-xl border border-[#2a2a2a] bg-white p-4 overflow-hidden">
+        <div className="rounded-xl border border-[#293b58] bg-white p-4 overflow-hidden">
           {activeTab === 'iframe' && (
             <iframe
               src={`/embed/${slug}${theme === 'dark' ? '?theme=dark' : ''}`}

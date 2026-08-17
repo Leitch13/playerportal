@@ -34,7 +34,7 @@ export default async function LeadsPage() {
     .order('name')
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       <LeadsPipeline
         leads={leads || []}
         teamMembers={teamMembers || []}

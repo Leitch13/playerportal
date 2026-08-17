@@ -188,7 +188,7 @@ export default function MovePlayerModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
       data-testid="move-player-modal"
     >
-      <div className="w-full max-w-2xl rounded-2xl bg-[#0f0f0f] border border-white/10 shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-2xl rounded-2xl bg-[#0f1a2b] border border-white/10 shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -293,7 +293,7 @@ export default function MovePlayerModal({
                     max={maxFutureIso}
                     onChange={(e) => { setMode('future'); setFutureDate(e.target.value) }}
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-1.5 w-full px-2 py-1.5 rounded-md bg-[#0a0a0a] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-[#4ecde6]/60"
+                    className="mt-1.5 w-full px-2 py-1.5 rounded-md bg-[#080e18] border border-white/[0.08] text-white text-sm focus:outline-none focus:border-[#4ecde6]/60"
                   />
                 </div>
               </label>
@@ -308,7 +308,7 @@ export default function MovePlayerModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Coach availability change"
-              className="w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-white/[0.08] text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/60"
+              className="w-full px-3 py-2 rounded-lg bg-[#080e18] border border-white/[0.08] text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/60"
               maxLength={200}
             />
             <p className="text-[11px] text-white/40 mt-1">Visible to academy staff only — not shown to the parent.</p>

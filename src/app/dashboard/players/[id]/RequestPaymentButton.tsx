@@ -67,7 +67,7 @@ export default function RequestPaymentButton({
       {open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => !loading && setOpen(false)} />
-          <div className="relative w-full max-w-md rounded-2xl border border-white/[0.12] bg-[#1a1a1a] shadow-2xl">
+          <div className="relative w-full max-w-md rounded-2xl border border-white/[0.12] bg-[#142236] shadow-2xl">
             <div className="px-5 py-4 border-b border-white/[0.08]">
               <h3 className="text-white font-bold text-base">Request payment — {playerFirstName}</h3>
               <p className="text-xs text-white/40 mt-0.5">We&apos;ll email their parent a one-tap link to add a card.</p>

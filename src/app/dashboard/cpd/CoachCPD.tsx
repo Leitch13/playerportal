@@ -121,7 +121,7 @@ export default function CoachCPD({
   const isAdmin = role === 'admin'
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[#080e18] text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Header */}
         <div className="mb-8">
@@ -260,17 +260,17 @@ function CertificationsSection({
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider">Total</p>
           <p className="text-2xl font-bold mt-1">{certs.length}</p>
         </div>
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-amber-400/80 text-xs font-medium uppercase tracking-wider">Expiring Soon</p>
           <p className="text-2xl font-bold mt-1 text-amber-400">
             {certs.filter((c) => getStatus(c.expiry_date) === 'expiring').length}
           </p>
         </div>
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-red-400/80 text-xs font-medium uppercase tracking-wider">Expired</p>
           <p className="text-2xl font-bold mt-1 text-red-400">
             {certs.filter((c) => getStatus(c.expiry_date) === 'expired').length}
@@ -293,7 +293,7 @@ function CertificationsSection({
 
       {/* Form */}
       {showForm && (
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-6 space-y-4">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-6 space-y-4">
           <h3 className="text-base font-semibold">{editId ? 'Edit Certification' : 'Add Certification'}</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -315,7 +315,7 @@ function CertificationsSection({
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#4ecde6]/40"
               >
                 {Object.entries(CERT_TYPES).map(([k, v]) => (
-                  <option key={k} value={k} className="bg-[#1a1a1a]">
+                  <option key={k} value={k} className="bg-[#142236]">
                     {v}
                   </option>
                 ))}
@@ -370,7 +370,7 @@ function CertificationsSection({
 
       {/* Cert cards */}
       {certs.length === 0 && !showForm && (
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-10 text-center">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-10 text-center">
           <div className="text-3xl mb-3">{'\uD83D\uDEE1\uFE0F'}</div>
           <p className="text-white/40 text-sm">No certifications yet. Add your first one above.</p>
         </div>
@@ -382,7 +382,7 @@ function CertificationsSection({
           return (
             <div
               key={cert.id}
-              className="bg-[#141414] border border-white/[0.06] rounded-xl p-5 space-y-3 hover:border-white/[0.12] transition group"
+              className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5 space-y-3 hover:border-white/[0.12] transition group"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
@@ -513,7 +513,7 @@ function CPDSection({
   return (
     <div className="space-y-6">
       {/* Progress card */}
-      <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-6">
+      <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-6">
         <div className="flex items-end justify-between mb-3">
           <div>
             <p className="text-white/40 text-xs font-medium uppercase tracking-wider">CPD Hours This Year</p>
@@ -563,7 +563,7 @@ function CPDSection({
 
       {/* Form */}
       {showForm && (
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-6 space-y-4">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-6 space-y-4">
           <h3 className="text-base font-semibold">Log CPD Hours</h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -642,14 +642,14 @@ function CPDSection({
 
       {/* CPD log */}
       {cpd.length === 0 && !showForm && (
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-10 text-center">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-10 text-center">
           <div className="text-3xl mb-3">{'\uD83D\uDCDA'}</div>
           <p className="text-white/40 text-sm">No CPD hours logged yet. Start tracking your development above.</p>
         </div>
       )}
 
       {cpd.length > 0 && (
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -724,7 +724,7 @@ function ComplianceSection({ coaches }: { coaches: CoachSummary[] }) {
 
   if (coaches.length === 0) {
     return (
-      <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-10 text-center">
+      <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-10 text-center">
         <div className="text-3xl mb-3">{'\uD83D\uDC65'}</div>
         <p className="text-white/40 text-sm">No coaches found in your organisation.</p>
       </div>
@@ -754,23 +754,23 @@ function ComplianceSection({ coaches }: { coaches: CoachSummary[] }) {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider">Coaches</p>
           <p className="text-2xl font-bold mt-1">{coaches.length}</p>
         </div>
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-white/40 text-xs font-medium uppercase tracking-wider">Fully Compliant</p>
           <p className="text-2xl font-bold mt-1 text-emerald-400">
             {coaches.filter((c) => c.expiredCount === 0 && c.expiringCount === 0 && c.certsCount > 0).length}
           </p>
         </div>
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-amber-400/80 text-xs font-medium uppercase tracking-wider">Expiring</p>
           <p className="text-2xl font-bold mt-1 text-amber-400">
             {coaches.filter((c) => c.expiringCount > 0).length}
           </p>
         </div>
-        <div className="bg-[#141414] border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl p-5">
           <p className="text-red-400/80 text-xs font-medium uppercase tracking-wider">Expired</p>
           <p className="text-2xl font-bold mt-1 text-red-400">
             {coaches.filter((c) => c.expiredCount > 0).length}
@@ -779,7 +779,7 @@ function ComplianceSection({ coaches }: { coaches: CoachSummary[] }) {
       </div>
 
       {/* Coach table */}
-      <div className="bg-[#141414] border border-white/[0.06] rounded-xl overflow-hidden">
+      <div className="bg-[#0f1a2b] border border-white/[0.06] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

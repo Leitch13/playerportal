@@ -30,7 +30,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
     <button
       type="button"
       onClick={onToggle}
-      className="w-full flex items-center justify-between py-3 border-b border-[#1e1e1e] mb-4 group"
+      className="w-full flex items-center justify-between py-3 border-b border-[#1d2c42] mb-4 group"
     >
       <h3 className="text-sm font-bold uppercase tracking-wider text-[#888] group-hover:text-white transition-colors">{title}</h3>
       <svg
@@ -229,10 +229,10 @@ export default function GroupForm({
     )
   }
 
-  const inputCls = 'w-full px-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30'
+  const inputCls = 'w-full px-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30'
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold">{isEdit ? 'Edit Class' : 'Create New Class'}</h2>
         <button
@@ -283,7 +283,7 @@ export default function GroupForm({
               <div className="flex items-end pb-1">
                 <label className="flex items-center gap-3 cursor-pointer select-none">
                   <div
-                    className={`relative w-11 h-6 rounded-full transition-colors ${isFeatured ? 'bg-primary' : 'bg-[#2a2a2a]'}`}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${isFeatured ? 'bg-primary' : 'bg-[#293b58]'}`}
                     onClick={() => setIsFeatured(!isFeatured)}
                   >
                     <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isFeatured ? 'translate-x-5' : ''}`} />
@@ -336,7 +336,7 @@ export default function GroupForm({
               <div className="space-y-2">
                 {benefits.map((b, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="flex-1 text-sm bg-[#1a1a1a] px-3 py-2 rounded-lg">{b}</span>
+                    <span className="flex-1 text-sm bg-[#142236] px-3 py-2 rounded-lg">{b}</span>
                     <button
                       type="button"
                       onClick={() => removeBenefit(i)}
@@ -421,7 +421,7 @@ export default function GroupForm({
                     value={pricePerSession}
                     onChange={(e) => setPricePerSession(e.target.value)}
                     placeholder="0.00"
-                    className="w-full pl-7 pr-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
+                    className="w-full pl-7 pr-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
                   />
                 </div>
               </div>
@@ -454,7 +454,7 @@ export default function GroupForm({
                     value={trialPrice}
                     onChange={(e) => setTrialPrice(e.target.value)}
                     placeholder="Leave blank for free trial"
-                    className="w-full pl-7 pr-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
+                    className="w-full pl-7 pr-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
                   />
                 </div>
                 <p className="mt-1.5 text-xs text-white/40">
@@ -560,7 +560,7 @@ export default function GroupForm({
           <button
             type="button"
             onClick={() => { setOpen(false); onClose?.() }}
-            className="px-6 py-2.5 border border-[#1e1e1e] rounded-xl text-sm font-medium hover:bg-[#1e1e1e] transition-colors"
+            className="px-6 py-2.5 border border-[#1d2c42] rounded-xl text-sm font-medium hover:bg-[#1d2c42] transition-colors"
           >
             Cancel
           </button>

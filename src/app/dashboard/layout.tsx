@@ -151,7 +151,7 @@ export default async function DashboardLayout({
         orgName={orgBrand?.name}
       >
       <GlobalSearch />
-      <div className="min-h-screen bg-[#0a0a0a] has-bottom-nav lg:pb-0">
+      <div className="min-h-screen bg-[#080e18] has-bottom-nav lg:pb-0">
         <Navigation
           role={role}
           userName={userName}

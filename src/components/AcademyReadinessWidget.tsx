@@ -26,7 +26,7 @@ export default function AcademyReadinessWidget({ state }: { state: ReadinessStat
     <section
       data-testid="academy-readiness"
       aria-labelledby="academy-readiness-heading"
-      className="rounded-2xl border border-[#1e1e1e] bg-[#0f0f0f] p-5 sm:p-6"
+      className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5 sm:p-6"
     >
       {/* Header — verdict + progress */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-5">
@@ -181,7 +181,7 @@ function ReadinessRow({ item }: { item: ReadinessItem }) {
                   on hover or keyboard focus; no client JS needed. */}
               <span
                 role="tooltip"
-                className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none absolute z-20 top-full left-0 mt-2 w-72 p-3 rounded-xl bg-[#0a0a0a] border border-white/10 shadow-xl text-xs leading-relaxed text-white/75"
+                className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none absolute z-20 top-full left-0 mt-2 w-72 p-3 rounded-xl bg-[#080e18] border border-white/10 shadow-xl text-xs leading-relaxed text-white/75"
               >
                 {tooltipBody}
               </span>

@@ -46,7 +46,7 @@ export default function ScheduleTopV2({
   // Empty state: parent has no booked sessions → point them to the catalogue below.
   if (mySchedule.length === 0) {
     return (
-      <div className="rounded-3xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] to-[#0a0a0a] p-5 sm:p-6 text-center">
+      <div className="rounded-3xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] to-[#080e18] p-5 sm:p-6 text-center">
         <p className="text-sm font-semibold text-white">No sessions booked yet</p>
         <p className="text-xs text-white/50 mt-1">Browse the classes below and book your child in — your week will appear here.</p>
       </div>
@@ -61,7 +61,7 @@ export default function ScheduleTopV2({
       {hero && (
         <div
           className="relative overflow-hidden rounded-3xl border p-5 sm:p-6"
-          style={{ borderColor: `${brandColor}40`, background: `linear-gradient(135deg, ${brandColor}1f 0%, ${brandColor}08 45%, #0a0a0a 100%)` }}
+          style={{ borderColor: `${brandColor}40`, background: `linear-gradient(135deg, ${brandColor}1f 0%, ${brandColor}08 45%, #080e18 100%)` }}
         >
           <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-[70px] pointer-events-none" style={{ background: `${brandColor}25` }} />
           <div className="relative">
@@ -99,13 +99,13 @@ export default function ScheduleTopV2({
           </span>
         </div>
         {thisWeek.length === 0 ? (
-          <div className="rounded-2xl border border-[#1e1e1e] bg-white/[0.02] p-4 text-center">
+          <div className="rounded-2xl border border-[#1d2c42] bg-white/[0.02] p-4 text-center">
             <p className="text-xs text-white/45">No more sessions booked this week.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {thisWeek.map((s) => (
-              <div key={`${s.enrolmentId}:${s.whenMs}`} className="flex items-center gap-3 rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] to-[#0a0a0a] p-3">
+              <div key={`${s.enrolmentId}:${s.whenMs}`} className="flex items-center gap-3 rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] to-[#080e18] p-3">
                 <div className="shrink-0 w-1 self-stretch rounded-full" style={{ background: brandColor }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
@@ -132,7 +132,7 @@ export default function ScheduleTopV2({
         </div>
         <div className="space-y-2">
           {mySchedule.map((s) => (
-            <div key={s.enrolmentId} className="flex items-center gap-3 rounded-2xl border border-[#1e1e1e] bg-gradient-to-br from-[#141414] to-[#0a0a0a] p-3">
+            <div key={s.enrolmentId} className="flex items-center gap-3 rounded-2xl border border-[#1d2c42] bg-gradient-to-br from-[#0f1a2b] to-[#080e18] p-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-sm font-bold text-white truncate">{s.playerName}</span>

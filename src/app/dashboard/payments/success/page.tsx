@@ -75,7 +75,7 @@ export default async function SubscriptionSuccessPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#060606] text-white -m-6 lg:-m-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#080e18] text-white -m-6 lg:-m-8 relative overflow-hidden">
       <SubscriptionSuccessConfetti color={brandColor} />
 
       {/* Ambient brand glow */}
@@ -131,7 +131,7 @@ export default async function SubscriptionSuccessPage({
 
         {/* What just happened card */}
         {plan && (
-          <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-6 sm:p-7 mb-8 text-left max-w-md mx-auto animate-fade-up" style={{ animationDelay: '0.2s' }}>
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-6 sm:p-7 mb-8 text-left max-w-md mx-auto animate-fade-up" style={{ animationDelay: '0.2s' }}>
             <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-3">
               Subscription confirmed
             </p>

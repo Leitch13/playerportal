@@ -272,7 +272,7 @@ export default function ReviewForm({
     }
   }
 
-  const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-colors'
+  const inputClass = 'w-full bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-colors'
 
   // ── Scoring-fields manager (single shared modal) ──
   // Previously duplicated inline in two places with no feedback states.
@@ -412,7 +412,7 @@ export default function ReviewForm({
         </button>
         <button
           onClick={() => setShowFieldManager(!showFieldManager)}
-          className="px-4 py-2.5 bg-[#141414] border border-[#1e1e1e] text-white/70 rounded-xl text-sm font-medium hover:bg-[#1a1a1a] hover:text-white transition-colors"
+          className="px-4 py-2.5 bg-[#0f1a2b] border border-[#1d2c42] text-white/70 rounded-xl text-sm font-medium hover:bg-[#142236] hover:text-white transition-colors"
         >
           Customise Fields
         </button>
@@ -426,7 +426,7 @@ export default function ReviewForm({
   const selectedPlayer = players.find(p => p.id === playerId)
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-bold text-white">New Player Report</h2>
@@ -476,7 +476,7 @@ export default function ReviewForm({
               <select
                 value={reviewClassType}
                 onChange={(e) => setReviewClassType(e.target.value)}
-                className="text-xs bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1.5 text-white/80 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
+                className="text-xs bg-[#142236] border border-[#293b58] rounded-lg px-2 py-1.5 text-white/80 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
                 title="What class context is this review for?"
               >
                 <option value="all">Universal scoring</option>
@@ -505,7 +505,7 @@ export default function ReviewForm({
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {categories.map((cat) => (
-              <div key={cat.key} className="bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-3 text-center">
+              <div key={cat.key} className="bg-[#080e18] border border-[#1d2c42] rounded-xl p-3 text-center">
                 <div className="text-[11px] text-white/50 mb-2 font-medium">{cat.icon && <span className="mr-1">{cat.icon}</span>}{cat.label}</div>
                 <div className="flex justify-center gap-1">
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -518,7 +518,7 @@ export default function ReviewForm({
                           ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/20'
                           : scores[cat.key] > n
                             ? 'bg-primary/15 text-primary'
-                            : 'bg-[#1a1a1a] text-white/30 border border-[#2a2a2a] hover:border-primary/40 hover:text-white/60'
+                            : 'bg-[#142236] text-white/30 border border-[#293b58] hover:border-primary/40 hover:text-white/60'
                       }`}
                     >
                       {n}
@@ -584,7 +584,7 @@ export default function ReviewForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-[#222] transition-colors"
+            className="px-4 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-[#1d2c42] transition-colors"
           >
             Cancel
           </button>

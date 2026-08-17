@@ -56,7 +56,7 @@ export default function ReferralLink({
               value={rewardAmount}
               onChange={(e) => setRewardAmount(e.target.value)}
               placeholder="0.00"
-              className="w-20 bg-[#1a1a1a] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
+              className="w-20 bg-[#142236] border border-[#293b58] rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/40"
             />
             <button
               disabled={loading || !rewardAmount}
@@ -144,7 +144,7 @@ export default function ReferralLink({
           </div>
         </div>
 
-        <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-lg px-3 py-2 mb-3">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-lg px-3 py-2 mb-3">
           <span className="text-xs font-mono truncate block text-white/70">{referralUrl}</span>
         </div>
 
@@ -171,7 +171,7 @@ export default function ReferralLink({
         </div>
       </div>
 
-      <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl px-4 py-3 mb-4">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl px-4 py-3 mb-4">
         <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1">Your link</p>
         <p className="text-sm text-white/80 font-mono truncate">{referralUrl}</p>
       </div>

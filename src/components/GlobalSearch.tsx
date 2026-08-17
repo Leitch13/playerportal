@@ -207,12 +207,12 @@ export default function GlobalSearch() {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-lg mx-4 bg-[#141414] rounded-xl shadow-2xl border border-[#1e1e1e] overflow-hidden animate-[search-in_0.15s_ease-out]"
+        className="relative w-full max-w-lg mx-4 bg-[#0f1a2b] rounded-xl shadow-2xl border border-[#1d2c42] overflow-hidden animate-[search-in_0.15s_ease-out]"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1e1e1e]">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1d2c42]">
           <svg
             className="w-5 h-5 text-[#4ecde6] shrink-0"
             fill="none"
@@ -234,7 +234,7 @@ export default function GlobalSearch() {
             placeholder="Search players, parents, groups, pages..."
             className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-500"
           />
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-gray-500 bg-[#1e1e1e] rounded border border-[#2a2a2a]">
+          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-gray-500 bg-[#1d2c42] rounded border border-[#293b58]">
             ESC
           </kbd>
         </div>
@@ -283,7 +283,7 @@ export default function GlobalSearch() {
                         <div className="text-xs text-gray-500 truncate">{result.subtitle}</div>
                       </div>
                       {isActive && (
-                        <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-[#1e1e1e] rounded border border-[#2a2a2a]">
+                        <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-[#1d2c42] rounded border border-[#293b58]">
                           Enter
                         </kbd>
                       )}
@@ -295,23 +295,23 @@ export default function GlobalSearch() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-[#1e1e1e] text-[11px] text-gray-500">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-[#1d2c42] text-[11px] text-gray-500">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-[#1e1e1e] rounded border border-[#2a2a2a] text-[10px]">
+              <kbd className="px-1 py-0.5 bg-[#1d2c42] rounded border border-[#293b58] text-[10px]">
                 ↑↓
               </kbd>
               Navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-[#1e1e1e] rounded border border-[#2a2a2a] text-[10px]">
+              <kbd className="px-1 py-0.5 bg-[#1d2c42] rounded border border-[#293b58] text-[10px]">
                 ↵
               </kbd>
               Select
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-[#1e1e1e] rounded border border-[#2a2a2a] text-[10px]">
+            <kbd className="px-1 py-0.5 bg-[#1d2c42] rounded border border-[#293b58] text-[10px]">
               Esc
             </kbd>
             Close

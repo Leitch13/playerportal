@@ -55,7 +55,7 @@ export default function SwitchFromClassForKidsPage() {
         </Link>
       </div>
 
-      <div className="bg-[#141414] rounded-xl border border-[#1e1e1e] p-6">
+      <div className="bg-[#0f1a2b] rounded-xl border border-[#1d2c42] p-6">
         <h2 className="text-lg font-semibold text-white mb-4">
           How to export your data from ClassForKids
         </h2>

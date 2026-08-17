@@ -35,7 +35,7 @@ export default function BirthdaysThisWeek({ players }: Props) {
   if (players.length === 0) return null  // no birthdays = no widget
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-[#0a0a0a] border border-purple-500/20 rounded-2xl p-5 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+    <div className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-[#080e18] border border-purple-500/20 rounded-2xl p-5 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
       <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-pink-500/10 blur-2xl pointer-events-none" />
       <div className="relative">
         <div className="flex items-center gap-2 mb-3">

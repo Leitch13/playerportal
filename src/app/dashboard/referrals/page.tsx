@@ -60,7 +60,7 @@ export default async function ReferralsPage() {
     const totalRewards = referrals?.filter((r) => r.status === 'rewarded').reduce((sum, r) => sum + (r.reward_amount || 0), 0) || 0
 
     return (
-      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+      <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
         {/* Hero */}
         <div>
@@ -115,7 +115,7 @@ export default async function ReferralsPage() {
               <p className="text-xs text-white/50 mt-1 max-w-xs mx-auto">Share your link above and you&rsquo;ll both benefit when a friend joins.</p>
             </div>
           ) : (
-            <div className="divide-y divide-[#1e1e1e]">
+            <div className="divide-y divide-[#1d2c42]">
               {referrals.map((referral) => (
                 <div key={referral.id} className="py-3 flex items-center justify-between">
                   <div>
@@ -170,7 +170,7 @@ export default async function ReferralsPage() {
   const totalPaidOut = allReferrals?.filter((r) => r.status === 'rewarded').reduce((sum, r) => sum + (r.reward_amount || 0), 0) || 0
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Referrals</h1>
 
@@ -186,7 +186,7 @@ export default async function ReferralsPage() {
               <h2 className="text-lg font-semibold text-white mb-4">Academies you&rsquo;ve referred</h2>
               <div className="space-y-2">
                 {(referredOrgs || []).map((r) => (
-                  <div key={`${r.name}-${r.created_at}`} className="flex items-center justify-between bg-[#141414] border border-[#232527] rounded-xl px-4 py-3">
+                  <div key={`${r.name}-${r.created_at}`} className="flex items-center justify-between bg-[#0f1a2b] border border-[#232527] rounded-xl px-4 py-3">
                     <div>
                       <p className="text-sm font-medium text-white">{r.name}</p>
                       <p className="text-xs text-white/40">Joined {r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
@@ -244,7 +244,7 @@ export default async function ReferralsPage() {
                   <th className="pb-3 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e1e1e]">
+              <tbody className="divide-y divide-[#1d2c42]">
                 {allReferrals.map((referral) => (
                   <tr key={referral.id}>
                     <td className="py-3 pr-4">

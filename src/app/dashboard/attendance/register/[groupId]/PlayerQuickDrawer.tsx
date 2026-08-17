@@ -315,7 +315,7 @@ export default function PlayerQuickDrawer({
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        className="absolute inset-x-0 bottom-0 sm:inset-x-auto sm:right-0 sm:top-0 sm:bottom-0 sm:w-[440px] sm:max-w-[90vw] flex flex-col overflow-hidden bg-[#0f0f0f] border-t border-white/[0.06] sm:border-t-0 sm:border-l shadow-2xl rounded-t-2xl sm:rounded-none max-h-[88vh] sm:max-h-none"
+        className="absolute inset-x-0 bottom-0 sm:inset-x-auto sm:right-0 sm:top-0 sm:bottom-0 sm:w-[440px] sm:max-w-[90vw] flex flex-col overflow-hidden bg-[#0f1a2b] border-t border-white/[0.06] sm:border-t-0 sm:border-l shadow-2xl rounded-t-2xl sm:rounded-none max-h-[88vh] sm:max-h-none"
         style={{ touchAction: 'pan-y' }}
       >
         {/* Mobile drag handle */}

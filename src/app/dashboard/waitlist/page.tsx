@@ -46,14 +46,14 @@ export default async function WaitlistPage() {
     (items || []).filter((e) => e.status === 'waiting' || e.status === 'offered').length
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Waitlist</h1>
         <p className="text-white/60 text-sm mt-1">Manage players waiting for spots in full classes. When a spot opens, the next person is automatically offered the place.</p>
       </div>
 
       {/* Auto-promote info banner */}
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 flex items-start gap-3">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 flex items-start gap-3">
         <div className="w-8 h-8 rounded-lg bg-[#4ecde6]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
           <span className="text-[#4ecde6] text-sm">&#9889;</span>
         </div>
@@ -64,7 +64,7 @@ export default async function WaitlistPage() {
       </div>
 
       {grouped.size === 0 && (
-        <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-12 text-center">
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
           <p className="text-4xl mb-3">&#127881;</p>
           <p className="font-semibold">No one on the waitlist</p>
           <p className="text-sm text-white/60 mt-1">All classes have available spots</p>
@@ -72,8 +72,8 @@ export default async function WaitlistPage() {
       )}
 
       {Array.from(grouped.values()).map((group) => (
-        <div key={group.groupId} className="bg-[#141414] rounded-2xl border border-[#1e1e1e] overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#1e1e1e] bg-white/[0.03] flex items-center justify-between">
+        <div key={group.groupId} className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#1d2c42] bg-white/[0.03] flex items-center justify-between">
             <div>
               <h2 className="font-bold">{group.groupName}</h2>
               <p className="text-xs text-white/60">{activeCount(group.entries)} active &middot; {group.entries!.length} total</p>

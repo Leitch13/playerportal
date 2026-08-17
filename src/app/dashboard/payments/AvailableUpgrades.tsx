@@ -43,7 +43,7 @@ export default function AvailableUpgrades({
           return (
             <div
               key={plan.id}
-              className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 flex flex-col gap-3 hover:border-[#4ecde6]/30 transition-colors"
+              className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 flex flex-col gap-3 hover:border-[#4ecde6]/30 transition-colors"
               data-testid="upgrade-plan-card"
             >
               <div>

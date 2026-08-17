@@ -55,7 +55,7 @@ export default async function AchievementsPage() {
       .limit(20)
 
     return (
-      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+      <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-white">Achievements</h1>
 
@@ -99,7 +99,7 @@ export default async function AchievementsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#1e1e1e] text-left">
+                  <tr className="border-b border-[#1d2c42] text-left">
                     <th className="pb-2 font-medium text-white/60">Achievement</th>
                     <th className="pb-2 font-medium text-white/60">Player</th>
                     <th className="pb-2 font-medium text-white/60">Awarded By</th>
@@ -107,7 +107,7 @@ export default async function AchievementsPage() {
                     <th className="pb-2 font-medium text-white/60">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1e1e1e]">
+                <tbody className="divide-y divide-[#1d2c42]">
                   {(recentAwards || []).map((award) => {
                     const achievement = award.achievement as unknown as {
                       name: string
@@ -186,7 +186,7 @@ export default async function AchievementsPage() {
   const totalAchievements = (playerAchievements || []).length
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Achievements</h1>
 
@@ -225,7 +225,7 @@ export default async function AchievementsPage() {
               return (
                 <div
                   key={pa.id}
-                  className="bg-[#141414] rounded-xl border-2 border-yellow-500/40 p-8 text-center print:border-yellow-500 print:shadow-none"
+                  className="bg-[#0f1a2b] rounded-xl border-2 border-yellow-500/40 p-8 text-center print:border-yellow-500 print:shadow-none"
                 >
                   <div className="border-2 border-dashed border-yellow-500/30 rounded-lg p-6 space-y-3">
                     <span className="text-5xl block">{achievement?.badge_emoji}</span>

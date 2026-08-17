@@ -39,7 +39,7 @@ export default function AuditFilters({
   const hasFilters = currentAction || currentSearch || currentFrom || currentTo
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-4 mb-4">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-4 mb-4">
       <div className="flex flex-col sm:flex-row gap-3 items-end">
         {/* Search */}
         <div className="flex-1 min-w-0">
@@ -54,7 +54,7 @@ export default function AuditFilters({
               const t = setTimeout(() => updateParam('search', val), 400)
               return () => clearTimeout(t)
             }}
-            className="w-full px-3 py-2 text-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+            className="w-full px-3 py-2 text-sm bg-[#142236] border border-[#293b58] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
           />
         </div>
 
@@ -64,7 +64,7 @@ export default function AuditFilters({
           <select
             value={currentAction}
             onChange={(e) => updateParam('action', e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+            className="w-full px-3 py-2 text-sm bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
           >
             <option value="">All Actions</option>
             {actions.map((a) => (
@@ -82,7 +82,7 @@ export default function AuditFilters({
             type="date"
             value={currentFrom}
             onChange={(e) => updateParam('from', e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+            className="w-full px-3 py-2 text-sm bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
           />
         </div>
 
@@ -93,7 +93,7 @@ export default function AuditFilters({
             type="date"
             value={currentTo}
             onChange={(e) => updateParam('to', e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
+            className="w-full px-3 py-2 text-sm bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/50"
           />
         </div>
 

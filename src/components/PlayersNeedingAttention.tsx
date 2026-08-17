@@ -42,7 +42,7 @@ const REASON_META: Record<AttentionPlayer['reason'], { label: string; icon: stri
 export default function PlayersNeedingAttention({ players }: Props) {
   if (players.length === 0) {
     return (
-      <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+      <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5 shadow-[0_0_15px_rgba(78,205,230,0.05)]">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-base">✨</span>
           <h2 className="text-sm font-bold text-white">Players Needing Attention</h2>
@@ -60,7 +60,7 @@ export default function PlayersNeedingAttention({ players }: Props) {
   const attendance = players.filter((p) => p.reason === 'attendance_drop')
 
   return (
-    <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
+    <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(78,205,230,0.05)]">
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-base">👀</span>

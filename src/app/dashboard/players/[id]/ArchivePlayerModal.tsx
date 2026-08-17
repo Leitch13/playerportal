@@ -102,7 +102,7 @@ export default function ArchivePlayerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#141414] border border-white/10 rounded-2xl max-w-lg w-full max-h-[90dvh] overflow-y-auto p-6 space-y-4">
+      <div className="bg-[#0f1a2b] border border-white/10 rounded-2xl max-w-lg w-full max-h-[90dvh] overflow-y-auto p-6 space-y-4">
         <div>
           <h2 className="text-xl font-bold text-white">Archive {playerName}?</h2>
           <p className="text-sm text-white/60 mt-1">

@@ -103,7 +103,7 @@ export default function AddPlayerToCamp({
           data-testid="camp-add-player-modal"
         >
           <div
-            className="bg-[#141414] border border-[#1e1e1e] rounded-2xl max-w-lg w-full p-6 space-y-4"
+            className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl max-w-lg w-full p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div>
@@ -123,11 +123,11 @@ export default function AddPlayerToCamp({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Type a name…"
-                className="w-full px-3 py-2 text-sm rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] text-white placeholder-white/30 focus:border-[#4ecde6] focus:outline-none"
+                className="w-full px-3 py-2 text-sm rounded-lg bg-[#080e18] border border-[#1d2c42] text-white placeholder-white/30 focus:border-[#4ecde6] focus:outline-none"
               />
             </div>
 
-            <div className="max-h-64 overflow-y-auto rounded-xl border border-[#1e1e1e] divide-y divide-white/[0.05]">
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-[#1d2c42] divide-y divide-white/[0.05]">
               {filtered.length === 0 ? (
                 <div className="px-4 py-6 text-sm text-white/40 text-center">No players match.</div>
               ) : (
@@ -165,7 +165,7 @@ export default function AddPlayerToCamp({
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-7 pr-3 py-2 text-sm rounded-lg bg-[#0a0a0a] border border-[#1e1e1e] text-white placeholder-white/30 focus:border-[#4ecde6] focus:outline-none"
+                  className="w-full pl-7 pr-3 py-2 text-sm rounded-lg bg-[#080e18] border border-[#1d2c42] text-white placeholder-white/30 focus:border-[#4ecde6] focus:outline-none"
                 />
               </div>
               <p className="text-[11px] text-white/40 mt-1">

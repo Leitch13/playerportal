@@ -137,7 +137,7 @@ export default function EngagementScore(props: EngagementScoreProps) {
   if (compact) {
     return (
       <Link href="/dashboard/engagement" className="block group">
-        <div className="bg-[#141414]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/30 transition-all">
+        <div className="bg-[#0f1a2b]/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 shadow-[0_0_15px_rgba(78,205,230,0.05)] hover:border-[#4ecde6]/30 transition-all">
           <div className="flex items-center gap-4">
             {/* Mini ring */}
             <div className="relative w-14 h-14 flex-shrink-0">

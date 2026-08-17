@@ -59,7 +59,7 @@ export default async function SessionPlanDetailPage({ params }: { params: Promis
   }
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white">
       <div className="no-print flex items-center justify-between mb-6">
         <Link href="/dashboard/session-plans" className="text-white/40 hover:text-white text-sm">&larr; Back to Plans</Link>
       </div>

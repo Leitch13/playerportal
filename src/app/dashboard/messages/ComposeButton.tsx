@@ -102,7 +102,7 @@ export default function ComposeButton({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-5 space-y-3" data-testid="compose-form">
+    <form onSubmit={handleSubmit} className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5 space-y-3" data-testid="compose-form">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-white">New message</h2>
         <button type="button" onClick={() => setOpen(false)} className="text-[11px] text-white/40 hover:text-white/70">Cancel</button>
@@ -113,7 +113,7 @@ export default function ComposeButton({
           value={recipientId}
           onChange={e => setRecipientId(e.target.value)}
           required
-          className="mt-2 w-full px-3 py-2 bg-[#0f0f0f] border border-[#252525] rounded-lg text-sm text-white focus:outline-none focus:border-[#4ecde6]/40"
+          className="mt-2 w-full px-3 py-2 bg-[#0f1a2b] border border-[#252525] rounded-lg text-sm text-white focus:outline-none focus:border-[#4ecde6]/40"
         >
           <option value="">Select recipient…</option>
           {recipients.map(r => (
@@ -130,7 +130,7 @@ export default function ComposeButton({
           value={subject}
           onChange={e => setSubject(e.target.value)}
           placeholder="e.g. Practice schedule update"
-          className="mt-2 w-full px-3 py-2 bg-[#0f0f0f] border border-[#252525] rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#4ecde6]/40"
+          className="mt-2 w-full px-3 py-2 bg-[#0f1a2b] border border-[#252525] rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#4ecde6]/40"
         />
       </label>
       <label className="block">
@@ -141,7 +141,7 @@ export default function ComposeButton({
           required
           rows={4}
           placeholder="Write your message…"
-          className="mt-2 w-full px-3 py-2 bg-[#0f0f0f] border border-[#252525] rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#4ecde6]/40"
+          className="mt-2 w-full px-3 py-2 bg-[#0f1a2b] border border-[#252525] rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#4ecde6]/40"
         />
       </label>
       <div className="flex items-center justify-end gap-3">

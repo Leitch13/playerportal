@@ -27,7 +27,7 @@ export default function MessagesList({
 }) {
   if (threads.length === 0) {
     return (
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl p-10 text-center">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-10 text-center">
         <p className="text-sm text-white/60">No messages yet.</p>
         <p className="text-[11px] text-white/40 mt-1">Start a conversation using the form above or via the deep-link from the Parents list.</p>
       </div>
@@ -37,7 +37,7 @@ export default function MessagesList({
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-bold text-white px-1">Your conversations</h2>
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl overflow-hidden divide-y divide-[#1e1e1e]">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden divide-y divide-[#1d2c42]">
         {threads.map(t => {
           const other = t.participants.find(p => p.id !== currentUserId)
           const otherName = other?.full_name || 'Unknown'

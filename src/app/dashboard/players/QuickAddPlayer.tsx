@@ -20,7 +20,7 @@ interface Plan {
   amount: number
 }
 
-const inputCls = 'w-full px-3 py-2.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'
+const inputCls = 'w-full px-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'
 const labelCls = 'block text-xs font-medium text-white/60 mb-1.5'
 const selectCls = inputCls + ' appearance-none'
 
@@ -168,7 +168,7 @@ export default function QuickAddPlayer({
   }
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-bold text-white">Add Player</h2>
         <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white text-sm transition-colors">Close</button>
@@ -198,23 +198,23 @@ export default function QuickAddPlayer({
             <div>
               <label className={labelCls}>Player Level</label>
               <select value={playingLevel} onChange={(e) => setPlayingLevel(e.target.value)} className={selectCls}>
-                <option value="beginner" className="bg-[#1a1a1a]">Beginner — Just starting out</option>
-                <option value="development" className="bg-[#1a1a1a]">Development — Learning the basics</option>
-                <option value="intermediate" className="bg-[#1a1a1a]">Intermediate — Good understanding</option>
-                <option value="advanced" className="bg-[#1a1a1a]">Advanced — Strong technical ability</option>
-                <option value="elite" className="bg-[#1a1a1a]">Elite — Academy/representative level</option>
+                <option value="beginner" className="bg-[#142236]">Beginner — Just starting out</option>
+                <option value="development" className="bg-[#142236]">Development — Learning the basics</option>
+                <option value="intermediate" className="bg-[#142236]">Intermediate — Good understanding</option>
+                <option value="advanced" className="bg-[#142236]">Advanced — Strong technical ability</option>
+                <option value="elite" className="bg-[#142236]">Elite — Academy/representative level</option>
               </select>
             </div>
             <div>
               <label className={labelCls}>League Level</label>
               <select value={leagueLevel} onChange={(e) => setLeagueLevel(e.target.value)} className={selectCls}>
-                <option value="" className="bg-[#1a1a1a]">Select league level...</option>
-                <option value="recreational" className="bg-[#1a1a1a]">Recreational</option>
-                <option value="grassroots" className="bg-[#1a1a1a]">Grassroots</option>
-                <option value="b_league" className="bg-[#1a1a1a]">B League</option>
-                <option value="a_league" className="bg-[#1a1a1a]">A League</option>
-                <option value="academy" className="bg-[#1a1a1a]">Academy</option>
-                <option value="professional" className="bg-[#1a1a1a]">Professional Development</option>
+                <option value="" className="bg-[#142236]">Select league level...</option>
+                <option value="recreational" className="bg-[#142236]">Recreational</option>
+                <option value="grassroots" className="bg-[#142236]">Grassroots</option>
+                <option value="b_league" className="bg-[#142236]">B League</option>
+                <option value="a_league" className="bg-[#142236]">A League</option>
+                <option value="academy" className="bg-[#142236]">Academy</option>
+                <option value="professional" className="bg-[#142236]">Professional Development</option>
               </select>
             </div>
           </div>
@@ -238,9 +238,9 @@ export default function QuickAddPlayer({
 
           {mode === 'existing' ? (
             <select value={parentId} onChange={(e) => setParentId(e.target.value)} required className={selectCls}>
-              <option value="" className="bg-[#1a1a1a]">Select parent...</option>
+              <option value="" className="bg-[#142236]">Select parent...</option>
               {parents.map((p) => (
-                <option key={p.id} value={p.id} className="bg-[#1a1a1a]">{p.full_name} ({p.email})</option>
+                <option key={p.id} value={p.id} className="bg-[#142236]">{p.full_name} ({p.email})</option>
               ))}
             </select>
           ) : (
@@ -265,22 +265,22 @@ export default function QuickAddPlayer({
         <div>
           <label className={labelCls}>Enrol in Class (optional)</label>
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)} className={selectCls}>
-            <option value="" className="bg-[#1a1a1a]">No class yet</option>
+            <option value="" className="bg-[#142236]">No class yet</option>
             {groups.map((g) => (
-              <option key={g.id} value={g.id} className="bg-[#1a1a1a]">{g.name}</option>
+              <option key={g.id} value={g.id} className="bg-[#142236]">{g.name}</option>
             ))}
           </select>
         </div>
 
         {/* Payment request — make add-and-bill one motion */}
         {plans.length > 0 && (
-          <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]/50 p-4">
+          <div className="rounded-xl border border-[#293b58] bg-[#142236]/50 p-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={sendPayReq}
                 onChange={(e) => setSendPayReq(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-[#2a2a2a] bg-[#1a1a1a] accent-[#4ecde6]"
+                className="mt-0.5 h-4 w-4 rounded border-[#293b58] bg-[#142236] accent-[#4ecde6]"
               />
               <span>
                 <span className="block text-sm font-semibold text-white">Send payment request to parent</span>
@@ -295,9 +295,9 @@ export default function QuickAddPlayer({
                 <div>
                   <label className={labelCls}>Membership Plan *</label>
                   <select value={payPlanId} onChange={(e) => setPayPlanId(e.target.value)} className={selectCls}>
-                    <option value="" className="bg-[#1a1a1a]">Select plan...</option>
+                    <option value="" className="bg-[#142236]">Select plan...</option>
                     {plans.map((p) => (
-                      <option key={p.id} value={p.id} className="bg-[#1a1a1a]">
+                      <option key={p.id} value={p.id} className="bg-[#142236]">
                         {p.name} — £{Number(p.amount).toFixed(2)}/mo
                       </option>
                     ))}
@@ -310,8 +310,8 @@ export default function QuickAddPlayer({
                     onChange={(e) => setPayFirstBilling(e.target.value === 'next_month' ? 'next_month' : 'today')}
                     className={selectCls}
                   >
-                    <option value="today" className="bg-[#1a1a1a]">Today · sessions left this month</option>
-                    <option value="next_month" className="bg-[#1a1a1a]">1st of next month · £0 today</option>
+                    <option value="today" className="bg-[#142236]">Today · sessions left this month</option>
+                    <option value="next_month" className="bg-[#142236]">1st of next month · £0 today</option>
                   </select>
                 </div>
               </div>

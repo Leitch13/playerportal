@@ -288,11 +288,11 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
   }
 
   const inputClass =
-    'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
+    'w-full bg-[#142236] border border-[#293b58] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-white/30'
 
   if (loading) {
     return (
-      <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6">
+      <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
         <div className="animate-pulse space-y-3">
           <div className="h-6 w-48 bg-white/10 rounded" />
           <div className="h-12 bg-white/5 rounded-xl" />
@@ -304,7 +304,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
   }
 
   return (
-    <div className="bg-[#141414] rounded-2xl border border-[#1e1e1e] p-6 space-y-5">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6 space-y-5">
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-primary text-white px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-2">
           {toast}
@@ -319,7 +319,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
       </div>
 
       {/* Class type tabs */}
-      <div className="border-b border-[#1e1e1e] -mx-6 px-6">
+      <div className="border-b border-[#1d2c42] -mx-6 px-6">
         <div className="flex gap-1 overflow-x-auto pb-px scrollbar-thin">
           {TAB_OPTIONS.map((tab) => {
             const count = tabCounts[tab.value] ?? 0
@@ -411,7 +411,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
               <div
                 key={cat.id || `new-${globalIdx}`}
                 className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                  cat.is_active ? 'border-[#1e1e1e] bg-[#1a1a1a]' : 'border-[#1e1e1e] bg-[#111] opacity-50'
+                  cat.is_active ? 'border-[#1d2c42] bg-[#142236]' : 'border-[#1d2c42] bg-[#0f1a2b] opacity-50'
                 }`}
               >
                 {/* Reorder arrows */}
@@ -456,7 +456,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
 
       {/* Add category form */}
       {showAdd ? (
-        <div className="border border-[#2a2a2a] rounded-xl p-4 space-y-3">
+        <div className="border border-[#293b58] rounded-xl p-4 space-y-3">
           <h3 className="text-sm font-semibold text-white">Add Category</h3>
           <div>
             <label className="text-xs font-medium text-white/70 block mb-1">Applies to *</label>
@@ -497,7 +497,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
             >
               Add
             </button>
-            <button onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-lg text-xs font-semibold border border-[#2a2a2a] text-white/60 hover:bg-[#1e1e1e] transition-colors">
+            <button onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-lg text-xs font-semibold border border-[#293b58] text-white/60 hover:bg-[#1d2c42] transition-colors">
               Cancel
             </button>
           </div>
@@ -513,7 +513,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
             }
             setShowAdd(true)
           }}
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-dashed border-[#2a2a2a] text-white/50 hover:text-white hover:border-white/20 transition-all w-full"
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-dashed border-[#293b58] text-white/50 hover:text-white hover:border-white/20 transition-all w-full"
         >
           + Add Category {activeTab !== '__all__' && `to ${TAB_OPTIONS.find((t) => t.value === activeTab)?.label}`}
         </button>

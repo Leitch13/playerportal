@@ -82,7 +82,7 @@ export default async function AnnouncementsPage() {
       ? Math.round((totalReads / (sentCount * (parentCount || 1))) * 100)
       : 0
     return (
-      <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+      <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
         {/* Hero */}
         <div className="flex items-start gap-3">
@@ -177,7 +177,7 @@ export default async function AnnouncementsPage() {
 
   // Parent view
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <div className="flex items-start gap-3">
         <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl shrink-0" aria-hidden>📢</span>

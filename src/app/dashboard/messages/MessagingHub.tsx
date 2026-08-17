@@ -476,7 +476,7 @@ export default function MessagingHub({
   /* ================================================================ */
 
   return (
-    <div className="bg-[#0a0a0a] -m-6 lg:-m-8 p-0 min-h-screen text-white" data-unread-count={totalUnread}>
+    <div className="bg-[#080e18] -m-6 lg:-m-8 p-0 min-h-screen text-white" data-unread-count={totalUnread}>
       <div className="h-screen flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 px-4 lg:px-6 py-4 border-b border-white/[0.06]">
@@ -511,7 +511,7 @@ export default function MessagingHub({
                   placeholder="Search conversations..."
                   value={searchFilter}
                   onChange={(e) => setSearchFilter(e.target.value)}
-                  className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg pl-9 pr-3 py-2 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors"
+                  className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg pl-9 pr-3 py-2 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors"
                 />
               </div>
             </div>
@@ -665,7 +665,7 @@ export default function MessagingHub({
                                   className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
                                     isOwn
                                       ? 'bg-[#4ecde6]/10 border border-[#4ecde6]/20 text-white'
-                                      : 'bg-[#1a1a1a] border border-[#2a2a2a] text-white/90'
+                                      : 'bg-[#142236] border border-[#293b58] text-white/90'
                                   }`}
                                 >
                                   {msg.content}
@@ -693,7 +693,7 @@ export default function MessagingHub({
                       onKeyDown={handleKeyDown}
                       placeholder="Type a message..."
                       rows={1}
-                      className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors resize-none"
+                      className="flex-1 bg-[#142236] border border-[#293b58] text-white rounded-lg px-4 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors resize-none"
                       style={{ maxHeight: 120 }}
                     />
                     <button
@@ -702,7 +702,7 @@ export default function MessagingHub({
                       className="flex-shrink-0 w-10 h-10 bg-[#4ecde6] text-[#0a0a0a] rounded-lg flex items-center justify-center hover:bg-[#3dbcd5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {sending ? (
-                        <div className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-[#080e18]/30 border-t-[#080e18] rounded-full animate-spin" />
                       ) : (
                         <IconSend />
                       )}
@@ -836,9 +836,9 @@ function NewConversationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#141414] border border-[#1e1e1e] rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl w-full max-w-md shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1e1e1e]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1d2c42]">
           <h2 className="text-base font-semibold text-white">New Conversation</h2>
           <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
             <IconClose />
@@ -850,7 +850,7 @@ function NewConversationModal({
           <div>
             <label className="text-xs font-medium text-white/50 mb-1.5 block">To</label>
             {selectedRecipient ? (
-              <div className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2">
+              <div className="flex items-center justify-between bg-[#142236] border border-[#293b58] rounded-lg px-3 py-2">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-[#4ecde6]/10 border border-[#4ecde6]/20 flex items-center justify-center text-[#4ecde6] text-xs font-semibold">
                     {selectedRecipient.full_name.charAt(0).toUpperCase()}
@@ -876,12 +876,12 @@ function NewConversationModal({
                     placeholder="Search by name or role..."
                     value={recipientSearch}
                     onChange={(e) => setRecipientSearch(e.target.value)}
-                    className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg pl-9 pr-3 py-2 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors"
+                    className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg pl-9 pr-3 py-2 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors"
                     autoFocus
                   />
                 </div>
                 {recipientSearch && (
-                  <div className="mt-1 max-h-40 overflow-y-auto bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
+                  <div className="mt-1 max-h-40 overflow-y-auto bg-[#142236] border border-[#293b58] rounded-lg">
                     {filteredRecipients.length === 0 ? (
                       <p className="text-xs text-white/30 px-3 py-2">No results</p>
                     ) : (
@@ -918,7 +918,7 @@ function NewConversationModal({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g. Training schedule question"
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors"
             />
           </div>
 
@@ -930,7 +930,7 @@ function NewConversationModal({
               onChange={(e) => setFirstMessage(e.target.value)}
               placeholder="Write your message..."
               rows={4}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors resize-none"
+              className="w-full bg-[#142236] border border-[#293b58] text-white rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/40 transition-colors resize-none"
             />
           </div>
 
@@ -941,7 +941,7 @@ function NewConversationModal({
             className="w-full py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-lg text-sm font-bold hover:bg-[#3dbcd5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {creating ? (
-              <div className="w-4 h-4 border-2 border-[#0a0a0a]/30 border-t-[#0a0a0a] rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-[#080e18]/30 border-t-[#080e18] rounded-full animate-spin" />
             ) : (
               <>
                 <IconSend />

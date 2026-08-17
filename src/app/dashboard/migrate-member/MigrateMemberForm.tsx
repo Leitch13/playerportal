@@ -114,7 +114,7 @@ export default function MigrateMemberForm({
   return (
     <div className="space-y-5">
       {/* Form card */}
-      <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-4 sm:p-6 space-y-5">
+      <div className="bg-[#0f1a2b] border border-white/[0.08] rounded-2xl p-4 sm:p-6 space-y-5">
         {/* Step 1 — Plan */}
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -249,7 +249,7 @@ export default function MigrateMemberForm({
 
       {/* Send actions — appears once we have a valid link */}
       {link && !tooFarOut && (
-        <div className="bg-[#141414] border border-white/[0.08] rounded-2xl p-4 sm:p-6 space-y-4">
+        <div className="bg-[#0f1a2b] border border-white/[0.08] rounded-2xl p-4 sm:p-6 space-y-4">
           <div>
             <p className={labelCls}>Shareable link</p>
             <div className="px-3 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs text-white/70 break-all font-mono">
