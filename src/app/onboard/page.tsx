@@ -25,59 +25,26 @@ interface PlatformPlan {
 
 const PLATFORM_PLANS: PlatformPlan[] = [
   {
-    slug: 'starter',
-    name: 'Starter',
-    monthlyPrice: 20,
+    slug: 'pro',
+    name: 'Player Portal',
+    monthlyPrice: 35,
     transactionFee: 3.5,
-    tagline: 'Go live in 10 minutes',
-    featureHeading: 'Core features',
+    recommended: true,
+    tagline: 'Everything included — no tiers, no gates',
+    featureHeading: 'Everything, one plan',
     features: [
-      'Unlimited players',
+      'Unlimited players, classes & coach accounts',
       'Booking page + parent signup',
       'Automated Stripe payments',
-      'Class scheduling + capacity caps',
       'Attendance (manual + QR)',
-      'Parent portal',
-      'Email notifications',
-      'CSV player import',
-    ],
-  },
-  {
-    slug: 'pro',
-    name: 'Pro',
-    monthlyPrice: 35,
-    transactionFee: 2.5,
-    recommended: true,
-    tagline: 'Retention & growth tools',
-    featureHeading: 'Everything in Starter, plus',
-    features: [
+      'Parent portal + messaging',
       'Progress reviews + custom scoring',
-      'Parent messaging',
-      'Photo gallery',
-      'Waitlists + win-back automation',
-      'Referral engine',
+      'Waitlists, referrals & win-back automation',
+      'Camps & events engine',
       'Full analytics + retention reports',
       'Session planner + drill library',
-      'Achievements & badges',
-      'Camps & events engine',
-      'Weekly parent digests',
-    ],
-  },
-  {
-    slug: 'enterprise',
-    name: 'Enterprise',
-    monthlyPrice: 60,
-    transactionFee: 2,
-    tagline: 'Branding, scale & priority support',
-    featureHeading: 'Everything in Pro, plus',
-    features: [
-      'White-label (custom domain + branding)',
-      'Merch shop',
-      'Unlimited coach accounts',
-      'API access',
-      'Audit log (compliance)',
-      'Priority support (1-hr response)',
-      'Dedicated onboarding call',
+      'White-label branding + merch shop',
+      'Free migration from any provider',
     ],
   },
 ]
@@ -605,12 +572,12 @@ export default function OnboardPage() {
           {step === 2 && (
             <div className="space-y-6">
               <div className="text-center">
-                <h2 className="text-2xl font-extrabold text-white mb-1">Pick your plan</h2>
-                <p className="text-white/50 text-sm">Lower transaction fees as you grow. 14 days free on every tier — no card needed.</p>
+                <h2 className="text-2xl font-extrabold text-white mb-1">One plan. Everything included.</h2>
+                <p className="text-white/50 text-sm">£35/month + 3.5% per transaction — you keep 96.5% of every payment. 14 days free — no card needed.</p>
               </div>
 
               {/* Plan Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 max-w-md mx-auto gap-4">
                 {PLATFORM_PLANS.map((plan) => {
                   const isSelected = selectedPlan === plan.slug
                   const isRecommended = plan.recommended

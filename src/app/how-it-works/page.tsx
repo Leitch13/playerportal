@@ -111,64 +111,29 @@ const parentFeatures = [
 
 const plans = [
   {
-    name: 'Starter',
-    price: '\u00a320',
+    name: 'Player Portal',
+    price: '\u00a335',
     period: '/mo',
-    fee: '3.5% transaction fee',
-    desc: 'Everything you need to run a small academy \u2014 go live in under 10 minutes.',
+    fee: '3.5% per transaction \u2014 all-in. You keep 96.5p of every pound; card processing included.',
+    desc: 'One plan. Everything included \u2014 no tiers, no feature gates, no player limits.',
     cta: 'Start Free Trial',
-    featured: false,
-    featureHeading: 'Core features',
+    featured: true,
+    featureHeading: 'Everything, one plan',
     features: [
-      'Unlimited players',
+      'Unlimited players, classes & coach accounts',
       'Booking page + parent signup',
       'Automated Stripe payments',
       'Class scheduling + capacity caps',
       'Attendance (manual + QR)',
-      'Parent portal',
-      'Email notifications',
-      'CSV player import',
-    ],
-  },
-  {
-    name: 'Pro',
-    price: '\u00a335',
-    period: '/mo',
-    fee: '2.5% transaction fee',
-    desc: 'The tools that lift retention, drive referrals and keep parents engaged.',
-    cta: 'Start Free Trial',
-    featured: true,
-    featureHeading: 'Everything in Starter, plus',
-    features: [
+      'Parent portal + messaging',
       'Progress reviews + custom scoring',
-      'Parent messaging',
-      'Photo gallery',
-      'Waitlists + win-back automation',
-      'Referral engine',
+      'Waitlists, referrals & win-back automation',
       'Full analytics + retention reports',
       'Session planner + drill library',
-      'Achievements & badges',
       'Camps & events engine',
-      'Weekly parent digest emails',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    price: '\u00a360',
-    period: '/mo',
-    fee: '2% transaction fee',
-    desc: 'White-label branding, unlimited staff and priority support for scaling academies.',
-    cta: 'Start Free Trial',
-    featured: false,
-    featureHeading: 'Everything in Pro, plus',
-    features: [
       'White-label (custom domain + branding)',
-      'Merch shop',
-      'Unlimited coach accounts',
-      'API access',
-      'Audit log (compliance)',
-      'Priority support (1-hr response)',
-      'Dedicated onboarding call',
+      'Merch shop + API access',
+      'Priority support + free migration',
     ],
   },
 ]
@@ -480,7 +445,7 @@ export default function HowItWorksPage() {
           <p className="text-sm text-white/40 mt-4 max-w-xl mx-auto text-center">
             Pay less per transaction as you grow. Upgrade or downgrade anytime.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start mt-10">
+          <div className="grid grid-cols-1 gap-6 max-w-xl mx-auto items-start mt-10">
             {plans.map((plan) => (
               <div
                 key={plan.name}
