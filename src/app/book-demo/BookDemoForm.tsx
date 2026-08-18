@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { fbTrack } from '@/lib/meta-pixel'
 
 /**
  * Marketing-site "Book a demo / Talk to us" form. Posts to
@@ -25,6 +26,7 @@ export default function BookDemoForm() {
         body: JSON.stringify(form),
       })
       setStatus(res.ok ? 'sent' : 'error')
+      if (res.ok) fbTrack('Lead', { content_name: 'book_demo' })
     } catch {
       setStatus('error')
     }

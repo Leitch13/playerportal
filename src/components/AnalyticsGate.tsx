@@ -22,6 +22,7 @@
 // on the first paint, then swaps to real content once state settles.
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import Script from 'next/script'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/next'
@@ -34,6 +35,7 @@ import {
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID
+const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID
 
 export default function AnalyticsGate() {
   // `mounted` guards against SSR/hydration mismatches — the first render
@@ -65,8 +67,33 @@ export default function AnalyticsGate() {
           })(window, document, "clarity", "script", "${CLARITY_ID}");`}
         </Script>
       )}
+      {META_PIXEL_ID && (
+        <Script id="meta-pixel" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '${META_PIXEL_ID}');
+          fbq('track', 'PageView');`}
+        </Script>
+      )}
+      {META_PIXEL_ID && <MetaPixelRouteTracker />}
       <VercelAnalytics />
       <SpeedInsights />
     </>
   )
+}
+
+// SPA navigations don't reload the page, so the base snippet's PageView only
+// fires once. This tracks subsequent route changes as PageViews too.
+function MetaPixelRouteTracker() {
+  const pathname = usePathname()
+  useEffect(() => {
+    if (typeof window.fbq === 'function') window.fbq('track', 'PageView')
+  }, [pathname])
+  return null
 }

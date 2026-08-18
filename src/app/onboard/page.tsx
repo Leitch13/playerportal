@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import FileUpload from '@/components/FileUpload'
+import { fbTrack } from '@/lib/meta-pixel'
 
 const STEPS = [
   { label: 'Academy Details', icon: '1' },
@@ -292,6 +293,7 @@ export default function OnboardPage() {
         return
       }
 
+      fbTrack('CompleteRegistration', { content_name: 'academy_onboard' })
       // 2. Create the admin user account via the API (server-side, no client session issues)
       const signupRes = await fetch('/api/onboard/signup', {
         method: 'POST',
