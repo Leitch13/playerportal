@@ -71,7 +71,7 @@ export default async function SessionNotesPage({
           <a
             href="/dashboard/session-notes"
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              !params.group ? 'bg-primary text-white' : 'bg-surface-dark text-text-light hover:bg-border'
+              !params.group ? 'bg-primary text-white' : 'bg-[#142236] text-[#93a2ba] hover:bg-border'
             }`}
           >
             All Groups
@@ -81,7 +81,7 @@ export default async function SessionNotesPage({
               key={g.id}
               href={`/dashboard/session-notes?group=${g.id}`}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                params.group === g.id ? 'bg-primary text-white' : 'bg-surface-dark text-text-light hover:bg-border'
+                params.group === g.id ? 'bg-primary text-white' : 'bg-[#142236] text-[#93a2ba] hover:bg-border'
               }`}
             >
               {g.name}
@@ -105,10 +105,10 @@ export default async function SessionNotesPage({
                       <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary">
                         {(note.group as unknown as { name: string })?.name}
                       </span>
-                      <span className="text-xs text-text-light">
+                      <span className="text-xs text-[#93a2ba]">
                         {new Date(note.session_date).toLocaleDateString()}
                       </span>
-                      <span className="text-xs text-text-light">
+                      <span className="text-xs text-[#93a2ba]">
                         by {(note.coach as unknown as { full_name: string })?.full_name}
                       </span>
                     </div>
@@ -120,14 +120,14 @@ export default async function SessionNotesPage({
                 {note.focus_areas && (
                   <div className="text-sm">
                     <span className="font-medium text-accent">Focus Areas:</span>{' '}
-                    <span className="text-text-light">{note.focus_areas}</span>
+                    <span className="text-[#93a2ba]">{note.focus_areas}</span>
                   </div>
                 )}
 
                 {note.players_of_note && (
                   <div className="text-sm">
                     <span className="font-medium text-primary">Players of Note:</span>{' '}
-                    <span className="text-text-light">{note.players_of_note}</span>
+                    <span className="text-[#93a2ba]">{note.players_of_note}</span>
                   </div>
                 )}
               </div>

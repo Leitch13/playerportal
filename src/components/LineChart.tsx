@@ -20,7 +20,7 @@ export default function LineChart({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   if (data.length < 2) {
-    return <p className="text-sm text-text-light">Not enough data yet.</p>
+    return <p className="text-sm text-[#93a2ba]">Not enough data yet.</p>
   }
 
   const maxValue = Math.max(...data.map((d) => d.value), 1)
@@ -140,7 +140,7 @@ export default function LineChart({
               y={chartHeight - 8}
               textAnchor="middle"
               fill="currentColor"
-              className="text-text-light"
+              className="text-[#93a2ba]"
               fontSize={11}
             >
               {p.label}

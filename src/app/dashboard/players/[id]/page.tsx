@@ -830,7 +830,7 @@ export default async function PlayerDetailPage({
                   className="flex flex-col items-center text-center p-3 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:border-accent/30 transition-colors"
                 >
                   <span className="text-3xl mb-1">{achievement.emoji}</span>
-                  <span className="text-xs font-medium text-text">{achievement.name}</span>
+                  <span className="text-xs font-medium text-[#eef2f9]">{achievement.name}</span>
                   <span className="text-[10px] text-white/60 mt-0.5">
                     {new Date(ach.awarded_at).toLocaleDateString()}
                   </span>

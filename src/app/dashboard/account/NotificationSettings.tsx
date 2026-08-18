@@ -37,7 +37,7 @@ export default function NotificationSettings({
           onClick={toggle}
           disabled={saving}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            enabled ? 'bg-accent' : 'bg-surface-dark'
+            enabled ? 'bg-accent' : 'bg-[#142236]'
           }`}
         >
           <span
@@ -46,7 +46,7 @@ export default function NotificationSettings({
             }`}
           />
         </button>
-        <span className="text-sm text-text-light">
+        <span className="text-sm text-[#93a2ba]">
           {enabled ? 'Receive email alerts for payments, messages & reviews' : 'Email notifications disabled'}
         </span>
       </div>

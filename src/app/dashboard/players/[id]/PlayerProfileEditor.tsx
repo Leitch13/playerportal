@@ -75,14 +75,14 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
   if (!editing) {
     return (
       <div className="space-y-2 text-sm">
-        {player.date_of_birth && <p><span className="text-text-light">DOB:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
-        {player.age_group && <p><span className="text-text-light">Age Group:</span> {player.age_group}</p>}
-        {player.position && <p><span className="text-text-light">Position:</span> {player.position}</p>}
-        {player.school && <p><span className="text-text-light">School:</span> {player.school}</p>}
-        {player.kit_size && <p><span className="text-text-light">Kit Size:</span> {player.kit_size}</p>}
-        {player.medical_info && <p><span className="text-text-light">Medical:</span> <span className="text-danger">{player.medical_info}</span></p>}
-        {player.emergency_contact_name && <p><span className="text-text-light">Emergency:</span> {player.emergency_contact_name} {player.emergency_contact_phone && `— ${player.emergency_contact_phone}`}</p>}
-        {player.notes && <p><span className="text-text-light">Notes:</span> {player.notes}</p>}
+        {player.date_of_birth && <p><span className="text-[#93a2ba]">DOB:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
+        {player.age_group && <p><span className="text-[#93a2ba]">Age Group:</span> {player.age_group}</p>}
+        {player.position && <p><span className="text-[#93a2ba]">Position:</span> {player.position}</p>}
+        {player.school && <p><span className="text-[#93a2ba]">School:</span> {player.school}</p>}
+        {player.kit_size && <p><span className="text-[#93a2ba]">Kit Size:</span> {player.kit_size}</p>}
+        {player.medical_info && <p><span className="text-[#93a2ba]">Medical:</span> <span className="text-danger">{player.medical_info}</span></p>}
+        {player.emergency_contact_name && <p><span className="text-[#93a2ba]">Emergency:</span> {player.emergency_contact_name} {player.emergency_contact_phone && `— ${player.emergency_contact_phone}`}</p>}
+        {player.notes && <p><span className="text-[#93a2ba]">Notes:</span> {player.notes}</p>}
         <div className="pt-2 flex items-center gap-2">
           <button onClick={() => setEditing(true)} className="text-sm text-primary hover:underline">Edit Profile</button>
           {success && <span className="text-sm text-accent">{success}</span>}
@@ -91,7 +91,7 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
     )
   }
 
-  const inputClass = 'w-full px-3 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary'
+  const inputClass = 'w-full px-3 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary'
 
   return (
     <div className="space-y-3">
@@ -126,51 +126,51 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-text-light mb-0.5">DOB</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">DOB</label>
           <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Age Group</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Age Group</label>
           <input type="text" value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} placeholder="e.g. U10" className={inputClass} />
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Position</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Position</label>
           <select value={position} onChange={(e) => setPosition(e.target.value)} className={inputClass}>
             <option value="">Select...</option>
             {POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Kit Size</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Kit Size</label>
           <select value={kitSize} onChange={(e) => setKitSize(e.target.value)} className={inputClass}>
             <option value="">Select...</option>
             {KIT_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">School</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">School</label>
           <input type="text" value={school} onChange={(e) => setSchool(e.target.value)} className={inputClass} />
         </div>
       </div>
 
       <div>
-        <label className="block text-xs text-text-light mb-0.5">Medical Info</label>
+        <label className="block text-xs text-[#93a2ba] mb-0.5">Medical Info</label>
         <textarea value={medicalInfo} onChange={(e) => setMedicalInfo(e.target.value)} rows={2} placeholder="Allergies, conditions, etc." className={inputClass} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Emergency Contact Name</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Emergency Contact Name</label>
           <input type="text" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Emergency Contact Phone</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Emergency Contact Phone</label>
           <input type="tel" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} className={inputClass} />
         </div>
       </div>
 
       <div>
-        <label className="block text-xs text-text-light mb-0.5">Notes</label>
+        <label className="block text-xs text-[#93a2ba] mb-0.5">Notes</label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} />
       </div>
 
@@ -178,7 +178,7 @@ export default function PlayerProfileEditor({ player }: { player: PlayerData }) 
         <button onClick={handleSave} disabled={saving} className="px-4 py-1.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors">
           {saving ? 'Saving...' : 'Save'}
         </button>
-        <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors">
+        <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors">
           Cancel
         </button>
       </div>

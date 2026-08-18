@@ -27,7 +27,7 @@ export default function PlayerTimeline({ items }: PlayerTimelineProps) {
           <div
             key={`${item.type}-${item.date}-${i}`}
             className={`relative flex items-start gap-4 py-3 px-3 rounded-lg ${
-              i % 2 === 0 ? 'bg-surface-dark/50' : ''
+              i % 2 === 0 ? 'bg-[#142236]/50' : ''
             }`}
           >
             {/* Icon circle */}
@@ -41,15 +41,15 @@ export default function PlayerTimeline({ items }: PlayerTimelineProps) {
             {/* Content */}
             <div className="flex-1 min-w-0 pt-1">
               <div className="flex items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-text truncate">
+                <p className="text-sm font-medium text-[#eef2f9] truncate">
                   {item.title}
                 </p>
-                <time className="text-xs text-text-light flex-shrink-0">
+                <time className="text-xs text-[#93a2ba] flex-shrink-0">
                   {new Date(item.date).toLocaleDateString()}
                 </time>
               </div>
               {item.subtitle && (
-                <p className="text-xs text-text-light mt-0.5 line-clamp-2">
+                <p className="text-xs text-[#93a2ba] mt-0.5 line-clamp-2">
                   {item.subtitle}
                 </p>
               )}

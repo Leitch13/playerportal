@@ -53,10 +53,10 @@ export default function WaiverManager({ orgId }: { orgId: string }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-white rounded-xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Create Waiver</h2>
-        <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">Close</button>
+        <button onClick={() => setOpen(false)} className="text-[#93a2ba] hover:text-[#eef2f9] text-sm">Close</button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -67,7 +67,7 @@ export default function WaiverManager({ orgId }: { orgId: string }) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Photo Consent Form"
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -78,9 +78,9 @@ export default function WaiverManager({ orgId }: { orgId: string }) {
             placeholder="Enter the full waiver / consent text here..."
             required
             rows={8}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
           />
-          <p className="text-xs text-text-light mt-0.5">Supports plain text. Parents will read this before signing.</p>
+          <p className="text-xs text-[#93a2ba] mt-0.5">Supports plain text. Parents will read this before signing.</p>
         </div>
         <div>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -88,7 +88,7 @@ export default function WaiverManager({ orgId }: { orgId: string }) {
               type="checkbox"
               checked={required}
               onChange={(e) => setRequired(e.target.checked)}
-              className="rounded border-border text-primary focus:ring-primary/20"
+              className="rounded border-[#1d2c42] text-primary focus:ring-primary/20"
             />
             Required (parents must sign)
           </label>
@@ -107,7 +107,7 @@ export default function WaiverManager({ orgId }: { orgId: string }) {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
           >
             Cancel
           </button>

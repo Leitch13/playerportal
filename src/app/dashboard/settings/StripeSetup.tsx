@@ -63,8 +63,8 @@ export default function StripeSetup() {
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-6 bg-surface rounded w-48" />
-        <div className="h-32 bg-surface rounded-xl" />
+        <div className="h-6 bg-[#0f1a2b] rounded w-48" />
+        <div className="h-32 bg-[#0f1a2b] rounded-xl" />
       </div>
     )
   }
@@ -72,7 +72,7 @@ export default function StripeSetup() {
   return (
     <div className="space-y-6">
       {/* Stripe Connect Status */}
-      <div className="bg-white rounded-2xl border border-border p-6 space-y-4">
+      <div className="bg-white rounded-2xl border border-[#1d2c42] p-6 space-y-4">
         <h3 className="font-bold text-lg">Stripe Connect</h3>
 
         {connectStatus?.connected ? (
@@ -81,7 +81,7 @@ export default function StripeSetup() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <span className="text-sm font-medium text-emerald-700">Connected</span>
               {connectStatus.business_name && (
-                <span className="text-sm text-text-light">
+                <span className="text-sm text-[#93a2ba]">
                   — {connectStatus.business_name}
                 </span>
               )}
@@ -120,9 +120,9 @@ export default function StripeSetup() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
-              <span className="text-sm font-medium text-text-light">Not connected</span>
+              <span className="text-sm font-medium text-[#93a2ba]">Not connected</span>
             </div>
-            <p className="text-sm text-text-light">
+            <p className="text-sm text-[#93a2ba]">
               Connect your Stripe account to start accepting payments from parents.
             </p>
             <button
@@ -144,9 +144,9 @@ export default function StripeSetup() {
 
       {/* Connected account — manage on Stripe */}
       {connectStatus?.connected && (
-        <div className="bg-white rounded-2xl border border-border p-6 space-y-3">
+        <div className="bg-white rounded-2xl border border-[#1d2c42] p-6 space-y-3">
           <h3 className="font-bold text-lg">Your Stripe Account</h3>
-          <p className="text-sm text-text-light">
+          <p className="text-sm text-[#93a2ba]">
             Manage your business details, bank account, and payouts directly in your Stripe dashboard.
           </p>
           <button

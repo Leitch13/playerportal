@@ -184,31 +184,31 @@ export default async function ReportsPage() {
         <Card>
           <div className="text-center">
             <div className="text-2xl font-bold text-primary">{(players || []).length}</div>
-            <div className="text-xs text-text-light">Total Players</div>
+            <div className="text-xs text-[#93a2ba]">Total Players</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">&pound;{totalCollected.toFixed(0)}</div>
-            <div className="text-xs text-text-light">Collected</div>
+            <div className="text-xs text-[#93a2ba]">Collected</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
             <div className={`text-2xl font-bold ${totalOutstanding > 0 ? 'text-warning' : 'text-accent'}`}>&pound;{totalOutstanding.toFixed(0)}</div>
-            <div className="text-xs text-text-light">Outstanding</div>
+            <div className="text-xs text-[#93a2ba]">Outstanding</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
             <div className={`text-2xl font-bold ${overdueAmount > 0 ? 'text-danger' : 'text-accent'}`}>&pound;{overdueAmount.toFixed(0)}</div>
-            <div className="text-xs text-text-light">Overdue</div>
+            <div className="text-xs text-[#93a2ba]">Overdue</div>
           </div>
         </Card>
         <Card>
           <div className="text-center">
             <div className="text-2xl font-bold text-accent">&pound;{monthlyRecurring.toFixed(0)}</div>
-            <div className="text-xs text-text-light">Monthly Recurring</div>
+            <div className="text-xs text-[#93a2ba]">Monthly Recurring</div>
           </div>
         </Card>
       </div>
@@ -231,12 +231,12 @@ export default async function ReportsPage() {
         {/* Attendance Report */}
         <Card title="Attendance by Player">
           {playerAttendance.length === 0 ? (
-            <p className="text-sm text-text-light">No attendance data yet.</p>
+            <p className="text-sm text-[#93a2ba]">No attendance data yet.</p>
           ) : (
             <div className="overflow-x-auto max-h-80 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-surface-dark">
-                  <tr className="border-b border-border">
+                <thead className="sticky top-0 bg-white dark:bg-[#142236]">
+                  <tr className="border-b border-[#1d2c42]">
                     <th className="text-left py-1.5 font-medium">Player</th>
                     <th className="text-center py-1.5 font-medium">Sessions</th>
                     <th className="text-center py-1.5 font-medium">Present</th>
@@ -245,13 +245,13 @@ export default async function ReportsPage() {
                 </thead>
                 <tbody>
                   {playerAttendance.map((p) => (
-                    <tr key={p.id} className="border-b border-border last:border-0">
+                    <tr key={p.id} className="border-b border-[#1d2c42] last:border-0">
                       <td className="py-1.5">{p.first_name} {p.last_name}</td>
                       <td className="py-1.5 text-center">{p.total}</td>
                       <td className="py-1.5 text-center">{p.present}</td>
                       <td className="py-1.5 text-center">
                         <div className="flex items-center gap-2 justify-center">
-                          <div className="w-12 bg-surface-dark rounded-full h-1.5">
+                          <div className="w-12 bg-[#142236] rounded-full h-1.5">
                             <div
                               className={`h-1.5 rounded-full ${p.rate >= 80 ? 'bg-accent' : p.rate >= 50 ? 'bg-warning' : 'bg-danger'}`}
                               style={{ width: `${p.rate}%` }}
@@ -273,12 +273,12 @@ export default async function ReportsPage() {
         {/* Payment Report by Parent */}
         <Card title="Payments by Family">
           {parentPayments.length === 0 ? (
-            <p className="text-sm text-text-light">No payment data yet.</p>
+            <p className="text-sm text-[#93a2ba]">No payment data yet.</p>
           ) : (
             <div className="overflow-x-auto max-h-80 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-surface-dark">
-                  <tr className="border-b border-border">
+                <thead className="sticky top-0 bg-white dark:bg-[#142236]">
+                  <tr className="border-b border-[#1d2c42]">
                     <th className="text-left py-1.5 font-medium">Parent</th>
                     <th className="text-right py-1.5 font-medium">Due</th>
                     <th className="text-right py-1.5 font-medium">Paid</th>
@@ -287,7 +287,7 @@ export default async function ReportsPage() {
                 </thead>
                 <tbody>
                   {parentPayments.map((p) => (
-                    <tr key={p.id} className={`border-b border-border last:border-0 ${p.hasOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
+                    <tr key={p.id} className={`border-b border-[#1d2c42] last:border-0 ${p.hasOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''}`}>
                       <td className="py-1.5">
                         {p.full_name}
                         {p.hasOverdue && <span className="text-xs text-danger ml-1">OVERDUE</span>}
@@ -310,14 +310,14 @@ export default async function ReportsPage() {
         {/* Group Sizes */}
         <Card title="Group Sizes">
           {groupStats.length === 0 ? (
-            <p className="text-sm text-text-light">No groups yet.</p>
+            <p className="text-sm text-[#93a2ba]">No groups yet.</p>
           ) : (
             <div className="space-y-2">
               {groupStats.map((g) => (
                 <div key={g.id} className="flex items-center justify-between">
                   <span className="text-sm font-medium">{g.name}</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-32 bg-surface-dark rounded-full h-2">
+                    <div className="w-32 bg-[#142236] rounded-full h-2">
                       <div
                         className="h-2 rounded-full bg-primary transition-all"
                         style={{ width: `${Math.min(100, (g.count / Math.max(...groupStats.map((gs) => gs.count), 1)) * 100)}%` }}
@@ -334,12 +334,12 @@ export default async function ReportsPage() {
         {/* Player Scores */}
         <Card title="Player Scores (Latest Review)">
           {playerScores.length === 0 ? (
-            <p className="text-sm text-text-light">No reviews yet.</p>
+            <p className="text-sm text-[#93a2ba]">No reviews yet.</p>
           ) : (
             <div className="overflow-x-auto max-h-80 overflow-y-auto">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-surface-dark">
-                  <tr className="border-b border-border">
+                <thead className="sticky top-0 bg-white dark:bg-[#142236]">
+                  <tr className="border-b border-[#1d2c42]">
                     <th className="text-left py-1.5 font-medium">Player</th>
                     <th className="text-center py-1.5 font-medium">Avg Score</th>
                     <th className="text-center py-1.5 font-medium">Reviews</th>
@@ -347,14 +347,14 @@ export default async function ReportsPage() {
                 </thead>
                 <tbody>
                   {playerScores.map((p, i) => (
-                    <tr key={i} className="border-b border-border last:border-0">
+                    <tr key={i} className="border-b border-[#1d2c42] last:border-0">
                       <td className="py-1.5">{p.first_name} {p.last_name}</td>
                       <td className="py-1.5 text-center">
                         <span className={`font-bold ${p.avg >= 4 ? 'text-accent' : p.avg >= 3 ? 'text-primary' : 'text-warning'}`}>
                           {p.avg}
                         </span>
                       </td>
-                      <td className="py-1.5 text-center text-text-light">{p.reviewCount}</td>
+                      <td className="py-1.5 text-center text-[#93a2ba]">{p.reviewCount}</td>
                     </tr>
                   ))}
                 </tbody>

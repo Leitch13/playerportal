@@ -288,14 +288,14 @@ export default function CommandPalette({ role }: { role: UserRole }) {
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-lg mx-4 bg-white dark:bg-surface-dark rounded-xl shadow-2xl border border-border overflow-hidden"
+        className="relative w-full max-w-lg mx-4 bg-white dark:bg-[#142236] rounded-xl shadow-2xl border border-[#1d2c42] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1d2c42]">
           <svg
-            className="w-5 h-5 text-text-light shrink-0"
+            className="w-5 h-5 text-[#93a2ba] shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -313,9 +313,9 @@ export default function CommandPalette({ role }: { role: UserRole }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search pages, players, parents, groups..."
-            className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-light"
+            className="flex-1 bg-transparent text-sm text-[#eef2f9] outline-none placeholder:text-[#93a2ba]"
           />
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-text-light bg-surface dark:bg-primary/10 rounded border border-border">
+          <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-[#93a2ba] bg-[#0f1a2b] dark:bg-primary/10 rounded border border-[#1d2c42]">
             ESC
           </kbd>
         </div>
@@ -323,20 +323,20 @@ export default function CommandPalette({ role }: { role: UserRole }) {
         {/* Results */}
         <div ref={listRef} className="max-h-[360px] overflow-y-auto py-2">
           {results.length === 0 && query.trim() && (
-            <p className="px-4 py-8 text-sm text-text-light text-center">
+            <p className="px-4 py-8 text-sm text-[#93a2ba] text-center">
               No results found.
             </p>
           )}
 
           {results.length === 0 && !query.trim() && (
-            <p className="px-4 py-8 text-sm text-text-light text-center">
+            <p className="px-4 py-8 text-sm text-[#93a2ba] text-center">
               Start typing to search...
             </p>
           )}
 
           {Array.from(grouped.entries()).map(([category, items]) => (
             <div key={category}>
-              <div className="px-4 py-1.5 text-[11px] font-semibold text-text-light uppercase tracking-wider">
+              <div className="px-4 py-1.5 text-[11px] font-semibold text-[#93a2ba] uppercase tracking-wider">
                 {category}
               </div>
               {items.map((result) => {
@@ -352,16 +352,16 @@ export default function CommandPalette({ role }: { role: UserRole }) {
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                       isActive
                         ? 'bg-accent/10 text-accent'
-                        : 'text-text hover:bg-accent/5'
+                        : 'text-[#eef2f9] hover:bg-accent/5'
                     }`}
                   >
                     <span className="text-lg shrink-0">{result.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{result.name}</div>
-                      <div className="text-xs text-text-light truncate">{result.subtitle}</div>
+                      <div className="text-xs text-[#93a2ba] truncate">{result.subtitle}</div>
                     </div>
                     {isActive && (
-                      <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-text-light bg-surface dark:bg-primary/10 rounded border border-border">
+                      <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium text-[#93a2ba] bg-[#0f1a2b] dark:bg-primary/10 rounded border border-[#1d2c42]">
                         Enter
                       </kbd>
                     )}
@@ -373,19 +373,19 @@ export default function CommandPalette({ role }: { role: UserRole }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-border text-[11px] text-text-light">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-[#1d2c42] text-[11px] text-[#93a2ba]">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-surface dark:bg-primary/10 rounded border border-border text-[10px]">↑↓</kbd>
+              <kbd className="px-1 py-0.5 bg-[#0f1a2b] dark:bg-primary/10 rounded border border-[#1d2c42] text-[10px]">↑↓</kbd>
               Navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-surface dark:bg-primary/10 rounded border border-border text-[10px]">↵</kbd>
+              <kbd className="px-1 py-0.5 bg-[#0f1a2b] dark:bg-primary/10 rounded border border-[#1d2c42] text-[10px]">↵</kbd>
               Select
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-surface dark:bg-primary/10 rounded border border-border text-[10px]">Esc</kbd>
+            <kbd className="px-1 py-0.5 bg-[#0f1a2b] dark:bg-primary/10 rounded border border-[#1d2c42] text-[10px]">Esc</kbd>
             Close
           </span>
         </div>

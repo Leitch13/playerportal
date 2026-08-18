@@ -57,37 +57,37 @@ export default function ParentProfileEditor({ parent }: { parent: ParentData }) 
     )
   }
 
-  const inputClass = 'w-full px-3 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary'
+  const inputClass = 'w-full px-3 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary'
 
   return (
-    <div className="border-t border-border pt-3 space-y-3">
+    <div className="border-t border-[#1d2c42] pt-3 space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Phone</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Phone</label>
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Address</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Address</label>
           <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Alt Contact Name</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Alt Contact Name</label>
           <input type="text" value={secondaryName} onChange={(e) => setSecondaryName(e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-xs text-text-light mb-0.5">Alt Contact Phone</label>
+          <label className="block text-xs text-[#93a2ba] mb-0.5">Alt Contact Phone</label>
           <input type="tel" value={secondaryPhone} onChange={(e) => setSecondaryPhone(e.target.value)} className={inputClass} />
         </div>
       </div>
       <div>
-        <label className="block text-xs text-text-light mb-0.5">Notes</label>
+        <label className="block text-xs text-[#93a2ba] mb-0.5">Notes</label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} />
       </div>
       <div className="flex gap-2">
         <button onClick={handleSave} disabled={saving} className="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark disabled:opacity-50">
           {saving ? 'Saving...' : 'Save'}
         </button>
-        <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-surface-dark">
+        <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-[#1d2c42] rounded-lg text-xs font-medium hover:bg-[#142236]">
           Cancel
         </button>
       </div>

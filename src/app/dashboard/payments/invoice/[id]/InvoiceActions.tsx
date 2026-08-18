@@ -49,7 +49,7 @@ export default function InvoiceActions({ paymentId }: { paymentId: string }) {
       <button
         onClick={handleEmailReceipt}
         disabled={emailing || emailSent}
-        className="inline-flex items-center gap-2 px-5 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -64,7 +64,7 @@ export default function InvoiceActions({ paymentId }: { paymentId: string }) {
 
       <Link
         href="/dashboard/payments"
-        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-text-light hover:text-text transition-colors"
+        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#93a2ba] hover:text-[#eef2f9] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

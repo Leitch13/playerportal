@@ -146,7 +146,7 @@ export default function UpsellCard({ type, className = '', childName, planName, 
         {/* Dismiss */}
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 rounded-full flex items-center justify-center text-text-light/40 hover:text-text-light hover:bg-black/5 transition-colors hover-only-btn-corner"
+          className="absolute top-2 right-2 rounded-full flex items-center justify-center text-[#93a2ba]/40 hover:text-[#93a2ba] hover:bg-black/5 transition-colors hover-only-btn-corner"
           aria-label="Dismiss"
         >
           <svg width="12" height="12" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -162,8 +162,8 @@ export default function UpsellCard({ type, className = '', childName, planName, 
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-semibold text-text">{title}</h4>
-            <p className="text-[11px] text-text-light mt-0.5">{description}</p>
+            <h4 className="text-sm font-semibold text-[#eef2f9]">{title}</h4>
+            <p className="text-[11px] text-[#93a2ba] mt-0.5">{description}</p>
             <Link
               href={href}
               className={`inline-flex items-center gap-1 text-xs font-semibold mt-2 ${config.ctaColor} transition-colors`}

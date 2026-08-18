@@ -42,7 +42,7 @@ export default function GrowthChart({
 
             return (
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                <span className={`text-[10px] font-bold ${isLatest ? `text-${color}` : 'text-text-light'}`}>
+                <span className={`text-[10px] font-bold ${isLatest ? `text-${color}` : 'text-[#93a2ba]'}`}>
                   {point.value}
                 </span>
                 <div
@@ -54,7 +54,7 @@ export default function GrowthChart({
                     backgroundColor: isLatest ? '#4ecde6' : 'rgba(78,205,230,0.3)',
                   }}
                 />
-                <span className="text-[9px] text-text-light whitespace-nowrap">{point.label}</span>
+                <span className="text-[9px] text-[#93a2ba] whitespace-nowrap">{point.label}</span>
               </div>
             )
           })}

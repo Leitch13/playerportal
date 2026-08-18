@@ -20,7 +20,7 @@ export default function BarChart({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   if (data.length === 0) {
-    return <p className="text-sm text-text-light">No data available.</p>
+    return <p className="text-sm text-[#93a2ba]">No data available.</p>
   }
 
   const maxValue = Math.max(...data.map((d) => d.value), 1)
@@ -145,7 +145,7 @@ export default function BarChart({
                 y={chartHeight - 8}
                 textAnchor="middle"
                 fill="currentColor"
-                className="text-text-light"
+                className="text-[#93a2ba]"
                 fontSize={11}
               >
                 {d.label}

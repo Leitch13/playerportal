@@ -98,7 +98,7 @@ export default function ParentProgressV2({
       ) : (
         <>
           {/* ── Latest report — premium hero in a white report card ── */}
-          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="bg-white rounded-2xl border border-[#1d2c42] overflow-hidden">
             <ReportPremiumTop
               firstName={selected.hero.firstName}
               verdict={selected.hero.verdict}

@@ -76,7 +76,7 @@ export default function ProfileEditor({
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div>
@@ -86,7 +86,7 @@ export default function ProfileEditor({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="07xxx xxx xxx"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
       </div>
@@ -98,11 +98,11 @@ export default function ProfileEditor({
           onChange={(e) => setAddress(e.target.value)}
           rows={2}
           placeholder="Full address"
-          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+          className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
         />
       </div>
 
-      <div className="border-t border-border pt-4">
+      <div className="border-t border-[#1d2c42] pt-4">
         <h3 className="text-sm font-semibold mb-3">Emergency / Secondary Contact</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -114,7 +114,7 @@ export default function ProfileEditor({
               value={secondaryName}
               onChange={(e) => setSecondaryName(e.target.value)}
               placeholder="e.g. Partner, Grandparent"
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+              className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
             />
           </div>
           <div>
@@ -126,7 +126,7 @@ export default function ProfileEditor({
               value={secondaryPhone}
               onChange={(e) => setSecondaryPhone(e.target.value)}
               placeholder="07xxx xxx xxx"
-              className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+              className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
             />
           </div>
         </div>

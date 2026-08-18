@@ -75,10 +75,10 @@ export default function AwardAchievementForm({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-white rounded-xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Award Achievement</h2>
-        <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">Close</button>
+        <button onClick={() => setOpen(false)} className="text-[#93a2ba] hover:text-[#eef2f9] text-sm">Close</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -87,7 +87,7 @@ export default function AwardAchievementForm({
             value={achievementId}
             onChange={(e) => setAchievementId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select achievement...</option>
             {achievements.map((a) => (
@@ -103,7 +103,7 @@ export default function AwardAchievementForm({
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select player...</option>
             {players.map((p) => (
@@ -120,7 +120,7 @@ export default function AwardAchievementForm({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Great performance in finals"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
 
@@ -137,7 +137,7 @@ export default function AwardAchievementForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
           >
             Cancel
           </button>

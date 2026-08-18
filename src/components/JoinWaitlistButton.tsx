@@ -88,7 +88,7 @@ export default function JoinWaitlistButton({
         <button
           onClick={handleCancel}
           disabled={loading}
-          className="text-xs text-text-light hover:text-red-500 transition-colors"
+          className="text-xs text-[#93a2ba] hover:text-red-500 transition-colors"
         >
           {loading ? '...' : 'Cancel'}
         </button>

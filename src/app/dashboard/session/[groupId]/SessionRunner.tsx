@@ -227,7 +227,7 @@ export default function SessionRunner({
         <div className="text-center py-12 space-y-4">
           <div className="text-5xl">&#127881;</div>
           <h2 className="text-2xl font-bold text-primary">Session Complete!</h2>
-          <p className="text-text-light">
+          <p className="text-[#93a2ba]">
             Attendance, notes, and reviews have been saved for{' '}
             <span className="font-medium">{groupName}</span>.
           </p>
@@ -240,7 +240,7 @@ export default function SessionRunner({
             </a>
             <a
               href="/dashboard/session-notes"
-              className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+              className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
             >
               View Session Notes
             </a>
@@ -253,7 +253,7 @@ export default function SessionRunner({
   return (
     <div className="space-y-4 pb-28">
       {/* Tab navigation */}
-      <div className="flex gap-1 bg-surface rounded-lg p-1">
+      <div className="flex gap-1 bg-[#0f1a2b] rounded-lg p-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -261,7 +261,7 @@ export default function SessionRunner({
             className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-white text-primary shadow-sm'
-                : 'text-text-light hover:text-text'
+                : 'text-[#93a2ba] hover:text-[#eef2f9]'
             }`}
           >
             {tab.label}
@@ -305,7 +305,7 @@ export default function SessionRunner({
       )}
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border px-4 py-3 z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#1d2c42] px-4 py-3 z-50">
         <div className="max-w-2xl mx-auto">
           {/* Progress dots */}
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -443,7 +443,7 @@ function NotesTab({
             value={noteTitle}
             onChange={(e) => setNoteTitle(e.target.value)}
             placeholder="e.g. Passing drills & small-sided game"
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
           />
         </div>
 
@@ -454,7 +454,7 @@ function NotesTab({
             onChange={(e) => setNoteBody(e.target.value)}
             placeholder="What happened in the session? Key observations, drills run, outcomes..."
             rows={6}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
           />
         </div>
 
@@ -465,7 +465,7 @@ function NotesTab({
             value={focusAreas}
             onChange={(e) => setFocusAreas(e.target.value)}
             placeholder="e.g. Passing accuracy, defensive positioning"
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
           />
         </div>
 
@@ -476,7 +476,7 @@ function NotesTab({
             onChange={(e) => setPlayersOfNote(e.target.value)}
             placeholder="Players who stood out, positive or needs attention"
             rows={3}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none"
           />
         </div>
       </div>
@@ -507,7 +507,7 @@ function ReviewsTab({
   if (players.length === 0) {
     return (
       <Card>
-        <p className="text-sm text-text-light text-center py-8">
+        <p className="text-sm text-[#93a2ba] text-center py-8">
           No present players to review. Mark attendance first.
         </p>
       </Card>
@@ -524,7 +524,7 @@ function ReviewsTab({
     <div className="space-y-4">
       {/* Player navigation header */}
       <div className="flex items-center justify-between">
-        <span className="text-sm text-text-light">
+        <span className="text-sm text-[#93a2ba]">
           Player {safeIndex + 1} of {players.length}
         </span>
         {review.skipped && (
@@ -568,7 +568,7 @@ function ReviewsTab({
                         className={`w-8 h-8 rounded-full text-xs font-bold transition-all ${
                           score >= n
                             ? 'bg-accent text-white'
-                            : 'bg-surface-dark text-text-light hover:bg-border'
+                            : 'bg-[#142236] text-[#93a2ba] hover:bg-border'
                         }`}
                       >
                         {n}
@@ -590,7 +590,7 @@ function ReviewsTab({
                 updateReview(player.id, 'strengths', e.target.value)
               }
               placeholder="What did they do well?"
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+              className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
 
@@ -604,7 +604,7 @@ function ReviewsTab({
                 updateReview(player.id, 'focus_next', e.target.value)
               }
               placeholder="What should they work on?"
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+              className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
             />
           </div>
 
@@ -616,7 +616,7 @@ function ReviewsTab({
             className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
               review.skipped
                 ? 'bg-yellow-100 text-yellow-700'
-                : 'bg-surface text-text-light hover:bg-surface-dark'
+                : 'bg-[#0f1a2b] text-[#93a2ba] hover:bg-[#142236]'
             }`}
           >
             {review.skipped ? 'Unskip This Player' : 'Skip This Player'}
@@ -629,7 +629,7 @@ function ReviewsTab({
         <button
           onClick={() => setCurrentIndex(Math.max(0, safeIndex - 1))}
           disabled={safeIndex === 0}
-          className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors disabled:opacity-30"
+          className="flex-1 py-2.5 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors disabled:opacity-30"
         >
           &larr; Previous
         </button>
@@ -638,7 +638,7 @@ function ReviewsTab({
             setCurrentIndex(Math.min(players.length - 1, safeIndex + 1))
           }
           disabled={safeIndex === players.length - 1}
-          className="flex-1 py-2.5 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors disabled:opacity-30"
+          className="flex-1 py-2.5 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors disabled:opacity-30"
         >
           Next &rarr;
         </button>
@@ -663,7 +663,7 @@ function ReviewsTab({
                     ? 'bg-yellow-200 text-yellow-700'
                     : hasScores
                       ? 'bg-green-200 text-green-700'
-                      : 'bg-surface-dark text-text-light'
+                      : 'bg-[#142236] text-[#93a2ba]'
               }`}
               title={`${p.first_name} ${p.last_name}`}
             >

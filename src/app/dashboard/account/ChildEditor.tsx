@@ -82,7 +82,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-3 pt-3 border-t border-border space-y-3"
+      className="mt-3 pt-3 border-t border-[#1d2c42] space-y-3"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
@@ -93,7 +93,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
             type="date"
             value={dob}
             onChange={(e) => setDob(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div>
@@ -101,7 +101,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
           <select
             value={kitSize}
             onChange={(e) => setKitSize(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           >
             <option value="">Select...</option>
             {KIT_SIZES.map((s) => (
@@ -117,7 +117,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
             type="text"
             value={school}
             onChange={(e) => setSchool(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div>
@@ -129,7 +129,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
             value={medicalInfo}
             onChange={(e) => setMedicalInfo(e.target.value)}
             placeholder="Any medical conditions or allergies"
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div>
@@ -140,7 +140,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
             type="text"
             value={emergencyName}
             onChange={(e) => setEmergencyName(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
         <div>
@@ -151,7 +151,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
             type="tel"
             value={emergencyPhone}
             onChange={(e) => setEmergencyPhone(e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
           />
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="px-3 py-1.5 border border-border rounded-lg text-xs font-medium hover:bg-surface-dark transition-colors"
+          className="px-3 py-1.5 border border-[#1d2c42] rounded-lg text-xs font-medium hover:bg-[#142236] transition-colors"
         >
           Cancel
         </button>

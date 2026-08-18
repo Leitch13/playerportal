@@ -60,7 +60,7 @@ export default function EnrolmentStatusToggle({
       value={currentStatus}
       onChange={(e) => updateStatus(e.target.value)}
       disabled={loading}
-      className="text-xs px-2 py-1 border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/20"
+      className="text-xs px-2 py-1 border border-[#1d2c42] rounded focus:outline-none focus:ring-1 focus:ring-primary/20"
     >
       {statuses.map((s) => (
         <option key={s} value={s}>

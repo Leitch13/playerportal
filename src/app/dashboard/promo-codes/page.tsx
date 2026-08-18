@@ -58,7 +58,7 @@ export default async function PromoCodesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-text-light">
+                <tr className="border-b border-[#1d2c42] text-left text-[#93a2ba]">
                   <th className="pb-3 font-medium">Code</th>
                   <th className="pb-3 font-medium">Description</th>
                   <th className="pb-3 font-medium">Discount</th>
@@ -87,11 +87,11 @@ export default async function PromoCodesPage() {
                   return (
                     <tr key={code.id} className="text-sm">
                       <td className="py-3 pr-4">
-                        <code className="bg-surface-dark px-2 py-1 rounded text-xs font-mono font-semibold">
+                        <code className="bg-[#142236] px-2 py-1 rounded text-xs font-mono font-semibold">
                           {code.code}
                         </code>
                       </td>
-                      <td className="py-3 pr-4 text-text-light max-w-[200px] truncate">
+                      <td className="py-3 pr-4 text-[#93a2ba] max-w-[200px] truncate">
                         {code.description || '—'}
                       </td>
                       <td className="py-3 pr-4">
@@ -104,7 +104,7 @@ export default async function PromoCodesPage() {
                         {code.current_uses}
                         {code.max_uses ? ` / ${code.max_uses}` : ''}
                       </td>
-                      <td className="py-3 pr-4 text-text-light text-xs">
+                      <td className="py-3 pr-4 text-[#93a2ba] text-xs">
                         {code.valid_from
                           ? new Date(code.valid_from).toLocaleDateString()
                           : '—'}

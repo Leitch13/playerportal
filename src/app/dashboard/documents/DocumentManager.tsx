@@ -96,10 +96,10 @@ export default function DocumentManager({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-white rounded-xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Add Document / Link</h2>
-        <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">Close</button>
+        <button onClick={() => setOpen(false)} className="text-[#93a2ba] hover:text-[#eef2f9] text-sm">Close</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -110,7 +110,7 @@ export default function DocumentManager({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Player Notes - March"
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -124,7 +124,7 @@ export default function DocumentManager({
             }}
             placeholder="https://canva.com/..."
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -132,20 +132,20 @@ export default function DocumentManager({
           <select
             value={docType}
             onChange={(e) => setDocType(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             {DOC_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
-          <p className="text-xs text-text-light mt-0.5">Auto-detected from URL</p>
+          <p className="text-xs text-[#93a2ba] mt-0.5">Auto-detected from URL</p>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Player (optional)</label>
           <select
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">General (no player)</option>
             {players.map((p) => (
@@ -160,7 +160,7 @@ export default function DocumentManager({
             value={folder}
             onChange={(e) => setFolder(e.target.value)}
             placeholder="e.g. Player Notes, Reports"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -170,7 +170,7 @@ export default function DocumentManager({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Brief description..."
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
 
@@ -187,7 +187,7 @@ export default function DocumentManager({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
           >
             Cancel
           </button>

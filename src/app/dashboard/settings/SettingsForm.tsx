@@ -256,7 +256,7 @@ export default function SettingsForm({
                 <label className="text-xs font-medium text-white/70 block mb-1.5">Hero Image URL</label>
                 <input className={inputClass} value={form.hero_image_url} onChange={e => setForm({...form, hero_image_url: e.target.value})} placeholder="https://..." />
                 {form.hero_image_url && (
-                  <div className="mt-2 w-full h-32 rounded-xl border border-white/[0.08] overflow-hidden bg-surface">
+                  <div className="mt-2 w-full h-32 rounded-xl border border-white/[0.08] overflow-hidden bg-[#0f1a2b]">
                     <img src={form.hero_image_url} alt="Hero" className="w-full h-full object-cover" />
                   </div>
                 )}

@@ -35,7 +35,7 @@ export default function AttendanceHeatmap({ data }: HeatmapProps) {
           const count = dayTotals.get(i) || 0
           return (
             <div key={day} className="text-center">
-              <span className="text-[10px] text-text-light font-medium block mb-1.5">{day}</span>
+              <span className="text-[10px] text-[#93a2ba] font-medium block mb-1.5">{day}</span>
               <div
                 className="aspect-square rounded-lg flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
                 style={{ backgroundColor: getColor(count) }}
@@ -51,16 +51,16 @@ export default function AttendanceHeatmap({ data }: HeatmapProps) {
         })}
       </div>
       {hovered && (
-        <p className="text-xs text-text-light text-center mt-2">
+        <p className="text-xs text-[#93a2ba] text-center mt-2">
           {DAYS[hovered.day]}: {hovered.count} session{hovered.count !== 1 ? 's' : ''}
         </p>
       )}
       <div className="flex items-center justify-center gap-1 mt-3">
-        <span className="text-[10px] text-text-light">Less</span>
+        <span className="text-[10px] text-[#93a2ba]">Less</span>
         {['#f3f4f6', '#d1fae5', '#6ee7b7', '#34d399', '#059669'].map((color) => (
           <div key={color} className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
         ))}
-        <span className="text-[10px] text-text-light">More</span>
+        <span className="text-[10px] text-[#93a2ba]">More</span>
       </div>
     </div>
   )

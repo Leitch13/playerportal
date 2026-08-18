@@ -54,7 +54,7 @@ export default function EnrolmentForm({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-white rounded-xl border border-[#1d2c42] p-6">
       <h2 className="text-lg font-semibold mb-4">Enrol Player</h2>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -63,7 +63,7 @@ export default function EnrolmentForm({
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select player...</option>
             {players.map((p) => (
@@ -81,7 +81,7 @@ export default function EnrolmentForm({
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select group...</option>
             {groups.map((g) => (
@@ -103,7 +103,7 @@ export default function EnrolmentForm({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
           >
             Cancel
           </button>

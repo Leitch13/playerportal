@@ -101,7 +101,7 @@ export default function EventManager({
   }
 
   return (
-    <div className="bg-white text-gray-900 rounded-xl border border-border p-6">
+    <div className="bg-white text-gray-900 rounded-xl border border-[#1d2c42] p-6">
       <h2 className="text-lg font-semibold mb-4">New Event</h2>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
@@ -112,7 +112,7 @@ export default function EventManager({
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="e.g. Easter Holiday Camp 2026"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div className="md:col-span-2">
@@ -122,7 +122,7 @@ export default function EventManager({
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="Details about the event..."
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -131,7 +131,7 @@ export default function EventManager({
             value={eventType}
             onChange={(e) => setEventType(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             {EVENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
@@ -145,7 +145,7 @@ export default function EventManager({
           <select
             value={coachId}
             onChange={(e) => setCoachId(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             <option value="">Select coach...</option>
             {coaches.map((c) => (
@@ -162,7 +162,7 @@ export default function EventManager({
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -171,7 +171,7 @@ export default function EventManager({
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -180,7 +180,7 @@ export default function EventManager({
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -189,7 +189,7 @@ export default function EventManager({
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -199,7 +199,7 @@ export default function EventManager({
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. Main Pitch"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -210,7 +210,7 @@ export default function EventManager({
             onChange={(e) => setMaxCapacity(e.target.value)}
             min="1"
             placeholder="e.g. 30"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -222,7 +222,7 @@ export default function EventManager({
             min="0"
             step="0.01"
             placeholder="e.g. 25.00"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div className="md:col-span-2">
@@ -236,7 +236,7 @@ export default function EventManager({
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   ageGroups.includes(ag)
                     ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-text-light border-border hover:border-primary/50'
+                    : 'bg-white text-[#93a2ba] border-[#1d2c42] hover:border-primary/50'
                 }`}
               >
                 {ag}
@@ -255,7 +255,7 @@ export default function EventManager({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
           >
             Cancel
           </button>

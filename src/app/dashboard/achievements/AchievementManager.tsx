@@ -127,14 +127,14 @@ export default function AchievementManager({
         {achievements.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {achievements.map((a) => (
-              <div key={a.id} className="bg-white rounded-xl border border-border p-4 flex items-start gap-3">
+              <div key={a.id} className="bg-white rounded-xl border border-[#1d2c42] p-4 flex items-start gap-3">
                 <span className={`text-3xl flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full ${a.badge_color}`}>
                   {a.badge_emoji}
                 </span>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-sm truncate">{a.name}</h3>
-                  {a.description && <p className="text-xs text-text-light mt-0.5 line-clamp-2">{a.description}</p>}
-                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs bg-surface-dark text-text-light capitalize">
+                  {a.description && <p className="text-xs text-[#93a2ba] mt-0.5 line-clamp-2">{a.description}</p>}
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs bg-[#142236] text-[#93a2ba] capitalize">
                     {a.achievement_type}
                   </span>
                   <div className="flex gap-2 mt-2">
@@ -161,10 +161,10 @@ export default function AchievementManager({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
+    <div className="bg-white rounded-xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">{editingId ? 'Edit Achievement' : 'Create Achievement'}</h2>
-        <button onClick={() => { resetForm(); setOpen(false) }} className="text-text-light hover:text-text text-sm">Close</button>
+        <button onClick={() => { resetForm(); setOpen(false) }} className="text-[#93a2ba] hover:text-[#eef2f9] text-sm">Close</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -175,7 +175,7 @@ export default function AchievementManager({
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Player of the Month"
             required
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -183,7 +183,7 @@ export default function AchievementManager({
           <select
             value={achievementType}
             onChange={(e) => setAchievementType(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
             {ACHIEVEMENT_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -197,7 +197,7 @@ export default function AchievementManager({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What is this achievement for?"
             rows={2}
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         <div>
@@ -209,7 +209,7 @@ export default function AchievementManager({
                 type="button"
                 onClick={() => setBadgeEmoji(emoji)}
                 className={`w-10 h-10 text-xl rounded-lg border-2 transition-colors flex items-center justify-center ${
-                  badgeEmoji === emoji ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
+                  badgeEmoji === emoji ? 'border-primary bg-primary/10' : 'border-[#1d2c42] hover:border-primary/40'
                 }`}
               >
                 {emoji}
@@ -241,7 +241,7 @@ export default function AchievementManager({
             value={criteria}
             onChange={(e) => setCriteria(e.target.value)}
             placeholder="e.g. Attend 10 sessions in a row"
-            className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
 
@@ -258,7 +258,7 @@ export default function AchievementManager({
           <button
             type="button"
             onClick={() => { resetForm(); setOpen(false) }}
-            className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-surface-dark transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
           >
             Cancel
           </button>

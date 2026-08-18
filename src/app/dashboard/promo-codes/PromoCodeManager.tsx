@@ -62,7 +62,7 @@ export default function PromoCodeManager({
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
           }}
-          className="text-xs px-2 py-1 rounded font-medium bg-surface-dark text-text-light hover:bg-border"
+          className="text-xs px-2 py-1 rounded font-medium bg-[#142236] text-[#93a2ba] hover:bg-border"
         >
           {copied ? 'Copied!' : 'Copy'}
         </button>
@@ -144,10 +144,10 @@ export default function PromoCodeManager({
           + Create Promo Code
         </button>
       ) : (
-        <div className="bg-white text-gray-900 rounded-xl border border-border p-6">
+        <div className="bg-white text-gray-900 rounded-xl border border-[#1d2c42] p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">New Promo Code</h2>
-            <button onClick={() => setOpen(false)} className="text-text-light hover:text-text text-sm">
+            <button onClick={() => setOpen(false)} className="text-[#93a2ba] hover:text-[#eef2f9] text-sm">
               Cancel
             </button>
           </div>
@@ -168,7 +168,7 @@ export default function PromoCodeManager({
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="e.g. SUMMER25"
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm font-mono uppercase"
                 />
               </div>
 
@@ -179,7 +179,7 @@ export default function PromoCodeManager({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Optional description"
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
             </div>
@@ -190,7 +190,7 @@ export default function PromoCodeManager({
                 <select
                   value={discountType}
                   onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'fixed')}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="percentage">Percentage (%)</option>
                   <option value="fixed">Fixed Amount (£)</option>
@@ -209,7 +209,7 @@ export default function PromoCodeManager({
                   max={discountType === 'percentage' ? '100' : undefined}
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export default function PromoCodeManager({
                   value={maxUses}
                   onChange={(e) => setMaxUses(e.target.value)}
                   placeholder="Unlimited"
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
             </div>
@@ -233,7 +233,7 @@ export default function PromoCodeManager({
                   type="date"
                   value={validFrom}
                   onChange={(e) => setValidFrom(e.target.value)}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
@@ -243,7 +243,7 @@ export default function PromoCodeManager({
                   type="date"
                   value={validUntil}
                   onChange={(e) => setValidUntil(e.target.value)}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
@@ -252,7 +252,7 @@ export default function PromoCodeManager({
                 <select
                   value={appliesTo}
                   onChange={(e) => setAppliesTo(e.target.value as typeof appliesTo)}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="all">All</option>
                   <option value="subscription">Subscription</option>
@@ -268,7 +268,7 @@ export default function PromoCodeManager({
                 <select
                   value={duration}
                   onChange={(e) => setDuration(e.target.value as typeof duration)}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="once">First payment only</option>
                   <option value="repeating_3">3 months</option>

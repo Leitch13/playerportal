@@ -170,7 +170,7 @@ export default function UpsellBanner({ type, className = '', childName, planName
     >
       <div
         className={`
-          relative overflow-hidden rounded-2xl border border-border/60
+          relative overflow-hidden rounded-2xl border border-[#1d2c42]/60
           ${config.bgColor} border-l-4 ${config.borderColor}
           shadow-sm hover:shadow-md transition-shadow duration-300
         `}
@@ -180,14 +180,14 @@ export default function UpsellBanner({ type, className = '', childName, planName
 
         <div className="relative flex items-center gap-4 px-5 py-4">
           {/* Icon */}
-          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/80 backdrop-blur-sm border border-border/40 flex items-center justify-center text-2xl shadow-sm">
+          <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/80 backdrop-blur-sm border border-[#1d2c42]/40 flex items-center justify-center text-2xl shadow-sm">
             {config.icon}
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-text">{heading}</h3>
-            <p className="text-xs text-text-light mt-0.5 leading-relaxed">{description}</p>
+            <h3 className="text-sm font-bold text-[#eef2f9]">{heading}</h3>
+            <p className="text-xs text-[#93a2ba] mt-0.5 leading-relaxed">{description}</p>
           </div>
 
           {/* CTA */}
@@ -206,7 +206,7 @@ export default function UpsellBanner({ type, className = '', childName, planName
           {/* Dismiss */}
           <button
             onClick={handleDismiss}
-            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-text-light/50 hover:text-text-light hover:bg-black/5 transition-colors"
+            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[#93a2ba]/50 hover:text-[#93a2ba] hover:bg-black/5 transition-colors"
             aria-label="Dismiss"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -57,7 +57,7 @@ export default async function TrainingPlansPage() {
               title={plan.title}
             >
               <div className="space-y-2 text-sm">
-                <div className="flex gap-4 text-text-light">
+                <div className="flex gap-4 text-[#93a2ba]">
                   <span>{(plan.group as unknown as { name: string })?.name}</span>
                   <span>
                     Week of{' '}

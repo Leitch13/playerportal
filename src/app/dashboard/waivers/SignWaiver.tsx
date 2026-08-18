@@ -102,7 +102,7 @@ export default function SignWaiver({
         const isExpanded = expandedId === waiver.id
 
         return (
-          <div key={waiver.id} className="bg-white rounded-xl border border-border">
+          <div key={waiver.id} className="bg-white rounded-xl border border-[#1d2c42]">
             <div className="p-4 flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export default function SignWaiver({
                         className={`px-2 py-0.5 rounded-full text-xs ${
                           signed
                             ? 'bg-cyan-100 text-cyan-800'
-                            : 'bg-surface-dark text-text-light'
+                            : 'bg-[#142236] text-[#93a2ba]'
                         }`}
                       >
                         {p.first_name} {p.last_name}
@@ -162,8 +162,8 @@ export default function SignWaiver({
             </div>
 
             {isExpanded && (
-              <div className="border-t border-border p-4 space-y-4">
-                <div className="bg-surface rounded-lg p-4 max-h-64 overflow-y-auto">
+              <div className="border-t border-[#1d2c42] p-4 space-y-4">
+                <div className="bg-[#0f1a2b] rounded-lg p-4 max-h-64 overflow-y-auto">
                   <p className="text-sm whitespace-pre-wrap">{waiver.content}</p>
                 </div>
 
@@ -172,7 +172,7 @@ export default function SignWaiver({
                   <select
                     value={selectedPlayerId}
                     onChange={(e) => setSelectedPlayerId(e.target.value)}
-                    className="w-full max-w-xs px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="w-full max-w-xs px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   >
                     <option value="">Select a player</option>
                     {players
@@ -190,7 +190,7 @@ export default function SignWaiver({
                     type="checkbox"
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
-                    className="rounded border-border text-primary focus:ring-primary/20"
+                    className="rounded border-[#1d2c42] text-primary focus:ring-primary/20"
                   />
                   I have read and agree to the terms above
                 </label>

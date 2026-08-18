@@ -124,7 +124,7 @@ export default function PhotoUpload({
           <img
             src={photoUrl}
             alt={`${firstName} ${lastName}`}
-            className={`${sizeClass} rounded-full object-cover border-2 border-border`}
+            className={`${sizeClass} rounded-full object-cover border-2 border-[#1d2c42]`}
           />
         ) : (
           <div

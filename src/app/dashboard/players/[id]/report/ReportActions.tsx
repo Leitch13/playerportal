@@ -7,7 +7,7 @@ export default function ReportActions({ playerId }: { playerId: string }) {
     <div className="no-print flex items-center gap-3 mb-6">
       <Link
         href={`/dashboard/players/${playerId}`}
-        className="inline-flex items-center gap-1.5 text-sm text-text-light hover:text-text transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-[#93a2ba] hover:text-[#eef2f9] transition-colors"
       >
         &larr; Back to Profile
       </Link>

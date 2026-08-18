@@ -39,7 +39,7 @@ export default function ThemeToggle() {
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               theme === opt.value
                 ? 'bg-primary text-white dark:bg-accent dark:text-primary'
-                : 'bg-surface-dark text-text-light hover:bg-border'
+                : 'bg-[#142236] text-[#93a2ba] hover:bg-border'
             }`}
           >
             <span>{opt.icon}</span>

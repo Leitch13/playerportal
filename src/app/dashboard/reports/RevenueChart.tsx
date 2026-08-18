@@ -48,7 +48,7 @@ export default function RevenueChart({ months }: { months: MonthData[] }) {
                     title={`Collected: £${month.collected.toFixed(0)}`}
                   />
                 </div>
-                <span className="text-[10px] text-text-light whitespace-nowrap">{month.label}</span>
+                <span className="text-[10px] text-[#93a2ba] whitespace-nowrap">{month.label}</span>
               </div>
             )
           })}
