@@ -23,6 +23,7 @@ interface OrgData {
   logo_url: string
   hero_image_url: string
   google_review_url: string
+  meta_pixel_id: string | null
   sibling_discount_enabled: boolean
   sibling_discount_percent: number
   quarterly_billing_enabled: boolean
@@ -65,7 +66,7 @@ export default function SettingsForm({
   const [form, setForm] = useState<OrgData>(org || {
     id: '', name: '', slug: '', description: '', contact_email: '',
     contact_phone: '', location: '', primary_color: '#4ecde6',
-    logo_url: '', hero_image_url: '', google_review_url: '',
+    logo_url: '', hero_image_url: '', google_review_url: '', meta_pixel_id: null,
     sibling_discount_enabled: false, sibling_discount_percent: 10,
     quarterly_billing_enabled: true, quarterly_discount_percent: 10,
     retention_offer_enabled: true, retention_offer_percent: 50, retention_offer_months: 1,
@@ -210,8 +211,13 @@ export default function SettingsForm({
                 <input className={inputClass} value={form.google_review_url} onChange={e => setForm({...form, google_review_url: e.target.value})} placeholder="https://g.page/r/your-academy/review" />
                 <p className="text-[10px] text-white/30 mt-1">Parents will be directed here after rating their experience positively. Find your link at Google Business Profile.</p>
               </div>
+              <div>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Meta Pixel ID <span className="text-white/30 font-normal">(optional)</span></label>
+                <input className={inputClass} value={form.meta_pixel_id || ''} onChange={e => setForm({...form, meta_pixel_id: e.target.value.trim() || null})} placeholder="e.g. 123456789012345" />
+                <p className="text-[10px] text-white/30 mt-1">Running Facebook or Instagram ads? Paste your Pixel ID from Meta Events Manager and your booking page will report page views, trial bookings and checkouts to YOUR ad account automatically. Consent-gated for GDPR.</p>
+              </div>
               <button
-                onClick={() => handleSave({ name: form.name, description: form.description, contact_email: form.contact_email, contact_phone: form.contact_phone, location: form.location, google_review_url: form.google_review_url })}
+                onClick={() => handleSave({ name: form.name, description: form.description, contact_email: form.contact_email, contact_phone: form.contact_phone, location: form.location, google_review_url: form.google_review_url, meta_pixel_id: form.meta_pixel_id })}
                 disabled={saving}
                 className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all"
               >

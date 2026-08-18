@@ -29,7 +29,7 @@ export default async function TrialBookingPage({
 
   const { data: org } = await supabase
     .from('organisations')
-    .select('id, name, primary_color, description')
+    .select('id, name, primary_color, description, meta_pixel_id')
     .ilike('slug', slug)
     .single()
 
@@ -86,6 +86,7 @@ export default async function TrialBookingPage({
       {/* Form */}
       <div className="max-w-lg mx-auto px-6 -mt-4 pb-16">
         <TrialBookingForm
+          metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}
           orgId={org.id}
           groups={(groups || []).map((g) => ({
             id: g.id,

@@ -4,9 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { deriveTrialSource, SOURCE_LABELS, type CanonicalSource } from '@/lib/trial-source-derive'
+import { fbTrackSingle } from '@/lib/meta-pixel'
 
 interface TrialBookingFormProps {
   orgId: string
+  metaPixelId?: string | null
   groups: { id: string; name: string; day: string | null; time: string | null }[]
   primaryColor: string
   slug: string
@@ -18,7 +20,7 @@ interface TrialBookingFormProps {
   referer?: string | null
 }
 
-export default function TrialBookingForm({ orgId, groups, primaryColor, slug, academyName, utmSource, utmMedium, utmCampaign, referer }: TrialBookingFormProps) {
+export default function TrialBookingForm({ orgId, metaPixelId = null, groups, primaryColor, slug, academyName, utmSource, utmMedium, utmCampaign, referer }: TrialBookingFormProps) {
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [parentPhone, setParentPhone] = useState('')
@@ -75,6 +77,7 @@ export default function TrialBookingForm({ orgId, groups, primaryColor, slug, ac
       setError(insertError.message)
     } else {
       setSuccess(true)
+      fbTrackSingle(metaPixelId, 'Lead', { content_name: 'trial_booking' })
 
       // Send confirmation email (fire and forget)
       const selectedGroup = groups.find((g) => g.id === groupId)

@@ -12,6 +12,7 @@ import BookingPageHero from '@/components/BookingPageHero'
 import TermInfo from '@/components/TermInfo'
 import GroupedClassList from './GroupedClassList'
 import PremiumBookingView, { type PremiumClassCard } from './PremiumBookingView'
+import AcademyPixel from '@/components/AcademyPixel'
 import { isPremiumBookingOrg } from '@/lib/premium-booking'
 
 export async function generateMetadata({
@@ -506,15 +507,18 @@ export default async function PublicBookingPage({
     })
     const venues = [...new Set(premiumClasses.map((c) => c.location).filter((v): v is string => !!v))]
     return (
-      <PremiumBookingView
-        orgName={org.name as string}
-        logoUrl={org.logo_url as string | null}
-        primaryColor={primaryColor as string}
-        classes={premiumClasses}
-        venues={venues}
-        trialHref={`/book/${slug}/trial/quick`}
-        isOwnerPreview={isOwnerPreview}
-      />
+      <>
+        <AcademyPixel pixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id} />
+        <PremiumBookingView
+          orgName={org.name as string}
+          logoUrl={org.logo_url as string | null}
+          primaryColor={primaryColor as string}
+          classes={premiumClasses}
+          venues={venues}
+          trialHref={`/book/${slug}/trial/quick`}
+          isOwnerPreview={isOwnerPreview}
+        />
+      </>
     )
   }
 
@@ -523,6 +527,7 @@ export default async function PublicBookingPage({
       className="min-h-screen bg-[#0a0a0a] text-white"
       style={{ '--brand-primary': primaryColor, '--brand-primary-rgb': hexToRgb(primaryColor), '--color-accent': primaryColor } as React.CSSProperties}
     >
+      <AcademyPixel pixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id} />
       {isOwnerPreview && (
         <div className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-3 text-center">
           <p className="text-sm text-amber-200">

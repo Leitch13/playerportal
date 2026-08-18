@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { StartDatePicker } from '@/components/billing/StartDatePicker'
 import { isoDate } from '@/lib/billing/next-session'
+import { fbTrackSingle } from '@/lib/meta-pixel'
 
 interface Plan {
   id: string
@@ -36,6 +37,7 @@ interface QuickBookFormProps {
    * false it's clamped to today-only (Option B). Default false for safety.
    */
   allowFutureStart?: boolean
+  metaPixelId?: string | null
   /**
    * Per-org bridge billing mode (server-resolved from
    * organisations.bridge_billing_mode). 'calendar' = current calendar-day
@@ -101,7 +103,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false, bridgeMode = 'calendar', quarterlyEnabled = false }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false, metaPixelId = null, bridgeMode = 'calendar', quarterlyEnabled = false }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -270,6 +272,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       if (data.url) {
         // Booking confirmation email fires from the Stripe webhook after payment,
         // not here — sending it now would be misleading if Checkout was abandoned.
+        fbTrackSingle(metaPixelId, 'InitiateCheckout', { currency: 'GBP', ...(data.tonightAmount ? { value: Number(data.tonightAmount) } : {}) })
         setTimeout(() => { window.location.href = data.url }, 1200)
         return
       } else {

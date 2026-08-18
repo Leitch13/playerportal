@@ -27,7 +27,7 @@ export default async function QuickBookPage({
   // yet, in which case we fall back to calendar mode safely.
   const { data: org } = await publicSupabase
     .from('organisations')
-    .select('id, name, slug, primary_color, contact_email, contact_phone, quarterly_billing_enabled')
+    .select('id, name, slug, primary_color, contact_email, contact_phone, quarterly_billing_enabled, meta_pixel_id')
     .ilike('slug', slug)
     .single()
 
@@ -286,6 +286,7 @@ export default async function QuickBookPage({
         classDayOfWeek={group.day_of_week as string | null}
         classTimeSlot={group.time_slot as string | null}
         allowFutureStart={allowFutureStart}
+        metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}
         bridgeMode={bridgeMode}
         quarterlyEnabled={isQuarterlyEnabledForOrg(org.id as string, (org as Record<string, unknown>).quarterly_billing_enabled as boolean | null | undefined)}
       />

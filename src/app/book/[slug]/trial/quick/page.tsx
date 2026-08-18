@@ -40,7 +40,7 @@ export default async function QuickTrialPage({
 
   const { data: org } = await supabase
     .from('organisations')
-    .select('id, name, primary_color, description, contact_email, contact_phone')
+    .select('id, name, primary_color, description, contact_email, contact_phone, meta_pixel_id')
     .ilike('slug', slug)
     .single()
 
@@ -140,6 +140,7 @@ export default async function QuickTrialPage({
       {/* Form */}
       <div className="max-w-lg mx-auto px-4 -mt-2 pb-12 sm:pb-16">
         <TrialForm
+          metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}
           orgId={org.id}
           // When the parent came from a specific class page (?class=...),
           // scope the trial booking to that class only. They're not browsing,
