@@ -34,7 +34,7 @@ export default function ReportPremiumTop({
   const tone = TONE[verdict.tone]
 
   return (
-    <div className="px-8 py-6 border-b border-border space-y-5">
+    <div className="px-8 py-6 border-b border-[#1d2c42] space-y-5">
       {/* Verdict hero + trend headline */}
       <div className={`rounded-2xl border ${tone.box} px-5 py-4 flex items-start gap-4`} role="status"
            aria-label={`Progress verdict: ${verdict.label}. ${headline}`}>
@@ -43,32 +43,32 @@ export default function ReportPremiumTop({
             <span aria-hidden className={`text-xl leading-none ${tone.label}`}>{tone.arrow}</span>
             <span className={`text-lg font-extrabold tracking-tight ${tone.label}`}>{verdict.label}</span>
           </div>
-          <p className="text-sm text-text mt-1">{headline}</p>
+          <p className="text-sm text-[#eef2f9] mt-1">{headline}</p>
         </div>
         {rating > 0 && (
           <div className="text-right shrink-0">
-            <div className="text-3xl font-extrabold text-accent leading-none">{fmt(rating)}<span className="text-base text-text-light">/5</span></div>
-            <div className="text-[10px] uppercase tracking-wide text-text-light mt-1">Overall</div>
+            <div className="text-3xl font-extrabold text-accent leading-none">{fmt(rating)}<span className="text-base text-[#93a2ba]">/5</span></div>
+            <div className="text-[10px] uppercase tracking-wide text-[#93a2ba] mt-1">Overall</div>
           </div>
         )}
       </div>
 
       {/* Coach quote — the most visually important block */}
       {coachQuote && coachQuote.trim() ? (
-        <figure className="rounded-2xl bg-surface border border-border px-6 py-5">
-          <p className="text-[11px] uppercase tracking-wide text-text-light font-semibold mb-2">What your coach said</p>
-          <blockquote className="text-lg leading-relaxed text-text font-medium">&ldquo;{coachQuote.trim()}&rdquo;</blockquote>
-          {coachName && <figcaption className="text-sm text-text-light mt-3">— {coachName}</figcaption>}
+        <figure className="rounded-2xl bg-[#0f1a2b] border border-[#1d2c42] px-6 py-5">
+          <p className="text-[11px] uppercase tracking-wide text-[#93a2ba] font-semibold mb-2">What your coach said</p>
+          <blockquote className="text-lg leading-relaxed text-[#eef2f9] font-medium">&ldquo;{coachQuote.trim()}&rdquo;</blockquote>
+          {coachName && <figcaption className="text-sm text-[#93a2ba] mt-3">— {coachName}</figcaption>}
         </figure>
       ) : (
-        <div className="rounded-2xl bg-surface border border-border px-6 py-5">
-          <p className="text-sm text-text-light">Your coach hasn&rsquo;t added written feedback on this report yet — the scores and skills below show {firstName}&rsquo;s latest progress.</p>
+        <div className="rounded-2xl bg-[#0f1a2b] border border-[#1d2c42] px-6 py-5">
+          <p className="text-sm text-[#93a2ba]">Your coach hasn&rsquo;t added written feedback on this report yet — the scores and skills below show {firstName}&rsquo;s latest progress.</p>
         </div>
       )}
 
       {/* What's changed */}
       <div>
-        <p className="text-[11px] uppercase tracking-wide text-text-light font-semibold mb-2">What&rsquo;s changed since last review</p>
+        <p className="text-[11px] uppercase tracking-wide text-[#93a2ba] font-semibold mb-2">What&rsquo;s changed since last review</p>
         {hasPrevReview && deltas.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {deltas.map((d) => (
@@ -81,7 +81,7 @@ export default function ReportPremiumTop({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-text-light">
+          <p className="text-sm text-[#93a2ba]">
             This is {firstName}&rsquo;s first report — we&rsquo;ve set the baseline today. From the next review you&rsquo;ll see exactly what improved. 🎯
           </p>
         )}

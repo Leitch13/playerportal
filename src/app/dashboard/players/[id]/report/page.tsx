@@ -153,7 +153,7 @@ function ProgressOverTimeChart({
 }) {
   if (reviewPoints.length < 2) {
     return (
-      <div className="text-sm text-text-light text-center py-6 px-4 border border-dashed border-border rounded-lg">
+      <div className="text-sm text-[#93a2ba] text-center py-6 px-4 border border-dashed border-[#1d2c42] rounded-lg">
         A second progress review will unlock the improvement trend chart.
       </div>
     )
@@ -196,7 +196,7 @@ function ProgressOverTimeChart({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-text-light">Average score per review</span>
+        <span className="text-xs text-[#93a2ba]">Average score per review</span>
         <span className="text-xs font-semibold" style={{ color: trendColor }}>
           {trend > 0.25 ? '↗' : trend < -0.25 ? '↘' : '→'} {trendLabel}
         </span>
@@ -300,12 +300,12 @@ function OverallRating({ average }: { average: number }) {
           </svg>
         )}
         {Array.from({ length: emptyStars }).map((_, i) => (
-          <svg key={`empty-${i}`} className="w-6 h-6 text-gray-200" fill="currentColor" viewBox="0 0 20 20">
+          <svg key={`empty-${i}`} className="w-6 h-6 text-[#eef2f9]" fill="currentColor" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         ))}
       </div>
-      <span className="text-sm text-text-light">/ 5.0</span>
+      <span className="text-sm text-[#93a2ba]">/ 5.0</span>
     </div>
   )
 }
@@ -529,9 +529,9 @@ export default async function PlayerReportPage({
       <ReportActions playerId={id} />
 
       {/* === PRINTABLE REPORT === */}
-      <div className="bg-white rounded-xl border border-border print:border-0 print:rounded-none print:shadow-none">
+      <div className="bg-white rounded-xl border border-[#1d2c42] print:border-0 print:rounded-none print:shadow-none">
         {/* Report Header */}
-        <div className="border-b border-border px-8 py-6 flex items-center justify-between">
+        <div className="border-b border-[#1d2c42] px-8 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {organisation?.logo_url ? (
               <img
@@ -547,14 +547,14 @@ export default async function PlayerReportPage({
               </div>
             )}
             <div>
-              <h1 className="text-xl font-bold text-text">{organisation?.name || 'Academy'}</h1>
-              <p className="text-sm text-text-light">Player Progress Report</p>
+              <h1 className="text-xl font-bold text-[#eef2f9]">{organisation?.name || 'Academy'}</h1>
+              <p className="text-sm text-[#93a2ba]">Player Progress Report</p>
             </div>
           </div>
-          <div className="text-right text-sm text-text-light">
+          <div className="text-right text-sm text-[#93a2ba]">
             <p>{reportDate}</p>
             {REPORT_VIEWED_TRACKING_ENABLED && isStaffViewer && latestReview && (
-              <p className={`mt-1 text-xs print:hidden ${latestReviewViewedAt ? 'text-emerald-600' : 'text-text-light'}`}>
+              <p className={`mt-1 text-xs print:hidden ${latestReviewViewedAt ? 'text-emerald-600' : 'text-[#93a2ba]'}`}>
                 {latestReviewViewedAt
                   ? `Parent viewed ✓ ${new Date(latestReviewViewedAt).toLocaleDateString('en-GB')}`
                   : 'Not yet viewed'}
@@ -564,7 +564,7 @@ export default async function PlayerReportPage({
         </div>
 
         {/* Player Info */}
-        <div className="px-8 py-6 border-b border-border flex items-center gap-5">
+        <div className="px-8 py-6 border-b border-[#1d2c42] flex items-center gap-5">
           <PlayerAvatar
             photoUrl={player.photo_url}
             firstName={player.first_name}
@@ -572,14 +572,14 @@ export default async function PlayerReportPage({
             size="lg"
           />
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-text">
+            <h2 className="text-2xl font-bold text-[#eef2f9]">
               {player.first_name} {player.last_name}
             </h2>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-text-light">
-              {player.age_group && <span>Age Group: <strong className="text-text">{player.age_group}</strong></span>}
-              {player.position && <span>Position: <strong className="text-text">{player.position}</strong></span>}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-[#93a2ba]">
+              {player.age_group && <span>Age Group: <strong className="text-[#eef2f9]">{player.age_group}</strong></span>}
+              {player.position && <span>Position: <strong className="text-[#eef2f9]">{player.position}</strong></span>}
               {player.date_of_birth && (
-                <span>DOB: <strong className="text-text">{new Date(player.date_of_birth).toLocaleDateString('en-GB')}</strong></span>
+                <span>DOB: <strong className="text-[#eef2f9]">{new Date(player.date_of_birth).toLocaleDateString('en-GB')}</strong></span>
               )}
             </div>
             {groupNames.length > 0 && (
@@ -610,10 +610,10 @@ export default async function PlayerReportPage({
 
         {/* Overall Rating — hidden when Premium Top is on (the verdict hero carries the rating). */}
         {latestReview && !REPORTS_PREMIUM_ENABLED && (
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-3">Overall Rating</h3>
+          <div className="px-8 py-6 border-b border-[#1d2c42]">
+            <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-3">Overall Rating</h3>
             <OverallRating average={overallAverage} />
-            <p className="text-xs text-text-light mt-2">
+            <p className="text-xs text-[#93a2ba] mt-2">
               Based on latest review ({new Date(latestReview.review_date).toLocaleDateString('en-GB')})
             </p>
           </div>
@@ -621,15 +621,15 @@ export default async function PlayerReportPage({
 
         {/* Skills Radar + Score Breakdown */}
         {radarScores.length > 0 && (
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">Skills Assessment</h3>
+          <div className="px-8 py-6 border-b border-[#1d2c42]">
+            <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-4">Skills Assessment</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <PrintRadarChart scores={radarScores} />
               <div className="space-y-3">
                 {radarScores.map((s) => (
                   <div key={s.label} className="flex items-center gap-3">
-                    <span className="text-sm text-text w-36 truncate">{s.label}</span>
-                    <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <span className="text-sm text-[#eef2f9] w-36 truncate">{s.label}</span>
+                    <div className="flex-1 h-2.5 bg-[#142236] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -638,7 +638,7 @@ export default async function PlayerReportPage({
                         }}
                       />
                     </div>
-                    <span className="text-sm font-semibold w-6 text-right text-text">{s.value}</span>
+                    <span className="text-sm font-semibold w-6 text-right text-[#eef2f9]">{s.value}</span>
                   </div>
                 ))}
               </div>
@@ -648,8 +648,8 @@ export default async function PlayerReportPage({
 
         {/* Progress Over Time */}
         {progressOverTime.length > 0 && (
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">
+          <div className="px-8 py-6 border-b border-[#1d2c42]">
+            <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-4">
               Progress Over Time
             </h3>
             <ProgressOverTimeChart reviewPoints={progressOverTime} />
@@ -657,39 +657,39 @@ export default async function PlayerReportPage({
         )}
 
         {/* Attendance Summary */}
-        <div className="px-8 py-6 border-b border-border">
-          <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">Attendance Summary</h3>
+        <div className="px-8 py-6 border-b border-[#1d2c42]">
+          <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-4">Attendance Summary</h3>
           {totalSessions > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center p-3 rounded-lg bg-surface">
-                <div className="text-2xl font-bold text-text">{totalSessions}</div>
-                <div className="text-xs text-text-light mt-0.5">Total Sessions</div>
+              <div className="text-center p-3 rounded-lg bg-[#0f1a2b]">
+                <div className="text-2xl font-bold text-[#eef2f9]">{totalSessions}</div>
+                <div className="text-xs text-[#93a2ba] mt-0.5">Total Sessions</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-surface">
+              <div className="text-center p-3 rounded-lg bg-[#0f1a2b]">
                 <div className="text-2xl font-bold text-accent">{presentCount}</div>
-                <div className="text-xs text-text-light mt-0.5">Present</div>
+                <div className="text-xs text-[#93a2ba] mt-0.5">Present</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-surface">
+              <div className="text-center p-3 rounded-lg bg-[#0f1a2b]">
                 <div className="text-2xl font-bold" style={{ color: attendanceRate >= 80 ? '#4ecde6' : attendanceRate >= 60 ? '#f59e0b' : '#ef4444' }}>
                   {attendanceRate}%
                 </div>
-                <div className="text-xs text-text-light mt-0.5">Attendance Rate</div>
+                <div className="text-xs text-[#93a2ba] mt-0.5">Attendance Rate</div>
               </div>
-              <div className="text-center p-3 rounded-lg bg-surface">
-                <div className="text-2xl font-bold text-text">{currentStreak}</div>
-                <div className="text-xs text-text-light mt-0.5">Current Streak</div>
+              <div className="text-center p-3 rounded-lg bg-[#0f1a2b]">
+                <div className="text-2xl font-bold text-[#eef2f9]">{currentStreak}</div>
+                <div className="text-xs text-[#93a2ba] mt-0.5">Current Streak</div>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-text-light">No attendance records yet.</p>
+            <p className="text-sm text-[#93a2ba]">No attendance records yet.</p>
           )}
         </div>
 
         {/* Areas of Strength & Development */}
         {latestReview && (strengths.length > 0 || areasToImprove.length > 0) && (
-          <div className="px-8 py-6 border-b border-border grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="px-8 py-6 border-b border-[#1d2c42] grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-3">Areas of Strength</h3>
+              <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-3">Areas of Strength</h3>
               {strengths.length > 0 ? (
                 <ul className="space-y-2">
                   {strengths.map((s) => (
@@ -702,11 +702,11 @@ export default async function PlayerReportPage({
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-text-light">Keep working hard!</p>
+                <p className="text-sm text-[#93a2ba]">Keep working hard!</p>
               )}
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-3">Areas to Develop</h3>
+              <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-3">Areas to Develop</h3>
               {areasToImprove.length > 0 ? (
                 <ul className="space-y-2">
                   {areasToImprove.map((s) => (
@@ -719,7 +719,7 @@ export default async function PlayerReportPage({
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-text-light">All areas performing well.</p>
+                <p className="text-sm text-[#93a2ba]">All areas performing well.</p>
               )}
             </div>
           </div>
@@ -727,8 +727,8 @@ export default async function PlayerReportPage({
 
         {/* Achievements */}
         {(achievements || []).length > 0 && (
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">Achievements</h3>
+          <div className="px-8 py-6 border-b border-[#1d2c42]">
+            <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-4">Achievements</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(achievements || []).map((ach) => {
                 const achievement = ach.achievement as unknown as { name: string; emoji: string; description: string } | null
@@ -736,12 +736,12 @@ export default async function PlayerReportPage({
                 return (
                   <div
                     key={ach.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-border"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-[#1d2c42]"
                   >
                     <span className="text-2xl flex-shrink-0">{achievement.emoji}</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-text truncate">{achievement.name}</p>
-                      <p className="text-xs text-text-light">
+                      <p className="text-sm font-medium text-[#eef2f9] truncate">{achievement.name}</p>
+                      <p className="text-xs text-[#93a2ba]">
                         {new Date(ach.awarded_at).toLocaleDateString('en-GB')}
                       </p>
                     </div>
@@ -754,16 +754,16 @@ export default async function PlayerReportPage({
 
         {/* Coach Notes / Reviews */}
         {(reviews || []).length > 0 && (
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">Coach Feedback</h3>
+          <div className="px-8 py-6 border-b border-[#1d2c42]">
+            <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-4">Coach Feedback</h3>
             <div className="space-y-4">
               {(reviews || []).slice(0, 3).map((r) => (
-                <div key={r.id} className="border border-border rounded-lg p-4">
+                <div key={r.id} className="border border-[#1d2c42] rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-text">
+                    <span className="text-sm font-medium text-[#eef2f9]">
                       {(r.coach as unknown as { full_name: string })?.full_name || 'Coach'}
                     </span>
-                    <span className="text-xs text-text-light">
+                    <span className="text-xs text-[#93a2ba]">
                       {new Date(r.review_date).toLocaleDateString('en-GB')}
                     </span>
                   </div>
@@ -793,7 +793,7 @@ export default async function PlayerReportPage({
                     </p>
                   )}
                   {r.parent_summary && (
-                    <p className="text-sm bg-surface rounded-lg p-3 mt-2 text-text-light italic">
+                    <p className="text-sm bg-[#0f1a2b] rounded-lg p-3 mt-2 text-[#93a2ba] italic">
                       {r.parent_summary}
                     </p>
                   )}
@@ -805,22 +805,22 @@ export default async function PlayerReportPage({
 
         {/* Session Notes */}
         {(sessionNotes || []).length > 0 && (
-          <div className="px-8 py-6 border-b border-border">
-            <h3 className="text-sm font-semibold text-text-light uppercase tracking-wide mb-4">Session Notes</h3>
+          <div className="px-8 py-6 border-b border-[#1d2c42]">
+            <h3 className="text-sm font-semibold text-[#93a2ba] uppercase tracking-wide mb-4">Session Notes</h3>
             <div className="space-y-3">
               {(sessionNotes || []).map((note) => (
                 <div key={note.id} className="flex gap-3 text-sm">
-                  <div className="flex-shrink-0 text-xs text-text-light w-20 pt-0.5">
+                  <div className="flex-shrink-0 text-xs text-[#93a2ba] w-20 pt-0.5">
                     {new Date(note.session_date).toLocaleDateString('en-GB')}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-text">
+                    <p className="font-medium text-[#eef2f9]">
                       {note.title || 'Session Note'}
                       {(note.group as unknown as { name: string })?.name && (
-                        <span className="font-normal text-text-light"> &mdash; {(note.group as unknown as { name: string }).name}</span>
+                        <span className="font-normal text-[#93a2ba]"> &mdash; {(note.group as unknown as { name: string }).name}</span>
                       )}
                     </p>
-                    <p className="text-text-light mt-0.5 line-clamp-2">{note.notes}</p>
+                    <p className="text-[#93a2ba] mt-0.5 line-clamp-2">{note.notes}</p>
                   </div>
                 </div>
               ))}
@@ -829,7 +829,7 @@ export default async function PlayerReportPage({
         )}
 
         {/* Footer */}
-        <div className="px-8 py-4 text-center text-xs text-text-light">
+        <div className="px-8 py-4 text-center text-xs text-[#93a2ba]">
           <p>Generated by Player Portal &middot; {reportDate}</p>
           <p className="mt-0.5">This report is based on data available at the time of generation.</p>
         </div>
