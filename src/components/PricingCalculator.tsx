@@ -1,56 +1,34 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 
-const PLANS = [
-  { slug: 'starter', name: 'Starter', monthlyPrice: 20, transactionFee: 3.5 },
-  { slug: 'pro', name: 'Pro', monthlyPrice: 35, transactionFee: 2.5 },
-  { slug: 'enterprise', name: 'Enterprise', monthlyPrice: 60, transactionFee: 2 },
-] as const
-
+// ONE plan since 2026-08: £35/mo + 3.5% all-in. The calculator shows what an
+// academy pays and — more importantly — what they keep.
+const MONTHLY = 35
+const FEE_PCT = 3.5
 const PRESETS = [500, 2000, 5000, 10000, 20000]
 
 export default function PricingCalculator() {
   const [volume, setVolume] = useState(2000)
-
-  const breakdown = useMemo(
-    () =>
-      PLANS.map((plan) => {
-        const fees = (volume * plan.transactionFee) / 100
-        return {
-          slug: plan.slug,
-          name: plan.name,
-          monthlyPrice: plan.monthlyPrice,
-          transactionFee: plan.transactionFee,
-          fees,
-          total: plan.monthlyPrice + fees,
-        }
-      }),
-    [volume],
-  )
-
-  const cheapest = breakdown.reduce((a, b) => (a.total <= b.total ? a : b))
-  const savingsVsStarter = breakdown[0].total - cheapest.total
+  const fees = (volume * FEE_PCT) / 100
+  const total = MONTHLY + fees
+  const keep = volume - fees
 
   return (
-    <div className="max-w-4xl mx-auto bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-sm">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-[11px] font-semibold uppercase tracking-wider mb-3">
-            Cost Calculator
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-white">
-            If you process{' '}
-            <span className="gradient-text">&pound;{volume.toLocaleString()}</span>/month in payments
-          </h3>
-          <p className="text-sm text-white/40 mt-1">
-            Drag the slider or pick a preset to see your total monthly cost on each plan.
-          </p>
+    <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-10">
+      <div className="text-center mb-8">
+        <div className="inline-flex px-3 py-1 rounded-full bg-[#4ecde6]/10 text-[#4ecde6] text-[11px] font-semibold uppercase tracking-wider mb-3">
+          Cost Calculator
         </div>
+        <h3 className="text-xl sm:text-2xl font-bold text-white">
+          If you process{' '}
+          <span className="gradient-text">&pound;{volume.toLocaleString()}</span>/month in payments
+        </h3>
+        <p className="text-sm text-white/40 mt-1">
+          One plan &mdash; &pound;35/month + 3.5% per transaction, card processing included.
+        </p>
       </div>
 
-      {/* Slider + presets */}
       <div className="mb-8">
         <input
           type="range"
@@ -65,8 +43,6 @@ export default function PricingCalculator() {
           <span>&pound;500</span>
           <span>&pound;20,000</span>
         </div>
-
-        {/* Preset chips */}
         <div className="flex flex-wrap gap-2 mt-4 justify-center">
           {PRESETS.map((preset) => (
             <button
@@ -85,61 +61,29 @@ export default function PricingCalculator() {
         </div>
       </div>
 
-      {/* Breakdown cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        {breakdown.map((item) => {
-          const isCheapest = item.slug === cheapest.slug
-          return (
-            <div
-              key={item.slug}
-              className={`relative rounded-2xl p-5 text-center transition-all duration-300 ${
-                isCheapest
-                  ? 'bg-gradient-to-b from-[#4ecde6]/[0.15] to-[#4ecde6]/[0.05] border-2 border-[#4ecde6]/50 shadow-lg shadow-[#4ecde6]/10'
-                  : 'bg-white/[0.02] border border-white/10'
-              }`}
-            >
-              {isCheapest && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#4ecde6] text-[#0a0a0a] text-[10px] font-bold uppercase tracking-wider rounded-full shadow-md">
-                  Best value
-                </div>
-              )}
-              <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${isCheapest ? 'text-[#4ecde6]' : 'text-white/50'}`}>
-                {item.name}
-              </p>
-              <p className={`text-3xl font-extrabold mb-1 ${isCheapest ? 'gradient-text' : 'text-white'}`}>
-                &pound;{item.total.toFixed(0)}
-              </p>
-              <p className="text-[11px] text-white/30">per month</p>
-              <div className="mt-3 pt-3 border-t border-white/5 text-[11px] text-white/40 space-y-0.5">
-                <div className="flex justify-between">
-                  <span>Base</span>
-                  <span className="text-white/60">&pound;{item.monthlyPrice}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Fees ({item.transactionFee}%)</span>
-                  <span className="text-white/60">&pound;{item.fees.toFixed(0)}</span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        <div className="rounded-2xl p-5 text-center bg-white/[0.02] border border-white/10">
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-2">Subscription</p>
+          <p className="text-3xl font-extrabold text-white tabular-nums">&pound;35</p>
+          <p className="text-xs text-white/40 mt-1">per month &middot; everything included</p>
+        </div>
+        <div className="rounded-2xl p-5 text-center bg-white/[0.02] border border-white/10">
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-2">Fees (3.5%)</p>
+          <p className="text-3xl font-extrabold text-white tabular-nums">&pound;{fees.toFixed(0)}</p>
+          <p className="text-xs text-white/40 mt-1">all-in &middot; card processing included</p>
+        </div>
+        <div className="relative rounded-2xl p-5 text-center bg-gradient-to-b from-[#4ecde6]/[0.15] to-[#4ecde6]/[0.05] border-2 border-[#4ecde6]/50 shadow-lg shadow-[#4ecde6]/10">
+          <p className="text-[11px] uppercase tracking-wider text-[#4ecde6] font-semibold mb-2">You keep</p>
+          <p className="text-3xl font-extrabold text-white tabular-nums">&pound;{keep.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          <p className="text-xs text-white/40 mt-1">96.5p of every pound collected</p>
+        </div>
       </div>
 
-      {/* Winner explainer */}
-      {savingsVsStarter > 0 ? (
-        <div className="text-center text-sm text-white/60">
-          <span className="font-semibold text-[#4ecde6]">{cheapest.name}</span> saves you{' '}
-          <span className="font-bold text-white">&pound;{savingsVsStarter.toFixed(0)}/month</span>{' '}
-          vs Starter at this volume
-          {cheapest.slug !== 'starter' && (
-            <> &mdash; <span className="text-white/40">and unlocks more features.</span></>
-          )}
-        </div>
-      ) : (
-        <div className="text-center text-sm text-white/60">
-          <span className="font-semibold text-[#4ecde6]">Starter</span> is the cheapest at this volume &mdash; upgrade once you grow past &pound;1,500/month to start saving.
-        </div>
-      )}
+      <p className="text-center text-sm text-white/50">
+        Total platform cost at this volume:{' '}
+        <span className="font-bold text-white">&pound;{total.toFixed(0)}/month</span> &mdash; no booking
+        fees for parents, no per-player charges, no surprises.
+      </p>
     </div>
   )
 }

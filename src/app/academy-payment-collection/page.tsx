@@ -150,7 +150,7 @@ export default function Page() {
             {
               stat: 'Unlimited',
               label: 'players every tier',
-              sub: 'No cap at £20 (Starter), £35 (Pro) or £60 (Enterprise). Player Portal takes a transaction fee that steps down as you scale — 3.5% Starter, 2.5% Pro, 2% Enterprise. Stripe\'s own card fees apply separately.',
+              sub: 'One plan at £35/month with unlimited players — no member caps, no tiers. A single 3.5% transaction fee includes card processing; you keep 96.5p of every pound collected.',
             },
           ]}
         />
@@ -198,7 +198,7 @@ export default function Page() {
             },
             {
               q: 'What fees does Player Portal take from each payment?',
-              a: 'Player Portal is a flat monthly subscription (£20 Starter, £35 Pro, £60 Enterprise) plus a transaction fee on each payment that steps down as you scale (3.5% Starter, 2.5% Pro, 2% Enterprise). Stripe\'s own standard card fees apply separately. There\'s no per-booking surcharge on top of that.',
+              a: 'Player Portal is one flat £35/month subscription plus a single 3.5% transaction fee — and that 3.5% includes card processing, so there are no separate Stripe fees and no per-booking surcharge. You keep 96.5p of every pound collected.',
             },
             {
               q: 'What happens when a parent\'s card fails?',

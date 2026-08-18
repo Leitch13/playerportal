@@ -151,7 +151,7 @@ export default function Page() {
             {
               stat: 'Unlimited',
               label: 'players every tier',
-              sub: 'No member cap at £20 (Starter), £35 (Pro) or £60 (Enterprise). The ladder is features, not headcount. Transaction fee steps down as you scale — 3.5% Starter, 2.5% Pro, 2% Enterprise.',
+              sub: 'One plan at £35/month with unlimited players — no member caps, no tiers. Player Portal takes a single 3.5% transaction fee that includes card processing; you keep 96.5p of every pound collected.',
             },
           ]}
         />
@@ -198,7 +198,7 @@ export default function Page() {
             },
             {
               q: 'How is Player Portal priced compared to ClassForKids?',
-              a: 'Flat monthly subscription: £20 (Starter, everything you need to go live), £35 (Pro, adds retention and growth tooling), £60 (Enterprise, adds white-label and priority support). Unlimited players on every tier — the ladder is features, not member caps. Player Portal takes a transaction fee on each payment that steps down as you scale (3.5% Starter, 2.5% Pro, 2% Enterprise); Stripe\'s own card fees apply separately. ClassForKids typically charges around 5% per booking on top of a base fee — for a 100-member academy taking £4,000/month, moving to Player Portal Pro cuts platform fees roughly in half.',
+              a: 'One flat plan: £35/month with everything included — unlimited players, white-label branding, the lot. Player Portal takes a single 3.5% transaction fee that covers card processing too, so you keep 96.5p of every pound collected. ClassForKids typically charges around 5% per booking on top of a base fee — for a 100-member academy taking £4,000/month, Player Portal works out meaningfully cheaper with no booking fees passed to parents.',
             },
             {
               q: 'Do we have to migrate everything before we can start?',

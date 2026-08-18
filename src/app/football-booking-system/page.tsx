@@ -150,7 +150,7 @@ export default function Page() {
             {
               stat: 'Unlimited',
               label: 'players every tier',
-              sub: '£20 (Starter) gets you the whole booking system — pages, waitlists, trials, capacity — for unlimited players. Pro (£35) adds waitlist automation and referrals. Enterprise (£60) adds white-label. Transaction fee steps down as you scale (3.5% → 2%); no per-booking surcharge.',
+              sub: '£35/month gets you the whole platform — booking pages, waitlists, trials, capacity, referrals, white-label, everything — for unlimited players. One 3.5% all-in transaction fee (card processing included); no per-booking surcharge.',
             },
           ]}
         />
@@ -206,7 +206,7 @@ export default function Page() {
             },
             {
               q: 'Does the booking page take payment?',
-              a: 'Yes, through your connected Stripe account. Parents enter card details on the booking page (never on the phone) and the money lands in your Stripe balance. Player Portal never touches the money. Player Portal takes a transaction fee that steps down by tier (3.5% Starter, 2.5% Pro, 2% Enterprise); Stripe\'s own card fee is separate. There\'s no per-booking surcharge on top of that.',
+              a: 'Yes, through your connected Stripe account. Parents enter card details on the booking page (never on the phone) and the money lands in your Stripe balance. Player Portal never touches the money. Player Portal takes a single 3.5% all-in transaction fee that includes card processing — there\'s no per-booking surcharge on top of that.',
             },
             {
               q: 'Can I embed the booking on my own website?',
