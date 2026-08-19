@@ -24,15 +24,28 @@ export default function EnrolmentForm({
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.from('enrolments').insert({
-      organisation_id: orgId,
-      player_id: playerId,
-      group_id: groupId,
-      status: 'active',
+    // Capacity-checked, reactivation-aware RPC (migration 105) — handles the
+    // "player was in this class before and has a cancelled row" case by
+    // reactivating it instead of exploding on the unique constraint.
+    const { data: rpcRes, error } = await supabase.rpc('enrol_if_capacity_available', {
+      p_player_id: playerId,
+      p_group_id: groupId,
+      p_org_id: orgId,
+      p_status: 'active',
+      p_activates_on: null,
     })
+    const result = rpcRes as { ok?: boolean; error?: string; idempotent?: boolean } | null
 
     if (error) {
-      alert(error.message)
+      alert('Could not add the enrolment. Please try again.')
+    } else if (result && result.ok === false) {
+      alert(result.error === 'class_full'
+        ? 'That class is full — free a space or increase its capacity first.'
+        : 'Could not add the enrolment. Please try again.')
+    } else if (result?.idempotent) {
+      alert('This player is already in that class.')
+      setOpen(false)
+      router.refresh()
     } else {
       setOpen(false)
       setPlayerId('')
