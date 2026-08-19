@@ -50,7 +50,7 @@ BEGIN
 
   v_max_capacity := COALESCE(v_max_capacity, 20);
 
-  SELECT id, status INTO v_existing_id, v_existing_status
+  SELECT id, status::text INTO v_existing_id, v_existing_status
   FROM public.enrolments
   WHERE player_id = p_player_id AND group_id = p_group_id
   LIMIT 1;
@@ -76,7 +76,7 @@ BEGIN
   -- Cancelled row exists → REACTIVATE it (this was the silent-vanish bug).
   IF v_existing_id IS NOT NULL THEN
     UPDATE public.enrolments
-    SET status = p_status,
+    SET status = p_status::enrolment_status,
         activates_on = p_activates_on,
         enrolled_at = now(),
         is_trial = false,          -- clear stale trial state from the row''s past life;
@@ -87,7 +87,7 @@ BEGIN
 
   -- No row at all → fresh insert (unchanged).
   INSERT INTO public.enrolments (player_id, group_id, organisation_id, status, activates_on)
-  VALUES (p_player_id, p_group_id, p_org_id, p_status, p_activates_on)
+  VALUES (p_player_id, p_group_id, p_org_id, p_status::enrolment_status, p_activates_on)
   RETURNING id INTO v_new_id;
 
   RETURN jsonb_build_object('ok', true, 'enrolment_id', v_new_id);
