@@ -78,7 +78,9 @@ BEGIN
     UPDATE public.enrolments
     SET status = p_status,
         activates_on = p_activates_on,
-        enrolled_at = now()
+        enrolled_at = now(),
+        is_trial = false,          -- clear stale trial state from the row''s past life;
+        trial_expires_at = NULL    -- the move flow re-applies trial fields when appropriate
     WHERE id = v_existing_id;
     RETURN jsonb_build_object('ok', true, 'enrolment_id', v_existing_id, 'reactivated', true);
   END IF;
