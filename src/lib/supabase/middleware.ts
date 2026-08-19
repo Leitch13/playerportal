@@ -49,6 +49,9 @@ export async function updateSession(request: NextRequest) {
       '/football-academy-management-software',
       '/football-booking-system',
       '/academy-payment-collection',
+      // Paid-traffic ASCEND webinar registration page. Exact-match (not a
+      // startsWith prefix) so no sibling route is silently exempted from auth.
+      '/wardrop',
     ]
     const path = request.nextUrl.pathname
     const isPublicRoute =
