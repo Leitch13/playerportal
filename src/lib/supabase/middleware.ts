@@ -52,6 +52,8 @@ export async function updateSession(request: NextRequest) {
       // Paid-traffic ASCEND webinar registration page. Exact-match (not a
       // startsWith prefix) so no sibling route is silently exempted from auth.
       '/wardrop',
+      // Paid-ads funnel landing page ("free booking page" offer).
+      '/start',
     ]
     const path = request.nextUrl.pathname
     const isPublicRoute =

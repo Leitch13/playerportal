@@ -47,9 +47,9 @@ export default function FunnelForm() {
         <h3 className="mt-4 text-2xl font-black text-[#0d1b2b]">You&apos;re in.</h3>
         <p className="mt-2 text-[#5a6b7c]">Here&apos;s what happens next:</p>
         <ol className="mt-4 space-y-3 text-sm text-[#0d1b2b]">
-          <li className="flex gap-3"><span className="font-black text-[#0a97b6]">1.</span>We build your academy&apos;s branded booking page — <strong>within 24 hours</strong>.</li>
-          <li className="flex gap-3"><span className="font-black text-[#0a97b6]">2.</span>It lands in your inbox. Have a poke around — no payment details, no commitment.</li>
-          <li className="flex gap-3"><span className="font-black text-[#0a97b6]">3.</span>Love it? We migrate your members for free and you go live on a 14-day free trial.</li>
+          <li className="flex gap-3"><span className="font-black text-[#0a97b6]">1.</span><span>We build your academy&apos;s branded booking page — <strong>within 24 hours</strong>.</span></li>
+          <li className="flex gap-3"><span className="font-black text-[#0a97b6]">2.</span><span>It lands in your inbox. Have a poke around — no payment details, no commitment.</span></li>
+          <li className="flex gap-3"><span className="font-black text-[#0a97b6]">3.</span><span>Love it? We migrate your members for free and you go live on a 14-day free trial.</span></li>
         </ol>
         <p className="mt-5 text-xs text-[#93a2ad]">Check your inbox — a confirmation is already on its way (look in spam if it&apos;s shy).</p>
       </div>

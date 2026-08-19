@@ -7,7 +7,7 @@ import FunnelForm from './FunnelForm'
 // not search. Copy mirrors the homepage's verified proof numbers; keep in
 // sync with NumbersProof.tsx when those refresh.
 export const metadata: Metadata = {
-  title: 'Get Your Academy’s Booking Page Built Free | Player Portal',
+  title: { absolute: 'Get Your Academy’s Booking Page Built Free | Player Portal' },
   description:
     'We’ll build your football academy a branded booking page — free, within 24 hours, before you pay a penny. Bookings, memberships and auto-billing in one place.',
   robots: { index: false, follow: false },
@@ -46,7 +46,11 @@ export default function StartPage() {
       {/* Slim bar — logo only, no nav: ad traffic gets one job to do */}
       <header className="px-6 py-4">
         <div className="mx-auto max-w-6xl flex items-center justify-between">
-          <img src="/logo.png" alt="Player Portal" className="h-9 w-auto object-contain" />
+          {/* logo.png is white-on-transparent (invisible on this light page) — text wordmark instead */}
+          <div className="italic font-black leading-none select-none" aria-label="The Player Portal">
+            <span className="block text-[10px] tracking-widest text-[#0a97b6]">THE</span>
+            <span className="block text-lg tracking-tight text-[#0d1b2b]">PLAYER P<span className="text-[#0a97b6]">O</span>RTAL</span>
+          </div>
           <span className="hidden sm:inline text-xs text-[#93a2ad]">Built by an academy owner</span>
         </div>
       </header>
