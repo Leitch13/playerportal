@@ -18,6 +18,7 @@
 
 export const PREMIUM_BOOKING_ORG_IDS = new Set<string>([
   '1aa5e627-d8cb-45f3-b460-d155d4d3c12b', // Granite City FA — tester (John's pilot org)
+  'de0de621-4ddd-410b-a671-18d493593ee5', // Connection Sports Coaching — funnel-lead demo (2026-08-20)
 ])
 
 /** Additive env override: PREMIUM_BOOKING_ORGS="id1,id2" */
