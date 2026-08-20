@@ -16,54 +16,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-// Player progress-report mock — mirrors the real report parents receive
-// (real SCORE_CATEGORIES labels). Fictional child + initials avatar on
-// purpose: never put a real player's photo on a public ad page.
-function PlayerReportMock() {
-  const skills: Array<[string, number]> = [
-    ['Attitude', 5],
-    ['Effort', 5],
-    ['Technical Quality', 4],
-    ['Game Understanding', 3],
-    ['Confidence', 4],
-  ]
-  return (
-    <div className="rounded-2xl border border-black/40 bg-[#080e18] overflow-hidden">
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/5">
-        <span className="w-2 h-2 rounded-full bg-white/15" /><span className="w-2 h-2 rounded-full bg-white/15" /><span className="w-2 h-2 rounded-full bg-white/15" />
-        <span className="ml-2 text-[9px] text-white/30 tracking-wide">theplayerportal.net / player report</span>
-      </div>
-      <div className="p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-black text-[#062a33] shrink-0" style={{ background: 'linear-gradient(170deg,#4ecde6,#12a2bd)' }}>LM</div>
-          <div>
-            <p className="text-sm font-bold text-white">Leo Mitchell</p>
-            <p className="text-[10px] text-white/40">U10 · Development Squad · Term Report</p>
-          </div>
-          <span className="ml-auto text-[9px] px-2 py-1 rounded-full bg-emerald-400/10 text-emerald-400 font-semibold whitespace-nowrap">92% attendance</span>
-        </div>
-        <div className="mt-4 space-y-2.5">
-          {skills.map(([label, score]) => (
-            <div key={label}>
-              <div className="flex justify-between text-[10px] mb-1">
-                <span className="text-white/60">{label}</span>
-                <span className="text-[#4ecde6] font-semibold tabular-nums">{score}/5</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-white/10">
-                <div className="h-full rounded-full bg-[#4ecde6]" style={{ width: `${score * 20}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 rounded-xl bg-white/5 p-3">
-          <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold">Coach&apos;s note</p>
-          <p className="mt-1 text-[11px] text-white/70 leading-relaxed">&ldquo;Leo&apos;s first touch has come on massively this term — brave on the ball and demanding it now. Really proud of him.&rdquo;</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 const STATS = [
   { number: '£23k+', label: 'collected for academies — live Stripe, not projections' },
   { number: '180+', label: 'members migrated for one academy in a single afternoon' },
@@ -177,8 +129,14 @@ export default function StartPage() {
             </p>
           </div>
           <div className="max-w-md w-full mx-auto lg:mx-0 space-y-4">
+            {/* Real player, real academy, real report (used with permission) */}
+            <img
+              src="/roman-progress.jpg"
+              alt="Roman, a Gold & Gray academy player, next to his Player Portal progress report showing skill ratings"
+              className="rounded-2xl border border-[#e3ebf0] w-full h-auto shadow-[0_18px_40px_-20px_rgba(13,40,54,0.35)]"
+              loading="lazy"
+            />
             <ReportsMock />
-            <PlayerReportMock />
           </div>
         </div>
       </section>
