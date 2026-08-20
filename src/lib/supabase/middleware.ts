@@ -70,6 +70,8 @@ export async function updateSession(request: NextRequest) {
       path.startsWith('/confirm-subscription') ||
       // ASCEND lead funnel: /ascend page + /ascend/calculator.html (static)
       path.startsWith('/ascend') ||
+      // Public academy help guides (e.g. /guides/meta-pixel)
+      path.startsWith('/guides') ||
       LANDING_SLUGS.includes(path)
 
     if (!user && !isAuthRoute && !isPublicRoute && !isApiRoute) {
