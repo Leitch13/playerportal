@@ -15,7 +15,20 @@ import { addToAscendAudience } from '@/lib/ascend-audience'
  *   3. auto-reply delivering the calculator link, signed John
  * The alert send is the one that must succeed; audience + auto-reply are
  * best-effort.
+ *
+ * CORS is permissive: the Wix-embedded ASCEND pages (calculator gate on the
+ * full-page embed) post here cross-origin. Public + rate-limited anyway.
  */
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS })
+}
+
 export async function POST(request: NextRequest) {
   const ip =
     (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
@@ -23,14 +36,14 @@ export async function POST(request: NextRequest) {
     'unknown'
   const { success } = rateLimit(`ascend-lead:${ip}`, 6, 3600000)
   if (!success) {
-    return NextResponse.json({ error: 'Too many requests — please try again later.' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many requests — please try again later.' }, { status: 429, headers: CORS })
   }
 
   let body: Record<string, unknown>
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400, headers: CORS })
   }
 
   const str = (v: unknown, max = 500) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
@@ -39,11 +52,11 @@ export async function POST(request: NextRequest) {
   const stage = str(body.stage, 80)
 
   if (!name || !email) {
-    return NextResponse.json({ error: 'Name and email are required.' }, { status: 400 })
+    return NextResponse.json({ error: 'Name and email are required.' }, { status: 400, headers: CORS })
   }
   const emailProblem = await checkLeadEmail(email, 'the calculator')
   if (emailProblem) {
-    return NextResponse.json({ error: emailProblem }, { status: 400 })
+    return NextResponse.json({ error: emailProblem }, { status: 400, headers: CORS })
   }
 
   const to =
@@ -112,5 +125,5 @@ export async function POST(request: NextRequest) {
     replyTo: to,
   })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true }, { headers: CORS })
 }
