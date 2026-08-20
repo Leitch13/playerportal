@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "playerportal": {
+      "command": "node",
+      "args": ["tools/pp-mcp/index.mjs"]
+    }
+  }
+}
