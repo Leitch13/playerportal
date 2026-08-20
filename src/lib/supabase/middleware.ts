@@ -68,6 +68,8 @@ export async function updateSession(request: NextRequest) {
       path.startsWith('/cookies') ||
       path.startsWith('/demo') ||
       path.startsWith('/confirm-subscription') ||
+      // ASCEND lead funnel: /ascend page + /ascend/calculator.html (static)
+      path.startsWith('/ascend') ||
       LANDING_SLUGS.includes(path)
 
     if (!user && !isAuthRoute && !isPublicRoute && !isApiRoute) {

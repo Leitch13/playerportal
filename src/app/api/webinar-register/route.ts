@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/email'
+import { addToAscendAudience } from '@/lib/ascend-audience'
 
 /**
  * ASCEND webinar registration capture (/wardrop).
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest) {
     // this and still sends the visitor to checkout.
     return NextResponse.json({ error: 'send_failed' }, { status: 502 })
   }
+
+  // Webinar registrants are ASCEND leads too — grow the broadcast list.
+  await addToAscendAudience(email, name)
 
   return NextResponse.json({ ok: true })
 }
