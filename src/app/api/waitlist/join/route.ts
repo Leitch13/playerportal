@@ -132,5 +132,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Tell the academy — joins were previously silent, so admins only ever
+  // discovered waitlist demand by opening the dashboard page. Best-effort:
+  // a notification failure must never fail the join.
+  try {
+    const [{ data: player }, { data: admins }] = await Promise.all([
+      db.from('players').select('first_name, last_name').eq('id', playerId).single(),
+      db.from('profiles').select('id').eq('organisation_id', group.organisation_id).eq('role', 'admin'),
+    ])
+    const childName = `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'A player'
+    if (admins?.length) {
+      await db.from('notifications').insert(
+        admins.map((a) => ({
+          user_id: a.id as string,
+          organisation_id: group.organisation_id,
+          type: 'waitlist_joined',
+          title: 'New waitlist signup',
+          body: `${childName} joined the waitlist for ${group.name?.trim() || 'a class'} (position ${inserted.position}).`,
+          link: '/dashboard/waitlist',
+        }))
+      )
+    }
+  } catch {
+    /* best-effort */
+  }
+
   return NextResponse.json({ id: inserted.id, position: inserted.position })
 }
