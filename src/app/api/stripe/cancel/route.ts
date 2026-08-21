@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 
 /**
  * Parent cancellation endpoint.
@@ -132,6 +133,15 @@ export async function POST(request: NextRequest) {
         await sendEmail({ to: profile.email, ...template })
       } catch { /* email optional */ }
     }
+
+    // Admin activity feed (in-app) — alongside the existing admin email.
+    await notifyOrgAdmins({
+      orgId,
+      type: 'cancellation',
+      title: 'Subscription cancelled',
+      body: `${(await (async()=>{const { data: pr } = await supabase.from('profiles').select('full_name').eq('id', user.id).single(); return pr?.full_name || 'A parent'})())} cancelled a subscription — ends ${endDate}.`,
+      link: '/dashboard/payments',
+    })
 
     // ─── ADMIN notification — new — with reason + offer outcome ───
     // "Notify academy/admin of cancellation reason and whether the offer

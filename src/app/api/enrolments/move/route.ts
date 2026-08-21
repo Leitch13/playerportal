@@ -29,6 +29,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 
 const MAX_FUTURE_DAYS = 90
 
@@ -292,6 +293,21 @@ export async function POST(request: NextRequest) {
         console.error('move: parent notification email failed (non-fatal)', e)
       }
     }
+
+    // Admin activity feed — moves used to be invisible to the other admins.
+    try {
+      const p = source.player as unknown as { first_name?: string; last_name?: string } | null
+      const playerName = `${p?.first_name || ''} ${p?.last_name || ''}`.trim() || 'A player'
+      const { data: srcGroup } = await service
+        .from('training_groups').select('name').eq('id', source.group_id).single()
+      await notifyOrgAdmins({
+        orgId,
+        type: 'class_move',
+        title: 'Player moved class',
+        body: `${playerName} moved from ${srcGroup?.name?.trim() || 'a class'} to ${(destGroup.name as string)?.trim()}${isImmediate ? '' : ` (effective ${effectiveDateIso})`}.`,
+        link: `/dashboard/groups/${destGroup.id}`,
+      })
+    } catch { /* best-effort */ }
 
     return NextResponse.json({
       ok: true,

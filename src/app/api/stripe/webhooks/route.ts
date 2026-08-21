@@ -1812,6 +1812,21 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       .eq('id', localSub.parent_id)
       .single()
 
+    // Admin activity feed — payments used to be invisible to admins.
+    // Additive + best-effort: never touches billing logic, never throws.
+    if (localSub.organisation_id && amountPaid > 0) {
+      try {
+        const { notifyOrgAdmins } = await import('@/lib/notify-admins')
+        await notifyOrgAdmins({
+          orgId: localSub.organisation_id as string,
+          type: 'payment',
+          title: 'Payment received',
+          body: `£${amountPaid.toFixed(2)} from ${profile?.full_name || 'a parent'}${renewalPlanName ? ` — ${renewalPlanName}` : ''}.`,
+          link: '/dashboard/payments',
+        })
+      } catch { /* best-effort */ }
+    }
+
     const { data: plan } = await supabase
       .from('subscription_plans')
       .select('name')

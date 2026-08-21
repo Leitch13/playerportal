@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 
 /**
  * Parent self-booking endpoint.
@@ -204,6 +205,13 @@ export async function POST(request: NextRequest) {
         .from('enrolments')
         .update({ status: 'active' })
         .eq('id', existing.id)
+      await notifyOrgAdmins({
+        orgId: group.organisation_id,
+        type: 'booking',
+        title: 'Class booking',
+        body: `${player.first_name} re-joined ${group.name}.`,
+        link: `/dashboard/groups/${groupId}`,
+      })
       return NextResponse.json({ success: true, reactivated: true })
     }
 
@@ -255,6 +263,13 @@ export async function POST(request: NextRequest) {
       // ignore
     }
 
+    await notifyOrgAdmins({
+      orgId: group.organisation_id,
+      type: 'booking',
+      title: 'Class booking',
+      body: `${player.first_name} booked into ${group.name}.`,
+      link: `/dashboard/groups/${groupId}`,
+    })
     return NextResponse.json({ success: true })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
