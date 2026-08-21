@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 /**
  * Parent joins a class waitlist.
@@ -11,6 +12,16 @@ import { createClient } from '@/lib/supabase/server'
  * - Computes the next position in the queue and inserts a `waiting` row.
  * - Idempotent: if the player is already on the list for this group with
  *   `waiting` status, returns the existing row instead of inserting a duplicate.
+ *
+ * DB access is via the SERVICE ROLE with explicit ownership filters, NOT the
+ * session client. Under RLS, `authenticated` users can only SELECT their own
+ * org's training_groups — so a signed-in parent from another academy (or a
+ * user whose profile isn't attached to this org yet) got a bogus "Class not
+ * found" on a class that anon visitors could see fine. The same session-RLS
+ * lens also made the position computation see only the caller's own waitlist
+ * rows. Security is preserved by the explicit checks below: the class must be
+ * published (org too), and the player must belong to the calling parent AND
+ * to the class's org.
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -32,20 +43,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'groupId is required' }, { status: 400 })
   }
 
-  // Resolve the target class's org so we don't trust client-supplied orgIds.
-  const { data: group } = await supabase
+  const db = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Resolve the target class — mirror what an anon visitor is allowed to see:
+  // a published class in a published org. Unpublished stays invisible.
+  const { data: group } = await db
     .from('training_groups')
-    .select('id, organisation_id, name')
+    .select('id, organisation_id, name, is_published, organisation:organisations!inner(is_published)')
     .eq('id', groupId)
     .single()
 
-  if (!group) {
+  const orgPublished = (group?.organisation as unknown as { is_published?: boolean } | null)?.is_published
+  if (!group || group.is_published === false || !orgPublished) {
     return NextResponse.json({ error: 'Class not found' }, { status: 404 })
   }
 
   // If no playerId was provided, pick the parent's first child in this org.
   if (!playerId) {
-    const { data: child } = await supabase
+    const { data: child } = await db
       .from('players')
       .select('id')
       .eq('parent_id', user.id)
@@ -63,7 +81,7 @@ export async function POST(request: NextRequest) {
     playerId = child.id
   } else {
     // Verify the player actually belongs to this parent + this org.
-    const { data: child } = await supabase
+    const { data: child } = await db
       .from('players')
       .select('id, organisation_id, parent_id')
       .eq('id', playerId)
@@ -74,7 +92,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Idempotency: if this child is already waiting for this group, return that row.
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('waitlist')
     .select('id, position, status')
     .eq('group_id', groupId)
@@ -85,8 +103,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ already: true, id: existing.id, position: existing.position, status: existing.status })
   }
 
-  // Compute next position
-  const { data: last } = await supabase
+  // Compute next position (service role sees the WHOLE queue, not just the
+  // caller's rows — under session RLS every parent thought they were #1).
+  const { data: last } = await db
     .from('waitlist')
     .select('position')
     .eq('group_id', groupId)
@@ -96,7 +115,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
   const nextPosition = (last?.position || 0) + 1
 
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await db
     .from('waitlist')
     .insert({
       player_id: playerId,
