@@ -10,6 +10,40 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-08-19 → 2026-08-21 (session burst — logged as one block)
+
+> Gap note: deployments between 2026-07-09 and 2026-08-18 were not logged here;
+> they are captured in `git log main` and the production-baseline memory
+> (highlights: grouped booking view `6be6db4`, cyan-shell nav `4bf467c`,
+> per-session bridge billing fix `b2b1145`, homepage V4 "Daylight" `fe9e5a9`,
+> one-plan £35+3.5% pricing `e8866fd`/`3acf34a`).
+
+### `196b86c` — fix(waitlist): join failed as "Class not found" for signed-in cross-org users
+- **Purpose**: 077b lockdown left authenticated users with own-org-only SELECT on `training_groups`; any signed-in user outside the academy died at the join route's first lookup. Also fixed queue position (session RLS made every parent position 1). Route now service-role with explicit checks (published class + published org, player belongs to caller and to the class's org). Verified live with minted demo-parent session, cross-org and same-org.
+- **Files**: `src/app/api/waitlist/join/route.ts`
+- **Rollback**: `git revert 196b86c` + push
+
+### `a960e96` — feat(demo): Connection Sports Coaching demo booking page (ads-funnel lead #1)
+- Premium allowlist entry + badge logo. Org data created directly in prod (org `de0de621…`, 5 classes, 4 plans, demo roster). Later data-only changes: trial extended to 2026-10-16, James Styles's profile repointed from his self-registered duplicate org (`f98aeba6…`, now hidden/renamed), his real 1:1 pricing folded in, `is_published` set true.
+- **Files**: `src/lib/premium-booking.ts`, `public/demo-logos/`
+- **Rollback**: remove allowlist line; org data removal = manual
+
+### `b292ce5` — feat(guides): public Meta Pixel setup guide (`/guides/meta-pixel`)
+### `32d2a39` — feat(tools): Player Portal MCP server v1 (`tools/pp-mcp`, `.mcp.json`) — read-only, 6 tools
+### `c0afc13` — feat(ascend): Wix mentorship + calculator pages rewired from Formspree to own capture (`/api/ascend/apply`, CORS)
+### `1b850bb` — feat(ascend): `/ascend` lead funnel + "ASCEND Leads" Resend audience (`RESEND_ASCEND_AUDIENCE_ID`); `/wardrop` feeds audience
+### `fcb62d5` — feat(funnel): Roman creative on `/start` (`public/roman-progress.jpg`)
+### `3206d04` — feat(funnel): cold-audience rework of `/start` (analytics-first hook, founder block, "what's the catch" FAQ)
+### `b237c02` — chore: `NEXT_PUBLIC_META_PIXEL_ID=2813414995711176` env + redeploy — platform pixel LIVE (verified PageView+Lead)
+### `b8a832e` — feat(funnel): fake-email rejection on lead capture (disposable blocklist, typo suggestions, MX check — later extracted to `src/lib/lead-email-checks.ts`)
+### `02b3137` — feat(funnel): `/start` ad landing page + `/api/funnel/lead` (alert + auto-reply); `/start` public in middleware
+### `18cfaf8` (and `a487d3e`/`af0b743`/`a3f8813`) — enrolment reactivation fix (migration 105) + per-academy Meta Pixel (migration 104)
+- **Purpose**: killed Emma's duplicate-key error on player moves + three silent bugs (move-vanish, ex-trialist re-registration, waitlist returners) via capacity-checked reactivation of cancelled enrolments; per-academy "bring your own pixel" (Settings field, consent-gated PageView/Lead/InitiateCheckout via trackSingle). Both migrations run manually in Supabase SQL editor; RPC verified end-to-end on prod.
+- **Files**: `supabase/104_org_meta_pixel.sql`, `supabase/105_enrol_reactivate_cancelled.sql`, `src/app/dashboard/enrolments/EnrolmentForm.tsx`, booking/trial pages, `src/components/AcademyPixel.tsx`, `src/lib/meta-pixel.ts`, settings
+
+
+---
+
 ## 2026-07-08
 
 ### `f7808c0` — Flexible Camp Booking Mode — global rollout (Phases 0 → 3E + pilot bypass)
