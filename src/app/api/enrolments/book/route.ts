@@ -211,6 +211,7 @@ export async function POST(request: NextRequest) {
         title: 'Class booking',
         body: `${player.first_name} re-joined ${group.name}.`,
         link: `/dashboard/groups/${groupId}`,
+        email: true,
       })
       return NextResponse.json({ success: true, reactivated: true })
     }
@@ -269,6 +270,7 @@ export async function POST(request: NextRequest) {
       title: 'Class booking',
       body: `${player.first_name} booked into ${group.name}.`,
       link: `/dashboard/groups/${groupId}`,
+      email: true,
     })
     return NextResponse.json({ success: true })
   } catch (err: unknown) {

@@ -306,6 +306,7 @@ export async function POST(request: NextRequest) {
         title: 'Player moved class',
         body: `${playerName} moved from ${srcGroup?.name?.trim() || 'a class'} to ${(destGroup.name as string)?.trim()}${isImmediate ? '' : ` (effective ${effectiveDateIso})`}.`,
         link: `/dashboard/groups/${destGroup.id}`,
+        email: true,
       })
     } catch { /* best-effort */ }
 

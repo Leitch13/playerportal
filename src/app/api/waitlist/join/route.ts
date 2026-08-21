@@ -142,16 +142,15 @@ export async function POST(request: NextRequest) {
     ])
     const childName = `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'A player'
     if (admins?.length) {
-      await db.from('notifications').insert(
-        admins.map((a) => ({
-          user_id: a.id as string,
-          organisation_id: group.organisation_id,
-          type: 'waitlist_joined',
-          title: 'New waitlist signup',
-          body: `${childName} joined the waitlist for ${group.name?.trim() || 'a class'} (position ${inserted.position}).`,
-          link: '/dashboard/waitlist',
-        }))
-      )
+      const { notifyOrgAdmins } = await import('@/lib/notify-admins')
+      await notifyOrgAdmins({
+        orgId: group.organisation_id,
+        type: 'waitlist_joined',
+        title: 'New waitlist signup',
+        body: `${childName} joined the waitlist for ${group.name?.trim() || 'a class'} (position ${inserted.position}).`,
+        link: '/dashboard/waitlist',
+        email: true,
+      })
     }
   } catch {
     /* best-effort */
