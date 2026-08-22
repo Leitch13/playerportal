@@ -503,6 +503,7 @@ export default async function PublicBookingPage({
         priceValue,
         priceUnit,
         href: `/book/${slug}/class/${group.id}`,
+        imageUrl: (group as unknown as { image_url?: string | null }).image_url || null,
       }
     })
     const venues = [...new Set(premiumClasses.map((c) => c.location).filter((v): v is string => !!v))]
@@ -512,6 +513,7 @@ export default async function PublicBookingPage({
         <PremiumBookingView
           orgName={org.name as string}
           logoUrl={org.logo_url as string | null}
+          heroUrl={(org as { hero_image_url?: string | null }).hero_image_url || null}
           primaryColor={primaryColor as string}
           classes={premiumClasses}
           venues={venues}

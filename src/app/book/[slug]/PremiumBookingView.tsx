@@ -28,11 +28,15 @@ export interface PremiumClassCard {
   priceUnit: string | null
   /** Same href the standard flat card links to (class detail page) */
   href: string
+  /** Optional class photo (training_groups.image_url) — card renders top image when set */
+  imageUrl: string | null
 }
 
 interface Props {
   orgName: string
   logoUrl: string | null
+  /** Optional hero banner (organisations.hero_image_url) */
+  heroUrl: string | null
   primaryColor: string
   classes: PremiumClassCard[]
   /** Unique venue names derived from the classes' locations */
@@ -86,7 +90,12 @@ const css = `
 .pb-dot{width:4.5px;height:4.5px;border-radius:50%;background:#67c79a}
 .pb-body{padding:16px 16px 20px;display:flex;flex-direction:column;gap:12px}
 .pb-seclab{font-family:var(--pb-mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:#5b6c86;margin-top:6px}
-.pb-card{background:#0f1a2b;border:1px solid #1d2c42;border-radius:15px;padding:14px 15px}
+.pb-hero{position:relative;margin:-16px -16px 14px;border-radius:18px 18px 0 0;overflow:hidden;height:150px}
+.pb-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.pb-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,14,24,.15),rgba(8,14,24,.92))}
+.pb-img{margin:-14px -15px 12px;overflow:hidden;border-radius:14px 14px 0 0;height:118px}
+.pb-img img{width:100%;height:100%;object-fit:cover;display:block}
+.pb-card{background:#0f1a2b;border:1px solid #1d2c42;border-radius:15px;padding:14px 15px;overflow:hidden}
 .pb-ct{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .pb-n{font-size:14px;font-weight:680;letter-spacing:-.01em;color:#eef2f9}
 .pb-pr{font-size:14px;font-weight:780;color:var(--pb-brand);white-space:nowrap}
@@ -128,6 +137,8 @@ const css = `
   .pb-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:22px 24px 26px}
   .pb-seclab,.pb-micro,.pb-ghost{grid-column:1/-1}
   .pb-card{display:flex;flex-direction:column;padding:17px 18px}
+  .pb-img{margin:-17px -18px 14px;height:140px}
+  .pb-hero{height:200px}
   .pb-n{font-size:15px}
   .pb-pr{font-size:15px}
   .pb-slot{margin-bottom:12px}
@@ -139,6 +150,7 @@ const css = `
 export default function PremiumBookingView({
   orgName,
   logoUrl,
+  heroUrl,
   primaryColor,
   classes,
   venues,
@@ -169,6 +181,12 @@ export default function PremiumBookingView({
         </div>
       )}
       <div className="pb-page">
+        {heroUrl && (
+          <div className="pb-hero">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={heroUrl} alt="" />
+          </div>
+        )}
         <div className="pb-head">
           <div className="pb-org">
             <div className="pb-crest">
@@ -202,6 +220,12 @@ export default function PremiumBookingView({
             const dayTime = [c.day, c.time].filter(Boolean).join(' ')
             return (
               <div className="pb-card" key={c.id}>
+                {c.imageUrl && (
+                  <div className="pb-img">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={c.imageUrl} alt="" loading="lazy" />
+                  </div>
+                )}
                 <div className="pb-ct">
                   <span className="pb-n">{c.name}</span>
                   {c.priceValue && (
