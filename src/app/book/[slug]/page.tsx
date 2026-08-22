@@ -552,7 +552,8 @@ export default async function PublicBookingPage({
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-16">
         {/* Stripe-not-connected notice — shown when the academy hasn't finished Stripe Connect yet */}
-        {!org.stripe_account_id && (
+        {/* pilot/demo orgs skip the setup banner — it's a showcase, not a live shop */}
+        {!org.stripe_account_id && !(org as { pilot?: boolean }).pilot && (
           <section>
             <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-6 text-amber-100">
               <div className="flex items-start gap-3">
