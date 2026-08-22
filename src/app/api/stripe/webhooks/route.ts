@@ -477,6 +477,55 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 // ---------------------------------------------------------------------------
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // ─── Requested/manual payment paid (dashboard "request payment" flow) ───
+  // /api/stripe/checkout stamps metadata.payment_id on these sessions, but no
+  // branch ever consumed it — the parent paid, Stripe took the money, and the
+  // ledger row stayed 'unpaid' forever (and admins were never told). Mark the
+  // row paid (idempotent) + fan the activity notification, then return: a
+  // manual payment must never fall through into the signup logic below.
+  if (session.metadata?.payment_id) {
+    if (session.payment_status === 'paid' || session.payment_status === 'no_payment_required') {
+      const nowIso = new Date().toISOString()
+      const { data: payRow, error: reqPayErr } = await supabase
+        .from('payments')
+        .update({
+          status: 'paid',
+          amount_paid: (session.amount_total ?? 0) / 100,
+          paid_date: nowIso.split('T')[0],
+          updated_at: nowIso,
+        })
+        .eq('id', session.metadata.payment_id)
+        .neq('status', 'paid')
+        .neq('status', 'refunded')
+        .select('id, organisation_id, parent_id, amount, description')
+        .maybeSingle()
+      if (reqPayErr) throw new Error(`requested-payment payments.update failed: ${reqPayErr.message}`)
+
+      // payRow null ⇒ already paid/refunded on a prior delivery — idempotent no-op.
+      if (payRow?.organisation_id) {
+        try {
+          let parentName = 'a parent'
+          if (payRow.parent_id) {
+            const { data: pr } = await supabase
+              .from('profiles').select('full_name').eq('id', payRow.parent_id).maybeSingle()
+            if (pr?.full_name) parentName = pr.full_name as string
+          }
+          const paidAmt = ((session.amount_total ?? 0) / 100) || Number(payRow.amount || 0)
+          const { notifyOrgAdmins } = await import('@/lib/notify-admins')
+          await notifyOrgAdmins({
+            orgId: payRow.organisation_id as string,
+            type: 'payment',
+            title: 'Requested payment received',
+            body: `£${paidAmt.toFixed(2)} received from ${parentName}${payRow.description ? ` — ${payRow.description}` : ''}.`,
+            link: '/dashboard/payments',
+            email: true,
+          })
+        } catch { /* best-effort */ }
+      }
+    }
+    return
+  }
+
   // ─── Camp booking paid (one-off Connect payment) ───
   // Source of truth for camp payment. Previously the booking was marked paid
   // on the success-page redirect, which anyone could hit without paying — this
