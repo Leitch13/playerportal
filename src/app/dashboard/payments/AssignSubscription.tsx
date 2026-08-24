@@ -53,19 +53,13 @@ export default function AssignSubscription({
     if (error) {
       alert(error.message)
     } else {
-      // Auto-create first monthly payment
-      const { error: payError } = await supabase.from('payments').insert({
-        organisation_id: orgId,
-        parent_id: player.parent_id,
-        player_id: playerId,
-        amount: Number(plan.amount),
-        amount_paid: 0,
-        description: `${plan.name} — ${player.first_name} ${player.last_name}`,
-        status: 'unpaid',
-        due_date: new Date().toISOString().split('T')[0],
-      })
-
-      // payError is non-critical — subscription was assigned
+      // NOTE: this used to auto-insert an 'unpaid' payments row ("first
+      // monthly payment") alongside the assignment. Removed 2026-08-24: the
+      // row was a phantom invoice — nothing ever sent it, nothing could pay
+      // it, and it inflated the parent's Outstanding balance from the moment
+      // it was created (every such row in production sat unpaid forever,
+      // duplicating a membership the family already had). Real payment rows
+      // are created by the Stripe webhook when money actually moves.
 
       setSuccess(`${plan.name} assigned to ${player.first_name}`)
       setPlayerId('')

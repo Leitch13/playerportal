@@ -51,15 +51,20 @@ export default function StatementClient({
     })
   }, [payments, startDate, endDate])
 
-  const totalDue = filteredPayments.reduce((sum, p) => sum + p.amount, 0)
-  const totalPaid = filteredPayments.reduce((sum, p) => sum + p.amount_paid, 0)
+  // Waived (written-off) and refunded rows are shown in the list for the
+  // record, but never count towards what's due — matches the payments page.
+  const billable = filteredPayments.filter(
+    (p) => p.status !== 'waived' && p.status !== 'refunded'
+  )
+  const totalDue = billable.reduce((sum, p) => sum + p.amount, 0)
+  const totalPaid = billable.reduce((sum, p) => sum + p.amount_paid, 0)
   const outstanding = totalDue - totalPaid
   const paidCount = filteredPayments.filter((p) => p.status === 'paid').length
   const overdueCount = filteredPayments.filter((p) => p.status === 'overdue').length
 
   // Find next payment due (unpaid with future or present due date)
   const nextPayment = payments
-    .filter((p) => p.status !== 'paid' && p.due_date)
+    .filter((p) => p.status !== 'paid' && p.status !== 'waived' && p.status !== 'refunded' && p.due_date)
     .sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''))
     [0]
 

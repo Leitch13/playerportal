@@ -232,8 +232,14 @@ async function ParentPayments({
       : null,
   }))
 
-  const totalDue = (payments || []).reduce((sum, p) => sum + Number(p.amount), 0)
-  const totalPaid = (payments || []).reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+  // Waived (written-off) and refunded rows must not count towards what a
+  // parent owes — a waived invoice is the academy saying "you don't owe this".
+  // Same rule the player passport already applies (ProgressionPassport.tsx).
+  const billablePayments = (payments || []).filter(
+    (p) => p.status !== 'waived' && p.status !== 'refunded'
+  )
+  const totalDue = billablePayments.reduce((sum, p) => sum + Number(p.amount), 0)
+  const totalPaid = billablePayments.reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
   const outstanding = totalDue - totalPaid
   const overdueCount = (payments || []).filter((p) => p.status === 'overdue').length
 
@@ -886,9 +892,13 @@ async function AdminPayments({
     ? (monthlyRecurring + totalLifetimeRevenue / Math.max(1, totalParentCount)) / Math.max(1, totalParentCount)
     : 0
 
-  // Collection rate
-  const totalDueAll = (allPayments || []).reduce((s, p) => s + Number(p.amount), 0)
-  const totalCollectedAll = (allPayments || []).reduce((s, p) => s + Number(p.amount_paid || 0), 0)
+  // Collection rate — waived/refunded rows are excluded: written-off money
+  // isn't "due", so it must not drag the rate down.
+  const billableAll = (allPayments || []).filter(
+    (p) => p.status !== 'waived' && p.status !== 'refunded'
+  )
+  const totalDueAll = billableAll.reduce((s, p) => s + Number(p.amount), 0)
+  const totalCollectedAll = billableAll.reduce((s, p) => s + Number(p.amount_paid || 0), 0)
   const collectionRate = totalDueAll > 0 ? Math.round((totalCollectedAll / totalDueAll) * 100) : 100
 
   // ─── Monthly income breakdown (last 6 months) ───
