@@ -10,6 +10,15 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-08-24
+
+### `e3e8e08` + `64b958f` + `8fb7e22` — feat(payments): sendable one-off invoices, Connect-routed; ledger integrity fixes
+- **Purpose**: academies could raise ad-hoc invoices ("+ Add Payment") but nothing was ever sent to the parent and there was no way to pay one — every invoice raised in prod sat unpaid forever. Added: `/pay/[id]` public branded pay page (bearer-capability UUID, same model as `/confirm-subscription`), `POST /api/payments/[id]/checkout` (Connect-routed via new `src/lib/invoice-checkout.ts` — readiness pre-flight, platform fee from plan tier, on_behalf_of + transfer_data), `POST /api/payments/[id]/send-link` (admin-only email w/ audit note), envelope send button on unpaid admin rows, middleware exemption for `/pay`. Fixed latent misroute in `/api/stripe/checkout` (had NO Connect routing; dead code, never triggered). Ledger fixes: parent Outstanding / collection rate / statement exclude waived+refunded; statement "next payment" skips them; AssignSubscription no longer auto-inserts phantom unpaid rows. `8fb7e22` (caught in post-deploy verification): waived invoices are unpayable via the pay link/checkout/send-link.
+- **Data companion**: 7 phantom G&G invoices (£396.10, all duplicating live memberships) set `status='waived'` with audit notes via service role. Zero unpaid rows platform-wide after.
+- **Deploy mechanism**: `vercel deploy --prod` from local `main` (GitHub push blocked — no credential on this machine; commits NOT yet on origin/main). ⚠️ **Must `git push origin main` once GitHub auth is restored, BEFORE any other push-to-main deploy, or auto-deploy will regress these three commits.**
+- **Webhook untouched** — existing `metadata.payment_id` branch does settlement.
+- **Rollback**: `git revert 8fb7e22 64b958f e3e8e08` + `vercel deploy --prod`; data rollback = set the 7 rows back to `unpaid`.
+
 ## 2026-08-19 → 2026-08-21 (session burst — logged as one block)
 
 > Gap note: deployments between 2026-07-09 and 2026-08-18 were not logged here;
