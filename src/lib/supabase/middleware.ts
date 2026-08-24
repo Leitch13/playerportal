@@ -68,6 +68,13 @@ export async function updateSession(request: NextRequest) {
       path.startsWith('/cookies') ||
       path.startsWith('/demo') ||
       path.startsWith('/confirm-subscription') ||
+      // One-off invoice payment link emailed to a parent. Public by design,
+      // exactly like /confirm-subscription: parents frequently have no
+      // password set, and bouncing them to a signin screen is the difference
+      // between an invoice that gets paid and one that doesn't. The invoice
+      // UUID is the unguessable bearer capability and grants nothing beyond
+      // paying that single invoice.
+      path.startsWith('/pay') ||
       // ASCEND lead funnel: /ascend page + /ascend/calculator.html (static)
       path.startsWith('/ascend') ||
       // Public academy help guides (e.g. /guides/meta-pixel)

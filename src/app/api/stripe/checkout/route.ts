@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createInvoiceCheckoutSession } from '@/lib/invoice-checkout'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,15 +35,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Calculate remaining balance in pence
-    const amountDue = Number(payment.amount)
-    const amountPaid = Number(payment.amount_paid || 0)
-    const remaining = amountDue - amountPaid
-
-    if (remaining <= 0) {
-      return NextResponse.json({ error: 'Payment already completed' }, { status: 400 })
-    }
-
     const parent = payment.parent as unknown as {
       full_name: string
       email: string
@@ -67,40 +59,40 @@ export async function POST(request: NextRequest) {
         .eq('id', user.id)
     }
 
-    // Create Stripe Checkout Session
+    // ─── Route the payment to the academy's connected Stripe account ───
+    // An invoice is money owed to the ACADEMY. Previously this session was
+    // created with no Connect routing at all, so the funds would have landed
+    // on the PLATFORM account and never reached the academy — the same defect
+    // that took the payment-link generator offline on 2026-07-17. No money was
+    // ever misrouted in practice because the caller (PayNowButton) was never
+    // rendered, but the landmine is removed here rather than left armed.
+    //
+    // Shared with the emailed /pay/[id] surface so both build an identical,
+    // correctly-routed session. Balance/settled checks live in the helper.
     const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      line_items: [
-        {
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: payment.description || 'Payment',
-              description: `Payment for ${parent?.full_name || 'Parent'}`,
-            },
-            unit_amount: Math.round(remaining * 100), // Stripe uses pence
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${origin}/dashboard/payments?success=1`,
-      cancel_url: `${origin}/dashboard/payments?cancelled=1`,
-      metadata: {
-        payment_id: paymentId,
-        supabase_user_id: user.id,
+    const result = await createInvoiceCheckoutSession({
+      db: supabase,
+      payment: {
+        id: payment.id as string,
+        amount: payment.amount as number,
+        amount_paid: payment.amount_paid as number | null,
+        status: payment.status as string,
+        description: payment.description as string | null,
+        organisation_id: payment.organisation_id as string | null,
       },
+      parentEmail: parent?.email || user.email || null,
+      customerId,
+      successUrl: `${origin}/dashboard/payments?success=1`,
+      cancelUrl: `${origin}/dashboard/payments?cancelled=1`,
+      metadata: { supabase_user_id: user.id, pp_flow: 'one_off_invoice' },
     })
 
-    // Store session ID on payment for webhook reconciliation
-    await supabase
-      .from('payments')
-      .update({ stripe_session_id: session.id })
-      .eq('id', paymentId)
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: result.status || 400 })
+    }
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: result.url })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     const stack = err instanceof Error ? err.stack : ''
