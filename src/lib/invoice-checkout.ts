@@ -108,7 +108,10 @@ export async function createInvoiceCheckoutSession(opts: {
 }): Promise<InvoiceCheckoutResult> {
   const { db, payment, parentEmail, customerId, successUrl, cancelUrl, metadata } = opts
 
-  if (payment.status === 'paid' || payment.status === 'refunded') {
+  if (payment.status === 'paid' || payment.status === 'refunded' || payment.status === 'waived') {
+    // 'waived' = written off by the academy — nothing is owed, so it must be
+    // just as unpayable as paid/refunded, or a stale emailed link could
+    // charge a family for a debt that was cancelled.
     return { ok: false, error: 'This invoice has already been settled.', status: 400 }
   }
 

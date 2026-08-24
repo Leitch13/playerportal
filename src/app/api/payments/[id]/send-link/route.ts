@@ -73,7 +73,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invoice not found.' }, { status: 404 })
   }
 
-  if (payment.status === 'paid' || payment.status === 'refunded') {
+  if (payment.status === 'paid' || payment.status === 'refunded' || payment.status === 'waived') {
     return NextResponse.json({ error: 'This invoice is already settled.' }, { status: 400 })
   }
 

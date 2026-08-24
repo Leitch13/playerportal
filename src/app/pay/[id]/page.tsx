@@ -57,7 +57,11 @@ export default async function PayInvoicePage({
   const remaining =
     Math.round((Number(payment.amount) - Number(payment.amount_paid || 0)) * 100) / 100
 
-  const settled = payment.status === 'paid' || payment.status === 'refunded' || remaining <= 0
+  const settled =
+    payment.status === 'paid' ||
+    payment.status === 'refunded' ||
+    payment.status === 'waived' ||
+    remaining <= 0
 
   return (
     <PayClient
