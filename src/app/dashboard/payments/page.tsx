@@ -16,6 +16,7 @@ import type { UserRole, SubscriptionPlan } from '@/lib/types'
 import PaymentManager from './PaymentManager'
 import PaymentStatusToggleClient from './PaymentStatusToggleClient'
 import SendPayLinkButton from './SendPayLinkButton'
+import OutstandingInvoices, { toOutstandingRows } from './OutstandingInvoices'
 import SubscribeButton from './SubscribeButton'
 import ManageBillingButton from './ManageBillingButton'
 import SubscriptionPlanManager from './SubscriptionPlanManager'
@@ -344,6 +345,10 @@ async function ParentPayments({
       nextPaymentAmount = Number((s.plan as unknown as SubscriptionPlan)?.amount ?? 0)
     }
   }
+  // One-off invoices the parent can pay right now (unpaid/partial/overdue
+  // with a balance). Each links to the proven public /pay/[id] flow.
+  const outstandingRows = toOutstandingRows(payments || [])
+
   const billingFacts: BillingFacts = {
     hasStripeCustomer,
     outstanding,
@@ -431,6 +436,7 @@ async function ParentPayments({
 
     const overviewPanel = (
       <div className="space-y-6">
+        <OutstandingInvoices rows={outstandingRows} />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <MembershipOverview activeSubs={activeSubs as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />
@@ -555,6 +561,8 @@ async function ParentPayments({
           Sections are pure presentation; all Stripe/cancel/messaging flows
           are reused unchanged through deep links + the existing components.
           ═══════════════════════════════════════════════════════════ */}
+
+      <OutstandingInvoices rows={outstandingRows} />
 
       <MembershipOverview activeSubs={activeSubsWithTerm as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />
 
