@@ -57,21 +57,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === 'conversion') {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    let discountCode = 'TRIAL-'
-    for (let i = 0; i < 6; i++) {
-      discountCode += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-
+    // No discount code: pricing is the academy's decision, and the code this
+    // previously generated was never a real promo (nothing at checkout read
+    // it), so the advertised "20% off" could never actually be applied.
     const slug = org?.slug || trial.organisation_id || ''
-    const signupUrl = `${appUrl}/book/${slug}?discount=${discountCode}`
+    const signupUrl = `${appUrl}/book/${slug}?trial=${trialId}&email=${encodeURIComponent(trial.parent_email)}`
 
     const template = trialConversionEmail({
       parentName: parentFirst,
       childName: trial.child_name,
       academyName: org?.name || 'the academy',
       className: group?.name || 'the class',
-      discountCode,
       signupUrl,
     })
 
@@ -79,7 +75,7 @@ export async function POST(request: NextRequest) {
     if (result.success) {
       await supabase
         .from('trial_bookings')
-        .update({ followup_sent: true, conversion_offer_sent: true, discount_code: discountCode })
+        .update({ followup_sent: true, conversion_offer_sent: true })
         .eq('id', trialId)
     }
     return NextResponse.json({ success: result.success })

@@ -2025,34 +2025,34 @@ export function trialReminder2hEmail(params: {
   }
 }
 
+// Post-trial invitation to join.
+//
+// DELIBERATELY OFFERS NO DISCOUNT. This email is sent by the platform on the
+// academy's behalf, and pricing is the academy's commercial decision alone —
+// Player Portal must never promise money off their classes. (The previous
+// version advertised "20% OFF" with a generated code that was never written
+// to `promo_codes` and that nothing at checkout ever read, so the discount
+// was unhonourable as well as unauthorised.) An academy that wants to run a
+// taster offer creates a real promo code and shares it themselves.
 export function trialConversionEmail(params: {
   parentName: string
   childName: string
   academyName: string
   className: string
-  discountCode: string
   signupUrl: string
 }) {
   return {
-    subject: `How did ${params.childName} enjoy their session? — ${params.academyName}`,
+    subject: `Would ${params.childName} like to keep going? — ${params.academyName}`,
     html: baseLayout(`
-      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">How did ${params.childName} enjoy it?</h2>
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Would ${params.childName} like to keep going?</h2>
       <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
-      <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> had a brilliant time at the <strong>${params.className}</strong> taster session with <strong>${params.academyName}</strong>!</p>
-      <p style="color:#aaa;line-height:1.6">If they loved it, we'd love to have them back. Here's a special offer just for taster families:</p>
-      <div style="background:linear-gradient(135deg,#0d2818,#0a1f14);border:2px solid #10b981;border-radius:16px;padding:24px;margin:24px 0;text-align:center">
-        <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#10b981">First month</p>
-        <p style="margin:0;font-size:36px;font-weight:800;color:#4ecde6">20% OFF</p>
-        <p style="margin:8px 0 0;font-size:13px;color:#aaa">Sign up within 7 days</p>
-        <div style="background:#1a1a1a;border-radius:8px;padding:10px;margin-top:12px;display:inline-block">
-          <p style="margin:0;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px">Your code</p>
-          <p style="margin:4px 0 0;font-size:20px;font-weight:800;color:#4ecde6;letter-spacing:2px;font-family:monospace">${params.discountCode}</p>
-        </div>
+      <p style="color:#aaa;line-height:1.6">We hope <strong>${params.childName}</strong> enjoyed their taster session at <strong>${params.className}</strong> with <strong>${params.academyName}</strong>.</p>
+      <p style="color:#aaa;line-height:1.6">If they had a good time, there's a place waiting for them. Sessions run weekly, and you can join from any week — it takes about a minute to get set up.</p>
+      <div style="text-align:center;margin:26px 0">
+        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Book ${params.childName} in &rarr;</a>
       </div>
-      <div style="text-align:center;margin:24px 0">
-        <a href="${params.signupUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Sign Up Now &rarr;</a>
-      </div>
-      <p style="color:#666;font-size:13px;text-align:center">Questions? Just reply to this email — we'd love to hear from you.</p>
+      <p style="color:#aaa;line-height:1.6;font-size:14px">Not quite right for them? That's completely fine — just reply and let us know, it genuinely helps us.</p>
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:20px">Any questions, just reply to this email.</p>
     `),
   }
 }

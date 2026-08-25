@@ -6,15 +6,6 @@ import { trialConversionEmail } from '@/lib/email-templates'
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
 
-function generateDiscountCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = 'TRIAL-'
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return code
-}
-
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -66,21 +57,22 @@ export async function GET(request: NextRequest) {
     const group = trial.training_group as unknown as { name: string } | null
     const org = trial.organisation as unknown as { name: string; slug: string | null } | null
 
-    const discountCode = generateDiscountCode()
     const slug = org?.slug || trial.organisation_id || ''
     // Trial Conversion 1A — Phase 2 + 3: append trial+email for attribution.
     // Personalisation: signup form can pre-fill from `email`; webhook
     // auto-link uses `trial` as the primary match key (via the
     // trial_signup_attributions table written when the parent loads the
     // /book/[slug] page).
-    const signupUrl = `${appUrl}/book/${slug}?discount=${discountCode}&trial=${trial.id}&email=${encodeURIComponent(trial.parent_email)}`
+    //
+    // NO `discount` param: the platform does not offer money off an
+    // academy's classes on their behalf. See trialConversionEmail.
+    const signupUrl = `${appUrl}/book/${slug}?trial=${trial.id}&email=${encodeURIComponent(trial.parent_email)}`
 
     const template = trialConversionEmail({
       parentName: trial.parent_name?.split(' ')[0] || 'there',
       childName: trial.child_name,
       academyName: org?.name || 'the academy',
       className: group?.name || 'the class',
-      discountCode,
       signupUrl,
     })
 
@@ -90,10 +82,7 @@ export async function GET(request: NextRequest) {
     // followup_sent belongs exclusively to the day-1 cron now.
     await supabase
       .from('trial_bookings')
-      .update({
-        conversion_offer_sent: true,
-        discount_code: discountCode,
-      })
+      .update({ conversion_offer_sent: true })
       .eq('id', trial.id)
   }
 
