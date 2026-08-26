@@ -80,3 +80,58 @@ Twelve drift categories:
 - No customer impact
 
 Re-running the script produces the same result. Safe to repeat.
+
+## cancel-academy-signup.mjs
+
+Takes down an academy signup that shouldn't be live — spam, fraud, or a
+mistaken onboarding.
+
+`/api/onboard` creates the organisation with `platform_subscription_status='trial'`
+and `is_published=true`, so a junk signup is immediately public and bookable at
+`/book/<slug>` on our own domain. The `/platform` dashboard is read-only, so
+there was previously no way to take one down short of hand-written SQL.
+
+**Dry run by default** — nothing is written without `--apply`.
+
+```sh
+vercel env pull /tmp/.env.prod --environment=production --yes
+set -a; source /tmp/.env.prod; set +a
+
+# 1. Look, don't touch
+node scripts/cancel-academy-signup.mjs --slug=regions-bank
+
+# 2. Soft cancel — reversible; unpublishes + marks cancelled, keeps every row
+node scripts/cancel-academy-signup.mjs --slug=regions-bank --apply
+
+# 3. Hard delete — irreversible; org, its rows, and its auth users
+node scripts/cancel-academy-signup.mjs --slug=regions-bank --purge --apply
+```
+
+### Flags
+
+- `--slug=a,b` / `--id=<uuid>` — target academies (comma-separated)
+- `--apply` — actually write; otherwise dry run
+- `--purge` — hard delete instead of soft cancel
+- `--force` — override the safety interlock
+- `--reason=<txt>` — recorded in `audit_log` (default: `spam signup`)
+
+### Safety interlock
+
+Before writing anything it counts `players`, `enrolments`, `subscriptions`,
+`payments`, `trial_bookings`, `camp_bookings`, `training_groups` and `leads`.
+A junk signup has zero of all of them; a live academy does not. If any are
+non-zero it refuses to proceed without `--force` — this is what stops a
+mistyped slug from taking down a paying customer.
+
+### Notes
+
+- **Never touches Stripe.** If the org has a platform subscription or a Connect
+  account it reports them and leaves them for the Stripe dashboard.
+- `--purge` deletes auth users first (`profiles` cascades from `auth.users`),
+  then sweeps org-scoped tables dependents-first. Almost none of the
+  `organisation_id` FKs declare `ON DELETE CASCADE`, so the organisation row
+  cannot be deleted until its children are gone; the sweep retries across
+  passes and reports anything it could not clear rather than half-deleting.
+- Soft cancel writes an `audit_log` row. Purge does not — it deletes that org's
+  audit rows and removes the FK target, so there is nowhere consistent to
+  record it.
