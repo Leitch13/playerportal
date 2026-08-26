@@ -18,6 +18,7 @@ type AcademyRow = {
   txFees: number
   trialEnds: string | null
   published: boolean
+  stripeAccount: boolean
   createdAt: string
 }
 
@@ -80,12 +81,24 @@ export default function PlatformDashboard({
       : `Cancel ${row.name}?\n\nThis unpublishes their booking page and marks the signup cancelled. Nothing is deleted, and you can undo it.`
     if (!confirm(warning)) return
 
+    // Payments route to the connected account, so unpublishing alone does not
+    // stop money already in flight. Offer the rejection separately: it is
+    // irreversible, and only right when the academy is actually fraudulent.
+    let rejectStripe = false
+    if (row.stripeAccount) {
+      rejectStripe = confirm(
+        `${row.name} has a connected Stripe account.\n\n` +
+          `Reject it as FRAUDULENT? This halts its charges and payouts and cannot be undone.\n\n` +
+          `OK = reject it (fraud)\nCancel = leave Stripe untouched`
+      )
+    }
+
     setCancelling(row.id)
     try {
       const res = await fetch(`/api/platform/academies/${row.id}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force }),
+        body: JSON.stringify({ force, rejectStripe }),
       })
       const data = await res.json()
 
@@ -99,8 +112,6 @@ export default function PlatformDashboard({
         alert(`Could not cancel: ${data.error || res.statusText}`)
         return
       }
-      // A fraudulent academy with a payout-capable Connect account needs
-      // handling in Stripe — this endpoint deliberately never touches it.
       if (data.stripe?.connectAccount || data.stripe?.platformSubscription) {
         alert(`${row.name} cancelled.\n\n${data.stripe.note}\n\nConnect account: ${data.stripe.connectAccount || 'none'}`)
       }

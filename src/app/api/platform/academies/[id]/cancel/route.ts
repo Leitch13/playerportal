@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { stripe } from '@/lib/stripe'
 
 /**
  * Super-admin endpoint: cancel an academy signup.
@@ -16,7 +17,8 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
  * removal once you're certain.
  *
  * Body:
- *   force  — proceed even when the academy has real activity (default false)
+ *   force         — proceed even when the academy has real activity (default false)
+ *   rejectStripe  — also reject the connected account as fraudulent (default false)
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -35,7 +37,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { force } = await request.json().catch(() => ({ force: false }))
+  const { force, rejectStripe } = await request
+    .json()
+    .catch(() => ({ force: false, rejectStripe: false }))
 
   const admin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -83,6 +87,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // ── optionally reject the connected account ──
+  // Connect accounts here are Standard, and parent payments route with
+  // on_behalf_of + transfer_data.destination, so funds settle into the
+  // connected account rather than the platform. A fraudulent academy with a
+  // live booking page is therefore a working card-testing funnel, and
+  // unpublishing alone does not stop money already in flight. accounts.reject
+  // is Stripe's platform-side mechanism for precisely this, and halts charges
+  // and payouts on the account.
+  //
+  // Opt-in and never automatic: rejecting is irreversible, and wrong for an
+  // academy cancelled for any ordinary reason.
+  const stripeRejection: { attempted: boolean; rejected: boolean; error?: string } = {
+    attempted: false,
+    rejected: false,
+  }
+  if (rejectStripe && org.stripe_account_id) {
+    stripeRejection.attempted = true
+    try {
+      await stripe.accounts.reject(org.stripe_account_id, { reason: 'fraud' })
+      stripeRejection.rejected = true
+    } catch (err) {
+      // Never fail the cancellation because Stripe refused — the booking page
+      // is already down, and the operator needs to know to finish in Stripe.
+      stripeRejection.error = err instanceof Error ? err.message : String(err)
+    }
+  }
+
   // Best effort — never fail the cancellation because the audit row didn't take.
   try {
     await admin.from('audit_log').insert({
@@ -91,7 +122,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       action: 'academy.cancelled',
       entity_type: 'organisation',
       entity_id: id,
-      details: { slug: org.slug, name: org.name, forced: !!force, via: 'platform-admin' },
+      details: {
+        slug: org.slug,
+        name: org.name,
+        forced: !!force,
+        via: 'platform-admin',
+        stripeAccountRejected: stripeRejection.rejected,
+      },
     })
   } catch { /* audit optional */ }
 
@@ -100,14 +137,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     academy: { id: org.id, name: org.name, slug: org.slug },
     forced: !!force,
     activity,
-    // Surfaced, never acted on: a fraudulent academy with a payout-capable
-    // Connect account is a card-testing vector and needs handling in Stripe.
+    // A fraudulent academy with a payout-capable Connect account is a
+    // card-testing vector. The account is rejected only on request; the
+    // platform subscription is always left alone.
     stripe: {
       connectAccount: org.stripe_account_id || null,
       platformSubscription: org.platform_stripe_subscription_id || null,
-      note: org.stripe_account_id || org.platform_stripe_subscription_id
-        ? 'Stripe objects attached — reject/cancel these in the Stripe dashboard. This endpoint does not touch Stripe.'
-        : 'No Stripe objects attached.',
+      rejection: stripeRejection,
+      note: stripeRejection.rejected
+        ? 'Connected account rejected as fraudulent — charges and payouts are halted. Check Stripe for payments that already settled.'
+        : stripeRejection.error
+          ? `Stripe refused the rejection (${stripeRejection.error}) — reject the account by hand in the Stripe dashboard.`
+          : org.stripe_account_id || org.platform_stripe_subscription_id
+            ? 'Stripe objects attached and left untouched — handle these in the Stripe dashboard.'
+            : 'No Stripe objects attached.',
     },
   })
 }

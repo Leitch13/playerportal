@@ -43,7 +43,7 @@ export default async function PlatformPage() {
   /* ── Fetch all organisations with plan info ── */
   const { data: orgs } = await admin
     .from('organisations')
-    .select('id, name, slug, logo_url, created_at, platform_plan_id, platform_subscription_status, platform_trial_ends_at, platform_stripe_subscription_id, is_published')
+    .select('id, name, slug, logo_url, created_at, platform_plan_id, platform_subscription_status, platform_trial_ends_at, platform_stripe_subscription_id, is_published, stripe_account_id')
     .order('created_at', { ascending: false })
 
   const allOrgs = orgs || []
@@ -195,6 +195,7 @@ export default async function PlatformPage() {
       monthlyRevenue: Math.round(orgPayments * 100) / 100,
       txFees: Math.round(txFee * 100) / 100,
       published: o.is_published !== false,
+      stripeAccount: Boolean(o.stripe_account_id),
       trialEnds: o.platform_trial_ends_at || null,
       createdAt: o.created_at,
     }
