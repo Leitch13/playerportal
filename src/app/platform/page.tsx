@@ -5,15 +5,6 @@ import PlatformDashboard from './PlatformDashboard'
 
 export const metadata = { title: 'Platform Admin' }
 
-/* helper: months ago date as ISO string */
-function monthsAgo(n: number) {
-  const d = new Date()
-  d.setMonth(d.getMonth() - n)
-  d.setDate(1)
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString()
-}
-
 function startOfMonth() {
   const d = new Date()
   d.setDate(1)
@@ -52,11 +43,10 @@ export default async function PlatformPage() {
   /* ── Fetch all organisations with plan info ── */
   const { data: orgs } = await admin
     .from('organisations')
-    .select('id, name, slug, logo_url, created_at, platform_plan_id, platform_subscription_status, platform_trial_ends_at, platform_stripe_subscription_id')
+    .select('id, name, slug, logo_url, created_at, platform_plan_id, platform_subscription_status, platform_trial_ends_at, platform_stripe_subscription_id, is_published')
     .order('created_at', { ascending: false })
 
   const allOrgs = orgs || []
-  const orgIds = allOrgs.map(o => o.id)
 
   /* ── Platform plans lookup ── */
   const { data: plans } = await admin.from('platform_plans').select('*')
@@ -204,6 +194,7 @@ export default async function PlatformPage() {
       classes: classCountMap[o.id] || 0,
       monthlyRevenue: Math.round(orgPayments * 100) / 100,
       txFees: Math.round(txFee * 100) / 100,
+      published: o.is_published !== false,
       trialEnds: o.platform_trial_ends_at || null,
       createdAt: o.created_at,
     }
