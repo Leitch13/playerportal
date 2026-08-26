@@ -10,6 +10,11 @@
 //
 // DRY RUN BY DEFAULT. Nothing is written without --apply.
 //
+//   # Find it first — the signup notification email is skipped silently when
+//   # ADMIN_NOTIFICATION_EMAIL is unset, so the inbox is not a complete record
+//   node scripts/cancel-academy-signup.mjs --search=church
+//   node scripts/cancel-academy-signup.mjs --recent=20
+//
 //   # Look, don't touch (default)
 //   node scripts/cancel-academy-signup.mjs --slug=regions-bank
 //
@@ -24,6 +29,8 @@
 //   set -a; source /tmp/.env.prod; set +a
 //
 // Flags:
+//   --search=<text> list academies matching name / slug / contact email / location
+//   --recent=<n>   list the n most recent signups (default 20)
 //   --slug=a,b     target academies by slug (comma-separated)
 //   --id=<uuid>    target academies by organisation id (comma-separated)
 //   --apply        actually write (otherwise dry run)
@@ -49,8 +56,15 @@ const PURGE = args.purge === 'true'
 const FORCE = args.force === 'true'
 const REASON = args.reason && args.reason !== 'true' ? args.reason : 'spam signup'
 
-if (!SLUGS.length && !IDS.length) {
-  console.error('Missing --slug=<slug> or --id=<uuid>. Nothing to do.')
+const SEARCH = args.search && args.search !== "true" ? args.search : null
+const RECENT = args.recent ? Number(args.recent === "true" ? 20 : args.recent) : null
+const LISTING = Boolean(SEARCH || RECENT)
+
+if (!LISTING && !SLUGS.length && !IDS.length) {
+  console.error("Nothing to do. Find an academy, then cancel it:")
+  console.error("  --search=<text>   list academies matching a name, slug or contact email")
+  console.error("  --recent=<n>      list the n most recent signups (default 20)")
+  console.error("  --slug=<slug>     target one for cancellation")
   process.exit(1)
 }
 
@@ -163,7 +177,36 @@ async function sweepChildRows(orgId) {
   return remaining
 }
 
+async function listAcademies() {
+  let path
+  if (SEARCH) {
+    const q = encodeURIComponent(`*${SEARCH}*`)
+    path = `organisations?select=*&or=(name.ilike.${q},slug.ilike.${q},contact_email.ilike.${q},location.ilike.${q})&order=created_at.desc`
+  } else {
+    path = `organisations?select=*&order=created_at.desc&limit=${RECENT}`
+  }
+  const rows = await rest(path)
+  banner(SEARCH ? `Academies matching "${SEARCH}" — ${rows.length} found` : `${rows.length} most recent academies`)
+  if (!rows.length) {
+    console.log("Nothing matched.")
+    return
+  }
+  for (const o of rows) {
+    console.log(`\n${o.name}`)
+    console.log(`  slug         ${o.slug}`)
+    console.log(`  id           ${o.id}`)
+    console.log(`  created      ${o.created_at}`)
+    console.log(`  contact      ${o.contact_email || "—"}  ${o.contact_phone || ""}`)
+    console.log(`  location     ${o.location || "—"}`)
+    console.log(`  platform     ${o.platform_subscription_status}${o.is_published ? " · published" : " · not published"}`)
+    console.log(`  cancel with  --slug=${o.slug}`)
+  }
+  banner("Read-only listing — nothing was changed.")
+}
+
 async function main() {
+  if (LISTING) return listAcademies()
+
   banner(
     `Cancel academy signup — ${APPLY ? 'APPLY' : 'DRY RUN'} · ${PURGE ? 'HARD DELETE (purge)' : 'soft cancel'}`
   )

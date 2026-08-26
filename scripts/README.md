@@ -93,6 +93,22 @@ there was previously no way to take one down short of hand-written SQL.
 
 **Dry run by default** — nothing is written without `--apply`.
 
+### Finding an academy
+
+The new-academy notification email is *silently skipped* when
+`ADMIN_NOTIFICATION_EMAIL` is unset (`src/app/api/onboard/route.ts`), so the
+admin inbox is not a complete record of who has signed up. Look in the database
+instead:
+
+```sh
+node scripts/cancel-academy-signup.mjs --search=church   # name, slug, email or location
+node scripts/cancel-academy-signup.mjs --recent=20       # most recent signups
+```
+
+Both are read-only and print the `--slug=` to use for cancellation.
+
+### Cancelling
+
 ```sh
 vercel env pull /tmp/.env.prod --environment=production --yes
 set -a; source /tmp/.env.prod; set +a
@@ -109,6 +125,8 @@ node scripts/cancel-academy-signup.mjs --slug=regions-bank --purge --apply
 
 ### Flags
 
+- `--search=<text>` — read-only; list academies matching name, slug, contact email or location
+- `--recent=<n>` — read-only; list the n most recent signups (default 20)
 - `--slug=a,b` / `--id=<uuid>` — target academies (comma-separated)
 - `--apply` — actually write; otherwise dry run
 - `--purge` — hard delete instead of soft cancel
