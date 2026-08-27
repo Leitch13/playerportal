@@ -63,7 +63,7 @@ export default function PushNotificationPrompt() {
     <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 min-w-0">
         <span className="text-lg shrink-0" aria-hidden="true">
-          🔔
+          
         </span>
         <p className="text-sm text-gray-300">
           Enable notifications to stay updated on sessions, payments, and announcements.

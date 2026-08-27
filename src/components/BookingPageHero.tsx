@@ -123,7 +123,7 @@ export default function BookingPageHero({
           </div>
         ) : isFreshLaunch ? (
           <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white/[0.06] border border-white/[0.12] backdrop-blur-sm mb-4 sm:mb-6 animate-fade-in">
-            <span className="text-sm sm:text-base">✨</span>
+            <span className="text-sm sm:text-base"></span>
             <span className="text-[11px] sm:text-xs font-semibold text-white/80">
               Newly launched · Be one of the first
             </span>

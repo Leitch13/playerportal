@@ -265,8 +265,8 @@ async function AdminSchedule({
                   <div>
                     <div className="font-semibold text-sm">{session.groupName}</div>
                     <div className="flex items-center gap-2 text-xs text-white/60 mt-1">
-                      {session.location && <span>📍 {session.location}</span>}
-                      {session.coachName && <span>👤 {session.coachName}</span>}
+                      {session.location && <span> {session.location}</span>}
+                      {session.coachName && <span> {session.coachName}</span>}
                     </div>
                   </div>
                   <div className="text-right">
@@ -1044,8 +1044,8 @@ async function ParentSchedule({
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-sm text-white truncate">{camp.name}</h4>
-                      <div className="text-[11px] text-white/50 mt-0.5">📅 {dateLabel}</div>
-                      {camp.location && <div className="text-[11px] text-white/40 truncate">📍 {camp.location}</div>}
+                      <div className="text-[11px] text-white/50 mt-0.5"> {dateLabel}</div>
+                      {camp.location && <div className="text-[11px] text-white/40 truncate"> {camp.location}</div>}
                       <div className="flex items-center justify-between mt-1.5">
                         {price != null && (
                           <span className="text-base font-extrabold" style={{ color: brandColor }}>£{price.toFixed(0)}</span>

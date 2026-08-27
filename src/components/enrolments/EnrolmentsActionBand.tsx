@@ -77,7 +77,7 @@ export default function EnrolmentsActionBand({
 
       {nothingUrgent ? (
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-5 text-center">
-          <p className="text-sm font-semibold text-emerald-300">No urgent enrolment actions today ✅</p>
+          <p className="text-sm font-semibold text-emerald-300">No urgent enrolment actions today </p>
           <p className="text-xs text-white/50 mt-1">No trials ending this week and no attendance concerns.</p>
         </div>
       ) : (

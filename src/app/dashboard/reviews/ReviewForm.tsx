@@ -277,9 +277,9 @@ export default function ReviewForm({
   // ── Scoring-fields manager (single shared modal) ──
   // Previously duplicated inline in two places with no feedback states.
   const TEMPLATES: { key: string; icon: string; blurb: string; fields: { name: string; icon: string; description: string }[] }[] = [
-    { key: 'Football', icon: '⚽', blurb: 'Outfield fundamentals', fields: FOOTBALL_DEFAULTS },
-    { key: 'Goalkeeper', icon: '🧤', blurb: 'Keeper-specific skills', fields: GOALKEEPER_DEFAULTS },
-    { key: 'General Sport', icon: '🏅', blurb: 'Sport-agnostic development', fields: CUSTOM_SPORT_DEFAULTS },
+    { key: 'Football', icon: '', blurb: 'Outfield fundamentals', fields: FOOTBALL_DEFAULTS },
+    { key: 'Goalkeeper', icon: '', blurb: 'Keeper-specific skills', fields: GOALKEEPER_DEFAULTS },
+    { key: 'General Sport', icon: '', blurb: 'Sport-agnostic development', fields: CUSTOM_SPORT_DEFAULTS },
   ]
   const activeNames = new Set(dbCategories.map(d => d.name))
   const isTemplateActive = (t: (typeof TEMPLATES)[number]) =>
@@ -299,14 +299,14 @@ export default function ReviewForm({
             <h2 className="text-lg font-bold text-white">Scoring fields</h2>
             <p className="text-xs text-white/45 mt-0.5">Used by every coach in your academy when writing player reports</p>
           </div>
-          <button onClick={closeFieldManager} aria-label="Close" className="w-8 h-8 -mr-1 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors text-base leading-none">✕</button>
+          <button onClick={closeFieldManager} aria-label="Close" className="w-8 h-8 -mr-1 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors text-base leading-none"></button>
         </div>
 
         <div className="px-6 py-5 space-y-6 max-h-[65vh] overflow-y-auto">
           {/* Feedback banner — success or error, never silent */}
           {fieldMsg && (
             <div className={`flex items-center gap-2 text-xs font-medium rounded-xl px-3.5 py-2.5 border ${fieldMsg.kind === 'ok' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
-              <span aria-hidden="true">{fieldMsg.kind === 'ok' ? '✓' : '⚠'}</span>
+              <span aria-hidden="true">{fieldMsg.kind === 'ok' ? '' : ''}</span>
               <span>{fieldMsg.text}</span>
             </div>
           )}

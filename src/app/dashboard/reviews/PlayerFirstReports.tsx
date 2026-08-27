@@ -238,7 +238,7 @@ export default function PlayerFirstReports({
               )}
               {/* top strength + focus + sparkline */}
               <div className="space-y-2">
-                {top && <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2 flex items-center justify-between"><span className="text-[10px] uppercase tracking-wider text-emerald-300/80 font-semibold">★ Top Strength</span><span className="text-sm font-bold text-white">{top.label} <span className="text-white/40 font-medium">{top.score}/5</span></span></div>}
+                {top && <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2 flex items-center justify-between"><span className="text-[10px] uppercase tracking-wider text-emerald-300/80 font-semibold"> Top Strength</span><span className="text-sm font-bold text-white">{top.label} <span className="text-white/40 font-medium">{top.score}/5</span></span></div>}
                 {focus && <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2 flex items-center justify-between"><span className="text-[10px] uppercase tracking-wider text-amber-300/80 font-semibold">◎ Focus Area</span><span className="text-sm font-bold text-white">{focus.label} <span className="text-white/40 font-medium">{focus.score}/5</span></span></div>}
                 {sparkVals.length >= 2 && (
                   <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-1.5">
@@ -320,7 +320,7 @@ export default function PlayerFirstReports({
                             <span className="text-xs"><DeltaText d={d} /></span>
                           </div>
                           <p className="text-2xl font-extrabold text-white mt-0.5">{hAvg != null ? hAvg.toFixed(1) : '—'}<span className="text-xs text-white/30"> /5</span></p>
-                          {hTop && <p className="text-[11px] text-emerald-300/80 mt-1">★ {hTop.label}</p>}
+                          {hTop && <p className="text-[11px] text-emerald-300/80 mt-1"> {hTop.label}</p>}
                           {hFocus && <p className="text-[11px] text-amber-300/80">◎ {hFocus.label}</p>}
                         </div>
                       )

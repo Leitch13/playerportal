@@ -667,7 +667,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                         {showEmailPreview ? 'Hide preview' : 'Preview email'}
                       </button>
                       <button type="button" onClick={sendTest} disabled={testState === 'sending' || !!amtErr || !!insErr} className="text-xs text-white/60 hover:text-white disabled:opacity-40">
-                        {testState === 'sending' ? 'Sending test…' : testState === 'sent' ? 'Test sent to you ✓' : testState === 'error' ? 'Test failed — retry' : 'Send test to myself'}
+                        {testState === 'sending' ? 'Sending test…' : testState === 'sent' ? 'Test sent to you ' : testState === 'error' ? 'Test failed — retry' : 'Send test to myself'}
                       </button>
                     </div>
                     {showEmailPreview && (

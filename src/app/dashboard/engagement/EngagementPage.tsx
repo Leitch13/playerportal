@@ -23,10 +23,10 @@ interface EngagementPageProps {
 type Level = 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
 
 function getLevel(score: number): { level: Level; color: string; bgColor: string; borderColor: string; glowColor: string; strokeColor: string; emoji: string } {
-  if (score >= 81) return { level: 'Platinum', color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30', glowColor: 'rgba(6,182,212,0.25)', strokeColor: '#06b6d4', emoji: '💎' }
-  if (score >= 61) return { level: 'Gold', color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', glowColor: 'rgba(245,158,11,0.25)', strokeColor: '#f59e0b', emoji: '🥇' }
-  if (score >= 41) return { level: 'Silver', color: 'text-gray-300', bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400/30', glowColor: 'rgba(156,163,175,0.25)', strokeColor: '#9ca3af', emoji: '🥈' }
-  return { level: 'Bronze', color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30', glowColor: 'rgba(249,115,22,0.25)', strokeColor: '#f97316', emoji: '🥉' }
+  if (score >= 81) return { level: 'Platinum', color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30', glowColor: 'rgba(6,182,212,0.25)', strokeColor: '#06b6d4', emoji: '' }
+  if (score >= 61) return { level: 'Gold', color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', glowColor: 'rgba(245,158,11,0.25)', strokeColor: '#f59e0b', emoji: '' }
+  if (score >= 41) return { level: 'Silver', color: 'text-gray-300', bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400/30', glowColor: 'rgba(156,163,175,0.25)', strokeColor: '#9ca3af', emoji: '' }
+  return { level: 'Bronze', color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30', glowColor: 'rgba(249,115,22,0.25)', strokeColor: '#f97316', emoji: '' }
 }
 
 /* ── Animated counter ── */
@@ -74,16 +74,16 @@ function BreakdownBar({ label, value, max, color, suffix = '' }: { label: string
 /* ── Achievements ── */
 function getAchievements(props: EngagementPageProps) {
   const achievements: { title: string; emoji: string; unlocked: boolean; description: string }[] = [
-    { title: '5 Session Streak', emoji: '🔥', unlocked: props.currentStreak >= 5, description: 'Attend 5 sessions in a row' },
-    { title: '10 Session Streak', emoji: '🔥', unlocked: props.currentStreak >= 10, description: 'Attend 10 sessions in a row' },
-    { title: '100% Attendance', emoji: '🏆', unlocked: props.attendanceRate === 100, description: 'Perfect attendance record' },
-    { title: 'Attendance Pro', emoji: '⭐', unlocked: props.attendanceRate >= 80, description: 'Maintain 80%+ attendance' },
-    { title: 'First Referral', emoji: '🎁', unlocked: props.referralCount >= 1, description: 'Refer your first friend' },
-    { title: 'Referral Champion', emoji: '🎁', unlocked: props.referralCount >= 3, description: 'Refer 3 or more friends' },
-    { title: 'Profile Complete', emoji: '✅', unlocked: props.profileComplete, description: 'Fill in all profile details' },
-    { title: 'Payments Up to Date', emoji: '💳', unlocked: props.paymentStatus === 'current', description: 'Keep payments current' },
-    { title: 'Platinum Parent', emoji: '💎', unlocked: calculateEngagementScore(props) >= 81, description: 'Reach Platinum level' },
-    { title: 'Gold Parent', emoji: '🥇', unlocked: calculateEngagementScore(props) >= 61, description: 'Reach Gold level' },
+    { title: '5 Session Streak', emoji: '', unlocked: props.currentStreak >= 5, description: 'Attend 5 sessions in a row' },
+    { title: '10 Session Streak', emoji: '', unlocked: props.currentStreak >= 10, description: 'Attend 10 sessions in a row' },
+    { title: '100% Attendance', emoji: '', unlocked: props.attendanceRate === 100, description: 'Perfect attendance record' },
+    { title: 'Attendance Pro', emoji: '', unlocked: props.attendanceRate >= 80, description: 'Maintain 80%+ attendance' },
+    { title: 'First Referral', emoji: '', unlocked: props.referralCount >= 1, description: 'Refer your first friend' },
+    { title: 'Referral Champion', emoji: '', unlocked: props.referralCount >= 3, description: 'Refer 3 or more friends' },
+    { title: 'Profile Complete', emoji: '', unlocked: props.profileComplete, description: 'Fill in all profile details' },
+    { title: 'Payments Up to Date', emoji: '', unlocked: props.paymentStatus === 'current', description: 'Keep payments current' },
+    { title: 'Platinum Parent', emoji: '', unlocked: calculateEngagementScore(props) >= 81, description: 'Reach Platinum level' },
+    { title: 'Gold Parent', emoji: '', unlocked: calculateEngagementScore(props) >= 61, description: 'Reach Gold level' },
   ]
   return achievements
 }

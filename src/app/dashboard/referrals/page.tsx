@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { requireFeature } from '@/lib/features'
@@ -14,7 +15,7 @@ function referralStatusChip(status: string) {
   const map: Record<string, { label: string; cls: string }> = {
     pending: { label: 'Invited', cls: 'bg-white/[0.06] text-white/70 border-white/[0.12]' },
     signed_up: { label: 'Signed up', cls: 'bg-[#4ecde6]/10 text-[#4ecde6] border-[#4ecde6]/30' },
-    rewarded: { label: 'Rewarded ✓', cls: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
+    rewarded: { label: 'Rewarded ', cls: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
   }
   const m = map[status] || { label: status, cls: 'bg-white/[0.06] text-white/70 border-white/[0.12]' }
   return <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${m.cls}`}>{m.label}</span>
@@ -64,7 +65,7 @@ export default async function ReferralsPage() {
       <div className="space-y-6">
         {/* Hero */}
         <div>
-          <h1 className="text-2xl font-bold text-white">Refer a friend — you both win 🎁</h1>
+          <h1 className="text-2xl font-bold text-white">Refer a friend — you both win </h1>
           <p className="text-sm text-white/60 mt-1">Share your link. When a friend joins, you both get rewarded.</p>
         </div>
 
@@ -110,7 +111,7 @@ export default async function ReferralsPage() {
         <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5"><h2 className="text-lg font-semibold text-white mb-4">Your referrals</h2>
           {!referrals || referrals.length === 0 ? (
             <div className="text-center py-10">
-              <div className="text-3xl mb-2" aria-hidden>🎁</div>
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['gift']}</svg></span>
               <p className="text-sm font-semibold text-white">No referrals yet</p>
               <p className="text-xs text-white/50 mt-1 max-w-xs mx-auto">Share your link above and you&rsquo;ll both benefit when a friend joins.</p>
             </div>

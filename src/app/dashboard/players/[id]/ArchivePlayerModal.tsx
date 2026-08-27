@@ -157,21 +157,21 @@ export default function ArchivePlayerModal({
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] p-3">
             <div className="font-medium text-emerald-300 mb-1.5">Will remain</div>
             <ul className="space-y-1 text-emerald-200/80">
-              <li>✓ Attendance history</li>
-              <li>✓ Progress reports &amp; reviews</li>
-              <li>✓ Awards &amp; badges</li>
-              <li>✓ Payment &amp; billing history</li>
-              <li>✓ Messages &amp; notes</li>
+              <li> Attendance history</li>
+              <li> Progress reports &amp; reviews</li>
+              <li> Awards &amp; badges</li>
+              <li> Payment &amp; billing history</li>
+              <li> Messages &amp; notes</li>
             </ul>
           </div>
           <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-3">
             <div className="font-medium text-amber-300 mb-1.5">Will be removed from</div>
             <ul className="space-y-1 text-amber-200/80">
-              <li>✓ Active Players list</li>
-              <li>✓ Class rosters / Live Register</li>
-              <li>✓ Class attendance taking</li>
-              <li>✓ Move Player picker</li>
-              <li>✓ Parent-facing My Children</li>
+              <li> Active Players list</li>
+              <li> Class rosters / Live Register</li>
+              <li> Class attendance taking</li>
+              <li> Move Player picker</li>
+              <li> Parent-facing My Children</li>
             </ul>
           </div>
         </div>
@@ -180,7 +180,7 @@ export default function ArchivePlayerModal({
         {hasActiveSubscription && (
           <div className="rounded-lg border border-rose-500/30 bg-rose-500/[0.06] p-3 space-y-2">
             <div className="text-sm font-medium text-rose-200">
-              ⚠ Active subscription detected
+               Active subscription detected
             </div>
             <p className="text-[12px] text-rose-200/80 leading-snug">
               By default we&apos;ll cancel the Stripe subscription at the end of the current billing period.

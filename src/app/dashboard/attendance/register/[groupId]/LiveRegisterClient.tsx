@@ -1,7 +1,7 @@
 /**
  * Sprint 11a — Live Register (pitch-side attendance taking).
  *
- * One class · one date · per-row ✓/✗ · sticky save bar. Mirrors the
+ * One class · one date · per-row / · sticky save bar. Mirrors the
  * proven AttendanceManager UX from /dashboard/attendance, scoped to a
  * single class so the coach lands here straight from a class card.
  *
@@ -25,6 +25,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 // Sprint 11b — Player Quick Drawer mounted at the bottom of the register.
@@ -213,7 +214,7 @@ export default function LiveRegisterClient({
             data-testid="live-register-mark-all"
             className="px-3 py-2 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            ✓ All present
+             All present
           </button>
           <button
             type="button"
@@ -274,7 +275,7 @@ export default function LiveRegisterClient({
 
         {players.length === 0 ? (
           <div className="p-10 text-center">
-            <div className="text-4xl mb-2">👥</div>
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['parents']}</svg></span>
             <p className="text-sm text-white/55">No players enrolled in this class yet.</p>
           </div>
         ) : (
@@ -347,7 +348,7 @@ export default function LiveRegisterClient({
                               title={p.medical_info as string}
                               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40"
                             >
-                              ⚠ Medical
+                               Medical
                             </span>
                           )}
                         </span>
@@ -356,7 +357,7 @@ export default function LiveRegisterClient({
                             className="block text-[11px] text-white/50 mt-0.5"
                             data-testid="live-register-row-emergency"
                           >
-                            🚨 Emergency:{' '}
+                             Emergency:
                             {emergencyName && <span className="text-white/70">{emergencyName}</span>}
                             {emergencyName && emergencyPhone && ' · '}
                             {emergencyPhone && (
@@ -385,9 +386,7 @@ export default function LiveRegisterClient({
                             ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30 scale-105'
                             : 'bg-emerald-500/10 text-emerald-300/70 hover:bg-emerald-500/20 hover:text-emerald-300'
                         }`}
-                      >
-                        ✓
-                      </button>
+                      ><svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.4}><path strokeLinecap='round' d='M6 6l12 12M18 6L6 18'/></svg></button>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setOne(p.id, 'absent') }}
@@ -398,9 +397,7 @@ export default function LiveRegisterClient({
                             ? 'bg-red-500 text-white shadow-md shadow-red-500/30 scale-105'
                             : 'bg-red-500/10 text-red-300/70 hover:bg-red-500/20 hover:text-red-300'
                         }`}
-                      >
-                        ✗
-                      </button>
+                      ><svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.4}><path strokeLinecap='round' d='M6 6l12 12M18 6L6 18'/></svg></button>
                     </div>
                   </div>
                 </div>
@@ -418,7 +415,7 @@ export default function LiveRegisterClient({
         >
           <div className="text-xs text-white/55">
             {counts.unmarked === counts.total ? (
-              <>Tap ✓ or ✗ for each player to start</>
+              <>Tap  or  for each player to start</>
             ) : (
               <><strong className="text-white">{counts.present + counts.absent}</strong> of {counts.total} marked</>
             )}

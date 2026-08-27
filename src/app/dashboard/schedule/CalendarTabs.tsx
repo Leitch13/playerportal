@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 
 export interface CalendarSession {
   id: string
@@ -263,7 +264,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
 
             {(byDay[selectedDay] || []).length === 0 ? (
               <div className="bg-[#080e18]/50 rounded-2xl p-10 text-center">
-                <div className="text-3xl mb-2">😴</div>
+                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['calendar']}</svg></span>
                 <p className="text-sm text-white/60">No classes on {selectedDay}</p>
               </div>
             ) : (
@@ -304,9 +305,9 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                       <div>
                         <h3 className="font-bold">{name}</h3>
                         <div className="flex items-center gap-3 text-xs text-white/60 mt-1">
-                          {first?.location && <span>📍 {first.location}</span>}
-                          {first?.coachName && <span>👤 {first.coachName}</span>}
-                          <span>📅 {groupSessions.map(s => s.day).join(', ')}</span>
+                          {first?.location && <span> {first.location}</span>}
+                          {first?.coachName && <span> {first.coachName}</span>}
+                          <span> {groupSessions.map(s => s.day).join(', ')}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -408,7 +409,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                               {session.playerCount} player{session.playerCount !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          {session.location && <div className="text-xs text-white/60 mb-2">📍 {session.location}</div>}
+                          {session.location && <div className="text-xs text-white/60 mb-2"> {session.location}</div>}
                           <PlayerChips players={session.players} />
                         </div>
                       ))}
@@ -441,7 +442,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center text-lg">
-                          📍
+                          
                         </div>
                         <div>
                           <h3 className="font-bold">{loc}</h3>
@@ -464,7 +465,7 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                           </div>
                           <div className="flex items-center gap-3 text-xs text-white/60 mb-2">
                             <span>{session.day}</span>
-                            {session.coachName && <span>👤 {session.coachName}</span>}
+                            {session.coachName && <span> {session.coachName}</span>}
                             <span>{session.playerCount} players</span>
                           </div>
                           <PlayerChips players={session.players} />
@@ -541,8 +542,8 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-white/60">
-                        {session.location && <span>📍 {session.location}</span>}
-                        {session.coachName && <span>👤 {session.coachName}</span>}
+                        {session.location && <span> {session.location}</span>}
+                        {session.coachName && <span> {session.coachName}</span>}
                       </div>
                       <div className="mt-2 flex items-center gap-2">
                         <div className="flex-1 bg-[#080e18] rounded-full h-1.5">
@@ -607,9 +608,9 @@ export default function CalendarTabs({ sessions, events, role, brandColor = '#4e
                       {event.description && <p className="text-sm text-white/60 mt-1">{event.description}</p>}
                       <div className="flex flex-wrap items-center gap-3 text-xs text-white/60 mt-2">
                         {event.start_time && (
-                          <span>🕐 {event.start_time}{event.end_time && ` – ${event.end_time}`}</span>
+                          <span> {event.start_time}{event.end_time && ` – ${event.end_time}`}</span>
                         )}
-                        {event.location && <span>📍 {event.location}</span>}
+                        {event.location && <span> {event.location}</span>}
                         <span className={`font-medium ${spotsLeft <= 3 ? 'text-orange-500' : 'text-accent'}`}>
                           {spotsLeft > 0 ? `${spotsLeft} spots left` : 'Full'}
                         </span>
@@ -790,7 +791,7 @@ function Chevron({ open }: { open: boolean }) {
 function EmptyBox({ message }: { message: string }) {
   return (
     <div className="bg-[#080e18]/50 rounded-2xl p-10 text-center">
-      <div className="text-3xl mb-2">📭</div>
+      <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['chat']}</svg></span>
       <p className="text-sm text-white/60">{message}</p>
     </div>
   )

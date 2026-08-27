@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import Card from '@/components/Card'
@@ -558,7 +559,7 @@ export default async function PlayerDetailPage({
                 {/* Sprint 12b — aggregate warning panel.
                     Visible only when N > 1 contributing subs exist.
                     Wording matches the approved spec exactly:
-                      "⚠ Multiple subscriptions detected. Total monthly
+                      " Multiple subscriptions detected. Total monthly
                        exposure: £X / month across N subscriptions.
                        Next billing date: <date>."
                     The trailing "Next billing date" clause is omitted
@@ -569,7 +570,7 @@ export default async function PlayerDetailPage({
                     data-testid="player-membership-aggregate"
                   >
                     <p className="text-sm font-bold text-amber-200" data-testid="player-membership-aggregate-text">
-                      ⚠ Multiple subscriptions detected. Total monthly exposure:{' '}
+                       Multiple subscriptions detected. Total monthly exposure:
                       <span data-testid="player-membership-aggregate-total">
                         {fmtMoney(aggregate.totalMonthly)} / month
                       </span>{' '}
@@ -910,7 +911,7 @@ export default async function PlayerDetailPage({
                       <div key={d.id} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-purple-400 hover:underline flex items-center gap-1.5">
-                            <span>🎨</span> {d.title}
+                            <span></span> {d.title}
                           </a>
                           <span className="text-xs text-white/60">{new Date(d.created_at).toLocaleDateString()}</span>
                         </div>
@@ -932,7 +933,7 @@ export default async function PlayerDetailPage({
                             rel="noopener noreferrer"
                             className="block bg-purple-500/10 border border-purple-500/20 rounded-lg p-6 text-center hover:bg-purple-500/15 transition-colors"
                           >
-                            <span className="text-3xl block mb-2">🎨</span>
+                            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['camera']}</svg></span>
                             <span className="text-sm font-medium text-purple-400">Open in Canva</span>
                           </a>
                         )}
@@ -953,11 +954,11 @@ export default async function PlayerDetailPage({
               <Card title="Documents" action={isStaff ? <Link href={`/dashboard/documents?player=${id}`} className="text-sm text-primary hover:underline">Manage</Link> : undefined}>
                 <div className="divide-y divide-border">
                   {otherDocs.map((d) => {
-                    const icons: Record<string, string> = { pdf: '📄', image: '🖼️', video: '🎥', link: '🔗' }
+                    const icons: Record<string, string> = { pdf: '', image: '', video: '', link: '' }
                     return (
                       <div key={d.id} className="py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span>{icons[d.doc_type as string] || '📁'}</span>
+                          <span>{icons[d.doc_type as string] || ''}</span>
                           <div>
                             <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
                               {d.title}

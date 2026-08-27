@@ -143,7 +143,7 @@ export default function ParentOnboardingChecklist({
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             {allDone
-              ? <>🎉 You're all set!</>
+              ? <> You're all set!</>
               : isMigrated
                 ? <>4 quick wins from the new portal</>
                 : <>Get the most out of Player Portal</>}

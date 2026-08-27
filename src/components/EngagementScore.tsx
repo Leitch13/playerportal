@@ -18,10 +18,10 @@ export interface EngagementScoreProps {
 type Level = 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
 
 function getLevel(score: number): { level: Level; color: string; bgColor: string; borderColor: string; glowColor: string; emoji: string } {
-  if (score >= 81) return { level: 'Platinum', color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30', glowColor: 'rgba(6,182,212,0.25)', emoji: '💎' }
-  if (score >= 61) return { level: 'Gold', color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', glowColor: 'rgba(245,158,11,0.25)', emoji: '🥇' }
-  if (score >= 41) return { level: 'Silver', color: 'text-gray-300', bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400/30', glowColor: 'rgba(156,163,175,0.25)', emoji: '🥈' }
-  return { level: 'Bronze', color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30', glowColor: 'rgba(249,115,22,0.25)', emoji: '🥉' }
+  if (score >= 81) return { level: 'Platinum', color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30', glowColor: 'rgba(6,182,212,0.25)', emoji: '' }
+  if (score >= 61) return { level: 'Gold', color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', glowColor: 'rgba(245,158,11,0.25)', emoji: '' }
+  if (score >= 41) return { level: 'Silver', color: 'text-gray-300', bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400/30', glowColor: 'rgba(156,163,175,0.25)', emoji: '' }
+  return { level: 'Bronze', color: 'text-orange-400', bgColor: 'bg-orange-500/10', borderColor: 'border-orange-500/30', glowColor: 'rgba(249,115,22,0.25)', emoji: '' }
 }
 
 /* ── Score calculation ── */

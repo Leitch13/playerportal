@@ -51,7 +51,7 @@ export default function ProgressTrend({
   const firstAvg = dataPoints[0].avg
   const lastAvg = dataPoints[dataPoints.length - 1].avg
   const trend = lastAvg - firstAvg
-  const trendIcon = trend > 0.2 ? '📈' : trend < -0.2 ? '📉' : '➡️'
+  const trendIcon = trend > 0.2 ? '' : trend < -0.2 ? '' : ''
   const trendLabel =
     trend > 0.2 ? 'Improving' : trend < -0.2 ? 'Needs focus' : 'Steady'
   const trendColor =

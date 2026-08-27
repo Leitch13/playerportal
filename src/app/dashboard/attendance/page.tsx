@@ -288,7 +288,7 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
             href="/dashboard/attendance/register"
             className="px-3 py-2 rounded-full text-xs font-semibold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10 whitespace-nowrap"
           >
-            🖨 Print register
+             Print register
           </Link>
         </div>
 
@@ -311,7 +311,7 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
         />
 
         <p className="text-xs text-white/30 text-center">
-          💡 Coach tip: use <strong className="text-white/50">Mark all present</strong> first, then tap ✗ on any no-shows. Faster than tapping every player.
+           Coach tip: use <strong className="text-white/50">Mark all present</strong> first, then tap  on any no-shows. Faster than tapping every player.
         </p>
       </div>
     </div>

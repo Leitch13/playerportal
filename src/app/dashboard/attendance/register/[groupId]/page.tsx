@@ -12,7 +12,7 @@
  *   • Pull trial guests for the chosen session date
  *   • Hand the data to LiveRegisterClient
  *
- * The client component owns: date picker, per-row ✓/✗ toggles, bulk
+ * The client component owns: date picker, per-row / toggles, bulk
  * actions, sticky save bar, existing-attendance pre-fill.
  *
  * No protected system touched. No schema change. No Stripe / RLS /

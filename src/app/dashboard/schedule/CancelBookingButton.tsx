@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const REASONS = [
-  { id: 'schedule', label: "Schedule doesn't work", icon: '📅' },
-  { id: 'expensive', label: 'Too expensive', icon: '💰' },
-  { id: 'child_stopped', label: 'Child lost interest', icon: '😕' },
-  { id: 'switching', label: 'Switching class', icon: '🔄' },
-  { id: 'other', label: 'Other reason', icon: '💬' },
+  { id: 'schedule', label: "Schedule doesn't work", icon: '' },
+  { id: 'expensive', label: 'Too expensive', icon: '' },
+  { id: 'child_stopped', label: 'Child lost interest', icon: '' },
+  { id: 'switching', label: 'Switching class', icon: '' },
+  { id: 'other', label: 'Other reason', icon: '' },
 ]
 
 type Step = 'idle' | 'reason' | 'offer' | 'confirm' | 'cancelled' | 'retained'
@@ -206,7 +206,7 @@ export default function CancelBookingButton({
       return (
         <>
           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 animate-fade-in">
-            ✓ Cancelled
+             Cancelled
           </span>
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
@@ -218,7 +218,7 @@ export default function CancelBookingButton({
             >
               <div className="text-center mb-5">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-3 text-3xl">
-                  ⚠️
+                  
                 </div>
                 <h3 className="text-xl font-bold text-white">That was your last class</h3>
                 <p className="text-sm text-white/60 mt-2">
@@ -229,7 +229,7 @@ export default function CancelBookingButton({
 
               <div className="rounded-2xl p-4 mb-5 bg-white/[0.03] border border-white/[0.08]">
                 <p className="text-sm text-white/70">
-                  💡 Two options:
+                   Two options:
                 </p>
                 <ul className="mt-2 space-y-1.5 text-sm text-white/80">
                   <li className="flex items-start gap-2">
@@ -269,7 +269,7 @@ export default function CancelBookingButton({
     }
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 animate-fade-in">
-        ✓ Cancelled
+         Cancelled
       </span>
     )
   }
@@ -278,7 +278,7 @@ export default function CancelBookingButton({
   if (step === 'retained') {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 animate-fade-in">
-        🎉 {retentionPercent}% off {durationShort}!
+         {retentionPercent}% off {durationShort}!
       </span>
     )
   }
@@ -305,7 +305,7 @@ export default function CancelBookingButton({
             <div className="p-6 sm:p-8">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
-                  😔
+                  
                 </div>
                 <h3 className="text-xl font-bold text-white">We&apos;re sorry to see you go</h3>
                 <p className="text-sm text-white/50 mt-1">Help us understand why — we read every answer.</p>
@@ -428,7 +428,7 @@ export default function CancelBookingButton({
                       Applying discount...
                     </span>
                   ) : (
-                    <>🎁 Stay &amp; Get {retentionPercent}% Off →</>
+                    <> Stay &amp; Get {retentionPercent}% Off →</>
                   )}
                 </button>
 
@@ -448,7 +448,7 @@ export default function CancelBookingButton({
             <div className="p-6 sm:p-8">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-3 text-2xl">
-                  ⚠️
+                  
                 </div>
                 <h3 className="text-xl font-bold text-white">Are you sure?</h3>
                 <p className="text-sm text-white/50 mt-1">
@@ -479,14 +479,14 @@ export default function CancelBookingButton({
               {/* Critical: explicitly tell parents subscription stays active — avoids "I was still charged?!" shock */}
               <div className="rounded-2xl p-3.5 mb-4 bg-amber-500/8 border border-amber-500/30">
                 <p className="text-xs text-amber-200/90">
-                  ⚠️ <strong className="text-amber-100">Heads up:</strong> Cancelling this class doesn&apos;t cancel your subscription. You&apos;ll still be charged monthly until you also cancel that.
+                   <strong className="text-amber-100">Heads up:</strong> Cancelling this class doesn&apos;t cancel your subscription. You&apos;ll still be charged monthly until you also cancel that.
                 </p>
               </div>
 
               {retentionEnabled && (
                 <div className="rounded-2xl p-3.5 mb-5 bg-[#4ecde6]/8 border border-[#4ecde6]/30">
                   <p className="text-sm text-white/90">
-                    💡 <strong className="text-white">Last chance:</strong> Get{' '}
+                     <strong className="text-white">Last chance:</strong> Get
                     <button onClick={() => setStep('offer')} className="text-[#4ecde6] font-bold underline underline-offset-2 hover:text-[#7adeeb] transition-colors">
                       {retentionPercent}% off {durationShort}
                     </button>{' '}

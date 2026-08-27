@@ -47,7 +47,7 @@ export default function AnnouncementFeed({ announcements, userId }: { announceme
   if (announcements.length === 0) {
     return (
       <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-12 text-center">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl mb-3" aria-hidden>📭</div>
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl mb-3" aria-hidden></div>
         <p className="font-semibold text-white">No announcements yet</p>
         <p className="text-sm text-white/50 mt-1">Check back later for news from your academy.</p>
       </div>

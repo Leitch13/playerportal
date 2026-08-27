@@ -97,7 +97,7 @@ function DeliveryStatusChip({ msg, isInbound }: { msg: MessageRow; isInbound: bo
   if (status === 'sent' || status === 'delivered') {
     return (
       <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-emerald-300/80">
-        <span aria-hidden>✓</span>
+        <span aria-hidden></span>
         Delivered via {msg.channel || 'email'}
       </span>
     )
@@ -105,7 +105,7 @@ function DeliveryStatusChip({ msg, isInbound }: { msg: MessageRow; isInbound: bo
   if (status === 'failed') {
     return (
       <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-rose-300" title={msg.delivery_failure_reason || ''}>
-        <span aria-hidden>⚠</span>
+        <span aria-hidden></span>
         Delivery failed — see details
       </span>
     )

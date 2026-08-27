@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 // Sprint 8a — per-row kebab with View / Message parent / Remove from class.
@@ -264,7 +265,7 @@ export default async function GroupDetailPage({
 
           {players.length === 0 ? (
             <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-8 text-center">
-              <div className="text-3xl mb-2">👥</div>
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['parents']}</svg></span>
               <p className="text-sm text-white/50">No players enrolled in this class yet</p>
             </div>
           ) : (

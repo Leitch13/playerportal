@@ -99,7 +99,7 @@ export default function BookClassButton({
   if (result === 'booked') {
     return (
       <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-green-600 bg-green-50 rounded-lg animate-fade-in">
-        ✓ Booked!
+         Booked!
       </span>
     )
   }

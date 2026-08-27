@@ -8,7 +8,7 @@ interface AttendanceStreakProps {
  * Gamified attendance streak widget for the player profile.
  *
  * Visual hierarchy:
- *  - Big animated emoji that escalates (⚽ → 🔥 → 🚀 → 💎) as the streak grows
+ *  - Big animated emoji that escalates ( →  →  → ) as the streak grows
  *  - Current streak count with milestone label ("4-week streak!")
  *  - Progress bar toward next milestone (5, 10, 20, 50)
  *  - Best streak + attendance rate as supporting stats
@@ -24,28 +24,28 @@ export default function AttendanceStreak({ currentStreak, bestStreak, rate }: At
     : 0
 
   // Emoji + label scales with streak so it feels rewarding
-  let emoji = '⚽' // soccer ball
+  let emoji = '' // soccer ball
   let tier = 'Just getting started'
   let glowColor = 'rgba(78, 205, 230, 0.15)'
 
   if (currentStreak >= 50) {
-    emoji = '💎' // diamond
+    emoji = '' // diamond
     tier = 'Legend'
     glowColor = 'rgba(168, 85, 247, 0.35)'
   } else if (currentStreak >= 20) {
-    emoji = '🚀' // rocket
+    emoji = '' // rocket
     tier = 'Unstoppable'
     glowColor = 'rgba(236, 72, 153, 0.3)'
   } else if (currentStreak >= 10) {
-    emoji = '🔥' // fire
+    emoji = '' // fire
     tier = 'On fire'
     glowColor = 'rgba(249, 115, 22, 0.3)'
   } else if (currentStreak >= 5) {
-    emoji = '🔥' // fire
+    emoji = '' // fire
     tier = 'Heating up'
     glowColor = 'rgba(245, 158, 11, 0.25)'
   } else if (currentStreak >= 1) {
-    emoji = '✨' // sparkles
+    emoji = '' // sparkles
     tier = 'Showing up'
     glowColor = 'rgba(78, 205, 230, 0.2)'
   }

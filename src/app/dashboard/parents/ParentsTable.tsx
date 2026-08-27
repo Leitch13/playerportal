@@ -14,6 +14,7 @@
  */
 
 import { useMemo, useState } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ParentProfileEditor from './ParentProfileEditor'
@@ -61,8 +62,8 @@ const SORT_OPTIONS: Array<{ key: ParentSortKey; label: string }> = [
 
 // Health chip palette
 const HEALTH: Record<ParentRowFacts['billingStatus'], { label: string; emoji: string; cls: string }> = {
-  healthy:        { label: 'Healthy',       emoji: '🟢', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  payment_issue:  { label: 'Payment issue', emoji: '⚠️', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+  healthy:        { label: 'Healthy',       emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  payment_issue:  { label: 'Payment issue', emoji: '', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
   pending_start:  { label: 'Pending start', emoji: '⏳', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
   none:           { label: 'No sub',        emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.10]' },
 }
@@ -186,7 +187,7 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
             href={`/dashboard/messages?recipients=${encodeURIComponent(visibleRows.map(r => r.id).join(','))}`}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-semibold bg-[#4ecde6]/15 text-[#4ecde6] border border-[#4ecde6]/40 hover:bg-[#4ecde6]/25 transition-colors"
           >
-            ✉ Message {visibleRows.length} families
+             Message {visibleRows.length} families
           </Link>
         )}
       </div>
@@ -292,11 +293,11 @@ function ParentRow({ r }: { r: ParentsTableRow }) {
       </td>
       <td className="py-2.5 px-3 text-right">
         <div className="inline-flex items-center gap-1 whitespace-nowrap">
-          <RowActionLink href={`/dashboard/parents/${r.id}`} title="View family">👨‍👩‍👧</RowActionLink>
-          <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Message">✉️</RowActionLink>
-          {r.parentPhone && <RowActionAnchor href={`tel:${r.parentPhone}`} title="Call">📞</RowActionAnchor>}
-          {r.parentPhone && <RowActionAnchor href={`https://wa.me/${waNumber}`} title="WhatsApp" external>💬</RowActionAnchor>}
-          {r.parentEmail && <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Email">📧</RowActionLink>}
+          <RowActionLink href={`/dashboard/parents/${r.id}`} title="View family"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['eye']}</svg></RowActionLink>
+          <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Message"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionLink>
+          {r.parentPhone && <RowActionAnchor href={`tel:${r.parentPhone}`} title="Call"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['phone']}</svg></RowActionAnchor>}
+          {r.parentPhone && <RowActionAnchor href={`https://wa.me/${waNumber}`} title="WhatsApp" external><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionAnchor>}
+          {r.parentEmail && <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Email"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['mail']}</svg></RowActionLink>}
           <ParentProfileEditor parent={r.editor} />
         </div>
       </td>

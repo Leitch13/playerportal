@@ -51,7 +51,7 @@ export default function ReferAcademyCard({ orgSlug, orgName }: { orgSlug: string
           onClick={copy}
           className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#4ecde6] text-[#0a0a0a] hover:bg-[#4ecde6]/90 transition-colors"
         >
-          {copied ? 'Copied ✓' : 'Copy link'}
+          {copied ? 'Copied ' : 'Copy link'}
         </button>
         <a
           href={`https://wa.me/?text=${waText}`}

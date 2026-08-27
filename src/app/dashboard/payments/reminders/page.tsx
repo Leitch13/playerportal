@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { createClient } from '@/lib/supabase/server'
 import ManualReminder from './ManualReminder'
 
@@ -131,7 +132,7 @@ export default async function RemindersPage() {
               {(!reminders || reminders.length === 0) && (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-white/40">
-                    <p className="text-3xl mb-2">📭</p>
+                    <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['chat']}</svg></span>
                     <p className="font-semibold text-white">No reminders sent yet</p>
                     <p className="text-xs mt-1">Automated reminders trigger at 3, 7, and 14 days overdue</p>
                   </td>

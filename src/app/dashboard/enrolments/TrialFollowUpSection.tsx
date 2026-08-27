@@ -113,14 +113,14 @@ export default function TrialFollowUpSection({ rows }: Props) {
                           className="px-2 py-1 rounded-md text-[11px] bg-amber-500/10 text-amber-200 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
                           title="Email parent (opens in your mail client)"
                         >
-                          ✉ Message
+                           Message
                         </a>
                       ) : (
                         <span
                           className="px-2 py-1 rounded-md text-[11px] bg-white/[0.04] text-white/30 border border-white/[0.06]"
                           title="No parent email on file"
                         >
-                          ✉ Message
+                           Message
                         </span>
                       )}
                       <Link

@@ -272,7 +272,7 @@ export default async function ParentDetailPage({
   // ── Phase 2.8 — Attendance Risk per child, then pick the MOST URGENT
   //                for the family-level banner.
   // We deliberately roll up to the highest-priority child so the banner
-  // surfaces the worst case ("⚠ Drifted away 41d" beats "⚠ Never 18d"
+  // surfaces the worst case (" Drifted away 41d" beats " Never 18d"
   // beats "new_player"). The banner is display-only.
   function tier(a: AttendanceRiskAssessment | null): number {
     if (!a) return 0
@@ -301,8 +301,8 @@ export default async function ParentDetailPage({
     ? new Date(parentProfile.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
     : '—'
 
-  const familyChip = familyStatus === 'healthy'      ? { label: 'Healthy',       cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', emoji: '🟢' }
-                   : familyStatus === 'payment_issue' ? { label: 'Payment Issue', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30',            emoji: '⚠️' }
+  const familyChip = familyStatus === 'healthy' ? { label: 'Healthy',       cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', emoji: '' }
+                   : familyStatus === 'payment_issue' ? { label: 'Payment Issue', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30',            emoji: '' }
                    : familyStatus === 'pending_start' ? { label: 'Pending Start', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30',         emoji: '⏳' }
                    :                                    { label: 'No subscription', cls: 'bg-white/[0.04] text-white/50 border-white/[0.10]',       emoji: '·'  }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { PaletteIcon } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -14,13 +15,13 @@ type SearchResult = {
 }
 
 const QUICK_LINKS = [
-  { label: 'Players', href: '/dashboard/players', icon: '⚽' },
-  { label: 'Payments', href: '/dashboard/payments', icon: '💳' },
-  { label: 'Attendance', href: '/dashboard/attendance', icon: '✅' },
-  { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
-  { label: 'Leads', href: '/dashboard/leads', icon: '🎯' },
-  { label: 'Messages', href: '/dashboard/messages', icon: '💬' },
-  { label: 'Schedule', href: '/dashboard/schedule', icon: '🗓️' },
+  { label: 'Players', href: '/dashboard/players', icon: 'players' },
+  { label: 'Payments', href: '/dashboard/payments', icon: 'card' },
+  { label: 'Attendance', href: '/dashboard/attendance', icon: 'check' },
+  { label: 'Settings', href: '/dashboard/settings', icon: 'cog' },
+  { label: 'Leads', href: '/dashboard/leads', icon: 'target' },
+  { label: 'Messages', href: '/dashboard/messages', icon: 'chat' },
+  { label: 'Schedule', href: '/dashboard/schedule', icon: 'calendar' },
 ]
 
 export default function GlobalSearch() {
@@ -92,7 +93,7 @@ export default function GlobalSearch() {
         (data || []).map((p) => ({
           id: `player-${p.id}`,
           category: 'Players' as const,
-          icon: '⚽',
+          icon: 'players',
           name: `${p.first_name} ${p.last_name}`,
           subtitle: p.age_group || 'Player',
           href: `/dashboard/players/${p.id}`,
@@ -109,7 +110,7 @@ export default function GlobalSearch() {
         (data || []).map((p) => ({
           id: `parent-${p.id}`,
           category: 'Parents' as const,
-          icon: '👨\u200D👩\u200D👧',
+          icon: 'parents',
           name: p.full_name || p.email || 'Unknown',
           subtitle: p.email || 'Parent',
           href: '/dashboard/parents',
@@ -125,7 +126,7 @@ export default function GlobalSearch() {
         (data || []).map((g) => ({
           id: `group-${g.id}`,
           category: 'Groups' as const,
-          icon: '📅',
+          icon: 'calendar',
           name: g.name,
           subtitle: g.day_of_week || 'Training Group',
           href: `/dashboard/groups/${g.id}`,
@@ -277,7 +278,7 @@ export default function GlobalSearch() {
                           : 'text-gray-300 hover:bg-white/5'
                       }`}
                     >
-                      <span className="text-lg shrink-0">{result.icon}</span>
+                      <PaletteIcon name={result.icon} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">{result.name}</div>
                         <div className="text-xs text-gray-500 truncate">{result.subtitle}</div>

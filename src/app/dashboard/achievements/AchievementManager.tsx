@@ -15,8 +15,8 @@ interface Achievement {
 }
 
 const EMOJI_OPTIONS = [
-  '⭐', '🏆', '🥇', '🥈', '🥉', '🎯', '🔥', '💪', '⚽', '🎖️',
-  '👑', '💎', '🚀', '🌟', '🏅', '✨', '🎓', '🛡️', '🦁', '👏',
+  '', '', '', '', '', '', '', '', '', '',
+  '', '', '', '', '', '', '', '', '', '',
 ]
 
 const ACHIEVEMENT_TYPES = [
@@ -45,7 +45,7 @@ export default function AchievementManager({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [badgeEmoji, setBadgeEmoji] = useState('⭐')
+  const [badgeEmoji, setBadgeEmoji] = useState('')
   const [badgeColor, setBadgeColor] = useState(BADGE_COLORS[0].value)
   const [achievementType, setAchievementType] = useState('badge')
   const [criteria, setCriteria] = useState('')
@@ -55,7 +55,7 @@ export default function AchievementManager({
   function resetForm() {
     setName('')
     setDescription('')
-    setBadgeEmoji('⭐')
+    setBadgeEmoji('')
     setBadgeColor(BADGE_COLORS[0].value)
     setAchievementType('badge')
     setCriteria('')

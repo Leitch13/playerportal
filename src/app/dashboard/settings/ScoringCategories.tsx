@@ -371,7 +371,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
                 className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#4ecde6]/15 text-[#4ecde6] hover:bg-[#4ecde6]/25 transition-colors border border-[#4ecde6]/40 shadow-[0_0_12px_rgba(78,205,230,0.15)]"
                 title={`Load ${smartDefaults.length} categories tuned for ${tabLabel} players`}
               >
-                ✨ Suggested for {tabLabel}
+                 Suggested for {tabLabel}
               </button>
             )
           })()}
@@ -421,7 +421,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
                 </div>
 
                 {/* Icon */}
-                <span className="text-lg w-7 text-center flex-shrink-0">{cat.icon || '⭐'}</span>
+                <span className="text-lg w-7 text-center flex-shrink-0">{cat.icon || ''}</span>
 
                 {/* Name & description */}
                 <div className="flex-1 min-w-0">
@@ -447,7 +447,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
                 </button>
 
                 {/* Delete */}
-                <button onClick={() => removeCategory(globalIdx)} className="text-white/30 hover:text-red-400 transition-colors text-sm" title="Remove">✕</button>
+                <button onClick={() => removeCategory(globalIdx)} className="text-white/30 hover:text-red-400 transition-colors text-sm" title="Remove">×</button>
               </div>
             )
           })}
@@ -487,7 +487,7 @@ export default function ScoringCategories({ orgId }: { orgId: string }) {
           </div>
           <div>
             <label className="text-xs font-medium text-white/70 block mb-1">Icon (emoji)</label>
-            <input className={inputClass + ' max-w-[120px]'} value={newIcon} onChange={(e) => setNewIcon(e.target.value)} placeholder="e.g. ⚽" />
+            <input className={inputClass + ' max-w-[120px]'} value={newIcon} onChange={(e) => setNewIcon(e.target.value)} placeholder="e.g. " />
           </div>
           <div className="flex gap-2">
             <button

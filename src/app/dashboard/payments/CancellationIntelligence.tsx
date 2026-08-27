@@ -17,6 +17,7 @@
  * are never shown below the sample threshold (separate per-panel
  * suppression in the derive layer too).
  */
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import {
   deriveLostMRR,
   deriveSavedMRR,
@@ -76,7 +77,7 @@ export default function CancellationIntelligence({ rows, detectedSubscriptionCan
           data-testid="cancellation-empty"
           className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 text-center"
         >
-          <div className="text-3xl mb-2">🪶</div>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['doc']}</svg></span>
           <p className="text-sm font-semibold text-white">Not enough cancellation data yet.</p>
           <p className="text-xs text-white/50 mt-1">
             Charts and percentages need at least 5 captured cancellations to be meaningful.
@@ -291,7 +292,7 @@ function IntegrityNotice({
       data-testid="data-integrity-notice"
       className="bg-amber-500/[0.06] border border-amber-500/30 rounded-xl p-4 flex items-start gap-3"
     >
-      <span className="text-amber-400 text-lg leading-none">⚠</span>
+      <span className="text-amber-400 text-lg leading-none"></span>
       <div className="space-y-1">
         <p className="text-xs text-amber-200 font-semibold">
           Some historical subscription cancellations were not captured through the cancellation flow.

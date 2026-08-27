@@ -84,7 +84,7 @@ export default function CommunicationPanel({
             href={`/dashboard/messages?to=${parentId}`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-white/80 border border-white/[0.08] transition-colors"
           >
-            <span aria-hidden>📧</span> Email
+            <span aria-hidden></span> Email
           </Link>
         )}
         {parentPhone && (
@@ -92,7 +92,7 @@ export default function CommunicationPanel({
             href={`tel:${parentPhone}`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.04] hover:bg-white/[0.08] text-white/80 border border-white/[0.08] transition-colors"
           >
-            <span aria-hidden>📞</span> Call
+            <span aria-hidden></span> Call
           </a>
         )}
         {whatsappHref && (
@@ -109,7 +109,7 @@ export default function CommunicationPanel({
           href={`/dashboard/messages?to=${parentId}`}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#4ecde6]/15 hover:bg-[#4ecde6]/25 text-[#4ecde6] border border-[#4ecde6]/30 transition-colors"
         >
-          <span aria-hidden>✉️</span> {messageCount > 0 ? `Open conversation (${messageCount})` : 'Send message'}
+          <span aria-hidden></span> {messageCount > 0 ? `Open conversation (${messageCount})` : 'Send message'}
         </Link>
       </div>
     </div>

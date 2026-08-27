@@ -44,7 +44,7 @@ export default function ParentUnlockMilestones({
 }: ParentMilestonesProps) {
   const milestones: Milestone[] = [
     {
-      emoji: '📅',
+      emoji: '',
       label: 'Book your first class',
       unlock: 'Unlocks your weekly schedule',
       done: enrolmentCount >= 1,
@@ -53,7 +53,7 @@ export default function ParentUnlockMilestones({
       href: '/dashboard/schedule',
     },
     {
-      emoji: '👟',
+      emoji: '',
       label: 'Attend your first session',
       unlock: 'Unlocks the attendance tracker',
       done: attendedCount >= 1,
@@ -61,7 +61,7 @@ export default function ParentUnlockMilestones({
       target: 1,
     },
     {
-      emoji: '🔥',
+      emoji: '',
       label: 'Hit a 5-session streak',
       unlock: 'Unlocks the streak badge',
       done: attendedCount >= 5,
@@ -69,7 +69,7 @@ export default function ParentUnlockMilestones({
       target: 5,
     },
     {
-      emoji: '📊',
+      emoji: '',
       label: 'Receive your first review',
       unlock: 'Unlocks the skills radar',
       done: reviewCount >= 1,
@@ -77,7 +77,7 @@ export default function ParentUnlockMilestones({
       target: 1,
     },
     {
-      emoji: '📈',
+      emoji: '',
       label: 'Receive your second review',
       unlock: 'Unlocks the progress trend chart',
       done: reviewCount >= 2,
@@ -85,7 +85,7 @@ export default function ParentUnlockMilestones({
       target: 2,
     },
     {
-      emoji: '🏆',
+      emoji: '',
       label: 'Earn your first achievement',
       unlock: 'Unlocks the badges row',
       done: achievementCount >= 1,
@@ -154,7 +154,7 @@ export default function ParentUnlockMilestones({
                 }`}
                 style={!m.done ? { background: `${brandColor}15` } : { background: 'rgba(255,255,255,0.04)' }}
               >
-                {m.done ? '✅' : m.emoji}
+                {m.done ? '' : m.emoji}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">

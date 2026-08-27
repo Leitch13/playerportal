@@ -59,7 +59,7 @@ export default async function MigrateMemberPage() {
 
       {/* Disambiguation callout — points heavier loads at the bulk Migration Wizard */}
       <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-white/[0.08] bg-white/[0.03]">
-        <span className="text-[#4ecde6] text-base shrink-0 mt-0.5" aria-hidden>👥</span>
+        <span className="text-[#4ecde6] text-base shrink-0 mt-0.5" aria-hidden></span>
         <div className="flex-1 text-xs sm:text-sm text-white/65 leading-relaxed">
           <strong className="text-white">For one family at a time.</strong> Migrating five or
           more parents at once? Use the{' '}

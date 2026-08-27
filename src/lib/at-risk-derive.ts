@@ -87,12 +87,12 @@ const REASON_CATALOGUE: Record<RiskReasonKey, Omit<RiskReason, 'key'>> = {
   // HIGH
   trial_stale_followup: { label: 'Stale trial follow-up', tier: 'high',   tone: 'rose',  emoji: '⏰' },
   trial_followup_due:   { label: 'Trial follow-up due',   tier: 'high',   tone: 'rose',  emoji: '⏰' },
-  payment_issue:        { label: 'Payment issue',         tier: 'high',   tone: 'rose',  emoji: '⚠️' },
+  payment_issue:        { label: 'Payment issue',         tier: 'high',   tone: 'rose',  emoji: '' },
   // MEDIUM
   no_attendance_30d:    { label: 'No attendance 30+ days', tier: 'medium', tone: 'amber', emoji: '⏱️' },
-  not_contacted_30d:    { label: 'No contact 30+ days',    tier: 'medium', tone: 'amber', emoji: '📭' },
-  never_contacted:      { label: 'Never contacted',        tier: 'medium', tone: 'amber', emoji: '📭' },
-  review_due:           { label: 'Review due',             tier: 'medium', tone: 'amber', emoji: '📋' },
+  not_contacted_30d:    { label: 'No contact 30+ days',    tier: 'medium', tone: 'amber', emoji: '' },
+  never_contacted:      { label: 'Never contacted',        tier: 'medium', tone: 'amber', emoji: '' },
+  review_due:           { label: 'Review due',             tier: 'medium', tone: 'amber', emoji: '' },
 }
 
 const reason = (key: RiskReasonKey): RiskReason => ({ key, ...REASON_CATALOGUE[key] })
@@ -171,7 +171,7 @@ export function matchesAtRiskFilter(a: RiskAssessment, filter: AtRiskFilterKey):
  * banner / chip stay in lockstep on tone shifts.
  */
 export const RISK_LEVEL_DISPLAY: Record<RiskLevel, { label: string; emoji: string; tone: 'rose' | 'amber' | 'emerald' }> = {
-  high:    { label: 'High priority',    emoji: '🔴', tone: 'rose' },
-  medium:  { label: 'Medium priority',  emoji: '🟠', tone: 'amber' },
-  healthy: { label: 'Healthy',          emoji: '🟢', tone: 'emerald' },
+  high:    { label: 'High priority',    emoji: '', tone: 'rose' },
+  medium:  { label: 'Medium priority',  emoji: '', tone: 'amber' },
+  healthy: { label: 'Healthy',          emoji: '', tone: 'emerald' },
 }

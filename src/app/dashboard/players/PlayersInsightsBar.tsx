@@ -26,10 +26,10 @@ const TILES: Array<{
   emoji: string
   tone: 'emerald' | 'amber' | 'sky' | 'rose'
 }> = [
-  { key: 'active',         label: 'Active players',  filterParam: 'active',        emoji: '🟢', tone: 'emerald' },
-  { key: 'pendingStarts',  label: 'Pending starts',  filterParam: 'pending',       emoji: '🟡', tone: 'amber'   },
-  { key: 'trials',         label: 'Trials',          filterParam: 'trial',         emoji: '🔵', tone: 'sky'     },
-  { key: 'paymentIssues',  label: 'Payment issues',  filterParam: 'payment_issue', emoji: '⚠️', tone: 'rose'    },
+  { key: 'active',         label: 'Active players',  filterParam: 'active',        emoji: '', tone: 'emerald' },
+  { key: 'pendingStarts',  label: 'Pending starts',  filterParam: 'pending',       emoji: '', tone: 'amber' },
+  { key: 'trials',         label: 'Trials',          filterParam: 'trial',         emoji: '', tone: 'sky' },
+  { key: 'paymentIssues',  label: 'Payment issues',  filterParam: 'payment_issue', emoji: '', tone: 'rose' },
 ]
 
 // Static palette → Tailwind JIT-safe.

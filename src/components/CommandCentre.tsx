@@ -174,7 +174,7 @@ function FirstRunJourney({
           >
             {/* Status circle */}
             {step.done ? (
-              <span aria-hidden className="grid h-[22px] w-[22px] place-items-center rounded-full bg-[#67c79a]/15 font-mono text-[10px] text-[#67c79a]">✓</span>
+              <span aria-hidden className="grid h-[22px] w-[22px] place-items-center rounded-full bg-[#67c79a]/15 font-mono text-[10px] text-[#67c79a]"></span>
             ) : isCurrent ? (
               <span aria-hidden className="grid h-[22px] w-[22px] place-items-center rounded-full bg-[#4ecde6]/15 font-mono text-[10px] text-[#4ecde6] shadow-[0_0_0_4px_rgba(78,205,230,0.06)]">{i + 1}</span>
             ) : (

@@ -92,7 +92,7 @@ export default function MembershipOverview({
       {/* Past-due alert (across all subs) */}
       {anyPastDue && (
         <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-2xl p-4 flex items-start gap-3" data-testid="past-due-banner">
-          <span className="text-xl shrink-0">⚠️</span>
+          <span className="text-xl shrink-0"></span>
           <div className="flex-1 text-sm">
             <strong className="block text-rose-200">Action needed</strong>
             One of your payments couldn&apos;t be processed. Update your payment method to avoid losing your child&apos;s place.
@@ -103,7 +103,7 @@ export default function MembershipOverview({
       {/* Scheduled-cancel alert (informational, separate from past_due) */}
       {anyScheduledCancel && !anyPastDue && (
         <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 rounded-2xl p-4 flex items-start gap-3" data-testid="cancel-pending-banner">
-          <span className="text-xl shrink-0">📅</span>
+          <span className="text-xl shrink-0"></span>
           <div className="flex-1 text-sm">
             <strong className="block text-amber-100">Your membership will end soon</strong>
             One subscription is scheduled to cancel at the end of the current period.

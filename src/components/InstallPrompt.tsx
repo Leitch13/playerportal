@@ -111,7 +111,7 @@ export default function InstallPrompt() {
         aria-label="Install Player Portal"
       >
         <div className="flex items-start gap-3">
-          <span className="text-2xl" aria-hidden>⚽</span>
+          <span className="text-2xl" aria-hidden></span>
           <div className="flex-1">
             <p className="font-bold text-sm">Install Player Portal</p>
             <p className="text-xs text-white/60 mt-0.5">Add to your home screen for the best experience</p>
@@ -150,7 +150,7 @@ export default function InstallPrompt() {
         aria-label="Add Player Portal to your Home Screen"
       >
         <div className="flex items-start gap-3">
-          <span className="text-2xl" aria-hidden>⚽</span>
+          <span className="text-2xl" aria-hidden></span>
           <div className="flex-1">
             <p className="font-bold text-sm">Add to Home Screen</p>
             <p className="text-xs text-white/60 mt-0.5">Install Player Portal on your iPhone for the best experience.</p>

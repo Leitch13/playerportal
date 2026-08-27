@@ -35,7 +35,7 @@ const UPSELL_CONFIG: Record<
   }
 > = {
   trial_to_class: {
-    icon: '⚽',
+    icon: '',
     heading: 'Loved the trial?',
     description: "Book {child}'s regular spot and keep the momentum going.",
     cta: 'View Classes',
@@ -46,7 +46,7 @@ const UPSELL_CONFIG: Record<
     ctaColor: 'bg-accent hover:bg-accent-dark text-white',
   },
   single_to_package: {
-    icon: '📦',
+    icon: '',
     heading: '{child} is doing great!',
     description: 'Save 15% with a multi-class package — fewer payments, same great sessions.',
     cta: 'See Packages',
@@ -57,7 +57,7 @@ const UPSELL_CONFIG: Record<
     ctaColor: 'bg-emerald-600 hover:bg-emerald-700 text-white',
   },
   package_to_subscription: {
-    icon: '🔄',
+    icon: '',
     heading: 'Upgrade to monthly',
     description: 'Never miss a session with a hassle-free monthly subscription. Cancel anytime.',
     cta: 'View Plans',
@@ -68,7 +68,7 @@ const UPSELL_CONFIG: Record<
     ctaColor: 'bg-violet-600 hover:bg-violet-700 text-white',
   },
   add_second_child: {
-    icon: '👦👧',
+    icon: '',
     heading: 'Got a sibling?',
     description: 'Get 10% off when you add a second child — they can train together!',
     cta: 'Add Child',
@@ -79,7 +79,7 @@ const UPSELL_CONFIG: Record<
     ctaColor: 'bg-amber-600 hover:bg-amber-700 text-white',
   },
   refer_friend: {
-    icon: '🎁',
+    icon: '',
     heading: 'Love Player Portal?',
     description: 'Refer a friend and you both get a free session. Everybody wins!',
     cta: 'Share Link',

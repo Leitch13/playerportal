@@ -137,7 +137,7 @@ export default function ReferralLink({
     return (
       <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
         <div className="flex items-center gap-2.5 mb-3">
-          <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-base" aria-hidden>🎁</span>
+          <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-base" aria-hidden></span>
           <div>
             <h3 className="text-sm font-bold text-white">Refer a friend</h3>
             <p className="text-xs text-white/50">Share your link — you both benefit.</p>
@@ -150,7 +150,7 @@ export default function ReferralLink({
 
         <div className="flex gap-2">
           <button onClick={handleCopy} className={`flex-1 ${copied ? 'bg-emerald-500 text-white' : 'bg-[#4ecde6] text-[#06222a] hover:bg-[#6fd9ec]'} py-2.5 rounded-xl text-sm font-bold transition-all`}>
-            {copied ? '✓ Copied' : 'Copy link'}
+            {copied ? ' Copied' : 'Copy link'}
           </button>
           <button onClick={handleShare} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-white/[0.06] border border-white/[0.12] text-white hover:bg-white/[0.1] transition-colors">
             Share
@@ -164,7 +164,7 @@ export default function ReferralLink({
   return (
     <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 md:p-8">
       <div className="flex items-center gap-3 mb-4">
-        <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl" aria-hidden>🎁</span>
+        <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl" aria-hidden></span>
         <div>
           <h2 className="text-lg font-bold text-white">Your referral link</h2>
           <p className="text-sm text-white/60">Share it anywhere — copy it, send via WhatsApp, or use your phone's share sheet.</p>
@@ -178,7 +178,7 @@ export default function ReferralLink({
 
       <div className="space-y-2.5">
         <button onClick={handleCopy} className={primaryBtn}>
-          {copied ? '✓ Copied!' : 'Copy your link'}
+          {copied ? ' Copied!' : 'Copy your link'}
         </button>
         <div className="grid grid-cols-2 gap-2.5">
           {/* Sprint 6 — Click-to-share via WhatsApp. utm_source=whatsapp utm_medium=referral

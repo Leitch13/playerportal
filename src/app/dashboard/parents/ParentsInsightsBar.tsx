@@ -21,10 +21,10 @@ const TILES: Array<{
   emoji: string
   tone: 'white' | 'emerald' | 'rose' | 'amber'
 }> = [
-  { key: 'total',          label: 'Total families',  filterParam: 'all',            emoji: '👨‍👩‍👧', tone: 'white'   },
-  { key: 'healthy',        label: 'Healthy',         filterParam: 'healthy',        emoji: '🟢',      tone: 'emerald' },
-  { key: 'paymentIssues',  label: 'Payment issues',  filterParam: 'payment_issues', emoji: '⚠️',      tone: 'rose'    },
-  { key: 'needsAttention', label: 'Needs attention', filterParam: 'attention',      emoji: '⏰',      tone: 'amber'   },
+  { key: 'total',          label: 'Total families',  filterParam: 'all',            emoji: '', tone: 'white' },
+  { key: 'healthy',        label: 'Healthy',         filterParam: 'healthy',        emoji: '',      tone: 'emerald' },
+  { key: 'paymentIssues',  label: 'Payment issues',  filterParam: 'payment_issues', emoji: '',      tone: 'rose' },
+  { key: 'needsAttention', label: 'Needs attention', filterParam: 'attention',      emoji: '',      tone: 'amber'   },
 ]
 
 const TONE: Record<'white' | 'emerald' | 'rose' | 'amber', { value: string; border: string; bg: string }> = {
@@ -47,7 +47,7 @@ export default function ParentsInsightsBar({ counts }: { counts: ParentsInsights
             className={`rounded-2xl border p-4 transition-colors ${tone.border} ${tone.bg}`}
           >
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm" aria-hidden>{t.emoji}</span>
+              
               <span className="text-[10px] uppercase tracking-wider text-white/50 font-bold">{t.label}</span>
             </div>
             <div className={`text-3xl font-extrabold leading-none tabular-nums ${tone.value}`}>{value}</div>

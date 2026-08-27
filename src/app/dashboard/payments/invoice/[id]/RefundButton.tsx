@@ -267,7 +267,7 @@ export default function RefundButton({
                           and removes the player from class enrolments.
                           {paymentAgeDays >= 35 && (
                             <span className="block mt-1 text-amber-300">
-                              ⚠ This payment is {paymentAgeDays} days old — cancellation
+                               This payment is {paymentAgeDays} days old — cancellation
                               now would end an active subscription based on a
                               historical refund. Verify this is intentional.
                             </span>

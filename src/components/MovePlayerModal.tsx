@@ -319,13 +319,13 @@ export default function MovePlayerModal({
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4 text-sm space-y-1.5">
               <p className="text-emerald-300 font-bold mb-1">What will happen</p>
               <p className="text-emerald-100/80 leading-snug">
-                <span className="text-emerald-300/90 font-semibold">✓</span> {playerName}&apos;s attendance, progress reviews and billing history stay intact.
+                <span className="text-emerald-300/90 font-semibold"></span> {playerName}&apos;s attendance, progress reviews and billing history stay intact.
               </p>
               <p className="text-emerald-100/80 leading-snug">
-                <span className="text-emerald-300/90 font-semibold">✓</span> The parent will be emailed a confirmation.
+                <span className="text-emerald-300/90 font-semibold"></span> The parent will be emailed a confirmation.
               </p>
               <p className="text-emerald-100/80 leading-snug">
-                <span className="text-emerald-300/90 font-semibold">✓</span> {mode === 'today'
+                <span className="text-emerald-300/90 font-semibold"></span> {mode === 'today'
                   ? `${playerName} appears on the ${selected.name} register from today.`
                   : `${playerName} keeps attending ${sourceGroupName} until ${futureDate || '—'}, then moves to ${selected.name}.`}
               </p>

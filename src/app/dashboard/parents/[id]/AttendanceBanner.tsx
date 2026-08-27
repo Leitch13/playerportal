@@ -2,12 +2,12 @@
  * Attendance Risk banner — Parent Detail page, Phase 2.8.
  *
  * Display-only. Surfaces ONE reason line per family:
- *   ⚠ Attendance Risk
+ *    Attendance Risk
  *     Never attended (34 days enrolled)
  *
  *   or
  *
- *   ⚠ Attendance Risk
+ *    Attendance Risk
  *     Drifted away (41 days since last attendance)
  *
  * NO inline actions. NO buttons. NO messaging. NO links into other
@@ -51,7 +51,7 @@ export default function AttendanceBanner({ assessment }: { assessment: Attendanc
       <div className="flex items-start gap-3 flex-wrap">
         <div className="flex-1 min-w-[180px]">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <span aria-hidden>⚠</span>
+            <span aria-hidden></span>
             Attendance Risk
             <span className="text-[10px] uppercase tracking-wider font-bold opacity-80">{levelWord}</span>
           </h2>

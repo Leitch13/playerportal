@@ -4,12 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 const REASONS = [
-  { id: 'too_expensive', label: 'Too expensive', icon: '💰' },
-  { id: 'not_using', label: 'Not using it enough', icon: '📉' },
-  { id: 'switching', label: 'Switching to another academy', icon: '🔄' },
-  { id: 'child_stopped', label: 'My child has stopped playing', icon: '⚽' },
-  { id: 'unhappy', label: 'Not happy with the service', icon: '😞' },
-  { id: 'other', label: 'Other reason', icon: '💬' },
+  { id: 'too_expensive', label: 'Too expensive', icon: '' },
+  { id: 'not_using', label: 'Not using it enough', icon: '' },
+  { id: 'switching', label: 'Switching to another academy', icon: '' },
+  { id: 'child_stopped', label: 'My child has stopped playing', icon: '' },
+  { id: 'unhappy', label: 'Not happy with the service', icon: '' },
+  { id: 'other', label: 'Other reason', icon: '' },
 ]
 
 type Step = 'reason' | 'policy' | 'offer' | 'confirm' | 'retained' | 'cancelled'
@@ -181,7 +181,7 @@ export default function CancelFlow({
         <div className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
-              😔
+              
             </div>
             <h1 className="text-2xl font-bold text-white">We&apos;re sorry to see you go</h1>
             <p className="text-white/50 text-sm mt-2 max-w-sm mx-auto">
@@ -259,7 +259,7 @@ export default function CancelFlow({
         <div className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl" data-testid="policy-step">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
-              📄
+              
             </div>
             <h1 className="text-2xl font-bold text-white">Cancellation policy</h1>
             <p className="text-white/50 text-sm mt-2 max-w-sm mx-auto">
@@ -280,7 +280,7 @@ export default function CancelFlow({
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-xl shrink-0">📅</span>
+              <span className="text-xl shrink-0"></span>
               <div className="text-sm text-white/85 leading-relaxed">
                 {computedEndDate ? (
                   <>Your membership will remain active until <strong className="text-white">{computedEndDate}</strong>.</>
@@ -290,7 +290,7 @@ export default function CancelFlow({
               </div>
             </div>
             <div className="flex gap-3">
-              <span className="text-xl shrink-0">⚽</span>
+              <span className="text-xl shrink-0"></span>
               <div className="text-sm text-white/85 leading-relaxed">
                 You&apos;ll continue to have full access to all booked sessions during this period
                 {cancellationNoticeDays > 0 ? ', and will be billed for any sessions inside the notice window' : ''}.
@@ -424,7 +424,7 @@ export default function CancelFlow({
                   Applying discount...
                 </span>
               ) : (
-                <>🎁 Stay &amp; Get {retentionPercent}% Off →</>
+                <> Stay &amp; Get {retentionPercent}% Off →</>
               )}
             </button>
 
@@ -443,7 +443,7 @@ export default function CancelFlow({
         <div className="bg-gradient-to-br from-[#0f1a2b] via-[#161010] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 mb-3 text-2xl">
-              ⚠️
+              
             </div>
             <h1 className="text-2xl font-bold text-white">Are you sure?</h1>
             <p className="text-white/50 text-sm mt-2">
@@ -509,7 +509,7 @@ export default function CancelFlow({
           {retentionEnabled && (
             <div className="rounded-2xl p-4 mb-5 bg-[#4ecde6]/8 border border-[#4ecde6]/30">
               <p className="text-sm text-white/90">
-                💡 <strong className="text-white">Last chance:</strong> Get{' '}
+                 <strong className="text-white">Last chance:</strong> Get
                 <button
                   onClick={() => setStep('offer')}
                   className="text-[#4ecde6] font-bold underline underline-offset-2 hover:text-[#7adeeb] transition-colors"
@@ -559,7 +559,7 @@ export default function CancelFlow({
           <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-emerald-500/15 blur-[60px] pointer-events-none" />
           <div className="relative">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-500/15 border-2 border-emerald-500/40 mb-4 text-4xl">
-              🎉
+              
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Welcome back!</h1>
             <p className="text-white/70 mb-5 text-sm sm:text-base">
@@ -585,7 +585,7 @@ export default function CancelFlow({
             </p>
             <div className="rounded-2xl p-4 mb-6 bg-emerald-500/10 border border-emerald-500/30">
               <p className="text-sm text-emerald-300 font-semibold">
-                ✓ Discount applied — no further action needed
+                 Discount applied — no further action needed
               </p>
             </div>
             <button
@@ -607,14 +607,14 @@ export default function CancelFlow({
       {step === 'cancelled' && (
         <div className="bg-gradient-to-br from-[#0f1a2b] via-[#0f1416] to-[#080e18] rounded-3xl border border-[#1d2c42] p-6 sm:p-8 shadow-2xl text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-3 text-3xl">
-            👋
+            
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Subscription Cancelled</h1>
           <p className="text-white/60 mb-4 text-sm">Your {planName} subscription has been cancelled.</p>
           {endDate && (
             <div className="rounded-2xl p-4 mb-6 bg-amber-500/10 border border-amber-500/30">
               <p className="text-sm text-amber-200">
-                📅 You still have access until <strong className="text-amber-100">{endDate}</strong>
+                 You still have access until <strong className="text-amber-100">{endDate}</strong>
               </p>
             </div>
           )}

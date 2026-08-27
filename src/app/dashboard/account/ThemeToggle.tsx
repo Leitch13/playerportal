@@ -23,9 +23,9 @@ export default function ThemeToggle() {
   }
 
   const options = [
-    { value: 'light' as const, label: 'Light', icon: '☀️' },
-    { value: 'dark' as const, label: 'Dark', icon: '🌙' },
-    { value: 'system' as const, label: 'System', icon: '💻' },
+    { value: 'light' as const, label: 'Light', icon: '' },
+    { value: 'dark' as const, label: 'Dark', icon: '' },
+    { value: 'system' as const, label: 'System', icon: '' },
   ]
 
   return (

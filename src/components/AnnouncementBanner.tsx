@@ -27,7 +27,7 @@ export default function AnnouncementBanner({ announcements }: { announcements: B
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-lg shrink-0">{a.priority === 'urgent' ? '🚨' : '⚠️'}</span>
+            <span className="text-lg shrink-0">{a.priority === 'urgent' ? '' : ''}</span>
             <p className="text-sm font-semibold truncate">{a.title}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">

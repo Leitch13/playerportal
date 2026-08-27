@@ -588,7 +588,7 @@ function PassportPayments({ payments }: { payments: PaymentRow[] }) {
     <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-6">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-white">
-          {'💳'} Payments
+           Payments
           <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-white/10 text-white/50 font-medium align-middle">
             Admin only
           </span>

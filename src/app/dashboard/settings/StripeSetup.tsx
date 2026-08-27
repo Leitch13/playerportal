@@ -111,7 +111,7 @@ export default function StripeSetup() {
             )}
             {connectError && (
               <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
-                <p className="font-medium">⚠️ Connection failed</p>
+                <p className="font-medium"> Connection failed</p>
                 <p className="mt-1 text-xs">{connectError}</p>
               </div>
             )}
@@ -134,7 +134,7 @@ export default function StripeSetup() {
             </button>
             {connectError && (
               <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
-                <p className="font-medium">⚠️ Connection failed</p>
+                <p className="font-medium"> Connection failed</p>
                 <p className="mt-1 text-xs">{connectError}</p>
               </div>
             )}

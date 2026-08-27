@@ -148,7 +148,7 @@ export default function TrialFollowUpActions({ source, id, signupHref, layout = 
         className="text-[11px] font-semibold text-emerald-300 px-2 py-1 rounded border border-emerald-500/30 hover:bg-emerald-500/15 transition-colors disabled:opacity-50"
         title="Mark this trial as converted (DB flag only — no charge)"
       >
-        {busy === 'convert' ? 'Converting…' : '✓ Convert'}
+        {busy === 'convert' ? 'Converting…' : ' Convert'}
       </button>
       <button
         type="button"
@@ -166,7 +166,7 @@ export default function TrialFollowUpActions({ source, id, signupHref, layout = 
         className="text-[11px] font-semibold text-rose-300 px-2 py-1 rounded border border-rose-500/30 hover:bg-rose-500/15 transition-colors disabled:opacity-50"
         title="Mark as lost (status='cancelled')"
       >
-        {busy === 'lost' ? 'Marking…' : '✕ Lost'}
+        {busy === 'lost' ? 'Marking…' : ' Lost'}
       </button>
       {err && (
         <span className="text-[11px] text-rose-300 w-full" role="alert">{err}</span>

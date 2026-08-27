@@ -20,12 +20,12 @@ export default async function ExportsPage() {
   ])
 
   const exports = [
-    { type: 'players', title: 'Players', description: 'All player data including name, DOB, groups', icon: '⚽', count: players.count || 0, hasDateFilter: false },
-    { type: 'attendance', title: 'Attendance', description: 'Attendance records with dates and statuses', icon: '✅', count: attendance.count || 0, hasDateFilter: true },
-    { type: 'payments', title: 'Payments', description: 'Payment history with amounts and statuses', icon: '💳', count: payments.count || 0, hasDateFilter: true },
-    { type: 'parents', title: 'Parents', description: 'Parent profiles with contact details', icon: '👨‍👩‍👦', count: parents.count || 0, hasDateFilter: false },
-    { type: 'enrolments', title: 'Enrolments', description: 'Current class enrolments', icon: '📋', count: enrolments.count || 0, hasDateFilter: false },
-    { type: 'trials', title: 'Trial Bookings', description: 'Free trial booking requests', icon: '🎯', count: trials.count || 0, hasDateFilter: true },
+    { type: 'players', title: 'Players', description: 'All player data including name, DOB, groups', icon: '', count: players.count || 0, hasDateFilter: false },
+    { type: 'attendance', title: 'Attendance', description: 'Attendance records with dates and statuses', icon: '', count: attendance.count || 0, hasDateFilter: true },
+    { type: 'payments', title: 'Payments', description: 'Payment history with amounts and statuses', icon: '', count: payments.count || 0, hasDateFilter: true },
+    { type: 'parents', title: 'Parents', description: 'Parent profiles with contact details', icon: '', count: parents.count || 0, hasDateFilter: false },
+    { type: 'enrolments', title: 'Enrolments', description: 'Current class enrolments', icon: '', count: enrolments.count || 0, hasDateFilter: false },
+    { type: 'trials', title: 'Trial Bookings', description: 'Free trial booking requests', icon: '', count: trials.count || 0, hasDateFilter: true },
   ]
 
   return (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -191,7 +192,7 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
       {/* Empty state for types with no plans */}
       {Object.keys(grouped).length === 0 && (
         <div className="text-center py-12">
-          <p className="text-3xl mb-3">💰</p>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['card']}</svg></span>
           <h3 className="font-bold text-lg mb-1">No plans yet</h3>
           <p className="text-white/40 text-sm mb-4">Create your first plan — it&apos;ll apply to all classes of that type</p>
         </div>

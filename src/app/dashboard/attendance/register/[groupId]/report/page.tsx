@@ -305,8 +305,8 @@ export default async function RegisterReportPage({
                         const record = playerAttendance?.get(date)
                         let symbol = '-'
                         let cellClass = 'text-gray-300'
-                        if (record === true) { symbol = '✓'; cellClass = 'text-green-700 font-bold' }
-                        else if (record === false) { symbol = '✗'; cellClass = 'text-red-600 font-bold' }
+                        if (record === true) { symbol = ''; cellClass = 'text-green-700 font-bold' }
+                        else if (record === false) { symbol = ''; cellClass = 'text-red-600 font-bold' }
                         return (
                           <td key={date} className={`border border-gray-300 px-1.5 py-1.5 text-center ${cellClass}`}>
                             {symbol}
@@ -336,8 +336,8 @@ export default async function RegisterReportPage({
         </div>
 
         <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-          <span><span className="text-green-700 font-bold">{'✓'}</span> Present</span>
-          <span><span className="text-red-600 font-bold">{'✗'}</span> Absent</span>
+          <span><span className="text-green-700 font-bold"></span> Present</span>
+          <span><span className="text-red-600 font-bold"></span> Absent</span>
           <span><span className="text-gray-300">-</span> No record</span>
         </div>
       </div>

@@ -84,28 +84,28 @@ export default function MembershipManagement({
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <ActionCard
           href="/dashboard/schedule"
-          icon="🗓️"
+          icon=""
           label="Add Another Class"
           subline="Browse the schedule"
           testId="action-add-class"
         />
         <ActionCard
           href="/dashboard/children"
-          icon="👶"
+          icon=""
           label="Add Sibling"
           subline="Register another child"
           testId="action-add-sibling"
         />
         <ActionCard
           href="/dashboard/upgrade"
-          icon="⬆️"
+          icon=""
           label="Upgrade Membership"
           subline="Move to a higher plan"
           testId="action-upgrade"
         />
         <ActionCard
           href="/dashboard/messages"
-          icon="💬"
+          icon=""
           label="Message Academy"
           subline="Reach your coach directly"
           testId="action-message"
@@ -113,7 +113,7 @@ export default function MembershipManagement({
         {hasActiveSub && (
           <ActionCard
             href="/dashboard/payments/cancel"
-            icon="✖️"
+            icon=""
             label="Cancel Subscription"
             subline="With save-offer + policy"
             testId="action-cancel-sub"

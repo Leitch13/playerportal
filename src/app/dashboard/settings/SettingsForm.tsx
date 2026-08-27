@@ -184,7 +184,7 @@ export default function SettingsForm({
                     /book/<strong className="text-primary">{form.slug}</strong>
                   </div>
                   <button onClick={copySlug} className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                    {copied ? '✓ Copied' : 'Copy URL'}
+                    {copied ? ' Copied' : 'Copy URL'}
                   </button>
                 </div>
               </div>

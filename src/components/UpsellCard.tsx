@@ -26,7 +26,7 @@ const CARD_CONFIG: Record<
   }
 > = {
   trial_to_class: {
-    icon: '⚽',
+    icon: '',
     title: 'Book regular classes',
     description: 'Keep {child} progressing with weekly sessions.',
     cta: 'View Classes',
@@ -36,7 +36,7 @@ const CARD_CONFIG: Record<
     ctaColor: 'text-accent hover:text-accent-dark',
   },
   single_to_package: {
-    icon: '📦',
+    icon: '',
     title: 'Save with a package',
     description: 'Get 15% off with multi-class bundles.',
     cta: 'See Packages',
@@ -46,7 +46,7 @@ const CARD_CONFIG: Record<
     ctaColor: 'text-emerald-600 hover:text-emerald-700',
   },
   package_to_subscription: {
-    icon: '🔄',
+    icon: '',
     title: 'Go monthly',
     description: 'Hassle-free subscription. Cancel anytime.',
     cta: 'View Plans',
@@ -56,7 +56,7 @@ const CARD_CONFIG: Record<
     ctaColor: 'text-violet-600 hover:text-violet-700',
   },
   add_second_child: {
-    icon: '👦👧',
+    icon: '',
     title: 'Add a sibling',
     description: '10% sibling discount available.',
     cta: 'Add Child',
@@ -66,7 +66,7 @@ const CARD_CONFIG: Record<
     ctaColor: 'text-amber-600 hover:text-amber-700',
   },
   refer_friend: {
-    icon: '🎁',
+    icon: '',
     title: 'Refer a friend',
     description: 'Both get a free session.',
     cta: 'Share Link',

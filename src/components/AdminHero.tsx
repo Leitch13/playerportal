@@ -154,7 +154,7 @@ export default function AdminHero({
               className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 border border-white/[0.08]"
               style={{ background: `${brandColor}15` }}
             >
-              ⚽
+              
             </div>
           )}
           <div className="min-w-0">

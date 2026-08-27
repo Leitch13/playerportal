@@ -71,7 +71,7 @@ export default function AnnouncementComposer({ orgId, authorId, groups }: Compos
         onClick={() => setOpen(true)}
         className="w-full bg-gradient-to-br from-[#4ecde6]/10 to-transparent rounded-2xl border border-[#4ecde6]/25 hover:border-[#4ecde6]/50 p-5 flex items-center justify-center gap-3 hover:from-[#4ecde6]/15 transition-all group"
       >
-        <span className="w-9 h-9 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform" aria-hidden>📢</span>
+        <span className="w-9 h-9 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-lg group-hover:scale-110 transition-transform" aria-hidden></span>
         <span className="font-semibold text-sm text-[#4ecde6]">New announcement</span>
       </button>
     )

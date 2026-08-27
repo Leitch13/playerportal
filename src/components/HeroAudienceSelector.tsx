@@ -20,9 +20,9 @@ export default function HeroAudienceSelector() {
   const [showSearch, setShowSearch] = useState(false)
 
   const segments: { id: Audience; label: string; emoji: string }[] = [
-    { id: 'academy', label: 'I run an academy', emoji: '🏟️' },
-    { id: 'parent', label: "I'm a parent", emoji: '👋' },
-    { id: 'browse', label: 'Just browsing', emoji: '👀' },
+    { id: 'academy', label: 'I run an academy', emoji: '' },
+    { id: 'parent', label: "I'm a parent", emoji: '' },
+    { id: 'browse', label: 'Just browsing', emoji: '' },
   ]
 
   const selectedIndex = segments.findIndex((s) => s.id === audience)

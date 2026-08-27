@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -221,7 +222,7 @@ export default function ClassPlanManager({
         </div>
       ) : (
         <div className="bg-[#0f1a2b] border border-dashed border-[#1d2c42] rounded-2xl p-8 text-center">
-          <div className="text-3xl mb-3">💰</div>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['card']}</svg></span>
           <h3 className="font-bold text-lg text-white mb-1">No plans yet for {groupName}</h3>
           <p className="text-white/40 text-sm mb-4">
             Create pricing plans so parents can subscribe to this class.

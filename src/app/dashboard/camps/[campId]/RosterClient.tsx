@@ -20,6 +20,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
 import { buildWhatsappUrl, WA_TEMPLATES } from '@/lib/whatsapp'
 
@@ -339,7 +340,7 @@ export default function RosterClient({
 
         {filtered.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <div className="text-3xl mb-2">🏕️</div>
+            <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['tent']}</svg></span>
             <p className="text-sm text-white/55">
               {bookings.length === 0
                 ? 'No bookings yet for this camp.'
@@ -406,7 +407,7 @@ export default function RosterClient({
                             data-testid="camp-roster-medical-badge"
                             title={b.medical_info as string}
                           >
-                            ⚠ Medical
+                             Medical
                           </span>
                         ) : (
                           <span className="text-white/25 text-xs">—</span>
@@ -489,7 +490,7 @@ export default function RosterClient({
                             disabled={resendingId === b.id || !b.parent_email || b.parent_email.endsWith('@theplayerportal.net')}
                             onClick={() => resendConfirmation(b.id)}
                             data-testid="camp-roster-row-resend"
-                            title={resent === 'ok' ? 'Sent ✓' : resent === 'fail' ? 'Failed — retry' : 'Resend confirmation email'}
+                            title={resent === 'ok'? 'Sent ' : resent === 'fail' ? 'Failed — retry' : 'Resend confirmation email'}
                             className={`p-1.5 rounded-md transition-colors ${
                               resent === 'ok'
                                 ? 'text-emerald-300 bg-emerald-500/15'
@@ -720,7 +721,7 @@ export default function RosterClient({
             )}
             {moveSuccess && (
               <div className="mb-3 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs text-emerald-200">
-                ✓ {moveSuccess}
+                 {moveSuccess}
               </div>
             )}
 

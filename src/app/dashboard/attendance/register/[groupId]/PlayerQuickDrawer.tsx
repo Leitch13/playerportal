@@ -379,7 +379,7 @@ export default function PlayerQuickDrawer({
             }
           >
             <div className={`text-[10px] font-extrabold uppercase tracking-[0.2em] ${hasMedical ? 'text-red-300' : 'text-white/45'}`}>
-              {hasMedical ? '⚠ Medical & Safety' : 'Medical & Safety'}
+              {hasMedical ? ' Medical & Safety' : 'Medical & Safety'}
             </div>
             {hasMedical ? (
               <p className="text-sm text-white whitespace-pre-line leading-snug">{player.medical_info}</p>
@@ -388,7 +388,7 @@ export default function PlayerQuickDrawer({
             )}
             {(player.emergency_contact_name || player.emergency_contact_phone) && (
               <div className="pt-2 border-t border-white/[0.06] space-y-1">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-white/50 font-bold">🚨 Emergency contact</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-white/50 font-bold"> Emergency contact</div>
                 <div className="text-sm">
                   {player.emergency_contact_name && <span className="text-white">{player.emergency_contact_name}</span>}
                   {player.emergency_contact_name && player.emergency_contact_phone && <span className="text-white/40"> · </span>}
@@ -421,7 +421,7 @@ export default function PlayerQuickDrawer({
                   : TONE_TO_CLASSES.muted
                 }`}
               >
-                {attendance === 'present' ? '✓ Present' : attendance === 'absent' ? '✗ Absent' : '◯ Unmarked'}
+                {attendance === 'present' ? ' Present' : attendance === 'absent' ? ' Absent' : '◯ Unmarked'}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -474,7 +474,7 @@ export default function PlayerQuickDrawer({
                         r.present ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'
                       }`}
                     >
-                      {r.present ? '✓' : '✗'}
+                      {r.present ? '' : ''}
                     </span>
                   ))
                 )}
@@ -539,7 +539,7 @@ export default function PlayerQuickDrawer({
                   data-testid="player-drawer-call"
                   className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-[#4ecde6]/10 hover:bg-[#4ecde6]/20 border border-[#4ecde6]/30 text-[#4ecde6] text-sm font-bold transition-colors"
                 >
-                  📞 Call
+                   Call
                 </a>
               ) : (
                 <button
@@ -549,7 +549,7 @@ export default function PlayerQuickDrawer({
                   title="No phone on file"
                   className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white/30 text-sm font-bold cursor-not-allowed"
                 >
-                  📞 Call
+                   Call
                 </button>
               )}
               {/* Email */}
@@ -559,7 +559,7 @@ export default function PlayerQuickDrawer({
                   data-testid="player-drawer-email"
                   className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.10] text-white/85 text-sm font-bold transition-colors"
                 >
-                  ✉ Email
+                   Email
                 </a>
               ) : (
                 <button
@@ -569,7 +569,7 @@ export default function PlayerQuickDrawer({
                   title="No email on file"
                   className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white/30 text-sm font-bold cursor-not-allowed"
                 >
-                  ✉ Email
+                   Email
                 </button>
               )}
               {/* Message — existing messaging deep-link */}
@@ -581,7 +581,7 @@ export default function PlayerQuickDrawer({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  💬 Message
+                   Message
                 </Link>
               ) : (
                 <button
@@ -591,7 +591,7 @@ export default function PlayerQuickDrawer({
                   title="No parent on file"
                   className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white/30 text-sm font-bold cursor-not-allowed"
                 >
-                  💬 Message
+                   Message
                 </button>
               )}
             </div>

@@ -427,10 +427,10 @@ async function ParentPayments({
 
     const trustBar = (
       <div className="grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-[#0f1a2b] p-4 text-xs text-white/60 sm:grid-cols-4">
-        <div><span className="block font-semibold text-white">🛡 Cancel anytime</span>No long-term contracts</div>
-        <div><span className="block font-semibold text-white">🔒 Secure payments</span>Powered by Stripe</div>
-        <div><span className="block font-semibold text-white">📈 Save with longer plans</span>Ask about quarterly billing</div>
-        <div><span className="block font-semibold text-white">🎧 Dedicated support</span>We&rsquo;re here to help</div>
+        <div><span className="block font-semibold text-white"> Cancel anytime</span>No long-term contracts</div>
+        <div><span className="block font-semibold text-white"> Secure payments</span>Powered by Stripe</div>
+        <div><span className="block font-semibold text-white"> Save with longer plans</span>Ask about quarterly billing</div>
+        <div><span className="block font-semibold text-white"> Dedicated support</span>We&rsquo;re here to help</div>
       </div>
     )
 
@@ -449,14 +449,14 @@ async function ParentPayments({
               <p className="mb-3 text-xs font-medium uppercase tracking-wider text-white/40">What you get</p>
               <ul className="space-y-2 text-sm text-white/80">
                 {whatYouGet.map((f) => (
-                  <li key={f} className="flex items-center gap-2"><span className="text-emerald-400" aria-hidden>✓</span>{f}</li>
+                  <li key={f} className="flex items-center gap-2"><span className="text-emerald-400" aria-hidden></span>{f}</li>
                 ))}
               </ul>
             </div>
             <div className="rounded-2xl border border-white/10 bg-[#0f1a2b] p-5">
               <p className="mb-1 text-sm font-semibold text-white">Need help?</p>
               <p className="mb-3 text-xs text-white/50">Contact the academy about your membership.</p>
-              <Link href="/dashboard/messages" className="inline-flex items-center gap-2 rounded-lg bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#0a0a0a] transition hover:opacity-90">💬 Message Academy</Link>
+              <Link href="/dashboard/messages" className="inline-flex items-center gap-2 rounded-lg bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#0a0a0a] transition hover:opacity-90"> Message Academy</Link>
             </div>
           </div>
         </div>

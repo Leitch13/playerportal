@@ -71,7 +71,7 @@ export default function BillingPanel({ facts }: { facts: BillingFacts }) {
         {/* Outstanding pill */}
         {(facts.outstanding > 0 || facts.overdueCount > 0) && (
           <div className="rounded-xl p-3 bg-rose-500/10 border border-rose-500/30 flex items-center gap-3 flex-wrap">
-            <span className="text-lg">⚠️</span>
+            <span className="text-lg"></span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-rose-200">
                 {fmtGBP(facts.outstanding)} outstanding

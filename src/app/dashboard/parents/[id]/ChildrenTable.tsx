@@ -23,17 +23,17 @@ export interface ChildRow {
 }
 
 const SUB_CHIP: Record<DerivedSubStatus, { label: string; emoji: string; cls: string }> = {
-  active:    { label: 'Active',    emoji: '💳', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  past_due:  { label: 'Past due',  emoji: '⚠️', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+  active:    { label: 'Active',    emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  past_due:  { label: 'Past due',  emoji: '', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
   pending:   { label: 'Pending',   emoji: '⏳', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  cancelled: { label: 'Cancelled', emoji: '❌', cls: 'bg-white/[0.05] text-white/50 border-white/[0.10]' },
+  cancelled: { label: 'Cancelled', emoji: '', cls: 'bg-white/[0.05] text-white/50 border-white/[0.10]' },
   none:      { label: 'No sub',    emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.08]' },
 }
 const STATUS_CHIP: Record<DerivedRowStatus, { label: string; emoji: string; cls: string }> = {
-  active:   { label: 'Active',   emoji: '🟢', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  pending:  { label: 'Pending',  emoji: '🟡', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  trial:    { label: 'Trial',    emoji: '🔵', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
-  paused:   { label: 'Paused',   emoji: '🟠', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
+  active:   { label: 'Active',   emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  pending:  { label: 'Pending',  emoji: '', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  trial:    { label: 'Trial',    emoji: '', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
+  paused:   { label: 'Paused',   emoji: '', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
   inactive: { label: 'Inactive', emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.08]' },
 }
 

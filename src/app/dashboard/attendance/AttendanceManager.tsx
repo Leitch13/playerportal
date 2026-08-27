@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -216,14 +217,14 @@ export default function AttendanceManager({
         </div>
 
         {selectedGroup?.location && (
-          <p className="text-xs text-white/40 mt-2">📍 {selectedGroup.location}</p>
+          <p className="text-xs text-white/40 mt-2"> {selectedGroup.location}</p>
         )}
       </div>
 
       {/* Empty state: no group picked */}
       {!groupId && (
         <div className="p-8 text-center">
-          <div className="text-4xl mb-3">📋</div>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['list']}</svg></span>
           <h3 className="text-base font-bold text-white mb-1">Pick a class to start</h3>
           <p className="text-sm text-white/50">Choose the class above to see your enrolled players.</p>
         </div>
@@ -274,7 +275,7 @@ export default function AttendanceManager({
       {/* Empty enrolment state */}
       {groupId && enrolledPlayers.length === 0 && (
         <div className="p-8 text-center">
-          <div className="text-4xl mb-3">👥</div>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['parents']}</svg></span>
           <h3 className="text-base font-bold text-white mb-1">No players enrolled in this class</h3>
           <p className="text-sm text-white/50">Add players to this class first via Players → Enrol.</p>
         </div>
@@ -296,7 +297,7 @@ export default function AttendanceManager({
                 className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                 title="Mark all as present"
               >
-                ✓ All present
+                 All present
               </button>
               <button
                 onClick={clearAll}
@@ -351,9 +352,7 @@ export default function AttendanceManager({
                             : 'bg-emerald-500/5 text-emerald-400/60 hover:bg-emerald-500/15 hover:text-emerald-400'
                         }`}
                         aria-label={`Mark ${p.first_name} present`}
-                      >
-                        ✓
-                      </button>
+                      ><svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.4}><path strokeLinecap='round' strokeLinejoin='round' d='M4 12.5l5 5L20 6.5'/></svg></button>
                       <button
                         onClick={() => setPlayerState(p.id, 'absent')}
                         className={`w-12 h-10 sm:w-16 rounded-lg text-xs font-bold transition-all ${
@@ -362,9 +361,7 @@ export default function AttendanceManager({
                             : 'bg-red-500/5 text-red-400/60 hover:bg-red-500/15 hover:text-red-400'
                         }`}
                         aria-label={`Mark ${p.first_name} absent`}
-                      >
-                        ✗
-                      </button>
+                      ><svg className='h-4 w-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.4}><path strokeLinecap='round' d='M6 6l12 12M18 6L6 18'/></svg></button>
                     </div>
                   </div>
                 </div>
@@ -378,7 +375,7 @@ export default function AttendanceManager({
               {existingLoaded && Object.keys(attendance).length > 0 ? (
                 <>Loaded existing · edit and re-save</>
               ) : counts.unmarked === counts.total ? (
-                <>Tap ✓ or ✗ for each player</>
+                <>Tap  or  for each player</>
               ) : (
                 <>{counts.present + counts.absent} of {counts.total} marked</>
               )}
@@ -395,7 +392,7 @@ export default function AttendanceManager({
           {/* Success toast */}
           {success && (
             <div className="px-4 py-2.5 bg-emerald-500/10 border-t border-emerald-500/30 text-xs font-semibold text-emerald-400 text-center">
-              ✓ {success}
+               {success}
             </div>
           )}
         </>

@@ -204,7 +204,7 @@ export default async function UpgradePage() {
         <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 rounded-2xl border border-emerald-500/20 p-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-white text-2xl flex-shrink-0">
-              📦
+              
             </div>
             <div className="flex-1">
               <h3 className="text-base font-bold text-emerald-400">Multi-Class Packages</h3>

@@ -159,8 +159,8 @@ export default function AdminCalendar({
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-white/60">
-                        {session.location && <span>📍 {session.location}</span>}
-                        {session.coachName && <span>👤 {session.coachName}</span>}
+                        {session.location && <span> {session.location}</span>}
+                        {session.coachName && <span> {session.coachName}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">

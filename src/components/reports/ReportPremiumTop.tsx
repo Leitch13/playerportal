@@ -9,7 +9,7 @@ const TONE: Record<Verdict['tone'], { box: string; chip: string; arrow: string; 
   up:   { box: 'bg-emerald-50 border-emerald-200', chip: 'text-emerald-700', arrow: '▲', label: 'text-emerald-700' },
   flat: { box: 'bg-slate-50 border-slate-200',     chip: 'text-slate-600',  arrow: '→', label: 'text-slate-600' },
   down: { box: 'bg-amber-50 border-amber-200',     chip: 'text-amber-700',  arrow: '▼', label: 'text-amber-700' },
-  new:  { box: 'bg-accent/5 border-accent/20',     chip: 'text-accent',     arrow: '✦', label: 'text-accent' },
+  new:  { box: 'bg-accent/5 border-accent/20',     chip: 'text-accent',     arrow: '', label: 'text-accent' },
 }
 
 function deltaColour(d: number) {
@@ -82,7 +82,7 @@ export default function ReportPremiumTop({
           </div>
         ) : (
           <p className="text-sm text-[#93a2ba]">
-            This is {firstName}&rsquo;s first report — we&rsquo;ve set the baseline today. From the next review you&rsquo;ll see exactly what improved. 🎯
+            This is {firstName}&rsquo;s first report — we&rsquo;ve set the baseline today. From the next review you&rsquo;ll see exactly what improved. 
           </p>
         )}
       </div>

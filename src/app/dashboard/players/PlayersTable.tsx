@@ -16,6 +16,7 @@
  */
 
 import Link from 'next/link'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import PlayerAvatar from '@/components/PlayerAvatar'
@@ -119,17 +120,17 @@ const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
 
 // Static chip palettes — kept JIT-safe.
 const SUB_CHIP: Record<DerivedSubStatus, { label: string; emoji: string; cls: string }> = {
-  active:    { label: 'Active',    emoji: '💳', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  past_due:  { label: 'Past due',  emoji: '⚠️', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+  active:    { label: 'Active',    emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  past_due:  { label: 'Past due',  emoji: '', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
   pending:   { label: 'Pending',   emoji: '⏳', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  cancelled: { label: 'Cancelled', emoji: '❌', cls: 'bg-white/[0.05] text-white/50 border-white/[0.10]' },
+  cancelled: { label: 'Cancelled', emoji: '', cls: 'bg-white/[0.05] text-white/50 border-white/[0.10]' },
   none:      { label: 'No sub',    emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.08]' },
 }
 const STATUS_CHIP: Record<DerivedRowStatus, { label: string; emoji: string; cls: string }> = {
-  active:   { label: 'Active',   emoji: '🟢', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  pending:  { label: 'Pending',  emoji: '🟡', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  trial:    { label: 'Trial',    emoji: '🔵', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
-  paused:   { label: 'Paused',   emoji: '🟠', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
+  active:   { label: 'Active',   emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+  pending:  { label: 'Pending',  emoji: '', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
+  trial:    { label: 'Trial',    emoji: '', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
+  paused:   { label: 'Paused',   emoji: '', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
   inactive: { label: 'Inactive', emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.08]' },
 }
 const LEVEL_CHIP: Record<string, string> = {
@@ -370,7 +371,7 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
             </span>
           )}
           {r.reviewDue && (
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Review due">📋</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Review due"></span>
           )}
           {/* Phase 2.4 — Trial follow-up badge. Tone shifts to rose when stale.
               Title text spells out the stage for the hover tooltip. */}
@@ -397,7 +398,7 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
               title="Parent has not been contacted in 30+ days"
               className="px-1.5 py-0.5 rounded-full text-[9px] font-medium border bg-rose-500/15 text-rose-300 border-rose-500/30"
             >
-              📭
+              
             </span>
           )}
         </Link>
@@ -415,7 +416,7 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
                   : 'text-amber-300'
               }
             >
-              ⚠ {r.attendanceRisk.riskReason.label}
+               {r.attendanceRisk.riskReason.label}
             </span>
           </div>
         )}
@@ -465,11 +466,11 @@ function PlayerRow({ r }: { r: PlayersTableRow }) {
       </td>
       <td className="py-2.5 px-3 text-right whitespace-nowrap">
         <div className="inline-flex items-center gap-1">
-          <RowActionLink href={`/dashboard/players/${r.id}`} title="View profile">👤</RowActionLink>
-          {r.parent_id && <RowActionLink href={`/dashboard/parents/${r.parent_id}`} title="View parent">👨‍👩‍👧</RowActionLink>}
-          {r.parent_id && <RowActionLink href={`/dashboard/messages?to=${r.parent_id}`} title="Message parent">✉️</RowActionLink>}
-          <RowActionLink href={`/dashboard/attendance?player=${r.id}`} title="Mark attendance">✓</RowActionLink>
-          <RowActionLink href="/dashboard/enrolments" title="Move class">↔️</RowActionLink>
+          <RowActionLink href={`/dashboard/players/${r.id}`} title="View profile"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['eye']}</svg></RowActionLink>
+          {r.parent_id && <RowActionLink href={`/dashboard/parents/${r.parent_id}`} title="View parent"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['parents']}</svg></RowActionLink>}
+          {r.parent_id && <RowActionLink href={`/dashboard/messages?to=${r.parent_id}`} title="Message parent"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionLink>}
+          <RowActionLink href={`/dashboard/attendance?player=${r.id}`} title="Mark attendance"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['check']}</svg></RowActionLink>
+          <RowActionLink href="/dashboard/enrolments" title="Move class"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['move']}</svg></RowActionLink>
         </div>
       </td>
     </tr>

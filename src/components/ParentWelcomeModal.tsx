@@ -57,19 +57,19 @@ export default function ParentWelcomeModal({
   // Migration-specific slides — for parents who came from ClassForKids / other systems
   const migrationSlides = [
     {
-      icon: '🎉',
+      icon: '',
       title: `Welcome back, ${firstName}!`,
       body: `${academyName} has moved to Player Portal — a much better way to manage ${childName}'s training. Your subscription is set up and ${childName}'s spot is confirmed. Nothing has changed about training itself.`,
       cta: 'Tell me more',
     },
     {
-      icon: '✅',
+      icon: '',
       title: `Nothing changes for ${childName}`,
       body: `Same coaches. Same classes. Same time. Same price. The only difference is YOU now get a proper parent app — schedule, payments, progress, messaging, all in one place. No more searching through WhatsApp or emails.`,
       cta: 'Sounds good',
     },
     {
-      icon: '📅',
+      icon: '',
       title: 'Everything in one place',
       body: nextSession
         ? `${childName}'s next session: ${nextSession.day} at ${nextSession.time} (${nextSession.group}). Always visible on your dashboard.`
@@ -77,13 +77,13 @@ export default function ParentWelcomeModal({
       cta: 'Brilliant',
     },
     {
-      icon: '📊',
+      icon: '',
       title: `See ${childName} improve over time`,
       body: `Coaches share progress updates with scores across skills, photos from sessions, and milestone awards. Watch ${childName}'s development month by month — not just an occasional report.`,
       cta: 'Love that',
     },
     {
-      icon: '📱',
+      icon: '',
       title: 'Add it to your phone',
       body: `Install Player Portal as an app on your phone home screen — works exactly like a native app, with notifications for session reminders, payment receipts, and coach messages.`,
       cta: `Let's go`,
@@ -93,13 +93,13 @@ export default function ParentWelcomeModal({
   // Fresh-signup slides — for parents who chose Player Portal directly
   const freshSlides = [
     {
-      icon: '👋',
+      icon: '',
       title: `Welcome ${firstName}!`,
       body: `Welcome to ${academyName}'s parent portal. Let's get you set up in 2 minutes.`,
       cta: 'Show me around',
     },
     {
-      icon: '📅',
+      icon: '',
       title: 'See every session at a glance',
       body: nextSession
         ? `${childName}'s next session: ${nextSession.day} at ${nextSession.time} (${nextSession.group}). Your schedule is always on the dashboard.`
@@ -107,13 +107,13 @@ export default function ParentWelcomeModal({
       cta: 'Got it',
     },
     {
-      icon: '📊',
+      icon: '',
       title: 'Watch them improve',
       body: `Coaches share progress updates with scores across skills, photos from sessions, and milestones. You'll see ${childName}'s development over time.`,
       cta: 'Brilliant',
     },
     {
-      icon: '💬',
+      icon: '',
       title: 'Message the coach directly',
       body: `Need to flag an absence or ask a question? Send a quick message to the coach. Replies come straight to your dashboard.`,
       cta: `Let's get started`,
@@ -185,7 +185,7 @@ export default function ParentWelcomeModal({
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-transform hover:scale-[1.02]"
               style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
             >
-              {current.cta} {isLast ? '✨' : '→'}
+              {current.cta} {isLast ? '' : '→'}
             </button>
           </div>
 

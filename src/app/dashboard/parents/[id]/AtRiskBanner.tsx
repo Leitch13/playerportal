@@ -37,7 +37,7 @@ export default function AtRiskBanner({ assessment }: { assessment: RiskAssessmen
       <div className="flex items-start gap-3 flex-wrap">
         <div className="flex-1 min-w-[180px]">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <span aria-hidden>⚠</span>
+            <span aria-hidden></span>
             Needs attention
             <span className="text-[10px] uppercase tracking-wider font-bold opacity-80">{meta.label}</span>
           </h2>

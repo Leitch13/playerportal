@@ -23,10 +23,10 @@ interface AdminEngagementProps {
 type Level = 'Bronze' | 'Silver' | 'Gold' | 'Platinum'
 
 function getLevel(score: number): { level: Level; color: string; bgColor: string; emoji: string } {
-  if (score >= 81) return { level: 'Platinum', color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', emoji: '💎' }
-  if (score >= 61) return { level: 'Gold', color: 'text-amber-400', bgColor: 'bg-amber-500/10', emoji: '🥇' }
-  if (score >= 41) return { level: 'Silver', color: 'text-gray-300', bgColor: 'bg-gray-400/10', emoji: '🥈' }
-  return { level: 'Bronze', color: 'text-orange-400', bgColor: 'bg-orange-500/10', emoji: '🥉' }
+  if (score >= 81) return { level: 'Platinum', color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', emoji: '' }
+  if (score >= 61) return { level: 'Gold', color: 'text-amber-400', bgColor: 'bg-amber-500/10', emoji: '' }
+  if (score >= 41) return { level: 'Silver', color: 'text-gray-300', bgColor: 'bg-gray-400/10', emoji: '' }
+  return { level: 'Bronze', color: 'text-orange-400', bgColor: 'bg-orange-500/10', emoji: '' }
 }
 
 export default function AdminEngagement({ parents, orgName }: AdminEngagementProps) {

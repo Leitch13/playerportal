@@ -18,6 +18,7 @@
  * Replaces the prior AtRiskSection.tsx (flat list, single tone).
  */
 import Link from 'next/link'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import type { ParentRowFacts } from '@/lib/parents-derive'
 import { RISK_LEVEL_DISPLAY, type RiskReason } from '@/lib/at-risk-derive'
 
@@ -44,7 +45,7 @@ export default function FamiliesRequiringAttention({
   return (
     <section className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-5 space-y-5">
       <header className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-sm font-bold text-white">⚠ Families requiring attention</h2>
+        <h2 className="text-sm font-bold text-white"> Families requiring attention</h2>
         <div className="text-[11px] text-white/40 tabular-nums">
           <span className="text-rose-300 font-semibold">{high.length} high</span>
           <span className="mx-1.5 text-white/30">·</span>
@@ -148,33 +149,29 @@ function FamilyRow({ f }: { f: ParentRowFacts }) {
           title="View family"
           aria-label="View family"
           className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
-        >
-          👨‍👩‍👧
-        </Link>
+        ><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['eye']}</svg></Link>
         <Link
           href={`/dashboard/messages?to=${f.id}`}
           title="Message"
           aria-label="Message"
           className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
-        >
-          ✉️
-        </Link>
+        ><svg className='h-3.5 w-3.5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></Link>
         {f.parentPhone && (
           <>
             <a
               href={`tel:${f.parentPhone}`}
               title="Call"
               aria-label="Call"
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
-            >📞</a>
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
+            ><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['phone']}</svg></a>
             <a
               href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               title="WhatsApp"
               aria-label="WhatsApp"
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-colors"
-            >💬</a>
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-colors"
+            ><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></a>
           </>
         )}
         {f.parentEmail && (
@@ -182,8 +179,8 @@ function FamilyRow({ f }: { f: ParentRowFacts }) {
             href={`mailto:${f.parentEmail}`}
             title="Email"
             aria-label="Email"
-            className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
-          >📧</a>
+            className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
+          ><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['mail']}</svg></a>
         )}
       </div>
     </div>

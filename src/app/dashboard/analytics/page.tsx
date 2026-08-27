@@ -875,7 +875,7 @@ export default async function AnalyticsPage() {
                   return (
                     <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
                       <td className="py-2.5 font-medium text-white">
-                        {isRockstar && <span className="mr-1.5">⭐</span>}
+                        {isRockstar && <span className="mr-1.5"></span>}
                         {c.name}
                       </td>
                       <td className="py-2.5 text-white/60 capitalize">{c.role}</td>

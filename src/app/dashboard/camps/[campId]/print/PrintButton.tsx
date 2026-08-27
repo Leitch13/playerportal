@@ -13,7 +13,7 @@ export default function PrintButton() {
       onClick={() => window.print()}
       data-testid="print-register-button"
     >
-      🖨️ Print this register
+       Print this register
     </button>
   )
 }

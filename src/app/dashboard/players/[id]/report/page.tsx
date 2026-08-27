@@ -556,7 +556,7 @@ export default async function PlayerReportPage({
             {REPORT_VIEWED_TRACKING_ENABLED && isStaffViewer && latestReview && (
               <p className={`mt-1 text-xs print:hidden ${latestReviewViewedAt ? 'text-emerald-600' : 'text-[#93a2ba]'}`}>
                 {latestReviewViewedAt
-                  ? `Parent viewed ✓ ${new Date(latestReviewViewedAt).toLocaleDateString('en-GB')}`
+                  ? `Parent viewed  ${new Date(latestReviewViewedAt).toLocaleDateString('en-GB')}`
                   : 'Not yet viewed'}
               </p>
             )}

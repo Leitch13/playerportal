@@ -83,7 +83,7 @@ export default async function BillingPage({
         <div className="bg-gradient-to-r from-[#4ecde6]/10 to-[#4ecde6]/5 border border-[#4ecde6]/30 rounded-2xl p-5">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-[#4ecde6]/20 flex items-center justify-center text-2xl flex-shrink-0">
-              🔒
+              
             </div>
             <div className="flex-1">
               <h2 className="text-base font-bold text-[#4ecde6]">

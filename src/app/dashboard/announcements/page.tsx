@@ -86,7 +86,7 @@ export default async function AnnouncementsPage() {
       <div className="space-y-6">
         {/* Hero */}
         <div className="flex items-start gap-3">
-          <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl shrink-0" aria-hidden>📢</span>
+          <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl shrink-0" aria-hidden></span>
           <div>
             <h1 className="text-2xl font-bold text-white">Announcements</h1>
             <p className="text-white/60 text-sm mt-0.5">Broadcast news, updates and alerts to your parents.</p>
@@ -164,7 +164,7 @@ export default async function AnnouncementsPage() {
           })}
           {formattedAnnouncements.length === 0 && (
             <div className="bg-white/[0.05] backdrop-blur-xl rounded-2xl border border-white/[0.08] p-12 text-center">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl mb-3" aria-hidden>📢</div>
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl mb-3" aria-hidden></div>
               <p className="font-semibold text-white">No announcements yet</p>
               <p className="text-sm text-white/50 mt-1">Create your first announcement above.</p>
             </div>
@@ -180,7 +180,7 @@ export default async function AnnouncementsPage() {
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl shrink-0" aria-hidden>📢</span>
+        <span className="w-11 h-11 rounded-xl bg-[#4ecde6]/15 border border-[#4ecde6]/30 flex items-center justify-center text-2xl shrink-0" aria-hidden></span>
         <div>
           <h1 className="text-2xl font-bold text-white">Announcements</h1>
           <p className="text-white/60 text-sm mt-0.5">News and updates from your academy.</p>

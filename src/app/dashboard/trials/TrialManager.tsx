@@ -285,7 +285,7 @@ export default function TrialManager({
                               className="px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-colors"
                               title="Copy personalised signup link"
                             >
-                              {copiedTrialId === t.id ? '✓ Copied' : 'Copy link'}
+                              {copiedTrialId === t.id ? ' Copied' : 'Copy link'}
                             </button>
                           )}
                           {t.status === 'pending' && (

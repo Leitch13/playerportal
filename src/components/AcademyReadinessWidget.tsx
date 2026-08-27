@@ -87,7 +87,7 @@ export default function AcademyReadinessWidget({ state }: { state: ReadinessStat
           className="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-4"
         >
           <p className="text-sm font-semibold text-emerald-200 leading-snug mb-0.5">
-            🎉 You&apos;re live{isPilot ? ' (pilot)' : ''}.
+             You&apos;re live{isPilot ? ' (pilot)' : ''}.
           </p>
           <p className="text-sm text-emerald-100/80">
             Parents can book and pay. Share your booking page link to start enrolling.

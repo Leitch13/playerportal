@@ -189,7 +189,7 @@ export default function PoliciesForm({
 
       <div className="flex items-center justify-between pt-2">
         <div className="text-xs text-white/40">
-          {saved ? <span className="text-emerald-400">✓ Saved</span> : 'Changes apply immediately to new signups'}
+          {saved ? <span className="text-emerald-400"> Saved</span> : 'Changes apply immediately to new signups'}
         </div>
         <button
           type="submit"

@@ -118,14 +118,14 @@ export default function ParentProgressV2({
                 <div className="flex flex-wrap gap-2" data-testid="skill-chips">
                   {selected.strongest && (
                     <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm">
-                      <span aria-hidden>🌟</span>
+                      <span aria-hidden></span>
                       <span className="text-white/50">Strongest skill</span>
                       <span className="font-semibold text-emerald-300">{selected.strongest.label}</span>
                     </span>
                   )}
                   {selected.focusChip && (
                     <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-sm">
-                      <span aria-hidden>🎯</span>
+                      <span aria-hidden></span>
                       <span className="text-white/50">Current focus</span>
                       <span className="font-semibold text-amber-300">{selected.focusChip.label}</span>
                     </span>
@@ -147,7 +147,7 @@ export default function ParentProgressV2({
                     <p className="text-[11px] text-white/40">Sessions attended</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{selected.engagement.streak > 0 ? `🔥 ${selected.engagement.streak}` : '—'}</p>
+                    <p className="text-2xl font-bold text-white">{selected.engagement.streak > 0 ? ` ${selected.engagement.streak}` : '—'}</p>
                     <p className="text-[11px] text-white/40">In a row</p>
                   </div>
                   <div>
@@ -194,7 +194,7 @@ export default function ParentProgressV2({
               <ProgressTrend reviews={selected.trendReviews} scoringCategories={selected.displayCategories} />
             ) : (
               <p className="text-sm text-white/50">
-                Baseline set — {selected.firstName}&rsquo;s trend will appear here after the next report. 📈
+                Baseline set — {selected.firstName}&rsquo;s trend will appear here after the next report. 
               </p>
             )}
           </Card>
@@ -215,7 +215,7 @@ export default function ParentProgressV2({
                             {h.delta > 0 ? '↑' : '↓'}{Math.abs(h.delta)}
                           </span>
                         )}
-                        {h.strongest && <span>★ {h.strongest}</span>}
+                        {h.strongest && <span> {h.strongest}</span>}
                         {h.focus && <span>◎ {h.focus}</span>}
                       </p>
                     )}

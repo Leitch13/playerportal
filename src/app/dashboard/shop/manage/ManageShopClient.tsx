@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -340,7 +341,7 @@ export default function ManageShopClient({
           {/* Product list */}
           {initialProducts.length === 0 ? (
             <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
-              <p className="text-4xl mb-3">👕</p>
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['tag']}</svg></span>
               <p className="text-white/60 font-medium">No products yet</p>
               <p className="text-sm text-white/30 mt-1">Add your first item to start selling.</p>
             </div>
@@ -358,7 +359,7 @@ export default function ManageShopClient({
                         />
                       ) : (
                         <div className="w-12 h-12 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
-                          <span className="text-lg opacity-50">👕</span>
+                          <span className="text-lg opacity-50"></span>
                         </div>
                       )}
                       <div className="min-w-0">
@@ -425,7 +426,7 @@ export default function ManageShopClient({
 
           {filteredOrders.length === 0 ? (
             <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
-              <p className="text-4xl mb-3">📦</p>
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['doc']}</svg></span>
               <p className="text-white/60 font-medium">No orders found</p>
             </div>
           ) : (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 
 interface GroupOption {
@@ -486,7 +487,7 @@ export default function MigrationWizard({
       {/* Step 1: Upload */}
       {step === 'upload' && (
         <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-8 text-center">
-          <div className="text-4xl mb-3">📥</div>
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['list']}</svg></span>
           <h2 className="text-lg font-bold text-white mb-2">Upload your player CSV</h2>
           <p className="text-sm text-white/50 max-w-md mx-auto mb-6">
             Export your player list from ClassForKids (or any system). We&apos;ll auto-detect the columns.
@@ -562,7 +563,7 @@ export default function MigrationWizard({
 
           {mappedCount < uniqueClasses.length && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-300">
-              ⚠️ {uniqueClasses.length - mappedCount} class{uniqueClasses.length - mappedCount !== 1 ? 'es' : ''} still unmapped.
+               {uniqueClasses.length - mappedCount} class{uniqueClasses.length - mappedCount !== 1 ? 'es' : ''} still unmapped.
               Unmapped players will be imported without a subscription — you can fix them individually later.
             </div>
           )}

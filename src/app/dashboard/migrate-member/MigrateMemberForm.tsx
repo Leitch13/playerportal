@@ -186,7 +186,7 @@ export default function MigrateMemberForm({
           </p>
           {tooFarOut && (
             <p className="text-[11px] text-amber-300 mt-1.5 flex items-center gap-1.5">
-              <span aria-hidden>⚠</span>
+              <span aria-hidden></span>
               That&apos;s more than 100 days out — the server will reject it. Pick a closer date.
             </p>
           )}
@@ -263,7 +263,7 @@ export default function MigrateMemberForm({
               className="py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.01] active:scale-[0.98]"
               style={{ backgroundColor: primary, color: '#0a0a0a' }}
             >
-              {copied ? '✓ Copied' : 'Copy link'}
+              {copied ? ' Copied' : 'Copy link'}
             </button>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(messageBody)}`}
@@ -277,7 +277,7 @@ export default function MigrateMemberForm({
               href={`mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(messageBody)}`}
               className="py-3 rounded-xl font-semibold text-sm text-center bg-white/[0.06] text-white/85 border border-white/[0.12] hover:bg-white/[0.10] transition-colors flex items-center justify-center gap-2"
             >
-              <span aria-hidden>✉</span> Send via email
+              <span aria-hidden></span> Send via email
             </a>
           </div>
 
@@ -293,7 +293,7 @@ export default function MigrateMemberForm({
                 onClick={(e) => { e.preventDefault(); copyTemplate() }}
                 className="ml-auto text-[11px] text-[#4ecde6] hover:text-[#7dddf0] font-semibold"
               >
-                {copied ? 'Copied ✓' : 'Copy text'}
+                {copied ? 'Copied ' : 'Copy text'}
               </button>
             </summary>
             <div className="mt-2 px-3 py-3 rounded-xl bg-black/40 border border-white/[0.08] text-xs text-white/70 leading-relaxed whitespace-pre-wrap font-sans">
