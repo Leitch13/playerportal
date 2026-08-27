@@ -23,9 +23,11 @@ interface Child {
 export default function ShopItem({
   item,
   players,
+  accent = '#4ecde6',
 }: {
   item: MerchItem
   players: Child[]
+  accent?: string
 }) {
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedChild, setSelectedChild] = useState(players[0]?.id || '')
@@ -127,15 +129,21 @@ export default function ShopItem({
   }
 
   return (
-    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl overflow-hidden flex flex-col">
+    <div
+      className="group flex flex-col overflow-hidden rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,0.6)]"
+      style={{ ['--shop-accent' as string]: accent }}
+    >
       {/* Image / Placeholder */}
       {item.image_url ? (
         <div className="relative h-48 overflow-hidden">
           <img
             src={item.image_url}
             alt={item.name}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
           />
+          <span className="absolute left-3 top-3 rounded-full border border-white/20 bg-black/45 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/85 backdrop-blur-sm">
+            {item.category.replace('_', ' ')}
+          </span>
           {!item.in_stock && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <span className="text-white/80 font-semibold text-sm bg-black/40 px-3 py-1 rounded-full">
@@ -160,7 +168,7 @@ export default function ShopItem({
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-base font-semibold text-white leading-tight">{item.name}</h3>
-          <span className="text-lg font-bold text-[#4ecde6] whitespace-nowrap ml-2">
+          <span className="ml-2 whitespace-nowrap text-lg font-extrabold" style={{ color: accent }}>
             &pound;{Number(item.price).toFixed(2)}
           </span>
         </div>
@@ -178,11 +186,12 @@ export default function ShopItem({
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     selectedSize === size
-                      ? 'bg-[#4ecde6] text-black'
+                      ? 'text-black'
                       : 'bg-[#1d2c42] text-white/60 hover:bg-white/[0.12] hover:text-white'
                   }`}
+                  style={selectedSize === size ? { background: accent } : undefined}
                 >
                   {size}
                 </button>
@@ -242,7 +251,8 @@ export default function ShopItem({
           <button
             onClick={handleOrder}
             disabled={loading || !item.in_stock}
-            className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#4ecde6] text-black hover:bg-[#4ecde6]/90 active:scale-[0.98]"
+            className="w-full rounded-xl py-2.5 text-sm font-bold text-black transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ background: accent }}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

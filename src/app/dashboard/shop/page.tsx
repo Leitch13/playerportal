@@ -34,6 +34,16 @@ export default async function ShopPage({
   const { data: orgId } = await supabase.rpc('get_my_org')
   if (!orgId) redirect('/dashboard')
 
+  // The shop is the parent buying THEIR academy's kit — brand it as the
+  // academy, not as Player Portal. Same treatment as the public booking page.
+  const { data: org } = await supabase
+    .from('organisations')
+    .select('name, logo_url, primary_color')
+    .eq('id', orgId)
+    .single()
+  const accent = (org?.primary_color as string | null) || '#4ecde6'
+  const academyName = (org?.name as string | null) || 'Academy'
+
   // Fetch children for selector
   const { data: children } = await supabase
     .from('players')
@@ -80,20 +90,57 @@ export default async function ShopPage({
 
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Academy Shop</h1>
-          <p className="text-sm text-white/40 mt-1">
-            Official kit, training gear &amp; equipment
-          </p>
+      {/* ─── Academy-branded hero band ─── */}
+      <div
+        className="relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] p-6 sm:p-8"
+        style={{
+          background: `linear-gradient(120deg, ${accent}26 0%, ${accent}0d 45%, rgba(255,255,255,0.02) 100%)`,
+        }}
+      >
+        <div
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-25"
+          style={{ background: `radial-gradient(closest-side, ${accent}, transparent 70%)` }}
+        />
+        <div className="relative flex items-center gap-4">
+          {org?.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={org.logo_url as string}
+              alt={academyName}
+              className="h-14 w-14 rounded-xl border border-white/15 bg-white/10 object-cover sm:h-16 sm:w-16"
+            />
+          ) : (
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-xl text-xl font-black text-black sm:h-16 sm:w-16"
+              style={{ background: accent }}
+            >
+              {academyName.charAt(0)}
+            </div>
+          )}
+          <div>
+            <p
+              className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
+              style={{ color: accent }}
+            >
+              Official club shop
+            </p>
+            <h1 className="mt-0.5 text-2xl font-extrabold leading-tight text-white sm:text-3xl">
+              {academyName}
+            </h1>
+            <p className="mt-1 text-xs text-white/45 sm:text-sm">
+              Kit, training wear &amp; equipment — ordered through your academy
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Category tabs */}
-      <ShopCategoryFilter active={categoryFilter || 'all'} />
+      <ShopCategoryFilter active={categoryFilter || 'all'} accent={accent} />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-6" />
+      <div
+        className="my-6 h-px"
+        style={{ background: `linear-gradient(to right, transparent, ${accent}66, transparent)` }}
+      />
 
       {/* Product grid */}
       {items.length === 0 ? (
@@ -107,7 +154,7 @@ export default async function ShopPage({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((item) => (
-            <ShopItem key={item.id} item={item} players={playerList} />
+            <ShopItem key={item.id} item={item} players={playerList} accent={accent} />
           ))}
         </div>
       )}
@@ -141,7 +188,7 @@ export default async function ShopPage({
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-[#4ecde6]">
+                      <span className="text-sm font-semibold" style={{ color: accent }}>
                         &pound;{Number(order.total_price).toFixed(2)}
                       </span>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusColors[order.status] || 'text-white/40 bg-white/5'}`}>

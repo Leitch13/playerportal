@@ -9,7 +9,7 @@ const categories = [
   { key: 'equipment', label: 'Equipment', icon: '\u26BD' },
 ]
 
-export default function ShopCategoryFilter({ active }: { active: string }) {
+export default function ShopCategoryFilter({ active, accent = '#4ecde6' }: { active: string; accent?: string }) {
   const router = useRouter()
 
   function setCategory(key: string) {
@@ -24,11 +24,12 @@ export default function ShopCategoryFilter({ active }: { active: string }) {
         <button
           key={cat.key}
           onClick={() => setCategory(cat.key)}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
             active === cat.key
-              ? 'bg-[#4ecde6] text-black'
+              ? 'text-black'
               : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.1] hover:text-white'
           }`}
+          style={active === cat.key ? { background: accent } : undefined}
         >
           <span>{cat.icon}</span>
           {cat.label}
