@@ -104,7 +104,7 @@ export default async function PaymentsPage({
     notFound()
   }
 
-  return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} month={params.month || 'all'} orgId={orgId} activeTab={params.tab || 'overview'} />
+  return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} month={params.month || 'current'} orgId={orgId} activeTab={params.tab || 'overview'} />
 }
 
 /* ═══════════════════════════════════════════════
@@ -758,12 +758,18 @@ async function AdminPayments({
     .eq('organisation_id', orgId)
 
   // ─── Filtered payments for list (org-scoped) ───
+  // The list defaults to THIS MONTH rather than everything: the old
+  // all-time default was silently capped at 200 rows, so an academy past
+  // that (Jamie: 288) lost its oldest payments with no indication. A month
+  // view is both what an academy actually asks for ("what came in on the
+  // 1st?") and safely inside the cap.
+  const effectiveMonth = month === 'current' ? new Date().toISOString().slice(0, 7) : month
   let query = supabase
     .from('payments')
     .select('*, parent:profiles!payments_parent_id_fkey(full_name, email, phone), player:players(first_name, last_name)')
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
-    .limit(200)
+    .limit(1000)
 
   if (filter === 'overdue') query = query.eq('status', 'overdue')
   else if (filter === 'unpaid') query = query.in('status', ['unpaid', 'partial'])
@@ -772,9 +778,9 @@ async function AdminPayments({
   // ─── Month window (?month=YYYY-MM) — "what came in on the 1st of August?"
   // Filters on paid_date for settled money, falling back to created_at for
   // rows never paid, so an unpaid August invoice still appears under August.
-  if (/^\d{4}-\d{2}$/.test(month)) {
-    const from = `${month}-01`
-    const [yy, mm] = month.split('-').map(Number)
+  if (/^\d{4}-\d{2}$/.test(effectiveMonth)) {
+    const from = `${effectiveMonth}-01`
+    const [yy, mm] = effectiveMonth.split('-').map(Number)
     const to = new Date(Date.UTC(yy, mm, 0)).toISOString().slice(0, 10)
     query = query.or(
       `and(paid_date.gte.${from},paid_date.lte.${to}),and(paid_date.is.null,created_at.gte.${from}T00:00:00Z,created_at.lte.${to}T23:59:59Z)`
@@ -800,7 +806,7 @@ async function AdminPayments({
       long: d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
     }
   })
-  const selectedMonth = monthOptions.find((m) => m.key === month) || null
+  const selectedMonth = monthOptions.find((m) => m.key === effectiveMonth) || null
   const monthLabel = selectedMonth?.long || null
   const monthRows = selectedMonth
     ? (allPayments || []).filter((p) => (((p.paid_date as string | null) || (p.created_at as string | null) || '').slice(0, 7)) === selectedMonth.key)
@@ -1241,18 +1247,24 @@ async function AdminPayments({
               {/* Month picker — plain links so it works without JS and the URL is shareable */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <a
-                  href={`/dashboard/payments?tab=overview${filter !== 'all' ? `&filter=${filter}` : ''}`}
+                  href={`/dashboard/payments?tab=overview&month=all${filter !== 'all' ? `&filter=${filter}` : ''}`}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${month === 'all' ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
                 >All time</a>
                 {monthOptions.map((m) => (
                   <a
                     key={m.key}
                     href={`/dashboard/payments?tab=overview&month=${m.key}${filter !== 'all' ? `&filter=${filter}` : ''}`}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${month === m.key ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${effectiveMonth === m.key ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
                   >{m.short}</a>
                 ))}
               </div>
             </div>
+
+            {(payments || []).length >= 1000 && (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300">
+                Showing the most recent 1,000 payments. Pick a month above, or use Exports for the full history.
+              </p>
+            )}
 
             <div className="flex flex-wrap gap-2">
               {filters.map((f) => (
