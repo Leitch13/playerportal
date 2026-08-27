@@ -56,6 +56,7 @@ export default async function PaymentsPage({
     cancelled?: string
     sub_success?: string
     sub_cancelled?: string
+    month?: string
     tab?: string
   }>
 }) {
@@ -103,7 +104,7 @@ export default async function PaymentsPage({
     notFound()
   }
 
-  return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} orgId={orgId} activeTab={params.tab || 'overview'} />
+  return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} month={params.month || 'all'} orgId={orgId} activeTab={params.tab || 'overview'} />
 }
 
 /* ═══════════════════════════════════════════════
@@ -680,11 +681,13 @@ async function AdminPayments({
   filter,
   orgId,
   activeTab,
+  month,
 }: {
   autoOpen: boolean
   filter: string
   orgId: string
   activeTab: string
+  month: string
 }) {
   const supabase = await createClient()
 
@@ -766,7 +769,44 @@ async function AdminPayments({
   else if (filter === 'unpaid') query = query.in('status', ['unpaid', 'partial'])
   else if (filter === 'paid') query = query.eq('status', 'paid')
 
+  // ─── Month window (?month=YYYY-MM) — "what came in on the 1st of August?"
+  // Filters on paid_date for settled money, falling back to created_at for
+  // rows never paid, so an unpaid August invoice still appears under August.
+  if (/^\d{4}-\d{2}$/.test(month)) {
+    const from = `${month}-01`
+    const [yy, mm] = month.split('-').map(Number)
+    const to = new Date(Date.UTC(yy, mm, 0)).toISOString().slice(0, 10)
+    query = query.or(
+      `and(paid_date.gte.${from},paid_date.lte.${to}),and(paid_date.is.null,created_at.gte.${from}T00:00:00Z,created_at.lte.${to}T23:59:59Z)`
+    )
+  }
+
   const { data: payments } = await query
+
+  // ─── Month options for the picker: every month that has payments, newest
+  // first, capped at 12 so the row stays one line. Built from allPayments
+  // (already fetched for stats) — no extra query. ───
+  const monthKeys = [...new Set(
+    (allPayments || [])
+      .map((p) => ((p.paid_date as string | null) || (p.created_at as string | null) || '').slice(0, 7))
+      .filter((k) => /^\d{4}-\d{2}$/.test(k))
+  )].sort().reverse().slice(0, 12)
+  const monthOptions = monthKeys.map((key) => {
+    const [y, m] = key.split('-').map(Number)
+    const d = new Date(Date.UTC(y, m - 1, 1))
+    return {
+      key,
+      short: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit', timeZone: 'UTC' }),
+      long: d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+    }
+  })
+  const selectedMonth = monthOptions.find((m) => m.key === month) || null
+  const monthLabel = selectedMonth?.long || null
+  const monthRows = selectedMonth
+    ? (allPayments || []).filter((p) => (((p.paid_date as string | null) || (p.created_at as string | null) || '').slice(0, 7)) === selectedMonth.key)
+    : []
+  const monthCollected = monthRows.reduce((s2, p) => s2 + Number(p.amount_paid || 0), 0)
+  const monthCount = monthRows.filter((p) => Number(p.amount_paid || 0) > 0).length
 
   // ─── All Parents (with signup dates) — org-scoped ───
   const { data: allParents } = await supabase
@@ -1189,7 +1229,30 @@ async function AdminPayments({
 
           {/* One-off Payments */}
           <div className="border-t border-white/[0.08] pt-6 space-y-4">
-            <h2 className="text-lg font-semibold">One-off Payments</h2>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Payments</h2>
+                {monthLabel && (
+                  <p className="mt-0.5 text-[13px] text-white/45">
+                    {monthLabel} · <span className="font-semibold text-emerald-300 tabular-nums">£{monthCollected.toFixed(2)}</span> collected across {monthCount} payment{monthCount === 1 ? '' : 's'}
+                  </p>
+                )}
+              </div>
+              {/* Month picker — plain links so it works without JS and the URL is shareable */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <a
+                  href={`/dashboard/payments?tab=overview${filter !== 'all' ? `&filter=${filter}` : ''}`}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${month === 'all' ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
+                >All time</a>
+                {monthOptions.map((m) => (
+                  <a
+                    key={m.key}
+                    href={`/dashboard/payments?tab=overview&month=${m.key}${filter !== 'all' ? `&filter=${filter}` : ''}`}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${month === m.key ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
+                  >{m.short}</a>
+                ))}
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-2">
               {filters.map((f) => (
@@ -1229,10 +1292,24 @@ async function AdminPayments({
                       {(payments || []).map((p) => (
                         <tr key={p.id} className="border-b border-white/[0.08] last:border-0 hover:bg-white/[0.03]">
                           <td className="py-2.5">
-                            <div className="font-medium">{(p.parent as unknown as { full_name: string })?.full_name || '—'}</div>
-                            <div className="text-xs text-white/60 hidden md:block">
-                              {(p.parent as unknown as { email: string })?.email}
-                            </div>
+                            {/* Click the family to see their full payment history. */}
+                            {p.parent_id ? (
+                              <Link href={`/dashboard/parents/${p.parent_id}`} className="group/fam block">
+                                <div className="font-medium transition-colors group-hover/fam:text-[#4ecde6]">
+                                  {(p.parent as unknown as { full_name: string })?.full_name || '—'}
+                                </div>
+                                <div className="hidden text-xs text-white/60 md:block">
+                                  {(p.parent as unknown as { email: string })?.email}
+                                </div>
+                              </Link>
+                            ) : (
+                              <>
+                                <div className="font-medium">{(p.parent as unknown as { full_name: string })?.full_name || '—'}</div>
+                                <div className="hidden text-xs text-white/60 md:block">
+                                  {(p.parent as unknown as { email: string })?.email}
+                                </div>
+                              </>
+                            )}
                           </td>
                           <td className="py-2.5">
                             {(p.player as unknown as { first_name: string; last_name: string })

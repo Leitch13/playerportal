@@ -113,7 +113,7 @@ export default async function ParentDetailPage({
   // ── 4. Payments for this parent (READ-ONLY) ──
   const { data: paymentsRows } = await supabase
     .from('payments')
-    .select('amount, amount_paid, status, paid_date, plan:subscription_plans(name)')
+    .select('id, amount, amount_paid, status, paid_date, created_at, description, plan:subscription_plans(name)')
     .eq('organisation_id', orgId)
     .eq('parent_id', parentId)
     .order('paid_date', { ascending: false, nullsFirst: false })
@@ -227,6 +227,8 @@ export default async function ParentDetailPage({
   const familyValue = deriveFamilyValue(allSubsForValue)
   const familyStatus = deriveFamilyBillingStatus((subsRows || []).map(s => ({ status: s.status })))
   const lastPaid = deriveLastPaidPayment(paymentsRows as Parameters<typeof deriveLastPaidPayment>[0])
+  const paidHistory = (paymentsRows || []).filter((p) => Number(p.amount_paid || 0) > 0)
+  const paidTotal = paidHistory.reduce((s2, p) => s2 + Number(p.amount_paid || 0), 0)
   const badges = deriveFamilyBadges({
     children: familyChildren,
     childCount: children.length,
@@ -388,6 +390,67 @@ export default async function ParentDetailPage({
             </div>
           </div>
         </div>
+
+        {/* ─── Payment history ───────────────────────────────────────────
+            The page already loaded this family's payments to derive "last
+            paid" but never showed them. Academies asking "what has this
+            family actually paid us?" had no answer short of a CSV export. ── */}
+        {(paymentsRows || []).length > 0 && (
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-bold text-white">Payment history</h2>
+                <p className="mt-0.5 text-[11px] text-white/40">
+                  {paidHistory.length} payment{paidHistory.length === 1 ? '' : 's'} · £{paidTotal.toFixed(2)} paid to date
+                </p>
+              </div>
+            </div>
+            <div className="-mx-1 overflow-x-auto">
+              <table className="w-full min-w-[420px] text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-wider text-white/35">
+                    <th className="px-1 pb-2 font-bold">Date</th>
+                    <th className="px-1 pb-2 font-bold">For</th>
+                    <th className="px-1 pb-2 text-right font-bold">Amount</th>
+                    <th className="px-1 pb-2 text-right font-bold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(paymentsRows || []).slice(0, 24).map((pay, i) => {
+                    const amt = Number(pay.amount_paid || 0) > 0 ? Number(pay.amount_paid) : Number(pay.amount || 0)
+                    const dateIso = (pay.paid_date as string | null) || (pay.created_at as string | null)
+                    const isPaid = pay.status === 'paid'
+                    const label = (pay.description as string | null)
+                      || ((pay.plan as unknown as { name?: string } | null)?.name)
+                      || 'Payment'
+                    return (
+                      <tr key={(pay.id as string) || i} className="border-t border-white/[0.05]">
+                        <td className="px-1 py-2.5 whitespace-nowrap text-white/70">
+                          {dateIso ? new Date(dateIso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+                        <td className="px-1 py-2.5 text-white/70">
+                          <span className="block max-w-[260px] truncate" title={label}>{label}</span>
+                        </td>
+                        <td className="px-1 py-2.5 text-right font-semibold tabular-nums text-white">£{amt.toFixed(2)}</td>
+                        <td className="px-1 py-2.5 text-right">
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold capitalize ${
+                            isPaid ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                            : pay.status === 'overdue' ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                            : pay.status === 'refunded' ? 'border-violet-500/30 bg-violet-500/10 text-violet-300'
+                            : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                          }`}>{String(pay.status)}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {(paymentsRows || []).length > 24 && (
+              <p className="mt-3 text-[11px] text-white/35">Showing the 24 most recent of {(paymentsRows || []).length}.</p>
+            )}
+          </div>
+        )}
 
         {/* ── Children ── */}
         <div>
