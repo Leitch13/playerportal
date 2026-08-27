@@ -56,19 +56,37 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+/**
+ * PostgREST sends `.in('col', ids)` as URL query params. Past a few hundred
+ * UUIDs the URL blows the server's request-line limit and the whole query
+ * dies with an opaque 400 — which is exactly how canary 7 was silently dead
+ * once recent-enrolment volume passed ~800 rows (855 ids = 31KB of URL).
+ * Every unbounded id-list lookup goes through this instead: batches of 150
+ * ids (~5.5KB of URL), results concatenated. Order is not preserved; the
+ * callers all build Maps/Sets so they don't care.
+ */
+const IN_CHUNK = 150
+async function fetchAllInChunks<T>(
+  ids: string[],
+  build: (chunk: string[]) => (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const unique = [...new Set(ids)].filter(Boolean)
+  const rows: T[] = []
+  for (let i = 0; i < unique.length; i += IN_CHUNK) {
+    rows.push(...await fetchAll<T>(build(unique.slice(i, i + IN_CHUNK))))
+  }
+  return rows
+}
+
 async function orgNames(sb: Supabase, ids: string[]): Promise<Map<string, string>> {
-  const unique = [...new Set(ids)]
-  if (!unique.length) return new Map()
-  const rows = await fetchAll<{ id: string; name: string }>((f, t) =>
-    sb.from('organisations').select('id, name').in('id', unique).range(f, t))
+  const rows = await fetchAllInChunks<{ id: string; name: string }>(ids, (chunk) => (f, t) =>
+    sb.from('organisations').select('id, name').in('id', chunk).range(f, t))
   return new Map(rows.map((o) => [o.id, o.name]))
 }
 
 async function playerNames(sb: Supabase, ids: string[]): Promise<Map<string, string>> {
-  const unique = [...new Set(ids)].filter(Boolean)
-  if (!unique.length) return new Map()
-  const rows = await fetchAll<{ id: string; first_name: string; last_name: string | null }>((f, t) =>
-    sb.from('players').select('id, first_name, last_name').in('id', unique).range(f, t))
+  const rows = await fetchAllInChunks<{ id: string; first_name: string; last_name: string | null }>(ids, (chunk) => (f, t) =>
+    sb.from('players').select('id, first_name, last_name').in('id', chunk).range(f, t))
   return new Map(rows.map((p) => [p.id, `${p.first_name} ${p.last_name ?? ''}`.trim()]))
 }
 
@@ -93,10 +111,11 @@ async function canary1TermAnchorMismatch(sb: Supabase): Promise<Omit<CanaryResul
   const termById = new Map(terms.map((tm) => [tm.id, tm]))
   const groupById = new Map(groups.map((g) => [g.id, g]))
 
-  const enrols = await fetchAll<{ player_id: string; group_id: string; organisation_id: string }>((f, t) =>
-    sb.from('enrolments')
+  const enrols = await fetchAllInChunks<{ player_id: string; group_id: string; organisation_id: string }>(
+    groups.map((g) => g.id),
+    (chunk) => (f, t) => sb.from('enrolments')
       .select('player_id, group_id, organisation_id')
-      .in('group_id', groups.map((g) => g.id))
+      .in('group_id', chunk)
       .in('status', ['pending', 'active'])
       .range(f, t))
   if (!enrols.length) return { rowCount: 0, lines: [] }
@@ -206,11 +225,9 @@ async function canary4CrossAcademy(sb: Supabase): Promise<Omit<CanaryResult, 'id
       .not('player_id', 'is', null)
       .range(f, t))
   if (!subs.length) return { rowCount: 0, lines: [] }
-  const enrols = await fetchAll<{ player_id: string; group_id: string }>((f, t) =>
-    sb.from('enrolments')
-      .select('player_id, group_id')
-      .in('player_id', [...new Set(subs.map((s) => s.player_id as string))])
-      .range(f, t))
+  const enrols = await fetchAllInChunks<{ player_id: string; group_id: string }>(
+    subs.map((s) => s.player_id as string),
+    (chunk) => (f, t) => sb.from('enrolments').select('player_id, group_id').in('player_id', chunk).range(f, t))
   const groups = await fetchAll<{ id: string; name: string; organisation_id: string }>((f, t) =>
     sb.from('training_groups').select('id, name, organisation_id').range(f, t))
   const groupById = new Map(groups.map((g) => [g.id, g]))
@@ -321,8 +338,9 @@ async function canary6DuplicateCampDay(sb: Supabase): Promise<Omit<CanaryResult,
   if (!dupes.length) return { rowCount: 0, lines: [] }
 
   const dayIds = dupes.map(([k]) => k.split('|')[3])
-  const dayRows = await fetchAll<{ id: string; date: string }>((f, t) =>
-    sb.from('camp_days').select('id, date').in('id', [...new Set(dayIds)]).range(f, t))
+  const dayRows = await fetchAllInChunks<{ id: string; date: string }>(
+    dayIds,
+    (chunk) => (f, t) => sb.from('camp_days').select('id, date').in('id', chunk).range(f, t))
   const dayDate = new Map(dayRows.map((d) => [d.id, d.date]))
   const campRows = await fetchAll<{ id: string; name: string }>((f, t) =>
     sb.from('camps').select('id, name').in('id', [...new Set(dupes.map(([k]) => k.split('|')[0]))]).range(f, t))
@@ -375,8 +393,9 @@ async function canary7EnrolledNotPaying(sb: Supabase): Promise<Omit<CanaryResult
   const pilotOrgs = new Set(pilots.map((o) => o.id))
 
   // player → parent
-  const players = await fetchAll<{ id: string; parent_id: string | null }>((f, t) =>
-    sb.from('players').select('id, parent_id').in('id', [...new Set(enrols.map((e) => e.player_id))]).range(f, t))
+  const players = await fetchAllInChunks<{ id: string; parent_id: string | null }>(
+    enrols.map((e) => e.player_id),
+    (chunk) => (f, t) => sb.from('players').select('id, parent_id').in('id', chunk).range(f, t))
   const parentOf = new Map(players.map((p) => [p.id, p.parent_id]))
 
   // every (parent|org) pair that holds an acceptable subscription
