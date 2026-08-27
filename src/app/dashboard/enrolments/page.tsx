@@ -22,6 +22,7 @@ import {
   type ConversionSummary,
 } from '@/lib/enrolments-revops'
 import { loadTrialConversionData } from '@/lib/trial-conversion-loader'
+import { loadPaymentStatusByPlayer, type PaymentVerdict } from '@/lib/enrolment-payment-status'
 import EnrolmentsActionBand from '@/components/enrolments/EnrolmentsActionBand'
 
 type EnrolmentRow = {
@@ -74,7 +75,7 @@ export default async function EnrolmentsPage() {
       .order('first_name'),
     supabase
       .from('training_groups')
-      .select('id, name, day_of_week')
+      .select('id, name, day_of_week, time_slot, max_capacity')
       .eq('organisation_id', orgId)
       .order('name'),
     loadTrialFollowUpRows(supabase, orgId).catch(() => []),
@@ -93,6 +94,20 @@ export default async function EnrolmentsPage() {
   const active = rows.filter(e => e.status === 'active' && !e.is_trial)
   const paused = rows.filter(e => e.status === 'paused')
   const cancelled = rows.filter(e => e.status === 'cancelled' || e.status === 'inactive')
+
+  // ── Payment markers: who on this roster is actually paying? One bounded
+  // read; see src/lib/enrolment-payment-status.ts for the verdict rules. ──
+  const { data: orgRow } = await supabase
+    .from('organisations')
+    .select('stripe_account_id')
+    .eq('id', orgId)
+    .single()
+  const rosterPlayerIds = [...new Set([...active, ...trials].map(e => e.player_id))]
+  const payMap = await loadPaymentStatusByPlayer(
+    supabase, orgId, rosterPlayerIds, !!orgRow?.stripe_account_id
+  )
+  const notPayingActive = active.filter(e => (payMap.get(e.player_id) ?? 'no_sub') !== 'paying')
+  const payingCount = active.length - notPayingActive.length
 
   // ── Enrolments Revenue Ops Phase 1A — read-only Daily Actions band. ──
   // Built only when the flag is ON: trials-ending-soon from already-loaded
@@ -160,20 +175,60 @@ export default async function EnrolmentsPage() {
     return `in ${n} days`
   }
 
+  // Chip sub-lines — the number says what, this says whether to care.
+  const trialsEndingThisWeek = trials.filter(e => {
+    const exp = e.trial_expires_at
+    if (!exp) return false
+    const n = daysFromNow(exp)
+    return n >= 0 && n <= 7
+  }).length
+  const nextPendingStart = pending
+    .map(e => e.activates_on)
+    .filter(Boolean)
+    .sort()[0] as string | undefined
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Enrolments</h1>
+        <p className="mt-1 text-[13px] text-white/40">Who&rsquo;s in, who&rsquo;s trialling, and who isn&rsquo;t paying yet</p>
         {/* ─── Phase 1: five-state chip row + Phase 2.4 follow-up chip ─── */}
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-          <Chip href="#active"          label="Active"           value={active.length}          tone="emerald" />
-          <Chip href="#pending"         label="Pending"          value={pending.length}         tone="amber" />
-          <Chip href="#trial"           label="Trial"            value={trials.length}          tone="sky" />
+          <Chip href="#active"          label="Active"           value={active.length}          tone="emerald"
+                detail={active.length > 0 ? `${payingCount} paying` : undefined} />
+          <Chip href="#pending"         label="Pending"          value={pending.length}         tone="amber"
+                detail={nextPendingStart ? `next start ${countdownLabel(nextPendingStart)}` : undefined} />
+          <Chip href="#trial"           label="On trial"         value={trials.length}          tone="sky"
+                detail={trialsEndingThisWeek > 0 ? `${trialsEndingThisWeek} end${trialsEndingThisWeek === 1 ? 's' : ''} this week` : undefined} />
           <Chip href="#trial-followup"  label="Follow-up due"    value={trialFollowUps.length}  tone="rose" />
           <Chip href="#paused"          label="Paused"           value={paused.length}          tone="violet" />
           <Chip href="#cancelled"       label="Cancelled"        value={cancelled.length}       tone="muted" />
         </div>
       </div>
+
+      {/* ─── "Enrolled, not paying" — the leak this page used to hide. ───
+          Only renders when someone on the active roster has no live
+          membership behind them (or an 'active' sub with no Stripe billing
+          on a Stripe-connected org — the phantom-active pattern). ─── */}
+      {notPayingActive.length > 0 && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.05] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-bold text-amber-300">
+                {notPayingActive.length} enrolled, not paying
+              </div>
+              <div className="mt-0.5 text-xs text-white/50">
+                {notPayingActive.slice(0, 4).map(e => `${e.player?.first_name ?? ''} ${e.player?.last_name ?? ''}`.trim()).join(' · ')}
+                {notPayingActive.length > 4 ? ` · +${notPayingActive.length - 4} more` : ''}
+                {' '}— on the roster with no membership behind them.
+              </div>
+            </div>
+            <Link href="/dashboard/payments" className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/20">
+              Set up payment →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {ENROLMENTS_REVOPS_ENABLED && (
         <EnrolmentsActionBand
@@ -200,7 +255,7 @@ export default async function EnrolmentsPage() {
           {pending.length > 0 && (
             <section id="pending">
               <SectionHeading title="Pending future starts" count={pending.length} tone="amber" />
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-x-auto">
                 <Table headers={['Player', 'Class', 'Start date', 'Days until', 'Actions']}>
                   {pending.map(e => {
                     const start = e.activates_on || ''
@@ -224,58 +279,99 @@ export default async function EnrolmentsPage() {
             </section>
           )}
 
-          {/* ─── TRIAL ─── */}
+          {/* ─── TRIAL — decision cards, urgent ones flagged ─── */}
           {trials.length > 0 && (
             <section id="trial">
-              <SectionHeading title="Trial enrolments" count={trials.length} tone="sky" />
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-                <Table headers={['Player', 'Class', 'Trial expiry', 'Actions']}>
-                  {trials.map(e => {
-                    const exp = e.trial_expires_at || ''
-                    return (
-                      <tr key={e.id} className="border-t border-white/[0.04]">
-                        <Td>{e.player?.first_name} {e.player?.last_name}</Td>
-                        <Td className="text-white/70">{e.group?.name}{e.group?.day_of_week ? ` · ${e.group.day_of_week}` : ''}</Td>
-                        <Td className={daysFromNow(exp) < 0 ? 'text-rose-300' : 'text-sky-300'}>
-                          {exp ? `${fmtDate(exp)} · ${countdownLabel(exp)}` : '—'}
-                        </Td>
-                        <Td>
-                          <TrialEnrolmentActions enrolmentId={e.id} />
-                        </Td>
-                      </tr>
-                    )
-                  })}
-                </Table>
+              <SectionHeading title="On trial" count={trials.length} tone="sky" />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {trials.map(e => {
+                  const exp = e.trial_expires_at || ''
+                  const n = exp ? daysFromNow(exp) : null
+                  const urgent = n != null && n <= 1
+                  return (
+                    <div key={e.id}
+                      className={`rounded-2xl border bg-white/[0.02] p-4 ${urgent ? 'border-rose-500/35' : 'border-white/[0.07]'}`}>
+                      <div className="text-[15px] font-bold text-white">{e.player?.first_name} {e.player?.last_name}</div>
+                      <div className="mt-0.5 text-xs text-white/40">
+                        {e.group?.name}{e.group?.day_of_week ? ` · ${e.group.day_of_week}` : ''}{e.group?.time_slot ? ` ${e.group.time_slot}` : ''}
+                      </div>
+                      {exp && (
+                        <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+                          n != null && n < 0 ? 'border-rose-500/35 bg-rose-500/10 text-rose-300'
+                          : urgent ? 'border-rose-500/35 bg-rose-500/10 text-rose-300'
+                          : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                        }`}>
+                          ⏳ {n != null && n < 0 ? countdownLabel(exp) : n === 0 ? 'Ends today' : n === 1 ? 'Ends tomorrow' : `${n} days left`}
+                        </span>
+                      )}
+                      <div className="mt-3">
+                        <TrialEnrolmentActions enrolmentId={e.id} />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </section>
           )}
 
-          {/* ─── ACTIVE BY CLASS (existing) ─── */}
+          {/* ─── ACTIVE BY CLASS — capacity + who's actually paying ─── */}
           {groupedActive.length > 0 && (
             <section id="active">
               <SectionHeading title="Active by class" count={active.length} tone="emerald" />
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.05]">
-                {groupedActive.map(([className, list]) => (
-                  <div key={className} className="p-4">
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-white">{className}</h3>
-                        <span className="text-[10px] uppercase tracking-wider text-white/40 bg-white/[0.06] px-2 py-0.5 rounded-full font-bold">{list.length}</span>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {groupedActive.map(([className, list]) => {
+                  const cap = (groups || []).find(g => g.id === list[0]?.group_id) as
+                    | { max_capacity?: number | null } | undefined
+                  const capacity = Number(cap?.max_capacity) || null
+                  const fillPct = capacity ? Math.min(100, Math.round((list.length / capacity) * 100)) : null
+                  return (
+                    <div key={className} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-[15px] font-bold text-white">{className}</h3>
+                          {list[0]?.group && (list[0].group.day_of_week || list[0].group.time_slot) && (
+                            <div className="mt-0.5 text-xs text-white/40">{list[0].group.day_of_week}{list[0].group.time_slot ? ` · ${list[0].group.time_slot}` : ''}</div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[13px] font-bold text-white">{list.length}{capacity ? `/${capacity}` : ''}</div>
+                          {fillPct != null && (
+                            <div className="mt-1.5 h-1.5 w-[110px] overflow-hidden rounded-full bg-white/[0.07]">
+                              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#4ecde6]" style={{ width: `${fillPct}%` }} />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      {list[0]?.group && (list[0].group.day_of_week || list[0].group.time_slot) && (
-                        <span className="text-[11px] text-white/40">{list[0].group.day_of_week}{list[0].group.time_slot ? ` · ${list[0].group.time_slot}` : ''}</span>
-                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {list.map(e => {
+                          const fullName = `${e.player?.first_name || ''} ${e.player?.last_name || ''}`.trim()
+                          const verdict = payMap.get(e.player_id) ?? 'no_sub'
+                          const paying = verdict === 'paying'
+                          return (
+                            <Link key={e.id} href={`/dashboard/players?search=${encodeURIComponent(fullName)}`}
+                              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                                paying
+                                  ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-200 hover:bg-emerald-500/15'
+                                  : 'border-amber-500/35 bg-amber-500/[0.08] text-amber-100 hover:bg-amber-500/15'
+                              }`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${paying ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                              {fullName}
+                              {!paying && (
+                                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-amber-300">
+                                  {verdict === 'not_billing' ? '£ NOT BILLING' : '£ NOT SET UP'}
+                                </span>
+                              )}
+                            </Link>
+                          )
+                        })}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {list.map(e => (
-                        <Link key={e.id} href={`/dashboard/players?search=${encodeURIComponent(e.player?.first_name || '')}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[12px] bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/15 transition-colors">
-                          ⚽ {e.player?.first_name} {e.player?.last_name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-medium text-white/40">
+                <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-emerald-400" />Paying member</span>
+                <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-amber-400" />Enrolled with no live membership — money never set up</span>
               </div>
             </section>
           )}
@@ -321,7 +417,7 @@ const TONE_CLASS: Record<string, { value: string; chip: string; section: string 
   muted:   { value: 'text-white/40',    chip: 'bg-white/[0.04] text-white/60 border-white/[0.08]',             section: 'text-white/60' },
 }
 
-function Chip({ href, label, value, tone }: { href: string; label: string; value: number; tone: keyof typeof TONE_CLASS }) {
+function Chip({ href, label, value, tone, detail }: { href: string; label: string; value: number; tone: keyof typeof TONE_CLASS; detail?: string }) {
   const meta = TONE_CLASS[tone]
   return (
     <Link
@@ -330,6 +426,7 @@ function Chip({ href, label, value, tone }: { href: string; label: string; value
     >
       <div className={`text-2xl sm:text-3xl font-extrabold leading-none ${meta.value}`}>{value}</div>
       <div className="text-[10px] uppercase tracking-wider mt-1">{label}</div>
+      {detail && <div className="mt-0.5 text-[10px] font-semibold opacity-60">{detail}</div>}
     </Link>
   )
 }
