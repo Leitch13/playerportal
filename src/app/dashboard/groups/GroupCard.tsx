@@ -210,21 +210,14 @@ export default function GroupCard({
   )
 
   return (
-    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 hover:border-[#293b58] transition-all relative flex flex-col min-h-[320px]">
+    <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 hover:border-[#293b58] transition-all relative flex flex-col ">
       {/* Top row — badges + overflow menu */}
       <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${typeBadge.bg} ${typeBadge.text}`}>
-            {typeBadge.label}
-          </span>
-          {group.age_group && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary">
-              {group.age_group}
-            </span>
-          )}
+        <div className="flex flex-wrap items-center gap-1.5">
           {group.is_featured && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
-              ★ Featured
+            <span className="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 bg-yellow-500/15 px-2 py-0.5 text-[10px] font-bold text-yellow-400">
+              <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 1.5l2.47 5 5.53.8-4 3.9.94 5.5L10 14.1l-4.94 2.6.94-5.5-4-3.9 5.53-.8z"/></svg>
+              Featured
             </span>
           )}
         </div>
@@ -326,39 +319,50 @@ export default function GroupCard({
           {group.name}
         </h3>
       </Link>
+      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/35">
+        {typeBadge.label}{group.age_group ? ` · ${group.age_group}` : ''}
+      </p>
       <p className="text-xs text-white/40 mt-1 line-clamp-2 min-h-[32px]">
         {group.short_description || group.description || (
           <span className="italic text-white/25">No description yet — add one to help parents choose this class.</span>
         )}
       </p>
 
-      {/* Details — always render all 3 rows for consistent height */}
+      {/* Details — only rows that exist; gaps roll up into one setup chip */}
       <div className="mt-3 space-y-1.5 text-sm">
-        <div className="flex items-center gap-2 text-white/70">
-          <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-          </svg>
-          <span className={group.time_slot ? '' : 'text-white/25 italic'}>
-            {group.time_slot || 'Time not set'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-white/70">
-          <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span className={group.location ? '' : 'text-white/25 italic'}>
-            {group.location || 'Location not set'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-white/70">
-          <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className={coachName ? '' : 'text-white/25 italic'}>
-            {coachName || 'Coach not assigned'}
-          </span>
-        </div>
+        {group.time_slot && (
+          <div className="flex items-center gap-2 text-white/70">
+            <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>{group.time_slot}</span>
+          </div>
+        )}
+        {group.location && (
+          <div className="flex items-center gap-2 text-white/70">
+            <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>{group.location}</span>
+          </div>
+        )}
+        {coachName && (
+          <div className="flex items-center gap-2 text-white/70">
+            <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>{coachName}</span>
+          </div>
+        )}
+        {isAdmin && (!group.time_slot || !group.location || !coachName) && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10.5px] font-bold text-amber-300">
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" d="M12 9v4m0 4h.01" /><path strokeLinecap="round" strokeLinejoin="round" d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" /></svg>
+              Finish setup — {[!group.time_slot && 'time', !group.location && 'venue', !coachName && 'coach'].filter(Boolean).join(', ')}
+            </span>
+          </div>
+        )}
         {group.price_per_session != null && Number(group.price_per_session) > 0 && (
           <div className="flex items-center gap-2 text-white/70">
             <svg className="w-3.5 h-3.5 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -402,7 +406,7 @@ export default function GroupCard({
         <div className="mt-4 pt-3 border-t border-[#1d2c42] flex items-center gap-2">
           <button
             onClick={handleCopyLink}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-[#4ecde6]/10 text-[#4ecde6] hover:bg-[#4ecde6]/20 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-white/50 transition-colors hover:bg-white/[0.06] hover:text-[#4ecde6]"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />

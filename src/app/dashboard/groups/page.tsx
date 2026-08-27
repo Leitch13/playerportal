@@ -18,7 +18,12 @@ import ClassesRevenueStrip from '@/components/classes/ClassesRevenueStrip'
 // Mirrors the Waitlist page's column-duality handling (task #248/#249).
 const WAITLIST_SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
 
-export default async function GroupsPage() {
+export default async function GroupsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }>
+}) {
+  const q = ((await searchParams)?.q || '').trim().toLowerCase()
   const supabase = await createClient()
   const {
     data: { user },
@@ -79,9 +84,19 @@ export default async function GroupsPage() {
     countByGroup.set(e.group_id, (countByGroup.get(e.group_id) || 0) + 1)
   }
 
+  // ?q= filters by name / venue / coach / age group — server-side so it
+  // works without JS and survives refresh/share.
+  const visibleGroups = q
+    ? (groups || []).filter((g) => {
+        const coach = (g.coach as unknown as { full_name?: string } | null)?.full_name || ''
+        const hay = `${g.name || ''} ${g.location || ''} ${coach} ${(g as unknown as { age_group?: string | null }).age_group || ''}`.toLowerCase()
+        return hay.includes(q)
+      })
+    : (groups || [])
+
   // Sort by day of week
   const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-  const sortedGroups = [...(groups || [])].sort((a, b) => {
+  const sortedGroups = [...visibleGroups].sort((a, b) => {
     const dayA = DAY_ORDER.indexOf(a.day_of_week || '')
     const dayB = DAY_ORDER.indexOf(b.day_of_week || '')
     return (dayA === -1 ? 99 : dayA) - (dayB === -1 ? 99 : dayB)
@@ -155,49 +170,48 @@ export default async function GroupsPage() {
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header — counts live here as one quiet line, not a band of stat tiles */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Classes</h1>
-          <p className="text-sm text-white/60 mt-0.5">Manage your training sessions and class capacity</p>
+          <p className="mt-1 text-[13px] text-white/40">
+            {totalClasses} class{totalClasses === 1 ? '' : 'es'} · {totalEnrolled} enrolled · {totalCapacity} capacity · {fillRate}% full
+          </p>
         </div>
+        <form method="GET" className="relative">
+          <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="11" cy="11" r="7" /><path strokeLinecap="round" d="M21 21l-4.3-4.3" />
+          </svg>
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Search classes, venues, coaches…"
+            className="w-64 rounded-xl border border-[#1d2c42] bg-[#0f1a2b] py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#4ecde6]/50 sm:w-72"
+          />
+        </form>
       </div>
 
       {CLASSES_REVOPS_ENABLED && classRollup && (
         <ClassesRevenueStrip rollup={classRollup} needsAttention={classNeedsAttention} />
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
-          <div className="text-2xl font-bold text-[#4ecde6]">{totalClasses}</div>
-          <div className="text-xs text-white/60 mt-0.5">Total Classes</div>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
-          <div className="text-2xl font-bold text-accent">{totalEnrolled}</div>
-          <div className="text-xs text-white/60 mt-0.5">Players Enrolled</div>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
-          <div className="text-2xl font-bold text-[#4ecde6]">{totalCapacity}</div>
-          <div className="text-xs text-white/60 mt-0.5">Total Capacity</div>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4 text-center">
-          <div className={`text-2xl font-bold ${fillRate >= 80 ? 'text-orange-500' : 'text-emerald-500'}`}>{fillRate}%</div>
-          <div className="text-xs text-white/60 mt-0.5">Fill Rate</div>
-        </div>
-      </div>
-
-      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
-
       {/* Create new class (admin only) */}
       {isAdmin && <GroupForm coaches={coaches || []} orgId={orgId} terms={termsForDropdown || []} />}
 
       {/* Classes by day */}
       {(groups || []).length === 0 ? (
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
-          <div className="text-4xl mb-3">📅</div>
-          <h3 className="text-lg font-bold mb-1 text-white">No classes yet</h3>
-          <p className="text-sm text-white/60 mb-4">Create your first class to start enrolling players</p>
+        <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-12 text-center">
+          <svg className="mx-auto mb-4 h-10 w-10 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18" strokeLinecap="round" />
+          </svg>
+          <h3 className="mb-1 text-lg font-bold text-white">No classes yet</h3>
+          <p className="text-sm text-white/50">Create your first class to start enrolling players</p>
+        </div>
+      ) : sortedGroups.length === 0 ? (
+        <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-10 text-center">
+          <p className="text-sm text-white/60">Nothing matches <span className="font-semibold text-white">&ldquo;{q}&rdquo;</span></p>
+          <a href="/dashboard/groups" className="mt-2 inline-block text-xs font-semibold text-[#4ecde6] hover:underline">Clear search</a>
         </div>
       ) : (
         <div className="space-y-8">
@@ -205,7 +219,7 @@ export default async function GroupsPage() {
             <div key={day}>
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-lg font-bold text-white">{day}</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
+                <div className="h-px flex-1 bg-white/[0.07]" />
                 <span className="text-xs text-white/60 font-medium">{dayGroups.length} class{dayGroups.length !== 1 ? 'es' : ''}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

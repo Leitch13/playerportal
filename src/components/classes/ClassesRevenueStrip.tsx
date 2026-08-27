@@ -67,7 +67,7 @@ export default function ClassesRevenueStrip({
       {/* ── Classes needing attention ── */}
       {shown.length === 0 ? (
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-4 text-center">
-          <p className="text-sm font-semibold text-emerald-300">All classes are healthy ✅</p>
+          <p className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />All classes are healthy</p>
           <p className="text-xs text-white/50 mt-1">No at-risk, underfilled, or waitlisted classes right now.</p>
         </div>
       ) : (
