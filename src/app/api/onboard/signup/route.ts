@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
+import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { orgIsClaimableByFirstAdmin } from '@/lib/onboard-claim'
 
 export async function POST(request: NextRequest) {
@@ -9,12 +10,17 @@ export async function POST(request: NextRequest) {
     // Mirror the sibling /api/onboard limiter so it can't be hammered to probe
     // slugs or brute-create accounts.
     const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
-    const { success } = rateLimit(`onboard-signup:${ip}`, 20, 3600000)
+    const { success } = rateLimit(`onboard-signup:${ip}`, 5, 3600000)
     if (!success) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
     }
 
     const { email, password, fullName, orgSlug } = await request.json()
+
+    const emailProblem = await checkLeadEmail(String(email || ''), 'your account')
+    if (emailProblem) {
+      return NextResponse.json({ error: emailProblem }, { status: 400 })
+    }
 
     if (!email || !password || !fullName || !orgSlug) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })

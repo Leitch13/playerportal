@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
+import { checkLeadEmail } from '@/lib/lead-email-checks'
 
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get('x-forwarded-for') || 'unknown'
-    const { success } = rateLimit(`onboard:${ip}`, 20, 3600000)
+    // 5 academy creations per IP per hour — 20 was drive-by friendly.
+    const { success } = rateLimit(`onboard:${ip}`, 5, 3600000)
     if (!success) {
       return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
     }
@@ -45,6 +47,15 @@ export async function POST(request: NextRequest) {
         { error: 'Name, slug, and contact email are required' },
         { status: 400 }
       )
+    }
+
+    // ── Email quality gate — same checker the lead forms use: disposable-
+    // inbox blocklist + MX lookup (fail-open on DNS noise, fail-CLOSED on
+    // "domain doesn't exist / throwaway inbox"). A real academy always has a
+    // real inbox; a junk signup ("regions bank" via silomails.com) doesn't. ──
+    const emailProblem = await checkLeadEmail(String(contactEmail), 'your academy')
+    if (emailProblem) {
+      return NextResponse.json({ error: emailProblem }, { status: 400 })
     }
 
     if (termsAccepted !== true || dpaAccepted !== true || authorityConfirmed !== true) {

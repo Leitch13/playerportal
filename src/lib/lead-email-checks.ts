@@ -15,6 +15,12 @@ const DISPOSABLE_DOMAINS = new Set([
   'sharklasers.com', 'getnada.com', 'dispostable.com', 'maildrop.cc', 'fakeinbox.com',
   'throwawaymail.com', 'mintemail.com', 'mohmal.com', 'tempinbox.com', 'spamgourmet.com',
   'mailnesia.com', 'mytemp.email', 'burnermail.io', 'emailondeck.com',
+  // Added 2026-08-28 after a junk academy signup from silomails.com sailed
+  // straight through account creation.
+  'silomails.com', 'mail.tm', 'mailsac.com', '1secmail.com', '1secmail.org',
+  'tempmailo.com', 'emailfake.com', 'inboxkitten.com', 'harakirimail.com',
+  'mailcatch.com', 'moakt.com', 'tmailor.com', 'crazymailing.com',
+  'tempr.email', 'discard.email', 'spambog.com', 'trash-mail.com',
 ])
 
 // Fat-finger domains that ARE registered (usually by squatters, so an MX
