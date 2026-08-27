@@ -29,11 +29,16 @@ export async function GET(request: NextRequest) {
   // never sent. We now use conversion_offer_sent (column from migration
   // 039, defaults false) so both crons can fire independently for the
   // same trial. Each cron is still individually idempotent.
+  // Window on WHEN THE TRIAL WAS MARKED ATTENDED (updated_at), not
+  // preferred_date: in production every attended trial has preferred_date
+  // NULL (the booking flow doesn't reliably set it), so the old date-window
+  // matched nothing — the cron ran green daily and emailed nobody (9/9
+  // attended trials, zero offers ever sent). 1-day lower gap so the day-1
+  // follow-up always lands first; 14-day lookback so warm-but-unactioned
+  // trials still get the invitation instead of being dropped forever.
   const now = new Date()
-  const threeDaysAgo = new Date(now)
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-  const oneDayAgo = new Date(now)
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+  const lookbackStart = new Date(now.getTime() - 14 * 86_400_000).toISOString()
+  const upperBound = new Date(now.getTime() - 1 * 86_400_000).toISOString()
 
   const { data: trials, error: trialsError } = await supabase
     .from('trial_bookings')
@@ -42,8 +47,8 @@ export async function GET(request: NextRequest) {
     )
     .eq('status', 'attended')
     .eq('conversion_offer_sent', false)
-    .gte('preferred_date', threeDaysAgo.toISOString().split('T')[0])
-    .lte('preferred_date', oneDayAgo.toISOString().split('T')[0])
+    .gte('updated_at', lookbackStart)
+    .lte('updated_at', upperBound)
 
   if (trialsError) {
     return NextResponse.json({ error: 'Failed to fetch trials' }, { status: 500 })
@@ -51,8 +56,15 @@ export async function GET(request: NextRequest) {
 
   const jobs: Parameters<typeof sendEmail>[0][] = []
 
+  // One offer per parent even when a child has duplicate attended rows
+  // (real case in prod: the same trial recorded twice).
+  const seenEmails = new Set<string>()
+
   for (const trial of trials || []) {
     if (!trial.parent_email) continue
+    const emailKey = trial.parent_email.toLowerCase()
+    if (seenEmails.has(emailKey)) continue
+    seenEmails.add(emailKey)
 
     const group = trial.training_group as unknown as { name: string } | null
     const org = trial.organisation as unknown as { name: string; slug: string | null } | null

@@ -35,20 +35,21 @@ export async function GET(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
 
-  // Find trial bookings from yesterday with status 'attended' that haven't
-  // already received the follow-up.
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStart = yesterday.toISOString().split('T')[0] + 'T00:00:00.000Z'
-  const yesterdayEnd = yesterday.toISOString().split('T')[0] + 'T23:59:59.999Z'
+  // Attended trials that haven't had the follow-up yet, marked attended in
+  // the last 7 days. Previously this was an exact one-day window (yesterday
+  // only) — so a single failed cron run, or a row whose updated_at fell
+  // outside the day it was checked, was skipped FOREVER (verified in prod:
+  // rows stuck followup_sent=false months later). The followup_sent flag is
+  // what prevents double-sends; the window only bounds how stale a trial we
+  // are still willing to follow up.
+  const lookbackStart = new Date(Date.now() - 7 * 86_400_000).toISOString()
 
   const { data: trials, error: trialsError } = await supabase
     .from('trial_bookings')
     .select('id, parent_name, parent_email, child_name, followup_sent, training_group:training_groups(name), organisation:organisations(name, slug)')
     .eq('status', 'attended')
     .eq('followup_sent', false)
-    .gte('updated_at', yesterdayStart)
-    .lte('updated_at', yesterdayEnd)
+    .gte('updated_at', lookbackStart)
 
   if (trialsError) {
     return NextResponse.json({ error: 'Failed to fetch trials' }, { status: 500 })
