@@ -1808,10 +1808,40 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
+/**
+ * Resolve the subscription id from an invoice, across Stripe API versions.
+ *
+ * Stripe moved this: `invoice.subscription` (top level) is NULL on current
+ * API versions — the id now lives at
+ * `invoice.parent.subscription_details.subscription`, with a per-line
+ * fallback at `lines.data[].parent.subscription_item_details.subscription`.
+ *
+ * Reading only the legacy field meant EVERY renewal silently no-op'd: the
+ * local subscription lookup missed, so no `payments` row was written and
+ * `current_period_end` was never refreshed. Money moved in Stripe and the
+ * app recorded none of it — verified in prod as £3,455 of one academy's
+ * August revenue invisible in-app. Check new location first, legacy last.
+ */
+function invoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const inv = invoice as unknown as {
+    subscription?: string | { id?: string } | null
+    parent?: { subscription_details?: { subscription?: string | { id?: string } | null } | null } | null
+    lines?: { data?: Array<{ parent?: { subscription_item_details?: { subscription?: string | { id?: string } | null } | null } | null }> }
+  }
+  const pick = (v: unknown): string | null =>
+    typeof v === 'string' ? v : (v as { id?: string } | null)?.id ?? null
+
+  return (
+    pick(inv.parent?.subscription_details?.subscription) ??
+    pick(inv.lines?.data?.find((l) => l?.parent?.subscription_item_details?.subscription)
+      ?.parent?.subscription_item_details?.subscription) ??
+    pick(inv.subscription) ??
+    null
+  )
+}
+
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
-  const subscriptionId = typeof invoice.subscription === 'string'
-    ? invoice.subscription
-    : invoice.subscription?.id ?? null
+  const subscriptionId = invoiceSubscriptionId(invoice)
 
   if (!subscriptionId) return
 
@@ -1919,9 +1949,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = typeof invoice.subscription === 'string'
-    ? invoice.subscription
-    : invoice.subscription?.id ?? null
+  const subscriptionId = invoiceSubscriptionId(invoice)
 
   if (!subscriptionId) return
 
