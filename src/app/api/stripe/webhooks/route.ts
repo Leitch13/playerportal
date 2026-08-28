@@ -1125,7 +1125,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         {
           customer: customerId,
           items: [{ price: recurringPriceId }],
-          trial_end: trialEndUnix,
+          // The anchor was stamped when Checkout OPENED. A parent who pays
+          // across midnight on the last day of the month hands us a
+          // trial_end now in the past — Stripe rejects it and the sub was
+          // silently never created even though tonight's payment WAS taken.
+          // Direct creates only need the date to be in the future: nudge it.
+          trial_end: Math.max(trialEndUnix, Math.floor(Date.now() / 1000) + 10 * 60),
           ...(savedPaymentMethod ? { default_payment_method: savedPaymentMethod } : {}),
           ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
           // on_behalf_of brands future renewals with the academy's Stripe

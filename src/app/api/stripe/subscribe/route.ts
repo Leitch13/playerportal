@@ -21,6 +21,22 @@ function getFirstOfNextMonth(): number {
   return Math.floor(nextMonth.getTime() / 1000)
 }
 
+/**
+ * Stripe CHECKOUT rejects a subscription trial_end less than 48 hours out
+ * ("trial_end must be at least 2 days in the future"). Our anchors are
+ * usually "the 1st of next month", which falls inside that window during
+ * the last two days of every month — so a parent signing up on the 30th/31st
+ * had their checkout REFUSED. Clamp any Checkout-bound trial_end to just
+ * past the 48h line: worst case the first charge slides ~1 day later (and
+ * the monthly anchor with it) for people who joined in that window — a
+ * far better outcome than an error at the payment page.
+ * 15-minute buffer covers clock skew and the parent dawdling on Checkout.
+ */
+function clampTrialEndForCheckout(ts: number): number {
+  const minAllowed = Math.floor(Date.now() / 1000) + 48 * 3600 + 15 * 60
+  return Math.max(ts, minAllowed)
+}
+
 // Returns Unix timestamp for the 1st of the month AFTER the given date.
 // Used when a parent's first session is in a future month — the next billing anchor
 // should be the month after the first session, since the first session's month is
@@ -784,7 +800,7 @@ export async function POST(request: NextRequest) {
           cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
           line_items: sessionBridgeLineItems,
           subscription_data: {
-            trial_end: anchorUnix,
+            trial_end: clampTrialEndForCheckout(anchorUnix),
             // NOTE: billing_cycle_anchor intentionally omitted. Stripe forbids
             // combining it with trial_end. trial_end alone produces the
             // desired calendar: first cycle billed on trial_end.
@@ -1087,7 +1103,7 @@ export async function POST(request: NextRequest) {
     // ─── Legacy / fallback flow: subscription mode with trial_end ───
     // Used for (a) migration billing and (b) no-session-this-month signups,
     // where there's nothing to charge for tonight — sub starts on the 1st.
-    const trialEnd = migrationTrialEnd || standardAnchor
+    const trialEnd = clampTrialEndForCheckout(migrationTrialEnd || standardAnchor)
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       { price: stripePriceId, quantity: 1 },
