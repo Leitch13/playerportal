@@ -434,16 +434,23 @@ export default function Navigation({
                     alt={orgName || 'Logo'}
                     className="h-10 w-10 sm:h-11 sm:w-11 object-cover rounded-xl shadow-sm border border-white/[0.08] group-hover:border-white/20 transition-colors"
                   />
+                ) : orgName ? (
+                  // No academy logo: an initial tile, not the full Player
+                  // Portal wordmark — wordmark + academy name + "Powered by"
+                  // was three brandings in a row and crowded the bar.
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.1] bg-white/[0.08] text-base font-extrabold text-[#4ecde6] sm:h-11 sm:w-11">
+                    {orgName.charAt(0).toUpperCase()}
+                  </div>
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src="/logo.png" alt="Player Portal" className="h-10 w-auto object-contain" />
                 )}
-                <div className="hidden sm:flex flex-col leading-tight">
-                  <span className="text-white font-extrabold text-base tracking-tight">{orgName || 'Player Portal'}</span>
-                  {orgName && <span className="text-[10px] text-white/30 font-medium">Powered by Player Portal</span>}
+                <div className="hidden min-w-0 sm:flex flex-col leading-tight">
+                  <span className="max-w-[38vw] truncate text-base font-extrabold tracking-tight text-white lg:max-w-[420px]">{orgName || 'Player Portal'}</span>
+                  {orgName && <span className="text-[10px] font-medium text-white/30">Powered by Player Portal</span>}
                 </div>
                 {/* Mobile: just the org name, no subtitle */}
-                <span className="sm:hidden font-extrabold text-base tracking-tight text-white">{orgName || 'Player Portal'}</span>
+                <span className="sm:hidden max-w-[46vw] truncate text-base font-extrabold tracking-tight text-white">{orgName || 'Player Portal'}</span>
               </Link>
             </div>
 
