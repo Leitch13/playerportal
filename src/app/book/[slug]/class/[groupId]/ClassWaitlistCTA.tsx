@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { postJson } from '@/lib/post-json'
 
 interface Props {
   groupId: string
@@ -53,21 +54,12 @@ export default function ClassWaitlistCTA({ groupId, slug, primaryColor }: Props)
 
   async function handleJoin() {
     setState({ kind: 'joining' })
-    try {
-      const res = await fetch('/api/waitlist/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ groupId }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setState({ kind: 'error', message: data.error || 'Could not join waitlist' })
-        return
-      }
-      setState({ kind: 'joined', position: data.position })
-    } catch {
-      setState({ kind: 'error', message: 'Network error — please try again' })
+    const res = await postJson('/api/waitlist/join', { groupId })
+    if (!res.ok) {
+      setState({ kind: 'error', message: res.error || 'Could not join waitlist' })
+      return
     }
+    setState({ kind: 'joined', position: res.data.position as number })
   }
 
   // Shared button style — neutral / amber for waitlist (not the "buy" colour)

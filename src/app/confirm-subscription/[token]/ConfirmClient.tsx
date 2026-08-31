@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { postJson } from '@/lib/post-json'
 
 interface Props {
   token: string
@@ -39,23 +40,14 @@ export default function ConfirmClient({
   async function handleConfirm() {
     setLoading(true)
     setError(null)
-    try {
-      const res = await fetch('/api/migration/confirm-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, billingOption: billing }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.url) {
-        setError(data.error || 'Something went wrong. Please try again.')
-        setLoading(false)
-        return
-      }
-      window.location.href = data.url
-    } catch {
-      setError('Network error. Please try again.')
+    const res = await postJson('/api/migration/confirm-checkout', { token, billingOption: billing })
+    const url = res.data.url
+    if (!res.ok || typeof url !== 'string' || !url) {
+      setError((typeof res.data.error === 'string' && res.data.error) || res.error || 'Something went wrong. Please try again.')
       setLoading(false)
+      return
     }
+    window.location.href = url
   }
 
   return (

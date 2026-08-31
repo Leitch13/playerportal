@@ -5,6 +5,11 @@ import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 
+// Parent-facing money route: give it real headroom instead of the platform
+// default. A timeout here surfaces to the parent as a mislabelled network
+// error mid-payment; the cron routes already run at 300.
+export const maxDuration = 60
+
 // Use service-role client since public users (no auth) can book camps
 function getServiceClient() {
   return createClient(

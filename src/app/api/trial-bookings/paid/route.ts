@@ -4,6 +4,11 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 
+// Parent-facing money route: give it real headroom instead of the platform
+// default. A timeout here surfaces to the parent as a mislabelled network
+// error mid-payment; the cron routes already run at 300.
+export const maxDuration = 60
+
 /**
  * Create a Stripe Checkout Session for a paid one-off trial session.
  *

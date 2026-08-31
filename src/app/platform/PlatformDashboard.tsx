@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 /* ── Types ── */
@@ -16,6 +17,8 @@ type AcademyRow = {
   monthlyRevenue: number
   txFees: number
   trialEnds: string | null
+  published: boolean
+  stripeAccount: boolean
   createdAt: string
 }
 
@@ -69,9 +72,59 @@ export default function PlatformDashboard({
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('createdAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const router = useRouter()
+  const [cancelling, setCancelling] = useState<string | null>(null)
+
+  async function cancelAcademy(row: AcademyRow, force = false) {
+    const warning = force
+      ? `${row.name} HAS REAL ACTIVITY (${row.players} players, ${row.parents} parents).\n\nCancelling takes a live academy offline. Are you absolutely sure?`
+      : `Cancel ${row.name}?\n\nThis unpublishes their booking page and marks the signup cancelled. Nothing is deleted, and you can undo it.`
+    if (!confirm(warning)) return
+
+    // Payments route to the connected account, so unpublishing alone does not
+    // stop money already in flight. Offer the rejection separately: it is
+    // irreversible, and only right when the academy is actually fraudulent.
+    let rejectStripe = false
+    if (row.stripeAccount) {
+      rejectStripe = confirm(
+        `${row.name} has a connected Stripe account.\n\n` +
+          `Reject it as FRAUDULENT? This halts its charges and payouts and cannot be undone.\n\n` +
+          `OK = reject it (fraud)\nCancel = leave Stripe untouched`
+      )
+    }
+
+    setCancelling(row.id)
+    try {
+      const res = await fetch(`/api/platform/academies/${row.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force, rejectStripe }),
+      })
+      const data = await res.json()
+
+      // 409 = the safety interlock found real activity. Escalate to an explicit
+      // second confirmation rather than silently proceeding.
+      if (res.status === 409) {
+        setCancelling(null)
+        return cancelAcademy(row, true)
+      }
+      if (!res.ok) {
+        alert(`Could not cancel: ${data.error || res.statusText}`)
+        return
+      }
+      if (data.stripe?.connectAccount || data.stripe?.platformSubscription) {
+        alert(`${row.name} cancelled.\n\n${data.stripe.note}\n\nConnect account: ${data.stripe.connectAccount || 'none'}`)
+      }
+      router.refresh()
+    } catch (err) {
+      alert(`Could not cancel: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setCancelling(null)
+    }
+  }
 
   const filteredRows = useMemo(() => {
-    let rows = academyRows.filter(r =>
+    const rows = academyRows.filter(r =>
       r.name.toLowerCase().includes(search.toLowerCase())
     )
     rows.sort((a, b) => {
@@ -212,7 +265,8 @@ export default function PlatformDashboard({
                   <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden md:table-cell" onClick={() => toggleSort('monthlyRevenue')}>Revenue{sortArrow('monthlyRevenue')}</th>
                   <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right hidden lg:table-cell" onClick={() => toggleSort('txFees')}>Your Fee{sortArrow('txFees')}</th>
                   <th className="pb-2 pr-4 text-right hidden xl:table-cell">Trial Ends</th>
-                  <th className="pb-2 cursor-pointer hover:text-white/70 text-right" onClick={() => toggleSort('createdAt')}>Created{sortArrow('createdAt')}</th>
+                  <th className="pb-2 pr-4 cursor-pointer hover:text-white/70 text-right" onClick={() => toggleSort('createdAt')}>Created{sortArrow('createdAt')}</th>
+                  <th className="pb-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -224,6 +278,7 @@ export default function PlatformDashboard({
                       <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusColors[r.status] || 'bg-white/10 text-white/50 border-white/10'}`}>
                         {r.status.replace('_', ' ')}
                       </span>
+                      {!r.published && <span className="ml-1.5 text-[11px] text-white/30" title="Booking page is not live">hidden</span>}
                     </td>
                     <td className="py-2.5 pr-4 text-right text-white/60">{r.players}</td>
                     <td className="py-2.5 pr-4 text-right text-white/60 hidden md:table-cell">{r.parents}</td>
@@ -231,11 +286,25 @@ export default function PlatformDashboard({
                     <td className="py-2.5 pr-4 text-right text-white/60 hidden md:table-cell">{formatCurrency(r.monthlyRevenue)}</td>
                     <td className="py-2.5 pr-4 text-right text-white/60 hidden lg:table-cell">{formatCurrency(r.txFees)}</td>
                     <td className="py-2.5 pr-4 text-right text-white/40 text-xs hidden xl:table-cell">{r.trialEnds ? formatDate(r.trialEnds) : '-'}</td>
-                    <td className="py-2.5 text-right text-white/40 text-xs">{formatDate(r.createdAt)}</td>
+                    <td className="py-2.5 pr-4 text-right text-white/40 text-xs">{formatDate(r.createdAt)}</td>
+                    <td className="py-2.5 text-right">
+                      {r.status === 'cancelled' ? (
+                        <span className="text-white/25 text-xs">cancelled</span>
+                      ) : (
+                        <button
+                          onClick={() => cancelAcademy(r)}
+                          disabled={cancelling === r.id}
+                          title={`Unpublish ${r.name} and mark the signup cancelled`}
+                          className="text-xs px-2.5 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {cancelling === r.id ? 'Cancelling…' : 'Cancel'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {filteredRows.length === 0 && (
-                  <tr><td colSpan={10} className="py-8 text-center text-white/30">No academies found</td></tr>
+                  <tr><td colSpan={11} className="py-8 text-center text-white/30">No academies found</td></tr>
                 )}
               </tbody>
             </table>

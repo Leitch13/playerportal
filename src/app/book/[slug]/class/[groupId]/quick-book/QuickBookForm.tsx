@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { StartDatePicker } from '@/components/billing/StartDatePicker'
 import { isoDate } from '@/lib/billing/next-session'
 import { fbTrackSingle } from '@/lib/meta-pixel'
+import { postJson } from '@/lib/post-json'
 
 interface Plan {
   id: string
@@ -253,37 +254,34 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       }
 
       setShowSuccess(true)
-      const res = await fetch('/api/stripe/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          planId: selectedPlanId,
-          playerId,
-          billingOption,
-          classId: groupId, // ← critical: webhook uses this to enrol player on payment success
-          // Stage 1: chosen start date for the enrolment. Captured in metadata so
-          // Stage 2 can read it for the prorated billing branch. Sent on every
-          // signup — the subscribe route + webhook decide what to do with it
-          // based on the feature flag.
-          activatesOn: startDate || defaultStartIso,
-        }),
+      const res = await postJson('/api/stripe/subscribe', {
+        planId: selectedPlanId,
+        playerId,
+        billingOption,
+        classId: groupId, // ← critical: webhook uses this to enrol player on payment success
+        // Stage 1: chosen start date for the enrolment. Captured in metadata so
+        // Stage 2 can read it for the prorated billing branch. Sent on every
+        // signup — the subscribe route + webhook decide what to do with it
+        // based on the feature flag.
+        activatesOn: startDate || defaultStartIso,
       })
-      const data = await res.json()
-      if (data.url) {
+      const data = res.data
+      const url = data.url
+      if (typeof url === 'string' && url) {
         // Booking confirmation email fires from the Stripe webhook after payment,
         // not here — sending it now would be misleading if Checkout was abandoned.
         fbTrackSingle(metaPixelId, 'InitiateCheckout', { currency: 'GBP', ...(data.tonightAmount ? { value: Number(data.tonightAmount) } : {}) })
-        setTimeout(() => { window.location.href = data.url }, 1200)
+        setTimeout(() => { window.location.href = url }, 1200)
         return
       } else {
         setShowSuccess(false)
         // Map known API error codes to friendly text. Anything we don't
-        // recognise falls through to the API's `error` field as-is, or a
-        // generic fallback if the response had no error field at all.
+        // recognise falls through to the API's `error` field as-is, then the
+        // helper's honest transport/server message, then a generic fallback.
         const friendly =
           data.error === 'class_full'
             ? 'This class is full — please join the waitlist.'
-            : (data.error || 'Failed to start payment')
+            : (typeof data.error === 'string' && data.error) || res.error || 'Failed to start payment'
         setGlobalError(friendly)
         setLoading(false)
         return
