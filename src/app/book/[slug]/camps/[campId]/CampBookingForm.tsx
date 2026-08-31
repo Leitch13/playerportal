@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
+import { postJson } from '@/lib/post-json'
 import Link from 'next/link'
 
 type Camp = {
@@ -152,42 +153,34 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
     setLoading(true)
 
     try {
-      const res = await fetch('/api/stripe/camp-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campId: camp.id,
-          organisationId: camp.organisation_id,
-          parentName,
-          parentEmail,
-          parentPhone,
-          childName,
-          childDob,
-          medicalInfo,
-          consentGiven,
-          siblingDiscount,
-          promoCode: promoApplied?.code,
-          slug,
-        }),
+      const res = await postJson('/api/stripe/camp-checkout', {
+        campId: camp.id,
+        organisationId: camp.organisation_id,
+        parentName,
+        parentEmail,
+        parentPhone,
+        childName,
+        childDob,
+        medicalInfo,
+        consentGiven,
+        siblingDiscount,
+        promoCode: promoApplied?.code,
+        slug,
       })
 
-      const data = await res.json()
-
       if (!res.ok) {
-        setError(data.error || 'Something went wrong')
+        setError(res.error || 'Something went wrong')
         return
       }
 
-      if (data.free) {
+      if (res.data.free) {
         setBooked(true)
         return
       }
 
-      if (data.url) {
-        window.location.href = data.url
+      if (typeof res.data.url === 'string') {
+        window.location.href = res.data.url
       }
-    } catch {
-      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }

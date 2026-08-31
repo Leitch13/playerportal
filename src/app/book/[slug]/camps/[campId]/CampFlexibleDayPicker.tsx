@@ -29,6 +29,7 @@
 
 import { useMemo, useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
+import { postJson } from '@/lib/post-json'
 
 type CampDay = {
   id: string
@@ -238,27 +239,22 @@ export default function CampFlexibleDayPicker({
     setLoading(true)
 
     try {
-      const res = await fetch('/api/stripe/flexible-camp-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campId,
-          organisationId,
-          parentName,
-          parentEmail,
-          parentPhone,
-          childName,
-          childDob,
-          medicalInfo,
-          consentGiven,
-          siblingDiscount,
-          promoCode: promoApplied?.code,
-          slug,
-          selectedCampDayIds: Array.from(selected),
-        }),
+      const res = await postJson('/api/stripe/flexible-camp-checkout', {
+        campId,
+        organisationId,
+        parentName,
+        parentEmail,
+        parentPhone,
+        childName,
+        childDob,
+        medicalInfo,
+        consentGiven,
+        siblingDiscount,
+        promoCode: promoApplied?.code,
+        slug,
+        selectedCampDayIds: Array.from(selected),
       })
-
-      const data = await res.json()
+      const data = res.data
 
       if (!res.ok) {
         // Server-side capacity race: some selected days became full
@@ -291,7 +287,7 @@ export default function CampFlexibleDayPicker({
             return next
           })
         }
-        setError(data.error || 'Something went wrong. Please try again.')
+        setError(res.error || 'Something went wrong. Please try again.')
         return
       }
 
@@ -303,15 +299,13 @@ export default function CampFlexibleDayPicker({
         return
       }
 
-      if (data.url) {
+      if (typeof data.url === 'string') {
         window.location.href = data.url
         return
       }
 
       // Unexpected shape — fail visibly.
       setError('Unexpected response from the server. Please try again.')
-    } catch {
-      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }

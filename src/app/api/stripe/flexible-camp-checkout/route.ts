@@ -28,6 +28,11 @@ import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-r
 import { FLEXIBLE_CAMPS_ENABLED, BOOKING_MODE_FLEXIBLE_DAYS } from '@/lib/flexible-camps'
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 
+// Parent-facing money route: give it real headroom instead of the platform
+// default. A timeout here surfaces to the parent as a mislabelled network
+// error mid-payment; the cron routes already run at 300.
+export const maxDuration = 60
+
 // Same service-role pattern as /api/stripe/camp-checkout. Anon parents
 // can book, and RLS is bypassed by the connection so nothing about the
 // booking depends on an elevated SQL function.

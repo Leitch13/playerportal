@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { postJson } from '@/lib/post-json'
 
 /**
  * Form for booking a paid one-off trial session.
@@ -72,30 +73,21 @@ export default function PaidTrialForm({
       return
     }
     setLoading(true)
-    try {
-      const res = await fetch('/api/trial-bookings/paid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          groupId,
-          childFirstName,
-          childLastName,
-          childDob,
-          parentName,
-          parentEmail,
-          parentPhone,
-          sessionDate,
-        }),
-      })
-      const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        setError(data.error || 'Failed to start trial checkout')
-        setLoading(false)
-      }
-    } catch {
-      setError('Something went wrong. Please try again.')
+    const res = await postJson('/api/trial-bookings/paid', {
+      groupId,
+      childFirstName,
+      childLastName,
+      childDob,
+      parentName,
+      parentEmail,
+      parentPhone,
+      sessionDate,
+    })
+    const url = res.data.url
+    if (res.ok && typeof url === 'string' && url) {
+      window.location.href = url
+    } else {
+      setError((typeof res.data.error === 'string' && res.data.error) || res.error || 'Failed to start trial checkout')
       setLoading(false)
     }
   }

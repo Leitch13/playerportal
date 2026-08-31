@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 import { createInvoiceCheckoutSession } from '@/lib/invoice-checkout'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 
+// Parent-facing money route: give it real headroom instead of the platform
+// default. A timeout here surfaces to the parent as a mislabelled network
+// error mid-payment; the cron routes already run at 300.
+export const maxDuration = 60
+
 export const dynamic = 'force-dynamic'
 
 // ─────────────────────────────────────────────────────────────────────────

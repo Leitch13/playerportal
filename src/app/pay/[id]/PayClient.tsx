@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { postJson } from '@/lib/post-json'
 
 export default function PayClient({
   paymentId,
@@ -40,17 +41,14 @@ export default function PayClient({
   async function handlePay() {
     setLoading(true)
     setError('')
-    try {
-      const res = await fetch(`/api/payments/${paymentId}/checkout`, { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || 'Could not start the payment. Please try again.')
-      }
-      window.location.href = data.url
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start the payment.')
+    const res = await postJson(`/api/payments/${paymentId}/checkout`)
+    const url = res.data.url
+    if (!res.ok || typeof url !== 'string' || !url) {
+      setError((typeof res.data.error === 'string' && res.data.error) || res.error || 'Could not start the payment. Please try again.')
       setLoading(false)
+      return
     }
+    window.location.href = url
   }
 
   // Stripe redirects back here on success; the webhook does the actual

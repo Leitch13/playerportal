@@ -5,6 +5,11 @@ import type Stripe from 'stripe'
 import { QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
 
+// Parent-facing money route: give it real headroom instead of the platform
+// default. A timeout here surfaces to the parent as a mislabelled network
+// error mid-payment; the cron routes already run at 300.
+export const maxDuration = 60
+
 export const dynamic = 'force-dynamic'
 
 function getFirstOfNextMonth(): number {

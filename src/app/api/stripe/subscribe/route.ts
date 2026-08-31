@@ -14,6 +14,11 @@ import {
   isStartTodayOrEarlier,
 } from '@/lib/billing/anchor'
 
+// Parent-facing money route: give it real headroom instead of the platform
+// default. A timeout here surfaces to the parent as a mislabelled network
+// error mid-payment; the cron routes already run at 300.
+export const maxDuration = 60
+
 // Returns Unix timestamp for the 1st of next month at midnight UTC
 function getFirstOfNextMonth(): number {
   const now = new Date()
