@@ -279,6 +279,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: CONNECT_NOT_READY_MESSAGE }, { status: 503 })
     }
 
+    // ── WHO IS THIS FOR? — last line of defence ───────────────────────
+    // A per-child membership with no child on it is money nobody can attribute:
+    // no player page shows it, no register can mark it paid, and the academy's
+    // own "request payment" guard cannot see it — so the family gets invited
+    // onto a SECOND membership while already paying. 32 of these had built up
+    // by 1 Sep 2026, ~£2,485/month, growing by roughly twenty a month, because
+    // the parent's upgrades page rendered its subscribe button without ever
+    // asking the question.
+    //
+    // The page now asks. This is the backstop for every path that doesn't:
+    // when the parent has exactly ONE child at this academy there is only one
+    // possible answer, so use it rather than writing nothing. More than one
+    // child is genuinely ambiguous and is left alone — guessing between
+    // siblings would be worse than leaving it blank.
+    //
+    // Deliberately never blocks: a parent who cannot pay is worse than a
+    // payment we have to attribute later by hand.
+    let resolvedPlayerId: string | undefined = playerId || undefined
+    if (!resolvedPlayerId) {
+      const { data: ownKids } = await serviceDb
+        .from('players')
+        .select('id')
+        .eq('parent_id', user.id)
+        .eq('organisation_id', plan.organisation_id)
+        .is('archived_at', null)
+        .limit(3)
+      if (ownKids && ownKids.length === 1) {
+        resolvedPlayerId = ownKids[0].id as string
+        console.warn('[subscribe] no playerId supplied; inferred the parent\'s only child', {
+          parent: user.id, plan: planId, inferred: resolvedPlayerId,
+        })
+      } else {
+        console.warn('[subscribe] no playerId supplied and it cannot be inferred', {
+          parent: user.id, plan: planId, childCount: ownKids?.length ?? 0,
+        })
+      }
+    }
+
     // ── DOUBLE-SUBSCRIPTION GUARD — every billing path ────────────────
     // A child must never end up paying twice for the same place. This check
     // existed, but only INSIDE the quarterly branch, so every monthly booking
@@ -295,11 +333,11 @@ export async function POST(request: NextRequest) {
     //
     // Service-role read on purpose: an RLS-hidden row is exactly the row that
     // would let a duplicate through.
-    if (playerId) {
+    if (resolvedPlayerId) {
       const { data: existingForPlayer } = await serviceDb
         .from('subscriptions')
         .select('id, status')
-        .eq('player_id', playerId)
+        .eq('player_id', resolvedPlayerId)
         .eq('organisation_id', plan.organisation_id)
         .in('status', ['active', 'trialing', 'past_due', 'pending_migration'])
         .limit(5)
@@ -548,7 +586,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
-          supabase_player_id: playerId || '',
+          ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
           billing_option: 'quarterly',
           months_covered: '3',
           activates_on: activatesOnIso,
@@ -558,7 +596,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             supabase_plan_id: planId,
             supabase_user_id: user.id,
-            supabase_player_id: playerId || '',
+            ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
             billing_option: 'quarterly',
             activates_on: activatesOnIso,
             ...(classId ? { supabase_class_id: classId } : {}),
@@ -840,7 +878,7 @@ export async function POST(request: NextRequest) {
             metadata: {
               supabase_plan_id: planId,
               supabase_user_id: user.id,
-              ...(playerId ? { supabase_player_id: playerId } : {}),
+              ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
               ...(classId ? { supabase_class_id: classId } : {}),
               billing_model: 'future_session_bridge',
               pp_flow: 'future_session_bridge',
@@ -853,7 +891,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             supabase_plan_id: planId,
             supabase_user_id: user.id,
-            supabase_player_id: playerId || '',
+            ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
             billing_option: 'monthly',
             billing_model: 'future_session_bridge',
             pp_flow: 'future_session_bridge',
@@ -917,7 +955,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             supabase_plan_id: planId,
             supabase_user_id: user.id,
-            ...(playerId ? { supabase_player_id: playerId } : {}),
+            ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
             ...(classId ? { supabase_class_id: classId } : {}),
             billing_model: 'future_prorated',
             pp_flow: 'future_prorated',
@@ -927,7 +965,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
-          supabase_player_id: playerId || '',
+          ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
           billing_option: 'monthly',
           billing_model: 'future_prorated',
           pp_flow: 'future_prorated',
@@ -979,7 +1017,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
-          supabase_player_id: playerId || '',
+          ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
           billing_option: 'monthly',
           billing_model: 'immediate_prorated',
           pp_flow: 'immediate_prorated',
@@ -991,7 +1029,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             supabase_plan_id: planId,
             supabase_user_id: user.id,
-            supabase_player_id: playerId || '',
+            ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
             billing_model: 'immediate_prorated',
             activates_on: activatesOnIso,
             ...(classId ? { supabase_class_id: classId } : {}),
@@ -1100,7 +1138,7 @@ export async function POST(request: NextRequest) {
           pp_flow: 'tonight_then_sub',
           supabase_plan_id: planId,
           supabase_user_id: user.id,
-          supabase_player_id: playerId || '',
+          ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
           supabase_class_id: classId || '',
           stripe_recurring_price_id: stripePriceId,
           stripe_connected_account: connectedAccountId || '',
@@ -1150,7 +1188,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         supabase_plan_id: planId,
         supabase_user_id: user.id,
-        supabase_player_id: playerId || '',
+        ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
         billing_option: 'monthly',
         billing_model: migrationTrialEnd ? 'migration' : 'sub_from_1st',
         ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
@@ -1162,7 +1200,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           supabase_plan_id: planId,
           supabase_user_id: user.id,
-          supabase_player_id: playerId || '',
+          ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
           billing_model: migrationTrialEnd ? 'migration' : 'sub_from_1st',
           ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
           ...(classId ? { supabase_class_id: classId } : {}),

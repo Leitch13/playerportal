@@ -464,7 +464,7 @@ async function ParentPayments({
 
         <MyChildrenList children={childSummaries} />
         <ActiveClassesList classes={activeClassesEnriched} retentionEnabled={retentionEnabled} retentionPercent={retentionPercent} retentionMonths={retentionMonths} />
-        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} />
+        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} myChildren={(myPlayers || []).map((p) => ({ id: p.id as string, first_name: p.first_name as string | null, last_name: p.last_name as string | null }))} />
         <MembershipManagement
           hasActiveSub={activeSubs.length > 0}
           noticeDays={cancellationNoticeDays}
@@ -633,7 +633,7 @@ async function ParentPayments({
         </div>
       )}
 
-      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} />
+      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} myChildren={(myPlayers || []).map((p) => ({ id: p.id as string, first_name: p.first_name as string | null, last_name: p.last_name as string | null }))} />
 
     </div>
     </div>
