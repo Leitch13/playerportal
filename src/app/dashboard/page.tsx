@@ -17,6 +17,8 @@ import OnboardingChecklist from '@/components/OnboardingChecklist'
 // src/lib/academy-readiness.ts for the state-computation helper.
 import AcademyReadinessWidget from '@/components/AcademyReadinessWidget'
 import { getAcademyReadiness } from '@/lib/academy-readiness'
+import NeedsAttentionPanel from '@/components/NeedsAttentionPanel'
+import { getNeedsAttention } from '@/lib/needs-attention'
 import ParentOnboardingChecklist from '@/components/ParentOnboardingChecklist'
 import ParentWelcomeModal from '@/components/ParentWelcomeModal'
 import ParentUnlockMilestones from '@/components/ParentUnlockMilestones'
@@ -1777,6 +1779,9 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   // returns a degraded "unknown" verification state rather than
   // throwing — the dashboard always renders.
   const readiness = await getAcademyReadiness(orgId)
+  // The academy's own money problems, on the academy's own screen. Previously
+  // these only ever reached John's inbox as canary alerts.
+  const attention = await getNeedsAttention(orgId)
 
   // Relative time helper
   const relativeTime = (dateStr: string) => {
@@ -1931,6 +1936,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
             LIVE it collapses to a celebratory summary and the
             operational widgets below take over as the primary view. */}
         <div className="mt-6">
+          <NeedsAttentionPanel state={attention} />
           <AcademyReadinessWidget state={readiness} />
         </div>
 
