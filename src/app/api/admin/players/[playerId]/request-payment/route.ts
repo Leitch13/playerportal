@@ -20,7 +20,8 @@ export const dynamic = 'force-dynamic'
 // email. It never updates or deletes an existing subscription, never touches
 // the subscribe route / webhooks / confirm-checkout, and never calls Stripe.
 // So it cannot change any existing subscription. A hard dedup guard blocks
-// creating a request for a player who already pays or has a pending request —
+// creating a request for a player who already pays or has a pending request,
+// AND for a parent holding a live payment with no child attached to it —
 // the anti-double-billing invariant.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -82,19 +83,71 @@ export async function POST(
   }
 
   // ── DEDUP — the anti-double-billing guard. Never create a billing
-  //    relationship for a player who already pays or has a pending request. ──
-  const { data: existing } = await db
+  //    relationship for a player who already pays or has a pending request.
+  //
+  //    Two defects fixed here on 2026-09-01, both of which had already cost
+  //    real money:
+  //
+  //    1. `.maybeSingle()` ERRORS when more than one row matches and returns
+  //       null — so a player who already had TWO subscriptions sailed straight
+  //       past the guard and could be issued a third. A list read cannot fail
+  //       that way.
+  //
+  //    2. The check was keyed on player_id alone. A parent whose payment had no
+  //       child attached to it was invisible to it: the guard looked for
+  //       subscriptions belonging to the child, found none, and concluded
+  //       nobody was paying. On 2026-08-13 that sent an invite to a parent who
+  //       had been paying £60/month since June. She accepted, reasonably, and
+  //       on 1 September Stripe attempted both. Only her bank declining the
+  //       second as a duplicate stopped a £150 charge for one boy in one class.
+  //       Another family in the same position was charged £120.
+  // ──
+  const { data: existingForPlayer } = await db
     .from('subscriptions')
     .select('id, status')
     .eq('player_id', playerId)
     .in('status', ['active', 'trialing', 'past_due', 'pending_migration'])
-    .maybeSingle()
+    .limit(5)
+  const existing = (existingForPlayer || [])[0]
   if (existing) {
     return NextResponse.json(
       {
         error: existing.status === 'pending_migration'
           ? `${player.first_name} already has a pending payment request. Cancel it before sending a new one.`
           : `${player.first_name} already has a subscription. Cancel it first if you need to re-issue.`,
+      },
+      { status: 409 }
+    )
+  }
+
+  // ── The blind spot above, closed. If this parent holds a live payment that
+  //    is not attached to any child, we cannot prove it is not already for THIS
+  //    child — so we refuse and say so. A parent paying for a named sibling is
+  //    unaffected: only payments with no child at all block here.
+  //
+  //    This condition is self-clearing. Once every payment carries a child
+  //    (backfill done 2026-09-01, source fixed in the subscribe path) there is
+  //    nothing left for it to catch. ──
+  const { data: parentSubs } = await db
+    .from('subscriptions')
+    .select('id, plan_id, status')
+    .eq('parent_id', player.parent_id)
+    .eq('organisation_id', orgId)
+    .is('player_id', null)
+    .in('status', ['active', 'trialing', 'past_due'])
+    .limit(10)
+  if (parentSubs && parentSubs.length > 0) {
+    const { data: theirPlan } = await db
+      .from('subscription_plans')
+      .select('name, amount')
+      .eq('id', parentSubs[0].plan_id)
+      .maybeSingle()
+    const detail = theirPlan
+      ? ` (${theirPlan.name} — £${Number(theirPlan.amount || 0).toFixed(2)}/month)`
+      : ''
+    return NextResponse.json(
+      {
+        error: `This parent already has a live membership${detail} that isn't linked to a child, so we can't tell whether it already covers ${player.first_name}. Sending this could charge them twice. Check their payments first — support can attach the existing membership to the right child.`,
       },
       { status: 409 }
     )

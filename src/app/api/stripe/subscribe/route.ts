@@ -279,6 +279,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: CONNECT_NOT_READY_MESSAGE }, { status: 503 })
     }
 
+    // ── DOUBLE-SUBSCRIPTION GUARD — every billing path ────────────────
+    // A child must never end up paying twice for the same place. This check
+    // existed, but only INSIDE the quarterly branch, so every monthly booking
+    // — nearly all of them — reached Checkout with no duplicate check at all.
+    // On 2026-08-31 a parent with an unconfirmed £72 invite came through this
+    // page and was sold a second £96 membership alongside it.
+    //
+    // Runs before any Stripe object exists, so a block costs nothing and the
+    // parent sees a plain message rather than a mid-checkout error.
+    //
+    // Scoped to THIS child at THIS academy. A parent paying for a sibling, or
+    // at a second academy, is deliberately untouched — those are legitimate
+    // second subscriptions and blocking them would stop real money.
+    //
+    // Service-role read on purpose: an RLS-hidden row is exactly the row that
+    // would let a duplicate through.
+    if (playerId) {
+      const { data: existingForPlayer } = await serviceDb
+        .from('subscriptions')
+        .select('id, status')
+        .eq('player_id', playerId)
+        .eq('organisation_id', plan.organisation_id)
+        .in('status', ['active', 'trialing', 'past_due', 'pending_migration'])
+        .limit(5)
+
+      const blocking = (existingForPlayer || [])[0]
+      if (blocking) {
+        // Deliberately no invite token in the response: playerId arrives in the
+        // request body, so echoing a token here would hand it to anyone who
+        // guessed an id. The parent's own payments page has their link.
+        const message =
+          blocking.status === 'pending_migration'
+            ? 'There is already a payment link waiting for this player. Please use that link (check your email, or your Payments page) rather than starting a second membership.'
+            : blocking.status === 'past_due'
+              ? 'This player already has a membership, but the last payment did not go through. Please update the card on your Payments page — starting a second membership would mean paying twice.'
+              : 'This player already has an active subscription.'
+        return NextResponse.json({ error: message }, { status: 400 })
+      }
+    }
+
     // ════════════════════════════════════════════════════════════════
     // Capacity preflight (RPC) — Phase 1a, flag-gated.
     // Grafted from hotfix 841f97b onto day1's richer route during the
@@ -474,23 +514,8 @@ export async function POST(request: NextRequest) {
       // to monthly (#1 application_fee_percent = PLATFORM_FEE_RATE preserved).
       const monthlyAmount = Number(plan.amount)
 
-      // Double-sub guard (quarterly-branch only): a player who already has an
-      // active subscription must not be able to start a second — prevents
-      // parallel billing. Returns a clear error before any Stripe object.
-      if (playerId) {
-        const { count: activeForPlayer } = await supabase
-          .from('subscriptions')
-          .select('id', { count: 'exact', head: true })
-          .eq('player_id', playerId)
-          .eq('organisation_id', plan.organisation_id)
-          .eq('status', 'active')
-        if ((activeForPlayer || 0) > 0) {
-          return NextResponse.json(
-            { error: 'This player already has an active subscription.' },
-            { status: 400 },
-          )
-        }
-      }
+      // (The double-subscription guard that used to live here now runs for
+      // every billing path, before any Stripe object — see above.)
 
       // Recurring quarterly Price: full 3 months, billed every 3 months. Created
       // inline (mirrors the previous quarterly price-create) so NO schema column
