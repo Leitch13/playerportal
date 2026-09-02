@@ -139,6 +139,41 @@ export function bridgeDescriptionFor(startDate: Date): string {
   return `Remaining ${month} sessions`
 }
 
+/**
+ * How many sessions a month does this class run?
+ *
+ * `subscription_plans.sessions_per_month` is the academy's explicit answer, but
+ * it is a field somebody has to remember to fill in — and mostly nobody does.
+ * On 2026-09-02, 6 of one academy's 11 active plans had it blank and silently
+ * fell back to calendar-day billing, and another academy had 0 of 27, which
+ * made session billing unreachable for them entirely.
+ *
+ * So derive it. A weekly class running on a known day has exactly as many
+ * sessions in a month as that weekday occurs — four or five, countable, no
+ * configuration required. The explicit field still wins where it is set, so
+ * nothing changes for a plan that has been filled in deliberately.
+ *
+ * Returns null only when the class has no day-of-week, which is the one case
+ * that genuinely cannot be counted.
+ *
+ *   sessionsPerMonthFor('Monday', new Date('2026-06-16T00:00:00Z'))  // 5
+ *   sessionsPerMonthFor('Tuesday', new Date('2026-09-02T00:00:00Z')) // 5
+ *   sessionsPerMonthFor(null, new Date())                            // null
+ */
+export function sessionsPerMonthFor(
+  classDayOfWeek: string | null,
+  monthOf: Date,
+): number | null {
+  if (!classDayOfWeek) return null
+  if (isNaN(monthOf.getTime())) return null
+  const y = monthOf.getUTCFullYear()
+  const m = monthOf.getUTCMonth()
+  const monthStart = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10)
+  const monthEnd = new Date(Date.UTC(y, m + 1, 1)).toISOString().slice(0, 10)
+  const n = countSessionsBetween(monthStart, monthEnd, classDayOfWeek)
+  return n > 0 ? n : null
+}
+
 export interface BridgeEstimate {
   /** Class-day occurrences in [start, anchor) */
   sessionsRemaining: number
@@ -174,17 +209,24 @@ export function estimateBridgePence(args: {
   startDate: Date
 }): BridgeEstimate | null {
   const { monthlyPence, sessionsPerMonth, classDayOfWeek, startDate } = args
-  if (!sessionsPerMonth || sessionsPerMonth <= 0) return null
   if (!classDayOfWeek) return null
   if (!(monthlyPence > 0)) return null
   if (isNaN(startDate.getTime())) return null
+
+  // The academy's explicit figure wins; otherwise count the class days in the
+  // month. A blank field is no longer a reason to drop to calendar billing.
+  const effectiveSessionsPerMonth =
+    sessionsPerMonth && sessionsPerMonth > 0
+      ? sessionsPerMonth
+      : sessionsPerMonthFor(classDayOfWeek, startDate)
+  if (!effectiveSessionsPerMonth || effectiveSessionsPerMonth <= 0) return null
 
   const anchorUnix = firstOfNextMonthUnix(startDate)
   const anchorISO = new Date(anchorUnix * 1000).toISOString().slice(0, 10)
   const startISO = startDate.toISOString().slice(0, 10)
 
   const sessionsRemaining = countSessionsBetween(startISO, anchorISO, classDayOfWeek)
-  const perSessionPence = Math.round(monthlyPence / sessionsPerMonth)
+  const perSessionPence = Math.round(monthlyPence / effectiveSessionsPerMonth)
   const uncappedPence = perSessionPence * sessionsRemaining
   const bridgePence = Math.min(uncappedPence, monthlyPence)
 

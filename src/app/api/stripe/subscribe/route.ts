@@ -223,15 +223,18 @@ export async function POST(request: NextRequest) {
     // bridge_billing_mode (Stage 3 session enhancement) read separately
     // so this route works whether or not migration 072 has been applied.
     // If the column doesn't exist yet, we fall back to 'calendar'.
-    let bridgeBillingMode = 'calendar'
+    // Session billing is the platform default (migration 107). An academy has
+    // to opt OUT to bill by calendar day, rather than opt in — the old default
+    // meant 53 of 54 academies billed joiners for days they had not trained.
+    let bridgeBillingMode = 'session'
     try {
       const { data: orgBridge } = await serviceDb
         .from('organisations')
         .select('bridge_billing_mode')
         .eq('id', plan.organisation_id)
         .single()
-      if ((orgBridge as { bridge_billing_mode?: string } | null)?.bridge_billing_mode === 'session') {
-        bridgeBillingMode = 'session'
+      if ((orgBridge as { bridge_billing_mode?: string } | null)?.bridge_billing_mode === 'calendar') {
+        bridgeBillingMode = 'calendar'
       }
     } catch { /* migration 072 not applied */ }
 
@@ -752,8 +755,9 @@ export async function POST(request: NextRequest) {
       !startsTodayOrEarlier
 
     // Session-bridge variant: same gate as useFutureProratedBase PLUS the org
-    // must be in session mode AND this plan must have sessions_per_month set
-    // AND the class must have a day_of_week (needed to count sessions).
+    // must be in session mode AND the class must have a day_of_week (the one
+    // thing that genuinely cannot be derived — without it there is nothing to
+    // count).
     // bridgeBillingMode + planSessionsPerMonth are resolved earlier (separate
     // queries that tolerate migration 072 not yet being applied).
     // If any condition fails, dispatch falls back to calendar.
@@ -762,8 +766,9 @@ export async function POST(request: NextRequest) {
       useFutureProratedBase &&
       !killSwitchOn &&
       bridgeBillingMode === 'session' &&
-      planSessionsPerMonth !== null &&
-      planSessionsPerMonth > 0 &&
+      // planSessionsPerMonth may be null — estimateBridgePence counts the class
+      // days in the month instead. Requiring it here is what kept 6 of one
+      // academy's plans, and all 27 of another's, on calendar billing.
       classDayOfWeek !== null &&
       !isQuarterly
 
