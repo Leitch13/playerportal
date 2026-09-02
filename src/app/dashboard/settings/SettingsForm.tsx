@@ -258,14 +258,39 @@ export default function SettingsForm({
                 />
                 <p className="text-[11px] text-white/30 mt-1.5">PNG with a transparent background works best. Max 10MB. Remember to hit Save Branding.</p>
               </div>
+              {/* Hero image.
+                  This was the only image in the product you could not upload —
+                  a "https://..." text box sitting directly beneath a Logo field
+                  that takes a dragged file. An academy owner has nowhere to host
+                  an image, so the field stayed empty and their booking page
+                  never got a hero. Now the same FileUpload control as the logo,
+                  with the URL box kept behind a disclosure — both write the same
+                  column, so nothing that already works stops working. */}
               <div>
-                <label className="text-xs font-medium text-white/70 block mb-1.5">Hero Image URL</label>
-                <input className={inputClass} value={form.hero_image_url} onChange={e => setForm({...form, hero_image_url: e.target.value})} placeholder="https://..." />
-                {form.hero_image_url && (
-                  <div className="mt-2 w-full h-32 rounded-xl border border-white/[0.08] overflow-hidden bg-[#0f1a2b]">
-                    <img src={form.hero_image_url} alt="Hero" className="w-full h-full object-cover" />
-                  </div>
-                )}
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Hero Image</label>
+                <FileUpload
+                  bucketName="branding"
+                  folder="heroes"
+                  accept="image/png,image/jpeg,image/webp"
+                  currentUrl={form.hero_image_url}
+                  onUpload={(url) => setForm({ ...form, hero_image_url: url })}
+                />
+                <p className="text-[11px] text-white/30 mt-1.5">
+                  A wide action shot works best &mdash; it sits behind your academy name on your booking page, so keep the subject simple.
+                </p>
+                {/* The URL box is kept, tucked away. Anyone already using a
+                    hosted image keeps working, and it stays available for an
+                    academy whose photo lives on their own site. */}
+                <details className="mt-2">
+                  <summary className="text-[11px] text-white/40 cursor-pointer hover:text-white/60">Or paste a link instead</summary>
+                  <input
+                    className={inputClass + ' mt-1.5'}
+                    value={form.hero_image_url}
+                    onChange={e => setForm({ ...form, hero_image_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                </details>
+                <p className="text-[11px] text-white/30 mt-1.5">Remember to hit Save Branding.</p>
               </div>
               <button
                 onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url })}
