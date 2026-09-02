@@ -72,35 +72,43 @@ export default function SubscriptionActions({
     setLoading(false)
   }
 
-  async function changePlan(newPlanId: string) {
-    setLoading(true)
-    const supabase = createClient()
-
-    await supabase
-      .from('subscriptions')
-      .update({
-        plan_id: newPlanId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', subscriptionId)
-
-    router.refresh()
-    setLoading(false)
-  }
+  // DISABLED 2026-09-02.
+  //
+  // This wrote plan_id straight to the database and never told Stripe. The
+  // app then showed the family on the new plan — on every screen, in every
+  // report — while Stripe carried on charging the old amount indefinitely.
+  // Nothing errored and nothing anywhere recorded the disagreement.
+  //
+  // Four live subscriptions were found out of step this way. One family had
+  // paid £34/month less than their academy believed for two months; another
+  // £20/month more than their academy's records showed, for three.
+  //
+  // The dropdown stays visible and still shows which plan someone is on,
+  // because that is useful and true. It just cannot be used to change one
+  // until there is a route behind it that swaps the Stripe subscription item,
+  // defers to the family's next renewal, and emails them what changed.
+  //
+  // Removing the control instead would have hidden the current plan from the
+  // academy, which is a real loss for no gain.
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {/* Plan switcher */}
       <select
         value={currentPlanId}
-        onChange={(e) => changePlan(e.target.value)}
-        disabled={loading || currentStatus === 'canceled'}
-        className="px-2 py-1 border border-[#1d2c42] rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary/20"
+        disabled
+        title="Plan changes are temporarily unavailable — changing a plan here would not update what the family is actually charged."
+        aria-label="Current plan (changes temporarily unavailable)"
+        data-testid="plan-switcher"
+        className="px-2 py-1 border border-[#1d2c42] rounded text-xs opacity-60 cursor-not-allowed focus:outline-none"
       >
         {plans.map((p) => (
           <option key={p.id} value={p.id}>{p.name}</option>
         ))}
       </select>
+      <span className="text-[10px] text-white/40" data-testid="plan-switcher-note">
+        Plan changes temporarily unavailable
+      </span>
 
       {/* Quick action buttons */}
       {currentStatus === 'active' && (
