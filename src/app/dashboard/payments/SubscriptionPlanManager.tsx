@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { postJson } from '@/lib/post-json'
 import type { SubscriptionPlan } from '@/lib/types'
 
 export default function SubscriptionPlanManager({
@@ -20,12 +21,27 @@ export default function SubscriptionPlanManager({
   const [amount, setAmount] = useState('')
   const [sessionsPerWeek, setSessionsPerWeek] = useState('1')
   const [loading, setLoading] = useState(false)
+  const [originalAmount, setOriginalAmount] = useState<number | null>(null)
+  // Only asked when the price actually changes. Defaults to moving everyone,
+  // because an academy changing a price almost always means the new price.
+  const [applyToExisting, setApplyToExisting] = useState(true)
+  const [notice, setNotice] = useState('')
+
+  const parsedAmount = parseFloat(amount)
+  const priceChanged =
+    editing !== null &&
+    originalAmount !== null &&
+    Number.isFinite(parsedAmount) &&
+    Math.abs(parsedAmount - originalAmount) > 0.001
 
   function startEdit(plan: SubscriptionPlan) {
     setEditing(plan.id)
     setName(plan.name)
     setDescription(plan.description || '')
     setAmount(String(plan.amount))
+    setOriginalAmount(Number(plan.amount))
+    setApplyToExisting(true)
+    setNotice('')
     setSessionsPerWeek(String(plan.sessions_per_week))
     setShowForm(true)
   }
@@ -35,6 +51,8 @@ export default function SubscriptionPlanManager({
     setName('')
     setDescription('')
     setAmount('')
+    setOriginalAmount(null)
+    setApplyToExisting(true)
     setSessionsPerWeek('1')
     setShowForm(false)
   }
@@ -55,13 +73,23 @@ export default function SubscriptionPlanManager({
     }
 
     if (editing) {
-      // Note: changing amount won't update the Stripe price — a new price will be created on next subscribe
-      const { error } = await supabase
-        .from('subscription_plans')
-        .update({ ...payload, stripe_price_id: null })
-        .eq('id', editing)
-
-      if (error) alert(error.message)
+      // Editing goes through the server so the change reaches Stripe too.
+      // Writing the new amount straight to the database — which is what this
+      // did until 2026-09-02 — left every existing member paying the old price
+      // with nothing anywhere to say so.
+      const res = await postJson(`/api/plans/${editing}/price`, {
+        name,
+        description: description || null,
+        amount: parseFloat(amount),
+        sessionsPerWeek: parseInt(sessionsPerWeek),
+        applyToExisting,
+      })
+      if (!res.ok) {
+        alert(res.error || 'Could not update the plan.')
+        setLoading(false)
+        return
+      }
+      if (typeof res.data.message === 'string') setNotice(res.data.message)
     } else {
       const { error } = await supabase
         .from('subscription_plans')
@@ -86,6 +114,11 @@ export default function SubscriptionPlanManager({
 
   return (
     <div className="space-y-4">
+      {notice && (
+        <div className="rounded-xl border border-[#4ecde6]/30 bg-[#4ecde6]/[0.06] px-4 py-3 text-[13px] text-[#bdeff8]" data-testid="plan-price-notice">
+          {notice}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Subscription Plans</h2>
         {!showForm && (
@@ -201,6 +234,33 @@ export default function SubscriptionPlanManager({
                 ))}
               </select>
             </div>
+            {priceChanged && (
+              <div className="sm:col-span-2 rounded-xl border border-amber-500/30 bg-amber-500/[0.05] p-4">
+                <p className="text-[13px] font-semibold text-amber-200 mb-1">
+                  You&rsquo;re changing the price from &pound;{originalAmount!.toFixed(2)} to &pound;{parsedAmount.toFixed(2)}
+                </p>
+                <p className="text-[12px] text-white/55 mb-3">
+                  Members already on this plan keep paying &pound;{originalAmount!.toFixed(2)} unless you move them.
+                  Nothing is charged today either way &mdash; a new price starts at each member&rsquo;s next payment date.
+                </p>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={applyToExisting}
+                    onChange={(e) => setApplyToExisting(e.target.checked)}
+                    data-testid="apply-price-to-existing"
+                    className="mt-0.5 w-4 h-4 rounded border-[#1d2c42] bg-[#080e18] accent-[#4ecde6]"
+                  />
+                  <span className="text-[13px] text-white/80">
+                    Move existing members onto &pound;{parsedAmount.toFixed(2)} from their next payment
+                    <span className="block text-[11.5px] text-white/45">
+                      Untick to change the price for new members only.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            )}
+
             <div className="sm:col-span-2">
               <button
                 type="submit"
