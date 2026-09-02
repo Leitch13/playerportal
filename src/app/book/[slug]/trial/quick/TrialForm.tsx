@@ -69,7 +69,14 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       for (let i = 0; i < 6; i++) {
         const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysAhead + i * 7)
         validDates.push({
-          iso: d.toISOString().split('T')[0],
+          // Format from the LOCAL date parts. toISOString() converts to UTC,
+          // and through British Summer Time local midnight is 23:00 the day
+          // BEFORE — so a Friday class was stored, and emailed, as Thursday.
+          // The label below is built with toLocaleDateString and was always
+          // right, which is why the dropdown looked correct while the
+          // confirmation arrived a day early. Every trial booked between the
+          // clocks going forward and back was affected.
+          iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
           label: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (selectedGroup.time ? ` · ${selectedGroup.time}` : ''),
         })
       }
