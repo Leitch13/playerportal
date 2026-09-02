@@ -224,18 +224,24 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Pricing banner */}
       <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-        <div className="flex items-center justify-between">
-          <div>
+        {/* Price on the left, spots on the right. Both must be able to hold
+            their own line: at laptop widths the sidebar is narrow enough that
+            "12 spots left" was breaking over three lines and interleaving with
+            the early-bird deadline beside it, so the block read as
+            "Early bird price ends 20 Sept left / 2026". First thing a parent
+            sees before paying. */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             {isEarlyBird ? (
               <>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-2xl font-bold text-white">
                     &pound;{Number(camp.early_bird_price).toFixed(0)}
                   </span>
                   <span className="text-sm text-white/40 line-through">
                     &pound;{Number(camp.price).toFixed(0)}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">
+                  <span className="shrink-0 whitespace-nowrap px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">
                     Early Bird
                   </span>
                 </div>
@@ -250,7 +256,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
             )}
           </div>
           {spotsLeft !== null && (
-            <div className={`text-sm font-semibold ${spotsLeft <= 5 ? 'text-red-400' : 'text-white/60'}`}>
+            <div className={`shrink-0 whitespace-nowrap text-sm font-semibold ${spotsLeft <= 5 ? 'text-red-400' : 'text-white/60'}`}>
               {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left
             </div>
           )}
