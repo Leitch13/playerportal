@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     .from('progress_reviews')
     .select(`
       id, attitude, effort, technical_quality, game_understanding, confidence, physical_movement,
+      scores,
       strengths, focus_next, parent_summary,
       player:players!progress_reviews_player_id_fkey(
         id, first_name, last_name, parent_id,
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
     return cats
   }
 
+  const skippedNoScores: string[] = []
   const jobs: Parameters<typeof sendEmail>[0][] = []
   const jobReviewIds: string[] = []   // Slice C — parallel to `jobs`, for emailed_at stamping
 
@@ -96,12 +98,56 @@ export async function GET(request: NextRequest) {
     const reviewOrgId = (review as Record<string, unknown>).organisation_id as string
     const reviewCategories = reviewOrgId ? await getOrgCategories(reviewOrgId) : FALLBACK_SCORE_CATEGORIES
 
-    // Calculate scores
-    const scores = reviewCategories.map(cat => ({
-      category: cat.label,
-      score: Number((review as Record<string, unknown>)[cat.key] || 0),
+    // Calculate scores.
+    //
+    // This read `review[cat.key]` — the per-category COLUMNS on the review row.
+    // Those columns are null on every review ever written: the coach's scores
+    // go into the `scores` jsonb, which this query did not even select. So
+    // every category resolved to 0, and so did the overall.
+    //
+    // Worse than a wrong number: the auto-derive below turns scores <= 2 into
+    // "focus areas", so a parent would have received a report scoring their
+    // child 0 in everything and listing every category as needing work.
+    //
+    // It has never fired in production only because the on-create send (which
+    // reads the scores correctly) has succeeded every time, and the
+    // idempotency guard stops this cron re-sending what already went. This is
+    // the fallback path — it runs precisely when the first email failed, and
+    // sending this would be worse than sending nothing.
+    //
+    // Second, and separately: the KEYS come from the review, not from the
+    // academy's current categories. A review is scored against whatever
+    // categories existed the day it was written, so rendering it against
+    // whatever is active today means that the moment an academy edits its
+    // scoring language every historic report turns into zeros — the keys
+    // simply stop matching. Three of the six reviews in production are already
+    // in that state. The review knows what it was scored on; current
+    // categories only supply a human label, and a key with no match falls back
+    // to a readable version of itself.
+    //
+    // Legacy columns are still read as a last resort for any historic review
+    // written before the jsonb existed.
+    const reviewScores = ((review as Record<string, unknown>).scores ?? null) as Record<string, number> | null
+    const labelFor = (key: string) =>
+      reviewCategories.find((c) => c.key === key)?.label
+      ?? key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())
+    const scoreKeys = reviewScores && Object.keys(reviewScores).length
+      ? Object.keys(reviewScores)
+      : reviewCategories.map((c) => c.key)
+    const scores = scoreKeys.map(key => ({
+      category: labelFor(key),
+      score: Number(reviewScores?.[key] ?? (review as Record<string, unknown>)[key] ?? 0),
     }))
-    const overallScore = scores.reduce((sum, s) => sum + s.score, 0) / scores.length
+    const overallScore = scores.length
+      ? scores.reduce((sum, s) => sum + s.score, 0) / scores.length
+      : 0
+
+    // A review with no usable scores must not go out as a wall of zeros.
+    // Skip it and let it be found rather than emailing a parent nonsense.
+    if (!scores.some((s) => s.score > 0)) {
+      skippedNoScores.push(review.id as string)
+      continue
+    }
 
     // Get strengths and focus areas
     const strengths: string[] = (review.strengths as string || '').split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -210,5 +256,12 @@ export async function GET(request: NextRequest) {
     ;({ sent } = await sendEmailBatch(jobs))
   }
 
-  return NextResponse.json({ checked: (reviews || []).length, sent })
+  if (skippedNoScores.length) {
+    console.warn('[progress-reports] reviews skipped — no usable scores', skippedNoScores)
+  }
+  return NextResponse.json({
+    checked: (reviews || []).length,
+    sent,
+    ...(skippedNoScores.length ? { skippedNoScores } : {}),
+  })
 }
