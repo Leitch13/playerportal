@@ -12,6 +12,15 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ## 2026-09-03
 
+### `7158e4d` — feat(camps): photo and video consent on camp bookings (migration 111)
+- **Deployment id**: `dpl_GzDhwrfE7PGoY5rDppRVcdAFEV1W`
+- **Deployment URL**: https://playerportallive-dug3ezdzk-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: Camp booking forms (whole-camp + flexible-days) now ask the parent a required Yes/No photo & video question, matching the weekly-class form (migration 110). Stored on `camp_bookings.photo_consent` (+ `_at`, `_source`). Camp roster gets a Photos column + CSV column; print register shows NO PHOTOS in bold red. Admin add-player copies the player's recorded answer. Requested for WLFA.
+- **Files**: `supabase/111_camp_photo_consent.sql`, `src/app/book/[slug]/camps/[campId]/CampBookingForm.tsx`, `CampFlexibleDayPicker.tsx`, `src/app/api/stripe/camp-checkout/route.ts`, `flexible-camp-checkout/route.ts`, `src/app/api/admin/camps/[campId]/add-player/route.ts`, `src/app/dashboard/camps/[campId]/{page,RosterClient,print/page}.tsx`
+- **Migration applied to production Supabase**: `111_camp_photo_consent.sql` run by John in the SQL editor BEFORE deploy; verified 171 existing bookings read NULL (never asked). Additive only.
+- **Protected system touched**: parent camp checkout routes (approved). Booking insert and `book_flexible_camp_days` RPC unchanged; consent is a separate best-effort UPDATE after the row exists. Webhook + email templates untouched (verified by diff).
+- **Rollback**: `git revert 7158e4d && vercel deploy --prod` (columns can stay; `ALTER TABLE public.camp_bookings DROP COLUMN photo_consent, DROP COLUMN photo_consent_at, DROP COLUMN photo_consent_source` if ever wanted)
+
 ### `de327be` — fix(dashboard): camps-only academies no longer shown as "Not live"
 - **Deployment id**: `dpl_C8h5RSVK2bAC3ycgESh5oBkQ8vNr`
 - **Deployment URL**: https://playerportallive-h939cf4dt-johnleitch970-1195s-projects.vercel.app
