@@ -10,6 +10,16 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-09-03
+
+### `de327be` — fix(dashboard): camps-only academies no longer shown as "Not live"
+- **Deployment id**: `dpl_C8h5RSVK2bAC3ycgESh5oBkQ8vNr`
+- **Deployment URL**: https://playerportallive-h939cf4dt-johnleitch970-1195s-projects.vercel.app
+- **Purpose**: Academy Readiness widget told WLFA (West Lothian Football Academy, camps only, 3 published camps, 0 classes, untouched default plans) "Your academy is in preview mode. Parents can't book yet" while its public camps page was live and taking bookings. A published camp now satisfies the class-or-camp item; camps-only academies skip the plans-reviewed item.
+- **Files**: `src/lib/academy-readiness.ts`
+- **Protected system touched**: none (dashboard display only)
+- **Rollback**: `git revert de327be && vercel deploy --prod`
+
 ## 2026-08-24
 
 ### `e3e8e08` + `64b958f` + `8fb7e22` — feat(payments): sendable one-off invoices, Connect-routed; ledger integrity fixes
