@@ -12,6 +12,7 @@ import BookingPageHero from '@/components/BookingPageHero'
 import TermInfo from '@/components/TermInfo'
 import GroupedClassList from './GroupedClassList'
 import PremiumBookingView, { type PremiumClassCard } from './PremiumBookingView'
+import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import AcademyPixel from '@/components/AcademyPixel'
 import { isPremiumBookingOrg } from '@/lib/premium-booking'
 
@@ -798,7 +799,14 @@ export default async function PublicBookingPage({
         {hasCamps && (
           <section className="relative overflow-hidden rounded-2xl p-4 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #065f46 0%, ${primaryColor} 100%)` }}>
             <div className="relative z-10">
-              <span className="text-2xl sm:text-3xl block mb-2">&#127945;</span>
+              {/* Was &#127945; — U+1F3C9, a RUGBY ball, on the camps section of
+                  every football academy's booking page. Now the shared stroked
+                  icon set, same as the rest of the app. */}
+              <span className="mx-auto mb-2 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-white/15" aria-hidden>
+                <svg className="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  {PALETTE_ICON_PATHS['tent']}
+                </svg>
+              </span>
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">Football Camps</h2>
               <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">Holiday camps with full-day sessions, games, tournaments &amp; more.</p>
               <Link href={`/book/${slug}/camps`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>View Camps &rarr;</Link>

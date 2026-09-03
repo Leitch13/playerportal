@@ -114,6 +114,21 @@ export default async function ClassBookingPage({
   const classTypeRaw = group.class_type as string | null
   const hasClassType = !!classTypeRaw
 
+  // Which plan are most families actually on? Used for the "Most Popular"
+  // badge below. A claim about other parents' choices should be true, so this
+  // counts live memberships and shows nothing when there is nothing to count.
+  const { data: popularityRows } = await supabase
+    .from('subscriptions')
+    .select('plan_id')
+    .eq('organisation_id', (org as Record<string, unknown>).id as string)
+    .in('status', ['active', 'trialing'])
+    .limit(2000)
+  const popularity = new Map<string, number>()
+  for (const r of popularityRows || []) {
+    const id = (r as { plan_id: string | null }).plan_id
+    if (id) popularity.set(id, (popularity.get(id) || 0) + 1)
+  }
+
   const { data: classPlans } = await supabase
     .from('subscription_plans')
     .select('id, name, amount, interval, sessions_per_week, is_active, training_group_id, class_type')
@@ -158,6 +173,17 @@ export default async function ClassBookingPage({
   const spotsLeft = capacity - enrolled
   const isFull = spotsLeft <= 0
   const coach = group.coach as unknown as { full_name: string } | null
+  // The clear leader among the plans shown on THIS class. Ties, or nobody
+  // subscribed at all, mean no badge — better silent than invented.
+  const popularPlanId = (() => {
+    const ranked = (plans || [])
+      .map((p) => ({ id: p.id as string, n: popularity.get(p.id as string) || 0 }))
+      .sort((a, b) => b.n - a.n)
+    if (!ranked.length || ranked[0].n === 0) return null
+    if (ranked.length > 1 && ranked[1].n === ranked[0].n) return null
+    return ranked[0].id
+  })()
+
   const primaryColor = org.primary_color || '#4ecde6'
   const price = group.price_per_session as number | null
   const rawTrialPrice = group.trial_price as number | null
@@ -423,7 +449,14 @@ export default async function ClassBookingPage({
                 const showQuarterly = qEnabled && qPercent > 0
                 const quarterlyAmount = Math.round(amount * 3 * (1 - qPercent / 100) * 100) / 100
                 const quarterlySaving = Math.round(amount * 3 * (qPercent / 100) * 100) / 100
-                const isPopular = i === Math.floor(plans.length / 2)
+                // "Most Popular" used to be `i === Math.floor(plans.length / 2)`
+                // — the middle plan by list position, which says nothing about
+                // what anyone actually buys. Plans are ordered cheapest-first,
+                // so at Gold & Gray it landed on the £182 two-child bundle and
+                // badged it to parents booking one child.
+                // Now it is the plan most families are genuinely on, and no
+                // badge at all when nobody is on any of them.
+                const isPopular = plan.id === popularPlanId
                 return (
                   <div
                     key={plan.id}
