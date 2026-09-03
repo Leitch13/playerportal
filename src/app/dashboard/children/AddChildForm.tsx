@@ -37,6 +37,27 @@ export default function AddChildForm({
       return
     }
 
+    // Refuse to create a child this parent already has. Without this the form
+    // happily made a second record for the same name and date of birth, which
+    // is how a family ends up billed twice for one child.
+    const { data: clash } = await supabase
+      .from('players')
+      .select('id, date_of_birth')
+      .eq('parent_id', user.id)
+      .eq('organisation_id', orgId)
+      .ilike('first_name', firstName.trim())
+      .ilike('last_name', lastName.trim())
+      .is('archived_at', null)
+      .limit(5)
+    const already = (clash || []).find(
+      (c: { date_of_birth: string | null }) => !dob || !c.date_of_birth || c.date_of_birth === dob,
+    )
+    if (already) {
+      setError(`${firstName} ${lastName} is already on your account. Add a different child, or use the one you have.`)
+      setLoading(false)
+      return
+    }
+
     const { error } = await supabase.from('players').insert({
       organisation_id: orgId,
       parent_id: user.id,
