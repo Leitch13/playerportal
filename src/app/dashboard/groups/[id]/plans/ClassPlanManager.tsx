@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { canDeletePlan } from '@/lib/plan-delete-guard'
 
 interface Plan {
   id: string
@@ -122,7 +123,12 @@ export default function ClassPlanManager({
   }
 
   async function handleDeletePlan(planId: string) {
-    if (!confirm('Delete this plan? Existing subscribers will not be affected.')) return
+    const plan = plans.find((p) => p.id === planId)
+    // The old dialog promised "Existing subscribers will not be affected".
+    // They were: the plan row went and their subscriptions referenced nothing.
+    const check = await canDeletePlan(planId, plan?.name)
+    if (!check.ok) { alert(check.message); return }
+    if (!confirm(`Delete "${plan?.name ?? 'this plan'}"? Nobody is on it, so nothing is affected.`)) return
     const supabase = createClient()
     const { error } = await supabase.from('subscription_plans').delete().eq('id', planId)
     if (error) {

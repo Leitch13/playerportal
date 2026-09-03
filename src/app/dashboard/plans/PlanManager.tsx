@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { canDeletePlan } from '@/lib/plan-delete-guard'
 
 interface Plan {
   id: string
@@ -35,7 +36,18 @@ const CLASS_TYPES = [
 
 const inputCls = 'w-full px-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#4ecde6]/30 focus:border-[#4ecde6]/50 transition-all'
 
-export default function PlanManager({ orgId, existingPlans }: { orgId: string; existingPlans: Plan[] }) {
+interface ClassRef { id: string; name: string; day_of_week: string | null; time_slot: string | null }
+
+export default function PlanManager({
+  orgId,
+  existingPlans,
+  classes = [],
+}: {
+  orgId: string
+  existingPlans: Plan[]
+  /** Classes any class-specific plan is attached to, so the list can name them. */
+  classes?: ClassRef[]
+}) {
   const router = useRouter()
   const [plans, setPlans] = useState<Plan[]>(existingPlans)
   const [showAdd, setShowAdd] = useState(false)
@@ -48,19 +60,27 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
   const [newDescription, setNewDescription] = useState('')
   const [newClassType, setNewClassType] = useState('group')
 
-  // Group plans by class_type
+  // Group plans by class_type.
+  //
+  // The branch for class-specific plans used to be an empty comment, so a plan
+  // attached to a single class worked perfectly on the booking page and was
+  // INVISIBLE here — not listed, not editable, not deletable. An academy could
+  // create one and then have no way to find it again. They are now listed in
+  // their own section with the class they belong to.
   const grouped: Record<string, Plan[]> = {}
   const unlinked: Plan[] = []
+  const classSpecific: Plan[] = []
   for (const p of plans) {
-    if (p.class_type && !p.training_group_id) {
+    if (p.training_group_id) {
+      classSpecific.push(p)
+    } else if (p.class_type) {
       if (!grouped[p.class_type]) grouped[p.class_type] = []
       grouped[p.class_type].push(p)
-    } else if (p.training_group_id) {
-      // class-specific plans - show separately
     } else {
       unlinked.push(p)
     }
   }
+  const classById = new Map(classes.map((c) => [c.id, c]))
 
   async function handleAddPlan() {
     if (!newName || !newAmount) return
@@ -98,9 +118,13 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
   }
 
   async function handleDelete(planId: string) {
-    if (!confirm('Delete this plan?')) return
+    const plan = plans.find((p) => p.id === planId)
+    const check = await canDeletePlan(planId, plan?.name)
+    if (!check.ok) { alert(check.message); return }
+    if (!confirm(`Delete "${plan?.name ?? 'this plan'}"? Nobody is on it, so nothing is affected.`)) return
     const supabase = createClient()
-    await supabase.from('subscription_plans').delete().eq('id', planId)
+    const { error } = await supabase.from('subscription_plans').delete().eq('id', planId)
+    if (error) { alert(error.message); return }
     setPlans(plans.filter(p => p.id !== planId))
     router.refresh()
   }
@@ -189,8 +213,55 @@ export default function PlanManager({ orgId, existingPlans }: { orgId: string; e
         )
       })}
 
+      {/* Plans attached to one specific class. Previously dropped on the floor. */}
+      {classSpecific.length > 0 && (
+        <div data-testid="class-specific-plans">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#4ecde6]/10 text-[#4ecde6]">One class only</span>
+            <span className="text-white/30 text-xs">{classSpecific.length} plan{classSpecific.length !== 1 ? 's' : ''}</span>
+            <div className="flex-1 h-px bg-white/[0.06]" />
+          </div>
+          <p className="text-xs text-white/40 mb-3">
+            These show on one class instead of every class of that type. Parents booking that class see only these.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {classSpecific.map(plan => {
+              const cls = classById.get(plan.training_group_id as string)
+              return (
+                <div key={plan.id} className={`bg-[#0f1a2b] border rounded-2xl p-4 transition-all ${plan.is_active ? 'border-[#4ecde6]/20' : 'border-[#1d2c42] opacity-50'}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-bold text-white text-sm">{plan.name}</h3>
+                      {!plan.is_active && <span className="text-[9px] px-1.5 py-0.5 bg-white/10 text-white/40 rounded-full">INACTIVE</span>}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-extrabold text-[#4ecde6]">&pound;{Number(plan.amount).toFixed(0)}</div>
+                      <div className="text-[10px] text-white/40">/month</div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-white/50 mb-3">
+                    {cls
+                      ? <>Only on <span className="text-white/75 font-medium">{cls.name}</span>{cls.day_of_week ? ` · ${cls.day_of_week}` : ''}{cls.time_slot ? ` ${cls.time_slot}` : ''}</>
+                      : <span className="text-amber-300/80">Attached to a class that no longer exists</span>}
+                  </p>
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#1d2c42]">
+                    {cls && (
+                      <a href={`/dashboard/groups/${cls.id}/plans`} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.06] text-white/50 hover:bg-white/[0.1] transition-colors">Edit on class</a>
+                    )}
+                    <button onClick={() => handleToggle(plan.id, plan.is_active)} className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${plan.is_active ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'}`}>
+                      {plan.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    <button onClick={() => handleDelete(plan.id)} className="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">Delete</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Empty state for types with no plans */}
-      {Object.keys(grouped).length === 0 && (
+      {Object.keys(grouped).length === 0 && classSpecific.length === 0 && (
         <div className="text-center py-12">
           <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['card']}</svg></span>
           <h3 className="font-bold text-lg mb-1">No plans yet</h3>

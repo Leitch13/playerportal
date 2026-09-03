@@ -19,6 +19,16 @@ export default async function PlansPage() {
     .order('class_type', { ascending: true })
     .order('amount', { ascending: true })
 
+  // Names for the classes any class-specific plan is attached to. Without
+  // these the list could only show an id, which tells an academy nothing.
+  const classIds = [...new Set((plans || []).map((p) => p.training_group_id).filter(Boolean))] as string[]
+  const { data: groups } = classIds.length
+    ? await supabase
+        .from('training_groups')
+        .select('id, name, day_of_week, time_slot')
+        .in('id', classIds)
+    : { data: [] }
+
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div>
@@ -39,6 +49,7 @@ export default async function PlansPage() {
           class_type: string | null
           training_group_id: string | null
         }>}
+        classes={(groups || []) as Array<{ id: string; name: string; day_of_week: string | null; time_slot: string | null }>}
       />
     </div>
   )
