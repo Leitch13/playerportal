@@ -77,15 +77,32 @@ export default async function CampPrintRegisterPage({
     parent_name: string | null
     parent_phone: string | null
     medical_info: string | null
+    photo_consent: boolean | null
     payment_status: string
   }
-  const { data: bookingsRaw } = await supabase
+  // Photo & video consent (migration 111) is selected first; if the column
+  // is not there yet (42703) fall back to the pre-111 select so the print
+  // register never 500s.
+  let bookingsRaw: unknown[] | null = null
+  const withPhoto = await supabase
     .from('camp_bookings')
-    .select('id, child_name, child_age, parent_name, parent_phone, medical_info, payment_status')
+    .select('id, child_name, child_age, parent_name, parent_phone, medical_info, photo_consent, payment_status')
     .eq('camp_id', campId)
     .eq('organisation_id', orgId)
     .in('payment_status', ['paid', 'pending'])
     .order('child_name', { ascending: true })
+  if (withPhoto.error && (withPhoto.error as { code?: string }).code === '42703') {
+    const legacy = await supabase
+      .from('camp_bookings')
+      .select('id, child_name, child_age, parent_name, parent_phone, medical_info, payment_status')
+      .eq('camp_id', campId)
+      .eq('organisation_id', orgId)
+      .in('payment_status', ['paid', 'pending'])
+      .order('child_name', { ascending: true })
+    bookingsRaw = (legacy.data || []) as unknown[]
+  } else {
+    bookingsRaw = (withPhoto.data || []) as unknown[]
+  }
 
   const rows = ((bookingsRaw || []) as Row[]).sort((a, b) =>
     (a.child_name || '').localeCompare(b.child_name || ''),
@@ -162,6 +179,7 @@ export default async function CampPrintRegisterPage({
         .print-register td.signature { width: 22%; }
         .print-register td.medical { color: #b00020; font-weight: 600; }
         .print-register .medical-empty { color: #999; font-weight: 400; }
+        .print-register td.no-photos { color: #b00020; font-weight: 800; letter-spacing: 0.04em; }
         .print-register .toolbar { margin-bottom: 16px; }
         .print-register .toolbar button { background: #4ecde6; color: #000; border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; }
       `}</style>
@@ -203,10 +221,11 @@ export default async function CampPrintRegisterPage({
                         <th style={{ width: '4%' }}>#</th>
                         <th style={{ width: '22%' }}>Child</th>
                         <th style={{ width: '4%' }}>Age</th>
-                        <th style={{ width: '20%' }}>Parent</th>
+                        <th style={{ width: '18%' }}>Parent</th>
                         <th style={{ width: '14%' }}>Phone</th>
-                        <th style={{ width: '20%' }}>Medical</th>
-                        <th style={{ width: '16%' }}>Signature</th>
+                        <th style={{ width: '18%' }}>Medical</th>
+                        <th style={{ width: '10%' }}>Photos</th>
+                        <th style={{ width: '14%' }}>Signature</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -221,6 +240,9 @@ export default async function CampPrintRegisterPage({
                             <td>{r.parent_phone || '—'}</td>
                             <td className={hasMedical ? 'medical' : ''}>
                               {hasMedical ? (r.medical_info as string) : <span className="medical-empty">None</span>}
+                            </td>
+                            <td className={r.photo_consent === false ? 'no-photos' : r.photo_consent == null ? 'medical-empty' : ''}>
+                              {r.photo_consent === false ? 'NO PHOTOS' : r.photo_consent === true ? 'OK' : 'not asked'}
                             </td>
                             <td className="signature">{/* empty for sign-in */}</td>
                           </tr>
@@ -241,10 +263,11 @@ export default async function CampPrintRegisterPage({
                 <th style={{ width: '4%' }}>#</th>
                 <th style={{ width: '22%' }}>Child</th>
                 <th style={{ width: '4%' }}>Age</th>
-                <th style={{ width: '20%' }}>Parent</th>
+                <th style={{ width: '18%' }}>Parent</th>
                 <th style={{ width: '14%' }}>Phone</th>
-                <th style={{ width: '20%' }}>Medical</th>
-                <th style={{ width: '16%' }}>Signature</th>
+                <th style={{ width: '18%' }}>Medical</th>
+                <th style={{ width: '10%' }}>Photos</th>
+                <th style={{ width: '14%' }}>Signature</th>
               </tr>
             </thead>
             <tbody>
@@ -260,6 +283,9 @@ export default async function CampPrintRegisterPage({
                     <td className={hasMedical ? 'medical' : ''}>
                       {hasMedical ? (r.medical_info as string) : <span className="medical-empty">None</span>}
                     </td>
+                    <td className={r.photo_consent === false ? 'no-photos' : r.photo_consent == null ? 'medical-empty' : ''}>
+                      {r.photo_consent === false ? 'NO PHOTOS' : r.photo_consent === true ? 'OK' : 'not asked'}
+                    </td>
                     <td className="signature">{/* empty for sign-in */}</td>
                   </tr>
                 )
@@ -269,7 +295,8 @@ export default async function CampPrintRegisterPage({
         )}
 
         <p className="sub" style={{ marginTop: 24, fontSize: 11, color: '#888' }}>
-          Printed via Player Portal. Medical column reflects what the parent supplied at booking.
+          Printed via Player Portal. Medical and Photos columns reflect what the parent supplied at booking;
+          &ldquo;not asked&rdquo; is not consent.
           For emergencies, contact the parent on the phone number above.
         </p>
       </div>

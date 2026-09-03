@@ -102,6 +102,9 @@ export default function CampFlexibleDayPicker({
   const [childDob, setChildDob] = useState('')
   const [medicalInfo, setMedicalInfo] = useState('')
   const [consentGiven, setConsentGiven] = useState(false)
+  // Photo & video consent (migration 111). '' = unanswered (blocks submit),
+  // 'yes' / 'no' are sent as a boolean. Never defaulted.
+  const [photoConsent, setPhotoConsent] = useState<'' | 'yes' | 'no'>('')
   const [siblingDiscount, setSiblingDiscount] = useState(false)
   const [promoInput, setPromoInput] = useState('')
   const [promoApplied, setPromoApplied] = useState<{ code: string; discount_type: 'percentage' | 'fixed'; discount_value: number } | null>(null)
@@ -201,7 +204,8 @@ export default function CampFlexibleDayPicker({
     parentName.trim() !== '' &&
     parentEmail.trim() !== '' &&
     childName.trim() !== '' &&
-    (!requireConsent || consentGiven)
+    (!requireConsent || consentGiven) &&
+    photoConsent !== ''
 
   const canContinue =
     !loading &&
@@ -249,6 +253,7 @@ export default function CampFlexibleDayPicker({
         childDob,
         medicalInfo,
         consentGiven,
+        photoConsent: photoConsent === 'yes',
         siblingDiscount,
         promoCode: promoApplied?.code,
         slug,
@@ -504,6 +509,33 @@ export default function CampFlexibleDayPicker({
             </span>
           </label>
         ) : null}
+        {/* Photo & video consent (migration 111). Two buttons rather than a
+            tick, matching the class booking form: an unticked box is ambiguous
+            between "no" and "didn't notice". Required — the parent must answer. */}
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3.5">
+          <p className="text-xs text-white/70 font-medium mb-1">Photos &amp; video</p>
+          <p className="text-[11.5px] text-white/40 leading-relaxed mb-2.5">
+            The academy sometimes photographs or films camp sessions for social media and their website. Are you happy for {childName.trim() || 'your child'} to appear? You can change this at any time by contacting the academy.
+          </p>
+          <div className="flex gap-2">
+            {([['yes', 'Yes, that\u2019s fine'], ['no', 'No, please don\u2019t']] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setPhotoConsent(v)}
+                data-testid={`photo-consent-${v}`}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
+                  photoConsent === v
+                    ? 'border-transparent text-[#0a0a0a]'
+                    : 'border-white/[0.12] text-white/60 hover:text-white hover:border-white/25'
+                }`}
+                style={photoConsent === v ? { backgroundColor: primaryColor } : undefined}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         {requireConsent && (
           <label className="flex items-start gap-2 text-xs text-white/70 cursor-pointer">
             <input

@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       childDob,
       medicalInfo,
       consentGiven,
+      photoConsent,
       siblingDiscount,
       promoCode,
       slug,
@@ -364,6 +365,21 @@ export async function POST(request: NextRequest) {
     if (!isUuid(bookingId)) {
       console.error('[flexible-camp-checkout] RPC returned invalid booking id:', rpcData)
       return NextResponse.json({ error: 'Booking could not be created. Please try again.' }, { status: 500 })
+    }
+
+    // Photo & video consent (migration 111). Best-effort, AFTER the booking
+    // exists: a failure here is logged and must never cost the parent their
+    // booking. Strict boolean check so an absent field never writes false.
+    if (photoConsent === true || photoConsent === false) {
+      const { error: photoErr } = await supabase
+        .from('camp_bookings')
+        .update({
+          photo_consent: photoConsent,
+          photo_consent_at: new Date().toISOString(),
+          photo_consent_source: 'booking',
+        })
+        .eq('id', bookingId)
+      if (photoErr) console.error('[flexible-camp-checkout] photo consent not recorded', photoErr.message)
     }
 
     // ─── 11. Free-camp short-circuit ────────────────────────────────

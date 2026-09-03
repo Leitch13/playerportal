@@ -86,7 +86,7 @@ export async function POST(
   // Player must belong to this org
   const { data: player, error: playerErr } = await svc
     .from('players')
-    .select('id, organisation_id, first_name, last_name, parent_id, date_of_birth, medical_info')
+    .select('id, organisation_id, first_name, last_name, parent_id, date_of_birth, medical_info, photo_consent')
     .eq('id', playerId)
     .maybeSingle()
   if (playerErr || !player) {
@@ -196,6 +196,18 @@ export async function POST(
 
   if (insErr || !booking) {
     return NextResponse.json({ error: insErr?.message || 'Failed to add player' }, { status: 500 })
+  }
+
+  // Photo & video consent (migration 111): carry the player's recorded
+  // answer onto the booking so the camp roster matches the class register.
+  // Best-effort — never fails the add. NULL (never asked) stays NULL.
+  const playerPhoto = (player as { photo_consent?: boolean | null }).photo_consent
+  if (playerPhoto === true || playerPhoto === false) {
+    const { error: photoErr } = await svc
+      .from('camp_bookings')
+      .update({ photo_consent: playerPhoto, photo_consent_at: new Date().toISOString(), photo_consent_source: 'admin' })
+      .eq('id', booking.id)
+    if (photoErr) console.error('[camp add-player] photo consent not copied', photoErr.message)
   }
 
   return NextResponse.json({ ok: true, bookingId: booking.id })

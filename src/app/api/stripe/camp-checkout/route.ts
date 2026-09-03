@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       childDob,
       medicalInfo,
       consentGiven,
+      photoConsent,
       siblingDiscount,
       promoCode,
       slug,
@@ -171,6 +172,21 @@ export async function POST(request: NextRequest) {
 
     if (bookingError || !booking) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
+    }
+
+    // Photo & video consent (migration 111). Best-effort, AFTER the booking
+    // exists: a failure here is logged and must never cost the parent their
+    // booking. Strict boolean check so an absent field never writes false.
+    if (photoConsent === true || photoConsent === false) {
+      const { error: photoErr } = await supabase
+        .from('camp_bookings')
+        .update({
+          photo_consent: photoConsent,
+          photo_consent_at: new Date().toISOString(),
+          photo_consent_source: 'booking',
+        })
+        .eq('id', booking.id)
+      if (photoErr) console.error('[camp-checkout] photo consent not recorded', photoErr.message)
     }
 
     // If free camp, mark as paid immediately

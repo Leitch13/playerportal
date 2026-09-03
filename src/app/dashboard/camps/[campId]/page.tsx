@@ -79,12 +79,13 @@ export default async function CampDetailPage({
     amount_paid: number | null
     payment_status: string
     booking_source: string | null
+    photo_consent: boolean | null
     created_at: string
   }
   let bookingsRaw: unknown[] | null = null
   const firstAttempt = await supabase
     .from('camp_bookings')
-    .select('id, child_name, child_age, parent_name, parent_email, parent_phone, medical_info, amount_paid, payment_status, booking_source, created_at')
+    .select('id, child_name, child_age, parent_name, parent_email, parent_phone, medical_info, amount_paid, payment_status, booking_source, photo_consent, created_at')
     .eq('camp_id', campId)
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
@@ -236,6 +237,7 @@ export default async function CampDetailPage({
     amount_paid: b.amount_paid,
     payment_status: b.payment_status,
     booking_source: b.booking_source,
+    photo_consent: b.photo_consent ?? null,
     created_at: b.created_at,
     // Flexible Camps (Phase 3E) — day list for flexible bookings.
     // Undefined for whole-camp bookings; RosterClient renders "—".

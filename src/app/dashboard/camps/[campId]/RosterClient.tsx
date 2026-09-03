@@ -36,6 +36,8 @@ export interface CampRosterBooking {
   amount_paid: number | null
   payment_status: string
   booking_source: string | null
+  // Photo & video consent (migration 111). null = never asked.
+  photo_consent: boolean | null
   created_at: string
   // Flexible Camps (Phase 3E). Ordered list of formatted date labels
   // for flexible bookings ("Mon 8 Jul", ...). Null/undefined for
@@ -192,8 +194,8 @@ export default function RosterClient({
   // to today's CSV format.
   function downloadCsv() {
     const headers = isFlexibleCamp
-      ? ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Booked at', 'Booked days', 'Amount paid (£)', 'Payment status', 'Source']
-      : ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Booked at', 'Amount paid (£)', 'Payment status', 'Source']
+      ? ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Photo consent', 'Booked at', 'Booked days', 'Amount paid (£)', 'Payment status', 'Source']
+      : ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Photo consent', 'Booked at', 'Amount paid (£)', 'Payment status', 'Source']
     const rows = filtered.map((b) => {
       const base = [
         b.child_name || '',
@@ -202,6 +204,7 @@ export default function RosterClient({
         b.parent_email || '',
         b.parent_phone || '',
         b.medical_info || '',
+        b.photo_consent === true ? 'Yes' : b.photo_consent === false ? 'No' : 'Not asked',
         b.created_at,
       ]
       const daysCol = isFlexibleCamp
@@ -362,6 +365,7 @@ export default function RosterClient({
                   <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Parent</th>
                   <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Contact</th>
                   <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Medical</th>
+                  <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Photos</th>
                   <th className="text-left px-6 py-3 text-[10px] uppercase tracking-wider text-white/40 font-bold">Booked</th>
                   {/* Flexible Camps (Phase 3E) — extra Days column when
                       the camp is flexible; whole-camp roster is byte-
@@ -411,6 +415,26 @@ export default function RosterClient({
                           </span>
                         ) : (
                           <span className="text-white/25 text-xs">—</span>
+                        )}
+                      </td>
+                      {/* Photo & video consent (migration 111). A refusal is loud;
+                          never-asked is quiet but present and is NOT consent. */}
+                      <td className="px-3 py-3 whitespace-nowrap" data-testid="camp-roster-photo-cell">
+                        {b.photo_consent === false ? (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500 text-white"
+                            title="This family has asked that their child is not photographed or filmed"
+                          >
+                            No photos
+                          </span>
+                        ) : b.photo_consent === true ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/15 text-green-400">
+                            OK
+                          </span>
+                        ) : (
+                          <span className="text-white/35 text-[11px]" title="Nobody has asked this family about photos yet — this is not consent">
+                            not asked
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-3 text-white/55 text-xs">{fmtBookedAt(b.created_at)}</td>
