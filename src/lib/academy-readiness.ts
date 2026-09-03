@@ -97,8 +97,8 @@ function plansAreUntouchedDefaults(
 export async function getAcademyReadiness(orgId: string): Promise<ReadinessState> {
   const supabase = await createClient()
 
-  // Fetch in parallel — three cheap reads.
-  const [orgResult, classCountResult, plansResult] = await Promise.all([
+  // Fetch in parallel — four cheap reads.
+  const [orgResult, classCountResult, campCountResult, plansResult] = await Promise.all([
     supabase
       .from('organisations')
       .select(
@@ -110,6 +110,14 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
       .from('training_groups')
       .select('id', { count: 'exact', head: true })
       .eq('organisation_id', orgId),
+    // Camps-only academies (e.g. holiday-camp operators with no weekly
+    // classes) are just as bookable — a published camp counts as an
+    // offering so the widget doesn't tell them "parents can't book yet".
+    supabase
+      .from('camps')
+      .select('id', { count: 'exact', head: true })
+      .eq('organisation_id', orgId)
+      .eq('is_published', true),
     supabase
       .from('subscription_plans')
       .select('name, amount')
@@ -128,17 +136,23 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
       }
     | null
   const classCount = classCountResult.count ?? 0
+  const campCount = campCountResult.count ?? 0
   const plans = (plansResult.data ?? []) as Array<{ name: string | null; amount: number | string | null }>
 
   // ── derive each readiness signal ───────────────────────────────────
   const accountCreated = true // by virtue of reaching the dashboard
   const academyCreated = !!org // if the org row exists
   const hasClasses = classCount > 0
+  const hasCamps = campCount > 0
+  const hasOffering = hasClasses || hasCamps
+  // Camps are priced per camp, so subscription plans are irrelevant to
+  // an academy that only runs camps — don't hold them at "Not live".
+  const campsOnly = hasCamps && !hasClasses
   // "Reviewed" = either the org has more/fewer than the 3 seeded
   // defaults, or one of the seeded rows has been edited away from
   // its default name/amount. Hardcoded values match the seed in
   // /api/onboard/route.ts. No new column needed.
-  const plansReviewed = plans.length > 0 && !plansAreUntouchedDefaults(plans)
+  const plansReviewed = campsOnly || (plans.length > 0 && !plansAreUntouchedDefaults(plans))
   const stripeConnected = !!org?.stripe_account_id
   const isPilot = !!org?.pilot
 
@@ -224,15 +238,18 @@ export async function getAcademyReadiness(orgId: string): Promise<ReadinessState
     },
     {
       key: 'at-least-one-class',
-      label: 'At least one class created',
-      done: hasClasses,
-      cta: hasClasses ? undefined : { label: 'Create your first class', href: '/dashboard/groups' },
+      label: 'At least one class or camp created',
+      done: hasOffering,
+      detail: campsOnly ? 'Running camps only — weekly classes are optional' : undefined,
+      cta: hasOffering ? undefined : { label: 'Create your first class', href: '/dashboard/groups' },
     },
     {
       key: 'plans-reviewed',
       label: 'Subscription plans reviewed',
       done: plansReviewed,
-      detail: plansReviewed
+      detail: campsOnly
+        ? 'Not needed — camps are priced individually'
+        : plansReviewed
         ? undefined
         : plans.length === 0
           ? 'No plans yet'
