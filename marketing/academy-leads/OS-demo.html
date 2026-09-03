@@ -1,0 +1,444 @@
+<meta charset="utf-8">
+<title>Academy OS Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper: #F6F5F1;
+    --card: #FFFFFF;
+    --ink: #131F38;
+    --ink-soft: #5B6478;
+    --line: #DDDAD1;
+    --gold: #B8860B;
+    --gold-strong: #9A7009;
+    --gold-wash: #F3EAD2;
+    --navy-chip: #131F38;
+    --navy-chip-text: #F6F5F1;
+    --flow-bg: #FBFAF7;
+    --mono-bg: #EEECE4;
+    --good: #24774A;
+    --good-wash: #E2EFE7;
+    --bad: #B3372E;
+    --bad-wash: #F6E4E2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0C1424; --card: #131D31; --ink: #EDEAE1; --ink-soft: #97A0B4;
+      --line: #26324B; --gold: #D9A62E; --gold-strong: #E4B94F; --gold-wash: #2A2A18;
+      --navy-chip: #D9A62E; --navy-chip-text: #0C1424; --flow-bg: #101A2C; --mono-bg: #1B2740;
+      --good: #4CAF7D; --good-wash: #12291D; --bad: #E06A5F; --bad-wash: #331512;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0C1424; --card: #131D31; --ink: #EDEAE1; --ink-soft: #97A0B4;
+    --line: #26324B; --gold: #D9A62E; --gold-strong: #E4B94F; --gold-wash: #2A2A18;
+    --navy-chip: #D9A62E; --navy-chip-text: #0C1424; --flow-bg: #101A2C; --mono-bg: #1B2740;
+    --good: #4CAF7D; --good-wash: #12291D; --bad: #E06A5F; --bad-wash: #331512;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 0 20px 96px;
+  }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+  header { padding: 56px 0 8px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin: 0 0 16px;
+  }
+  h1 {
+    font-family: "Archivo", sans-serif; font-weight: 900;
+    font-size: clamp(34px, 6vw, 54px); line-height: 1.02; letter-spacing: -0.02em;
+    margin: 0 0 16px; text-wrap: balance;
+  }
+  .standfirst { font-size: 18px; color: var(--ink-soft); max-width: 42em; margin: 0; }
+  .standfirst strong { color: var(--ink); font-weight: 600; }
+
+  /* scoreboard strip */
+  .scorestrip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px; margin: 30px 0 0;
+  }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px 10px; }
+  .stat .n {
+    font-family: "Archivo", sans-serif; font-weight: 800; font-size: 26px; line-height: 1;
+    font-variant-numeric: tabular-nums; transition: color .3s;
+  }
+  .stat .n.bumped { color: var(--gold-strong); }
+  .stat .l {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin-top: 4px;
+  }
+
+  /* main demo grid */
+  .demo { display: grid; grid-template-columns: 300px 1fr; gap: 18px; margin-top: 26px; align-items: start; }
+  @media (max-width: 760px) { .demo { grid-template-columns: 1fr; } }
+
+  .panel-label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 10px;
+  }
+  .events { display: grid; gap: 8px; position: sticky; top: 16px; }
+  @media (max-width: 760px) { .events { position: static; } }
+  .evt {
+    display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: center;
+    text-align: left; width: 100%;
+    background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer;
+    transition: border-color .15s, transform .1s;
+  }
+  .evt:hover { border-color: var(--gold); }
+  .evt:active { transform: scale(.985); }
+  .evt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .evt .ico { font-size: 18px; text-align: center; }
+  .evt small { display: block; font-weight: 400; font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+  .evt.briefing { background: var(--navy-chip); color: var(--navy-chip-text); border-color: var(--navy-chip); }
+  .evt.briefing small { color: var(--navy-chip-text); opacity: .75; }
+  .evt.reset { background: none; border-style: dashed; font-weight: 500; color: var(--ink-soft); }
+
+  /* feed */
+  .feed { display: grid; gap: 14px; min-height: 300px; }
+  .feed-empty {
+    border: 1.5px dashed var(--line); border-radius: 10px; padding: 48px 24px;
+    text-align: center; color: var(--ink-soft); font-size: 15px;
+  }
+  .scenario { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .scenario-head {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 13px 18px; background: var(--flow-bg); border-bottom: 1px solid var(--line);
+  }
+  .scenario-head .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+  }
+  .scenario-head b { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 15.5px; }
+  .steps { padding: 8px 18px 16px; display: grid; }
+  .step {
+    display: grid; grid-template-columns: 118px 1fr; gap: 14px; padding: 10px 0;
+    opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s;
+  }
+  .step.show { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .step { transition: none; transform: none; } }
+  @media (max-width: 560px) { .step { grid-template-columns: 1fr; gap: 4px; } }
+  .step + .step { border-top: 1px solid var(--line); }
+  .when {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--gold-strong); padding-top: 3px;
+  }
+
+  /* step card variants */
+  .rec {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12.5px; line-height: 1.6;
+    background: var(--mono-bg); border-radius: 6px; padding: 9px 12px;
+  }
+  .rec b { font-weight: 600; }
+  .rec .pill {
+    display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    padding: 1px 7px; border-radius: 3px; background: var(--gold-wash); color: var(--gold-strong); margin-left: 6px;
+  }
+  .rec .pill.good { background: var(--good-wash); color: var(--good); }
+  .rec .pill.bad { background: var(--bad-wash); color: var(--bad); }
+
+  .mail { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .mail-head {
+    padding: 8px 12px; background: var(--flow-bg); border-bottom: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-soft); display: grid; gap: 1px;
+  }
+  .mail-head b { color: var(--ink); font-weight: 600; }
+  .mail-body { padding: 10px 12px; font-size: 13.5px; line-height: 1.55; }
+  .mail-body p { margin: 0 0 6px; max-width: none; } .mail-body p:last-child { margin: 0; }
+  .mail-body ul { margin: 4px 0; padding-left: 18px; } .mail-body li::marker { color: var(--gold); }
+
+  .alert {
+    display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start;
+    background: var(--navy-chip); color: var(--navy-chip-text); border-radius: 8px; padding: 11px 14px;
+    font-size: 13.5px; line-height: 1.5;
+  }
+  .alert.bad { outline: 2px solid var(--bad); }
+  .alert .a-ico { font-size: 16px; padding-top: 1px; }
+  .alert b { font-weight: 600; }
+  .alert small { display: block; opacity: .72; font-size: 11.5px; margin-top: 2px; }
+
+  .tasks { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 13.5px; }
+  .tasks .t { display: flex; gap: 9px; align-items: baseline; padding: 2.5px 0; }
+  .tasks .box {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px;
+    color: var(--ink-soft); flex: none;
+  }
+  .tasks .t.done .box { color: var(--good); }
+  .tasks .t.done span { color: var(--ink-soft); text-decoration: line-through; }
+  .tasks .t.due span { color: var(--bad); font-weight: 600; }
+
+  .note { font-size: 13px; color: var(--ink-soft); font-style: italic; padding-top: 2px; }
+
+  /* build section */
+  section.build { margin-top: 72px; }
+  h2 {
+    font-family: "Archivo", sans-serif; font-weight: 800; font-size: 26px;
+    letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance;
+  }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--gold); margin: 0 0 10px;
+  }
+  .lede { color: var(--ink-soft); max-width: 44em; margin: 0 0 22px; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+  .parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .part { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px 14px; }
+  .part .big { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 24px; line-height: 1.1; }
+  .part .big em { font-style: normal; color: var(--gold-strong); }
+  .part h3 { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 15px; margin: 6px 0 4px; }
+  .part p { font-size: 13px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+  .timeline { margin-top: 26px; display: grid; gap: 8px; }
+  .trow {
+    display: grid; grid-template-columns: 96px 1fr auto; gap: 14px; align-items: baseline;
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px;
+    font-size: 14.5px;
+  }
+  @media (max-width: 560px) { .trow { grid-template-columns: 70px 1fr; } .trow .eff { grid-column: 2; } }
+  .trow .ph { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-strong); }
+  .trow .eff { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+  .trow.done .ph { color: var(--good); }
+  .trow.done div:nth-child(2) { color: var(--ink-soft); }
+  .totals {
+    margin-top: 14px; background: var(--navy-chip); color: var(--navy-chip-text);
+    border-radius: 8px; padding: 16px 20px; font-size: 15px; line-height: 1.6;
+  }
+  .totals b { font-weight: 700; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">ASCEND &middot; The Academy OS &middot; working demo</p>
+    <h1>Press an event. Watch the academy react.</h1>
+    <p class="standfirst">This is the whole idea in one screen: <strong>something happens in the business, and the system runs the reaction</strong> — records, emails, alerts, chase-ups — before the owner has looked up from the pitch. Fire a few events, then press <strong>8am — morning briefing</strong> to see the owner's one daily email compose itself from everything that happened.</p>
+  </header>
+
+  <div class="scorestrip" aria-label="Live scoreboard">
+    <div class="stat"><div class="n" id="s-leads">0</div><div class="l">Leads in pipeline</div></div>
+    <div class="stat"><div class="n" id="s-members">42</div><div class="l">Members</div></div>
+    <div class="stat"><div class="n" id="s-staff">4</div><div class="l">Active coaches</div></div>
+    <div class="stat"><div class="n" id="s-tasks">0</div><div class="l">Open checklists</div></div>
+    <div class="stat"><div class="n" id="s-incidents">0</div><div class="l">Incidents this month</div></div>
+  </div>
+
+  <div class="demo">
+    <div>
+      <p class="panel-label">Something happens</p>
+      <div class="events">
+        <button class="evt" data-s="lead"><span class="ico">&#128229;</span><span>A lead comes in<small>Parent submits the trial funnel</small></span></button>
+        <button class="evt" data-s="trial"><span class="ico">&#9917;</span><span>Trial &rarr; enrolled<small>The conversion chain runs</small></span></button>
+        <button class="evt" data-s="coach"><span class="ico">&#129333;</span><span>A coach applies<small>Staff engine + onboarding</small></span></button>
+        <button class="evt" data-s="injury"><span class="ico">&#128657;</span><span>Injury at a session<small>Playbook + incident log</small></span></button>
+        <button class="evt" data-s="safeguard"><span class="ico">&#128737;</span><span>Safeguarding concern<small>Escalation checklist</small></span></button>
+        <button class="evt" data-s="cancel"><span class="ico">&#10060;</span><span>A member cancels<small>Exit + win-back</small></span></button>
+        <button class="evt briefing" data-s="briefing"><span class="ico">&#9728;</span><span>8am — morning briefing<small>Composed from today's events</small></span></button>
+        <button class="evt reset" data-s="reset"><span class="ico">&#8634;</span><span>Reset the day</span></button>
+      </div>
+    </div>
+    <div>
+      <p class="panel-label">The system reacts</p>
+      <div class="feed" id="feed">
+        <div class="feed-empty" id="empty">Nothing has happened yet.<br>Fire an event on the left — start with <b>&ldquo;A lead comes in.&rdquo;</b></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="build">
+    <p class="kicker">The bill of materials</p>
+    <h2>What it takes to build</h2>
+    <p class="lede">No servers, no code beyond the branded pages, no monthly stack cost. <strong>Four HTML pages, one Airtable base, about two dozen automations</strong> — then it's a template any academy duplicates in half an hour.</p>
+    <div class="parts">
+      <div class="part"><div class="big">4</div><h3>Branded front-door pages</h3><p>Trial funnel (already built), coach application, incident report, general enquiry. Each is one HTML file with a single CONFIG block — name, colour, logo, offer.</p></div>
+      <div class="part"><div class="big">1</div><h3>Airtable base, 8 tables</h3><p>Leads &middot; Members &middot; Staff &middot; Onboarding tasks &middot; Sessions &middot; Resources &middot; Incidents &middot; Scoreboard. All linked, all on the free tier.</p></div>
+      <div class="part"><div class="big">~24</div><h3>Automations</h3><p>The invisible staff: alerts, auto-replies, chase sequences, expiry reminders, the three briefings. All native Airtable — no Zapier, no Make.</p></div>
+      <div class="part"><div class="big">1</div><h3>Playbook card pack</h3><p>One-page PDFs per scenario — injury, safeguarding, missing child, angry parent, coach no-show — drawn from the Academy Bible, loaded into the staff hub.</p></div>
+      <div class="part"><div class="big">&pound;0<em>/mo</em></div><h3>Running cost</h3><p>Airtable free tier + free video hosting (Loom / unlisted YouTube) + Canva links. SMS stays a paid bolt-on for later.</p></div>
+      <div class="part"><div class="big">30<em> min</em></div><h3>Client setup</h3><p>Duplicate the template base, fill four CONFIG blocks, paste two webhook URLs, send one test lead. Same handoff pattern as the Lead Machine.</p></div>
+    </div>
+
+    <p class="kicker" style="margin-top:40px;">The build, phase by phase</p>
+    <div class="timeline">
+      <div class="trow done"><span class="ph">Phase 1 &#10003;</span><div>Lead Machine — trial funnel, Leads table, four automations. Live and selling.</div><span class="eff">done</span></div>
+      <div class="trow"><span class="ph">Phase 2</span><div>Conversion module — Members table + the five trial-to-enrolled automations. The biggest money leak, fixed first.</div><span class="eff">~0.5 day</span></div>
+      <div class="trow"><span class="ph">Phase 3</span><div>Staff engine + staff hub — coach application page, onboarding checklists, cert-expiry reminders, the resource library.</div><span class="eff">~1.5 days</span></div>
+      <div class="trow"><span class="ph">Phase 4</span><div>Playbooks, retention + command centre — incident report page, escalation checklists, win-back flow, the three briefings.</div><span class="eff">~1.5 days</span></div>
+      <div class="trow"><span class="ph">Phase 5</span><div>Package — template-share the base, setup guide, refreshed sales sheet. Lead Machine = entry product, Academy OS = flagship.</div><span class="eff">~0.5 day</span></div>
+    </div>
+    <div class="totals"><b>Total: roughly four focused build days</b> on top of what already exists — and every phase ships something sellable on its own, so revenue doesn't wait for the finish line.</div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var state = {
+    leads: 0, members: 42, staff: 4, tasks: 0, incidents: 0,
+    chase: [], trialsToday: [], onboarding: [], escalation: [], injuryFollowups: [],
+    briefingRan: false
+  };
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var feed = document.getElementById("feed");
+  var empty = document.getElementById("empty");
+
+  function setStat(id, val) {
+    var el = document.getElementById(id);
+    if (el.textContent !== String(val)) {
+      el.textContent = val;
+      el.classList.add("bumped");
+      setTimeout(function () { el.classList.remove("bumped"); }, 900);
+    }
+  }
+  function syncStats() {
+    setStat("s-leads", state.leads);
+    setStat("s-members", state.members);
+    setStat("s-staff", state.staff);
+    setStat("s-tasks", state.tasks);
+    setStat("s-incidents", state.incidents);
+  }
+
+  function el(html) { var d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; }
+  function mail(to, subject, body) {
+    return '<div class="mail"><div class="mail-head"><span>To: <b>' + to + '</b></span><span>Subject: <b>' + subject + '</b></span></div><div class="mail-body">' + body + '</div></div>';
+  }
+  function alertCard(txt, sub, bad) {
+    return '<div class="alert' + (bad ? " bad" : "") + '"><span class="a-ico">&#128276;</span><span><b>' + txt + '</b><small>' + sub + '</small></span></div>';
+  }
+  function rec(txt) { return '<div class="rec">' + txt + '</div>'; }
+  function note(txt) { return '<div class="note">' + txt + '</div>'; }
+
+  function playScenario(title, tag, steps, onDone) {
+    empty.style.display = "none";
+    var sc = el('<div class="scenario"><div class="scenario-head"><span class="tag">' + tag + '</span><b>' + title + '</b></div><div class="steps"></div></div>');
+    feed.prepend(sc);
+    var holder = sc.querySelector(".steps");
+    var i = 0;
+    function next() {
+      if (i >= steps.length) { if (onDone) onDone(); syncStats(); return; }
+      var s = steps[i++];
+      var row = el('<div class="step"><span class="when">' + s.when + '</span><div>' + s.html + '</div></div>');
+      holder.appendChild(row);
+      if (s.fx) s.fx();
+      syncStats();
+      requestAnimationFrame(function () { requestAnimationFrame(function () { row.classList.add("show"); }); });
+      setTimeout(next, reduced ? 0 : 620);
+    }
+    next();
+  }
+
+  var scenarios = {
+    lead: function () {
+      playScenario("Claire Robertson enquires about a trial for Max, age 8", "Event &middot; trial funnel", [
+        { when: "Instantly", html: rec('<b>Leads</b> &larr; new row &nbsp;Max Robertson &middot; 8 &middot; Facebook &middot; 07700 900123 <span class="pill">New</span>'),
+          fx: function () { state.leads++; state.chase.push("Claire Robertson &middot; 07700 900123 &middot; New lead (Max, 8)"); } },
+        { when: "Instantly", html: alertCard("New lead: Max (age 8)", "Claire Robertson &middot; 07700 900123 &middot; call today") },
+        { when: "Instantly", html: mail("claire.robertson@email.com", "Thanks — let's get Max booked in",
+          "<p>Hi Claire, thanks for booking a free trial for Max! We'll be in touch today to confirm the time. Reply with any questions.</p><p>— Northside Football Academy</p>") },
+        { when: "Instantly", html: rec('<b>Leads</b> &larr; Follow-up = today &rarr; joins tomorrow&rsquo;s chase list') },
+        { when: "", html: note("Four things happened. The owner did none of them.") }
+      ]);
+    },
+    trial: function () {
+      playScenario("Max's trial: booked, reminded, attended, enrolled", "Event &middot; conversion chain", [
+        { when: "Owner drags card", html: rec('<b>Leads</b> &larr; status <span class="pill">Trial booked</span> &nbsp;Sat 10am &middot; Meadowbank'),
+          fx: function () { state.trialsToday.push("Max Robertson &middot; Sat 10am &middot; Meadowbank"); } },
+        { when: "Instantly", html: mail("claire.robertson@email.com", "Max's trial is booked &#127881;",
+          "<p>Saturday 10am at Meadowbank. Bring boots, shin pads and water — see you there!</p>") },
+        { when: "Day before", html: mail("claire.robertson@email.com", "See you tomorrow, Max!", "<p>Quick reminder — trial tomorrow, 10am at Meadowbank.</p>") },
+        { when: "Next morning", html: mail("claire.robertson@email.com", "How did Max find it?",
+          "<p>Great to have Max down yesterday! If he loved it, here's the link to enrol and lock in his spot: <b>northside.academy/enrol</b></p>") },
+        { when: "Status &rarr; Enrolled", html: rec('<b>Members</b> &larr; Max Robertson copied from Leads <span class="pill good">Active</span> &middot; &pound;39/mo &middot; joined today'),
+          fx: function () { state.leads = Math.max(0, state.leads - 1); state.members++; state.chase = []; state.trialsToday = []; } },
+        { when: "Instantly", html: mail("claire.robertson@email.com", "Welcome to the academy, Max! &#9917;",
+          "<p>You're in! Everything you need:</p><ul><li>Kit list &amp; term dates</li><li>Payment details</li><li>Parents' WhatsApp group link</li></ul>") },
+        { when: "", html: note("Scoreboard logs the conversion. This chain — confirm, remind, follow up, welcome — is where academies leak the most money when it's done from memory.") }
+      ]);
+    },
+    coach: function () {
+      playScenario("Ryan Ferguson applies to coach — UEFA C, free evenings", "Event &middot; staff engine", [
+        { when: "Instantly", html: rec('<b>Staff</b> &larr; new row &nbsp;Ryan Ferguson &middot; UEFA C &middot; Mon/Wed/Thu eves <span class="pill">Applied</span>') },
+        { when: "Instantly", html: alertCard("New coach application: Ryan Ferguson", "UEFA C &middot; evenings &middot; CV attached") },
+        { when: "Instantly", html: mail("ryan.ferguson@email.com", "Thanks Ryan — we'll be in touch", "<p>Thanks for applying to coach with us. We review applications every week — expect to hear from us within a few days.</p>") },
+        { when: "Offer made", html:
+          '<div class="tasks">' +
+          '<div class="t done"><span class="box">[x]</span><span>Contract sent &amp; signed</span></div>' +
+          '<div class="t done"><span class="box">[x]</span><span>Academy Bible + staff hub link sent</span></div>' +
+          '<div class="t done"><span class="box">[x]</span><span>Walkthrough videos watched</span></div>' +
+          '<div class="t done"><span class="box">[x]</span><span>Bank details for payroll</span></div>' +
+          '<div class="t done"><span class="box">[x]</span><span>Kit ordered</span></div>' +
+          '<div class="t due"><span class="box">[ ]</span><span>PVG check submitted — due Friday</span></div>' +
+          '<div class="t"><span class="box">[ ]</span><span>First-aid certificate uploaded</span></div>' +
+          '</div>',
+          fx: function () { state.tasks += 2; state.onboarding.push("Ryan Ferguson — PVG check due Friday, first-aid cert missing"); } },
+        { when: "Instantly", html: mail("ryan.ferguson@email.com", "Welcome aboard, Ryan",
+          "<p>Delighted to have you. Your handbook and the staff hub are here: <b>hub link</b> — session plans, playbook cards, walkthrough videos, everything.</p><p>Two things left on your checklist: PVG and first-aid cert. The system will nudge us both.</p>") },
+        { when: "", html: note("Ryan can't quietly start coaching with a missing PVG — the two open tasks sit in the owner's briefing until they're ticked. When they are, he flips to Active automatically.") }
+      ]);
+    },
+    injury: function () {
+      playScenario("Max takes a knock at Wednesday's session", "Event &middot; playbook: injury", [
+        { when: "At the pitch", html: note("Coach follows the injury playbook card from the staff hub — assess, treat, inform the parent at pick-up — then files the 60-second report from their phone.") },
+        { when: "Instantly", html: rec('<b>Incidents</b> &larr; new row &nbsp;Injury &middot; minor &middot; Max R. &middot; ice applied, parent informed <span class="pill">Logged</span>'),
+          fx: function () { state.incidents++; state.injuryFollowups.push("Call Claire Robertson — check on Max after yesterday's knock"); } },
+        { when: "Instantly", html: alertCard("Incident logged: minor injury — Max R.", "Wednesday session &middot; handled by R. Ferguson &middot; full report in base") },
+        { when: "Next day, 9am", html: alertCard("Follow-up: call Claire Robertson", "Check how Max is doing after yesterday's knock") },
+        { when: "", html: note("The record is the accident log — dated, attributable, exportable if an insurer or governing body ever asks. And the next-day call is the moment a bad event becomes trust.") }
+      ]);
+    },
+    safeguard: function () {
+      playScenario("A coach raises a safeguarding concern", "Event &middot; playbook: safeguarding", [
+        { when: "At the pitch", html: note("Coach follows the safeguarding playbook card: don't investigate, don't promise secrecy, record facts, report the same day.") },
+        { when: "Instantly", html: rec('<b>Incidents</b> &larr; new row &nbsp;Safeguarding <span class="pill bad">High</span> &middot; details visible to owner &amp; welfare officer only'),
+          fx: function () { state.incidents++; } },
+        { when: "Instantly", html: alertCard("SAFEGUARDING — action required today", "Reported by R. Ferguson &middot; open the record now", true) },
+        { when: "Instantly", html:
+          '<div class="tasks">' +
+          '<div class="t"><span class="box">[ ]</span><span>Welfare officer informed</span></div>' +
+          '<div class="t"><span class="box">[ ]</span><span>Written record completed same day</span></div>' +
+          '<div class="t"><span class="box">[ ]</span><span>Referral decision made &amp; logged</span></div>' +
+          '</div>',
+          fx: function () { state.tasks += 3; state.escalation.push("Safeguarding escalation — 3 steps open"); } },
+        { when: "Every 8am", html: note("The morning briefing flags this checklist in red until all three steps are ticked. A safeguarding concern cannot be quietly dropped — that's the point.") }
+      ]);
+    },
+    cancel: function () {
+      playScenario("The Hendersons cancel — schedule clash with swimming", "Event &middot; retention", [
+        { when: "Owner sets status", html: rec('<b>Members</b> &larr; Ava Henderson <span class="pill bad">Cancelled</span> &middot; reason: schedule clash'),
+          fx: function () { state.members = Math.max(0, state.members - 1); } },
+        { when: "Instantly", html: mail("l.henderson@email.com", "Sorry to see Ava go",
+          "<p>Thanks for everything — Ava's been brilliant. If the schedule ever frees up, her spot's here. The door's always open.</p>") },
+        { when: "+30 days", html: mail("l.henderson@email.com", "We'd love Ava back — first month on us",
+          "<p>Our new Thursday 5pm group might fit around swimming. First month free if she fancies it.</p>") },
+        { when: "Instantly", html: rec('<b>Scoreboard</b> &larr; churn +1 &middot; reason logged: <b>schedule clash</b> &rarr; monthly report shows <i>why</i> people leave') },
+        { when: "", html: note("Most academies find out about churn when the money stops. This one gets a reason, a graceful exit, and a timed second chance.") }
+      ]);
+    },
+    briefing: function () {
+      var lines = [];
+      if (state.chase.length) lines.push("<li><b>Chase today:</b> " + state.chase.join("; ") + "</li>");
+      if (state.trialsToday.length) lines.push("<li><b>Trials today:</b> " + state.trialsToday.join("; ") + "</li>");
+      if (state.onboarding.length) lines.push("<li><b>Onboarding open:</b> " + state.onboarding.join("; ") + "</li>");
+      if (state.escalation.length) lines.push('<li style="color:var(--bad);"><b>&#9888; Safeguarding checklist still open — 3 steps</b></li>');
+      if (state.injuryFollowups.length) lines.push("<li><b>Follow-up call:</b> " + state.injuryFollowups.join("; ") + "</li>");
+      lines.push("<li><b>Certs:</b> Jess Muir's first aid expires in 24 days — renewal booked?</li>");
+      var body = lines.length > 1 || state.chase.length || state.escalation.length || state.onboarding.length || state.injuryFollowups.length
+        ? "<p>Morning. Here's what needs you today:</p><ul>" + lines.join("") + "</ul><p>Everything else is handled.</p>"
+        : "<p>Nothing needs you today — this email wouldn't even send.</p>";
+      playScenario("8:00am — the owner's briefing composes itself", "Daily &middot; command centre", [
+        { when: "8:00am", html: mail("owner@northside.academy", "Your academy today — " + new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "short" }).format(new Date()), body) },
+        { when: "", html: note("One email, built from every module above. No dashboard, no logging in. If the day is clean, it stays silent. This is the moment that sells the OS in a demo.") }
+      ]);
+    },
+    reset: function () {
+      state = { leads: 0, members: 42, staff: 4, tasks: 0, incidents: 0, chase: [], trialsToday: [], onboarding: [], escalation: [], injuryFollowups: [], briefingRan: false };
+      feed.querySelectorAll(".scenario").forEach(function (n) { n.remove(); });
+      empty.style.display = "";
+      syncStats();
+    }
+  };
+
+  document.querySelectorAll(".evt").forEach(function (b) {
+    b.addEventListener("click", function () { scenarios[b.dataset.s](); });
+  });
+})();
+</script>

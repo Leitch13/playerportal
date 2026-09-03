@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  ASCEND - 12-MONTH REVENUE PLANNER (tool only, no sales page)
+  ============================================================
+  A full-year revenue + profit planner for grassroots football academy owners.
+  Sister tool to the Pricing Calculator: the calculator answers "what do I
+  charge?", this answers "what does my whole year actually look like?"
+
+  HOW TO USE IN WIX:
+  1. Copy this whole file:  in Terminal run  cat <thisfile> | pbcopy
+  2. Wix Editor -> Add (+) -> Embed Code -> Embed HTML -> "Code" -> paste -> Update.
+  3. Make the embed FULL WIDTH and give it a fixed height so there is no
+     scrollbar-inside-a-scrollbar. Measured: approx 2700px on desktop, approx
+     4900px on tablet. In the mobile editor set approx 5800px - everything
+     stacks into one column there, so it needs the extra room.
+  Or just open the file in a browser / host it as its own page.
+
+  Everything saves to the visitor's browser (localStorage) as they type.
+  No email gate, no lead capture, no external calls.
+
+  100% ASCII source on purpose - Wix's embed box corrupts raw pound/dash/quote bytes.
+  ============================================================
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCEND Year Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+        --paper:#EEF3F5; --mute:#7E8C99;
+        --cyan:#22D3EE; --cyan-deep:#0B6E7C;
+        --red:#F0526B; --amber:#F2B441; --green:#38D39F; --violet:#8B93F8;
+        --line:rgba(255,255,255,.10); --maxw:1280px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+    .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+    .eyebrow{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);font-weight:700}
+    .accent{color:var(--cyan)}
+
+    /* TOP BAR */
+    .bar{border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(34,211,238,.06),transparent);position:relative}
+    .bar .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:16px 22px;padding-top:20px;padding-bottom:20px}
+    .mark{font-family:"Anton",sans-serif;font-size:1.3rem;letter-spacing:.05em;color:var(--cyan);line-height:1}
+    .mark small{display:block;font-family:"Space Grotesk",sans-serif;font-size:.6rem;letter-spacing:.16em;color:var(--mute);margin-top:4px;font-weight:500}
+    .bar h1{font-family:"Anton",sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(1.25rem,2.6vw,1.7rem);line-height:1;letter-spacing:.01em}
+    .bar .sub{font-size:.82rem;color:var(--mute);margin-top:5px}
+    .bar .divider{width:1px;align-self:stretch;background:var(--line)}
+    .bar .tools{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+    .btn{display:inline-flex;align-items:center;gap:.5em;background:var(--cyan);color:#04181C;font-family:inherit;font-weight:700;font-size:.9rem;padding:11px 18px;border-radius:6px;border:1px solid var(--cyan);cursor:pointer;transition:transform .15s,box-shadow .25s}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(34,211,238,.3)}
+    .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+    .btn.ghost:hover{border-color:var(--cyan);box-shadow:none}
+    .chip{background:var(--ink);border:1px solid var(--line);color:#C4D0D8;font-family:inherit;font-size:.78rem;font-weight:500;padding:8px 13px;border-radius:40px;cursor:pointer;transition:.15s;white-space:nowrap}
+    .chip:hover{border-color:var(--cyan);color:var(--cyan)}
+    .presets{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+    .presets .lbl{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-right:3px}
+
+    /* LAYOUT */
+    .app{display:grid;grid-template-columns:352px 1fr;gap:22px;align-items:start;padding:24px 0 60px}
+    .side{position:sticky;top:16px;display:grid;gap:12px}
+    .main{display:grid;gap:20px;min-width:0}
+
+    .panel{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--ink-2),#0b1116);padding:20px}
+    .panel-title{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+    .panel-title .n{color:var(--mute)}
+    .block-title{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.15rem;letter-spacing:.02em;margin-bottom:4px}
+    .block-note{font-size:.82rem;color:var(--mute);margin-bottom:14px;max-width:78ch}
+
+    /* INPUTS */
+    .fld{margin-bottom:12px}
+    .fld:last-child{margin-bottom:0}
+    .fld label{display:block;font-size:.8rem;font-weight:500;color:#C4D0D8;margin-bottom:5px}
+    .hint{display:block;font-size:.71rem;color:var(--mute);margin-top:5px;line-height:1.42}
+    .inwrap{position:relative}
+    .pre,.suf{position:absolute;top:50%;transform:translateY(-50%);color:var(--mute);font-size:.86rem;pointer-events:none}
+    .pre{left:11px} .suf{right:11px}
+    input[type=number],input[type=text],select{width:100%;padding:9px 11px;background:var(--ink);border:1px solid var(--line);border-radius:6px;color:var(--paper);font-family:inherit;font-size:.94rem;appearance:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+    .pre ~ input{padding-left:24px}
+    input:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+    select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237E8C99' stroke-width='2.5' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:15px;padding-right:30px}
+    .seg{display:flex;gap:5px;background:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px}
+    .seg button{flex:1;background:transparent;border:0;color:var(--mute);font-family:inherit;font-size:.78rem;font-weight:700;padding:8px 5px;border-radius:5px;cursor:pointer;transition:.15s}
+    .seg button.on{background:rgba(34,211,238,.14);color:var(--cyan);box-shadow:inset 0 0 0 1px rgba(34,211,238,.4)}
+    .check{display:flex;align-items:flex-start;gap:9px;margin-top:10px;font-size:.79rem;color:#C4D0D8;cursor:pointer;line-height:1.4}
+    .check input{width:16px;height:16px;flex:0 0 auto;margin-top:2px;accent-color:var(--cyan)}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    /* RESULTS */
+    .res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+    .res{border:1px solid var(--line);border-radius:11px;background:var(--ink-2);padding:17px 15px;text-align:center}
+    .res.lead-tile{border-color:rgba(34,211,238,.55);background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.12),transparent 62%),var(--ink-2)}
+    .res-lab{font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mute);margin-bottom:7px}
+    .res-num{font-family:"Anton",sans-serif;font-size:clamp(1.7rem,3.6vw,2.5rem);line-height:.95;font-variant-numeric:tabular-nums}
+    .res-sub{font-size:.72rem;color:var(--mute);margin-top:7px;line-height:1.35}
+    .verdict{border:1px solid var(--line);border-radius:11px;padding:14px 17px;display:flex;gap:14px;align-items:center;background:var(--ink-2);margin-top:11px}
+    .verdict .vband{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1rem;letter-spacing:.03em;white-space:nowrap}
+    .verdict .vtext{font-size:.88rem;color:#C4D0D8}
+
+    /* CHART */
+    .legend{display:flex;flex-wrap:wrap;gap:15px;margin-bottom:12px;font-size:.75rem;color:#C4D0D8}
+    .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+    .chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .chart-scroll svg{display:block;width:100%;min-width:620px;height:auto}
+
+    /* TABLE */
+    .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:11px}
+    table{border-collapse:collapse;width:100%;min-width:840px;font-size:.87rem}
+    thead th{background:var(--ink-3);color:var(--mute);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;text-align:right;padding:11px 10px;white-space:nowrap;border-bottom:1px solid var(--line)}
+    thead th:first-child{text-align:left}
+    thead th.ed{color:var(--cyan)}
+    tbody td{padding:7px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,.06);font-variant-numeric:tabular-nums;white-space:nowrap}
+    tbody td:first-child{text-align:left;font-weight:700}
+    tbody tr:hover{background:rgba(34,211,238,.04)}
+    tbody tr.dead td:first-child{color:var(--amber)}
+    tbody td input{width:62px;padding:5px 7px;text-align:right;font-size:.84rem;background:var(--ink-3);border-color:transparent}
+    tbody td input:hover{border-color:var(--line)}
+    tbody td.edit{background:rgba(34,211,238,.04)}
+    tbody td.neg{color:var(--red)}
+    tbody td.pos{color:var(--green)}
+    tfoot td{padding:12px 10px;text-align:right;font-family:"Anton",sans-serif;font-size:1rem;letter-spacing:.02em;background:var(--ink-3);border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+    tfoot td:first-child{text-align:left}
+
+    /* LEVERS */
+    .levers{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+    .lever{border:1px solid var(--line);border-radius:11px;background:var(--ink-2);padding:18px 16px}
+    .lever h4{font-size:.88rem;font-weight:700;color:var(--paper);margin-bottom:5px}
+    .lever p{font-size:.78rem;color:var(--mute);line-height:1.42}
+    .lever .delta{font-family:"Anton",sans-serif;font-size:1.75rem;line-height:1;color:var(--green);margin:9px 0 4px;font-variant-numeric:tabular-nums}
+    .lever .delta.flat{color:var(--mute)}
+
+    /* NOTES */
+    .notes{list-style:none;display:grid;gap:10px}
+    .notes li{display:flex;gap:12px;align-items:flex-start;font-size:.92rem;color:#DCE5EA;border:1px solid var(--line);border-radius:10px;background:var(--ink-2);padding:14px 16px;line-height:1.5}
+    .notes li .dot{flex:0 0 auto;width:8px;height:8px;border-radius:50%;margin-top:7px;background:var(--cyan)}
+    .notes li.warn .dot{background:var(--amber)}
+    .notes li.bad .dot{background:var(--red)}
+    .notes li.good .dot{background:var(--green)}
+    .notes li b{color:var(--paper)}
+
+    .foot{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--mute);font-size:.78rem}
+    .foot .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+
+    @media (max-width:1080px){
+        .app{grid-template-columns:1fr;padding-top:18px}
+        .side{position:static;grid-template-columns:repeat(2,1fr);gap:12px}
+        .side > .panel:last-child{grid-column:1 / -1}
+        .levers{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:720px){
+        .side{grid-template-columns:1fr}
+        .res-grid{grid-template-columns:1fr 1fr}
+        .levers{grid-template-columns:1fr}
+        .bar .tools{margin-left:0;width:100%}
+        .bar .divider{display:none}
+        .verdict{flex-direction:column;align-items:flex-start;gap:7px}
+    }
+
+    /* PRINT: a clean plan on paper */
+    @media print{
+        body{background:#fff;color:#111}
+        .no-print{display:none !important}
+        .app{grid-template-columns:1fr;padding:0}
+        .side{position:static;grid-template-columns:repeat(3,1fr)}
+        .panel,.res,.lever,.notes li,.tbl-scroll,.verdict{background:#fff !important;border-color:#CBD5DC !important}
+        .res-num,.lever .delta,.verdict .vband{color:#111 !important}
+        thead th,tfoot td{background:#F1F5F7 !important;color:#333 !important}
+        tbody td input{background:#fff !important;color:#111 !important;border-color:#CBD5DC !important}
+        .eyebrow,.panel-title,.mark{color:#0B6E7C !important}
+        .chart-scroll svg{min-width:0}
+    }
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="bar">
+  <div class="wrap">
+    <div class="mark">ASCEND<small>JOHN LEITCH</small></div>
+    <div class="divider"></div>
+    <div>
+      <h1>12-Month Revenue Planner</h1>
+      <div class="sub">Weekly sessions, holiday camps, dead weeks and real costs &mdash; your whole academy year on one page.</div>
+    </div>
+    <div class="tools no-print">
+      <div class="presets">
+        <span class="lbl">Start from</span>
+        <button class="chip" data-preset="small" type="button">40 players</button>
+        <button class="chip" data-preset="growing" type="button">90 players</button>
+        <button class="chip" data-preset="established" type="button">200 players</button>
+        <button class="chip" data-preset="reset" type="button">Reset</button>
+      </div>
+      <button class="btn ghost" type="button" id="btnPrint">Print / PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap app">
+
+  <!-- ===== INPUTS ===== -->
+  <aside class="side">
+
+    <div class="panel">
+      <div class="panel-title">Weekly programme <span class="n">1</span></div>
+      <div class="fld">
+        <label>How you bill</label>
+        <div class="seg" id="modeSeg">
+          <button type="button" data-mode="membership" class="on">Monthly membership</button>
+          <button type="button" data-mode="session">Pay per session</button>
+        </div>
+      </div>
+      <div class="fld" id="fldFee">
+        <label for="pFee">Membership price per player</label>
+        <div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pFee" min="0" step="1" value="30"><span class="suf">/ month</span></div>
+      </div>
+      <div class="fld" id="fldSession" style="display:none">
+        <label for="pSessionPrice">Price per session</label>
+        <div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pSessionPrice" min="0" step="0.5" value="6"></div>
+      </div>
+      <label class="check" id="chkSmoothWrap"><input type="checkbox" id="pSmooth" checked><span>Charge all 12 months (annual fee split evenly), not just the months you train</span></label>
+      <div class="row2" style="margin-top:12px">
+        <div class="fld"><label for="pMembers">Players now</label><input type="number" id="pMembers" min="0" step="1" value="60"></div>
+        <div class="fld"><label for="pJoiners">New / month</label><input type="number" id="pJoiners" min="0" step="1" value="4"></div>
+      </div>
+      <div class="row2">
+        <div class="fld"><label for="pChurn">Drop-off</label><div class="inwrap"><input type="number" id="pChurn" min="0" max="50" step="0.5" value="5"><span class="suf">%/mo</span></div></div>
+        <div class="fld"><label for="pAttend">Each player attends</label><div class="inwrap"><input type="number" id="pAttend" min="0.5" step="0.5" value="1"><span class="suf">/ wk</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="fld"><label for="pSessions">Sessions you run / wk</label><input type="number" id="pSessions" min="0" step="1" value="3"></div>
+        <div class="fld"><label for="pMaxPer">Max players / session</label><input type="number" id="pMaxPer" min="1" step="1" value="24"></div>
+      </div>
+      <span class="hint">Sessions per week &times; max per session sets your ceiling. The plan stops growing when you hit it.</span>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Camps &amp; extra income <span class="n">2</span></div>
+      <div class="row2">
+        <div class="fld"><label for="pCampPrice">Camp price / day</label><div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pCampPrice" min="0" step="1" value="25"></div></div>
+        <div class="fld"><label for="pCampPlayers">Players / camp day</label><input type="number" id="pCampPlayers" min="0" step="1" value="20"></div>
+      </div>
+      <div class="fld">
+        <label for="pCampCost">Cost per camp day (venue + staff)</label>
+        <div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pCampCost" min="0" step="5" value="180"></div>
+        <span class="hint">Camp days per month live in the table &mdash; UK school holidays are pre-filled.</span>
+      </div>
+      <div class="fld">
+        <label for="pOtherAll">Other income (1-to-1s, parties, sponsors, kit)</label>
+        <div class="row2">
+          <div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pOtherAll" min="0" step="10" value="0"></div>
+          <button class="btn ghost no-print" type="button" id="btnOtherAll" style="justify-content:center;font-size:.78rem;padding:9px 8px">Apply to all</button>
+        </div>
+        <span class="hint">Or leave at zero and drop one-offs into single months in the table.</span>
+      </div>
+      <div class="fld">
+        <label for="pOtherCost">Cost of delivering that extra income</label>
+        <div class="inwrap"><input type="number" id="pOtherCost" min="0" max="100" step="5" value="40"><span class="suf">%</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Costs, tax &amp; season <span class="n">3</span></div>
+      <div class="row2">
+        <div class="fld"><label for="pVenue">Venue / session</label><div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pVenue" min="0" step="1" value="35"></div></div>
+        <div class="fld"><label for="pCoach">Coaching / session</label><div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pCoach" min="0" step="1" value="25"></div></div>
+      </div>
+      <span class="hint" style="margin-bottom:12px">Pay yourself for the sessions you coach. If you do not, the plan flatters you.</span>
+      <div class="fld"><label for="pFixed">Fixed overheads (insurance, software, accountant, phone)</label><div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pFixed" min="0" step="10" value="120"><span class="suf">/ month</span></div></div>
+      <div class="row2">
+        <div class="fld"><label for="pMarketing">Marketing / month</label><div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pMarketing" min="0" step="10" value="80"></div></div>
+        <div class="fld"><label for="pOneOff">Kit &amp; one-offs / year</label><div class="inwrap"><span class="pre">&pound;</span><input type="number" id="pOneOff" min="0" step="50" value="600"></div></div>
+      </div>
+      <div class="fld"><label for="pTax">Tax set-aside</label><div class="inwrap"><input type="number" id="pTax" min="0" max="60" step="1" value="15"><span class="suf">% of profit</span></div></div>
+      <div class="row2">
+        <div class="fld"><label for="pStartMonth">Season starts</label>
+          <select id="pStartMonth">
+            <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+            <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+            <option value="6">July</option><option value="7">August</option><option value="8" selected>September</option>
+            <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+          </select>
+        </div>
+        <div class="fld"><label for="pStartYear">Year</label><input type="number" id="pStartYear" min="2020" max="2100" step="1" value="2026"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== RESULTS ===== -->
+  <main class="main">
+
+    <section>
+      <div class="res-grid">
+        <div class="res lead-tile">
+          <div class="res-lab">Year revenue</div>
+          <div class="res-num accent" id="oRevenue">&pound;0</div>
+          <div class="res-sub" id="oRevenueSub">&mdash;</div>
+        </div>
+        <div class="res">
+          <div class="res-lab">Year profit</div>
+          <div class="res-num" id="oProfit">&pound;0</div>
+          <div class="res-sub" id="oProfitSub">after costs and tax</div>
+        </div>
+        <div class="res">
+          <div class="res-lab">Average month</div>
+          <div class="res-num" id="oAvg">&pound;0</div>
+          <div class="res-sub">profit per month</div>
+        </div>
+        <div class="res">
+          <div class="res-lab">Margin</div>
+          <div class="res-num" id="oMargin">0%</div>
+          <div class="res-sub" id="oMarginSub">&mdash;</div>
+        </div>
+      </div>
+      <div class="verdict">
+        <span class="vband" id="oBand">&mdash;</span>
+        <span class="vtext" id="oVerdict">Set your numbers on the left and your year appears here.</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="block-title">The shape of your year</div>
+      <div class="block-note">Bars are money in, split by where it comes from. The line is what you keep after costs and tax &mdash; below the line is a month funded out of last month's profit.</div>
+      <div class="legend">
+        <span><i style="background:var(--cyan)"></i>Weekly programme</span>
+        <span><i style="background:var(--amber)"></i>Holiday camps</span>
+        <span><i style="background:var(--violet)"></i>Other income</span>
+        <span><i style="background:var(--paper);border-radius:50%"></i>Profit after tax</span>
+      </div>
+      <div class="chart-scroll"><svg id="chart" viewBox="0 0 780 320" role="img" aria-label="Monthly revenue and profit chart"></svg></div>
+    </section>
+
+    <section>
+      <div class="block-title">Month by month</div>
+      <div class="block-note">The three cyan columns are yours to edit &mdash; training weeks, camp days and one-off income for any individual month.</div>
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th><th class="ed">Weeks</th><th class="ed">Camp days</th><th class="ed">Other in</th>
+              <th>Players</th><th>Weekly</th><th>Camps</th><th>Revenue</th><th>Costs</th><th>Profit</th><th>Running total</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Year</td><td id="fWeeks">0</td><td id="fCamp">0</td><td id="fOther">&pound;0</td>
+              <td id="fPlayers">0</td><td id="fWeekly">&pound;0</td><td id="fCamps">&pound;0</td>
+              <td id="fRevenue">&pound;0</td><td id="fCosts">&pound;0</td><td id="fProfit">&pound;0</td><td id="fCum">&pound;0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <span class="hint">Weeks = weeks you actually run sessions that month (0 when you shut down). Players is the end-of-month figure after joiners and drop-off. Costs include venue, coaching, camps, overheads, marketing, kit and your tax set-aside.</span>
+    </section>
+
+    <section>
+      <div class="block-title">What each move is worth</div>
+      <div class="block-note">Your plan re-run with one number changed. These are extra <b>profit</b> over the twelve months, not extra revenue.</div>
+      <div class="levers" id="levers"></div>
+    </section>
+
+    <section>
+      <div class="block-title">What your plan is telling you</div>
+      <ul class="notes" id="notes"></ul>
+    </section>
+
+  </main>
+</div>
+
+<div class="foot">
+  <div class="wrap">
+    <span>ASCEND &middot; John Leitch Coaching</span>
+    <span>Your figures stay in this browser. Nothing is sent anywhere.</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var el = function(id){ return document.getElementById(id); };
+  var POUND = String.fromCharCode(163);
+
+  var STORE_KEY = 'jl_year_planner_v1';
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  /* Defaults follow the UK school year: indexes are CALENDAR months, Jan = 0. */
+  var DEF_WEEKS = [4,3,4,3,4,4,3,0,4,3,4,2];
+  var DEF_CAMPS = [0,3,0,4,1,0,5,10,0,5,0,3];
+  var DEF_OTHER = [0,0,0,0,0,0,0,0,0,0,0,0];
+
+  var weeks = DEF_WEEKS.slice(), camps = DEF_CAMPS.slice(), other = DEF_OTHER.slice();
+  var mode = 'membership';
+
+  var NUM_IDS = ['pFee','pSessionPrice','pMembers','pJoiners','pChurn','pAttend','pSessions','pMaxPer',
+                 'pCampPrice','pCampPlayers','pCampCost','pOtherCost','pVenue','pCoach','pFixed',
+                 'pMarketing','pOneOff','pTax','pStartYear'];
+
+  function num(id){ var n = parseFloat(el(id).value); return isFinite(n) && n > 0 ? n : 0; }
+  function gbp(n){ var r = Math.round(n); return (r < 0 ? '-' : '') + POUND + Math.abs(r).toLocaleString('en-GB'); }
+  function gbpSigned(n){ var r = Math.round(n); return (r > 0 ? '+' : r < 0 ? '-' : '') + POUND + Math.abs(r).toLocaleString('en-GB'); }
+
+  /* ---------- the model ---------- */
+  function readParams(){
+    return {
+      mode: mode,
+      fee: num('pFee'),
+      sessionPrice: num('pSessionPrice'),
+      smooth: el('pSmooth').checked,
+      members: num('pMembers'),
+      joiners: num('pJoiners'),
+      churn: Math.min(0.5, num('pChurn') / 100),
+      attend: Math.max(0.5, num('pAttend')),
+      sessionsPerWeek: num('pSessions'),
+      maxPer: num('pMaxPer'),
+      campPrice: num('pCampPrice'),
+      campPlayers: num('pCampPlayers'),
+      campCost: num('pCampCost'),
+      otherCost: Math.min(1, num('pOtherCost') / 100),
+      venue: num('pVenue'),
+      coach: num('pCoach'),
+      fixed: num('pFixed'),
+      marketing: num('pMarketing'),
+      oneOff: num('pOneOff'),
+      tax: Math.min(0.6, num('pTax') / 100),
+      startMonth: parseInt(el('pStartMonth').value, 10) || 0,
+      startYear: num('pStartYear') || 2026,
+      weeks: weeks, camps: camps, other: other
+    };
+  }
+
+  function capacityOf(p){
+    var seats = p.sessionsPerWeek * p.maxPer;
+    return p.attend > 0 ? seats / p.attend : seats;
+  }
+
+  /* Pure: same params in, same year out. Every what-if lever re-runs this. */
+  function simulate(p){
+    var cap = capacityOf(p);
+    var members = Math.min(p.members, cap);
+    var rows = [], cum = 0, cappedAt = -1;
+
+    for (var i = 0; i < 12; i++){
+      var cal = (p.startMonth + i) % 12;
+      var w = p.weeks[cal], cd = p.camps[cal], oth = p.other[cal];
+      var running = w > 0;
+
+      var weeklyRev;
+      if (p.mode === 'membership'){
+        weeklyRev = (p.smooth || running) ? members * p.fee : 0;
+      } else {
+        weeklyRev = members * p.sessionPrice * w * p.attend;
+      }
+      var campRev = cd * p.campPlayers * p.campPrice;
+      var revenue = weeklyRev + campRev + oth;
+
+      var weeklyCost = w * p.sessionsPerWeek * (p.venue + p.coach);
+      var campCost = cd * p.campCost;
+      var costs = weeklyCost + campCost + (oth * p.otherCost) + p.fixed + p.marketing + (p.oneOff / 12);
+
+      var gross = revenue - costs;
+      var tax = gross > 0 ? gross * p.tax : 0;
+      var profit = gross - tax;
+      cum += profit;
+
+      rows.push({
+        cal: cal,
+        year: p.startYear + (p.startMonth + i >= 12 ? 1 : 0),
+        weeks: w, campDays: cd, other: oth,
+        members: members, weeklyRev: weeklyRev, campRev: campRev,
+        revenue: revenue, costs: costs + tax, tax: tax, profit: profit, cum: cum,
+        running: running
+      });
+
+      /* roll the squad forward: drop-off every month, joiners only when you are open */
+      var next = members * (1 - p.churn);
+      if (running) { next += p.joiners; }
+      if (next > cap){ next = cap; if (cappedAt < 0) cappedAt = i; }
+      members = Math.max(0, next);
+    }
+
+    var tot = { revenue:0, costs:0, profit:0, weeklyRev:0, campRev:0, other:0, weeks:0, campDays:0 };
+    var worst = rows[0], best = rows[0], redMonths = 0;
+    for (var j = 0; j < 12; j++){
+      var r = rows[j];
+      tot.revenue += r.revenue; tot.costs += r.costs; tot.profit += r.profit;
+      tot.weeklyRev += r.weeklyRev; tot.campRev += r.campRev; tot.other += r.other;
+      tot.weeks += r.weeks; tot.campDays += r.campDays;
+      if (r.profit < worst.profit) worst = r;
+      if (r.profit > best.profit) best = r;
+      if (r.profit < 0) redMonths++;
+    }
+    tot.margin = tot.revenue > 0 ? tot.profit / tot.revenue : 0;
+    return { rows: rows, tot: tot, worst: worst, best: best, redMonths: redMonths, cappedAt: cappedAt, capacity: cap };
+  }
+
+  function clone(p, changes){
+    var c = {}, k;
+    for (k in p){ if (p.hasOwnProperty(k)) c[k] = p[k]; }
+    for (k in changes){ if (changes.hasOwnProperty(k)) c[k] = changes[k]; }
+    return c;
+  }
+
+  /* ---------- chart ---------- */
+  function drawChart(res){
+    var W = 780, H = 320, L = 58, R = 16, T = 14, B = 42;
+    var pw = W - L - R, ph = H - T - B;
+    var rows = res.rows, maxV = 0, minV = 0, i;
+    for (i = 0; i < 12; i++){
+      if (rows[i].revenue > maxV) maxV = rows[i].revenue;
+      if (rows[i].profit > maxV) maxV = rows[i].profit;
+      if (rows[i].profit < minV) minV = rows[i].profit;
+    }
+    if (maxV <= 0) maxV = 100;
+    maxV = maxV * 1.08; minV = minV * 1.15;
+    var span = maxV - minV || 1;
+    var y = function(v){ return T + ph - ((v - minV) / span) * ph; };
+    var slot = pw / 12, bw = Math.min(38, slot * 0.54);
+    var s = '';
+
+    var ticks = [maxV, (maxV + minV) / 2, 0];
+    if (minV < 0) ticks.push(minV);
+    for (var t = 0; t < ticks.length; t++){
+      var yv = y(ticks[t]), isZero = Math.abs(ticks[t]) < 0.5;
+      s += '<line x1="' + L + '" y1="' + yv.toFixed(1) + '" x2="' + (W - R) + '" y2="' + yv.toFixed(1) +
+           '" stroke="' + (isZero ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.08)') + '" stroke-width="1"' +
+           (isZero ? '' : ' stroke-dasharray="3 4"') + '/>';
+      s += '<text x="' + (L - 9) + '" y="' + (yv + 4).toFixed(1) + '" text-anchor="end" fill="#7E8C99" font-size="11" font-family="Space Grotesk,sans-serif">' +
+           (Math.abs(ticks[t]) >= 1000 ? (ticks[t] / 1000).toFixed(1) + 'k' : Math.round(ticks[t])) + '</text>';
+    }
+
+    var pts = [];
+    for (var m = 0; m < 12; m++){
+      var r = rows[m], cx = L + slot * m + slot / 2, x0 = cx - bw / 2, base = y(0);
+      var stack = [
+        { v: r.weeklyRev, c: '#22D3EE' },
+        { v: r.campRev,   c: '#F2B441' },
+        { v: r.other,     c: '#8B93F8' }
+      ];
+      var cursor = 0;
+      for (var k = 0; k < stack.length; k++){
+        if (stack[k].v <= 0) continue;
+        var top = y(cursor + stack[k].v), bot = y(cursor);
+        s += '<rect x="' + x0.toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw.toFixed(1) +
+             '" height="' + Math.max(0.5, bot - top).toFixed(1) + '" fill="' + stack[k].c + '" opacity=".88"/>';
+        cursor += stack[k].v;
+      }
+      if (cursor <= 0){
+        s += '<line x1="' + x0.toFixed(1) + '" y1="' + base.toFixed(1) + '" x2="' + (x0 + bw).toFixed(1) +
+             '" y2="' + base.toFixed(1) + '" stroke="rgba(255,255,255,.18)" stroke-width="2"/>';
+      }
+      pts.push([cx, y(r.profit), r.profit]);
+      s += '<text x="' + cx.toFixed(1) + '" y="' + (H - 20) + '" text-anchor="middle" fill="' +
+           (r.running ? '#BAC6CE' : '#F2B441') + '" font-size="11.5" font-family="Space Grotesk,sans-serif">' + MONTHS[r.cal] + '</text>';
+      s += '<text x="' + cx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" fill="#57646F" font-size="9.5" font-family="Space Grotesk,sans-serif">' +
+           ("" + r.year).slice(2) + '</text>';
+    }
+
+    var d = '';
+    for (var q = 0; q < pts.length; q++){ d += (q ? ' L' : 'M') + pts[q][0].toFixed(1) + ' ' + pts[q][1].toFixed(1); }
+    s += '<path d="' + d + '" fill="none" stroke="#EEF3F5" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
+    for (var q2 = 0; q2 < pts.length; q2++){
+      s += '<circle cx="' + pts[q2][0].toFixed(1) + '" cy="' + pts[q2][1].toFixed(1) + '" r="3.6" fill="' +
+           (pts[q2][2] < 0 ? '#F0526B' : '#EEF3F5') + '" stroke="#090C10" stroke-width="1.5"/>';
+    }
+    el('chart').innerHTML = s;
+  }
+
+  /* ---------- table ---------- */
+  var tableBuilt = false;
+  function buildTable(res){
+    var tb = el('tbody'), html = '';
+    for (var i = 0; i < 12; i++){
+      var r = res.rows[i];
+      html += '<tr' + (r.running ? '' : ' class="dead"') + '>' +
+        '<td>' + MONTHS[r.cal] + ' ' + ("" + r.year).slice(2) + '</td>' +
+        '<td class="edit"><input type="number" min="0" max="5" step="1" data-kind="w" data-cal="' + r.cal + '" value="' + r.weeks + '"></td>' +
+        '<td class="edit"><input type="number" min="0" max="31" step="1" data-kind="c" data-cal="' + r.cal + '" value="' + r.campDays + '"></td>' +
+        '<td class="edit"><input type="number" min="0" step="25" data-kind="o" data-cal="' + r.cal + '" value="' + r.other + '"></td>' +
+        '<td data-f="members"></td><td data-f="weekly"></td><td data-f="camps"></td>' +
+        '<td data-f="revenue"></td><td data-f="costs"></td><td data-f="profit"></td><td data-f="cum"></td>' +
+      '</tr>';
+    }
+    tb.innerHTML = html;
+    if (!tableBuilt){
+      tb.addEventListener('input', function(e){
+        var inp = e.target;
+        if (!inp || inp.tagName !== 'INPUT') return;
+        var cal = parseInt(inp.getAttribute('data-cal'), 10);
+        var v = parseFloat(inp.value); if (!isFinite(v) || v < 0) v = 0;
+        var kind = inp.getAttribute('data-kind');
+        if (kind === 'w') weeks[cal] = v; else if (kind === 'c') camps[cal] = v; else other[cal] = v;
+        render(false);
+      });
+    }
+    tableBuilt = true;
+  }
+
+  function fillTable(res){
+    var trs = el('tbody').children;
+    for (var i = 0; i < 12; i++){
+      var r = res.rows[i], tr = trs[i];
+      if (!tr) continue;
+      tr.className = r.running ? '' : 'dead';
+      tr.children[0].textContent = MONTHS[r.cal] + ' ' + ("" + r.year).slice(2);
+      var set = function(f, txt, cls){
+        var td = tr.querySelector('[data-f="' + f + '"]');
+        td.textContent = txt; td.className = cls || '';
+      };
+      set('members', Math.round(r.members));
+      set('weekly', gbp(r.weeklyRev));
+      set('camps', gbp(r.campRev));
+      set('revenue', gbp(r.revenue));
+      set('costs', gbp(r.costs));
+      set('profit', gbp(r.profit), r.profit < 0 ? 'neg' : 'pos');
+      set('cum', gbp(r.cum), r.cum < 0 ? 'neg' : '');
+    }
+    var t = res.tot;
+    el('fWeeks').textContent = t.weeks;
+    el('fCamp').textContent = t.campDays;
+    el('fOther').textContent = gbp(t.other);
+    el('fPlayers').textContent = Math.round(res.rows[11].members);
+    el('fWeekly').textContent = gbp(t.weeklyRev);
+    el('fCamps').textContent = gbp(t.campRev);
+    el('fRevenue').textContent = gbp(t.revenue);
+    el('fCosts').textContent = gbp(t.costs);
+    el('fProfit').textContent = gbp(t.profit);
+    el('fProfit').style.color = t.profit < 0 ? 'var(--red)' : 'var(--green)';
+    el('fCum').textContent = gbp(t.profit);
+    el('fCum').style.color = t.profit < 0 ? 'var(--red)' : 'var(--paper)';
+  }
+
+  /* ---------- levers ---------- */
+  function drawLevers(p, base){
+    var newPrice, priceLever;
+    if (p.mode === 'membership'){
+      newPrice = Math.round(p.fee * 1.1 * 2) / 2;
+      priceLever = { p: clone(p, { fee: newPrice }), title: 'Put the price up 10%',
+                     note: POUND + p.fee + ' to ' + POUND + newPrice + ' a month. One conversation, once.' };
+    } else {
+      newPrice = Math.round(p.sessionPrice * 1.1 * 2) / 2;
+      priceLever = { p: clone(p, { sessionPrice: newPrice }), title: 'Put the price up 10%',
+                     note: POUND + p.sessionPrice + ' to ' + POUND + newPrice + ' a session. One conversation, once.' };
+    }
+
+    var levers = [
+      priceLever,
+      { p: clone(p, { churn: p.churn / 2 }), title: 'Halve your drop-off',
+        note: 'Keep half the players you currently lose. Retention, not recruitment.' },
+      { p: clone(p, { joiners: p.joiners + 2 }), title: 'Two more players a month',
+        note: '24 extra signings across the year, compounding month on month.' },
+      { p: clone(p, { camps: camps.map(function(c){ return c > 0 ? c + 2 : c; }) }), title: 'Two more camp days per holiday',
+        note: 'Same venue, same staff, same marketing. Just more days open.' }
+    ];
+
+    var html = '';
+    for (var i = 0; i < levers.length; i++){
+      var delta = simulate(levers[i].p).tot.profit - base.tot.profit;
+      html += '<div class="lever">' +
+        '<h4>' + levers[i].title + '</h4>' +
+        '<div class="delta' + (Math.round(delta) <= 0 ? ' flat' : '') + '">' + gbpSigned(delta) + '</div>' +
+        '<p>' + levers[i].note + '</p>' +
+      '</div>';
+    }
+    el('levers').innerHTML = html;
+  }
+
+  /* ---------- insights ---------- */
+  function drawNotes(p, res){
+    var n = [], t = res.tot;
+    var monthName = function(r){ return MONTHS[r.cal] + ' ' + ("" + r.year).slice(2); };
+
+    if (t.revenue <= 0){
+      el('notes').innerHTML = '<li><span class="dot"></span><span>Put your numbers in on the left and your year gets read back to you here.</span></li>';
+      return;
+    }
+
+    if (res.worst.profit < 0){
+      n.push({ c:'bad', h:'Your leanest month is ' + monthName(res.worst) + ' at ' + gbp(res.worst.profit) + '.',
+        t:'That month is funded out of the profit you made before it. ' + (res.redMonths > 1 ? 'You have ' + res.redMonths + ' months in the red across the year. ' : '') + 'Fix it with a camp, a smoothed membership, or fewer venue hours you are not filling.' });
+    } else {
+      n.push({ c:'good', h:'Every month in your plan makes money.',
+        t:'The leanest is ' + monthName(res.worst) + ' at ' + gbp(res.worst.profit) + '. That is a business, not a hobby that pays sometimes.' });
+    }
+
+    if (p.mode === 'session' || (p.mode === 'membership' && !p.smooth)){
+      var equivFee = res.rows[0].members > 0 ? Math.round((t.weeklyRev / 12) / res.rows[0].members) : 0;
+      var smoothed = simulate(p.mode === 'session'
+        ? clone(p, { mode:'membership', smooth:true, fee: equivFee })
+        : clone(p, { smooth:true }));
+      n.push({ c:'warn', h:'You are billing in lumps, not a rhythm.',
+        t:'The same money spread evenly as a 12-month membership' + (p.mode === 'session' ? ' (about ' + POUND + equivFee + ' a player a month)' : '') +
+          ' takes your worst month from ' + gbp(res.worst.profit) + ' to ' + gbp(smoothed.worst.profit) + '. Parents budget monthly. So should you.' });
+    } else {
+      n.push({ c:'good', h:'A 12-month membership is doing the heavy lifting.',
+        t:'Charging every month, including the ones you do not train, is what turns a seasonal academy into a predictable business. Hold that line.' });
+    }
+
+    var weeklyShare = t.weeklyRev / t.revenue;
+    if (weeklyShare > 0.85){
+      n.push({ c:'warn', h:'Everything rests on the weekly programme (' + Math.round(weeklyShare * 100) + '% of revenue).',
+        t:'One income stream is one point of failure. A handful of camp days in the holidays is the fastest second stream &mdash; you know the venue and the families already.' });
+    } else {
+      n.push({ c:'', h:'Camps bring ' + Math.round((t.campRev / t.revenue) * 100) + '% of your revenue (' + gbp(t.campRev) + ').',
+        t:'Weekly sessions bring ' + Math.round(weeklyShare * 100) + '% (' + gbp(t.weeklyRev) + ')' + (t.other > 0 ? ', with ' + gbp(t.other) + ' from everything else' : '') + '. A resilient academy rarely leans more than 85% on one stream.' });
+    }
+
+    if (res.cappedAt >= 0){
+      n.push({ c:'warn', h:'You hit your ceiling in ' + monthName(res.rows[res.cappedAt]) + '.',
+        t:'At ' + p.sessionsPerWeek + ' sessions a week and ' + p.maxPer + ' players a session, the plan caps at ' + Math.round(res.capacity) + ' players. Past that, growth comes from price or another session &mdash; not more signings.' });
+    }
+
+    var churnCost = simulate(clone(p, { churn: 0 })).tot.profit - t.profit;
+    if (churnCost > 0){
+      n.push({ c: churnCost > Math.abs(t.profit) * 0.25 ? 'bad' : '',
+        h:'Drop-off costs you ' + gbp(churnCost) + ' of profit this year.',
+        t:'That is the same academy with nobody leaving. At ' + (p.churn * 100).toFixed(1) + '% a month you replace roughly ' + Math.round(res.rows[0].members * p.churn * 12) + ' players a year just to stand still.' });
+    }
+
+    n.push({ c: t.margin >= 0.3 ? 'good' : t.margin >= 0.15 ? 'warn' : 'bad',
+      h:'You keep ' + Math.round(t.margin * 100) + 'p of every pound that comes in.',
+      t: t.margin >= 0.3 ? 'A strong grassroots margin. Protect it when venue costs move.'
+        : t.margin >= 0.15 ? 'Workable, but thin. A venue price rise or one quiet term eats it.'
+        : 'Too thin to absorb a shock. Price, group size or venue cost has to move.' });
+
+    var html = '';
+    for (var i = 0; i < n.length; i++){
+      html += '<li class="' + n[i].c + '"><span class="dot"></span><span><b>' + n[i].h + '</b> ' + n[i].t + '</span></li>';
+    }
+    el('notes').innerHTML = html;
+  }
+
+  /* ---------- render ---------- */
+  function render(rebuild){
+    var p = readParams();
+    var res = simulate(p);
+
+    el('oRevenue').textContent = gbp(res.tot.revenue);
+    el('oRevenueSub').textContent = gbp(res.tot.revenue / 12) + ' a month on average';
+    el('oProfit').textContent = gbp(res.tot.profit);
+    el('oProfit').style.color = res.tot.profit < 0 ? 'var(--red)' : 'var(--green)';
+    el('oProfitSub').textContent = 'after ' + gbp(res.tot.costs) + ' of costs and tax';
+    el('oAvg').textContent = gbp(res.tot.profit / 12);
+    el('oAvg').style.color = res.tot.profit < 0 ? 'var(--red)' : 'var(--paper)';
+    el('oMargin').textContent = Math.round(res.tot.margin * 100) + '%';
+    el('oMarginSub').textContent = res.redMonths > 0
+      ? res.redMonths + ' month' + (res.redMonths > 1 ? 's' : '') + ' in the red'
+      : 'no months in the red';
+
+    var band, verdict;
+    if (res.tot.profit <= 0){
+      band = { t:'Running at a loss', c:'var(--red)' };
+      verdict = 'On these numbers the year costs you money. Price, costs or group sizes have to move before the season starts.';
+    } else if (res.tot.margin < 0.15){
+      band = { t:'Surviving', c:'var(--amber)' };
+      verdict = 'You clear ' + gbp(res.tot.profit) + ' across the year, on a margin too thin to take a hit. Start with the levers below.';
+    } else if (res.tot.margin < 0.3){
+      band = { t:'Working', c:'var(--cyan)' };
+      verdict = gbp(res.tot.profit) + ' a year with room to improve. Your best month is ' + MONTHS[res.best.cal] + ' at ' + gbp(res.best.profit) + '.';
+    } else {
+      band = { t:'Strong year', c:'var(--green)' };
+      verdict = gbp(res.tot.profit) + ' across the year on a ' + Math.round(res.tot.margin * 100) + '% margin. Protect it, then build the second stream.';
+    }
+    el('oBand').textContent = band.t; el('oBand').style.color = band.c;
+    el('oVerdict').textContent = verdict;
+
+    drawChart(res);
+    if (rebuild || !tableBuilt) buildTable(res);
+    fillTable(res);
+    drawLevers(p, res);
+    drawNotes(p, res);
+    save();
+  }
+
+  /* ---------- persistence ---------- */
+  function save(){
+    try {
+      var data = { mode: mode, smooth: el('pSmooth').checked, weeks: weeks, camps: camps, other: other,
+                   startMonth: el('pStartMonth').value, v: {} };
+      for (var i = 0; i < NUM_IDS.length; i++){ data.v[NUM_IDS[i]] = el(NUM_IDS[i]).value; }
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    } catch(e){}
+  }
+  function load(){
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var d = JSON.parse(raw);
+      if (!d || !d.v) return;
+      for (var k in d.v){ if (d.v.hasOwnProperty(k) && el(k)) el(k).value = d.v[k]; }
+      if (d.weeks && d.weeks.length === 12) weeks = d.weeks;
+      if (d.camps && d.camps.length === 12) camps = d.camps;
+      if (d.other && d.other.length === 12) other = d.other;
+      if (d.startMonth != null) el('pStartMonth').value = d.startMonth;
+      el('pSmooth').checked = d.smooth !== false;
+      setMode(d.mode === 'session' ? 'session' : 'membership');
+    } catch(e){}
+  }
+
+  /* ---------- presets ---------- */
+  var PRESETS = {
+    small:       { pMembers:40,  pJoiners:2, pChurn:6, pSessions:2, pMaxPer:22, pFee:26, pSessionPrice:5,
+                   pVenue:32, pCoach:20, pFixed:90,  pMarketing:40,  pOneOff:400,  pCampPlayers:14, pCampPrice:22, pCampCost:150 },
+    growing:     { pMembers:90,  pJoiners:5, pChurn:5, pSessions:4, pMaxPer:24, pFee:30, pSessionPrice:6,
+                   pVenue:35, pCoach:25, pFixed:140, pMarketing:100, pOneOff:800,  pCampPlayers:22, pCampPrice:25, pCampCost:190 },
+    established: { pMembers:200, pJoiners:9, pChurn:4, pSessions:8, pMaxPer:26, pFee:34, pSessionPrice:7,
+                   pVenue:40, pCoach:30, pFixed:260, pMarketing:200, pOneOff:1800, pCampPlayers:34, pCampPrice:28, pCampCost:280 }
+  };
+  var DEFAULTS = {};
+  for (var d0 = 0; d0 < NUM_IDS.length; d0++){ DEFAULTS[NUM_IDS[d0]] = el(NUM_IDS[d0]).value; }
+
+  function applyPreset(key){
+    var set = key === 'reset' ? DEFAULTS : PRESETS[key];
+    if (!set) return;
+    for (var k in set){ if (set.hasOwnProperty(k) && el(k)) el(k).value = set[k]; }
+    if (key === 'reset'){
+      weeks = DEF_WEEKS.slice(); camps = DEF_CAMPS.slice(); other = DEF_OTHER.slice();
+      el('pStartMonth').value = '8'; el('pSmooth').checked = true; setMode('membership');
+    }
+    render(true);
+  }
+
+  /* ---------- wiring ---------- */
+  function setMode(m){
+    mode = m;
+    var btns = el('modeSeg').getElementsByTagName('button');
+    for (var i = 0; i < btns.length; i++){
+      btns[i].className = btns[i].getAttribute('data-mode') === m ? 'on' : '';
+    }
+    el('fldFee').style.display = m === 'membership' ? '' : 'none';
+    el('fldSession').style.display = m === 'session' ? '' : 'none';
+    el('chkSmoothWrap').style.display = m === 'membership' ? '' : 'none';
+  }
+  el('modeSeg').addEventListener('click', function(e){
+    var b = e.target && e.target.getAttribute('data-mode') ? e.target : null;
+    if (!b) return;
+    setMode(b.getAttribute('data-mode'));
+    render(false);
+  });
+
+  for (var i2 = 0; i2 < NUM_IDS.length; i2++){
+    el(NUM_IDS[i2]).addEventListener('input', function(){ render(false); });
+  }
+  el('pSmooth').addEventListener('change', function(){ render(false); });
+  el('pStartMonth').addEventListener('change', function(){ render(true); });
+
+  el('btnOtherAll').addEventListener('click', function(){
+    var v = parseFloat(el('pOtherAll').value); if (!isFinite(v) || v < 0) v = 0;
+    for (var m = 0; m < 12; m++){ other[m] = v; }
+    render(true);
+  });
+  el('btnPrint').addEventListener('click', function(){ window.print(); });
+
+  var chips = document.querySelectorAll('[data-preset]');
+  for (var c = 0; c < chips.length; c++){
+    chips[c].addEventListener('click', function(e){ applyPreset(e.target.getAttribute('data-preset')); });
+  }
+
+  load();
+  render(true);
+})();
+</script>
+</body>
+</html>

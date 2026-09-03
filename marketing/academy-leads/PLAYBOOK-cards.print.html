@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  ACADEMY OS - PLAYBOOK CARDS  (print pack, one card per page)
+  ============================================================
+  Five one-page "when something goes wrong" cards. Print to PDF via Chrome
+  (File > Print > Save as PDF, A4, default margins, backgrounds ON), then:
+    - load the PDF into the Resources table (Category: Playbooks)
+    - laminate a set for the kit bag
+  Replace [ACADEMY NAME], the two phone numbers, and the report URL/QR
+  before printing. Keep step wording in sync with incident-report.html.
+  ============================================================
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>Playbook Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#0E1526; --paper:#FFFFFF; --mute:#5B6478; --line:#D8D5CC; --gold:#B8860B; --red:#B3372E; --redwash:#F9ECEA; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Space Grotesk",system-ui,sans-serif;color:var(--ink);background:#EEE}
+  .card{
+    width:210mm;min-height:280mm;margin:8mm auto;background:var(--paper);
+    padding:18mm 16mm;page-break-after:always;display:flex;flex-direction:column;
+  }
+  @media print{
+    body{background:none}
+    .card{margin:0;box-shadow:none;min-height:auto;height:266mm}
+    @page{size:A4;margin:8mm}
+  }
+  .top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid var(--ink);padding-bottom:6mm;margin-bottom:8mm}
+  .top .brand{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:14pt}
+  .top .tag{font-size:9pt;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700}
+  h1{font-family:"Anton",sans-serif;font-weight:400;text-transform:uppercase;font-size:34pt;line-height:.98;margin-bottom:3mm}
+  .crit h1 .flag{color:var(--red)}
+  .promise{font-size:12pt;color:var(--mute);margin-bottom:8mm;max-width:150mm}
+  .steps{counter-reset:s;display:grid;gap:4.5mm;margin-bottom:8mm}
+  .step{display:grid;grid-template-columns:14mm 1fr;gap:5mm;align-items:start}
+  .step .n{counter-increment:s;font-family:"Anton",sans-serif;font-size:20pt;color:var(--gold);line-height:1}
+  .step .n::before{content:counter(s,decimal-leading-zero)}
+  .crit .step .n{color:var(--red)}
+  .step p{font-size:13pt;line-height:1.35;font-weight:500}
+  .step p b{font-weight:700}
+  .never{border:2.5px solid var(--red);background:var(--redwash);border-radius:4mm;padding:6mm 7mm;margin-bottom:8mm}
+  .never h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:13pt;color:var(--red);margin-bottom:2.5mm;letter-spacing:.03em}
+  .never ul{list-style:none;display:grid;gap:1.8mm}
+  .never li{font-size:11.5pt;font-weight:600;padding-left:6mm;position:relative}
+  .never li::before{content:"\00d7";position:absolute;left:0;color:var(--red);font-weight:700}
+  .foot{margin-top:auto;border-top:1.5px solid var(--line);padding-top:5mm;display:flex;justify-content:space-between;gap:8mm;align-items:center}
+  .foot .then{font-size:11pt;line-height:1.4}
+  .foot .then b{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.03em;font-size:12pt;display:block;margin-bottom:1mm}
+  .foot .qr{flex:none;width:26mm;height:26mm;border:2px dashed var(--mute);border-radius:2mm;display:flex;align-items:center;justify-content:center;font-size:8pt;color:var(--mute);text-align:center;padding:2mm}
+  .numbers{font-size:10.5pt;color:var(--mute);margin-top:2mm}
+  .numbers b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<!-- ============ CARD 1: INJURY ============ -->
+<div class="card">
+  <div class="top"><span class="brand">[ACADEMY NAME]</span><span class="tag">Playbook &middot; 1 of 5</span></div>
+  <h1>Injury</h1>
+  <p class="promise">A child is hurt. Calm, quick, in this order.</p>
+  <div class="steps">
+    <div class="step"><span class="n"></span><p><b>Stop the activity</b> and make the area safe. Keep the other players busy with a drill away from it.</p></div>
+    <div class="step"><span class="n"></span><p><b>First aider assesses.</b> Serious injury, or ANY head, neck or back concern &mdash; <b>call 999 first</b>, questions later.</p></div>
+    <div class="step"><span class="n"></span><p><b>Treat and reassure.</b> Keep them warm, keep them talking, keep it low-drama.</p></div>
+    <div class="step"><span class="n"></span><p><b>Tell the parent.</b> Serious: phone them now. Minor: face to face at pick-up &mdash; never let them find out at home.</p></div>
+  </div>
+  <div class="never">
+    <h2>Never</h2>
+    <ul>
+      <li>Move a child with a suspected head, neck or back injury</li>
+      <li>Give any medication &mdash; including painkillers</li>
+      <li>Let them "run it off" after a head knock</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <div class="then"><b>Then: file the report</b>Same day, from your phone. It takes a minute and it is the academy's official accident record.<div class="numbers">Report: <b>[report page URL]</b> &middot; Owner: <b>[phone]</b></div></div>
+    <div class="qr">QR code to report page</div>
+  </div>
+</div>
+
+<!-- ============ CARD 2: SAFEGUARDING ============ -->
+<div class="card crit">
+  <div class="top"><span class="brand">[ACADEMY NAME]</span><span class="tag">Playbook &middot; 2 of 5</span></div>
+  <h1>Safeguarding <span class="flag">concern</span></h1>
+  <p class="promise">A child tells you something, or you see something that worries you. Your only job is to listen and pass it on &mdash; today.</p>
+  <div class="steps">
+    <div class="step"><span class="n"></span><p><b>Listen calmly.</b> Let them talk at their own pace. Do not ask leading questions &mdash; "tell me more" is enough.</p></div>
+    <div class="step"><span class="n"></span><p><b>Never promise secrecy.</b> Say: "I have to tell someone whose job is to keep you safe."</p></div>
+    <div class="step"><span class="n"></span><p><b>Reassure them.</b> They did the right thing telling you. It is not their fault.</p></div>
+    <div class="step"><span class="n"></span><p><b>Write down their exact words</b> as soon as you can &mdash; phone notes are fine. Facts, not opinions.</p></div>
+    <div class="step"><span class="n"></span><p><b>Tell the welfare officer or owner TODAY.</b> Not after the weekend. Today.</p></div>
+  </div>
+  <div class="never">
+    <h2>Never</h2>
+    <ul>
+      <li>Investigate it yourself or quiz the child</li>
+      <li>Confront the person involved</li>
+      <li>Discuss it with anyone except the welfare officer / owner</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <div class="then"><b>Then: file the report</b>Speak to the welfare officer FIRST, then file. Details are restricted to the owner &amp; welfare officer.<div class="numbers">Welfare officer: <b>[name + phone]</b> &middot; Report: <b>[report page URL]</b></div></div>
+    <div class="qr">QR code to report page</div>
+  </div>
+</div>
+
+<!-- ============ CARD 3: MISSING CHILD ============ -->
+<div class="card crit">
+  <div class="top"><span class="brand">[ACADEMY NAME]</span><span class="tag">Playbook &middot; 3 of 5</span></div>
+  <h1>Missing <span class="flag">child</span></h1>
+  <p class="promise">You cannot see a child who should be there. Minutes matter &mdash; act, don't hope.</p>
+  <div class="steps">
+    <div class="step"><span class="n"></span><p><b>Shout it to the lead coach now.</b> Child's name and where they were last seen. No embarrassment &mdash; a false alarm is a good outcome.</p></div>
+    <div class="step"><span class="n"></span><p><b>One coach holds the group.</b> Headcount everyone else and keep them in one place.</p></div>
+    <div class="step"><span class="n"></span><p><b>Everyone else searches now:</b> toilets, exits, car park, last place seen, favourite hiding spots.</p></div>
+    <div class="step"><span class="n"></span><p><b>Not found within a few minutes? Call 999,</b> then the parents. Do not keep searching quietly instead of calling.</p></div>
+  </div>
+  <div class="never">
+    <h2>Never</h2>
+    <ul>
+      <li>Leave the rest of the group unsupervised to join the search</li>
+      <li>Delay the 999 call to "avoid a fuss"</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <div class="then"><b>Then: file the report</b>Once the child is safe &mdash; every detail while it's fresh. The academy reviews every one of these, found-quickly or not.<div class="numbers">Report: <b>[report page URL]</b> &middot; Owner: <b>[phone]</b></div></div>
+    <div class="qr">QR code to report page</div>
+  </div>
+</div>
+
+<!-- ============ CARD 4: ANGRY PARENT ============ -->
+<div class="card">
+  <div class="top"><span class="brand">[ACADEMY NAME]</span><span class="tag">Playbook &middot; 4 of 5</span></div>
+  <h1>Angry parent</h1>
+  <p class="promise">A parent is raising their voice &mdash; at you, another parent, or a referee. De-escalate, don't win.</p>
+  <div class="steps">
+    <div class="step"><span class="n"></span><p><b>Move it away from the children.</b> "Let's talk over here" &mdash; walking somewhere calms most people on its own.</p></div>
+    <div class="step"><span class="n"></span><p><b>Stay calm, listen first.</b> Lower your voice; let them empty the tank before you respond.</p></div>
+    <div class="step"><span class="n"></span><p><b>Don't argue or match their tone.</b> You will not win an argument at a touchline, and you don't need to.</p></div>
+    <div class="step"><span class="n"></span><p><b>If it continues or turns threatening, end it:</b> "I'm going to get [owner] to call you today" &mdash; then walk away and make that call.</p></div>
+  </div>
+  <div class="never">
+    <h2>Never</h2>
+    <ul>
+      <li>Have the argument in front of the kids</li>
+      <li>Put hands on anyone, even to guide them away</li>
+      <li>Promise outcomes on the spot ("your child will start next week")</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <div class="then"><b>Then: file the report</b>Even when it fizzled out &mdash; patterns across weeks are what the owner needs to see.<div class="numbers">Report: <b>[report page URL]</b> &middot; Owner: <b>[phone]</b></div></div>
+    <div class="qr">QR code to report page</div>
+  </div>
+</div>
+
+<!-- ============ CARD 5: COACH NO-SHOW ============ -->
+<div class="card">
+  <div class="top"><span class="brand">[ACADEMY NAME]</span><span class="tag">Playbook &middot; 5 of 5</span></div>
+  <h1>Coach no-show</h1>
+  <p class="promise">You're a coach down and the kids are arriving. Safety first, session second.</p>
+  <div class="steps">
+    <div class="step"><span class="n"></span><p><b>Count heads vs adults.</b> Can you run safely at ratio? That question decides everything else.</p></div>
+    <div class="step"><span class="n"></span><p><b>Merge or simplify.</b> Fewer, bigger groups with simpler drills beats cancelling &mdash; if the ratios allow it.</p></div>
+    <div class="step"><span class="n"></span><p><b>Call the owner now.</b> Don't soldier on in silence &mdash; they may be able to send cover inside 20 minutes.</p></div>
+    <div class="step"><span class="n"></span><p><b>If ratios are impossible,</b> keep every child together in one supervised space, with arriving parents asked to stay, until cover or pick-up.</p></div>
+  </div>
+  <div class="never">
+    <h2>Never</h2>
+    <ul>
+      <li>Leave any group unsupervised, even briefly</li>
+      <li>Send children away early without a parent physically there</li>
+    </ul>
+  </div>
+  <div class="foot">
+    <div class="then"><b>Then: file the report</b>Staffing gaps are a business problem the owner fixes with data &mdash; give them the data.<div class="numbers">Report: <b>[report page URL]</b> &middot; Owner: <b>[phone]</b></div></div>
+    <div class="qr">QR code to report page</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roles &amp; Responsibilities — ASCEND</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1214; --panel:#121E21; --panel2:#0F181A;
+    --ink:#EAF3F3; --muted:#8DA0A1; --muted-dim:#5C6B6C;
+    --cyan:#33E3E3; --line:#223034;
+    --keep:#33E3E3; --moved:#5FC2A2; --trap:#F0A24B; --gap:#F2685E;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    padding:24px clamp(14px,3vw,36px) 64px;
+  }
+  .top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin:0 0 8px}
+  h1{font-family:'Archivo',sans-serif;font-weight:900;font-size:clamp(26px,3.6vw,40px);line-height:0.98;margin:0}
+  h1 .who{color:var(--cyan)}
+  .sub{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:56ch;line-height:1.5}
+  .brand{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--muted-dim);text-transform:uppercase;text-align:right;white-space:nowrap}
+
+  .people{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;margin-bottom:16px}
+  .people .k{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0}
+  .people-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:11px}
+  .person{display:inline-flex;align-items:center;gap:9px;padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);font-size:13px;font-weight:500;color:var(--ink)}
+  .person.me{border-color:var(--cyan);color:var(--cyan)}
+  .person .x{cursor:pointer;color:var(--muted);font-weight:700;line-height:1;font-size:15px}
+  .person .x:hover{color:var(--gap)}
+  .addp{display:inline-flex;gap:6px}
+  .addp input{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:7px 13px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;min-width:160px}
+  .addp input::placeholder{color:var(--muted-dim)}
+  .addp input:focus{outline:none;border-color:var(--cyan)}
+  .addp button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+  .addp button:hover{border-color:var(--cyan);color:var(--cyan)}
+
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .stat{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:15px 16px}
+  .stat .k{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  .stat .v{font-family:'Archivo',sans-serif;font-weight:800;font-size:30px;line-height:1}
+  .stat .v small{font-size:14px;font-weight:600;color:var(--muted);margin-left:3px}
+  .stat.trap .v{color:var(--trap)}
+  .stat.moved .v{color:var(--moved)}
+  .stat.gap .v{color:var(--gap)}
+
+  .insight{margin-bottom:22px;border-left:3px solid var(--cyan);background:var(--panel);border-radius:0 10px 10px 0;padding:14px 16px;font-size:15px;line-height:1.55}
+  .insight b{color:var(--cyan);font-weight:600}
+
+  .group{margin-bottom:10px}
+  .grouphead{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);margin-bottom:7px}
+  .role .name{font-size:14.5px;font-weight:500}
+  .role .tag{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted-dim);margin-top:3px}
+  .role .tag.core{color:var(--cyan)}
+
+  select{
+    font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--ink);
+    background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:8px 30px 8px 12px;cursor:pointer;-webkit-appearance:none;appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 52%,calc(100% - 11px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+    transition:border-color .12s,color .12s;
+  }
+  select.on-me{border-color:var(--trap);color:var(--trap)}
+  select.on-me.core{border-color:var(--cyan);color:var(--cyan)}
+
+  .pill{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;min-width:78px;text-align:center}
+  .pill.keep{background:rgba(51,227,227,0.12);color:var(--keep)}
+  .pill.moved{background:rgba(95,194,162,0.14);color:var(--moved)}
+  .pill.trap{background:rgba(240,162,75,0.14);color:var(--trap)}
+  .pill.gap{background:rgba(242,104,94,0.14);color:var(--gap)}
+
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:22px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+  .btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn.reset:hover{border-color:var(--gap);color:var(--gap)}
+  .hint{color:var(--muted-dim);font-size:12px;font-family:'Space Mono',monospace}
+  textarea{width:100%;margin-top:14px;min-height:150px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:14px;font-family:'Space Mono',monospace;font-size:12px;line-height:1.6;display:none}
+
+  @media(max-width:560px){
+    .row{grid-template-columns:1fr;gap:10px}
+    .row select,.row .pill{justify-self:start}
+  }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:7px;background:#121E21;border:1px solid #2E4247;color:#33E3E3;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 13px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.35)">&#8592; ASCEND hub</a>
+
+
+  <div class="top">
+    <div>
+      <p class="eyebrow">Ascend · Step 1 — Audit</p>
+      <h1>Roles &amp; Responsibilities<br><span class="who">Who really owns what</span></h1>
+      <p class="sub">Every job starts on you — that's the trap. Add your real team first, then hand each job to whoever owns it. The counter tracks the jobs you could pass on but still hold. Those are the reclaim list.</p>
+    </div>
+    <div class="brand">Ascend<br>Founder to founder</div>
+  </div>
+
+  <div class="people">
+    <p class="k">Who's on the team?</p>
+    <div class="people-row" id="people-row">
+      <span class="person me">Me</span>
+      <span class="addp">
+        <input id="new-person" type="text" placeholder="Add a name…" maxlength="24">
+        <button id="add-person">Add</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="stat trap"><p class="k">On you · can move</p><div class="v" id="v-trap">0<small>jobs</small></div></div>
+    <div class="stat moved"><p class="k">Moved off you</p><div class="v" id="v-moved">0<small>jobs</small></div></div>
+    <div class="stat gap"><p class="k">Nobody yet</p><div class="v" id="v-gap">0<small>jobs</small></div></div>
+    <div class="stat"><p class="k">Yours to keep</p><div class="v" id="v-keep">0<small>jobs</small></div></div>
+  </div>
+
+  <div class="insight" id="insight">Add your team above, then reassign each job to see the reclaim list build.</div>
+
+  <div id="board"></div>
+
+  <div class="foot">
+    <span class="hint">Amber = still on you · cyan = genuinely yours</span>
+    <div class="btns">
+      <button class="btn" id="copy">Copy summary</button>
+      <button class="btn reset" id="reset">Reset to all-me</button>
+    </div>
+  </div>
+  <textarea id="out" readonly></textarea>
+
+<script>
+  // Owners: "me" and "none" (nobody yet) are always present.
+  // Everyone in between is a named staff member added live.
+  var staff = [];
+  var staffCounter = 0;
+
+  function owners(){
+    return [{id:'me',label:'Me'}].concat(staff).concat([{id:'none',label:'Nobody yet'}]);
+  }
+  function ownerLabel(id){
+    var all = owners();
+    for(var i=0;i<all.length;i++){ if(all[i].id===id) return all[i].label; }
+    return 'Nobody yet';
+  }
+
+  // core:true = genuinely your job. core:false = delegatable.
+  var ROLES = [
+    { area:'On the pitch', name:'Running sessions & coaching',   core:true  },
+    { area:'On the pitch', name:'Player development & feedback',  core:true  },
+    { area:'On the pitch', name:'Session planning',              core:false },
+    { area:'On the pitch', name:'Matchdays & fixtures',          core:false },
+    { area:'On the pitch', name:'Coach standards & culture',     core:true  },
+
+    { area:'Off the pitch', name:'Enquiry handling',             core:false },
+    { area:'Off the pitch', name:'Bookings & registrations',     core:false },
+    { area:'Off the pitch', name:'Registers & attendance',       core:false },
+    { area:'Off the pitch', name:'Venue & pitch bookings',       core:false },
+    { area:'Off the pitch', name:'Kit & equipment',              core:false },
+    { area:'Off the pitch', name:'Parent messages',              core:false },
+
+    { area:'Growth', name:'Social media content',                core:false },
+    { area:'Growth', name:'Marketing & lead gen',                core:false },
+    { area:'Growth', name:'Following up new leads',              core:false },
+
+    { area:'Money', name:'Taking payments',                      core:false },
+    { area:'Money', name:'Chasing late payers',                  core:false },
+    { area:'Money', name:'Invoices & refunds',                   core:false },
+    { area:'Money', name:'Bookkeeping',                          core:false },
+
+    { area:'Direction', name:'Business vision & direction',      core:true  },
+    { area:'Direction', name:'Pricing & offers',                 core:true  }
+  ];
+  ROLES.forEach(function(r,i){ r.id='r'+i; r.owner='me'; });
+
+  var board = document.getElementById('board');
+  var order = ['On the pitch','Off the pitch','Growth','Money','Direction'];
+
+  function statusOf(r){
+    if(r.owner==='none') return {label:'Gap', cls:'gap'};
+    if(r.owner==='me') return r.core ? {label:'You keep', cls:'keep'} : {label:'On you', cls:'trap'};
+    return {label:'Moved', cls:'moved'};
+  }
+
+  order.forEach(function(area){
+    var group = document.createElement('div'); group.className='group';
+    var head = document.createElement('div'); head.className='grouphead'; head.textContent=area;
+    group.appendChild(head);
+
+    ROLES.filter(function(r){ return r.area===area; }).forEach(function(r){
+      var row = document.createElement('div'); row.className='row'; row.dataset.id=r.id;
+
+      var roleCol = document.createElement('div'); roleCol.className='role';
+      var nm = document.createElement('div'); nm.className='name'; nm.textContent=r.name;
+      var tag = document.createElement('div'); tag.className='tag'+(r.core?' core':'');
+      tag.textContent = r.core ? 'Yours to keep' : 'Can be handed off';
+      roleCol.appendChild(nm); roleCol.appendChild(tag);
+
+      var sel = document.createElement('select');
+      sel.dataset.id = r.id;
+      if(r.core) sel.classList.add('core');
+      sel.addEventListener('change', function(){
+        r.owner = sel.value;
+        refreshRow(row, r, sel);
+        recalc();
+      });
+
+      var pill = document.createElement('span'); pill.className='pill';
+
+      row.appendChild(roleCol); row.appendChild(sel); row.appendChild(pill);
+      group.appendChild(row);
+    });
+    board.appendChild(group);
+  });
+
+  function refreshRow(row, r, sel){
+    sel.classList.toggle('on-me', r.owner==='me');
+    var pill = row.querySelector('.pill');
+    var st = statusOf(r);
+    pill.className = 'pill ' + st.cls;
+    pill.textContent = st.label;
+  }
+
+  function rebuildDropdowns(){
+    var opts = owners();
+    document.querySelectorAll('.row').forEach(function(row){
+      var sel = row.querySelector('select');
+      var r = ROLES.filter(function(x){ return x.id===sel.dataset.id; })[0];
+      if(!opts.some(function(o){ return o.id===r.owner; })) r.owner='none';
+      sel.innerHTML='';
+      opts.forEach(function(o){
+        var opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.label; sel.appendChild(opt);
+      });
+      sel.value = r.owner;
+      refreshRow(row, r, sel);
+    });
+  }
+
+  var peopleRow = document.getElementById('people-row');
+  var addBtn = document.getElementById('add-person');
+  var input = document.getElementById('new-person');
+
+  function renderPeople(){
+    peopleRow.querySelectorAll('.person.staff').forEach(function(el){ el.remove(); });
+    var addBox = peopleRow.querySelector('.addp');
+    staff.forEach(function(p){
+      var chip = document.createElement('span'); chip.className='person staff';
+      var label = document.createElement('span'); label.textContent=p.label;
+      var x = document.createElement('span'); x.className='x'; x.textContent='×'; x.title='Remove';
+      x.addEventListener('click', function(){
+        staff = staff.filter(function(s){ return s.id!==p.id; });
+        renderPeople(); rebuildDropdowns(); recalc();
+      });
+      chip.appendChild(label); chip.appendChild(x);
+      peopleRow.insertBefore(chip, addBox);
+    });
+  }
+
+  function addPerson(){
+    var name = input.value.trim();
+    if(!name) return;
+    staff.push({ id:'s'+(staffCounter++), label:name });
+    input.value='';
+    renderPeople(); rebuildDropdowns();
+    input.focus();
+  }
+  addBtn.addEventListener('click', addPerson);
+  input.addEventListener('keydown', function(e){ if(e.key==='Enter') addPerson(); });
+
+  function recalc(){
+    var trap=0, moved=0, gap=0, keep=0;
+    ROLES.forEach(function(r){
+      var s = statusOf(r).cls;
+      if(s==='trap') trap++; else if(s==='moved') moved++; else if(s==='gap') gap++; else keep++;
+    });
+    document.getElementById('v-trap').innerHTML  = trap  + '<small>jobs</small>';
+    document.getElementById('v-moved').innerHTML = moved + '<small>jobs</small>';
+    document.getElementById('v-gap').innerHTML   = gap   + '<small>jobs</small>';
+    document.getElementById('v-keep').innerHTML  = keep  + '<small>jobs</small>';
+
+    var ins = document.getElementById('insight');
+    if(trap>0){
+      ins.innerHTML = '<b>'+trap+' job'+(trap===1?'':'s')+' you could hand off</b> still sit'+(trap===1?'s':'')+' with you — that\u2019s the reclaim list. '+
+        moved+' already moved off your plate'+(gap>0?', and '+gap+' still have nobody.':'.');
+    } else if(gap>0){
+      ins.innerHTML = 'Nothing delegatable left on you \u2014 but <b>'+gap+' job'+(gap===1?'':'s')+' have nobody yet</b>. Those are the hires or systems to line up next.';
+    } else {
+      ins.innerHTML = 'Every delegatable job is off you and owned by someone. You\u2019re left holding only what\u2019s genuinely yours \u2014 that\u2019s the touchline seat.';
+    }
+  }
+
+  document.getElementById('copy').addEventListener('click', function(){
+    var lines = ['ROLES & RESPONSIBILITIES AUDIT',''];
+    if(staff.length){ lines.push('Team: Me, '+staff.map(function(s){return s.label;}).join(', ')); lines.push(''); }
+    order.forEach(function(area){
+      lines.push(area.toUpperCase());
+      ROLES.filter(function(r){ return r.area===area; }).forEach(function(r){
+        lines.push('  \u2022 '+r.name+' \u2014 '+ownerLabel(r.owner)+' ['+statusOf(r).label+']');
+      });
+      lines.push('');
+    });
+    var trap=ROLES.filter(function(r){return statusOf(r).cls==='trap';}).length;
+    var gap=ROLES.filter(function(r){return statusOf(r).cls==='gap';}).length;
+    lines.push('Still on you (can move): '+trap);
+    lines.push('Nobody yet: '+gap);
+    var text = lines.join('\n');
+    var out = document.getElementById('out');
+    out.value = text; out.style.display='block'; out.focus(); out.select();
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(function(){}); }
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    ROLES.forEach(function(r){ r.owner='me'; });
+    rebuildDropdowns();
+    document.getElementById('out').style.display='none';
+    recalc();
+  });
+
+  rebuildDropdowns();
+  recalc();
+</script>
+</body>
+</html>

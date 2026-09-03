@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--
+  ASCEND LEAD MACHINE - SALES / POSITIONING SHEET (prospect-facing).
+  One page to show academy owners the offer + the two tiers.
+  Print / export to PDF works.
+
+  Positioning: the Lead Machine is FREE for ASCEND members (a membership perk),
+  so there are no prices to set. This sheet sells ASCEND, not the tool.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCEND Lead Machine — for academy owners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441;
+    --line:rgba(255,255,255,.10); --maxw:1040px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.96}
+  .eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .accent{color:var(--brand)}
+  a{color:inherit;text-decoration:none}
+
+  .btn{display:inline-flex;align-items:center;gap:.5em;background:var(--brand);color:var(--brand-ink);font-family:inherit;font-weight:700;font-size:1rem;padding:15px 28px;border-radius:6px;border:1px solid var(--brand);cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+
+  /* nav */
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:22px}
+  .brandmark{display:flex;align-items:center;gap:12px}
+  .brandmark .logo{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.05rem;color:var(--brand-ink)}
+  .brandmark .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:1.05rem}
+  .brandmark .name small{display:block;font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:.6rem;letter-spacing:.16em;color:var(--mute)}
+
+  /* hero */
+  .hero{position:relative;padding:56px 0 46px;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(55% 55% at 88% 0%,rgba(34,211,238,.16),transparent 60%),radial-gradient(45% 40% at 0% 100%,rgba(11,110,124,.18),transparent 60%);pointer-events:none}
+  .hero .wrap{position:relative;z-index:1}
+  .hero h1{font-size:clamp(2.4rem,6.2vw,4.4rem);margin:14px 0 16px;max-width:17ch}
+  .hero .lead{font-size:clamp(1.05rem,2vw,1.28rem);color:#C4D0D8;max-width:56ch;margin-bottom:8px}
+
+  section{padding:48px 0;border-top:1px solid var(--line)}
+  h2.sec{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(1.6rem,4vw,2.4rem);margin-bottom:10px;line-height:1}
+  .sec-lead{color:#BAC6CE;max-width:62ch;margin-bottom:24px}
+
+  /* problem */
+  .prob{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+  .prob .p{border:1px solid var(--line);border-radius:10px;padding:20px;background:var(--ink-2)}
+  .prob .p .x{color:var(--amber);font-family:"Anton",sans-serif;font-size:1.1rem;margin-bottom:8px}
+  .prob .p p{font-size:.95rem;color:#D2DCE2}
+
+  /* flow strip */
+  .strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin-top:6px}
+  .strip .s{flex:1;min-width:150px;border:1px solid var(--line);border-radius:10px;background:var(--ink-2);padding:16px 18px}
+  .strip .s.brand{border-color:var(--brand);background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.08),transparent 60%),var(--ink-2)}
+  .strip .s .l{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-bottom:5px}
+  .strip .s h4{font-size:1rem;font-weight:700;margin-bottom:3px}
+  .strip .s p{font-size:.82rem;color:#AEBAC2}
+
+  /* tiers */
+  .tiers{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+  .tier{border:1px solid var(--line);border-radius:16px;padding:28px;background:var(--ink-2);display:flex;flex-direction:column}
+  .tier.hot{border-color:var(--brand);background:radial-gradient(120% 80% at 50% 0%,rgba(34,211,238,.09),transparent 60%),var(--ink-2);box-shadow:0 40px 100px -60px rgba(34,211,238,.6)}
+  .tier .badge{display:inline-block;align-self:flex-start;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border-radius:20px;margin-bottom:14px}
+  .tier.cool .badge{background:var(--ink-3);color:var(--mute)}
+  .tier.hot .badge{background:var(--brand);color:var(--brand-ink)}
+  .tier h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.5rem;line-height:1;margin-bottom:6px}
+  .tier .tag{color:#B6C2CA;font-size:.95rem;margin-bottom:18px;min-height:44px}
+  .tier .price{font-family:"Anton",sans-serif;font-size:2rem;color:var(--brand);line-height:1;margin-bottom:4px}
+  .tier .price small{font-family:"Space Grotesk",sans-serif;font-size:.9rem;color:var(--mute);font-weight:500}
+  .tier .pricenote{font-size:.82rem;color:var(--mute);margin-bottom:20px}
+  .tier ul{list-style:none;display:grid;gap:11px;margin-bottom:22px}
+  .tier ul li{display:flex;gap:11px;align-items:flex-start;font-size:.96rem;color:#DCE5EA}
+  .tier ul li::before{content:"";flex:0 0 auto;width:20px;height:20px;margin-top:2px;border-radius:5px;background:rgba(34,211,238,.12);border:1px solid var(--brand);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322D3EE' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:13px}
+  .tier .who{font-size:.86rem;color:var(--mute);border-top:1px solid var(--line);padding-top:14px;margin-top:auto}
+  .tier .who b{color:#fff}
+
+  /* value */
+  .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .val{border:1px solid var(--line);border-radius:12px;padding:22px;background:var(--ink-2)}
+  .val b{color:#fff;display:block;margin-bottom:6px;font-size:1.05rem}
+  .val p{font-size:.9rem;color:#AEBAC2}
+
+  /* author */
+  .author{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;max-width:820px}
+  .crest{width:76px;height:76px;border-radius:12px;flex:0 0 auto;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.8rem;color:var(--brand-ink)}
+  .author p{color:#CDD8DE;font-size:1rem}
+  .creds{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .creds span{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:20px;padding:5px 12px}
+
+  .final{text-align:center}
+  .final h2{margin-bottom:18px}
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--mute);font-size:.85rem}
+  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center}
+  footer .brand{font-family:"Anton",sans-serif;color:var(--paper);letter-spacing:.05em}
+
+  @media (max-width:820px){
+    .prob{grid-template-columns:1fr}
+    .tiers{grid-template-columns:1fr}
+    .vals{grid-template-columns:1fr}
+    .author{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <div class="brandmark"><div class="logo">A</div><span class="name">ASCEND<small>by John Leitch Coaching</small></span></div>
+    <a class="btn ghost" href="#tiers">See the options &rarr;</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">ASCEND Lead Machine &middot; for academy owners</span>
+    <h1 class="display">Stop losing enquiries. <span class="accent">Fill your academy</span> on autopilot.</h1>
+    <p class="lead">A done-for-you system that turns interested parents into paying members &mdash; capturing every enquiry, matching it to the right session, and chasing it from first click to welcome pack automatically. You just coach and close.</p>
+    <p style="margin-top:16px;font-weight:700;color:var(--brand);font-size:1.05rem">Free with your ASCEND membership.</p>
+  </div>
+</header>
+
+<!-- PROBLEM -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Sound familiar?</span>
+    <h2 class="sec">Every week, leads walk out the gate</h2>
+    <div class="prob">
+      <div class="p"><div class="x">01</div><p>A parent messages asking about sessions &mdash; and you see it three days later.</p></div>
+      <div class="p"><div class="x">02</div><p>You mean to follow up, but you&rsquo;re coaching, and it slips your mind.</p></div>
+      <div class="p"><div class="x">03</div><p>You&rsquo;ve no real idea how many enquiries you get &mdash; or how many you lose.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT IT IS -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">The fix</span>
+    <h2 class="sec">One machine that runs your leads</h2>
+    <p class="sec-lead">Parents land on a page that finds the right session for their child and books a free trial. From there it runs itself.</p>
+    <div class="strip">
+      <div class="s"><div class="l">1 &middot; Traffic</div><h4>Ads &amp; your site</h4><p>Facebook, Instagram, Google or your website.</p></div>
+      <div class="s brand"><div class="l">2 &middot; Capture</div><h4>Smart funnel</h4><p>Parent finds the right session, books a trial.</p></div>
+      <div class="s"><div class="l">3 &middot; Follow-up</div><h4>Auto-chase</h4><p>Alerts, replies and reminders send themselves.</p></div>
+      <div class="s"><div class="l">4 &middot; Convert</div><h4>Book &amp; enrol</h4><p>They join and become a paying member.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TIERS -->
+<section id="tiers">
+  <div class="wrap">
+    <span class="eyebrow">Two ways to get it &mdash; both included</span>
+    <h2 class="sec">Free with ASCEND</h2>
+    <p class="sec-lead">Every ASCEND member gets the Lead Machine at no extra cost. Set it up yourself, or we&rsquo;ll build it for you &mdash; your choice.</p>
+    <div class="tiers">
+
+      <!-- SELF-SERVE -->
+      <div class="tier cool">
+        <span class="badge">Self-serve</span>
+        <h3>The Kit</h3>
+        <div class="tag">You set it up yourself with our no-code tools &mdash; live in about 15 minutes.</div>
+        <div class="price">Included<small> free</small></div>
+        <div class="pricenote">Yours as an ASCEND member</div>
+        <ul>
+          <li>The branded trial funnel + smart session matcher</li>
+          <li>No-code Session Builder &mdash; add your classes in a form</li>
+          <li>Copy-paste embed for Wix, Squarespace &amp; WordPress</li>
+          <li>Your own leads board with automatic follow-ups</li>
+          <li>Trial confirmations, day-before reminders &amp; no-show rescue &mdash; automatic</li>
+          <li>One drag enrols a member: welcome pack sends itself</li>
+          <li>Three email voice packs &mdash; sounds like your academy, not like software</li>
+          <li>Step-by-step 20-minute setup guide</li>
+        </ul>
+        <div class="who"><b>Best for:</b> owners happy to follow a simple guide and run their own system.</div>
+      </div>
+
+      <!-- DONE FOR YOU -->
+      <div class="tier hot">
+        <span class="badge">Done-for-you</span>
+        <h3>The Machine, Built</h3>
+        <div class="tag">Send us your sessions &mdash; we build, host and launch the whole thing for you.</div>
+        <div class="price">Included<small> free</small></div>
+        <div class="pricenote">We build it for you &mdash; also an ASCEND member benefit</div>
+        <ul>
+          <li>Everything in The Kit &mdash; built and live for you</li>
+          <li>We brand your funnel and load all your sessions</li>
+          <li>We host it and connect it to your website / ads</li>
+          <li>Your leads board set up and running &mdash; nothing to learn</li>
+          <li>Leads land in your inbox the moment they come in</li>
+          <li>The full trial-to-member chase wired in with your enrol link &amp; welcome pack</li>
+          <li>We write every parent email in your academy's voice</li>
+          <li>Meta Pixel set up so your ads work harder</li>
+        </ul>
+        <div class="who"><b>Best for:</b> owners who&rsquo;d rather it was just done &mdash; live this week, zero setup.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- VALUE -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Why it works</span>
+    <h2 class="sec">Built to fill your academy</h2>
+    <div class="vals">
+      <div class="val"><b>No lead ever slips</b><p>Every interested parent is captured and chased automatically &mdash; even the ones who don&rsquo;t finish booking.</p></div>
+      <div class="val"><b>You know what they want</b><p>Not just a name &mdash; which child, what they&rsquo;re after, matched to the right session before you even call.</p></div>
+      <div class="val"><b>Zero admin</b><p>Leads flow in and the board updates itself. Your only job is the call and the coaching.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- AUTHOR -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Who&rsquo;s behind it</span>
+    <div class="author" style="margin-top:16px">
+      <div class="crest">JL</div>
+      <div>
+        <p>I built my own grassroots academy to 220+ members over ten years, then sold it &mdash; and learned the hard way that the academies that grow are the ones that never lose an enquiry. The ASCEND Lead Machine is the system I wish I&rsquo;d had from day one, now built for you.</p>
+        <div class="creds">
+          <span>UEFA C Licensed</span>
+          <span>FC Barcelona Innovation Hub</span>
+          <span>10 Years &middot; 220+ Members &middot; Exited</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="wrap">
+    <h2 class="sec display">Get it free inside ASCEND</h2>
+    <a class="btn" href="#">Join ASCEND &rarr;</a>
+    <div style="color:var(--mute);font-size:.85rem;margin-top:12px">ASCEND &middot; by John Leitch Coaching</div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="brand">ASCEND LEAD MACHINE</span>
+    <span>&copy; 2026 John Leitch Coaching</span>
+  </div>
+</footer>
+
+</body>
+</html>

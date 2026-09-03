@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Member Intake &middot; ASCEND Members</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ascend.css">
+<style>
+  .fs{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:24px 26px;margin-bottom:16px}
+  .fs .fh{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .fs .fh .n{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--cyan)}
+  .fs .fh h2{font-size:19px;margin:0}
+  .fs .fi{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 22px;max-width:60ch}
+  .saved{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--muted-dim);min-height:16px}
+  .saved.on{color:var(--cyan)}
+  .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0 40px}
+  #msg{padding:16px 20px;border-radius:12px;font-size:14px;line-height:1.6;margin:18px 0 0;display:none}
+  #msg.ok{display:block;background:rgba(95,208,138,.08);border:1px solid #2E5F42;color:#9FE3BB}
+  #msg.err{display:block;background:rgba(232,160,95,.08);border:1px solid #6B4A2A;color:#E8C4A0}
+  #msg a{color:var(--cyan)}
+  .req{color:var(--cyan)}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html">ASCEND<span>.</span></a>
+  <nav class="navlinks">
+    <a href="index.html">Hub</a>
+    <a href="start-here.html">Start here</a>
+    <a href="library.html">Library</a>
+    <a href="diagnostic.html">Diagnostic</a>
+    <a href="pricing-calculator.html">Calculator</a>
+    <a href="work-with-me.html">Work with me</a>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+  <div style="padding:46px 0 26px">
+    <p class="eyebrow">Step 2 of your first 30 days</p>
+    <h1>Member intake.</h1>
+    <p class="lede">Ten minutes. This is so I turn up to our first call already knowing your academy, and we spend the forty-five minutes on what to do rather than on you explaining the setup. <b style="color:var(--ink)">Estimates are completely fine</b> &mdash; if you knew all these numbers exactly you probably wouldn't need me. Where you're guessing, say so.</p>
+    <p class="small">Your answers save on this device as you type, so you can leave and come back.</p>
+  </div>
+
+  <form id="intakeForm" novalidate>
+
+    <div class="fs">
+      <div class="fh"><span class="n">01</span><h2>You and the academy</h2></div>
+      <p class="fi">The basics, so I can find you and pronounce it right.</p>
+      <div class="grid2">
+        <div class="field"><label>Your name <span class="req">*</span></label><input name="name" required></div>
+        <div class="field"><label>Academy name <span class="req">*</span></label><input name="academy" required></div>
+        <div class="field"><label>Email <span class="req">*</span></label><input name="email" type="email" required></div>
+        <div class="field"><label>WhatsApp / mobile</label><input name="phone" type="tel"></div>
+      </div>
+      <div class="field"><label>Where do you operate?<span class="hint">Town or region, and roughly how many venues.</span></label><input name="location"></div>
+      <div class="field"><label>How long has the academy been running?<span class="hint">Or "not launched yet" if you're pre-launch &mdash; that's a perfectly good answer.</span></label><input name="tenure"></div>
+    </div>
+
+    <div class="fs">
+      <div class="fh"><span class="n">02</span><h2>The numbers</h2></div>
+      <p class="fi">The part everyone dreads. Best estimates are fine. If a figure genuinely doesn't exist yet, write "don't know" &mdash; that itself is useful information, and it's usually where we start.</p>
+      <div class="grid2">
+        <div class="field"><label>Regular weekly players<span class="hint">Ones who turn up most weeks, not everyone on the list.</span></label><input name="players"></div>
+        <div class="field"><label>What you charge per session or per month<span class="hint">If it varies by programme, give the range.</span></label><input name="price"></div>
+        <div class="field"><label>Roughly what the academy turns over per month</label><input name="revenue"></div>
+        <div class="field"><label>Roughly what it pays you per month<span class="hint">What actually reaches your pocket, not turnover.</span></label><input name="pay"></div>
+        <div class="field"><label>How many coaches, including you</label><input name="coaches"></div>
+        <div class="field"><label>Hours a week you work on it<span class="hint">Honestly. Including the evening admin.</span></label><input name="hours"></div>
+      </div>
+      <div class="field"><label>Do you know your profit margin per session?<span class="hint">No shame either way &mdash; most owners don't when they start.</span></label>
+        <select name="knows_margin">
+          <option value="">Choose one</option>
+          <option>Yes, I could tell you it right now</option>
+          <option>Roughly, but I'd have to work it out</option>
+          <option>No idea</option>
+        </select>
+      </div>
+      <div class="field"><label>How do you currently take payments?<span class="hint">Bank transfer, cash, direct debit, an app &mdash; and how much chasing it costs you.</span></label><input name="payments"></div>
+    </div>
+
+    <div class="fs">
+      <div class="fh"><span class="n">03</span><h2>Where it hurts</h2></div>
+      <p class="fi">This is the section I read first. Be blunt. Nothing here shocks me and nothing goes anywhere near anyone else.</p>
+      <div class="field"><label>What's the single biggest problem in the academy right now? <span class="req">*</span><span class="hint">One thing. If you list five, we'll fix none.</span></label><textarea name="problem" rows="4" required></textarea></div>
+      <div class="field"><label>What have you already tried to fix it?<span class="hint">Saves us covering ground you've already walked.</span></label><textarea name="tried" rows="3"></textarea></div>
+      <div class="field"><label>What part of the week do you most dread?<span class="hint">Usually points straight at the thing to delegate first.</span></label><textarea name="dread" rows="2"></textarea></div>
+      <div class="field"><label>Where do new players come from at the moment?<span class="hint">If the honest answer is "word of mouth and luck", say that.</span></label><textarea name="leads" rows="2"></textarea></div>
+    </div>
+
+    <div class="fs">
+      <div class="fh"><span class="n">04</span><h2>Where you're going</h2></div>
+      <p class="fi">So we're aiming at your target rather than one I've assumed for you.</p>
+      <div class="field"><label>In twelve months, what does good look like? <span class="req">*</span><span class="hint">Be specific. "More players" isn't a target. "180 weekly players and I'm off the grass on Tuesdays" is.</span></label><textarea name="goal" rows="4" required></textarea></div>
+      <div class="field"><label>What would that change about your life outside the academy?<span class="hint">This is the bit that keeps you going in month four when the work is dull.</span></label><textarea name="why" rows="3"></textarea></div>
+      <div class="field"><label>Realistically, how many hours a week can you put into changing things?<span class="hint">Be honest rather than ambitious &mdash; I'll plan around the real number.</span></label><input name="capacity"></div>
+      <div class="field"><label>Anything else I should know before we speak?</label><textarea name="notes" rows="3"></textarea></div>
+    </div>
+
+    <p class="saved" id="savedNote"></p>
+    <div class="actions">
+      <button class="btn" type="submit" id="submitBtn">Send it to John</button>
+      <button class="btn ghost" type="button" id="copyBtn">Copy my answers</button>
+      <span class="small" id="clearWrap"><button type="button" id="clearBtn" style="background:none;border:none;color:var(--muted-dim);text-decoration:underline;cursor:pointer;font-size:12.5px;font-family:'Inter',sans-serif">Clear the form</button></span>
+    </div>
+    <div id="msg"></div>
+
+  </form>
+
+</div>
+
+<footer><div class="wrap">
+  <span>John Leitch &middot; ASCEND</span>
+  <span><a href="index.html">Hub</a> &middot; <a href="start-here.html">Start here</a></span>
+</div></footer>
+
+<script>
+/* Set this to your Formspree (or other) endpoint. Leave as the placeholder and the
+   form falls back to copy-to-clipboard + email, so it never dead-ends on a member. */
+var ENDPOINT = 'INTAKE_FORM_ENDPOINT';
+var FALLBACK_EMAIL = 'johnleitch970@gmail.com';
+
+var form = document.getElementById('intakeForm');
+var msg = document.getElementById('msg');
+var savedNote = document.getElementById('savedNote');
+var KEY = 'ascend_intake_draft_v1';
+
+/* ---- draft autosave ---- */
+function fields(){ return Array.prototype.slice.call(form.querySelectorAll('input,textarea,select')); }
+function saveDraft(){
+  var d = {};
+  fields().forEach(function(f){ if(f.name) d[f.name] = f.value; });
+  try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){ return; }
+  savedNote.textContent = 'Saved on this device';
+  savedNote.className = 'saved on';
+  clearTimeout(window.__st);
+  window.__st = setTimeout(function(){ savedNote.className = 'saved'; }, 1600);
+}
+function loadDraft(){
+  var d;
+  try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){ return; }
+  if(!d) return;
+  fields().forEach(function(f){ if(f.name && d[f.name]) f.value = d[f.name]; });
+}
+loadDraft();
+fields().forEach(function(f){ f.addEventListener('input', saveDraft); f.addEventListener('change', saveDraft); });
+
+/* ---- plain-text version, used for copy and for the email fallback ---- */
+function asText(){
+  var out = ['ASCEND member intake', ''];
+  Array.prototype.slice.call(form.querySelectorAll('.fs')).forEach(function(sec){
+    out.push('== ' + sec.querySelector('h2').textContent + ' ==');
+    Array.prototype.slice.call(sec.querySelectorAll('.field, .grid2 .field')).forEach(function(fl){
+      var lab = fl.querySelector('label');
+      var inp = fl.querySelector('input,textarea,select');
+      if(!lab || !inp) return;
+      var q = lab.childNodes[0].textContent.trim();
+      out.push(q + ': ' + (inp.value || '-'));
+    });
+    out.push('');
+  });
+  return out.join('\n');
+}
+
+function missing(){
+  return fields().filter(function(f){ return f.hasAttribute('required') && !f.value.trim(); });
+}
+
+document.getElementById('copyBtn').addEventListener('click', function(){
+  var t = asText();
+  function done(){ show('ok', 'Copied. Paste it into an email or WhatsApp to John.'); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ legacyCopy(t, done); });
+  } else { legacyCopy(t, done); }
+});
+function legacyCopy(t, done){
+  var ta = document.createElement('textarea');
+  ta.value = t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }
+  catch(e){ show('err', 'Could not copy automatically. Use "Send it to John" instead.'); }
+  document.body.removeChild(ta);
+}
+
+document.getElementById('clearBtn').addEventListener('click', function(){
+  if(!confirm('Clear everything you have typed?')) return;
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  form.reset(); msg.className = ''; msg.style.display='none';
+});
+
+function show(kind, html){
+  msg.className = kind; msg.innerHTML = html;
+  msg.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function emailFallback(){
+  var body = encodeURIComponent(asText());
+  var to = (FALLBACK_EMAIL.indexOf('@') > -1) ? FALLBACK_EMAIL : '';
+  show('ok',
+    'Your answers are ready to send. <a href="mailto:' + to +
+    '?subject=ASCEND%20member%20intake&body=' + body +
+    '">Open them in your email app</a>, or use "Copy my answers" and paste them into WhatsApp.');
+}
+
+form.addEventListener('submit', function(e){
+  e.preventDefault();
+  var gaps = missing();
+  if(gaps.length){
+    show('err', 'A few required answers are still blank (marked with a *). Fill those in and try again.');
+    gaps[0].focus();
+    return;
+  }
+
+  /* No endpoint configured yet -> never dead-end the member. */
+  if(ENDPOINT.indexOf('http') !== 0){ emailFallback(); return; }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  var data = new FormData(form);
+  data.append('source', 'ascend-member-intake');
+
+  fetch(ENDPOINT, { method:'POST', body:data, headers:{ 'Accept':'application/json' } })
+    .then(function(r){
+      btn.disabled = false; btn.textContent = 'Send it to John';
+      if(r.ok){
+        show('ok', '<b>Got it &mdash; thanks.</b><br>I\'ll read this before our call. If anything major changes before then, just message me.<br><br><a href="start-here.html">Back to your 30-day path &rarr;</a>');
+        form.style.opacity = '.5';
+      } else { emailFallback(); }
+    })
+    .catch(function(){
+      btn.disabled = false; btn.textContent = 'Send it to John';
+      emailFallback();
+    });
+});
+</script>
+</body>
+</html>

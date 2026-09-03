@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  ASCEND - THE PRICING CALCULATOR - FULL LANDING PAGE (one-paste Wix embed)
+  ============================================================
+  Whole page in one file: hero -> live calculator -> email capture -> problem
+  -> what you get -> author -> ASCEND upsell -> FAQ -> final CTA -> footer.
+
+  HOW TO USE IN WIX:
+  1. Copy this whole file:  in Terminal run  cat <thisfile> | pbcopy
+  2. Wix Editor -> Add (+) -> Embed Code -> Embed HTML -> "Code" -> paste -> Update.
+  3. Make the embed FULL WIDTH. Set its height to the numbers I gave you in chat
+     (one height for desktop, a taller one for the mobile editor). Fixed height so
+     there is no scrollbar-inside-a-scrollbar.
+  4. Preview to test.
+
+  THREE THINGS TO FILL IN (search for "REPLACE"):
+  A. FORM_ENDPOINT - your Formspree URL (free: formspree.io -> new form ->
+     copy the https://formspree.io/f/xxxx endpoint). Makes the email form capture.
+  B. BOOKING_LINK - your intro-call booking URL, e.g. Calendly (used on the upsell link).
+     (Was SKOOL_LINK - Skool is retired as of 2026-08-10; ASCEND joins go via a call.)
+  C. Optional photo URLs - HERO_PHOTO / AUTHOR_PHOTO (leave blank to show a clean
+     monogram instead; relative image files do NOT work inside a Wix embed, must be URLs).
+
+  100% ASCII source on purpose - Wix's embed box corrupts raw pound/dash/quote bytes.
+  ============================================================
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+        --paper:#EEF3F5; --mute:#7E8C99;
+        --cyan:#22D3EE; --cyan-deep:#0B6E7C;
+        --red:#F0526B; --amber:#F2B441; --green:#38D39F;
+        --line:rgba(255,255,255,.10); --maxw:1080px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+    .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+    .eyebrow{font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);font-weight:700}
+    .accent{color:var(--cyan)}
+    a{color:inherit;text-decoration:none}
+    .sec{padding:76px 0;border-top:1px solid var(--line);position:relative}
+    .sec.alt{background:var(--ink-2)}
+    h2.display{font-size:clamp(2rem,4.6vw,3.1rem);max-width:20ch;margin:14px 0 18px}
+    .sec-lead{color:#BAC6CE;max-width:58ch;font-size:1.05rem}
+
+    .btn{display:inline-flex;align-items:center;gap:.55em;background:var(--cyan);color:#04181C;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:1.02rem;padding:16px 28px;border-radius:5px;border:1px solid var(--cyan);cursor:pointer;transition:transform .15s,box-shadow .25s}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(34,211,238,.35)}
+    .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+    .btn.ghost:hover{border-color:var(--cyan);box-shadow:none}
+    .micro{font-size:.82rem;color:var(--mute);margin-top:12px;letter-spacing:.02em}
+
+    /* HERO */
+    .hero{position:relative;padding:88px 0 70px;overflow:hidden}
+    .hero::before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(60% 50% at 80% 6%,rgba(34,211,238,.15),transparent 60%),radial-gradient(50% 40% at 4% 92%,rgba(11,110,124,.20),transparent 60%);pointer-events:none}
+    .hero .wrap{position:relative;z-index:1}
+    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:44px;align-items:center}
+    .hero h1{font-size:clamp(2.7rem,7vw,5rem);margin:18px 0 20px;max-width:15ch}
+    .hero .byline{font-size:clamp(1rem,2vw,1.18rem);color:var(--paper);font-weight:500;border-left:3px solid var(--cyan);padding-left:15px;margin:0 0 18px;max-width:48ch;line-height:1.5}
+    .hero .lead{font-size:clamp(1rem,2vw,1.2rem);color:#C4D0D8;max-width:52ch;margin-bottom:28px}
+    .monogram{width:100%;aspect-ratio:4/5;border:1px solid rgba(34,211,238,.28);border-radius:14px;background:linear-gradient(135deg,var(--ink-2),#0b1116);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;box-shadow:0 40px 90px -50px rgba(34,211,238,.4);background-size:cover;background-position:center}
+    .monogram .mono-mark{font-family:"Anton",sans-serif;font-size:3.4rem;color:var(--cyan)}
+    .monogram .mono-sub{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+
+
+    /* ===== MOBILE POLISH (<=640px) ===== */
+    @media (max-width:640px){
+      .sec{padding:44px 0}
+      .hero{padding:48px 0 40px}
+      .hero h1{font-size:clamp(2rem,9vw,2.6rem);max-width:100%}
+      h2.display{font-size:clamp(1.5rem,7.5vw,2rem)}
+      .hero .byline{font-size:.95rem}
+      .hero .lead{font-size:.98rem}
+      .btn{width:100%;justify-content:center}
+      .calc-lock{position:static;padding:0;margin:0 0 18px}
+      .calc-lock-card{max-width:100%}
+      .calc-blur{filter:blur(7px)}
+      .ac-panel{padding:18px}
+      .monogram{max-width:260px;margin:0 auto}
+    }
+    /* CALCULATOR GATE */
+    #calc{position:relative}
+    .calc-blur{filter:blur(10px);pointer-events:none;user-select:none;opacity:.55;transition:filter .5s,opacity .5s}
+    .calc-lock{position:absolute;left:0;right:0;top:170px;z-index:6;display:flex;justify-content:center;padding:0 24px;pointer-events:none}
+    .calc-lock-card{pointer-events:auto;max-width:460px;width:100%;border:1px solid var(--cyan);border-radius:12px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.12),transparent 60%),var(--ink-2);padding:26px 24px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+    .calc-lock-card .lk-t{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.45rem;margin:0 0 8px}
+    .calc-lock-card .lk-d{color:#BAC6CE;font-size:.95rem;line-height:1.5;margin:0 0 16px}
+    .calc-lock-card input{width:100%;padding:12px 14px;margin-bottom:10px;background:var(--ink);border:1px solid var(--line);border-radius:6px;color:var(--paper);font-size:1rem;font-family:inherit}
+    .calc-lock-card input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+    .calc-lock-card .btn{width:100%;justify-content:center}
+    .calc-lock-card .lk-fine{font-size:.74rem;color:var(--mute);margin-top:10px}
+    .calc-lock-card .lk-err{display:none;color:var(--red);font-size:.85rem;margin-top:10px}
+    /* CALCULATOR */
+    .ac-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:18px;align-items:start}
+    .ac-panel{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--ink-2),#0b1116);padding:26px}
+    .ac-group{margin-bottom:20px}
+    .ac-group:last-child{margin-bottom:0}
+    .ac-group-title{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+    .ac-field{margin-bottom:13px}
+    .ac-field:last-child{margin-bottom:0}
+    .ac-field label{display:block;font-size:.86rem;font-weight:500;color:#C4D0D8;margin-bottom:6px}
+    .ac-inwrap{position:relative}
+    .ac-pre,.ac-suf{position:absolute;top:50%;transform:translateY(-50%);color:var(--mute);font-size:.95rem;pointer-events:none}
+    .ac-pre{left:13px} .ac-suf{right:13px}
+    .ac-field input{width:100%;padding:11px 13px;background:var(--ink);border:1px solid var(--line);border-radius:6px;color:var(--paper);font-size:1rem;appearance:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+    .ac-pre ~ input{padding-left:26px}
+    .ac-field input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+    .ac-hero{text-align:center;border:1px solid var(--line);border-radius:10px;background:var(--ink);padding:24px 18px;margin-bottom:16px}
+    .ac-hero-lab{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+    .ac-hero-num{font-family:"Anton",sans-serif;font-size:clamp(3.2rem,10vw,5rem);line-height:.88;font-variant-numeric:tabular-nums}
+    .ac-hero-band{display:inline-block;margin-top:12px;font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;border-radius:40px;border:1px solid currentColor}
+    .ac-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .ac-stat{background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:14px 10px;text-align:center}
+    .ac-stat-num{font-family:"Anton",sans-serif;font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums}
+    .ac-stat-lab{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:7px}
+    .ac-rec{border:1px solid var(--cyan);border-radius:10px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.10),transparent 60%),var(--ink-2);padding:22px;text-align:center}
+    .ac-rec-lab{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:8px}
+    .ac-rec-price{font-family:"Anton",sans-serif;font-size:clamp(2.6rem,8vw,3.6rem);line-height:.9;color:var(--cyan);text-shadow:0 0 34px rgba(34,211,238,.4)}
+    .ac-rec-sub{font-size:.9rem;color:#C4D0D8;margin-top:8px}
+    .ac-rec-uplift{display:flex;justify-content:center;gap:22px;margin-top:16px;flex-wrap:wrap}
+    .ac-rec-uplift div{text-align:center}
+    .ac-rec-uplift b{font-family:"Anton",sans-serif;font-size:1.4rem;color:var(--green);display:block;line-height:1}
+    .ac-rec-uplift small{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+
+    /* OPT-IN */
+    .optin{max-width:520px;margin:22px auto 0}
+    .optin-form{display:flex;flex-direction:column;gap:12px;border:1px solid var(--cyan);border-radius:14px;padding:26px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.10),transparent 60%),var(--ink-2);box-shadow:0 30px 90px -50px rgba(34,211,238,.6)}
+    .optin-form input{width:100%;padding:14px 15px;border-radius:6px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font-family:inherit;font-size:1rem}
+    .optin-form input:focus{outline:2px solid var(--cyan);outline-offset:1px;border-color:var(--cyan)}
+    .optin-form .btn{width:100%;justify-content:center}
+    .optin-done{text-align:center;color:var(--cyan);font-weight:700;padding:10px 0}
+
+    /* problem cards */
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:30px 0 22px}
+    .card{border:1px solid var(--line);border-radius:8px;padding:22px 20px;background:var(--ink-2)}
+    .card .tick{font-family:"Anton",sans-serif;color:var(--cyan-deep);font-size:1.1rem;margin-bottom:10px}
+    .card p{font-size:.98rem;color:#D2DCE2}
+    .closing{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(1.3rem,3vw,2rem);color:var(--paper);max-width:24ch;line-height:1.05;margin-top:6px}
+
+    /* what you get */
+    .getgrid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:start}
+    .checklist{list-style:none;margin-top:26px;display:grid;gap:13px}
+    .checklist li{display:flex;gap:13px;align-items:flex-start;font-size:1.02rem;color:#DCE5EA}
+    .checklist li::before{content:"";flex:0 0 auto;width:22px;height:22px;margin-top:2px;border-radius:5px;background:rgba(34,211,238,.12);border:1px solid var(--cyan);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322D3EE' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:14px}
+    .panel{border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,var(--ink-2),#0b1116);padding:28px}
+    .panel h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.4rem;margin-bottom:12px}
+    .panel .micro-list{list-style:none;display:grid;gap:9px;color:#C4D0D8;font-size:.95rem}
+    .panel .micro-list li{padding-left:18px;position:relative}
+    .panel .micro-list li::before{content:"\25B8";position:absolute;left:0;color:var(--cyan)}
+
+    /* author */
+    .author{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:start;max-width:760px}
+    .crest{width:84px;height:84px;border-radius:12px;flex:0 0 auto;background:linear-gradient(135deg,var(--cyan),var(--cyan-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:2rem;color:#04181C;box-shadow:0 0 40px rgba(34,211,238,.3);background-size:cover;background-position:center}
+    .author p{color:#CDD8DE;font-size:1.04rem}
+    .author .sign{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.04em;margin-top:12px;color:var(--paper);font-size:1.1rem}
+    .creds{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+    .creds span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:40px;padding:6px 14px}
+
+    /* upsell */
+    .upsell .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:22px}
+    .upsell .u-text{max-width:60ch}
+    .upsell h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.6rem;margin-bottom:10px}
+    .upsell p{color:#B6C2CA;font-size:1rem}
+    .ulink{display:inline-flex;align-items:center;gap:.5em;color:var(--cyan);font-weight:700;border-bottom:1px solid transparent;padding-bottom:2px;white-space:nowrap}
+    .ulink:hover{border-bottom-color:var(--cyan)}
+    .ulink .pm{color:var(--mute);font-weight:400}
+
+    /* faq */
+    .faq{margin-top:26px;border-top:1px solid var(--line)}
+    .faq details{border-bottom:1px solid var(--line);padding:4px 0}
+    .faq summary{cursor:pointer;list-style:none;padding:19px 4px;font-weight:700;font-size:1.04rem;display:flex;justify-content:space-between;align-items:center}
+    .faq summary::-webkit-details-marker{display:none}
+    .faq summary::after{content:"+";color:var(--cyan);font-family:"Anton",sans-serif;font-size:1.4rem;transition:transform .2s}
+    .faq details[open] summary::after{transform:rotate(45deg)}
+    .faq .ans{padding:0 4px 20px;color:#B6C2CA;max-width:62ch}
+
+    .final{text-align:center}
+    .final h2{margin:0 auto 22px}
+    footer{border-top:1px solid var(--line);padding:36px 0;color:var(--mute);font-size:.85rem}
+    footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center}
+    footer .brand{font-family:"Anton",sans-serif;color:var(--paper);letter-spacing:.04em}
+
+    .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+    .reveal.in{opacity:1;transform:none}
+
+    @media (max-width:820px){
+        .hero-grid{grid-template-columns:1fr;gap:30px}
+        .hero-media{max-width:320px}
+        .getgrid{grid-template-columns:1fr;gap:26px}
+        .ac-grid{grid-template-columns:1fr}
+        .cards{grid-template-columns:1fr}
+        .ac-stats{grid-template-columns:1fr 1fr}
+        .author{grid-template-columns:1fr}
+    }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">ASCEND &middot; by John Leitch Coaching</span>
+        <h1 class="display">Stop pricing your academy on a guess.</h1>
+        <p class="byline">I took my own grassroots academy to 300-350 players a week, then sold it &mdash; and got pricing wrong for years before I got it right. This is the tool I wish I'd had on day one.</p>
+        <p class="lead">The calculator that tells grassroots football academy owners exactly what to charge &mdash; built around your real costs, your time, and what your coaching is actually worth. Five minutes. One number.</p>
+        <a class="btn" href="#calc">Find my number &darr;</a>
+        <div class="micro">Free to use &middot; no email needed to see your number</div>
+      </div>
+      <div class="hero-media">
+        <div class="monogram" id="heroPhoto"><span class="mono-mark">JL</span><span class="mono-sub">John Leitch &middot; ASCEND</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== CALCULATOR ===== -->
+<section class="sec" id="calc">
+  <div class="wrap">
+    <span class="eyebrow">The calculator &middot; 60 seconds</span>
+    <h2 class="display">What are you <span class="accent">really</span> earning per hour?</h2>
+    <p class="sec-lead" style="margin-bottom:30px">Drop in your real numbers &mdash; costs, time, the lot. No email needed to see the verdict.</p>
+
+    <div class="calc-lock" id="calcLock">
+      <div class="calc-lock-card">
+        <p class="lk-t">Unlock the calculator</p>
+        <p class="lk-d">Pop your name and email in and the calculator opens right here &mdash; takes 60 seconds to get your real number.</p>
+        <form id="gateForm">
+          <input type="text" id="gateName" placeholder="First name" autocomplete="given-name" required>
+          <input type="email" id="gateEmail" placeholder="you@example.com" autocomplete="email" required>
+          <button class="btn" type="submit">Unlock my number &rarr;</button>
+        </form>
+        <p class="lk-fine">Free. No card. One useful email a week &mdash; unsubscribe any time.</p>
+        <p class="lk-err" id="gateErr"></p>
+      </div>
+    </div>
+    <div class="ac-grid calc-blur" id="acGrid">
+      <div class="ac-panel">
+        <div class="ac-group">
+          <div class="ac-group-title">Your session</div>
+          <div class="ac-field"><label for="acPrice">Current price per player</label><div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acPrice" min="0" step="0.5" value="5"></div></div>
+          <div class="ac-field"><label for="acPlayers">Average players per session</label><div class="ac-inwrap"><input type="number" id="acPlayers" min="0" step="1" value="20"></div></div>
+          <div class="ac-field"><label for="acLength">Session length</label><div class="ac-inwrap"><input type="number" id="acLength" min="0" step="0.25" value="1"><span class="ac-suf">hours</span></div></div>
+        </div>
+        <div class="ac-group">
+          <div class="ac-group-title">Your costs (per session)</div>
+          <div class="ac-field"><label for="acVenue">Venue / pitch hire</label><div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acVenue" min="0" step="1" value="35"></div></div>
+          <div class="ac-field"><label for="acCoach">Coach cost (pay yourself too)</label><div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acCoach" min="0" step="1" value="25"></div></div>
+          <div class="ac-field"><label for="acOther">Other (kit, insurance, admin)</label><div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acOther" min="0" step="1" value="10"></div></div>
+        </div>
+        <div class="ac-group">
+          <div class="ac-group-title">The reality</div>
+          <div class="ac-field"><label for="acTax">Tax set-aside</label><div class="ac-inwrap"><input type="number" id="acTax" min="0" max="100" step="1" value="15"><span class="ac-suf">%</span></div></div>
+          <div class="ac-field"><label for="acAdmin">Planning + admin time per session</label><div class="ac-inwrap"><input type="number" id="acAdmin" min="0" step="0.25" value="2"><span class="ac-suf">hours</span></div></div>
+        </div>
+      </div>
+      <div class="ac-panel">
+        <div class="eyebrow" style="margin-bottom:14px">The verdict</div>
+        <div class="ac-hero">
+          <div class="ac-hero-lab">Your real hourly rate</div>
+          <div class="ac-hero-num" id="acHourly">&pound;0</div>
+          <div class="ac-hero-band" id="acBand">&mdash;</div>
+        </div>
+        <div class="ac-stats">
+          <div class="ac-stat"><div class="ac-stat-num" id="acRevenue">&pound;0</div><div class="ac-stat-lab">Revenue / session</div></div>
+          <div class="ac-stat"><div class="ac-stat-num" id="acProfit">&pound;0</div><div class="ac-stat-lab">Profit / session</div></div>
+          <div class="ac-stat"><div class="ac-stat-num" id="acMargin">0%</div><div class="ac-stat-lab">Margin</div></div>
+          <div class="ac-stat"><div class="ac-stat-num" id="acCosts">&pound;0</div><div class="ac-stat-lab">Total cost</div></div>
+          <div class="ac-stat"><div class="ac-stat-num" id="acBreakeven">0</div><div class="ac-stat-lab">Break-even players</div></div>
+          <div class="ac-stat"><div class="ac-stat-num" id="acTime">0h</div><div class="ac-stat-lab">Time invested</div></div>
+        </div>
+        <div class="ac-rec">
+          <div class="ac-rec-lab">You should be charging</div>
+          <div class="ac-rec-price" id="acRecPrice">&pound;0</div>
+          <div class="ac-rec-sub" id="acRecSub">for a healthy 40% margin</div>
+          <div class="ac-rec-uplift" id="acUplift">
+            <div><b id="acRecHourly">&pound;0</b><small>New hourly rate</small></div>
+            <div><b id="acRecProfit">&pound;0</b><small>New profit / session</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== EMAIL CAPTURE ===== -->
+<section class="sec alt" id="get">
+  <div class="wrap" style="text-align:center">
+    <span class="eyebrow">Take it with you</span>
+    <h2 class="display" style="margin:14px auto 12px">Want your number as a plan you can keep?</h2>
+    <p class="sec-lead" style="margin:0 auto 4px">Get the full calculator spreadsheet <b>plus</b> the how-to guide with the worked example &mdash; sent straight to your inbox. Free.</p>
+    <div class="optin">
+      <form class="optin-form" id="leadForm" novalidate>
+        <input type="text" id="leadName" name="name" placeholder="First name" autocomplete="given-name" aria-label="First name" required>
+        <input type="email" id="leadEmail" name="email" placeholder="Your email" autocomplete="email" aria-label="Your email" required>
+        <button type="submit" class="btn">Send me the calculator</button>
+      </form>
+      <div class="micro">Free &middot; unsubscribe anytime</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PROBLEM ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">The problem</span>
+    <h2 class="display">Most academy owners are guessing</h2>
+    <p class="sec-lead">You set your price years ago. Or you matched the club down the road. Or you picked a number that felt fair and never touched it again. Meanwhile your costs climbed, your sessions filled up, and your price stood still.</p>
+    <div class="cards">
+      <div class="card reveal"><div class="tick">01</div><p>You haven't raised your prices in two years or more.</p></div>
+      <div class="card reveal"><div class="tick">02</div><p>You charge what feels fair &mdash; not what the numbers actually say.</p></div>
+      <div class="card reveal"><div class="tick">03</div><p>You've no real idea what a single player costs you to coach.</p></div>
+    </div>
+    <p class="closing">Every one of those is <span class="accent">money walking out the gate</span>, week after week.</p>
+  </div>
+</section>
+
+<!-- ===== WHAT YOU GET ===== -->
+<section class="sec alt">
+  <div class="wrap getgrid">
+    <div>
+      <span class="eyebrow">What it does</span>
+      <h2 class="display">Plug in your numbers. Get a price you can stand behind.</h2>
+      <p class="sec-lead">Venue, coaches, sessions, group sizes, kit &mdash; the lot. It does the maths you've been avoiding and hands you back a price built on your real costs, not a hunch.</p>
+      <ul class="checklist">
+        <li>Your true cost-per-player, worked out for you</li>
+        <li>The price that hits the margin you actually want to run on</li>
+        <li>A break-even line, so you always know your floor</li>
+        <li>See what changes when you add sessions or players</li>
+        <li>Built for grassroots football, not a generic template</li>
+      </ul>
+    </div>
+    <aside class="panel reveal">
+      <h3>What you walk away with</h3>
+      <ul class="micro-list">
+        <li>One clear number you can charge with confidence</li>
+        <li>The maths behind it, so you can defend it to any parent</li>
+        <li>A reusable tool for every price review from here on</li>
+        <li>Five minutes of work instead of an afternoon of spreadsheets</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<!-- ===== AUTHOR ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">Why listen to me</span>
+    <div class="author" style="margin-top:18px">
+      <div class="crest" id="authorPhoto">JL</div>
+      <div>
+        <p>I built Play It Love It from nothing to 300-350 players a week across Aberdeenshire over ten years &mdash; then sold it. Every pricing mistake baked into this calculator is one I made first and fixed the hard way. Now I help academy owners build businesses that actually pay them properly.</p>
+        <div class="sign">&mdash; John Leitch</div>
+        <div class="creds">
+          <span>10 Years</span>
+          <span>350 Weekly Players</span>
+          <span>Built &middot; Scaled &middot; Sold</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== UPSELL ===== -->
+<section class="sec alt upsell">
+  <div class="wrap">
+    <div class="u-text">
+      <h3>Want the whole system, not just the price?</h3>
+      <p>The calculator fixes one number. ASCEND fixes the whole business &mdash; my mentoring programme for academy owners, walking you through the full method to turn a grassroots academy into something that runs without you.</p>
+    </div>
+    <a class="ulink" href="REPLACE_WITH_BOOKING_LINK" target="_blank" rel="noopener">Book a free intro call <span class="pm">&middot; ASCEND &pound;50/mo</span> &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">Before you ask</span>
+    <h2 class="display">The quick questions</h2>
+    <div class="faq">
+      <details><summary>Is it really free?</summary><div class="ans">Yes &mdash; completely. The calculator's free to use right here, and the spreadsheet + guide are free too. No card needed.</div></details>
+      <details><summary>Do I have to give my email?</summary><div class="ans">No. Use the calculator on this page as much as you like without giving anything. Pop your email in only if you want the full spreadsheet and the guide to keep.</div></details>
+      <details><summary>What do I get by email?</summary><div class="ans">The full calculator spreadsheet (works in Excel and Google Sheets) plus the how-to guide with the worked example.</div></details>
+      <details><summary>Will this work for my area?</summary><div class="ans">Yes &mdash; it's built on your real numbers, not averages, so it works wherever you coach: city, town or village.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FINAL CTA ===== -->
+<section class="sec alt final">
+  <div class="wrap">
+    <h2 class="display">Know your number by tonight.</h2>
+    <a class="btn" href="#calc">Find my number &darr;</a>
+    <div class="micro">Free &middot; built for grassroots academies &middot; yours to keep.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="brand">ASCEND</span>
+    <span>&copy; 2026 John Leitch Coaching</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+    var el = function(id){ return document.getElementById(id); };
+    var POUND = String.fromCharCode(163), EMDASH = String.fromCharCode(8212), RSQUO = String.fromCharCode(8217);
+
+    /* ===== OPTIONAL PHOTOS: paste an image URL between the quotes to use a photo instead of the monogram ===== */
+    var HERO_PHOTO = '';    // OPTIONAL: paste a hosted image URL here (Wix Media -> your photo -> Copy URL)
+    var AUTHOR_PHOTO = '';  // OPTIONAL: same
+    if (HERO_PHOTO){ var h = el('heroPhoto'); h.style.backgroundImage = 'url(' + HERO_PHOTO + ')'; h.innerHTML = ''; }
+    if (AUTHOR_PHOTO){ var a = el('authorPhoto'); a.style.backgroundImage = 'url(' + AUTHOR_PHOTO + ')'; a.textContent = ''; }
+
+    /* ===== EMAIL FORM ===== paste your Formspree endpoint to capture leads ===== */
+    var FORM_ENDPOINT = 'https://formspree.io/f/xjybwyqv'; // ASCEND Calculator form (Formspree, wired 2026-08-10)
+    window.FORM_ENDPOINT = FORM_ENDPOINT; // exposed for the calculator gate script
+
+    /* ===== CALCULATOR ===== */
+    var ids = ['acPrice','acPlayers','acLength','acVenue','acCoach','acOther','acTax','acAdmin'];
+    var TARGET_MARGIN = 0.40;
+    function num(v){ var n = parseFloat(v); return isFinite(n) && n > 0 ? n : 0; }
+    function gbp(n){ return POUND + Math.round(n).toLocaleString('en-GB'); }
+    function gbp2(n){ var r = Math.round(n*100)/100; return POUND + (r % 1 === 0 ? r.toString() : r.toFixed(2)); }
+    function band(h){
+        if (h < 10) return { t:'Below minimum wage', c:'var(--red)' };
+        if (h < 20) return { t:'Working poor', c:'var(--amber)' };
+        if (h < 40) return { t:'Room to grow', c:'var(--cyan)' };
+        if (h < 80) return { t:'Healthy', c:'var(--green)' };
+        return { t:'Premium territory', c:'var(--green)' };
+    }
+    function render(){
+        var price = num(el('acPrice').value), players = num(el('acPlayers').value),
+            length = num(el('acLength').value), venue = num(el('acVenue').value),
+            coach = num(el('acCoach').value), other = num(el('acOther').value),
+            taxRate = Math.min(0.95, num(el('acTax').value)/100), admin = num(el('acAdmin').value);
+        var fixed = venue + coach + other, revenue = price * players;
+        var totalCost = fixed + revenue * taxRate, profit = revenue - totalCost;
+        var time = length + admin, hourly = time > 0 ? profit/time : 0;
+        var margin = revenue > 0 ? profit/revenue : 0;
+        var breakeven = price > 0 ? Math.ceil(fixed/price) : 0;
+
+        el('acRevenue').textContent = gbp(revenue);
+        el('acCosts').textContent = gbp(totalCost);
+        el('acProfit').textContent = (profit < 0 ? '-' + POUND + Math.abs(Math.round(profit)).toLocaleString('en-GB') : gbp(profit));
+        el('acProfit').style.color = profit < 0 ? 'var(--red)' : 'var(--paper)';
+        el('acMargin').textContent = Math.round(margin*100) + '%';
+        el('acBreakeven').textContent = breakeven;
+        el('acTime').textContent = (Math.round(time*10)/10) + 'h';
+
+        el('acHourly').textContent = (hourly < 0 ? '-' + POUND + Math.abs(Math.round(hourly)) : gbp(hourly));
+        var b = band(hourly);
+        el('acHourly').style.color = b.c; el('acBand').textContent = b.t; el('acBand').style.color = b.c;
+
+        var denom = players * ((1 - taxRate) - TARGET_MARGIN);
+        var rec = denom > 0 ? fixed/denom : 0;
+        rec = Math.round(rec/0.5)*0.5;
+        if (rec < price) rec = price;
+        var recRevenue = rec * players, recProfit = recRevenue - (fixed + recRevenue * taxRate);
+        var recHourly = time > 0 ? recProfit/time : 0;
+
+        el('acRecPrice').textContent = gbp2(rec);
+        if (rec > price){
+            el('acRecSub').textContent = 'up from ' + gbp2(price) + ' ' + EMDASH + ' for a healthy 40% margin';
+            el('acRecHourly').textContent = gbp(recHourly);
+            el('acRecProfit').textContent = gbp(recProfit);
+            el('acUplift').style.display = 'flex';
+        } else {
+            el('acRecSub').textContent = 'you' + RSQUO + 're already at or above a healthy margin ' + EMDASH + ' protect it';
+            el('acUplift').style.display = 'none';
+        }
+    }
+    ids.forEach(function(id){ el(id).addEventListener('input', render); el(id).addEventListener('change', render); });
+    render();
+
+    /* ===== FORM SUBMIT ===== */
+    var form = el('leadForm');
+    form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var name = el('leadName').value.trim(), email = el('leadEmail').value.trim();
+        if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+            el('leadEmail').style.borderColor = 'var(--red)'; return;
+        }
+        var btn = form.querySelector('button');
+        btn.textContent = 'Sending...';
+        var done = function(){ form.parentNode.innerHTML = '<div class="optin-done">Check your inbox ' + EMDASH + ' the calculator and guide are on the way.</div>'; };
+        if (FORM_ENDPOINT.indexOf('REPLACE') === 0){ done(); return; } // not wired yet: still confirm to the user
+        fetch(EP, { method:'POST', headers:{ 'Content-Type':'application/json', 'Accept':'application/json' }, body: JSON.stringify({ name:name, email:email, source:'ascend-pricing-calculator' }) })
+            .then(function(){ done(); }).catch(function(){ done(); });
+    });
+
+    /* ===== REVEAL ===== */
+    var reveals = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window){
+        var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold:.15 });
+        reveals.forEach(function(r){ io.observe(r); });
+    } else { reveals.forEach(function(r){ r.classList.add('in'); }); }
+})();
+</script>
+<script>
+(function(){
+  var GATE_KEY = 'jl_calc_unlocked';
+  var grid = document.getElementById('acGrid');
+  var lock = document.getElementById('calcLock');
+  function unlock(){
+    grid.classList.remove('calc-blur');
+    lock.style.display = 'none';
+    try { localStorage.setItem(GATE_KEY, '1'); } catch(e) {}
+  }
+  try { if (localStorage.getItem(GATE_KEY) === '1') { unlock(); } } catch(e) {}
+  var attempts = 0;
+  document.getElementById('gateForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = document.getElementById('gateName').value.trim();
+    var email = document.getElementById('gateEmail').value.trim();
+    var err = document.getElementById('gateErr');
+    err.style.display = 'none';
+    if (!name || !email) { return; }
+    var EP = window.FORM_ENDPOINT || 'REPLACE';
+    if (EP.indexOf('REPLACE') !== -1) {
+      /* endpoint not configured yet - let the visitor through, warn the owner */
+      if (window.console) console.warn('Calculator gate: FORM_ENDPOINT not set - email NOT captured.');
+      unlock(); return;
+    }
+    var btn = e.target.querySelector('button');
+    btn.disabled = true; btn.textContent = 'Unlocking...';
+    fetch(FORM_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email) + '&source=calculator-gate'
+    }).then(function(r){
+      if (!r.ok) throw new Error('bad');
+      unlock();
+    }).catch(function(){
+      attempts++;
+      btn.disabled = false; btn.textContent = 'Unlock my number ' + String.fromCharCode(8594);
+      if (attempts >= 2) { unlock(); return; } /* never dead-end a visitor */
+      err.textContent = 'Something glitched - hit the button once more.';
+      err.style.display = 'block';
+    });
+  });
+})();
+</script>
+</body>
+</html>

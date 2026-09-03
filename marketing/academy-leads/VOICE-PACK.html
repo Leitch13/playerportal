@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<!--
+  ASCEND LEAD MACHINE - EMAIL VOICE PACK
+  The six parent-facing emails, each written three ways. At setup, the academy
+  picks the voice that sounds like them and pastes that column into the
+  automations. Merge tokens ({Parent name} etc.) are Airtable field tokens -
+  paste the body, then re-insert the blue tokens via Airtable's field picker
+  where marked. [Square bracket] items are the academy's own details.
+  Owner-facing alerts (new lead, daily chase) stay as they are - parents never
+  see them, so they don't need a voice.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Voice Pack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441;
+    --line:rgba(255,255,255,.10); --maxw:860px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.97}
+  .eyebrow{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  a{color:var(--brand);text-decoration:none}
+
+  header{padding:52px 0 26px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 90% 0%,rgba(34,211,238,.12),transparent 60%)}
+  header h1{font-size:clamp(2rem,5.5vw,3.1rem);margin:12px 0 12px;max-width:18ch}
+  header p{color:#C4D0D8;max-width:60ch;font-size:1rem}
+
+  /* voice tabs */
+  .voices{position:sticky;top:0;z-index:5;background:var(--ink);border-bottom:1px solid var(--line);padding:14px 0}
+  .voices .wrap{display:flex;gap:8px;flex-wrap:wrap}
+  .vtab{font:inherit;font-weight:700;font-size:.88rem;padding:10px 18px;border-radius:30px;border:1px solid var(--line);background:var(--ink-2);color:#CBD5DC;cursor:pointer}
+  .vtab.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+  .vtab:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .vdesc{font-size:.85rem;color:var(--mute);padding-top:8px;width:100%}
+
+  .emails{padding:34px 0 80px;display:grid;gap:16px}
+  .em{border:1px solid var(--line);border-radius:12px;background:var(--ink-2);overflow:hidden}
+  .em-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .em-head h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.02rem;letter-spacing:.02em}
+  .em-head .goes{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);font-weight:700}
+  .em-body{padding:16px 18px}
+  .subj{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .subj .lab{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700;flex:none}
+  .subj b{font-size:.95rem}
+  .body-box{background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:13px 15px;font-size:.92rem;color:#DCE5EA;line-height:1.65;white-space:pre-wrap}
+  .body-box .tok{color:var(--brand);font-weight:700}
+  .body-box .fill{color:var(--amber)}
+  .em-foot{display:flex;gap:10px;padding:12px 18px 16px;flex-wrap:wrap}
+  .copybtn{font:inherit;font-weight:700;font-size:.82rem;padding:9px 16px;border-radius:5px;border:1px solid var(--brand);background:var(--brand);color:var(--brand-ink);cursor:pointer}
+  .copybtn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+  .copybtn.done{background:var(--green);border-color:var(--green)}
+  .note{font-size:.8rem;color:var(--mute);padding-top:4px}
+
+  .keybox{border:1px solid var(--line);border-radius:10px;background:var(--ink-2);padding:14px 18px;margin-top:22px;font-size:.85rem;color:#B6C2CA}
+  .keybox b{color:var(--brand)} .keybox i{color:var(--amber);font-style:normal;font-weight:700}
+  footer{border-top:1px solid var(--line);padding:28px 0 60px;color:var(--mute);font-size:.84rem;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="eyebrow">Lead Machine &middot; email voice pack</span>
+    <h1 class="display">Emails that sound like you, not like software.</h1>
+    <p>The six emails parents actually receive, each written three ways. Pick the voice that sounds like your academy, then copy each email into its automation. Read all three versions of email one out loud &mdash; the one that sounds like something you'd actually say is your voice.</p>
+    <div class="keybox"><b>{Blue tokens}</b> are Airtable merge fields &mdash; after pasting, re-insert them with Airtable's blue <b>+</b> field picker so they fill in automatically. <i>[Amber brackets]</i> are your details &mdash; type those in once. Owner alerts (new lead, daily chase list) stay as they are; parents never see them.</div>
+  </div>
+</header>
+
+<div class="voices">
+  <div class="wrap">
+    <button class="vtab on" data-v="local">Local &amp; friendly</button>
+    <button class="vtab" data-v="pro">Professional / performance</button>
+    <button class="vtab" data-v="club">Community club</button>
+    <p class="vdesc" id="vdesc">Warm, quick, first-name terms. For academies where the owner knows every parent at the gate.</p>
+  </div>
+</div>
+
+<div class="wrap emails" id="emails"></div>
+
+<footer>
+  <div class="wrap">Pick one voice and stay in it &mdash; a parent gets all six of these over weeks, and consistency is what makes it feel human.</div>
+</footer>
+
+<script>
+var VOICE_DESCS = {
+  local: 'Warm, quick, first-name terms. For academies where the owner knows every parent at the gate.',
+  pro:   'Polished and structured. For performance pathways and academies selling development seriously.',
+  club:  'Family-feel, welcoming, "one of us". For community clubs built on belonging.'
+};
+
+/* T('Field') = Airtable merge token; F('detail') = academy fill-in */
+var EMAILS = [
+  {
+    title: '1. Instant reply to a new enquiry',
+    goes: 'Automation 2 - when record created',
+    local: { s: 'Thanks {Parent name} - let\'s get {Child name} playing!',
+      b: 'Hi {Parent name}!\n\nBrilliant - we\'ve got {Child name}\'s details and we\'ll give you a shout today to sort the free trial. Any questions in the meantime, just hit reply.\n\n[Owner first name] at [Academy name]' },
+    pro: { s: 'Your trial request for {Child name} - [Academy name]',
+      b: 'Hello {Parent name},\n\nThank you for your enquiry. We have {Child name}\'s details and a member of our team will contact you today to arrange the trial session and answer any questions.\n\nIf you\'d like to reach us sooner, simply reply to this email.\n\nKind regards,\n[Academy name]' },
+    club: { s: 'We\'d love to have {Child name} down!',
+      b: 'Hi {Parent name},\n\nThanks so much for getting in touch! We\'ve got {Child name}\'s details and one of us will be in touch today to sort their free session.\n\nWe\'re a friendly bunch - any questions at all, just reply.\n\nSee you soon,\neveryone at [Academy name]' }
+  },
+  {
+    title: '2. Trial confirmation',
+    goes: 'Automation 5 - status is Trial booked',
+    local: { s: '{Child name}\'s trial is booked! 🎉',
+      b: 'Great stuff {Parent name} - {Child name} is booked in for {Trial date}.\n\nBoots, shin pads, water bottle - that\'s it. Any problems on the day, reply here or ring us.\n\nSee you there!' },
+    pro: { s: 'Trial confirmed: {Child name} - {Trial date}',
+      b: 'Hello {Parent name},\n\n{Child name}\'s trial session is confirmed for {Trial date}.\n\nPlease bring football boots, shin pads and a water bottle, and arrive ten minutes early so we can welcome you and introduce {Child name}\'s coach.\n\nIf anything changes, reply to this email.\n\nWe look forward to seeing you,\n[Academy name]' },
+    club: { s: 'See you soon, {Child name}! Trial confirmed',
+      b: 'Hi {Parent name} - lovely news, {Child name}\'s in for {Trial date}.\n\nBring boots, shin pads and a water bottle, and come and say hello when you arrive - the coaches will be expecting you both.\n\nAny problems on the day, just reply. Can\'t wait to meet you!' }
+  },
+  {
+    title: '3. Day-before reminder',
+    goes: 'Automation 6 - daily 5pm sweep',
+    local: { s: 'See you tomorrow, {Child name}!',
+      b: 'Quick one {Parent name} - {Child name}\'s trial is tomorrow at {Trial date}.\n\nBoots, shin pads, water. See you there!' },
+    pro: { s: 'Reminder: {Child name}\'s trial tomorrow',
+      b: 'Hello {Parent name},\n\nA reminder that {Child name}\'s trial session takes place tomorrow at {Trial date}. Please bring boots, shin pads and a water bottle, arriving ten minutes early.\n\nWe look forward to seeing you both,\n[Academy name]' },
+    club: { s: 'Tomorrow\'s the day, {Child name}! ⚽',
+      b: 'Hi {Parent name} - just a friendly nudge that {Child name}\'s first session is tomorrow at {Trial date}.\n\nBoots, shin pads, water bottle, big smile. See you both there!' }
+  },
+  {
+    title: '4. Morning-after enrol nudge',
+    goes: 'Automation 7 - status is Trial attended',
+    local: { s: 'How did {Child name} get on?',
+      b: 'Morning {Parent name}!\n\nGreat to have {Child name} down. If they loved it, grab their spot here: [enrol link]\n\nAnything you want to ask about groups or fees - just reply.' },
+    pro: { s: 'Next steps for {Child name}',
+      b: 'Hello {Parent name},\n\nThank you for bringing {Child name} to their trial session - the coaches enjoyed having them.\n\nIf you\'d like to secure their place, you can enrol here: [enrol link]\n\nIf you have any questions about groups, fees or development pathways, reply and we\'ll be happy to help.\n\n[Academy name]' },
+    club: { s: '{Child name} fitted right in ⚽',
+      b: 'Hi {Parent name} - it was brilliant having {Child name} along, hope they enjoyed it as much as we did!\n\nIf they\'d like to make it a regular thing, here\'s the link to join: [enrol link]\n\nAnything you\'re wondering about, just reply - no pressure either way.' }
+  },
+  {
+    title: '5. No-show rescue',
+    goes: 'Automation 8 - status is No-show',
+    local: { s: 'We missed {Child name}! Want to rebook?',
+      b: 'No bother at all {Parent name} - life happens!\n\n{Child name}\'s free trial is still there. Reply with a day that suits and we\'ll sort it.' },
+    pro: { s: 'Rearranging {Child name}\'s trial',
+      b: 'Hello {Parent name},\n\nWe\'re sorry we missed {Child name} at their scheduled trial. Their place remains available - reply with a day that suits and we will rebook it.\n\n[Academy name]' },
+    club: { s: 'No worries - {Child name}\'s spot is safe',
+      b: 'Hi {Parent name},\n\nWe missed you both - but honestly, no worries at all, these things happen!\n\n{Child name}\'s free session is still waiting. Just reply with a day that works and we\'ll get it sorted.' }
+  },
+  {
+    title: '6. The welcome pack',
+    goes: 'Automation 9 - status is Enrolled',
+    local: { s: 'Get in! Welcome to [Academy name], {Child name} ⚽',
+      b: 'You\'re in, {Parent name}!\n\nEverything you need:\n• Kit list - [your line]\n• Term dates & venue - [your line]\n• Payment - [your line]\n• Parents\' WhatsApp - [invite link]\n\nAny questions, reply here. See you at training!' },
+    pro: { s: 'Welcome to [Academy name] - {Child name}\'s enrolment confirmed',
+      b: 'Hello {Parent name},\n\nWe\'re delighted to confirm {Child name}\'s place.\n\nKey information:\n• Kit list: [your line]\n• Term dates and venue: [your line]\n• Payment: [your line]\n• Parent communication group: [invite link]\n\nIf you have any questions ahead of the first session, please reply to this email.\n\nWelcome to the academy,\n[Academy name]' },
+    club: { s: 'Welcome to the family, {Child name}! 🎉',
+      b: 'Hi {Parent name} - that\'s {Child name} officially one of us!\n\nThe bits you need:\n• What to bring - [your line]\n• When & where - [your line]\n• How payment works - [your line]\n• Parents\' WhatsApp (the best place for everything) - [invite link]\n\nLoads of friendly faces waiting - see you at the first session!' }
+  }
+];
+
+var voice = 'local';
+var holder = document.getElementById('emails');
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pretty(s){
+  return esc(s)
+    .replace(/\{([^}]+)\}/g, '<span class="tok">{$1}</span>')
+    .replace(/\[([^\]]+)\]/g, '<span class="fill">[$1]</span>');
+}
+
+function render(){
+  holder.innerHTML = '';
+  EMAILS.forEach(function(e, i){
+    var v = e[voice];
+    var card = document.createElement('div');
+    card.className = 'em';
+    card.innerHTML =
+      '<div class="em-head"><h3>'+e.title+'</h3><span class="goes">'+e.goes+'</span></div>' +
+      '<div class="em-body">' +
+        '<div class="subj"><span class="lab">Subject</span><b>'+pretty(v.s)+'</b></div>' +
+        '<div class="body-box">'+pretty(v.b)+'</div>' +
+      '</div>' +
+      '<div class="em-foot">' +
+        '<button class="copybtn" data-i="'+i+'" data-k="b">Copy body</button>' +
+        '<button class="copybtn ghost" data-i="'+i+'" data-k="s">Copy subject</button>' +
+        '<span class="note">Paste into the automation, then re-insert the blue tokens with Airtable\'s field picker.</span>' +
+      '</div>';
+    holder.appendChild(card);
+  });
+}
+
+function copyText(t, btn){
+  var done = function(){
+    var old = btn.textContent;
+    btn.textContent = 'Copied ✓'; btn.classList.add('done');
+    setTimeout(function(){ btn.textContent = old; btn.classList.remove('done'); }, 1400);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ fallback(t); done(); });
+  } else { fallback(t); done(); }
+  function fallback(txt){
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  }
+}
+
+document.addEventListener('click', function(ev){
+  var t = ev.target;
+  if (t.classList.contains('vtab')){
+    voice = t.dataset.v;
+    document.querySelectorAll('.vtab').forEach(function(b){ b.classList.toggle('on', b === t); });
+    document.getElementById('vdesc').textContent = VOICE_DESCS[voice];
+    render();
+  }
+  if (t.classList.contains('copybtn')){
+    var e = EMAILS[+t.dataset.i][voice];
+    copyText(t.dataset.k === 's' ? e.s : e.b, t);
+  }
+});
+
+render();
+</script>
+</body>
+</html>

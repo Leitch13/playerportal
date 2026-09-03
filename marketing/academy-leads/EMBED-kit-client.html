@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!--
+  CLIENT-FACING EMBED KIT - how to drop the trial funnel onto any website.
+  Self-contained HTML; host it or export to PDF and hand to the academy owner.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Put your funnel on your website — Embed Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441;
+    --line:rgba(255,255,255,.10); --maxw:840px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98}
+  .eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .accent{color:var(--brand)}
+  a{color:var(--brand)}
+  strong{color:#fff}
+
+  header.top{padding:56px 0 30px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 90% 0%,rgba(34,211,238,.12),transparent 60%)}
+  header.top h1{font-size:clamp(2rem,5.6vw,3rem);margin:12px 0 14px;max-width:18ch}
+  header.top p{color:#C4D0D8;max-width:56ch;font-size:1.05rem}
+
+  section{padding:40px 0;border-bottom:1px solid var(--line)}
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(1.4rem,4vw,2rem);margin-bottom:10px;line-height:1.02}
+  h2 .num{color:var(--brand)}
+  .lead{color:#BAC6CE;max-width:60ch;margin-bottom:18px}
+  h3{font-size:1.12rem;font-weight:700;margin:20px 0 8px}
+  p{margin-bottom:12px;color:#D4DDE3}
+  ul{margin:6px 0 14px 20px;color:#C4D0D8}
+  li{margin-bottom:6px}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+  .opt{border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--ink-2)}
+  .opt.rec{border-color:var(--brand);background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.08),transparent 60%),var(--ink-2)}
+  .opt .tag{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:12px}
+  .opt.rec .tag{background:var(--brand);color:var(--brand-ink)}
+  .opt.alt .tag{background:var(--ink-3);color:var(--mute)}
+  .opt h4{font-size:1.05rem;font-weight:700;margin-bottom:8px}
+  .opt p{font-size:.92rem;color:#B6C2CA;margin-bottom:0}
+
+  pre{background:#05080b;border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:10px 0 6px;font-size:.82rem;line-height:1.5}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;color:#CFE8ee}
+  .codelabel{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-top:16px}
+  .kbd{background:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-size:.85em;color:#fff}
+
+  .platform{border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-top:14px;background:var(--ink-2)}
+  .platform h3{margin-top:0;display:flex;align-items:center;gap:10px}
+  .platform h3 .b{width:26px;height:26px;border-radius:6px;background:var(--ink-3);display:flex;align-items:center;justify-content:center;font-size:.9rem}
+  .platform ol{margin:8px 0 0 20px;color:#C4D0D8}
+  .platform ol li{margin-bottom:6px}
+
+  .tip{margin-top:12px;font-size:.9rem;color:var(--amber);background:rgba(242,180,65,.08);border:1px solid rgba(242,180,65,.25);border-radius:8px;padding:11px 14px}
+  .ok{margin-top:12px;font-size:.9rem;color:var(--green);background:rgba(56,211,159,.08);border:1px solid rgba(56,211,159,.25);border-radius:8px;padding:11px 14px}
+
+  .checklist{list-style:none;display:grid;gap:11px;margin:14px 0 0 0}
+  .checklist li{display:flex;gap:12px;align-items:flex-start;font-size:1rem;color:#DCE5EA}
+  .checklist li::before{content:"";flex:0 0 auto;width:22px;height:22px;margin-top:2px;border-radius:5px;border:1px solid var(--brand);background:rgba(34,211,238,.1)}
+
+  footer{padding:32px 0;color:var(--mute);font-size:.85rem;text-align:center}
+  @media (max-width:680px){ .two{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="eyebrow">Embed kit</span>
+    <h1 class="display">Put your funnel on your website.</h1>
+    <p>Two ways to drop the trial funnel onto your site &mdash; copy, paste, done. It resizes itself to fit and every lead still flows into your tracker automatically.</p>
+  </div>
+</header>
+
+<!-- TWO WAYS -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Pick one</span>
+    <h2>Two ways to add it</h2>
+    <div class="two">
+      <div class="opt rec">
+        <span class="tag">Recommended</span>
+        <h4>A &mdash; Embed with a link (iframe)</h4>
+        <p>Host the funnel once to get a web link, then paste a small snippet. Works on any website, resizes itself, and updating the funnel updates it everywhere. Best for Squarespace, WordPress, or any site.</p>
+      </div>
+      <div class="opt alt">
+        <span class="tag">No hosting</span>
+        <h4>B &mdash; Paste the whole page</h4>
+        <p>Paste the entire funnel file straight into a Wix or WordPress HTML box. No hosting needed &mdash; but to update it you re-paste. Fine if you just want it live fast.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METHOD A -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Method A</span>
+    <h2><span class="num">1.</span> Get a link for your funnel</h2>
+    <p class="lead">Your funnel file needs to live at a web address before you can embed it. Easiest free option:</p>
+    <ul>
+      <li>Go to <a href="https://app.netlify.com/drop">app.netlify.com/drop</a> and <strong>drag your <code>trial-funnel-matcher.html</code> file onto the page</strong>. It gives you a link instantly (rename to <code>index.html</code> first for a tidy URL).</li>
+      <li>Or upload it to your own web hosting, Vercel, or GitHub Pages.</li>
+    </ul>
+    <p>Copy that link &mdash; you'll paste it into the snippet below.</p>
+
+    <h2 style="margin-top:26px"><span class="num">2.</span> Paste this embed snippet</h2>
+    <p class="lead">Swap <code>REPLACE_WITH_YOUR_FUNNEL_URL</code> for your link. This also makes the funnel auto-resize so there's no scrollbar or empty gap.</p>
+    <div class="codelabel">Embed snippet</div>
+<pre><code>&lt;!-- Trial funnel --&gt;
+&lt;iframe id="ppFunnel"
+        src="REPLACE_WITH_YOUR_FUNNEL_URL"
+        title="Book a free trial"
+        scrolling="no"
+        style="width:100%;border:0;display:block;min-height:720px"&gt;&lt;/iframe&gt;
+&lt;script&gt;
+  window.addEventListener('message', function(e){
+    if (e.data &amp;&amp; e.data.ppFunnel === 'height'){
+      var f = document.getElementById('ppFunnel');
+      if (f) f.style.height = e.data.h + 'px';
+    }
+  });
+&lt;/script&gt;</code></pre>
+    <div class="ok">The funnel sends its height to the page, and that little script resizes the frame to match &mdash; so it always fits, on desktop and mobile.</div>
+  </div>
+</section>
+
+<!-- WHERE TO PASTE -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Step 3</span>
+    <h2>Where to paste it &mdash; by platform</h2>
+
+    <div class="platform">
+      <h3><span class="b">W</span> Wix</h3>
+      <ol>
+        <li>Editor &rarr; <span class="kbd">Add (+)</span> &rarr; <strong>Embed Code</strong> &rarr; <strong>Embed HTML</strong>.</li>
+        <li>Choose <strong>Code</strong> and paste the snippet (Method A) &mdash; or the <strong>whole funnel file</strong> (Method B, no hosting needed).</li>
+        <li>Drag it full-width. <strong>Set the box height</strong> in the editor: about <strong>900px desktop</strong> and <strong>1250px mobile</strong> (Wix embeds don't auto-grow, so give it room).</li>
+        <li>Preview to test.</li>
+      </ol>
+      <div class="tip">&#9888; Wix boxes-in embeds at a fixed height, so on Wix set a generous height by hand rather than relying on auto-resize.</div>
+    </div>
+
+    <div class="platform">
+      <h3><span class="b">S</span> Squarespace</h3>
+      <ol>
+        <li>Edit the page &rarr; <span class="kbd">Add Block</span> &rarr; <strong>Code</strong> (or <strong>Embed</strong>).</li>
+        <li>Paste the Method A snippet. Save.</li>
+        <li>That's it &mdash; it auto-resizes on its own here.</li>
+      </ol>
+      <div class="ok">Auto-resize works natively on Squarespace &mdash; no manual height needed.</div>
+    </div>
+
+    <div class="platform">
+      <h3><span class="b">W</span> WordPress</h3>
+      <ol>
+        <li>Edit the page &rarr; add a <strong>Custom HTML</strong> block.</li>
+        <li>Paste the Method A snippet (or the whole file for Method B). Update.</li>
+        <li>Auto-resizes on its own.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- TEST -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Before you're done</span>
+    <h2>Quick test</h2>
+    <ul class="checklist">
+      <li>The funnel shows on the page and fits with no scrollbar or big gap</li>
+      <li>Pick an age, a session type, tap Find &mdash; the match appears</li>
+      <li>Fill the form &mdash; a lead lands in your Airtable board</li>
+      <li>You get the alert email + the test parent gets the auto-reply</li>
+      <li>On your phone: it still looks right and works</li>
+    </ul>
+    <div class="tip" style="margin-top:18px">Running Facebook ads? Add your <strong>Meta Pixel ID</strong> in the funnel's CONFIG (the <code>metaPixelId</code> line) so Facebook can track who books and let you retarget the ones who don't.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Stuck? Send me a message and I'll get it live for you. &nbsp;&middot;&nbsp; Your automated leads system.</div>
+</footer>
+
+</body>
+</html>

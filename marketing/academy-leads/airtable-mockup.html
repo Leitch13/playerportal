@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<!--
+  MOCKUP ONLY - a visual of the "Academy Leads" Airtable base you'd build once
+  and hand to clients. Not a live Airtable; a picture of the three screens:
+  Grid (all leads) -> Pipeline (kanban tracking) -> Automations (the Zapier part).
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academy Leads — Airtable mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --ink:#1d1f25; --mute:#6b7280; --line:#e5e7eb;
+    --blue:#2d7ff9; --blue-soft:#e0edff;
+    /* airtable-ish pastel select pills */
+    --gray:#eaeaea; --gray-t:#5a5a5a;
+    --yellow:#ffeab6; --yellow-t:#8a6d1a;
+    --orange:#ffdcc7; --orange-t:#9a4a1f;
+    --teal:#c2f0e0; --teal-t:#136b52;
+    --green:#cdeecb; --green-t:#276b25;
+    --red:#ffd0d6; --red-t:#a02436;
+    --purple:#ead7ff; --purple-t:#6b34a8;
+    --pink:#ffdaf0; --pink-t:#a02a78;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-serif;font-size:14px;line-height:1.4;padding:26px}
+  .page{max-width:1180px;margin:0 auto}
+  h1.title{font-size:1.35rem;font-weight:700;margin-bottom:3px}
+  .subtitle{color:var(--mute);font-size:.92rem;margin-bottom:22px}
+  .caption{font-size:.82rem;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:26px 0 9px}
+
+  /* window chrome */
+  .win{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 8px 30px -18px rgba(0,0,0,.28)}
+  .toolbar{display:flex;align-items:center;gap:14px;padding:9px 14px;border-bottom:1px solid var(--line);background:#fbfbfc}
+  .basemark{display:flex;align-items:center;gap:9px;font-weight:700}
+  .basemark .b{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#ffb84d,#ff7a45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem;font-weight:800}
+  .tabs{display:flex;gap:2px;margin-left:6px}
+  .tab{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;font-weight:600;font-size:.86rem;color:var(--mute);cursor:default}
+  .tab.on{background:var(--blue-soft);color:var(--blue)}
+  .tab .ico{font-size:.9rem}
+  .tbtn{margin-left:auto;font-size:.82rem;color:var(--mute);display:flex;gap:14px}
+  .tbtn span{display:flex;align-items:center;gap:5px}
+
+  /* pills */
+  .pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.78rem;font-weight:600;white-space:nowrap}
+  .p-new{background:var(--gray);color:var(--gray-t)}
+  .p-contacted{background:var(--yellow);color:var(--yellow-t)}
+  .p-tbooked{background:var(--orange);color:var(--orange-t)}
+  .p-tattended{background:var(--teal);color:var(--teal-t)}
+  .p-enrolled{background:var(--green);color:var(--green-t)}
+  .p-lost{background:var(--red);color:var(--red-t)}
+  .p-fb{background:var(--purple);color:var(--purple-t)}
+  .p-web{background:var(--blue-soft);color:var(--blue)}
+  .p-ref{background:var(--pink);color:var(--pink-t)}
+
+  /* grid */
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  thead th{text-align:left;font-weight:600;color:var(--mute);font-size:.76rem;padding:9px 12px;border-bottom:1px solid var(--line);background:#fbfbfc;white-space:nowrap}
+  thead th .gh{display:flex;align-items:center;gap:6px}
+  tbody td{padding:8px 12px;border-bottom:1px solid #f0f1f3;border-right:1px solid #f4f5f7;white-space:nowrap}
+  tbody tr:hover{background:#fafbff}
+  .rownum{color:#b6bcc6;width:34px;text-align:center;font-size:.78rem}
+  .strong{font-weight:600}
+  .muted{color:var(--mute)}
+  .tablewrap{overflow-x:auto}
+
+  /* kanban */
+  .kan{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:12px;padding:14px;overflow-x:auto}
+  .col{background:#f6f7f9;border-radius:10px;padding:10px;min-width:150px}
+  .col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+  .col-head .lab{display:flex;align-items:center;gap:7px;font-weight:600;font-size:.82rem}
+  .col-head .cnt{color:#9aa1ac;font-size:.78rem;font-weight:600}
+  .dots{width:9px;height:9px;border-radius:50%}
+  .card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 11px;margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .card .nm{font-weight:600;font-size:.85rem}
+  .card .meta{color:var(--mute);font-size:.76rem;margin-top:3px}
+  .card .tagline{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  .mini{font-size:.68rem;background:#f0f1f3;color:#6b7280;border-radius:5px;padding:2px 7px;font-weight:600}
+
+  /* automations */
+  .autos{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
+  .auto{border:1px solid var(--line);border-radius:10px;padding:14px 15px;background:#fff}
+  .auto .on{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;color:var(--green-t);background:var(--green);padding:2px 9px;border-radius:20px;margin-bottom:10px}
+  .auto h4{font-size:.95rem;font-weight:700;margin-bottom:10px}
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .node{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.8rem;font-weight:500;background:#fbfbfc}
+  .node .ci{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex:0 0 auto}
+  .c-trig{background:#fff3d6} .c-mail{background:#e0edff} .c-clock{background:#e9e2ff} .c-tag{background:#d7f7e9}
+  .arrow{color:#c2c7d0;font-size:1rem;font-weight:700}
+  .auto .note{color:var(--mute);font-size:.78rem;margin-top:10px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .legend .pill{font-size:.72rem}
+  .foot{margin-top:22px;color:var(--mute);font-size:.82rem;border-top:1px solid var(--line);padding-top:14px}
+  .foot b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1 class="title">Academy Leads &mdash; the base you build once and hand to every client</h1>
+  <div class="subtitle">The funnel page sends each new parent straight in here. This is where leads get tracked and where the automations fire.</div>
+
+  <!-- ============ GRID VIEW ============ -->
+  <div class="caption">1 &middot; Grid view &mdash; every lead in one place</div>
+  <div class="win">
+    <div class="toolbar">
+      <div class="basemark"><span class="b">A</span> Academy Leads</div>
+      <div class="tabs">
+        <div class="tab on"><span class="ico">&#9638;</span> Grid</div>
+        <div class="tab"><span class="ico">&#9776;</span> Pipeline</div>
+        <div class="tab"><span class="ico">&#9889;</span> Automations</div>
+      </div>
+      <div class="tbtn"><span>&#128065; Hide fields</span><span>&#9662; Filter</span><span>&#8645; Sort</span><span>&#128269; Search</span></div>
+    </div>
+    <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="rownum">#</th>
+          <th><span class="gh">&#128100; Parent</span></th>
+          <th><span class="gh">&#9917; Child</span></th>
+          <th><span class="gh">Age</span></th>
+          <th><span class="gh">&#9993; Email</span></th>
+          <th><span class="gh">&#128241; Phone</span></th>
+          <th><span class="gh">Source</span></th>
+          <th><span class="gh">Status</span></th>
+          <th><span class="gh">Follow-up</span></th>
+          <th><span class="gh">Created</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="rownum">1</td><td class="strong">Sarah Jones</td><td>Leo</td><td>8</td><td class="muted">sarah@email.com</td><td class="muted">07700 900123</td><td><span class="pill p-web">Website</span></td><td><span class="pill p-new">New</span></td><td class="muted">Today</td><td class="muted">2 min ago</td></tr>
+        <tr><td class="rownum">2</td><td class="strong">Mark Reilly</td><td>Ava</td><td>6</td><td class="muted">mark.r@email.com</td><td class="muted">07700 900456</td><td><span class="pill p-fb">Facebook</span></td><td><span class="pill p-contacted">Contacted</span></td><td class="muted">Tomorrow</td><td class="muted">1 hr ago</td></tr>
+        <tr><td class="rownum">3</td><td class="strong">Priya Shah</td><td>Rohan</td><td>10</td><td class="muted">priya@email.com</td><td class="muted">07700 900789</td><td><span class="pill p-web">Website</span></td><td><span class="pill p-tbooked">Trial booked</span></td><td class="muted">Sat 10am</td><td class="muted">Yesterday</td></tr>
+        <tr><td class="rownum">4</td><td class="strong">Dan Okafor</td><td>Zara</td><td>7</td><td class="muted">dan.o@email.com</td><td class="muted">07700 900222</td><td><span class="pill p-ref">Referral</span></td><td><span class="pill p-tattended">Trial attended</span></td><td class="muted">Follow up</td><td class="muted">3 days ago</td></tr>
+        <tr><td class="rownum">5</td><td class="strong">Emma Hughes</td><td>Noah</td><td>9</td><td class="muted">emma.h@email.com</td><td class="muted">07700 900333</td><td><span class="pill p-fb">Facebook</span></td><td><span class="pill p-enrolled">Enrolled</span></td><td class="muted">&mdash;</td><td class="muted">Last week</td></tr>
+        <tr><td class="rownum">6</td><td class="strong">Chris Bell</td><td>Milo</td><td>5</td><td class="muted">chrisb@email.com</td><td class="muted">07700 900444</td><td><span class="pill p-web">Website</span></td><td><span class="pill p-lost">Lost</span></td><td class="muted">&mdash;</td><td class="muted">Last week</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ============ KANBAN VIEW ============ -->
+  <div class="caption">2 &middot; Pipeline view &mdash; the tracking board (drag a lead as it moves)</div>
+  <div class="win">
+    <div class="toolbar">
+      <div class="basemark"><span class="b">A</span> Academy Leads</div>
+      <div class="tabs">
+        <div class="tab"><span class="ico">&#9638;</span> Grid</div>
+        <div class="tab on"><span class="ico">&#9776;</span> Pipeline</div>
+        <div class="tab"><span class="ico">&#9889;</span> Automations</div>
+      </div>
+      <div class="tbtn"><span>Stacked by &#9662; Status</span></div>
+    </div>
+    <div class="kan">
+      <div class="col">
+        <div class="col-head"><span class="lab"><span class="dots" style="background:#a3a3a3"></span> New</span><span class="cnt">1</span></div>
+        <div class="card"><div class="nm">Sarah Jones</div><div class="meta">Leo &middot; age 8</div><div class="tagline"><span class="mini">Website</span><span class="mini">2 min ago</span></div></div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span class="lab"><span class="dots" style="background:#e0b23a"></span> Contacted</span><span class="cnt">1</span></div>
+        <div class="card"><div class="nm">Mark Reilly</div><div class="meta">Ava &middot; age 6</div><div class="tagline"><span class="mini">Facebook</span><span class="mini">Call back tmrw</span></div></div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span class="lab"><span class="dots" style="background:#e07a3a"></span> Trial booked</span><span class="cnt">1</span></div>
+        <div class="card"><div class="nm">Priya Shah</div><div class="meta">Rohan &middot; age 10</div><div class="tagline"><span class="mini">Sat 10am</span></div></div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span class="lab"><span class="dots" style="background:#1fae86"></span> Trial attended</span><span class="cnt">1</span></div>
+        <div class="card"><div class="nm">Dan Okafor</div><div class="meta">Zara &middot; age 7</div><div class="tagline"><span class="mini">Referral</span><span class="mini">Nudge to enrol</span></div></div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span class="lab"><span class="dots" style="background:#3aa93a"></span> Enrolled</span><span class="cnt">1</span></div>
+        <div class="card"><div class="nm">Emma Hughes</div><div class="meta">Noah &middot; age 9</div><div class="tagline"><span class="mini">&#127881; Won</span></div></div>
+      </div>
+      <div class="col">
+        <div class="col-head"><span class="lab"><span class="dots" style="background:#d1495b"></span> Lost</span><span class="cnt">1</span></div>
+        <div class="card"><div class="nm">Chris Bell</div><div class="meta">Milo &middot; age 5</div><div class="tagline"><span class="mini">Too far away</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ AUTOMATIONS ============ -->
+  <div class="caption">3 &middot; Automations &mdash; the "Zapier" part (runs inside Airtable, no extra tool)</div>
+  <div class="win">
+    <div class="toolbar">
+      <div class="basemark"><span class="b">A</span> Academy Leads</div>
+      <div class="tabs">
+        <div class="tab"><span class="ico">&#9638;</span> Grid</div>
+        <div class="tab"><span class="ico">&#9776;</span> Pipeline</div>
+        <div class="tab on"><span class="ico">&#9889;</span> Automations</div>
+      </div>
+    </div>
+    <div class="autos">
+
+      <div class="auto">
+        <span class="on">&#9679; On</span>
+        <h4>1. New lead &rarr; alert the owner instantly</h4>
+        <div class="flow">
+          <div class="node"><span class="ci c-trig">&#9889;</span> New record</div>
+          <span class="arrow">&rarr;</span>
+          <div class="node"><span class="ci c-mail">&#9993;</span> Email you the lead</div>
+        </div>
+        <div class="note">Speed-to-lead. You know within seconds &mdash; name, child, age, phone.</div>
+      </div>
+
+      <div class="auto">
+        <span class="on">&#9679; On</span>
+        <h4>2. New lead &rarr; auto-reply to the parent</h4>
+        <div class="flow">
+          <div class="node"><span class="ci c-trig">&#9889;</span> New record</div>
+          <span class="arrow">&rarr;</span>
+          <div class="node"><span class="ci c-mail">&#9993;</span> Email parent</div>
+          <span class="arrow">&rarr;</span>
+          <div class="node"><span class="ci c-tag">&#127991;</span> Set follow-up date</div>
+        </div>
+        <div class="note">&ldquo;Thanks &mdash; here&rsquo;s how to book your trial&rdquo; goes out on its own.</div>
+      </div>
+
+      <div class="auto">
+        <span class="on">&#9679; On</span>
+        <h4>3. Status = Trial booked &rarr; confirm + remind</h4>
+        <div class="flow">
+          <div class="node"><span class="ci c-trig">&#9889;</span> Status changes</div>
+          <span class="arrow">&rarr;</span>
+          <div class="node"><span class="ci c-mail">&#9993;</span> Confirmation</div>
+          <span class="arrow">&rarr;</span>
+          <div class="node"><span class="ci c-clock">&#9200;</span> Reminder before</div>
+        </div>
+        <div class="note">Cuts no-shows &mdash; the parent gets a nudge the day before.</div>
+      </div>
+
+      <div class="auto">
+        <span class="on">&#9679; On</span>
+        <h4>4. Follow-up date is today &rarr; remind you</h4>
+        <div class="flow">
+          <div class="node"><span class="ci c-clock">&#9200;</span> Daily check</div>
+          <span class="arrow">&rarr;</span>
+          <div class="node"><span class="ci c-mail">&#9993;</span> &ldquo;Chase these leads&rdquo;</div>
+        </div>
+        <div class="note">No lead ever goes cold because someone forgot to call.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>How it connects:</b> the trial funnel page &rarr; webhook &rarr; this base &rarr; automations fire. You build this <b>once</b>, then share a &ldquo;copy this base&rdquo; link so each academy owner duplicates their own. Free Airtable tier covers it. &nbsp;<i>(Mockup &mdash; not a live base.)</i>
+  </div>
+</div>
+</body>
+</html>

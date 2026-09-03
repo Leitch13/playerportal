@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<!--
+  ASCEND - THE ADS ENGINE (print / PDF source).
+  A4 portrait, dark ASCEND brand. Render to PDF with headless Chrome:
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+      --print-to-pdf=ASCEND-Ads-Engine-Workbook.pdf --no-pdf-header-footer \
+      --print-to-pdf-no-header file://<abs-path>
+  PDF imports straight into Canva (one PDF page = one Canva page).
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>The Ads Engine - ASCEND Workbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+  --paper:#EEF3F5; --soft:#BAC6CE; --mute:#8695A2;
+  --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+  --green:#38D39F; --amber:#F2B441; --red:#F0526B;
+  --line:rgba(255,255,255,.12); --line-2:rgba(255,255,255,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:A4;margin:0}
+html,body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;counter-reset:pg}
+body{font-size:10pt;line-height:1.45}
+
+.page{
+  width:210mm;height:297mm;position:relative;overflow:hidden;
+  padding:16mm 16mm 14mm;display:flex;flex-direction:column;
+  background:
+    radial-gradient(45% 30% at 88% 4%,rgba(34,211,238,.13),transparent 60%),
+    radial-gradient(40% 26% at 2% 98%,rgba(11,110,124,.18),transparent 60%),
+    linear-gradient(165deg,#0b1116,#090C10 55%);
+  page-break-after:always;break-after:page;counter-increment:pg;
+}
+.page:last-child{page-break-after:auto;break-after:auto}
+.grid-tex{position:absolute;inset:0;background-image:
+   linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+   linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);
+   background-size:52px 52px;pointer-events:none}
+.z{position:relative;z-index:1;display:flex;flex-direction:column;flex:1;min-height:0}
+
+/* ---- running head / foot ---- */
+.rh{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:11px;flex:0 0 auto}
+.rh .mod{font-size:7.5pt;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);font-weight:700}
+.rh .bk{font-family:"Anton",sans-serif;font-size:9pt;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.rf{margin-top:auto;padding-top:8px;border-top:1px solid var(--line-2);display:flex;justify-content:space-between;align-items:center;font-size:7.5pt;color:var(--mute);letter-spacing:.08em;flex:0 0 auto}
+.rf .n:after{content:counter(pg)}
+
+/* ---- type ---- */
+.display,h1,h2,h3.dsp{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+.eyebrow{font-size:8pt;letter-spacing:.26em;text-transform:uppercase;color:var(--brand);font-weight:700}
+.cy{color:var(--brand)}
+h2.mh{font-size:25pt;margin:0 0 3px}
+h2.mh .num{color:var(--brand);margin-right:8px}
+.sub{color:var(--mute);font-size:9pt;margin-bottom:12px}
+.lead{color:var(--soft);font-size:10.5pt;margin-bottom:12px}
+h3{font-family:"Anton",sans-serif;font-weight:400;text-transform:uppercase;font-size:13pt;letter-spacing:.03em;margin:0 0 6px}
+h4{font-size:9pt;font-weight:700;color:var(--brand);letter-spacing:.1em;text-transform:uppercase;margin:0 0 5px}
+p{margin-bottom:7px}
+p:last-child{margin-bottom:0}
+b,strong{color:#fff;font-weight:700}
+em{font-style:italic;color:var(--soft)}
+.small{font-size:8.5pt}
+.mute{color:var(--mute)}
+
+/* ---- blocks ---- */
+.box{border:1px solid var(--line);border-radius:9px;background:var(--ink-2);padding:11px 13px;margin-bottom:9px}
+.box.brand{border-color:rgba(34,211,238,.45);background:rgba(34,211,238,.06)}
+.box.warn{border-color:rgba(240,82,107,.45);background:rgba(240,82,107,.07)}
+.box.gold{border-color:rgba(242,180,65,.45);background:rgba(242,180,65,.06)}
+.box p{color:var(--soft);font-size:9.5pt}
+.box.brand h4,.box.brand .lbl{color:var(--brand)}
+.box.warn h4{color:var(--red)}
+.box.gold h4{color:var(--amber)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.two>.box,.three>.box{margin-bottom:0}
+.john{border-left:3px solid var(--amber);background:rgba(242,180,65,.06);border-radius:0 9px 9px 0;padding:11px 14px;margin-bottom:9px}
+.john .lbl{font-size:7.5pt;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-bottom:4px}
+.john p{font-style:italic;color:var(--soft);font-size:9.5pt}
+
+/* ---- steps ---- */
+ol.steps{list-style:none}
+ol.steps>li{counter-increment:st;position:relative;padding:0 0 9px 30px;font-size:9.5pt;color:var(--soft)}
+ol.steps{counter-reset:st}
+ol.steps>li:before{content:counter(st,decimal-leading-zero);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:50%;
+  border:1px solid var(--brand);color:var(--brand);background:rgba(34,211,238,.08);
+  font-family:"Anton",sans-serif;font-size:8.5pt;display:flex;align-items:center;justify-content:center;line-height:1}
+ol.steps>li .t{display:block;color:#fff;font-weight:700;font-size:10pt;margin-bottom:1px;line-height:1.25}
+ul.bul{list-style:none}
+ul.bul>li{position:relative;padding:0 0 5px 14px;font-size:9.5pt;color:var(--soft)}
+ul.bul>li:before{content:"";position:absolute;left:0;top:6px;width:5px;height:5px;background:var(--brand);border-radius:1px}
+ul.tight>li{padding-bottom:3px}
+
+/* ---- tables ---- */
+table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:9px}
+th{font-family:"Anton",sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.07em;font-size:9.5pt;color:var(--brand);
+   text-align:left;padding:7px 9px;background:var(--ink-3);border-bottom:1px solid var(--line)}
+td{padding:7px 9px;border-bottom:1px solid var(--line-2);color:var(--soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td b{color:#fff}
+table.framed{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.good{color:var(--green);font-weight:700}
+.bad{color:var(--red);font-weight:700}
+.amb{color:var(--amber);font-weight:700}
+
+/* ---- checklist / write-in ---- */
+ul.check{list-style:none}
+ul.check>li{display:flex;gap:9px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:9.5pt;color:var(--soft)}
+ul.check>li:last-child{border-bottom:none}
+.tick{width:14px;height:14px;flex:0 0 14px;margin-top:2px;border:1.4px solid var(--brand);border-radius:3px;background:rgba(34,211,238,.06)}
+.fill{border-bottom:1px dashed rgba(255,255,255,.28);display:inline-block;min-width:60px;height:11pt}
+.wbox{border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02);padding:9px 11px;margin-bottom:8px}
+.wbox .lbl{font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-bottom:7px}
+.wline{border-bottom:1px dashed rgba(255,255,255,.25);height:15pt}
+.wline+.wline{margin-top:7px}
+.field{display:inline-block;border:1px solid var(--line);border-radius:4px;background:var(--ink-3);padding:0 5px;font-size:8.5pt;color:var(--brand);font-weight:500}
+code{font-family:ui-monospace,Menlo,monospace;font-size:8.5pt;color:var(--amber);background:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:0 4px;word-break:normal;overflow-wrap:anywhere}
+
+/* ---- cover ---- */
+.cover{justify-content:space-between}
+.brandrow{display:flex;align-items:center;gap:11px}
+.logo{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:16pt;color:var(--brand-ink)}
+.brandrow .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:12pt;line-height:1}
+.brandrow .name small{display:block;font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:6.5pt;letter-spacing:.16em;color:var(--mute);margin-top:3px}
+h1.cover-t{font-size:64pt;line-height:.88;margin:10px 0 0}
+.cover-tag{font-size:14pt;color:#D6E0E6;margin-top:14px;max-width:30ch;line-height:1.32;font-weight:500}
+.cover-tag b{color:#fff}
+.pill{display:inline-block;font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);border:1px solid var(--brand);border-radius:30px;padding:5px 12px;margin:16px 6px 0 0}
+.cover-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:20px}
+.cover-facts div{border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.02);padding:9px 10px}
+.cover-facts .k{font-size:6.8pt;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:3px}
+.cover-facts .v{font-family:"Anton",sans-serif;font-size:14pt;color:var(--brand);line-height:1}
+
+/* ---- contents ---- */
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
+.toc .row{display:flex;align-items:baseline;gap:7px;border-bottom:1px solid var(--line-2);padding:5px 0;font-size:9pt}
+.toc .n{font-family:"Anton",sans-serif;color:var(--brand);font-size:11pt;min-width:22px}
+.toc .t{color:var(--paper);font-weight:700}
+.toc .d{color:var(--mute);margin-left:auto;font-size:8pt}
+
+/* ---- misc ---- */
+.layers{display:grid;gap:7px}
+.layer{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;background:var(--ink-2);padding:10px 12px}
+.layer .no{font-family:"Anton",sans-serif;font-size:17pt;color:var(--brand);line-height:1;min-width:26px}
+.layer.done{border-color:rgba(242,180,65,.45);background:rgba(242,180,65,.06)}
+.layer.done .no{color:var(--amber)}
+.layer h4{color:#fff;font-size:10.5pt;letter-spacing:.02em;text-transform:none;margin-bottom:1px}
+.layer p{font-size:9pt;color:var(--soft);margin:0}
+.tree{border:1px solid var(--line);border-radius:9px;background:var(--ink-2);padding:10px 12px;margin-bottom:8px}
+.tree .sym{font-family:"Anton",sans-serif;font-size:11.5pt;color:var(--red);letter-spacing:.02em;text-transform:uppercase}
+.tree .cz{color:#fff;font-weight:700;font-size:9.5pt;margin:3px 0 2px}
+.tree p{font-size:9pt;color:var(--soft);margin:0}
+.script{border-left:3px solid var(--brand);background:rgba(34,211,238,.05);border-radius:0 8px 8px 0;padding:8px 11px;margin-top:5px;font-size:9pt;color:#D6E0E6;font-style:italic}
+.flow{display:flex;align-items:center;gap:6px;margin:4px 0 10px}
+.flow div{flex:1;border:1px solid var(--line);border-radius:8px;background:var(--ink-2);padding:8px 6px;text-align:center}
+.flow .v{font-family:"Anton",sans-serif;font-size:16pt;color:var(--brand);line-height:1}
+.flow .k{font-size:7pt;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-top:3px}
+.flow .ar{flex:0 0 auto;color:var(--brand);font-size:12pt;border:none;background:none;padding:0}
+.end{text-align:center;justify-content:center;align-items:center;display:flex;flex-direction:column}
+</style>
+</head>
+<body>
+
+<!-- ============ 1. COVER ============ -->
+<section class="page cover">
+  <div class="grid-tex"></div>
+  <div class="z" style="justify-content:space-between">
+    <div>
+      <div class="brandrow">
+        <div class="logo">A</div>
+        <div class="name">ASCEND<small>BY JOHN LEITCH</small></div>
+      </div>
+      <div class="eyebrow" style="margin-top:34mm">Member Training &middot; Traction Stage &middot; Resource 04</div>
+      <h1 class="cover-t display">THE ADS<br><span class="cy">ENGINE</span></h1>
+      <div class="cover-tag">You&rsquo;ve got the creative. This is <b>everything else</b> &mdash; the bit that decides whether your ads fill sessions or quietly burn money.</div>
+      <div>
+        <span class="pill">Meta Ads</span>
+        <span class="pill">Delivery Side</span>
+        <span class="pill">Local Academies</span>
+      </div>
+      <div class="cover-facts">
+        <div><div class="k">Setup</div><div class="v">90 min</div></div>
+        <div><div class="k">Weekly</div><div class="v">15 min</div></div>
+        <div><div class="k">Start from</div><div class="v">&pound;10/day</div></div>
+        <div><div class="k">Modules</div><div class="v">12</div></div>
+      </div>
+    </div>
+    <div class="small mute" style="border-top:1px solid var(--line);padding-top:9px">
+      A working document. Write in it, tick the boxes, bring your numbers to your next session.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. CONTENTS ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Contents</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display">What&rsquo;s in <span class="cy">here</span></h2>
+    <div class="sub">Twelve modules. Work through them in order the first time &mdash; after that it&rsquo;s a reference.</div>
+
+    <div class="toc">
+      <div class="row"><span class="n">00</span><span class="t">Read this first</span><span class="d">p.3</span></div>
+      <div class="row"><span class="n">01</span><span class="t">The plumbing</span><span class="d">p.5</span></div>
+      <div class="row"><span class="n">02</span><span class="t">One offer, one destination</span><span class="d">p.9</span></div>
+      <div class="row"><span class="n">03</span><span class="t">Build the campaign</span><span class="d">p.12</span></div>
+      <div class="row"><span class="n">04</span><span class="t">Loading your creative</span><span class="d">p.17</span></div>
+      <div class="row"><span class="n">05</span><span class="t">Launch day</span><span class="d">p.21</span></div>
+      <div class="row"><span class="n">06</span><span class="t">The first 7 days</span><span class="d">p.22</span></div>
+      <div class="row"><span class="n">07</span><span class="t">The only numbers that matter</span><span class="d">p.24</span></div>
+      <div class="row"><span class="n">08</span><span class="t">When it&rsquo;s not working</span><span class="d">p.28</span></div>
+      <div class="row"><span class="n">09</span><span class="t">Delivering the lead</span><span class="d">p.30</span></div>
+      <div class="row"><span class="n">10</span><span class="t">The weekly rhythm</span><span class="d">p.34</span></div>
+      <div class="row"><span class="n">11</span><span class="t">Scaling &amp; retargeting</span><span class="d">p.36</span></div>
+      <div class="row"><span class="n">12</span><span class="t">Your first 30 days</span><span class="d">p.38</span></div>
+      <div class="row"><span class="n">&mdash;</span><span class="t">Glossary &amp; quick reference</span><span class="d">p.40</span></div>
+    </div>
+
+    <div class="box brand" style="margin-top:12px">
+      <h4>How to use this workbook</h4>
+      <p><b>First time through:</b> Modules 01 and 02 are setup you do once, at a desk, with a coffee. Modules 03 to 05 are the build &mdash; do them in one sitting with Ads Manager open on the other screen. Modules 06 to 12 are what happens after you press go.</p>
+      <p><b>After that:</b> Module 08 is the page you'll come back to most (something's wrong, what is it?), and Module 10 is your Monday routine.</p>
+    </div>
+
+    <div class="box gold">
+      <h4>The pages with dotted lines are yours</h4>
+      <p>Several pages are worksheets &mdash; your player value, your target cost per lead, your monthly tracker. Fill them in with real numbers. A workbook with blank worksheets is just a magazine.</p>
+    </div>
+
+        <div class="two" style="margin-top:11px">
+      <div class="box brand">
+        <h4>By the end of this you'll be able to</h4>
+        <ul class="bul tight">
+          <li>Build a proper lead campaign from scratch, without guessing at a single setting.</li>
+          <li>Say what a new player is actually <b>worth</b> to you, and what you can afford to pay for a lead.</li>
+          <li>Look at a week of numbers and name the broken layer in under a minute.</li>
+          <li>Turn a form submission into a booked trial without losing half of them.</li>
+          <li>Scale a working campaign without breaking it.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Have these to hand before Module 01</h4>
+        <ul class="bul tight">
+          <li>Facebook Page login (admin, not just editor)</li>
+          <li>Your funnel page or website login</li>
+          <li>A card for the ad account</li>
+          <li>Your 3&ndash;4 finished creatives, on the laptop you're working on</li>
+          <li>Last month's numbers: fee per player, and roughly what it costs you to deliver a session</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 3. M00 five layers ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 00 &middot; Read this first</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">00</span>Read this <span class="cy">first</span></h2>
+    <div class="sub">What this training covers, and the one idea the whole thing is built on.</div>
+
+    <p class="lead">Most academy owners think their ads failed because the video wasn&rsquo;t good enough. It&rsquo;s almost never the video. It&rsquo;s the plumbing behind it &mdash; the wrong objective, no tracking, a slow page, a lead that sat unanswered for two days. That&rsquo;s the delivery side, and that&rsquo;s what this is.</p>
+
+    <h3>The five layers of an ad that works</h3>
+    <p class="small mute" style="margin-bottom:8px">Every result you get is one of five layers doing its job or failing at it. Ads Manager will not tell you which one. Learn to read the numbers and you'll know in sixty seconds.</p>
+
+    <div class="layers">
+      <div class="layer"><div class="no">1</div><div><h4>The offer</h4><p>Whether anybody wants the thing you&rsquo;re advertising. Fixed in Module 02.</p></div></div>
+      <div class="layer done"><div class="no">2</div><div><h4>The creative &mdash; already done</h4><p>Whether they stop scrolling. You&rsquo;ve built this. This workbook doesn&rsquo;t re-teach it; it tells you where to load it and what breaks it.</p></div></div>
+      <div class="layer"><div class="no">3</div><div><h4>The delivery</h4><p>Who Meta shows it to, how often, and what it charges you. Modules 03 to 06.</p></div></div>
+      <div class="layer"><div class="no">4</div><div><h4>The capture</h4><p>Whether a click becomes a name and a phone number. Module 02.</p></div></div>
+      <div class="layer"><div class="no">5</div><div><h4>The follow-up</h4><p>Whether that name becomes a paying player. Module 09 &mdash; and this is where most of the money is lost.</p></div></div>
+    </div>
+
+    <div class="john" style="margin-top:10px">
+      <div class="lbl">John says</div>
+      <p>&ldquo;I&rsquo;ve watched owners spend &pound;600 on ads and blame Facebook, when they had 41 leads sitting unopened in a Facebook inbox they didn&rsquo;t know existed. The ads worked fine. The delivery didn&rsquo;t.&rdquo;</p>
+    </div>
+
+        <h3 style="margin-top:11px">Where the money actually leaks</h3>
+    <table class="framed">
+      <tr><th style="width:26%">Layer</th><th style="width:30%">What it looks like when it breaks</th><th>What it costs you</th></tr>
+      <tr><td><b>Offer</b></td><td>Clicks but nobody books</td><td>Everything downstream. No fixing this with budget.</td></tr>
+      <tr><td><b>Delivery</b></td><td>High CPM, low reach, no leads</td><td>30&ndash;50% more per lead than you should pay</td></tr>
+      <tr><td><b>Capture</b></td><td>Clicks, no form submissions</td><td>Roughly half your leads, silently</td></tr>
+      <tr><td><b>Follow-up</b></td><td>Leads that never turn into trials</td><td class="bad">The biggest leak of all &mdash; often 60%+ of the money</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 4. M00 prerequisites ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 00 &middot; Read this first</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">Before you spend a penny</h3>
+
+    <div class="two">
+      <div class="box">
+        <h4>What you need</h4>
+        <ul class="bul tight">
+          <li>A <b>Facebook Page</b> for the academy that you are an admin of &mdash; not a personal profile.</li>
+          <li>An <b>Instagram account</b> for the academy. Optional, but it's free extra placement.</li>
+          <li>Your <b>creative</b> &mdash; the videos and images you've already made.</li>
+          <li>A <b>place to send the click</b>: your trial funnel page.</li>
+          <li>A <b>card</b> you're comfortable putting &pound;10&ndash;20 a day on.</li>
+          <li>Your <b>phone</b>, with notifications on. Non-negotiable.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>What this is not</h4>
+        <ul class="bul tight">
+          <li><b>Not creative training.</b> You've done that side already.</li>
+          <li><b>Not a hack list.</b> Meta renames buttons constantly, so this teaches the function &mdash; when the label changes you'll still know what you're looking for.</li>
+          <li><b>Not boosting posts.</b> Boosting is the most expensive way to spend money on Meta.</li>
+          <li><b>Not agency scale.</b> This is the &pound;10&ndash;&pound;50/day zone, which is where a local academy actually wins.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="box warn" style="margin-top:9px">
+      <h4>The one rule</h4>
+      <p>Never launch an ad without knowing exactly what happens in the <b>five minutes</b> after somebody fills in your form. If you can't answer that in one sentence, you're not ready to spend. Read Module 09 first, then come back.</p>
+    </div>
+
+    <h3 style="margin-top:11px">The shape of the whole thing</h3>
+    <div class="flow">
+      <div><div class="v">&pound;15</div><div class="k">Daily spend</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">100</div><div class="k">Leads / mo</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">70</div><div class="k">Trials booked</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">47</div><div class="k">Turn up</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">28</div><div class="k">Enrol</div></div>
+    </div>
+    <p class="small mute">Illustrative, using the healthy conversion rates in Module 07. &pound;450 of spend, 28 new players, about &pound;16 to acquire a player who then pays you monthly for years. Every module in this book exists to protect one of those arrows.</p>
+
+    <div class="box gold" style="margin-top:10px">
+      <h4>Write your target here before you start</h4>
+      <p style="margin-bottom:8px">Come back and check it in 30 days.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><span class="small mute">New players I want in 30 days:</span><div class="wline"></div></div>
+        <div><span class="small mute">Monthly budget I'm comfortable with:</span><div class="wline"></div></div>
+      </div>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 5. M01 A ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 01 &middot; The plumbing</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">01</span>The <span class="cy">plumbing</span></h2>
+    <div class="sub">Do this once. 30&ndash;45 minutes. Skip a step here and you'll be debugging it for a month.</div>
+
+    <p class="lead">Meta gives you two different places to click. <b>Meta Business Suite</b> is the admin layer &mdash; assets, people, payments. <b>Ads Manager</b> is where campaigns get built. You need the first one set up properly before the second is worth touching.</p>
+
+    <h3>A. Business portfolio &amp; ad account</h3>
+    <ol class="steps">
+      <li><span class="t">Create a Business portfolio</span>Go to business.facebook.com and create one in your <b>academy's</b> name, not your own. This is the container that owns everything. If you ever sell the academy, bring in staff, or hire help, you hand over this &mdash; not your personal login.</li>
+      <li><span class="t">Add your Page to it</span>Business settings &rarr; Accounts &rarr; Pages &rarr; Add &rarr; <span class="field">Add an existing Page</span>. If your Page is currently stuck under a personal profile, this is the step that frees it.</li>
+      <li><span class="t">Create an ad account</span>Business settings &rarr; Accounts &rarr; Ad accounts &rarr; Add &rarr; <span class="field">Create a new ad account</span>. Name it <code>ACADEMY NAME - Ads</code>. Currency <b>GBP</b>. Time zone <b>London</b>.</li>
+      <li><span class="t">Currency and time zone are permanent</span>You cannot change them later. Changing your mind means a brand new ad account and losing every bit of history and learning attached to the old one. Read them twice before you click create.</li>
+      <li><span class="t">Add a payment method</span>Billing &rarr; Payment settings. Add a card, then set an <b>account spending limit</b> equal to your monthly budget while you're learning. It's a hard stop that protects you from a mis-typed daily budget.</li>
+      <li><span class="t">Turn on two-factor authentication</span>Hacked ad accounts are common, and Meta support is close to non-existent when it happens. Put 2FA on the personal profile that administers the business portfolio. Now, not later.</li>
+      <li><span class="t">Add a second admin you trust</span>If you lose access to your profile, a second admin can restore yours. One person with sole access is a single point of failure for the whole marketing engine.</li>
+    </ol>
+
+    <div class="box warn">
+      <h4>The most common blocker</h4>
+      <p>New ad accounts sometimes launch straight into review, or get restricted for no obvious reason. If that happens: complete every identity verification Meta asks for, don't create a second account to get around it (that makes it worse), and use the Account Quality section to request a review. Most clear within a few days.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 6. M01 B pixel ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 01 &middot; The plumbing</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">B. Tracking &mdash; the dataset (pixel)</h3>
+    <p class="small mute" style="margin-bottom:9px">Meta now calls the pixel a <b>dataset</b>. Same thing: a snippet of code on your funnel page that tells Meta &ldquo;this person filled the form in&rdquo;.</p>
+
+    <p class="lead">Without it, two things happen. Meta is guessing who to show your ads to instead of learning from real conversions &mdash; and you are flying blind on cost per lead. It is the single highest-value 20 minutes in this entire workbook.</p>
+
+    <ol class="steps">
+      <li><span class="t">Create the dataset</span>Business settings &rarr; Data sources &rarr; Datasets &rarr; Add. Name it <code>ACADEMY NAME - Web</code>. Copy the ID &mdash; a 15 or 16 digit number &mdash; and write it on the worksheet two pages on.</li>
+      <li><span class="t">Install it on your funnel page</span><b>ASCEND trial funnel:</b> paste the ID into the pixel field in your page setup. <b>Player Portal:</b> Settings &rarr; Marketing &rarr; Meta Pixel, paste, save &mdash; page views and lead events then fire automatically. <b>Anything else:</b> paste the base code into the <code>&lt;head&gt;</code> of every page.</li>
+      <li><span class="t">Wire the Lead event</span>The form submission must fire a <span class="field">Lead</span> event. This is the most important line of tracking you own: it's what &ldquo;cost per lead&rdquo; counts, and what Meta optimises delivery towards. Everything downstream is built on it.</li>
+      <li><span class="t">Test it before you spend anything</span>Install the <b>Meta Pixel Helper</b> Chrome extension. Load your funnel page &mdash; it should show <span class="field">PageView</span>. Submit a real test lead &mdash; it should show <span class="field">Lead</span>. If it doesn't, stop and fix it. Do not launch on faith.</li>
+      <li><span class="t">Verify your domain</span>Business settings &rarr; Brand safety &rarr; Domains. Add your domain and verify it, either with a DNS TXT record or a meta tag in your page head. This gives you control of your own conversion events and stops iOS privacy rules eating your reporting.</li>
+      <li><span class="t">Set Lead as a priority event</span>Events Manager &rarr; your dataset &rarr; Aggregated Event Measurement &rarr; configure web events. Put <span class="field">Lead</span> at the top of the list. Ignore this and conversions from iOS users may not report at all &mdash; which makes a working campaign look dead.</li>
+      <li><span class="t">Optional but worth it: the Conversions API</span>Browser tracking gets blocked; server-side tracking doesn't. If your funnel tool offers a CAPI or server-events integration, switch it on. It typically recovers 10&ndash;25% of conversions that the browser pixel loses.</li>
+    </ol>
+
+    <div class="box brand">
+      <h4>If you use Meta Instant Forms instead</h4>
+      <p>You don't strictly need a pixel &mdash; the form lives on Facebook itself, so Meta sees the conversion natively. You still want the pixel installed for retargeting and for the day you switch to your own page. See Module 02: it's a real trade-off, not a shortcut.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 7. M01 C lead routing ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 01 &middot; The plumbing</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">C. Where the leads land</h3>
+    <p class="small mute" style="margin-bottom:9px">Decide this now, in writing, before a single ad runs. A lead that arrives somewhere nobody looks is money set on fire.</p>
+
+    <table class="framed">
+      <tr><th style="width:30%">Route</th><th>What happens, and what breaks</th></tr>
+      <tr><td><b>Funnel page lead</b></td><td>Instant email or push alert to your phone, plus a row on your Academy Leads board. <b>Test it</b> &mdash; alerts silently stop working more often than you'd think.</td></tr>
+      <tr><td><b>Instant Form lead</b></td><td>Sits in <b>Business Suite &rarr; Leads Centre</b>. <span class="bad">Nobody is emailed by default.</span> You must connect it out (Zapier, Make, a CRM) or check the Leads Centre twice a day. This is where most academies quietly lose leads.</td></tr>
+      <tr><td><b>Comment or DM</b></td><td>Turn Page and Instagram notifications on. A question in the comments left for two days is a lead lost in public, in front of every other parent.</td></tr>
+      <tr><td><b>Who is on the hook</b></td><td>One named person, with a backup for coaching hours. If it's &ldquo;whoever sees it first&rdquo;, it's nobody.</td></tr>
+    </table>
+
+    <h3 style="margin-top:6px">Your setup record</h3>
+    <p class="small mute" style="margin-bottom:8px">Fill this in. In six months, when something breaks, this page saves you an hour of hunting.</p>
+
+    <div class="two">
+      <div class="wbox"><div class="lbl">Ad account name / ID</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Dataset (pixel) ID</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Funnel page URL</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Domain verified? (date)</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Lead alerts go to</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Backup person for coaching hours</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Card on file (last 4)</div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Account spending limit set to</div><div class="wline"></div></div>
+    </div>
+
+    <div class="box brand">
+      <h4>Plumbing sign-off</h4>
+      <ul class="check">
+        <li><span class="tick"></span><span>Business portfolio owns the Page and the ad account</span></li>
+        <li><span class="tick"></span><span>2FA on, second admin added</span></li>
+        <li><span class="tick"></span><span>Pixel Helper shows <b>PageView</b> and <b>Lead</b> firing</span></li>
+        <li><span class="tick"></span><span>Domain verified, Lead set as top priority event</span></li>
+        <li><span class="tick"></span><span>Test lead submitted &mdash; and the alert reached your phone</span></li>
+      </ul>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 8. M02 offers ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 02 &middot; Offer &amp; destination</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">02</span>One offer, one <span class="cy">destination</span></h2>
+    <div class="sub">The two decisions that cap your results before the ad ever runs.</div>
+
+    <p class="lead">You are not advertising your academy. Nobody clicks &ldquo;an academy&rdquo;. You are advertising <b>one specific thing a parent can say yes to this week</b> &mdash; with a date, a place and an age group attached to it.</p>
+
+    <div class="two">
+      <div class="box brand">
+        <h4>Offers that convert cold traffic</h4>
+        <ul class="bul tight">
+          <li><b>Free trial session</b> &mdash; named date, named venue, named age group. The workhorse. Highest volume, lowest friction.</li>
+          <li><b>Holiday camp</b> &mdash; deadline built in, parents are actively looking, easiest paid conversion of the year.</li>
+          <li><b>&pound;10 taster block</b> (2&ndash;3 weeks) &mdash; fewer leads than a free trial, far better show-up rate, because they've paid something.</li>
+          <li><b>New venue or new age group launch</b> &mdash; genuine news. Works brilliantly for a 2&ndash;3 week burst.</li>
+          <li><b>Bring a friend week</b> &mdash; cheap, and it converts through your existing parents.</li>
+        </ul>
+      </div>
+      <div class="box warn">
+        <h4>Offers that don't</h4>
+        <ul class="bul tight">
+          <li><b>&ldquo;Join our academy&rdquo;</b> &mdash; no date, no decision, nothing to say yes to.</li>
+          <li><b>&ldquo;Sign up to our newsletter&rdquo;</b> &mdash; a parent whose child wants to play football does not want a newsletter.</li>
+          <li><b>Price as the headline</b>, before they know who you are.</li>
+          <li><b>Three offers in one ad.</b> One campaign, one offer. Always.</li>
+          <li><b>&ldquo;Enquire now&rdquo;</b> &mdash; vague, and it attracts people with vague intent.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:10px">The four things every offer must state</h3>
+    <table class="framed">
+      <tr><th style="width:20%">Element</th><th style="width:36%">Weak</th><th>Strong</th></tr>
+      <tr><td><b>What</b></td><td>&ldquo;Football sessions&rdquo;</td><td>&ldquo;Free 60-minute trial session&rdquo;</td></tr>
+      <tr><td><b>Who</b></td><td>&ldquo;Kids&rdquo;</td><td>&ldquo;Boys and girls, ages 6&ndash;12, all abilities&rdquo;</td></tr>
+      <tr><td><b>Where</b></td><td>&ldquo;Aberdeen&rdquo;</td><td>&ldquo;Sports Village, Linksfield &mdash; free parking&rdquo;</td></tr>
+      <tr><td><b>When</b></td><td>&ldquo;Weekly&rdquo;</td><td>&ldquo;This Saturday, 9am&rdquo;</td></tr>
+    </table>
+
+    <div class="box gold">
+      <h4>Your offer, written out in full</h4>
+      <p style="margin-bottom:7px">Write it as you'd say it to a parent at the school gates. If it takes more than one breath, it's too complicated.</p>
+      <div class="wline"></div><div class="wline"></div>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 9. M02 destination ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 02 &middot; Offer &amp; destination</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">Where you send the click</h3>
+
+    <table class="framed">
+      <tr><th style="width:26%"></th><th>Your funnel page</th><th>Meta Instant Form</th></tr>
+      <tr><td><b>Cost per lead</b></td><td>Higher &mdash; typically 30&ndash;60% more</td><td class="good">Lower &mdash; no page load, fields autofilled</td></tr>
+      <tr><td><b>Lead quality</b></td><td class="good">Higher &mdash; they chose to click through</td><td class="amb">Lower &mdash; thumb-slip signups are common</td></tr>
+      <tr><td><b>Show-up rate</b></td><td class="good">Typically 50&ndash;65%</td><td class="amb">Typically 30&ndash;45%</td></tr>
+      <tr><td><b>Setup effort</b></td><td>Needs a page and a working pixel</td><td class="good">Built inside the ad, about 10 minutes</td></tr>
+      <tr><td><b>Retargeting data</b></td><td class="good">Full &mdash; visitors, part-completers, everything</td><td>Video views and form opens only</td></tr>
+      <tr><td><b>Where leads land</b></td><td class="good">Your inbox and CRM, instantly</td><td class="bad">Leads Centre &mdash; silent unless you wire it out</td></tr>
+      <tr><td><b>Room to sell</b></td><td class="good">Photos, proof, FAQs, prices</td><td>A headline and a few lines</td></tr>
+      <tr><td><b>Best for</b></td><td>Ongoing intake, higher-value offers</td><td>Camps with a deadline, volume pushes</td></tr>
+    </table>
+
+    <div class="box brand">
+      <h4>The ASCEND default: your funnel page</h4>
+      <p>You pay a bit more per lead and you get a parent who actually turns up. Cost per <b>enrolled player</b> is the only number that pays your bills, and the funnel page usually wins it. Use Instant Forms when you're filling a camp fast, on a hard deadline, and raw volume beats quality.</p>
+    </div>
+
+    <div class="box warn">
+      <h4>If you do use an Instant Form</h4>
+      <ul class="bul tight">
+        <li>Choose <b>&ldquo;Higher intent&rdquo;</b>, not &ldquo;More volume&rdquo; &mdash; it adds a confirmation step that removes most accidental leads.</li>
+        <li>Add <b>one custom question</b>: &ldquo;What age is your child?&rdquo; with age-band options. It filters out half the junk and pre-qualifies the call.</li>
+        <li>Write a proper <b>completion screen</b> with your phone number and what happens next.</li>
+        <li>Wire the leads out to email or your CRM <b>on day one</b>, and test it with a real submission.</li>
+      </ul>
+    </div>
+
+    <div class="john">
+      <div class="lbl">John says</div>
+      <p>&ldquo;Instant Forms look brilliant on the dashboard and average on the pitch. Forty cheap leads where twelve turn up is worse than twenty-five where sixteen turn up &mdash; and it's a lot more phone calls for you.&rdquo;</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 10. M02 page preflight ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 02 &middot; Offer &amp; destination</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Pre-flight your destination page</h3>
+    <p class="small mute" style="margin-bottom:9px">Open it on <b>your own phone</b>, on <b>4G with wifi switched off</b>. That's how your parents will see it &mdash; not on your laptop on fast broadband.</p>
+
+    <ul class="check">
+      <li><span class="tick"></span><span>It loads in <b>under 3 seconds</b>. Every extra second costs roughly 10% of your leads.</span></li>
+      <li><span class="tick"></span><span>Offer, age group, venue and date are visible <b>without scrolling</b>.</span></li>
+      <li><span class="tick"></span><span>The form asks for <b>4 fields maximum</b>: parent name, child age, phone, email.</span></li>
+      <li><span class="tick"></span><span>The phone field brings up a <b>number keypad</b>, not a full keyboard.</span></li>
+      <li><span class="tick"></span><span>The button says something specific &mdash; &ldquo;Book my free trial&rdquo;, not &ldquo;Submit&rdquo;.</span></li>
+      <li><span class="tick"></span><span>There is <b>one</b> call to action on the page. No menu, no other links, no distractions.</span></li>
+      <li><span class="tick"></span><span>Photos are of <b>your</b> sessions, with consent on file. Not stock photos.</span></li>
+      <li><span class="tick"></span><span>The page answers the three questions every parent has: <b>how much, how old, where exactly</b>.</span></li>
+      <li><span class="tick"></span><span>You submitted a <b>real test lead</b> and it arrived on your phone.</span></li>
+      <li><span class="tick"></span><span>The thank-you page says exactly what happens next: &ldquo;I'll text you within the hour to confirm your spot.&rdquo;</span></li>
+      <li><span class="tick"></span><span>The wording on the page <b>matches the ad</b>. If the ad says Saturday 9am, the page says Saturday 9am.</span></li>
+    </ul>
+
+    <div class="box gold" style="margin-top:9px">
+      <h4>The mismatch tax</h4>
+      <p>The single most expensive mistake on this page is an ad that promises one thing and a page that talks about another. The parent's brain reads it as &ldquo;wrong place&rdquo; and they leave in under two seconds &mdash; and you paid for that click. Ad and page should read like one sentence.</p>
+    </div>
+
+    <h3 style="margin-top:9px">Rough conversion expectations for the page</h3>
+    <table class="framed">
+      <tr><th>Of everyone who lands on the page&hellip;</th><th>Healthy</th><th>Fix it if</th></tr>
+      <tr><td>Fill in the form</td><td class="good">15&ndash;35%</td><td class="bad">Under 10%</td></tr>
+      <tr><td>Start the form but abandon</td><td>20&ndash;40% of starters</td><td class="bad">Over 60% &mdash; too many fields</td></tr>
+      <tr><td>Land, then leave in under 3 seconds</td><td>Under 35%</td><td class="bad">Over 50% &mdash; slow page or mismatch</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 11. M03 anatomy ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 03 &middot; Build the campaign</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">03</span>Build the <span class="cy">campaign</span></h2>
+    <div class="sub">Click by click. Meta moves its buttons &mdash; the functions stay the same, so learn what each setting does.</div>
+
+    <p class="lead">Ads Manager has three levels, and each controls something completely different. Get this straight in your head and the whole interface stops being confusing, permanently.</p>
+
+    <div class="three">
+      <div class="box brand"><h4>Campaign</h4><p>The <b>goal</b> and the budget. What are you asking Meta to go and get?</p></div>
+      <div class="box brand"><h4>Ad set</h4><p><b>Who, where, how much, when.</b> Audience, location, placements, schedule.</p></div>
+      <div class="box brand"><h4>Ad</h4><p>The <b>creative</b>. Video, text, headline, button, destination link.</p></div>
+    </div>
+
+    <h3 style="margin-top:11px">The structure you're aiming for</h3>
+    <div class="box">
+      <p style="font-family:ui-monospace,Menlo,monospace;font-size:9pt;color:var(--soft);line-height:1.7;margin:0">
+      CAMPAIGN &mdash; 2026-09 | Trial | Aberdeen U8-U12 &nbsp;<span class="cy">(Leads, &pound;15/day)</span><br>
+      &nbsp;&nbsp;&#9492;&#9472; AD SET &mdash; Linksfield +10km | Parents 25-50<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; AD 01 &mdash; Session footage / hook A<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; AD 02 &mdash; Parent testimonial<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; AD 03 &mdash; Coach to camera / hook B<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&#9472; AD 04 &mdash; Static image + offer
+      </p>
+    </div>
+    <p class="small mute">One campaign. One ad set. Three or four ads. That's it. Complexity is not sophistication at &pound;15 a day &mdash; it just means less data in each box and slower learning.</p>
+
+    <h3 style="margin-top:10px">Naming conventions that save you next year</h3>
+    <table class="framed">
+      <tr><th style="width:22%">Level</th><th>Pattern</th><th style="width:32%">Example</th></tr>
+      <tr><td><b>Campaign</b></td><td>Month | Offer | Area+Age</td><td><code>2026-09 | Trial | Aberdeen U8-U12</code></td></tr>
+      <tr><td><b>Ad set</b></td><td>Venue +radius | Audience</td><td><code>Linksfield +10km | Parents 25-50</code></td></tr>
+      <tr><td><b>Ad</b></td><td>Format - hook - version</td><td><code>Reel - GirlsScoring - v2</code></td></tr>
+    </table>
+    <p class="small mute">Sloppy names are the reason owners can't tell what worked last season. Ninety seconds now, an hour saved later.</p>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 12. M03 steps 1-6 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 03 &middot; Build the campaign</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">The build, part one &mdash; campaign level</h3>
+
+    <ol class="steps">
+      <li><span class="t">Ads Manager &rarr; Create &rarr; objective <span class="cy">LEADS</span></span>Not Traffic. Not Engagement. Not the Boost button on your post. <b>Leads</b> tells Meta's algorithm to go and find people who fill forms in &mdash; not people who like things. This one dropdown is worth more than every other setting combined.</li>
+      <li><span class="t">Name it properly</span>Use the convention from the previous page. You will thank yourself in eleven months.</li>
+      <li><span class="t">Special ad category: leave it OFF</span>That setting is for housing, employment, credit and politics. Children's sport is none of those. Switching it on needlessly strips out your age targeting and widens your radius by force, which wrecks delivery and costs you money.</li>
+      <li><span class="t">Budget at campaign level (Advantage campaign budget)</span>Set <b>&pound;10&ndash;15 a day</b> to start. One budget shared across the campaign, with Meta moving spend to whatever is working. At this level it beats splitting the budget by hand, every time.</li>
+      <li><span class="t">Daily, not lifetime</span>Daily budget is easier to control and easier to scale in 20% steps. Use lifetime budget only for a camp campaign with a hard end date.</li>
+      <li><span class="t">Leave bid strategy on the default</span><span class="field">Highest volume</span> (sometimes shown as &ldquo;lowest cost&rdquo;). Do not set a bid cap or cost cap while you're learning &mdash; caps stop delivery dead if they're set below what your auction actually costs, and you'll think the ad is broken.</li>
+    </ol>
+
+    <div class="box warn">
+      <h4>Never use the Boost button</h4>
+      <p>Boosting gives you the Engagement objective wearing a disguise. You get likes from people who will never enrol, no conversion optimisation, no proper targeting, and no usable reporting. It is the most expensive button on Facebook. Every campaign in this workbook is built in Ads Manager.</p>
+    </div>
+
+    <div class="box gold">
+      <h4>What &ldquo;optimisation&rdquo; actually means</h4>
+      <p>Meta runs an auction for every single impression. It's not selling you space &mdash; it's deciding which advertiser gets to show something to <b>this specific person, right now</b>. When you choose Leads, you're telling it: only bid on people your models think will fill a form in. Choose Traffic and you're telling it: bid on people who click things. Clickers and form-fillers are two completely different groups of people, and you pay for the one you asked for.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 13. M03 steps 7-14 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 03 &middot; Build the campaign</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">The build, part two &mdash; ad set level</h3>
+
+    <ol class="steps">
+      <li><span class="t">Conversion location</span><span class="field">Website</span> if you're sending to your funnel page &mdash; then choose your dataset and set the performance goal to <b>maximise number of conversions</b>, with conversion event <span class="field">Lead</span>. Choose <span class="field">Instant forms</span> only if you decided that in Module 02.</li>
+      <li><span class="t">Location &mdash; the setting that matters most</span>Drop a pin on <b>your venue</b>, not your town. Radius <b>+8 to +15 km</b> (5&ndash;10 miles) for a city or suburb; up to <b>25 km</b> rural. Then check the dropdown says <b>&ldquo;People living in this location&rdquo;</b> &mdash; the default includes visitors and tourists, who cannot bring their child to your Tuesday session.</li>
+      <li><span class="t">Age and gender: 25&ndash;50, all genders</span>You are targeting <b>parents</b>, not players. Every season somebody targets 8 to 12 year olds and wonders why nothing happens. Children that age aren't on Facebook and can't pay you.</li>
+      <li><span class="t">Detailed targeting: leave it empty</span>Yes, really. On a small local radius your audience is already tiny &mdash; 20,000 to 150,000 people. Stacking &ldquo;interested in football&rdquo; on top starves delivery and pushes costs up. Meta's Advantage+ audience reads your creative and your pixel far better than an interest list does.</li>
+      <li><span class="t">Exclude your existing parents</span>Upload your customer list as a custom audience and exclude it. Nothing annoys a paying parent like being sold a free trial for the thing they already pay for &mdash; and you're paying for the privilege.</li>
+      <li><span class="t">Placements: Advantage+ (all of them)</span>Restricting to Feed only is the classic beginner move, and it raises costs 30&ndash;50%. Reels and Stories are cheap inventory. You already made vertical creative &mdash; let it run everywhere.</li>
+      <li><span class="t">Attribution: 7-day click, 1-day view</span>Parents don't decide instantly. They see it Tuesday and sign up Thursday night from the sofa. A 1-day window makes good ads look dead.</li>
+      <li><span class="t">Schedule: all day, every day, starting Monday 00:00</span>At &pound;10&ndash;15/day there isn't enough volume for dayparting to do anything except cost you reach. Starting Monday makes your weekly reporting line up cleanly, which matters more than it sounds.</li>
+    </ol>
+
+    <div class="box brand">
+      <h4>Audience size sanity check</h4>
+      <p>Ads Manager shows an estimated audience size as you build. Under <b>15,000</b> and your costs will climb and your frequency will run away &mdash; widen the radius or the age range. Over <b>500,000</b> in a local academy context and you're probably reaching people who'd never drive to your venue &mdash; tighten it. The sweet spot for a local academy is roughly <b>30,000 to 200,000</b>.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 14. M03 cheat sheet ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 03 &middot; Build the campaign</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display">Settings <span class="cy">cheat sheet</span></h2>
+    <div class="sub">Tear this page out, or keep it open while you build. Every setting, in order, with the answer.</div>
+
+    <table class="framed">
+      <tr><th style="width:34%">Setting</th><th style="width:30%">Set it to</th><th>Why</th></tr>
+      <tr><td><b>Objective</b></td><td class="good">Leads</td><td>Optimises for form-fillers, not clickers</td></tr>
+      <tr><td><b>Special ad category</b></td><td class="good">None</td><td>Sport isn't a restricted category; switching it on cripples targeting</td></tr>
+      <tr><td><b>Budget level</b></td><td class="good">Campaign (Advantage)</td><td>Meta moves money to what's working</td></tr>
+      <tr><td><b>Budget type</b></td><td class="good">Daily, &pound;10&ndash;15</td><td>Easy to control and scale in steps</td></tr>
+      <tr><td><b>Bid strategy</b></td><td class="good">Highest volume</td><td>Caps stop delivery when set too low</td></tr>
+      <tr><td><b>Conversion location</b></td><td class="good">Website</td><td>Better quality leads that turn up</td></tr>
+      <tr><td><b>Conversion event</b></td><td class="good">Lead</td><td>The event your form fires</td></tr>
+      <tr><td><b>Location</b></td><td class="good">Pin on venue, +8&ndash;15km</td><td>People who can realistically drive to you</td></tr>
+      <tr><td><b>Location type</b></td><td class="good">People living here</td><td>Excludes tourists and passers-through</td></tr>
+      <tr><td><b>Age</b></td><td class="good">25&ndash;50</td><td>Parents pay, children don't</td></tr>
+      <tr><td><b>Gender</b></td><td class="good">All</td><td>Mums book more sessions than dads do</td></tr>
+      <tr><td><b>Detailed targeting</b></td><td class="good">Empty</td><td>Small radius is already narrow enough</td></tr>
+      <tr><td><b>Advantage+ audience</b></td><td class="good">On</td><td>Learns from your pixel and creative</td></tr>
+      <tr><td><b>Exclusions</b></td><td class="good">Current parents</td><td>Don't pay to annoy your customers</td></tr>
+      <tr><td><b>Placements</b></td><td class="good">Advantage+ (all)</td><td>Reels and Stories are cheap reach</td></tr>
+      <tr><td><b>Attribution</b></td><td class="good">7-day click, 1-day view</td><td>Parents take days to decide</td></tr>
+      <tr><td><b>Schedule</b></td><td class="good">All day, from Monday</td><td>Not enough volume for dayparting</td></tr>
+      <tr><td><b>Ads per ad set</b></td><td class="good">3&ndash;4</td><td>Enough to find a winner, not enough to split data</td></tr>
+      <tr><td><b>Call to action</b></td><td class="good">Book Now / Sign Up</td><td>Attracts deciders, not readers</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 15. M03 radius planner ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 03 &middot; Build the campaign</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Choosing your radius</h3>
+    <p class="small mute" style="margin-bottom:9px">The honest question behind this setting: <b>how far will a parent really drive, on a wet Tuesday in February, for a session that isn't a match?</b></p>
+
+    <table class="framed">
+      <tr><th style="width:26%">Your situation</th><th style="width:20%">Start with</th><th>Notes</th></tr>
+      <tr><td><b>City / large town</b></td><td class="good">+8&ndash;10 km</td><td>Traffic makes 10km feel like 25. Tighten if your CPM is high.</td></tr>
+      <tr><td><b>Suburb / small town</b></td><td class="good">+12&ndash;15 km</td><td>The classic academy setting. Usually 40k&ndash;120k people.</td></tr>
+      <tr><td><b>Rural</b></td><td class="good">+20&ndash;25 km</td><td>Parents expect to drive. Watch that the audience isn't under 15k.</td></tr>
+      <tr><td><b>Multiple venues</b></td><td class="good">One ad set each</td><td>Never one big blob covering both &mdash; the ad must name the venue nearest them.</td></tr>
+      <tr><td><b>Holiday camp</b></td><td class="good">+15&ndash;20 km</td><td>Parents travel further for childcare in the school holidays. Genuinely.</td></tr>
+    </table>
+
+    <h3 style="margin-top:6px">Venue planner</h3>
+    <p class="small mute" style="margin-bottom:8px">One row per venue. Fill it in before you build the ad set.</p>
+    <table class="framed">
+      <tr><th>Venue</th><th>Radius</th><th>Est. audience</th><th>Age group</th><th>Session day / time</th></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+    </table>
+
+    <div class="box brand">
+      <h4>The postcode trick</h4>
+      <p>If your venue sits at the edge of your town, don't centre the pin on the venue &mdash; centre it on the <b>housing</b>. A circle drawn around a leisure centre on a bypass wastes a third of its reach on fields and industrial estates. Look at the map Meta draws you, and move the pin until the circle covers where families actually live.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 16. M04 formats ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 04 &middot; Loading your creative</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">04</span>Loading your <span class="cy">creative</span></h2>
+    <div class="sub">You've made the assets. This is which one goes in which slot, and what breaks them.</div>
+
+    <p class="lead">Meta will happily take one square video and stretch it across nine placements, cropping your captions off in five of them. Ninety seconds of care here is worth more than another day of filming.</p>
+
+    <table class="framed">
+      <tr><th style="width:24%">Placement</th><th style="width:16%">Ratio</th><th>What to do</th></tr>
+      <tr><td><b>Feed (FB + IG)</b></td><td class="good">4:5</td><td>Takes the most vertical screen space feed allows. This is your main upload.</td></tr>
+      <tr><td><b>Stories &amp; Reels</b></td><td class="good">9:16</td><td>Use <span class="field">Edit per placement</span> to swap in your full-screen cut. Keep text out of the top and bottom 14% &mdash; the interface covers it.</td></tr>
+      <tr><td><b>Right column / search</b></td><td>1:1</td><td>Low volume. A square version keeps it from looking broken.</td></tr>
+      <tr><td><b>Video length</b></td><td class="good">15&ndash;30 sec</td><td>Hook in the first 2 seconds. Most people never turn the sound on &mdash; burn the captions in.</td></tr>
+      <tr><td><b>Thumbnail</b></td><td>&mdash;</td><td>Pick the frame with a face and a ball in it. Never a logo card.</td></tr>
+      <tr><td><b>Static images</b></td><td>4:5</td><td>Keep text on the image light. Heavy text still suppresses reach in practice.</td></tr>
+    </table>
+
+    <h3 style="margin-top:6px">How many, and what mix</h3>
+    <div class="two">
+      <div class="box brand">
+        <h4>The starting four</h4>
+        <ul class="bul tight">
+          <li><b>Session footage</b> &mdash; kids playing, noise, energy. The workhorse.</li>
+          <li><b>Parent testimonial</b> &mdash; 20 seconds, filmed on a phone, at the side of a pitch.</li>
+          <li><b>You to camera</b> &mdash; who you are, what the session is, one line of proof.</li>
+          <li><b>Static offer card</b> &mdash; date, venue, age group, big and clear.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Rotation rules</h4>
+        <ul class="bul tight">
+          <li>Load all 3&ndash;4 into <b>one ad set</b> and let Meta find the winner.</li>
+          <li>Expect one ad to take 70&ndash;90% of the spend. That's the system working, not a bug.</li>
+          <li>Swap in fresh creative when <b>frequency passes 3&ndash;4</b>, not on a fixed schedule.</li>
+          <li>When you swap, change <b>one</b> ad at a time so you can tell what happened.</li>
+          <li>Keep every retired ad in a folder. Winners come back around 6 months later.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="box gold" style="margin-top:9px">
+      <h4>The only creative note in this workbook</h4>
+      <p>Put the <b>place name</b> in the first two seconds &mdash; on screen and in the voice. &ldquo;Free trial in Inverurie this Saturday&rdquo; stops the right parent and lets everybody else scroll past, which is exactly what you want. Local beats slick, every single time.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 17. M04 text fields ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 04 &middot; Loading your creative</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">The text fields, and what actually goes in them</h3>
+
+    <table class="framed">
+      <tr><th style="width:24%">Field</th><th>What it is, and what to write</th></tr>
+      <tr><td><b>Primary text</b></td><td>The paragraph above the video. Facebook cuts it at roughly <b>125 characters</b> on mobile, so the first line is everything. Lead with place and offer: <em>&ldquo;Free trial session in Ellon this Saturday &mdash; ages 6 to 12, all abilities.&rdquo;</em></td></tr>
+      <tr><td><b>Headline</b></td><td>Bold line under the video. Concrete, not clever: <em>&ldquo;Free Trial &mdash; Saturday 9am, Meadows Sports Centre&rdquo;</em>. This is not a slogan slot.</td></tr>
+      <tr><td><b>Description</b></td><td>Often not shown at all. Never put anything essential here.</td></tr>
+      <tr><td><b>Call to action</b></td><td><span class="field">Book Now</span> or <span class="field">Sign Up</span>. Not &ldquo;Learn More&rdquo; &mdash; you want the ones ready to act, not the browsers.</td></tr>
+      <tr><td><b>Website URL</b></td><td>Your funnel page with UTMs (below). Paste the finished link into your phone browser and check it before you publish.</td></tr>
+      <tr><td><b>Display link</b></td><td>The clean version shown to humans: <code>youracademy.co.uk/trial</code></td></tr>
+    </table>
+
+    <h3 style="margin-top:4px">Tracking your links</h3>
+    <p class="small mute" style="margin-bottom:7px">Paste this into the <b>URL parameters</b> box at ad level. The double-brace parts fill themselves in automatically.</p>
+    <div class="box">
+      <p style="font-family:ui-monospace,Menlo,monospace;font-size:8.5pt;color:var(--amber);margin:0;word-break:break-all">utm_source=facebook&amp;utm_medium=paid&amp;utm_campaign={{campaign.name}}&amp;utm_content={{ad.name}}</p>
+    </div>
+    <p class="small mute">Now, when a parent says &ldquo;I saw you online somewhere&rdquo;, your form data tells you exactly which ad it was. Over a season this is how you learn which creative brings players rather than clicks.</p>
+
+    <h3 style="margin-top:9px">Before you hit publish</h3>
+    <ul class="check">
+      <li><span class="tick"></span><span>Previewed on <b>mobile feed, Stories and Reels</b> using the preview dropdown &mdash; not just desktop.</span></li>
+      <li><span class="tick"></span><span>Captions are readable and not cut off in the 9:16 version.</span></li>
+      <li><span class="tick"></span><span>Date, venue and age in the ad <b>match the page</b> word for word.</span></li>
+      <li><span class="tick"></span><span>Clicked your own link on your phone and reached the right page.</span></li>
+      <li><span class="tick"></span><span>The Instagram account is connected, so the ad runs there too.</span></li>
+      <li><span class="tick"></span><span>No spelling mistakes in the first line. That line does 80% of the work.</span></li>
+    </ul>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 18. M04 policy ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 04 &middot; Loading your creative</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Rejections that hit academies</h3>
+    <p class="small mute" style="margin-bottom:9px">Almost every academy rejection comes from one policy: <b>personal attributes</b>. Meta doesn't allow you to imply you know something personal about the reader &mdash; including things about their child.</p>
+
+    <table class="framed">
+      <tr><th style="width:34%">What trips it</th><th style="width:26%">Why</th><th>Write this instead</th></tr>
+      <tr><td>&ldquo;Is <b>your child</b> struggling with confidence?&rdquo;</td><td>Personal attributes</td><td>&ldquo;We help kids build confidence on the pitch.&rdquo;</td></tr>
+      <tr><td>&ldquo;Is your son being overlooked at his club?&rdquo;</td><td>Personal attributes</td><td>&ldquo;Extra touches for players who want more game time.&rdquo;</td></tr>
+      <tr><td>&ldquo;Unfit or overweight kids welcome&rdquo;</td><td>Health and body image</td><td>&ldquo;All abilities welcome &mdash; no experience needed.&rdquo;</td></tr>
+      <tr><td>Before and after body images</td><td>Banned outright</td><td>Session footage, faces, parents watching</td></tr>
+      <tr><td>Club badges and crests you don't own</td><td>Trademark / IP</td><td>Your own branding only</td></tr>
+      <tr><td>&ldquo;FIFA&rdquo;, &ldquo;Premier League&rdquo;, pro club names</td><td>Trademark</td><td>Describe the standard without borrowing the brand</td></tr>
+      <tr><td>&ldquo;Guaranteed to get scouted&rdquo;</td><td>Unrealistic outcomes</td><td>&ldquo;Players from our sessions have gone on to&hellip;&rdquo;</td></tr>
+      <tr><td>Countdown timers that reset forever</td><td>Misleading claims</td><td>A real deadline you actually honour</td></tr>
+    </table>
+
+    <div class="box warn">
+      <h4>If an ad gets rejected</h4>
+      <ul class="bul tight">
+        <li><b>Request one review.</b> Roughly half get overturned within a day, and the automated first pass is often just wrong.</li>
+        <li><b>Don't</b> delete and re-upload the same creative repeatedly. Repeated rejections put the whole ad account at risk, and recovering a disabled account is genuinely painful.</li>
+        <li>If it's rejected twice, <b>rewrite the copy</b> rather than arguing. Nine times in ten it's one sentence with the word &ldquo;your child&rdquo; in it.</li>
+        <li>Check <b>Account Quality</b> in Business Suite to see if the issue is the ad or the account.</li>
+      </ul>
+    </div>
+
+    <div class="box gold">
+      <h4>Rewriting the same idea, legally</h4>
+      <p>The trick is to move the sentence from <b>them</b> to <b>us</b>. &ldquo;Is your child shy?&rdquo; becomes &ldquo;A lot of the kids who join us start out shy.&rdquo; Identical meaning, identical emotional pull, no policy breach &mdash; because you're describing your sessions, not making a claim about the reader.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 19. M04 safeguarding ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 04 &middot; Loading your creative</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Safeguarding &amp; data &mdash; the part ads training skips</h3>
+    <p class="small mute" style="margin-bottom:9px">This isn't Meta policy. It's the bit that protects your reputation, and one angry parent in a local Facebook group costs more than a campaign ever made you.</p>
+
+    <div class="two">
+      <div class="box brand">
+        <h4>Using children in creative</h4>
+        <ul class="bul tight">
+          <li><b>Written parental consent</b> for any child who is identifiable. Keep it on file with a date.</li>
+          <li>Keep a <b>consent register</b> &mdash; name, date, what it covers, and how to withdraw it.</li>
+          <li>Check the register again <b>before you scale</b> an ad to a wider radius.</li>
+          <li>Never name a child in ad copy or in a comment reply.</li>
+          <li>Never pair a child's image with an exact venue <b>and</b> exact session time in the same post.</li>
+          <li>If a parent withdraws consent, pull the ad that day. Not next week.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Handling the data you collect</h4>
+        <ul class="bul tight">
+          <li>Say on the form <b>what you'll do</b> with their details, in one line.</li>
+          <li>Link a simple <b>privacy policy</b>. Instant Forms require one &mdash; the URL must work.</li>
+          <li>Keep leads in <b>one</b> place, not scattered across three phones.</li>
+          <li>Delete leads that never converted after a reasonable period.</li>
+          <li>If you upload a customer list to Meta, you need a lawful basis and to have told parents you may do it.</li>
+          <li>Don't put a child's medical or SEN details anywhere near a lead form.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="john" style="margin-top:9px">
+      <div class="lbl">John says</div>
+      <p>&ldquo;I've turned down two brilliant bits of footage because I couldn't put my hand on the consent. It stung both times. It's still the right call &mdash; you're advertising to the same few thousand families you'll be coaching for the next decade, and trust is the whole business.&rdquo;</p>
+    </div>
+
+    <div class="box gold">
+      <h4>Faces you can always use safely</h4>
+      <ul class="bul tight">
+        <li><b>You</b>, to camera, talking about the sessions.</li>
+        <li><b>Your coaching staff</b>, with their permission.</li>
+        <li><b>Parents</b> giving a testimonial &mdash; adults, consenting, on the record.</li>
+        <li>Wide shots and back-of-head footage where no child is identifiable.</li>
+        <li>Your own kids, if you're comfortable with it. Many owners aren't &mdash; that's fine too.</li>
+      </ul>
+    </div>
+
+        <h3 style="margin-top:9px">Consent register</h3>
+    <p class="small mute" style="margin-bottom:7px">Keep one. It takes two minutes and it's the difference between a difficult conversation and a serious one.</p>
+    <table class="framed">
+      <tr><th>Child</th><th>Parent / guardian</th><th>Date given</th><th>Covers</th><th>Withdrawn</th></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 20. M05 launch ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 05 &middot; Launch day</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">05</span>Launch <span class="cy">day</span></h2>
+    <div class="sub">Twelve checks, ten minutes. Every one of these is a mistake somebody has already paid for.</div>
+
+    <ul class="check">
+      <li><span class="tick"></span><span>Objective is <b>Leads</b> &mdash; not Traffic, not Engagement, not a boosted post.</span></li>
+      <li><span class="tick"></span><span>Location is a <b>pin on the venue</b> with a radius, set to <b>people living in this location</b>.</span></li>
+      <li><span class="tick"></span><span>Age range is <b>25&ndash;50</b>, all genders. Parents, not players.</span></li>
+      <li><span class="tick"></span><span>Daily budget is the number you meant. <b>Read it twice</b> &mdash; &pound;15 and &pound;150 look alike at speed.</span></li>
+      <li><span class="tick"></span><span>Account spending limit is set, as a hard stop.</span></li>
+      <li><span class="tick"></span><span>Placements are <b>Advantage+ (all)</b>, with a 9:16 cut loaded for Stories and Reels.</span></li>
+      <li><span class="tick"></span><span>Pixel Helper shows <b>PageView</b> and <b>Lead</b> firing on your funnel page.</span></li>
+      <li><span class="tick"></span><span>You clicked your own ad link on your phone, on 4G, and the page loaded properly.</span></li>
+      <li><span class="tick"></span><span>You submitted a <b>real test lead</b> and the alert reached your phone.</span></li>
+      <li><span class="tick"></span><span>Date, venue and age group in the ad <b>match the page exactly</b>.</span></li>
+      <li><span class="tick"></span><span>You have <b>time in the diary</b> to answer leads for the next seven days.</span></li>
+      <li><span class="tick"></span><span>Page and Instagram <b>comment notifications are on</b>. Parents ask in the comments.</span></li>
+    </ul>
+
+    <div class="box brand" style="margin-top:10px">
+      <h4>Launch record</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><span class="small mute">Launched on (date &amp; time):</span><div class="wline"></div></div>
+        <div><span class="small mute">Daily budget:</span><div class="wline"></div></div>
+        <div><span class="small mute">Offer running:</span><div class="wline"></div></div>
+        <div><span class="small mute">First review date (day 4):</span><div class="wline"></div></div>
+      </div>
+    </div>
+
+    <div class="john">
+      <div class="lbl">John says</div>
+      <p>&ldquo;The night before a launch I still send myself a test lead from my own phone. Every time. It's caught a broken form twice &mdash; and each of those would have been a full week of spend pouring into a dead end.&rdquo;</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 21. M06 learning ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 06 &middot; The first 7 days</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">06</span>The first <span class="cy">7 days</span></h2>
+    <div class="sub">The part almost everybody gets wrong: doing nothing, on purpose.</div>
+
+    <p class="lead">When a new ad set launches it enters the <b>learning phase</b>. Meta is spending your money buying information about who converts. It needs roughly <b>50 conversion events in 7 days</b> to stabilise. Until then the numbers bounce around wildly &mdash; and every edit you make <b>restarts the whole thing</b>, throwing away what it learned and what you paid for it.</p>
+
+    <div class="two">
+      <div class="box warn">
+        <h4>Days 1&ndash;3: hands off</h4>
+        <ul class="bul tight">
+          <li>Do <b>not</b> change the budget.</li>
+          <li>Do <b>not</b> pause an ad because it looks bad.</li>
+          <li>Do <b>not</b> add or swap creative.</li>
+          <li>Do <b>not</b> touch the audience or the radius.</li>
+          <li>Do <b>not</b> duplicate it &ldquo;to test something&rdquo;.</li>
+        </ul>
+        <p style="margin-top:6px"><b>Do:</b> answer every lead within five minutes, and reply to every comment.</p>
+      </div>
+      <div class="box brand">
+        <h4>Days 4&ndash;7: your first real read</h4>
+        <p style="margin-bottom:6px">Now you look &mdash; and take <b>one</b> action, not five:</p>
+        <ul class="bul tight">
+          <li>Leads at or under target cost &rarr; <b>leave it completely alone</b>.</li>
+          <li>Leads coming but expensive &rarr; give it three more days; costs usually fall as it exits learning.</li>
+          <li>Spent 3&times; your target cost per lead with <b>zero</b> leads &rarr; something is broken. Module 08.</li>
+          <li>One ad taking 80% of spend &rarr; normal and good. Meta found your winner.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="box gold" style="margin-top:9px">
+      <h4>Day one costs lie</h4>
+      <p>A &pound;22 cost per lead on day one routinely settles to &pound;5 by day four. Judging an ad after twelve hours is judging noise, and the owners who do it kill good campaigns weekly, then conclude that ads don't work for academies.</p>
+    </div>
+
+    <h3 style="margin-top:9px">What normal looks like, day by day</h3>
+    <table class="framed">
+      <tr><th style="width:16%">Day</th><th>What you should expect to see</th></tr>
+      <tr><td><b>1</b></td><td>Spend starts slowly, impressions build through the day, costs look alarming. Ignore.</td></tr>
+      <tr><td><b>2&ndash;3</b></td><td>First leads arrive, often in clusters. Cost per lead swings between double and half your target.</td></tr>
+      <tr><td><b>4&ndash;5</b></td><td>Meta starts favouring one ad. Cost per lead begins settling into a range.</td></tr>
+      <tr><td><b>6&ndash;7</b></td><td>The number you see now is roughly the number you have. This is the one to judge.</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 22. M06 20% rule + log ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 06 &middot; The first 7 days</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">The 20% rule, and the label you can ignore</h3>
+
+    <div class="box brand">
+      <h4>The 20% rule</h4>
+      <p>Once you're out of learning, budget changes bigger than about <b>20% at a time</b> re-trigger the learning phase. So scale in steps &mdash; &pound;15, then &pound;18, then &pound;21 &mdash; leaving 3 to 4 days between each. Doubling a budget overnight is the most reliable way to break an ad that was working perfectly.</p>
+    </div>
+
+    <div class="box">
+      <h4>&ldquo;Learning limited&rdquo; &mdash; not a failure</h4>
+      <p>This label means the ad set isn't getting around 50 conversions a week. At &pound;15/day with a &pound;6 lead you will live in &ldquo;learning limited&rdquo; permanently, and that is <b>completely fine</b> for a local academy. It's a warning designed for advertisers spending thousands a day. Judge yourself on cost per lead and bums on grass, not on Meta's label.</p>
+    </div>
+
+    <div class="box warn">
+      <h4>Things that restart learning (avoid during week one)</h4>
+      <ul class="bul tight">
+        <li>Budget change over ~20%</li>
+        <li>Changing the audience, location or age range</li>
+        <li>Changing the optimisation event or conversion location</li>
+        <li>Adding or removing ads from the ad set</li>
+        <li>Turning the ad set off and on again</li>
+        <li>Editing the creative or the destination link</li>
+      </ul>
+    </div>
+
+    <h3 style="margin-top:8px">Week one log</h3>
+    <p class="small mute" style="margin-bottom:8px">Fill this in each evening. Two minutes. It stops you reacting to noise, and it becomes the baseline you compare everything to.</p>
+    <table class="framed">
+      <tr><th>Day</th><th>Spend</th><th>Impressions</th><th>Leads</th><th>Cost / lead</th><th>Booked</th></tr>
+      <tr><td><b>Mon</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Tue</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Wed</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Thu</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Fri</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Sat</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Sun</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 23. M07 metrics ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 07 &middot; The numbers</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">07</span>The only numbers <span class="cy">that matter</span></h2>
+    <div class="sub">Six metrics, in order. Everything else in Ads Manager is decoration.</div>
+
+    <p class="lead">Set your Ads Manager columns to a custom view with exactly these &mdash; <b>Amount spent, Impressions, CPM, CTR (link), CPC (link), Leads, Cost per lead</b> &mdash; save it as &ldquo;Academy view&rdquo;, and never look at the default again.</p>
+
+    <table class="framed">
+      <tr><th style="width:22%">Metric</th><th style="width:40%">Plain English</th><th>Typical UK local academy</th></tr>
+      <tr><td><b>CPM</b></td><td>Cost to show your ad 1,000 times &mdash; the price of attention in your area</td><td>&pound;4&ndash;&pound;14 (tight radius runs higher)</td></tr>
+      <tr><td><b>CTR (link)</b></td><td>Of those who saw it, how many clicked &mdash; creative and audience fit</td><td>1.0&ndash;2.5% healthy<br><span class="bad">Under 0.8% = a problem</span></td></tr>
+      <tr><td><b>CPC (link)</b></td><td>What one click costs you</td><td>&pound;0.35&ndash;&pound;1.20</td></tr>
+      <tr><td><b>Page conversion</b></td><td>Of the clickers, how many filled the form &mdash; your page's job</td><td>15&ndash;35% healthy<br><span class="bad">Under 10% = fix the page</span></td></tr>
+      <tr><td><b>Cost per lead</b></td><td>What one name and phone number costs</td><td>Free trial &pound;2&ndash;&pound;8<br>Paid camp &pound;6&ndash;&pound;18</td></tr>
+      <tr><td><b>Cost per player</b></td><td class="good">The only one that decides whether this worked</td><td>Compare against the worksheet overleaf</td></tr>
+    </table>
+
+    <div class="box warn">
+      <h4>Ranges, not laws</h4>
+      <p>These are typical UK grassroots numbers, not guarantees. Your area, your season, your offer and your creative all move them. After a month, <b>your own first month</b> becomes the benchmark that matters &mdash; compare yourself to that, not to a table in a book.</p>
+    </div>
+
+    <div class="box gold">
+      <h4>Metrics to deliberately ignore</h4>
+      <p><b>Reach, likes, shares, comments, video views, engagement rate.</b> They feel good and they pay nobody. The only exception: heavy comments and shares tend to lower your CPM, so a lively ad is cheaper to run &mdash; that's a side effect worth having, not a target worth chasing.</p>
+    </div>
+
+        <h3 style="margin-top:8px">Build your &ldquo;Academy view&rdquo; in sixty seconds</h3>
+    <ol class="steps">
+      <li><span class="t">Columns &rarr; Customise columns</span>Top right of the Ads Manager table. Ignore the presets Meta offers &mdash; they're built for e-commerce.</li>
+      <li><span class="t">Clear everything, then tick only these</span>Amount spent, Impressions, CPM, CTR (link), CPC (link), Results, Cost per result, Frequency.</li>
+      <li><span class="t">Save it as a preset called &ldquo;Academy view&rdquo;</span>Tick &ldquo;save as preset&rdquo; before you apply. Now it's two clicks every Monday, forever.</li>
+      <li><span class="t">Set the date range to Last 7 days, not Today</span>Today's numbers are noise. Weekly numbers are decisions.</li>
+    </ol>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 24. M07 funnel maths ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 07 &middot; The numbers</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">The funnel maths, all the way to the bank</h3>
+    <p class="small mute" style="margin-bottom:9px">Track four conversion steps every month. Where the drop-off is tells you what to fix &mdash; and it is very rarely the ad.</p>
+
+    <table class="framed">
+      <tr><th style="width:30%">Step</th><th style="width:20%">Healthy</th><th>If you're below it</th></tr>
+      <tr><td><b>Lead &rarr; contacted</b></td><td class="good">100% within 1 hour</td><td>It's you, not the ads. Module 09.</td></tr>
+      <tr><td><b>Lead &rarr; trial booked</b></td><td class="good">60&ndash;80%</td><td>Follow-up is too slow or too soft. Use the scripts.</td></tr>
+      <tr><td><b>Booked &rarr; turned up</b></td><td class="good">60&ndash;75%</td><td>You're not sending the day-before reminder.</td></tr>
+      <tr><td><b>Turned up &rarr; enrolled</b></td><td class="good">50&ndash;70%</td><td>The session, or more likely the ask at the end of it.</td></tr>
+    </table>
+
+    <h3 style="margin-top:4px">Worked example &mdash; &pound;500 a month</h3>
+    <div class="flow">
+      <div><div class="v">&pound;500</div><div class="k">Spent</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">100</div><div class="k">Leads @ &pound;5</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">70</div><div class="k">Booked</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">47</div><div class="k">Attended</div></div>
+      <div class="ar">&rarr;</div>
+      <div><div class="v">28</div><div class="k">Enrolled</div></div>
+    </div>
+    <p class="small">That's <b>&pound;17.86 to acquire a player</b>. If a player pays you &pound;35 a month and stays ten months, those 28 players are worth <b>&pound;9,800 of revenue</b> from &pound;500 of spend &mdash; and that's before siblings, camps and referrals.</p>
+
+    <div class="box warn" style="margin-top:8px">
+      <h4>The same funnel with slow follow-up</h4>
+      <p>Same &pound;500, same 100 leads &mdash; but you answer the next day. Booked drops to 35, attended to 20, enrolled to 11. Cost per player jumps from &pound;17.86 to <b>&pound;45.45</b>, and you'll conclude the ads are too expensive. Nothing about the ads changed. That gap is Module 09, and it is worth more than any targeting tweak in this book.</p>
+    </div>
+
+    <h3 style="margin-top:8px">Your funnel, last 30 days</h3>
+    <table class="framed">
+      <tr><th>Spend</th><th>Leads</th><th>Cost/lead</th><th>Booked</th><th>Attended</th><th>Enrolled</th><th>Cost/player</th></tr>
+      <tr><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+    </table>
+
+        <h3 style="margin-top:8px">The academy year &mdash; when to push</h3>
+    <table class="framed">
+      <tr><th style="width:22%">Period</th><th style="width:20%">Demand</th><th>What to run</th></tr>
+      <tr><td><b>Early January</b></td><td class="good">Very high</td><td>Trials. New year, new activity, parents actively looking.</td></tr>
+      <tr><td><b>Feb&ndash;March</b></td><td class="good">Good</td><td>Trials, spring blocks.</td></tr>
+      <tr><td><b>Easter / half terms</b></td><td class="good">High</td><td>Camps. Start advertising 3 weeks out, not 1.</td></tr>
+      <tr><td><b>May&ndash;June</b></td><td class="amb">Fading</td><td>Summer camp pre-sales to existing parents first.</td></tr>
+      <tr><td><b>Late Aug &ndash; Sept</b></td><td class="good">Peak of the year</td><td>Trials and new-season intake. Budget hardest here.</td></tr>
+      <tr><td><b>Oct&ndash;Nov</b></td><td class="amb">Steady</td><td>Trials, plus retargeting the ones who nearly joined in September.</td></tr>
+      <tr><td><b>December</b></td><td class="bad">Low, and expensive</td><td>Pause or drop budget. Retail is bidding you out of the auction.</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 25. M07 player value worksheet ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 07 &middot; The numbers</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display">What a player is <span class="cy">worth</span></h2>
+    <div class="sub">Ads aren't expensive or cheap in the abstract. They're expensive or cheap relative to this number.</div>
+
+    <p class="lead">Most owners never do this sum, so they panic at a &pound;9 lead and switch the ads off the week before they'd have started printing. Do it once, write it down, and it changes how every future decision feels.</p>
+
+    <div class="box brand">
+      <h4>Step 1 &mdash; what one player is worth to you</h4>
+      <table style="margin-bottom:0">
+        <tr><td style="width:62%">Monthly fee per player</td><td><b>A</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Your cost to deliver, per player per month<br><span class="small mute">pitch, coaches, kit, insurance divided by players</span></td><td><b>B</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Profit per player per month &nbsp;<span class="cy">(A &minus; B)</span></td><td><b>C</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Average months a player stays</td><td><b>D</b></td><td><div class="wline"></div></td></tr>
+        <tr><td><b>Player lifetime value &nbsp;<span class="cy">(C &times; D)</span></b></td><td><b>E</b></td><td><div class="wline"></div></td></tr>
+      </table>
+    </div>
+
+    <div class="box brand">
+      <h4>Step 2 &mdash; what you can pay for a lead</h4>
+      <table style="margin-bottom:0">
+        <tr><td style="width:62%">Of 100 leads, how many enrol? (as a decimal, e.g. 28% = 0.28)</td><td><b>F</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Break-even cost per lead &nbsp;<span class="cy">(E &times; F)</span><br><span class="small mute">above this you are losing money</span></td><td><b>G</b></td><td><div class="wline"></div></td></tr>
+        <tr><td><b>Target cost per lead &nbsp;<span class="cy">(G &divide; 3)</span></b><br><span class="small mute">keeps two thirds of the profit; this is the number you manage to</span></td><td><b>H</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Leads needed per player &nbsp;<span class="cy">(1 &divide; F)</span></td><td><b>I</b></td><td><div class="wline"></div></td></tr>
+      </table>
+    </div>
+
+    <div class="box gold">
+      <h4>Worked example &mdash; Dave's academy</h4>
+      <p class="small" style="margin-bottom:4px">Fee <b>&pound;35</b> &minus; delivery <b>&pound;14</b> = <b>&pound;21</b> profit a month. Stays <b>10 months</b> &rarr; player worth <b>&pound;210</b>. Enrol rate <b>0.28</b> &rarr; break-even lead = &pound;210 &times; 0.28 = <b>&pound;58.80</b>. Target = &pound;58.80 &divide; 3 = <b>&pound;19.60</b>. Leads per player = 1 &divide; 0.28 = <b>3.6</b>.</p>
+      <p class="small">So Dave's real cost per lead of <b>&pound;5</b> isn't just fine &mdash; it's three times better than his target, and the correct response is to spend more, not to congratulate himself and stop.</p>
+    </div>
+
+    <div class="box warn">
+      <h4>If B is bigger than A</h4>
+      <p>Your delivery cost is above your fee, so every extra player loses you money and no advertising can fix that. Stop here and go back to the <b>Pricing Calculator</b> (Traction Stage, Resource 01). Ads pour fuel on whatever engine you have &mdash; including a broken one.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 26. M07 budget planner ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 07 &middot; The numbers</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Turning that into a budget</h3>
+    <p class="small mute" style="margin-bottom:9px">Work backwards from players, not forwards from what you feel like spending.</p>
+
+    <div class="box brand">
+      <table style="margin-bottom:0">
+        <tr><td style="width:62%">New players I want this month</td><td><b>J</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Leads needed &nbsp;<span class="cy">(J &times; I from the last page)</span></td><td><b>K</b></td><td><div class="wline"></div></td></tr>
+        <tr><td>Realistic cost per lead <span class="small mute">(your actual, or &pound;5 to start)</span></td><td><b>L</b></td><td><div class="wline"></div></td></tr>
+        <tr><td><b>Monthly budget needed &nbsp;<span class="cy">(K &times; L)</span></b></td><td><b>M</b></td><td><div class="wline"></div></td></tr>
+        <tr><td><b>Daily budget &nbsp;<span class="cy">(M &divide; 30)</span></b></td><td><b>N</b></td><td><div class="wline"></div></td></tr>
+      </table>
+    </div>
+
+    <h3 style="margin-top:6px">Reality check on that number</h3>
+    <table class="framed">
+      <tr><th style="width:20%">Daily</th><th style="width:22%">Monthly</th><th>What that realistically buys at a &pound;5 lead</th></tr>
+      <tr><td><b>&pound;10</b></td><td>&pound;300</td><td>~60 leads &rarr; 40 booked &rarr; 27 attend &rarr; <b>16 players</b></td></tr>
+      <tr><td><b>&pound;15</b></td><td>&pound;450</td><td>~90 leads &rarr; 63 booked &rarr; 42 attend &rarr; <b>25 players</b></td></tr>
+      <tr><td><b>&pound;25</b></td><td>&pound;750</td><td>~150 leads &rarr; 105 booked &rarr; 70 attend &rarr; <b>42 players</b></td></tr>
+      <tr><td><b>&pound;40</b></td><td>&pound;1,200</td><td>~240 leads &rarr; 168 booked &rarr; 112 attend &rarr; <b>67 players</b></td></tr>
+    </table>
+    <p class="small mute">Using the healthy conversion rates from Module 07 &mdash; and assuming the follow-up in Module 09 actually happens. Without it, halve every number in the last column.</p>
+
+    <div class="box warn">
+      <h4>Two hard limits before you scale</h4>
+      <ul class="bul tight">
+        <li><b>Capacity.</b> Can you physically coach 42 new players? Filling a session you can't staff is worse than not advertising at all &mdash; you'll lose the ones you already have.</li>
+        <li><b>Follow-up hours.</b> 150 leads a month is roughly five conversations a day. If nobody has time for that, buy fewer, better leads.</li>
+      </ul>
+    </div>
+
+    <div class="john">
+      <div class="lbl">John says</div>
+      <p>&ldquo;Once you know a player is worth &pound;200 to you, a &pound;9 lead stops feeling expensive and starts feeling like something you should buy more of. That single sum is the difference between advertising and gambling.&rdquo;</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 27. M08 diagnosis 1 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 08 &middot; When it's not working</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">08</span>When it's <span class="cy">not working</span></h2>
+    <div class="sub">Find the broken layer in sixty seconds. Read top to bottom &mdash; the first symptom that matches is your problem.</div>
+
+    <div class="tree">
+      <div class="sym">Barely any impressions &middot; the budget isn't going out</div>
+      <div class="cz">The delivery is blocked, not the creative.</div>
+      <p>Audience under ~15k &rarr; widen the radius. Ad still in review &rarr; wait, it can take 24 hours. Payment method failed &rarr; check billing. Schedule set to start in the future &rarr; check the dates. A bid cap set &rarr; remove it. Account spending limit already reached &rarr; raise it.</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">CPM above &pound;20</div>
+      <div class="cz">You're paying a premium for the audience you asked for.</div>
+      <p>Radius too tight, or interests stacked on top of a small radius &rarr; widen and strip the interests. Frequency over 3&ndash;4 in a fortnight &rarr; the same people keep seeing it, refresh the creative. Some months are simply expensive &mdash; December, and the fortnight before school returns, are brutal auctions everywhere.</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">Impressions fine, CTR under 0.8%</div>
+      <div class="cz">Creative and audience aren't matching.</div>
+      <p>The one place this workbook hands back to your creative work. Swap the hook, put the place name in the first two seconds, lead with a face and a pitch rather than a logo. Also ask the blunt question: is the offer appealing to a parent, or is it about you and your badges?</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">Clicks coming, no leads</div>
+      <div class="cz">The page, not the ad. This is the most common one of all.</div>
+      <p>Open it on 4G on your phone. Slow? Offer below the fold? Form broken on mobile? Does the ad promise something the page never mentions? And check the pixel is actually firing <span class="field">Lead</span> &mdash; sometimes the leads are arriving fine and simply aren't being counted, which sends owners chasing a problem that doesn't exist.</p>
+    </div>
+
+        <div class="tree">
+      <div class="sym">Cost per lead doubled overnight</div>
+      <div class="cz">Almost always an edit, or the calendar.</div>
+      <p>Did you change something in the last 3 days &mdash; budget, creative, audience? You've restarted learning. Did a competitor start advertising, or is it a peak week (early January, late August)? Check frequency too: a sudden jump usually means Meta has run out of fresh people to show it to.</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">Budget isn't spending in full each day</div>
+      <div class="cz">Meta can't find enough people worth bidding on.</div>
+      <p>The audience is too small, the optimisation event is too rare, or your creative isn't earning impressions in the auction. Widen the radius first, then check that the <span class="field">Lead</span> event is actually firing &mdash; an ad set optimising for an event that never happens will throttle itself.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 28. M08 diagnosis 2 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 08 &middot; When it's not working</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+
+    <div class="tree">
+      <div class="sym">Leads coming, nobody turns up</div>
+      <div class="cz">Speed of follow-up, nine times out of ten.</div>
+      <p>How long between the form and your first message? Over an hour is your answer. Then: are you sending a day-before reminder? Is the venue, the entrance and the parking crystal clear? Did you ever actually speak to a human, or only text? Module 09.</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">They turn up, they don't join</div>
+      <div class="cz">The session, or far more likely the ask at the end of it.</div>
+      <p>Did you speak to the parent for two minutes at pickup? Did you invite them to join, with a price and a next date, and then stop talking? Did the child leave saying they loved it? No ad campaign in the world fixes a trial session with no ask at the end.</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">It worked for three weeks, now it's dying</div>
+      <div class="cz">Creative fatigue in a small audience.</div>
+      <p>Check <b>frequency</b>. Over 3&ndash;4 in a small radius means your whole area has seen it several times over. Rotate in fresh creative and change nothing else. This is exactly why you make creative in batches rather than one perfect film.</p>
+    </div>
+
+    <div class="tree">
+      <div class="sym">Leads are junk &mdash; wrong ages, wrong towns, timewasters</div>
+      <div class="cz">Your qualifying is happening after the click instead of before it.</div>
+      <p>Put the age group and the venue in the ad itself, not just on the page. Add the age question to the form. If you're on Instant Forms, switch to &ldquo;higher intent&rdquo; or move to your funnel page. Cheap leads that don't fit are not cheap.</p>
+    </div>
+
+    <div class="box brand" style="margin-top:4px">
+      <h4>The one-change rule</h4>
+      <p>Whatever you diagnose: change <b>one thing</b>, then wait <b>three days</b>. Change three things at once and you've learned nothing, whatever happens next &mdash; and you'll be back here next month with the same problem and no more knowledge than today.</p>
+    </div>
+
+    <div class="box gold">
+      <h4>Before you blame the ads, check these three</h4>
+      <ul class="bul tight">
+        <li>Is the <b>Lead event</b> still firing? Pixel Helper, thirty seconds.</li>
+        <li>Are lead <b>alerts</b> still arriving on your phone? They break silently.</li>
+        <li>Is the <b>page</b> still live and fast? Domains expire, hosts fall over, forms break after updates.</li>
+      </ul>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 29. M09 five minute rule ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 09 &middot; Delivering the lead</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">09</span>Delivering <span class="cy">the lead</span></h2>
+    <div class="sub">The ad's job ends at the form. This module is where the money is actually made or lost.</div>
+
+    <p class="lead">A lead is not a customer. It's a parent who half-decided something while scrolling, and whose interest starts decaying the moment they close the app. <b>Speed beats polish, every single time.</b> A scruffy text in four minutes outperforms a beautiful email tomorrow.</p>
+
+    <table class="framed">
+      <tr><th style="width:34%">Time to first contact</th><th>What happens</th></tr>
+      <tr><td><b>Under 5 minutes</b></td><td class="good">You catch most of them while the phone is still in their hand</td></tr>
+      <tr><td><b>Under 1 hour</b></td><td class="amb">Still decent. Treat this as your minimum standard.</td></tr>
+      <tr><td><b>Same day</b></td><td class="amb">You've lost a chunk of them</td></tr>
+      <tr><td><b>Next day or later</b></td><td class="bad">Most are gone &mdash; and some have booked with someone else</td></tr>
+    </table>
+
+    <div class="box brand">
+      <h4>Set this up before you launch, not after</h4>
+      <ul class="bul tight">
+        <li>Lead alerts as a <b>push notification</b> on your phone, not just an email.</li>
+        <li><b>One named person</b> responsible, with a backup for coaching hours.</li>
+        <li>An <b>automatic instant reply</b> that buys you the evening if you're on the pitch.</li>
+        <li>The scripts on the next two pages saved in your phone as text shortcuts, so a reply takes ten seconds.</li>
+      </ul>
+    </div>
+
+    <div class="box warn">
+      <h4>Why text or WhatsApp first, not a call</h4>
+      <p>Parents of young children do not answer unknown numbers &mdash; they assume it's a scam or a school problem. They read texts within minutes. Text first to open the door, then call once you're a name rather than a number.</p>
+    </div>
+
+    <div class="john">
+      <div class="lbl">John says</div>
+      <p>&ldquo;For years I told myself I'd ring the leads after training. By then it was half nine, I was knackered, and it waited until tomorrow &mdash; and by tomorrow I was a stranger asking about something they'd forgotten doing. The academies that grow aren't the ones with the best ads. They're the ones that answer first.&rdquo;</p>
+    </div>
+
+        <div class="box gold" style="margin-top:9px">
+      <h4>Your cover rota</h4>
+      <p style="margin-bottom:7px">Write down who answers leads, when. The gap in this table is exactly where your money leaks.</p>
+      <table style="margin-bottom:0">
+        <tr><th style="width:30%">When</th><th>Who answers</th><th style="width:26%">Backup</th></tr>
+        <tr><td>Weekday daytime</td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+        <tr><td>Weekday coaching hours</td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+        <tr><td>Weekends</td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+        <tr><td>After 9pm / overnight</td><td>Auto-reply, then first thing</td><td><div class="wline"></div></td></tr>
+      </table>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 30. M09 scripts 1 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 09 &middot; Delivering the lead</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">The contact sequence &mdash; part one</h3>
+    <p class="small mute" style="margin-bottom:9px">Change the wording so it sounds like you. Don't change the timings &mdash; the timings are the part that works.</p>
+
+    <ol class="steps">
+      <li><span class="t">Instantly &mdash; automatic reply</span>
+        <div class="script">&ldquo;Hi [name], thanks for booking [child] in for the free trial at [venue] &mdash; it's [day] at [time]. I'll message you personally shortly to confirm. Any questions in the meantime, just reply here. [Your name], [Academy].&rdquo;</div>
+      </li>
+      <li><span class="t">Within 5 minutes &mdash; personal text or WhatsApp</span>
+        <div class="script">&ldquo;Hi [name] &mdash; [your name] from [Academy]. Just seen [child]'s booking for Saturday. Quick one: what age is [child], and have they played much before? Just want to put them in the right group.&rdquo;</div>
+        <p class="small mute" style="margin-top:4px">A question they can answer in three words. It starts a conversation and confirms the booking without asking for a commitment.</p>
+      </li>
+      <li><span class="t">Within 1 hour &mdash; phone call, if no reply</span>Say who you are, confirm the spot, say what to bring. Ninety seconds, no pitch. If they don't answer, leave a voicemail <b>and</b> send a text saying you've called &mdash; the text is what gets read.</li>
+      <li><span class="t">Day before &mdash; the reminder</span>
+        <div class="script">&ldquo;Looking forward to seeing [child] tomorrow at [time], [venue] &mdash; we're on the [pitch/hall]. Just boots, shin pads and a water bottle. Parking is [detail]. See you there.&rdquo;</div>
+        <p class="small mute" style="margin-top:4px">This single message is worth 15&ndash;20 points of show-up rate. It is the highest-return message in the whole sequence.</p>
+      </li>
+      <li><span class="t">Morning of &mdash; short nudge</span>
+        <div class="script">&ldquo;Morning! All set for [time] today. Text me if you're running late &mdash; no problem at all.&rdquo;</div>
+        <p class="small mute" style="margin-top:4px">&ldquo;No problem at all&rdquo; matters: the number one reason a family no-shows is that they're running late and feel too awkward to walk in.</p>
+      </li>
+    </ol>
+
+        <div class="two" style="margin-top:6px">
+      <div class="box brand">
+        <h4>Make these one-tap on your phone</h4>
+        <ul class="bul tight">
+          <li><b>iPhone:</b> Settings &rarr; General &rarr; Keyboard &rarr; Text Replacement. Save each script with a shortcut like <code>;trial</code>.</li>
+          <li><b>Android:</b> Settings &rarr; System &rarr; Languages &amp; input &rarr; Personal dictionary.</li>
+          <li><b>WhatsApp Business:</b> use Quick Replies (<code>/trial</code>) and set the away message as your auto-reply.</li>
+          <li>Then a five-minute response takes ten seconds, which is the only way it survives a busy week.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Tone rules</h4>
+        <ul class="bul tight">
+          <li>Write like a coach texting a parent, not like a business emailing a customer.</li>
+          <li>One question per message. Two questions gets you zero answers.</li>
+          <li>Use the child's name in every message. It's their child, not a lead.</li>
+          <li>No emojis in the first message, no pressure, no capital-letter urgency.</li>
+          <li>Never send a wall of text. Three lines maximum.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 31. M09 scripts 2 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 09 &middot; Delivering the lead</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:9px">The contact sequence &mdash; part two</h3>
+
+    <ol class="steps" style="counter-reset:st 5">
+      <li><span class="t">Right after the session &mdash; the ask, face to face</span>
+        <div class="script">&ldquo;[Child] did really well today &mdash; especially [specific thing they did]. We'd love to have them regularly. It's &pound;[price] a month, same time every week. Shall I get them signed up for next Saturday?&rdquo;</div>
+        <p class="small mute" style="margin-top:4px">Then <b>stop talking</b>. Let them answer. This is the whole ballgame, and it's the step most owners skip because it feels pushy. It isn't &mdash; they came to you.</p>
+      </li>
+      <li><span class="t">Same evening &mdash; the link</span>
+        <div class="script">&ldquo;Great to meet you today. Here's the sign-up for [child] &mdash; takes two minutes: [link]. Any questions just shout.&rdquo;</div>
+      </li>
+      <li><span class="t">+2 days &mdash; one soft chase</span>
+        <div class="script">&ldquo;Hi [name], just checking whether [child] fancied coming back this week? Happy to hold their spot until Friday if that helps.&rdquo;</div>
+      </li>
+      <li><span class="t">+7 days &mdash; close it off warmly</span>
+        <div class="script">&ldquo;No problem at all if the timing isn't right. I'll keep you posted when we've got space or a camp coming up &mdash; door's always open.&rdquo;</div>
+        <p class="small mute" style="margin-top:4px">Then stop, and tag them for the next camp. Chasing beyond this costs goodwill and gains nothing.</p>
+      </li>
+    </ol>
+
+    <h3 style="margin-top:6px">The two messages that recover lost money</h3>
+    <div class="two">
+      <div class="box brand">
+        <h4>No-show, same evening</h4>
+        <div class="script" style="margin-top:0">&ldquo;Missed you at [venue] today &mdash; everything alright? Want me to put [child] in for this Saturday instead?&rdquo;</div>
+        <p class="small mute" style="margin-top:5px">No guilt, no lecture. A big share of no-shows rebook off this one message.</p>
+      </div>
+      <div class="box brand">
+        <h4>Attended, went quiet</h4>
+        <div class="script" style="margin-top:0">&ldquo;Hi [name] &mdash; was [child] keen after Saturday? We've got two spots left in that group this term, wanted to check before they go.&rdquo;</div>
+        <p class="small mute" style="margin-top:5px">Real scarcity only. If there aren't two spots left, don't say there are.</p>
+      </div>
+    </div>
+
+        <h3 style="margin-top:7px">The five objections, and what to say</h3>
+    <table class="framed">
+      <tr><th style="width:30%">They say</th><th>You say</th></tr>
+      <tr><td>&ldquo;How much is it?&rdquo;</td><td>Answer straight away, then add value: &ldquo;&pound;35 a month for weekly sessions, and that includes [x]. Come to the free trial first and see if they enjoy it.&rdquo;</td></tr>
+      <tr><td>&ldquo;It's a bit far for us.&rdquo;</td><td>&ldquo;Fair enough &mdash; we've got families coming from [nearby town] too. If the Saturday session is easier than the Tuesday, I can put them in that one.&rdquo;</td></tr>
+      <tr><td>&ldquo;He's quite shy.&rdquo;</td><td>&ldquo;A lot of ours started that way. I'll pair him with [coach] and keep an eye on him &mdash; you're welcome to stay and watch the whole session.&rdquo;</td></tr>
+      <tr><td>&ldquo;She already plays for a club.&rdquo;</td><td>&ldquo;Perfect &mdash; most of our players do. This is extra touches midweek, not instead of their team.&rdquo;</td></tr>
+      <tr><td>&ldquo;I'll speak to his dad and get back to you.&rdquo;</td><td>&ldquo;No problem. I'll hold a spot for Saturday and drop you a text Thursday &mdash; if it's not right, just say and I'll give it to someone else.&rdquo;</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 32. M09 lead rules ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 09 &middot; Delivering the lead</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:8px">Never let a lead die</h3>
+
+    <div class="two">
+      <div class="box">
+        <h4>The four rules</h4>
+        <ul class="bul tight">
+          <li>Every lead goes on the board the day it arrives, with a <b>status</b> and a <b>next action date</b>. Your Academy Leads base does this for you.</li>
+          <li>A <b>no-show is not dead.</b> One message, no guilt, offer the next date.</li>
+          <li><b>&ldquo;Not right now&rdquo; means next camp</b>, not never. Tag them and message when it opens.</li>
+          <li>Five minutes a week scanning for anything with <b>no next action set</b>. That's where the money hides.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Pipeline statuses</h4>
+        <ul class="bul tight">
+          <li><b>New</b> &mdash; just arrived, not yet contacted</li>
+          <li><b>Contacted</b> &mdash; you've messaged, no reply yet</li>
+          <li><b>Trial booked</b> &mdash; date agreed</li>
+          <li><b>Trial attended</b> &mdash; they showed up</li>
+          <li><b>Enrolled</b> &mdash; paying</li>
+          <li><b>Lost</b> &mdash; with a one-word reason: price, timing, distance, ghosted</li>
+        </ul>
+        <p class="small mute" style="margin-top:5px">The reasons matter. Three &ldquo;distance&rdquo; in a month means your radius is too wide.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:9px">Comments and DMs are leads too</h3>
+    <div class="box">
+      <ul class="bul tight">
+        <li>Reply to <b>every</b> comment, even &ldquo;how much is it?&rdquo; &mdash; publicly first, then DM.</li>
+        <li>Answer the price question <b>straight</b>. Dodging it in public reads as expensive.</li>
+        <li><b>Hide, don't delete</b>, anything abusive. Hiding is invisible to them; deleting starts a fight.</li>
+        <li>Tagged friends (&ldquo;@Claire look at this&rdquo;) are gold &mdash; reply to both of them.</li>
+        <li>Comments and reactions are social proof that lowers your CPM. An engaged ad literally costs less to run, so replying is a performance tactic, not just manners.</li>
+      </ul>
+    </div>
+
+    <div class="box gold" style="margin-top:9px">
+      <h4>Your response promise</h4>
+      <p style="margin-bottom:7px">Write it down, then hold yourself to it. Everything in Module 07 depends on this one line.</p>
+      <div class="wline"></div>
+      <p class="small mute" style="margin-top:6px">For example: &ldquo;Every lead gets a personal text within 30 minutes between 8am and 9pm, and by 9am the next morning otherwise. Sarah covers Tuesday and Thursday evenings.&rdquo;</p>
+    </div>
+
+        <div class="two" style="margin-top:9px">
+      <div class="box brand">
+        <h4>The Monday five-minute lead sweep</h4>
+        <ul class="check">
+          <li><span class="tick"></span><span>Anything still <b>New</b> after 24 hours &mdash; contact it now</span></li>
+          <li><span class="tick"></span><span>Anything with <b>no next action date</b> &mdash; set one</span></li>
+          <li><span class="tick"></span><span>Last week's <b>no-shows</b> &mdash; one message each</span></li>
+          <li><span class="tick"></span><span>Last week's <b>attended but not enrolled</b> &mdash; the two-day chase</span></li>
+          <li><span class="tick"></span><span>Anything over a fortnight old with no reply &mdash; close it off warmly</span></li>
+        </ul>
+      </div>
+      <div class="box warn">
+        <h4>Three messages never to send</h4>
+        <ul class="bul tight">
+          <li><b>&ldquo;Just following up&hellip;&rdquo;</b> with nothing new in it. Give them a reason to reply.</li>
+          <li><b>A price list as a first reply.</b> Answer the price, then get them to the session.</li>
+          <li><b>Anything that reads as annoyed.</b> They're a busy parent, not a bad person &mdash; and they talk to other parents.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 33. M10 weekly ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 10 &middot; The weekly rhythm</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">10</span>The weekly <span class="cy">rhythm</span></h2>
+    <div class="sub">Fifteen minutes, once a week, same day, same time. This is the entire ongoing job.</div>
+
+    <p class="lead">The owners who get results aren't the ones who check Ads Manager six times a day &mdash; those ones fiddle, restart learning, and wonder why nothing settles. Set an alarm for Monday morning and do exactly this.</p>
+
+    <ol class="steps">
+      <li><span class="t">Open Ads Manager, last 7 days</span>Write down four numbers in the same place every week: <b>spend, leads, cost per lead, frequency</b>. Same four, every week, forever.</li>
+      <li><span class="t">Compare to your target cost per lead</span>The number from your worksheet &mdash; not a number you have a feeling about.</li>
+      <li><span class="t">Check frequency</span>Under 2.5 is fine. Over 3.5 in a small radius, plan a creative swap this week.</li>
+      <li><span class="t">Take at most one action</span>Scale up 20%, swap one creative, or do nothing. <b>One.</b> Multiple changes at once and you never learn which one did it.</li>
+      <li><span class="t">Check the lead board</span>Anything with no next action, deal with it now. Anything older than a fortnight with no reply, close it off warmly.</li>
+      <li><span class="t">Count the real outcome</span>How many trials booked, attended and enrolled last week? <b>That's the scoreboard.</b> Ads Manager is just engine noise.</li>
+    </ol>
+
+    <div class="box brand">
+      <h4>What not to do the other six days</h4>
+      <p>Don't check the dashboard daily. Don't pause an ad on a bad afternoon. Don't ask three people in a Facebook group what they think of your CPM. Answer your leads, coach your sessions, and look on Monday.</p>
+    </div>
+
+    <div class="box gold">
+      <h4>Once a quarter, do this too</h4>
+      <ul class="bul tight">
+        <li>Refresh your creative library &mdash; film a batch, not a masterpiece.</li>
+        <li>Re-upload your customer list so exclusions and lookalikes stay current.</li>
+        <li>Check the funnel page still loads fast and the form still works.</li>
+        <li>Look back over three months of the tracker overleaf and ask what actually changed.</li>
+      </ul>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 34. M10 tracker ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 10 &middot; The weekly rhythm</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Your 12-month tracker</h3>
+    <p class="small mute" style="margin-bottom:9px">One row a month. Twelve of these rows tell you more about your business than any dashboard ever will &mdash; and they're what you bring to your ASCEND sessions.</p>
+
+    <table class="framed" style="font-size:8.5pt">
+      <tr><th>Month</th><th>Spend</th><th>Leads</th><th>CPL</th><th>Booked</th><th>Attended</th><th>Enrolled</th><th>Cost/player</th><th>New &pound;/mo</th></tr>
+      <tr><td><b>Jan</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Feb</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Mar</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Apr</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>May</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Jun</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Jul</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Aug</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Sep</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Oct</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Nov</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+      <tr><td><b>Dec</b></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td><td><div class="wline"></div></td></tr>
+    </table>
+
+    <p class="small mute">The last column &mdash; new monthly revenue added &mdash; is the one that matters. Everything else in this workbook exists to move it.</p>
+
+        <h3 style="margin-top:6px">Quarterly review</h3>
+    <div class="two">
+      <div class="wbox"><div class="lbl">Q1 &mdash; what changed, what I'll do next</div><div class="wline"></div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Q2 &mdash; what changed, what I'll do next</div><div class="wline"></div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Q3 &mdash; what changed, what I'll do next</div><div class="wline"></div><div class="wline"></div></div>
+      <div class="wbox"><div class="lbl">Q4 &mdash; what changed, what I'll do next</div><div class="wline"></div><div class="wline"></div></div>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 35. M11 scaling ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 11 &middot; Scaling &amp; retargeting</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">11</span>Scaling &amp; <span class="cy">retargeting</span></h2>
+    <div class="sub">Only once a campaign has hit target cost per lead for two straight weeks. Not before.</div>
+
+    <div class="two">
+      <div class="box brand">
+        <h4>How to scale without breaking it</h4>
+        <ul class="bul tight">
+          <li><b>Vertical:</b> +20% budget every 3&ndash;4 days, while cost per lead holds. Slow, boring, reliable.</li>
+          <li><b>Horizontal:</b> duplicate the ad set with a <b>different location</b> &mdash; a second venue, a neighbouring town. Same creative, same settings. This is how a local academy actually grows: more places, not more money in one place.</li>
+          <li><b>Capacity first:</b> check you can physically take the players before you turn the tap up.</li>
+          <li><b>When cost per lead rises as you scale:</b> hold at the last budget that worked for a week. Small radiuses have a natural ceiling &mdash; find it and sit just under it.</li>
+        </ul>
+      </div>
+      <div class="box warn">
+        <h4>When to kill something</h4>
+        <ul class="bul tight">
+          <li>Spent 3&times; target cost per lead, zero leads, and Module 08 found nothing broken &rarr; kill the <b>ad</b>, keep the ad set.</li>
+          <li>Cost per lead more than double target for 7 days <b>after</b> learning &rarr; pause and rebuild with different creative.</li>
+          <li>Frequency over 5 and CTR falling &rarr; the area is saturated. Rest it two weeks.</li>
+          <li><b>Never kill during learning.</b> You're binning an incomplete experiment you've already paid for.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:10px">Budget plans by stage</h3>
+    <table class="framed">
+      <tr><th style="width:18%">Stage</th><th style="width:16%">Daily</th><th style="width:32%">Structure</th><th>Realistic monthly outcome</th></tr>
+      <tr><td><b>Testing</b></td><td>&pound;10&ndash;15</td><td>1 campaign, 1 ad set, 3&ndash;4 ads, cold only</td><td>40&ndash;80 leads &rarr; roughly 10&ndash;25 players</td></tr>
+      <tr><td><b>Working</b></td><td>&pound;20&ndash;30</td><td>Add a &pound;4/day retargeting ad set</td><td>80&ndash;160 leads, better show-up rate</td></tr>
+      <tr><td><b>Expanding</b></td><td>&pound;40&ndash;60</td><td>One ad set per venue, plus retargeting</td><td>Multi-venue intake &mdash; staff it first</td></tr>
+      <tr><td><b>Camp burst</b></td><td>&pound;30&ndash;80<br>for 10&ndash;14 days</td><td>Separate campaign, hard deadline, then off</td><td>Camps fill faster than anything else you'll run</td></tr>
+    </table>
+
+        <h3 style="margin-top:9px">Scale, hold or kill?</h3>
+    <table class="framed">
+      <tr><th style="width:40%">Last 7 days say&hellip;</th><th>Do this</th></tr>
+      <tr><td>Cost per lead at or under target, 2 weeks running</td><td class="good">Scale +20%</td></tr>
+      <tr><td>Cost per lead under target but only 1 week in</td><td>Hold. Wait another week.</td></tr>
+      <tr><td>Cost per lead slightly over target, frequency under 2.5</td><td>Hold, swap one creative</td></tr>
+      <tr><td>Cost per lead over target, frequency over 3.5</td><td>Refresh creative before anything else</td></tr>
+      <tr><td>Double target for 7 days after learning</td><td class="bad">Pause and rebuild</td></tr>
+      <tr><td>Leads fine, but nobody enrolling</td><td class="bad">Stop scaling. Fix Module 09 first.</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 36. M11 retargeting ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 11 &middot; Scaling &amp; retargeting</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h3 class="dsp" style="font-size:16pt;margin-bottom:4px">Retargeting &mdash; the cheapest leads you'll ever buy</h3>
+    <p class="small mute" style="margin-bottom:9px">Wait until you have 30 days of traffic, then add one small ad set at <b>&pound;3&ndash;5/day</b> aimed only at people who already know you. These convert several times better than cold, because the ad is a nudge rather than an introduction.</p>
+
+    <table class="framed">
+      <tr><th style="width:30%">Audience to build</th><th style="width:24%">Where to build it</th><th>What to show them</th></tr>
+      <tr><td><b>Visited the funnel page, didn't submit</b> (30 days)</td><td>Custom audience &rarr; Website</td><td>&ldquo;Still thinking about it? Spots left for Saturday.&rdquo;</td></tr>
+      <tr><td><b>Watched 50%+ of any video</b> (90 days)</td><td>Custom audience &rarr; Video</td><td>Parent testimonial, then the trial offer</td></tr>
+      <tr><td><b>Engaged with your Page or Instagram</b> (365 days)</td><td>Custom audience &rarr; Page / IG</td><td>Session footage plus &ldquo;here's how to join&rdquo;</td></tr>
+      <tr><td><b>Your existing parents</b></td><td>Customer list upload</td><td><span class="bad">Exclude</span> from cold ads &mdash; then target separately for camps, siblings and referrals</td></tr>
+      <tr><td><b>Lookalike 1% of enrolled parents</b></td><td>Lookalike from customer list</td><td>Your best cold audience &mdash; once you have 100+ on the list</td></tr>
+      <tr><td><b>Lapsed players</b></td><td>Customer list of former parents</td><td>&ldquo;We've missed [child] &mdash; new term starts [date]&rdquo;</td></tr>
+    </table>
+
+    <div class="box warn">
+      <h4>Always exclude current customers from cold ads</h4>
+      <p>Nothing annoys a paying parent like being advertised a free trial for the thing they already pay you for &mdash; and you are paying money for the privilege of irritating them. Refresh the uploaded list every quarter.</p>
+    </div>
+
+    <div class="box gold">
+      <h4>The referral ad nobody runs</h4>
+      <p>Point a &pound;3/day ad at your <b>existing parents only</b>, with one message: &ldquo;Know a family who'd love this? Bring a friend to any session this month.&rdquo; It's the cheapest new-player source you have, and it barely costs anything to reach an audience that small.</p>
+    </div>
+
+    <div class="john">
+      <div class="lbl">John says</div>
+      <p>&ldquo;Retargeting is where academies find the parents who nearly signed up in September and forgot. They were never a lost cause &mdash; they were just busy that Tuesday.&rdquo;</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 37. M12 weeks 1-2 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 12 &middot; Your first 30 days</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display"><span class="num">12</span>Your first <span class="cy">30 days</span></h2>
+    <div class="sub">Work down it in order. Don't jump ahead &mdash; week two depends on week one being done properly.</div>
+
+    <div class="box brand">
+      <h4>Week 1 &mdash; build the plumbing</h4>
+      <ul class="check">
+        <li><span class="tick"></span><span>Business portfolio, Page and ad account created; 2FA on; second admin added</span></li>
+        <li><span class="tick"></span><span>Payment method added and account spending limit set</span></li>
+        <li><span class="tick"></span><span>Dataset created, installed, and <b>Lead</b> event verified with Pixel Helper</span></li>
+        <li><span class="tick"></span><span>Domain verified; Lead set as the top priority event</span></li>
+        <li><span class="tick"></span><span>One offer chosen, with a date, a venue and an age group</span></li>
+        <li><span class="tick"></span><span>Funnel page live, tested on 4G, alert reaching your phone</span></li>
+        <li><span class="tick"></span><span>Lead board ready, with statuses and next-action dates</span></li>
+        <li><span class="tick"></span><span>Setup record on page 7 filled in</span></li>
+      </ul>
+    </div>
+
+    <div class="box brand">
+      <h4>Week 2 &mdash; launch</h4>
+      <ul class="check">
+        <li><span class="tick"></span><span>Campaign built: Leads objective, venue pin plus radius, ages 25&ndash;50</span></li>
+        <li><span class="tick"></span><span>3&ndash;4 creatives loaded, with 9:16 versions for Stories and Reels</span></li>
+        <li><span class="tick"></span><span>UTMs on the link; link tested on your own phone</span></li>
+        <li><span class="tick"></span><span>Twelve-point launch checklist completed</span></li>
+        <li><span class="tick"></span><span>Live &mdash; and hands off for 72 hours</span></li>
+        <li><span class="tick"></span><span>Every lead answered inside 5 minutes; every comment replied to</span></li>
+        <li><span class="tick"></span><span>Week one log filled in each evening</span></li>
+      </ul>
+    </div>
+
+    <div class="box gold">
+      <h4>If week one takes you two weeks, that's fine</h4>
+      <p>The plumbing is the part that pays off for years. What isn't fine is launching with an untested pixel and an unanswered inbox because you were impatient to press go.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 38. M12 weeks 3-4 ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Module 12 &middot; Your first 30 days</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+
+    <div class="box brand">
+      <h4>Week 3 &mdash; read and fix</h4>
+      <ul class="check">
+        <li><span class="tick"></span><span>Custom &ldquo;Academy view&rdquo; column set saved in Ads Manager</span></li>
+        <li><span class="tick"></span><span>Player value worksheet completed &mdash; you know your target cost per lead</span></li>
+        <li><span class="tick"></span><span>First weekly 15-minute review done and written down</span></li>
+        <li><span class="tick"></span><span>Any broken layer diagnosed with Module 08 &mdash; <b>one</b> change made</span></li>
+        <li><span class="tick"></span><span>Show-up rate measured: booked versus attended</span></li>
+        <li><span class="tick"></span><span>Day-before reminder message now going out every week</span></li>
+      </ul>
+    </div>
+
+    <div class="box brand">
+      <h4>Week 4 &mdash; convert and compound</h4>
+      <ul class="check">
+        <li><span class="tick"></span><span>The face-to-face ask made at <b>every</b> trial session</span></li>
+        <li><span class="tick"></span><span>Full funnel counted: leads &rarr; booked &rarr; attended &rarr; enrolled</span></li>
+        <li><span class="tick"></span><span>Cost per <b>enrolled player</b> worked out and written on the tracker</span></li>
+        <li><span class="tick"></span><span>Retargeting ad set added at &pound;3&ndash;5/day</span></li>
+        <li><span class="tick"></span><span>Existing parents uploaded and excluded from cold ads</span></li>
+        <li><span class="tick"></span><span>Month one written on the 12-month tracker &mdash; that's now your benchmark</span></li>
+        <li><span class="tick"></span><span>Decision made: hold, scale +20%, or fix and retest</span></li>
+      </ul>
+    </div>
+
+    <div class="box gold">
+      <h4>Bring this to your ASCEND session</h4>
+      <p>Turn up with your four numbers &mdash; <b>spend, leads, cost per lead, players enrolled</b> &mdash; and we can have a forty-minute conversation about exactly what to change next. Turn up with &ldquo;the ads aren't really working&rdquo; and it's a forty-minute conversation about nothing.</p>
+    </div>
+
+        <div class="box gold">
+      <h4>What good looks like at day 30</h4>
+      <ul class="bul tight">
+        <li>You know your cost per lead, and it's within reach of your target.</li>
+        <li>Every lead was answered the same day, most within the hour.</li>
+        <li>At least 60% of booked trials actually turned up.</li>
+        <li>You made the ask, out loud, at every session.</li>
+        <li>You can name the one thing you'd change next month &mdash; and it's not &ldquo;everything&rdquo;.</li>
+      </ul>
+      <p style="margin-top:6px"><b>If you're not there:</b> don't rebuild the campaign. Work out which single layer is leaking (Module 08), fix that one thing, and give it another fortnight.</p>
+    </div>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 39. glossary ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Reference &middot; Glossary</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display">The words <span class="cy">decoded</span></h2>
+    <div class="sub">Every term Meta uses that sounds like it means something else.</div>
+
+    <table class="framed" style="font-size:8.8pt">
+      <tr><th style="width:26%">Term</th><th>What it actually means</th></tr>
+      <tr><td><b>Ad account</b></td><td>The billing container your campaigns live in. Owned by your business portfolio.</td></tr>
+      <tr><td><b>Advantage+</b></td><td>Meta's label for &ldquo;let the algorithm decide&rdquo;. Applied to audiences, placements and budget. At small budgets, usually the right answer.</td></tr>
+      <tr><td><b>Attribution window</b></td><td>How long after seeing or clicking an ad a conversion still counts as caused by it.</td></tr>
+      <tr><td><b>Business portfolio</b></td><td>Formerly Business Manager. The top-level container that owns your Page, ad account and datasets.</td></tr>
+      <tr><td><b>CAPI</b></td><td>Conversions API. Server-side tracking that survives browser blocking. Recovers conversions the pixel loses.</td></tr>
+      <tr><td><b>CPC</b></td><td>Cost per click. Use the <b>link</b> click version, not &ldquo;all clicks&rdquo;, which counts people expanding your text.</td></tr>
+      <tr><td><b>CPM</b></td><td>Cost per 1,000 impressions. The price of attention in your area this week.</td></tr>
+      <tr><td><b>CTR</b></td><td>Click-through rate. Clicks divided by impressions. Again, use the link version.</td></tr>
+      <tr><td><b>Custom audience</b></td><td>A list of people who already interacted with you &mdash; site visitors, video viewers, your customer list.</td></tr>
+      <tr><td><b>Dataset</b></td><td>The new name for the pixel. The tracking code on your funnel page.</td></tr>
+      <tr><td><b>Frequency</b></td><td>Average number of times each person saw your ad. Over 3&ndash;4 in a small area means fatigue.</td></tr>
+      <tr><td><b>Impressions</b></td><td>Times your ad was shown. Not people &mdash; one person can be several impressions.</td></tr>
+      <tr><td><b>Instant Form</b></td><td>A form that opens inside Facebook, prefilled from the user's profile. Cheap leads, lower intent.</td></tr>
+      <tr><td><b>Learning phase</b></td><td>The period where Meta is buying data about who converts. Needs ~50 events in 7 days.</td></tr>
+      <tr><td><b>Learning limited</b></td><td>Not getting enough weekly conversions to fully optimise. Normal at local-academy budgets.</td></tr>
+      <tr><td><b>Leads Centre</b></td><td>Where Instant Form leads sit inside Business Suite. Nobody is emailed automatically.</td></tr>
+      <tr><td><b>Lookalike</b></td><td>An audience Meta builds to resemble a list you supply. Best built from enrolled parents.</td></tr>
+      <tr><td><b>Objective</b></td><td>What you're asking Meta to optimise for. Use Leads.</td></tr>
+      <tr><td><b>Placements</b></td><td>Where the ad can appear &mdash; feed, Stories, Reels, Marketplace and so on.</td></tr>
+      <tr><td><b>Reach</b></td><td>Number of individual people who saw it. Interesting, not actionable.</td></tr>
+      <tr><td><b>Retargeting</b></td><td>Advertising to people who already interacted with you. Cheapest conversions you'll get.</td></tr>
+      <tr><td><b>UTM</b></td><td>Tags on the end of a link so your own systems can tell you where a lead came from.</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 40. quick reference ============ -->
+<section class="page">
+  <div class="grid-tex"></div>
+  <div class="z">
+    <div class="rh"><span class="mod">Reference &middot; One page</span><span class="bk">ASCEND &middot; The Ads Engine</span></div>
+    <h2 class="mh display">The whole thing <span class="cy">on one page</span></h2>
+    <div class="sub">If you only ever re-read one page of this workbook, make it this one.</div>
+
+    <div class="two">
+      <div class="box brand">
+        <h4>The build</h4>
+        <ul class="bul tight">
+          <li>Objective: <b>Leads</b></li>
+          <li>Pin the <b>venue</b>, +8&ndash;15km, people <b>living</b> there</li>
+          <li>Ages <b>25&ndash;50</b>, all genders</li>
+          <li>Detailed targeting: <b>empty</b></li>
+          <li>Placements: <b>Advantage+ (all)</b></li>
+          <li>Budget: <b>&pound;10&ndash;15/day</b>, campaign level</li>
+          <li>Attribution: <b>7-day click, 1-day view</b></li>
+          <li><b>1 campaign, 1 ad set, 3&ndash;4 ads</b></li>
+        </ul>
+      </div>
+      <div class="box brand">
+        <h4>The rules</h4>
+        <ul class="bul tight">
+          <li><b>72 hours</b> hands off after launch</li>
+          <li>Budget changes: <b>+20% max</b>, every 3&ndash;4 days</li>
+          <li><b>One change</b>, then wait three days</li>
+          <li>Answer every lead in <b>5 minutes</b></li>
+          <li><b>Day-before reminder</b>, every time</li>
+          <li>Make the <b>ask</b> at pickup, then stop talking</li>
+          <li>Review <b>Mondays</b>, 15 minutes</li>
+          <li>Judge on <b>players</b>, not on likes</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:10px">Symptom &rarr; cause, at a glance</h3>
+    <table class="framed">
+      <tr><th style="width:42%">What you see</th><th>What's actually broken</th></tr>
+      <tr><td>No impressions</td><td>Audience too small, in review, or billing</td></tr>
+      <tr><td>High CPM</td><td>Radius too tight, or creative fatigue</td></tr>
+      <tr><td>Low CTR</td><td>Creative and audience mismatch</td></tr>
+      <tr><td>Clicks, no leads</td><td class="bad">The page</td></tr>
+      <tr><td>Leads, no shows</td><td class="bad">Your follow-up speed</td></tr>
+      <tr><td>Shows, no enrols</td><td class="bad">The ask at the end of the session</td></tr>
+      <tr><td>Worked, now dying</td><td>Frequency &mdash; rotate the creative</td></tr>
+    </table>
+
+    <div class="box gold" style="margin-top:6px">
+      <h4>Your four numbers this month</h4>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px">
+        <div><span class="small mute">Spend</span><div class="wline"></div></div>
+        <div><span class="small mute">Leads</span><div class="wline"></div></div>
+        <div><span class="small mute">Cost / lead</span><div class="wline"></div></div>
+        <div><span class="small mute">Players</span><div class="wline"></div></div>
+      </div>
+    </div>
+
+        <h3 style="margin-top:8px">Benchmarks, at a glance</h3>
+    <table class="framed">
+      <tr><th>CPM</th><th>CTR (link)</th><th>Cost / lead</th><th>Lead &rarr; booked</th><th>Booked &rarr; attend</th><th>Attend &rarr; enrol</th></tr>
+      <tr><td>&pound;4&ndash;&pound;14</td><td>1.0&ndash;2.5%</td><td>&pound;2&ndash;&pound;8 trial<br>&pound;6&ndash;&pound;18 camp</td><td>60&ndash;80%</td><td>60&ndash;75%</td><td>50&ndash;70%</td></tr>
+    </table>
+
+    <div class="rf"><span>ASCEND &middot; The Ads Engine</span><span>Page <span class="n"></span></span></div>
+  </div>
+</section>
+
+<!-- ============ 41. back cover ============ -->
+<section class="page end">
+  <div class="grid-tex"></div>
+  <div class="z" style="justify-content:center;align-items:center;text-align:center">
+    <div class="brandrow" style="justify-content:center">
+      <div class="logo">A</div>
+      <div class="name" style="text-align:left">ASCEND<small>BY JOHN LEITCH</small></div>
+    </div>
+    <h2 class="display" style="font-size:34pt;margin-top:26px;line-height:.95">The ads aren't<br>the hard part.<br><span class="cy">The delivery is.</span></h2>
+    <p style="color:var(--soft);max-width:44ch;margin-top:18px;font-size:11pt">
+      Build the plumbing once. Launch properly. Answer in five minutes. Read the numbers on a Monday, change one thing, and let it run.
+    </p>
+    <p style="color:var(--mute);max-width:44ch;margin-top:14px;font-size:10pt">
+      That's the entire job &mdash; and it's the difference between an academy that hopes for players and one that can turn them on like a tap.
+    </p>
+    <div style="margin-top:30px;border-top:1px solid var(--line);padding-top:16px;width:60%">
+      <div class="eyebrow">The Ads Engine</div>
+      <p class="small mute" style="margin-top:6px">ASCEND Member Training &middot; Traction Stage &middot; Resource 04<br>Pairs with your creative library and the ASCEND Lead Machine.</p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

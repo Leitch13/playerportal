@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<!--
+  ACADEMY LEADS - SMART MATCHER FUNNEL  (give-to-client template)
+  ============================================================
+  The parent says what they're looking for (child's age + type + when) and the
+  page instantly finds the RIGHT session, then captures the lead WITH that match.
+
+  Self-contained. The academy lists its programmes once in CONFIG.programmes and
+  the matching happens in the browser - no backend.
+
+  FILL IN (search "REPLACE"): academy details, your programmes, form endpoint,
+  booking link, your email. Same CONFIG idea as trial-funnel.html.
+  100% ASCII source (Wix-safe).
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find your child's session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#7E8C99;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --red:#F0526B; --amber:#F2B441; --green:#38D39F;
+    --line:rgba(255,255,255,.10); --maxw:1080px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+  .eyebrow{font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .accent{color:var(--brand)}
+  a{color:inherit;text-decoration:none}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.55em;background:var(--brand);color:var(--brand-ink);font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:1.02rem;padding:15px 26px;border-radius:5px;border:1px solid var(--brand);cursor:pointer;transition:transform .15s,box-shadow .25s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(34,211,238,.35)}
+  .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+  .micro{font-size:.82rem;color:var(--mute);margin-top:12px;letter-spacing:.02em}
+
+  /* ---- sections below the hero ---- */
+  .sec{padding:76px 0;border-top:1px solid var(--line)}
+  .sec .eyebrow{display:block;margin-bottom:12px}
+  .sec h2{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98;font-size:clamp(1.9rem,4.4vw,3rem);margin-bottom:14px}
+  .sec p.intro{color:#B6C2CA;max-width:56ch;font-size:1.02rem;line-height:1.6}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}
+  .tile{background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:24px}
+  .tile .n{font-family:"Anton",sans-serif;font-size:1.5rem;color:var(--brand);line-height:1;margin-bottom:10px}
+  .tile h3{font-size:1.02rem;margin-bottom:7px;letter-spacing:.01em}
+  .tile p{color:#9FADB8;font-size:.92rem;line-height:1.55}
+  .perks{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:30px}
+  .perk{display:flex;gap:12px;align-items:flex-start;background:var(--ink-2);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .perk .tick{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:.72rem;display:flex;align-items:center;justify-content:center;margin-top:2px;font-weight:700}
+  .perk div strong{display:block;font-size:.95rem;margin-bottom:3px}
+  .perk div span{color:#9FADB8;font-size:.88rem;line-height:1.5}
+  .venues{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:30px}
+  .venue{background:var(--ink-2);border:1px solid var(--line);border-radius:14px;padding:26px}
+  .venue h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.35rem;margin-bottom:6px}
+  .venue p{color:#9FADB8;font-size:.92rem}
+  .faq{margin-top:30px;border-top:1px solid var(--line)}
+  .faq details{border-bottom:1px solid var(--line)}
+  .faq summary{cursor:pointer;padding:18px 0;font-size:1rem;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";color:var(--brand);font-size:1.35rem;line-height:1}
+  .faq details[open] summary::after{content:"\2013"}
+  .faq p{color:#9FADB8;font-size:.94rem;line-height:1.6;padding:0 0 20px;max-width:62ch}
+  .quote{background:var(--ink-2);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:12px;padding:30px 32px;margin-top:8px}
+  .quote blockquote{font-size:1.12rem;line-height:1.6;color:#DCE5EA}
+  .quote .who{margin-top:14px;color:var(--mute);font-size:.88rem}
+  .endcta{text-align:center;padding:70px 0 84px;border-top:1px solid var(--line)}
+  .endcta h2{margin-bottom:16px}
+  .endcta .btn{display:inline-block;width:auto;padding:16px 34px}
+  footer.site{border-top:1px solid var(--line);padding:30px 0;color:var(--mute);font-size:.88rem}
+  footer.site .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center}
+  footer.site a{color:#B6C2CA;text-decoration:none}
+  @media(max-width:820px){
+    .grid3,.perks,.venues{grid-template-columns:1fr}
+    .sec{padding:56px 0}
+  }
+
+
+  /* nav */
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:22px}
+  .brandmark{display:flex;align-items:center;gap:12px}
+  .brandmark .logo{width:42px;height:42px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.15rem;color:var(--brand-ink);background-size:cover;background-position:center}
+  .brandmark .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.03em;font-size:1.15rem}
+
+  /* hero */
+  .hero{position:relative;padding:56px 0 66px;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(60% 50% at 84% 2%,rgba(34,211,238,.15),transparent 60%),radial-gradient(50% 40% at 0% 98%,rgba(11,110,124,.20),transparent 60%);pointer-events:none}
+  .hero .wrap{position:relative;z-index:1}
+  .hero-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:44px;align-items:center}
+  .hero .pill{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);border:1px solid var(--brand);border-radius:40px;padding:6px 15px;margin-bottom:18px}
+  .hero h1{font-size:clamp(2.3rem,5.6vw,3.9rem);margin:6px 0 18px;max-width:15ch}
+  .hero .lead{font-size:clamp(1rem,2vw,1.15rem);color:#C4D0D8;max-width:46ch;margin-bottom:22px}
+  .trust{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px}
+  .trust div{display:flex;align-items:center;gap:9px;font-size:.9rem;color:#CBD5DC}
+  .trust .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
+
+  /* matcher card */
+  .card{border:1px solid var(--brand);border-radius:16px;padding:28px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.10),transparent 60%),var(--ink-2);box-shadow:0 40px 100px -55px rgba(34,211,238,.6)}
+  .card h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.4rem;line-height:1.02;margin-bottom:4px}
+  .card .sub{color:#B6C2CA;font-size:.94rem;margin-bottom:20px}
+
+  /* progress dots */
+  .steps-dots{display:flex;gap:7px;margin-bottom:18px}
+  .steps-dots span{height:5px;flex:1;border-radius:5px;background:var(--ink-3)}
+  .steps-dots span.on{background:var(--brand)}
+
+  .q{margin-bottom:16px}
+  .q label{display:block;font-size:.8rem;letter-spacing:.03em;color:#C4D0D8;margin-bottom:7px;font-weight:500}
+  .q select,.q input{width:100%;padding:13px 14px;border-radius:7px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font-family:inherit;font-size:1rem;appearance:none;-webkit-appearance:none}
+  .q select:focus,.q input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{flex:1;min-width:90px;text-align:center;padding:12px 10px;border-radius:8px;border:1px solid var(--line);background:var(--ink);color:#C4D0D8;font-size:.92rem;font-weight:600;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--brand)}
+  .chip.sel{border-color:var(--brand);background:rgba(34,211,238,.12);color:#fff}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .err{color:var(--red);font-size:.82rem;min-height:0;margin-top:2px}
+  .card .btn{width:100%;margin-top:6px}
+  .backlink{display:inline-block;margin-top:14px;color:var(--mute);font-size:.86rem;cursor:pointer}
+  .backlink:hover{color:var(--brand)}
+
+  /* result */
+  .result-badge{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-ink);background:var(--brand);border-radius:20px;padding:4px 12px;display:inline-block;margin-bottom:14px}
+  .prog{border:1px solid var(--line);border-radius:12px;background:var(--ink);padding:18px;margin-bottom:12px}
+  .prog.best{border-color:var(--brand);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+  .prog .pname{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.15rem;line-height:1}
+  .prog .pmeta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .prog .tag{font-size:.74rem;font-weight:600;background:var(--ink-3);color:#C4D0D8;border-radius:6px;padding:4px 10px}
+  .prog .tag.b{background:rgba(34,211,238,.14);color:var(--brand)}
+  .prog .pnote{color:#AEBAC2;font-size:.9rem;margin-top:10px}
+  .softnote{color:var(--amber);font-size:.86rem;background:rgba(242,180,65,.08);border:1px solid rgba(242,180,65,.22);border-radius:8px;padding:9px 12px;margin-bottom:14px}
+
+  .optin-done{text-align:center;padding:14px 6px}
+  .optin-done .big{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.5rem;color:var(--brand);margin-bottom:10px}
+  .optin-done p{color:#C4D0D8;font-size:1rem;margin-bottom:18px}
+
+  .hidden{display:none !important}
+
+  @media (max-width:820px){
+    .hero-grid{grid-template-columns:1fr;gap:28px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <div class="brandmark"><div class="logo" id="navLogo">A</div><span class="name" id="navName">Academy</span></div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="pill" id="heroPill">Find the right fit</span>
+        <h1 class="display" id="heroHeadline">Find your child's perfect session.</h1>
+        <p class="lead" id="heroLead">Answer three quick questions and we'll show you exactly which session suits your child &mdash; then book a free trial in seconds.</p>
+        <div class="trust">
+          <div><span class="dot"></span> <span id="trust1">Qualified coaches</span></div>
+          <div><span class="dot"></span> <span id="trust2">All abilities welcome</span></div>
+        </div>
+      </div>
+
+      <div class="hero-form">
+        <div class="card" id="card">
+
+          <!-- STEP 1: MATCHER -->
+          <div id="matchStep">
+            <div class="steps-dots"><span class="on"></span><span></span></div>
+            <h3>Which session fits your child?</h3>
+            <div class="sub">Takes 20 seconds. We'll match you to the right group.</div>
+
+            <div class="q">
+              <label for="qAge">How old is your child?</label>
+              <select id="qAge"><option value="">Choose age</option></select>
+            </div>
+
+            <div class="q">
+              <label>What are you looking for?</label>
+              <div class="chips" id="qType"></div>
+            </div>
+
+            <div class="q">
+              <label>Whereabouts are you?</label>
+              <div class="chips" id="qWhen">
+                <div class="chip sel" data-v="any">Show me all</div>
+                <div class="chip" data-v="edinburgh">Edinburgh</div>
+                <div class="chip" data-v="dunfermline">Dunfermline</div>
+              </div>
+            </div>
+
+            <div class="err" id="matchErr"></div>
+            <button class="btn" id="findBtn">Find our best fit &rarr;</button>
+          </div>
+
+          <!-- STEP 2: RESULT + CAPTURE -->
+          <div id="resultStep" class="hidden">
+            <div class="steps-dots"><span class="on"></span><span class="on"></span></div>
+            <span class="result-badge" id="resultBadge">Your match</span>
+            <h3 id="resultTitle">Here's your best fit</h3>
+            <div class="sub" id="resultSub">Book a free trial and come and try it.</div>
+
+            <div id="softNote" class="softnote hidden"></div>
+            <div id="progList"></div>
+
+            <div id="captureInner">
+              <div class="q" style="margin-top:16px"><label for="pName">Parent's name</label><input type="text" id="pName" placeholder="Your name" autocomplete="name"></div>
+              <div class="row2">
+                <div class="q"><label for="pEmail">Email</label><input type="email" id="pEmail" placeholder="you@email.com" autocomplete="email"></div>
+                <div class="q"><label for="pPhone">Mobile</label><input type="tel" id="pPhone" placeholder="07..." autocomplete="tel"></div>
+              </div>
+              <div class="q"><label for="cName">Child's first name</label><input type="text" id="cName" placeholder="Child's name"></div>
+              <div class="err" id="capErr"></div>
+              <button class="btn" id="claimBtn">Claim free trial &rarr;</button>
+              <div class="micro">No cost &middot; no commitment.</div>
+            </div>
+
+            <span class="backlink" id="backLink">&larr; change my answers</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== HOW THE TRIAL WORKS ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2>Three steps to their first session</h2>
+    <p class="intro">No cost, no commitment. Come along, see the coaching for yourself, and decide after.</p>
+    <div class="grid3">
+      <div class="tile">
+        <div class="n">01</div>
+        <h3>Tell us about your keeper</h3>
+        <p>Answer three quick questions above and we'll show you which session fits their age and your week.</p>
+      </div>
+      <div class="tile">
+        <div class="n">02</div>
+        <h3>We confirm your slot</h3>
+        <p>We'll be in touch the same day to lock in the time and tell you exactly where to go.</p>
+      </div>
+      <div class="tile">
+        <div class="n">03</div>
+        <h3>Come and try it</h3>
+        <p>Bring boots, gloves and a water bottle. Have a proper session with our coaches, then decide.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHAT MEMBERS GET ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">Membership</span>
+    <h2>What you get when they join</h2>
+    <p class="intro">Specialist goalkeeper coaching &mdash; not an afterthought at the end of an outfield session.</p>
+    <div class="perks">
+      <div class="perk"><span class="tick">&#10003;</span><div><strong>Weekly specialist coaching</strong><span>Goalkeeper-only sessions built around handling, footwork, decision-making and confidence.</span></div></div>
+      <div class="perk"><span class="tick">&#10003;</span><div><strong>&pound;41.99 a month</strong><span>One simple monthly payment. Your two-week festive break is already included &mdash; no adjustments to make.</span></div></div>
+      <div class="perk"><span class="tick">&#10003;</span><div><strong>Parents' WhatsApp community</strong><span>Updates, announcements and a direct line to the coaches.</span></div></div>
+      <div class="perk"><span class="tick">&#10003;</span><div><strong>Member discount on gloves</strong><span>Members get money off their first order with our glove partner.</span></div></div>
+      <div class="perk"><span class="tick">&#10003;</span><div><strong>1-2-1 coaching available</strong><span>&pound;35 a session, or a block of five for &pound;165, when they want focused individual work.</span></div></div>
+      <div class="perk"><span class="tick">&#10003;</span><div><strong>School holiday camps</strong><span>Full days of goalkeeper training through the school holidays.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHERE ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">Where we train</span>
+    <h2>Four venues across Edinburgh &amp; Fife</h2>
+    <div class="venues">
+      <div class="venue"><h3>Forrester High School</h3><p>Edinburgh north side, astroturf pitches. Mondays, 5:00&ndash;6:00pm.</p></div>
+      <div class="venue"><h3>Peffermill Playing Fields</h3><p>Edinburgh. Wednesdays, 6:00&ndash;7:00pm.</p></div>
+      <div class="venue"><h3>Portobello High School</h3><p>Edinburgh. Fridays, 4:00&ndash;5:00pm.</p></div>
+      <div class="venue"><h3>Pitreavie Sports Centre</h3><p>Dunfermline. Fridays, 5:00&ndash;6:00pm and 6:00&ndash;7:00pm.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">Questions</span>
+    <h2>The things parents ask us</h2>
+    <div class="faq">
+      <details open><summary>What should they bring to the trial?</summary><p>Boots, gloves and a water bottle. If they haven't got their own gloves yet, don't worry &mdash; come along anyway and we'll sort them for the session.</p></details>
+      <details><summary>What ages do you coach?</summary><p>Academy groups run 7&ndash;9, 10&ndash;12 and 13&ndash;15, plus an Elite group for 15&ndash;17s at Dunfermline. Tell us their age above and we'll show you the right one.</p></details>
+      <details><summary>Does my child need to be any good already?</summary><p>No. We coach complete beginners who've just decided they like going in goal, right through to keepers playing at a high level.</p></details>
+      <details><summary>What does it cost after the trial?</summary><p>Membership is &pound;41.99 a month by standing order. That covers your weekly sessions, and your two-week festive break is already built in.</p></details>
+      <details><summary>Do you do one-to-one sessions?</summary><p>Yes &mdash; &pound;35 a session, or a block of five for &pound;165. A good way to work on something specific.</p></details>
+      <details><summary>What if we want to stop?</summary><p>Just let us know before you cancel your standing order so we can manage class numbers and the waiting list properly.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== QUOTE ===== -->
+<section class="sec">
+  <div class="wrap">
+    <span class="eyebrow">From a parent</span>
+    <div class="quote">
+      <blockquote id="quoteText">&ldquo;My son didn&rsquo;t want to leave after the trial. The coaching is specialist and you can see his confidence in goal already. Best thing we&rsquo;ve done.&rdquo;</blockquote>
+      <div class="who" id="quoteWho">&mdash; A parent at No.1 Goalkeeping Academy</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== END CTA ===== -->
+<section class="endcta">
+  <div class="wrap">
+    <h2 class="display">Claim their free trial</h2>
+    <p class="intro" style="margin:0 auto 26px">Takes 20 seconds. No cost, no commitment.</p>
+    <a class="btn" href="#top">Find our best fit &rarr;</a>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <span id="footBrand">No.1 Goalkeeping Academy</span>
+    <span><a href="mailto:no.1goalkeepingacademy@yahoo.com">no.1goalkeepingacademy@yahoo.com</a> &middot; <a href="tel:07808845172">07808 845172</a></span>
+  </div>
+</footer>
+
+
+<script>
+/* ============================================================
+   CONFIG - the only part a client edits.
+   ============================================================ */
+var CONFIG = {
+  academyName: 'No.1 Goalkeeping Academy',
+  brandColor:  '#E21212',
+  logoUrl:     '',                            // REPLACE (optional)
+
+  heroPill:      'Find the right fit',
+  headline:      "Find your goalkeeper's perfect session.",
+  heroLead:      "Answer three quick questions and we'll show you exactly which session suits your goalkeeper - then claim a free trial in seconds.",
+
+  ageMin: 6, ageMax: 17,
+
+  // The "what are you looking for" options. Keep 2-4. 'key' must match programme.type below.
+  types: [
+    { key:'weekly',   label:'Weekly training' },
+    { key:'camp',     label:'Holiday camps' },
+    { key:'onetoone', label:'One-to-one' }
+  ],
+
+  // YOUR PROGRAMMES - the academy lists these once. The page matches against them.
+  //   type: one of the type keys above
+  //   days: 'weekday' | 'weekend' | 'any'
+  programmes: [
+    { name:'7-9s Academy - Edinburgh North',  ageMin:7,  ageMax:9,  type:'weekly', days:'edinburgh',   when:'Mon 5:00-6:00pm',            venue:'Forrester High School',   note:'Astroturf pitches, Edinburgh north side.' },
+    { name:'10-12s Academy - Edinburgh North',ageMin:10, ageMax:12, type:'weekly', days:'edinburgh',   when:'Mon 5:00-6:00pm',            venue:'Forrester High School',   note:'Astroturf pitches, Edinburgh north side.' },
+    { name:'7-9s Academy - Peffermill',       ageMin:7,  ageMax:9,  type:'weekly', days:'edinburgh',   when:'Wed 6:00-7:00pm',            venue:'Peffermill Playing Fields', note:'Currently a waiting list - ask us and we will add you.' },
+    { name:'10-12s Academy - Peffermill',     ageMin:10, ageMax:12, type:'weekly', days:'edinburgh',   when:'Wed 6:00-7:00pm',            venue:'Peffermill Playing Fields', note:'Spaces available.' },
+    { name:'13-15s Academy - Peffermill',     ageMin:13, ageMax:15, type:'weekly', days:'edinburgh',   when:'Wed 6:00-7:00pm',            venue:'Peffermill Playing Fields', note:'Currently a waiting list - ask us and we will add you.' },
+    { name:'7-9s Academy - Portobello',       ageMin:7,  ageMax:9,  type:'weekly', days:'edinburgh',   when:'Fri 4:00-5:00pm',            venue:'Portobello High School',  note:'Spaces available.' },
+    { name:'10-12s Academy - Portobello',     ageMin:10, ageMax:12, type:'weekly', days:'edinburgh',   when:'Fri 4:00-5:00pm',            venue:'Portobello High School',  note:'Spaces available.' },
+    { name:'7-9s Academy - Dunfermline',      ageMin:7,  ageMax:9,  type:'weekly', days:'dunfermline', when:'Fri 5:00-6:00pm',            venue:'Pitreavie Sports Centre', note:'Spaces available.' },
+    { name:'10-12s Academy - Dunfermline',    ageMin:10, ageMax:12, type:'weekly', days:'dunfermline', when:'Fri 5:00-6:00pm or 6:00-7:00pm', venue:'Pitreavie Sports Centre', note:'Two groups to choose from.' },
+    { name:'13-15s Academy - Dunfermline',    ageMin:13, ageMax:15, type:'weekly', days:'dunfermline', when:'Fri 5:00-6:00pm or 6:00-7:00pm', venue:'Pitreavie Sports Centre', note:'Two groups to choose from.' },
+    { name:'Elite Academy - Dunfermline',     ageMin:15, ageMax:17, type:'weekly', days:'dunfermline', when:'Fri 5:00-6:00pm',            venue:'Pitreavie Sports Centre', note:'For keepers playing at a higher level.' },
+    { name:'Holiday Camps',                   ageMin:6,  ageMax:17, type:'camp',   days:'any',         when:'School holidays',            venue:'Edinburgh & Dunfermline', note:'Full days of goalkeeper coaching through the school holidays.' },
+    { name:'One-to-one coaching',             ageMin:6,  ageMax:17, type:'onetoone',days:'any',        when:'By arrangement',             venue:'Flexible',                note:'\u00a335 a session, or five sessions for \u00a3165.' }
+  ],
+
+  formEndpoint: 'https://hooks.airtable.com/workflows/v1/genericWebhook/app0unmjsfbA1XP2U/wflHi7MN0zPKRfKLH/wtrfKkzbOr4ynKWa3',
+  bookingLink:  'https://1gk-academy.classforkids.io/camps',
+  bookingLabel: 'Book on ClassForKids',
+  notifyEmail:  'no.1goalkeepingacademy@yahoo.com',
+
+  /* FACEBOOK / ADS -------------------------------------------- */
+  // Paste the academy's Meta Pixel ID to track ad conversions + retarget.
+  // Leave blank to run without a pixel. (Find it in Meta Events Manager.)
+  metaPixelId:  '2268320903483110',
+  defaultSource:'Website'                     // used when no utm_source is in the link
+};
+
+(function(){
+  var el = function(id){ return document.getElementById(id); };
+  var C = CONFIG;
+  var state = { age:'', type:'', when:'any', match:[], exact:true };
+
+  /* brand */
+  if (C.brandColor){
+    var r = document.documentElement.style; r.setProperty('--brand', C.brandColor);
+    var hex = C.brandColor.replace('#',''); if (hex.length===3){ hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2]; }
+    var lum = 0.299*parseInt(hex.substr(0,2),16)+0.587*parseInt(hex.substr(2,2),16)+0.114*parseInt(hex.substr(4,2),16);
+    r.setProperty('--brand-ink', lum>150?'#04181C':'#FFFFFF');
+  }
+  var mono = (C.academyName||'A').trim().charAt(0).toUpperCase();
+  if (C.logoUrl){ el('navLogo').style.backgroundImage='url('+C.logoUrl+')'; el('navLogo').textContent=''; } else { el('navLogo').textContent=mono; }
+  el('navName').textContent = C.academyName;
+  el('heroPill').textContent = C.heroPill;
+  el('heroHeadline').textContent = C.headline;
+  el('heroLead').textContent = C.heroLead;
+
+  /* age options */
+  var ageSel = el('qAge');
+  for (var a=C.ageMin;a<=C.ageMax;a++){ var o=document.createElement('option'); o.value=a; o.textContent=a; ageSel.appendChild(o); }
+
+  /* type chips */
+  var typeWrap = el('qType');
+  C.types.forEach(function(t){
+    var c=document.createElement('div'); c.className='chip'; c.setAttribute('data-v',t.key); c.textContent=t.label;
+    c.addEventListener('click',function(){ chipPick(typeWrap,c); state.type=t.key; });
+    typeWrap.appendChild(c);
+  });
+  /* when chips */
+  var whenWrap = el('qWhen');
+  Array.prototype.forEach.call(whenWrap.children,function(c){
+    c.addEventListener('click',function(){ chipPick(whenWrap,c); state.when=c.getAttribute('data-v'); });
+  });
+  function chipPick(wrap,chip){ Array.prototype.forEach.call(wrap.children,function(x){x.classList.remove('sel');}); chip.classList.add('sel'); }
+
+  /* ---- matching ---- */
+  function findMatches(age, type, when){
+    var inAge = C.programmes.filter(function(p){ return age>=p.ageMin && age<=p.ageMax; });
+    // 1. exact: age + type + when
+    var m = inAge.filter(function(p){ return p.type===type && (p.days===when || p.days==='any' || when==='any'); });
+    if (m.length) return { list:m, exact:true };
+    // 2. relax the "when"
+    m = inAge.filter(function(p){ return p.type===type; });
+    if (m.length) return { list:m, exact:false, reason:'time' };
+    // 3. relax the type: anything in their age band
+    if (inAge.length) return { list:inAge, exact:false, reason:'type' };
+    // 4. nothing in age band: nearest by age
+    var near = C.programmes.slice().sort(function(a,b){ return ageGap(a,age)-ageGap(b,age); });
+    return { list: near.slice(0,2), exact:false, reason:'age' };
+  }
+  function ageGap(p,age){ if(age<p.ageMin) return p.ageMin-age; if(age>p.ageMax) return age-p.ageMax; return 0; }
+  function typeLabel(key){ for(var i=0;i<C.types.length;i++){ if(C.types[i].key===key) return C.types[i].label; } return key; }
+
+  /* ---- step 1 -> step 2 ---- */
+  el('findBtn').addEventListener('click', function(){
+    el('matchErr').textContent='';
+    state.age = parseInt(el('qAge').value,10);
+    if (!state.age){ el('matchErr').textContent='Please choose your child’s age.'; return; }
+    if (!state.type){ el('matchErr').textContent='Please tell us what you’re looking for.'; return; }
+    var res = findMatches(state.age, state.type, state.when);
+    state.match = res.list; state.exact = res.exact;
+    renderResult(res);
+    el('matchStep').classList.add('hidden');
+    el('resultStep').classList.remove('hidden');
+    postHeight();
+  });
+
+  el('backLink').addEventListener('click', function(){
+    el('resultStep').classList.add('hidden'); el('matchStep').classList.remove('hidden');
+    postHeight();
+  });
+
+  function renderResult(res){
+    var soft = el('softNote'); soft.classList.add('hidden');
+    if (res.exact){
+      el('resultTitle').textContent = 'Perfect — we’ve got the one';
+      el('resultBadge').textContent = 'Your match';
+      el('resultSub').textContent = 'Book a free trial and come and try it.';
+    } else {
+      el('resultTitle').textContent = 'Here’s the closest fit';
+      el('resultBadge').textContent = 'Recommended';
+      soft.classList.remove('hidden');
+      if (res.reason==='time') soft.textContent = 'Nothing at that exact time — here’s the ' + typeLabel(state.type).toLowerCase() + ' option for their age.';
+      else if (res.reason==='type') soft.textContent = 'Here’s what we run for age ' + state.age + '. Tell us more when you enquire and we’ll guide you.';
+      else soft.textContent = 'Age ' + state.age + ' is just outside our usual groups — here’s the nearest. Enquire and we’ll advise.';
+      el('resultSub').textContent = 'Claim a free trial and we’ll make sure they’re in the right group.';
+    }
+    var html='';
+    res.list.slice(0,3).forEach(function(p,i){
+      html += '<div class="prog'+(i===0?' best':'')+'">'
+        + '<div class="pname">'+esc(p.name)+'</div>'
+        + '<div class="pmeta">'
+          + '<span class="tag b">Ages '+p.ageMin+'–'+p.ageMax+'</span>'
+          + '<span class="tag">'+esc(p.when)+'</span>'
+          + (p.venue?'<span class="tag">'+esc(p.venue)+'</span>':'')
+        + '</div>'
+        + (p.note?'<div class="pnote">'+esc(p.note)+'</div>':'')
+        + '</div>';
+    });
+    el('progList').innerHTML = html;
+  }
+
+  /* ---- capture submit ---- */
+  el('claimBtn').addEventListener('click', function(){
+    el('capErr').textContent='';
+    var data = {
+      parent_name: el('pName').value.trim(),
+      email:       el('pEmail').value.trim(),
+      phone:       el('pPhone').value.trim(),
+      child_name:  el('cName').value.trim(),
+      child_age:   state.age,
+      interested_in: (state.type === 'onetoone') ? '1-2-1' : 'Academy',
+      looking_for: typeLabel(state.type),
+      preferred_when: state.when,
+      matched_programme: (state.match[0] ? state.match[0].name : ''),
+      exact_match: state.exact,
+      academy:     C.academyName,
+      source:      getSource(),
+      form:        'matcher-funnel',
+      page:        (location&&location.href)?location.href:''
+    };
+    if (!data.parent_name || !data.child_name){ el('capErr').textContent='Please fill in your name and your child’s name.'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)){ el('capErr').textContent='Please enter a valid email.'; return; }
+    if (data.phone.replace(/[^0-9]/g,'').length<7){ el('capErr').textContent='Please enter a valid mobile number.'; return; }
+
+    var btn=el('claimBtn'); btn.textContent='Sending...'; btn.disabled=true;
+    var done=function(){
+      // 1-2-1 enquiries are arranged directly - don't push them at a booking page.
+      var showLink = C.bookingLink && state.type !== 'onetoone';
+      var link = showLink ? '<a class="btn" href="'+C.bookingLink+'" target="_blank" rel="noopener">'+(C.bookingLabel||'Book your time')+' &rarr;</a>' : '';
+      var prog = data.matched_programme ? (' for <strong>'+esc(data.matched_programme)+'</strong>') : '';
+      el('resultStep').innerHTML = '<div class="optin-done"><div class="big">You’re in!</div>'
+        + '<p>Thanks '+esc(first(data.parent_name))+' — we’ve got '+esc(data.child_name)+'’s free trial'+prog+' and we’ll be in touch today to confirm.</p>'
+        + link + '</div>';
+      if (window.fbq){ fbq('track','Lead'); }
+      postHeight();
+    };
+    if (C.formEndpoint.indexOf('REPLACE')===0){ done(); return; }
+    fetch(C.formEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)})
+      .then(function(){done();}).catch(function(){done();});
+  });
+
+  function first(s){ return (s||'').split(' ')[0]; }
+  function esc(s){ return (s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  /* Source tag from the ad/link (utm_source, fbclid, gclid) -> lands in the tracker's Source field */
+  function getSource(){
+    var qs = location.search || '';
+    var m = /[?&]utm_source=([^&]+)/i.exec(qs);
+    if (m){ var s = decodeURIComponent(m[1].replace(/\+/g,' ')); return s.charAt(0).toUpperCase()+s.slice(1); }
+    if (/[?&]fbclid=/i.test(qs)) return 'Facebook';
+    if (/[?&]gclid=/i.test(qs)) return 'Google';
+    return C.defaultSource || 'Website';
+  }
+
+  /* Auto-resize when embedded in a website (posts its height to the parent page) */
+  function postHeight(){ try{ if (window.parent !== window){ window.parent.postMessage({ ppFunnel:'height', h: document.body.scrollHeight }, '*'); } }catch(e){} }
+  window.addEventListener('resize', postHeight);
+  window.addEventListener('load', postHeight);
+  postHeight();
+
+  /* Meta Pixel (only loads if a Pixel ID is set in CONFIG) */
+  if (C.metaPixelId){
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', C.metaPixelId); fbq('track','PageView');
+  }
+})();
+</script>
+</body>
+</html>

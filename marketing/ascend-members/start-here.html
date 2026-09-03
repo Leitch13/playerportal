@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Start Here &middot; ASCEND Members</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ascend.css">
+<style>
+  .weekhead{display:flex;align-items:baseline;gap:12px;margin:38px 0 6px}
+  .weekhead .w{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan)}
+  .weekhead h2{margin:0;font-size:clamp(20px,2.6vw,25px)}
+  .weeknote{color:var(--muted);font-size:14px;margin:0 0 18px;max-width:60ch}
+
+  .step-item{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:12px;overflow:hidden;transition:.14s}
+  .step-item.done{background:var(--panel2);border-color:var(--cyan-dim)}
+  .step-top{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;cursor:pointer}
+  .step-top .box{
+    flex:0 0 22px;width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line-lit);
+    margin-top:2px;display:grid;place-items:center;font-size:13px;color:#06181A;transition:.12s;
+  }
+  .step-item.done .box{background:var(--cyan);border-color:var(--cyan)}
+  .step-item.done .box:after{content:'\2713';font-weight:700}
+  .step-main{flex:1;min-width:0}
+  .step-main .n{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .step-main .n .mins{color:var(--muted-dim);letter-spacing:1px}
+  .step-main h3{font-size:17px;margin:0 0 5px}
+  .step-item.done h3{color:var(--muted-dim)}
+  .step-main .why{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0}
+  .step-do{padding:0 20px 18px 56px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .step-do .btn{padding:10px 18px;font-size:13.5px}
+  .step-do .note{color:var(--muted-dim);font-size:12.5px}
+
+  .stickybar{
+    position:sticky;top:58px;z-index:40;background:var(--bg);
+    padding:16px 0 14px;border-bottom:1px solid var(--line);margin-bottom:6px;
+  }
+  .stickybar .prog{margin:0}
+  .resetlink{background:none;border:none;color:var(--muted-dim);font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;padding:0;text-decoration:underline}
+  .resetlink:hover{color:var(--cyan)}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html">ASCEND<span>.</span></a>
+  <nav class="navlinks">
+    <a href="index.html">Hub</a>
+    <a href="start-here.html" class="on">Start here</a>
+    <a href="library.html">Library</a>
+    <a href="diagnostic.html">Diagnostic</a>
+    <a href="pricing-calculator.html">Calculator</a>
+    <a href="work-with-me.html">Work with me</a>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+  <div style="padding:46px 0 8px">
+    <p class="eyebrow">Your first 30 days</p>
+    <h1>Start here.</h1>
+    <p class="lede">Nine steps, in this order. It front-loads the boring bit &mdash; getting honest about your numbers &mdash; because every good decision after it depends on knowing where you actually are. Budget about three hours across the month. Tick things off as you go; it saves on this device.</p>
+  </div>
+
+  <div class="stickybar">
+    <div class="prog">
+      <div class="bar"><i id="barFill"></i></div>
+      <span class="pct" id="pctText">0 / 9</span>
+    </div>
+  </div>
+
+  <div class="weekhead"><span class="w">Week 1</span><h2>Get the picture</h2></div>
+  <p class="weeknote">Nothing to build yet. This week is you finding out the truth about the academy, and me finding it out with you.</p>
+
+  <div class="step-item" data-step="0">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 1</span><span class="mins">5 min</span></div>
+      <h3>Book your kickoff call</h3>
+      <p class="why">Forty-five minutes, one-to-one. Do this now rather than "when I've had a look round" &mdash; the slot you book is usually a week or two out, so booking early means the rest of week one has a deadline attached to it.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="BOOKING_LINK" target="_blank" rel="noopener">Book the kickoff call</a>
+      <span class="note">45 minutes &middot; video call</span>
+    </div>
+  </div>
+
+  <div class="step-item" data-step="1">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 2</span><span class="mins">10 min</span></div>
+      <h3>Fill in your intake</h3>
+      <p class="why">Player numbers, prices, what you take a month, what's bugging you most. It means I turn up to the call already knowing your academy, and we spend the time on what to do rather than on you explaining the setup. Estimates are fine &mdash; step 4 sharpens them.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="intake.html">Open the intake form</a>
+      <span class="note">Do this before the kickoff call</span>
+    </div>
+  </div>
+
+  <div class="step-item" data-step="2">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 3</span><span class="mins">10 min</span></div>
+      <h3>Take the diagnostic</h3>
+      <p class="why">Thirty statements across the six stages, scored out of 25 each. It hands you two things: your level, and the one stage that's actually holding you back. Most owners are wrong about which one it is &mdash; they're usually working the stage that feels urgent, not the one that's broken.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="diagnostic.html">Take the diagnostic</a>
+      <span class="note">Write your score down &mdash; you'll compare in 90 days</span>
+    </div>
+  </div>
+
+  <div class="weekhead"><span class="w">Week 2</span><h2>Face the numbers</h2></div>
+  <p class="weeknote">This is the week that stings a bit. Do it anyway. Everyone who's grown properly has been through it.</p>
+
+  <div class="step-item" data-step="3">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 4</span><span class="mins">15 min</span></div>
+      <h3>Run the pricing calculator</h3>
+      <p class="why">Take one session. Put in what you charge, how many turn up, the venue, the coaches, and &mdash; this is the bit people leave out &mdash; the admin hours it costs you. What comes out the other end is your real hourly rate. If it's under twenty quid, that's not a pricing tweak, that's the whole problem.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="pricing-calculator.html">Open the calculator</a>
+      <span class="note">Use your worst session, not your best</span>
+    </div>
+  </div>
+
+  <div class="step-item" data-step="4">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 5</span><span class="mins">15 min</span></div>
+      <h3>Map your money</h3>
+      <p class="why">Zoom out from one session to the whole year. Where you are now, where you'd be on realistic targets for players, price and extra income, and what that gap is worth over twelve months. That number is usually the reason to keep going when the work gets tedious.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="money-map.html">Open the money map</a>
+      <span class="note">Screenshot the result</span>
+    </div>
+  </div>
+
+  <div class="step-item" data-step="5">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 6</span><span class="mins">20 min</span></div>
+      <h3>Audit your week</h3>
+      <p class="why">Paint in where your hours actually went last week &mdash; not where you meant them to go. Then split it: what genuinely needs you, and what you're doing because you've always done it. That second list is your growth budget. You can't add players to a week that's already full.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="time-audit.html">Open the time audit</a>
+      <a class="btn ghost" href="roles-audit.html">Then the roles audit</a>
+    </div>
+  </div>
+
+  <div class="weekhead"><span class="w">Weeks 3 &amp; 4</span><h2>Fix one thing</h2></div>
+  <p class="weeknote">You now know more about your academy than you did a fortnight ago. The temptation is to fix all of it. Don't.</p>
+
+  <div class="step-item" data-step="6">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 7</span><span class="mins">On the call</span></div>
+      <h3>Pick your one thing</h3>
+      <p class="why">On the kickoff call we agree a single fix for the next 30 days, and how we'll know it worked. One. Not a list of five, because a list of five is a list of none. It'll usually come from your weakest diagnostic stage, and it'll usually be smaller than you expect.</p>
+    </div></div>
+    <div class="step-do">
+      <span class="note">We do this together &mdash; tick it once we've agreed it</span>
+    </div>
+  </div>
+
+  <div class="step-item" data-step="7">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 8</span><span class="mins">Ongoing</span></div>
+      <h3>Work your stage folder</h3>
+      <p class="why">The library is filed by the six stages. Go to the one the diagnostic flagged as your weakest, and use the material there &mdash; not the stuff that looks most interesting. If your Audit score is the lowest, marketing material is a distraction no matter how badly you want more players.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="library.html">Open the library</a>
+      <span class="note">Start at your weakest stage</span>
+    </div>
+  </div>
+
+  <div class="step-item" data-step="8">
+    <div class="step-top"><div class="box"></div><div class="step-main">
+      <div class="n"><span>Step 9</span><span class="mins">Day 30</span></div>
+      <h3>Report back</h3>
+      <p class="why">Bring three things to your first monthly call: what you did, what the number did, and what got in the way. Even "it didn't work" is progress if you know why. Bringing nothing is the only version of this that wastes both our time.</p>
+    </div></div>
+    <div class="step-do">
+      <a class="btn" href="work-with-me.html">Book your monthly call</a>
+      <span class="note">Same time each month works best</span>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:34px">
+    <div class="lbl">If you get stuck</div>
+    <p>Don't sit on it for three weeks. Message me on WhatsApp &mdash; a two-minute answer beats a month of guessing. Details are on the <a href="work-with-me.html">Work with me</a> page.</p>
+  </div>
+
+  <p style="margin:26px 0 40px"><button class="resetlink" id="resetBtn">Reset my progress on this device</button></p>
+
+</div>
+
+<footer><div class="wrap">
+  <span>John Leitch &middot; ASCEND</span>
+  <span><a href="index.html">Hub</a> &middot; <a href="library.html">Library</a> &middot; <a href="work-with-me.html">Contact</a></span>
+</div></footer>
+
+<script>
+var KEY = 'ascend_onboarding_v1';
+var items = Array.prototype.slice.call(document.querySelectorAll('.step-item'));
+var TOTAL = items.length;
+
+function load(){
+  try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; }
+}
+function save(s){
+  try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){}
+}
+var state = load();
+
+function render(){
+  var done = 0;
+  items.forEach(function(el){
+    var i = el.getAttribute('data-step');
+    if(state['s'+i]){ el.classList.add('done'); done++; }
+    else { el.classList.remove('done'); }
+  });
+  document.getElementById('barFill').style.width = Math.round((done/TOTAL)*100)+'%';
+  document.getElementById('pctText').textContent = done+' / '+TOTAL;
+}
+
+items.forEach(function(el){
+  el.querySelector('.step-top').addEventListener('click', function(){
+    var i = el.getAttribute('data-step');
+    if(state['s'+i]){ delete state['s'+i]; } else { state['s'+i] = 1; }
+    save(state); render();
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', function(){
+  if(confirm('Clear all ticked steps on this device?')){ state = {}; save(state); render(); }
+});
+
+render();
+</script>
+</body>
+</html>

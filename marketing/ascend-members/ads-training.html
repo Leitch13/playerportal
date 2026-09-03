@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ads Engine &middot; ASCEND Training</title>
+<meta name="description" content="ASCEND member training: how to actually run Meta ads that fill your academy. The delivery side - account setup, campaign build, launch, numbers, follow-up and scaling.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#090C10;--ink2:#10161C;--ink3:#151C24;
+  --paper:#EEF3F5;--soft:#C4D0D8;--mute:#7E8C99;
+  --cyan:#22D3EE;--gold:#F2B441;--red:#F0526B;--green:#12a150;
+  --line:rgba(255,255,255,.10);--line2:rgba(255,255,255,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:78px}
+body{background:var(--ink);color:var(--paper);font-family:'Space Grotesk',sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1020px;margin:0 auto;padding:0 24px}
+h1,h2,h3,h4{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.02em;line-height:.98;text-transform:uppercase}
+a{color:var(--cyan)}
+.eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);font-weight:700}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(9,12,16,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .inner{max-width:1020px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:18px}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.06em;white-space:nowrap}
+.brand span{color:var(--cyan)}
+.tnav{margin-left:auto;display:flex;gap:16px;overflow-x:auto;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;scrollbar-width:none}
+.tnav::-webkit-scrollbar{display:none}
+.tnav a{color:var(--mute);text-decoration:none;white-space:nowrap}
+.tnav a:hover{color:var(--cyan)}
+
+/* ---------- hero ---------- */
+.hero{padding:74px 0 56px;background:radial-gradient(65% 55% at 50% 0%,rgba(34,211,238,.13),transparent 62%);text-align:center}
+.hero h1{font-size:clamp(3rem,9.5vw,6rem);margin:16px 0 18px}
+.hero h1 em{font-style:normal;color:var(--cyan)}
+.hero .sub{color:var(--soft);max-width:60ch;margin:0 auto 26px;font-size:clamp(1rem,2vw,1.15rem)}
+.pillrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+.pill{border:1px solid var(--line);background:var(--ink2);border-radius:999px;padding:8px 16px;font-size:.82rem;color:var(--soft)}
+.pill b{color:var(--cyan)}
+
+/* ---------- sections ---------- */
+.sec{padding:56px 0;border-top:1px solid var(--line)}
+.sec>.wrap>h2{font-size:clamp(2rem,5vw,2.9rem);margin-bottom:6px}
+.modhead{display:flex;align-items:flex-start;gap:18px;margin-bottom:26px}
+.modnum{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;line-height:.8;color:var(--cyan);opacity:.85;min-width:52px}
+.modhead h2{font-size:clamp(1.9rem,4.6vw,2.7rem);margin:0 0 4px}
+.modhead .why{color:var(--mute);font-size:.92rem}
+.lead{color:var(--soft);margin-bottom:22px;max-width:74ch}
+p{margin-bottom:14px}
+p:last-child{margin-bottom:0}
+strong,b{color:var(--paper)}
+.sec p,.sec li{color:var(--soft)}
+.sec strong{color:var(--paper)}
+
+/* ---------- cards / boxes ---------- */
+.card{border:1px solid var(--line);border-radius:14px;background:var(--ink2);padding:22px 24px;margin-bottom:16px}
+.card h3{font-size:1.35rem;color:var(--paper);margin-bottom:10px;letter-spacing:.03em}
+.card h4{font-size:1.1rem;color:var(--cyan);margin:18px 0 8px;letter-spacing:.04em}
+.card h4:first-child{margin-top:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.note{border-left:3px solid var(--cyan);background:rgba(34,211,238,.06);border-radius:0 10px 10px 0;padding:16px 20px;margin:18px 0;font-size:.95rem}
+.warn{border-left:3px solid var(--red);background:rgba(240,82,107,.07);border-radius:0 10px 10px 0;padding:16px 20px;margin:18px 0;font-size:.95rem}
+.john{border-left:3px solid var(--gold);background:rgba(242,180,65,.06);border-radius:0 10px 10px 0;padding:16px 20px;margin:18px 0;font-size:.97rem;font-style:italic;color:var(--soft)}
+.john b{color:var(--gold);font-style:normal;display:block;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+.note b,.warn b{display:block;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+.note b{color:var(--cyan)}
+.warn b{color:var(--red)}
+
+/* ---------- steps ---------- */
+ol.steps{list-style:none;counter-reset:s;margin:6px 0 0}
+ol.steps>li{counter-increment:s;position:relative;padding:0 0 18px 46px;border-left:1px solid var(--line);margin-left:15px}
+ol.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+ol.steps>li:before{content:counter(s,decimal-leading-zero);position:absolute;left:-15px;top:-2px;width:30px;height:30px;border-radius:50%;background:var(--ink3);border:1px solid var(--cyan);color:var(--cyan);font-family:'Bebas Neue',sans-serif;font-size:.95rem;display:flex;align-items:center;justify-content:center}
+ol.steps>li>b:first-child{color:var(--paper);display:block;margin-bottom:2px}
+ol.steps ul{margin:8px 0 0 18px}
+ul.bul{margin:8px 0 0 20px}
+ul.bul li{margin-bottom:7px}
+ul.bul li::marker{color:var(--cyan)}
+.field{display:inline-block;background:var(--ink3);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.86em;color:var(--cyan);font-weight:500;white-space:nowrap}
+code{background:var(--ink3);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.86em;color:var(--gold);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:break-all}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:520px}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line2)}
+th{background:var(--ink3);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.06em;color:var(--cyan);font-weight:400;text-transform:uppercase}
+tr:last-child td{border-bottom:none}
+td b{color:var(--paper)}
+.good{color:var(--green);font-weight:700}
+.bad{color:var(--red);font-weight:700}
+.mid{color:var(--gold);font-weight:700}
+
+/* ---------- checklist ---------- */
+.check{list-style:none;margin:6px 0 0}
+.check li{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line2)}
+.check li:last-child{border-bottom:none}
+.check input{appearance:none;width:22px;height:22px;flex:0 0 22px;margin-top:2px;border:1px solid var(--mute);border-radius:6px;background:var(--ink3);cursor:pointer;position:relative;transition:.15s}
+.check input:checked{background:var(--cyan);border-color:var(--cyan)}
+.check input:checked:after{content:"";position:absolute;left:7px;top:3px;width:6px;height:11px;border:solid #04181C;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.check input:checked+span{color:var(--mute);text-decoration:line-through}
+.check span{font-size:.96rem;color:var(--soft)}
+.resetbtn{margin-top:14px;background:none;border:1px solid var(--line);color:var(--mute);border-radius:8px;padding:8px 14px;font-family:inherit;font-size:.8rem;cursor:pointer}
+.resetbtn:hover{color:var(--cyan);border-color:var(--cyan)}
+
+/* ---------- calculator ---------- */
+.calc{border:1px solid rgba(34,211,238,.3);border-radius:16px;background:linear-gradient(180deg,rgba(34,211,238,.05),transparent);padding:26px}
+.calcgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.calcgrid label{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:6px}
+.calcgrid input{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:8px;color:var(--paper);font-family:inherit;font-size:1.05rem;padding:11px 14px}
+.calcgrid input:focus{outline:none;border-color:var(--cyan)}
+.out{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.out div{background:var(--ink2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;text-align:center}
+.out .k{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:8px}
+.out .v{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--cyan);line-height:1}
+.out .h{font-size:.76rem;color:var(--mute);margin-top:6px}
+.verdict{margin-top:18px;border-radius:10px;padding:14px 18px;font-size:.95rem;border:1px solid var(--line);background:var(--ink2)}
+
+/* ---------- misc ---------- */
+.kv{display:grid;grid-template-columns:180px 1fr;gap:10px 18px;font-size:.95rem}
+.kv dt{color:var(--cyan);font-weight:700}
+.kv dd{color:var(--soft)}
+.tree{border:1px solid var(--line);border-radius:12px;background:var(--ink2);padding:18px 22px;margin-bottom:14px}
+.tree .sym{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:var(--red);letter-spacing:.03em}
+.tree .cause{color:var(--paper);font-weight:700;margin:6px 0 4px}
+.foot{border-top:1px solid var(--line);padding:34px 0 60px;text-align:center;font-size:.85rem;color:var(--mute)}
+.foot b{color:var(--paper)}
+
+@media(max-width:820px){
+  .grid2,.grid3,.calcgrid,.out{grid-template-columns:1fr}
+  .kv{grid-template-columns:1fr;gap:2px 0}
+  .kv dd{margin-bottom:10px}
+  .tnav{display:none}
+  body{font-size:16px}
+}
+@media print{
+  body{background:#fff;color:#111}
+  .topbar,.tnav,.resetbtn{display:none}
+  .card,.note,.warn,.john,.tree,.calc{border-color:#ccc;background:#fff}
+  h1,h2,h3,h4,.modnum,th{color:#000}
+  .sec p,.sec li,.lead,td{color:#222}
+  .sec{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:7px;background:#121E21;border:1px solid #2E4247;color:#33E3E3;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 13px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.35)">&#8592; ASCEND hub</a>
+
+
+<div class="topbar">
+  <div class="inner">
+    <div class="brand">ASCEND <span>&middot;</span> Ads Engine</div>
+    <nav class="tnav">
+      <a href="#m1">Setup</a>
+      <a href="#m3">Build</a>
+      <a href="#m5">Launch</a>
+      <a href="#m7">Numbers</a>
+      <a href="#m8">Fixes</a>
+      <a href="#m9">Follow-up</a>
+      <a href="#m11">Scale</a>
+      <a href="#checklist">Checklist</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">ASCEND Member Training &middot; Traction Stage</span>
+    <h1>The Ads<br><em>Engine</em></h1>
+    <p class="sub">You&rsquo;ve got the creative. This is everything else &mdash; the bit that actually decides whether the ads fill your sessions or quietly burn your money. Set up once, run in 15 minutes a week.</p>
+    <div class="pillrow">
+      <span class="pill"><b>Platform:</b> Meta (Facebook + Instagram)</span>
+      <span class="pill"><b>Budget:</b> from &pound;10/day</span>
+      <span class="pill"><b>Setup time:</b> ~90 min once</span>
+      <span class="pill"><b>Weekly:</b> 15 min</span>
+    </div>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">00</div>
+      <div>
+        <h2>Read this first</h2>
+        <div class="why">What the training covers, and the one idea it&rsquo;s built on.</div>
+      </div>
+    </div>
+
+    <p class="lead">Most academy owners think ads fail because the video wasn&rsquo;t good enough. It&rsquo;s almost never the video. It&rsquo;s the plumbing behind it &mdash; the wrong objective, no tracking, a broken landing page, a lead that sat in an inbox for two days. That&rsquo;s the delivery side, and that&rsquo;s what this is.</p>
+
+    <div class="card">
+      <h3>The five layers of an ad that works</h3>
+      <p>Every result you get is one of five layers doing its job or failing. Ads Manager will not tell you which. This training teaches you to read the numbers and know instantly which layer is broken.</p>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Layer</th><th>What it decides</th><th>Where it lives</th></tr>
+          <tr><td><b>1. The offer</b></td><td>Whether anyone wants it</td><td>Your head &mdash; Module 02</td></tr>
+          <tr><td><b>2. The creative</b></td><td>Whether they stop scrolling</td><td><b style="color:var(--gold)">Already done &mdash; you have this</b></td></tr>
+          <tr><td><b>3. The delivery</b></td><td>Who Meta shows it to, and how often</td><td>Campaign settings &mdash; Modules 03&ndash;06</td></tr>
+          <tr><td><b>4. The capture</b></td><td>Whether a click becomes a name and number</td><td>Your funnel page &mdash; Module 02</td></tr>
+          <tr><td><b>5. The follow-up</b></td><td>Whether that name becomes a paying player</td><td>You, within 5 minutes &mdash; Module 09</td></tr>
+        </table>
+      </div>
+      <div class="john"><b>John says</b>&ldquo;I&rsquo;ve seen owners spend &pound;600 on ads and blame Facebook, when they had 41 leads sitting unanswered in a Facebook inbox they didn&rsquo;t know existed. The ads worked. The delivery didn&rsquo;t.&rdquo;</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>What you need before you start</h3>
+        <ul class="bul">
+          <li>A <b>Facebook Page</b> for your academy that you are an admin of (not a personal profile).</li>
+          <li>An <b>Instagram account</b> for the academy (optional but free reach &mdash; connect it).</li>
+          <li>Your <b>creative</b> &mdash; the videos and images you&rsquo;ve already made.</li>
+          <li>A <b>place to send people</b> &mdash; your trial funnel page. If you don&rsquo;t have one, Module 02.</li>
+          <li>A <b>card</b> you&rsquo;re happy to put &pound;10&ndash;20/day on.</li>
+          <li>Your <b>phone</b>, with notifications on. Non-negotiable. Module 09.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>What this training is not</h3>
+        <ul class="bul">
+          <li>Not creative training. You&rsquo;ve done that side.</li>
+          <li>Not a hack list. Meta changes button names constantly &mdash; this teaches the <b>function</b>, so when they rename something you still know what you&rsquo;re looking for.</li>
+          <li>Not for boosting posts. Boosting is the single most expensive way to spend money on Meta. We build proper campaigns.</li>
+          <li>Not agency-level scale. This is the &pound;10&ndash;&pound;50/day zone, which is where a local academy lives and wins.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="warn"><b>The one rule</b>Never launch an ad without knowing exactly what happens in the 5 minutes after someone fills the form in. If you can&rsquo;t answer that, you&rsquo;re not ready to spend. Go to Module 09 first.</div>
+  </div>
+</section>
+
+<section class="sec" id="m1">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">01</div>
+      <div>
+        <h2>The plumbing</h2>
+        <div class="why">Do this once. 30&ndash;45 minutes. Skip a step here and you&rsquo;ll be debugging it for a month.</div>
+      </div>
+    </div>
+
+    <p class="lead">Meta has two different places to click: <b>Meta Business Suite</b> (the admin layer &mdash; assets, people, payments) and <b>Ads Manager</b> (where campaigns get built). You need the first set up properly before the second is worth touching.</p>
+
+    <div class="card">
+      <h3>A. Business portfolio &amp; ad account</h3>
+      <ol class="steps">
+        <li><b>Create a Business portfolio</b>Go to <a href="https://business.facebook.com" target="_blank" rel="noopener">business.facebook.com</a>. Create one in your <b>academy&rsquo;s</b> name, not your own. This is the container that owns everything &mdash; if you ever hand the academy on, sell it, or bring in help, you hand over this, not your personal login.</li>
+        <li><b>Add your Page to it</b>Business settings &rarr; Accounts &rarr; Pages &rarr; Add &rarr; <span class="field">Add an existing Page</span>. If your Page is stuck under a personal profile, this is the step that frees it.</li>
+        <li><b>Create an ad account</b>Business settings &rarr; Accounts &rarr; Ad accounts &rarr; Add &rarr; <span class="field">Create a new ad account</span>. Name it <code>ACADEMY NAME - Ads</code>, currency <b>GBP</b>, time zone <b>London</b>.</li>
+        <li><b>Warning: currency and time zone are permanent</b>You cannot change them later without creating a whole new ad account and losing all your data. Get them right now.</li>
+        <li><b>Add a payment method</b>Billing &rarr; Payment settings. Add a card. Set a <b>spending limit</b> of your monthly budget while you&rsquo;re learning &mdash; it&rsquo;s a hard stop that protects you from a mis-typed budget.</li>
+        <li><b>Turn on two-factor authentication</b>Hacked ad accounts are common and Meta support is close to non-existent. 2FA on the personal profile that admins the business. Do it now, not later.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>B. Tracking &mdash; the dataset (pixel)</h3>
+      <p>The pixel (Meta now calls it a <b>dataset</b>) is a snippet of code on your funnel page that tells Meta &ldquo;this person filled the form in.&rdquo; Without it, Meta is guessing who to show your ads to, and you are flying blind on cost per lead.</p>
+      <ol class="steps">
+        <li><b>Create the dataset</b>Business settings &rarr; Data sources &rarr; Datasets &rarr; Add. Name it <code>ACADEMY NAME - Web</code>. Copy the ID (a 15&ndash;16 digit number) somewhere safe.</li>
+        <li><b>Install it on your funnel page</b>If you&rsquo;re on the ASCEND trial funnel: paste the ID into the pixel field in your page setup. If you&rsquo;re on Player Portal: Settings &rarr; Marketing &rarr; Meta Pixel, paste the ID, save &mdash; it fires page views and lead events for you automatically.</li>
+        <li><b>Wire the Lead event</b>The form submission must fire a <span class="field">Lead</span> event. This is the single most important line of tracking you own &mdash; it&rsquo;s what &ldquo;cost per lead&rdquo; is counted from and what Meta optimises towards.</li>
+        <li><b>Test it before you spend a penny</b>Install the <b>Meta Pixel Helper</b> Chrome extension. Load your funnel page &mdash; it should show <span class="field">PageView</span>. Submit a test lead &mdash; it should show <span class="field">Lead</span>. If it doesn&rsquo;t, stop and fix it. Everything downstream is built on this.</li>
+        <li><b>Verify your domain</b>Business settings &rarr; Brand safety &rarr; Domains. Add your domain and verify it (DNS TXT record or a meta tag in your page head). This gives you control of your own conversion events and stops iOS privacy rules eating your data.</li>
+        <li><b>Set the Lead event as a priority event</b>Events Manager &rarr; your dataset &rarr; Aggregated Event Measurement &rarr; configure web events. Put <span class="field">Lead</span> at the top. Ignore this and iOS users&rsquo; conversions may not report at all.</li>
+      </ol>
+      <div class="note"><b>If you use Meta Instant Forms instead</b>You don&rsquo;t need a pixel for the ad to work &mdash; the form is on Facebook itself. You still want it for retargeting later. See Module 02 for the trade-off; it&rsquo;s a real decision, not a shortcut.</div>
+    </div>
+
+    <div class="card">
+      <h3>C. Where the leads land</h3>
+      <p>Decide this now, in writing, before a single ad runs. A lead that arrives somewhere nobody looks is money set on fire.</p>
+      <div class="kv">
+        <dt>Funnel page leads</dt><dd>Email alert to your phone + row in your Academy Leads base (Airtable) + WhatsApp notification if you&rsquo;ve wired it.</dd>
+        <dt>Instant Form leads</dt><dd>They sit in <b>Meta Business Suite &rarr; Leads Centre</b> and nobody gets an email by default. You must connect them out (Zapier / Make / a CRM) or check the Leads Centre twice a day. This is where most academies lose leads.</dd>
+        <dt>Who is on the hook</dt><dd>One named person. If it&rsquo;s &ldquo;whoever sees it first&rdquo;, it&rsquo;s nobody.</dd>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="m2">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">02</div>
+      <div>
+        <h2>One offer, one destination</h2>
+        <div class="why">The two decisions that cap your results before the ad ever runs.</div>
+      </div>
+    </div>
+
+    <p class="lead">You are not advertising your academy. Nobody clicks &ldquo;an academy.&rdquo; You are advertising <b>one specific thing a parent can say yes to this week</b>.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Offers that convert cold traffic</h3>
+        <ul class="bul">
+          <li><b>Free trial session</b> &mdash; named date, named venue, named age group. The workhorse. Highest volume, lowest friction.</li>
+          <li><b>Holiday camp</b> &mdash; deadline built in, parents are actively searching, easiest paid conversion of the year.</li>
+          <li><b>&pound;10 taster block</b> (2&ndash;3 weeks) &mdash; fewer leads than a free trial but a far higher show-up rate, because they&rsquo;ve paid something.</li>
+          <li><b>New venue / new age group launch</b> &mdash; genuine news, works brilliantly for a 2&ndash;3 week burst.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Offers that don&rsquo;t</h3>
+        <ul class="bul">
+          <li><b>&ldquo;Join our academy&rdquo;</b> &mdash; no date, no decision, no urgency.</li>
+          <li><b>&ldquo;Sign up for our newsletter&rdquo;</b> &mdash; a parent whose kid wants to play football does not want a newsletter.</li>
+          <li><b>Anything with a price as the headline</b> before they know who you are.</li>
+          <li><b>Three offers in one ad.</b> One campaign, one offer. Always.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Where you send the click</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th></th><th>Your funnel page</th><th>Meta Instant Form</th></tr>
+          <tr><td><b>Cost per lead</b></td><td>Higher (typically 30&ndash;60% more)</td><td>Lower &mdash; no page load, autofilled</td></tr>
+          <tr><td><b>Lead quality</b></td><td class="good">Higher &mdash; they chose to click through</td><td class="mid">Lower &mdash; thumb-slip signups are common</td></tr>
+          <tr><td><b>Show-up rate</b></td><td class="good">Typically 50&ndash;65%</td><td class="mid">Typically 30&ndash;45%</td></tr>
+          <tr><td><b>Setup effort</b></td><td>Needs a page + pixel</td><td>Built inside the ad, 10 minutes</td></tr>
+          <tr><td><b>Retargeting data</b></td><td class="good">Full &mdash; page visitors, part-completers</td><td>Video views + form opens only</td></tr>
+          <tr><td><b>Where leads land</b></td><td class="good">Your inbox / CRM instantly</td><td class="bad">Leads Centre, unless you wire it out</td></tr>
+        </table>
+      </div>
+      <div class="note"><b>The ASCEND default</b>Use your <b>funnel page</b>. You pay a bit more per lead and you get a parent who actually turns up &mdash; and cost per <em>enrolled player</em> is the only number that pays your bills. Use Instant Forms when you&rsquo;re filling a camp fast, on a deadline, and volume beats quality.</div>
+      <div class="warn"><b>If you use an Instant Form</b>Choose <b>&ldquo;Higher intent&rdquo;</b>, not &ldquo;More volume&rdquo;, and add one custom question (&ldquo;What age is your child?&rdquo; with age-band options). That one question filters out half the accidental leads and pre-qualifies the call.</div>
+    </div>
+
+    <div class="card">
+      <h3>Pre-flight your destination page</h3>
+      <p>Before you spend, open your funnel page on <b>your phone</b>, on <b>4G with wifi off</b>, and check:</p>
+      <ul class="bul">
+        <li>It loads in under 3 seconds. Every extra second costs roughly 10% of your leads.</li>
+        <li>The offer, the age group, the venue and the date are visible <b>without scrolling</b>.</li>
+        <li>The form asks for <b>4 fields maximum</b>: parent name, child age, phone, email. Every extra field drops completion.</li>
+        <li>The phone field is set to a phone keypad type. Sounds trivial &mdash; it isn&rsquo;t.</li>
+        <li>You submitted a real test lead, and you got the alert on your phone.</li>
+        <li>The thank-you page tells them <b>exactly what happens next</b>: &ldquo;I&rsquo;ll text you within the hour to confirm your spot.&rdquo;</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="m3">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">03</div>
+      <div>
+        <h2>Build the campaign</h2>
+        <div class="why">Click by click. Meta renames buttons &mdash; the function stays the same, so read what each setting <em>does</em>.</div>
+      </div>
+    </div>
+
+    <p class="lead">Three levels, and they each control something different. Get this straight and Ads Manager stops being confusing forever.</p>
+
+    <div class="grid3">
+      <div class="card"><h4>Campaign</h4><p>Sets the <b>goal</b> and (usually) the budget. What are you asking Meta to go and get?</p></div>
+      <div class="card"><h4>Ad set</h4><p>Sets <b>who, where, how much, when</b>. Audience, location, placements, schedule.</p></div>
+      <div class="card"><h4>Ad</h4><p>The <b>creative</b> itself &mdash; video, text, headline, button, destination link.</p></div>
+    </div>
+
+    <div class="card">
+      <h3>Step by step</h3>
+      <ol class="steps">
+        <li><b>Ads Manager &rarr; Create</b>Objective: <span class="field">Leads</span>. Not Traffic. Not Engagement. Not the &ldquo;Boost&rdquo; button on your post. <b>Leads</b> tells Meta&rsquo;s algorithm to hunt for people who fill forms in, not people who like things.</li>
+        <li><b>Campaign name</b>Use a convention you&rsquo;ll still understand in six months: <code>2026-09 | Trial | Aberdeen U8-U12</code>. Sloppy names are why owners can&rsquo;t tell what worked last year.</li>
+        <li><b>Special ad category: leave it OFF</b>That&rsquo;s for housing, employment, credit and politics. Children&rsquo;s sport is not one &mdash; switching it on needlessly strips out your age and radius targeting and wrecks delivery.</li>
+        <li><b>Budget: at campaign level (Advantage campaign budget)</b>Set <b>&pound;10&ndash;15/day</b> to start. One budget, shared across ad sets, Meta moves it to whatever&rsquo;s working. Simpler and better than splitting it yourself at this spend level.</li>
+        <li><b>Conversion location</b><span class="field">Website</span> if you&rsquo;re sending to your funnel page &mdash; then pick your dataset and set the performance goal to <b>maximise number of conversions</b>, conversion event <span class="field">Lead</span>. Choose <span class="field">Instant forms</span> only if you decided that in Module 02.</li>
+        <li><b>Location targeting &mdash; the one that matters most</b>Drop a pin on <b>your venue</b>, not your town. Set a radius of <b>+8 to +15 km</b> (5&ndash;10 miles). Rural academies: go wider, up to 25 km. Make sure the dropdown says <b>&ldquo;People living in this location&rdquo;</b> &mdash; the default includes tourists and visitors.</li>
+        <li><b>Age &amp; gender</b><b>25&ndash;50, all genders.</b> You are targeting <b>parents</b>, not players. Every season someone targets 8&ndash;12 year olds and wonders why nothing happens &mdash; kids that age aren&rsquo;t on Facebook and can&rsquo;t pay you.</li>
+        <li><b>Detailed targeting: leave it empty</b>Yes, really. On a small local radius your audience is already tiny (20k&ndash;150k people). Stacking &ldquo;interested in football&rdquo; on top starves delivery and pushes your costs up. Let Meta&rsquo;s Advantage+ audience find the parents &mdash; it reads your creative and your pixel far better than an interest list does.</li>
+        <li><b>Placements: Advantage+ placements (all of them)</b>Restricting to Feed only is the classic beginner move and it raises your costs 30&ndash;50%. Reels and Stories are cheap. You already made vertical creative &mdash; let it run everywhere.</li>
+        <li><b>Attribution setting</b><b>7-day click, 1-day view.</b> Parents don&rsquo;t decide instantly &mdash; they see it Tuesday and sign up Thursday from the sofa. A 1-day window will make good ads look dead.</li>
+        <li><b>Schedule</b>Run <b>all day, every day</b>. At &pound;10&ndash;15/day there isn&rsquo;t enough volume for dayparting to do anything but cost you reach. Start the campaign at <b>00:00 on a Monday</b> so your weekly reporting lines up cleanly.</li>
+        <li><b>Number of ads: 3 to 4</b>You already have the creative. Load 3&ndash;4 into <b>one ad set</b> and let Meta pick the winner. Do not build one ad set per creative at this budget &mdash; you&rsquo;ll split your data so thin that nothing ever learns.</li>
+      </ol>
+    </div>
+
+    <div class="note"><b>The shape you&rsquo;re aiming for</b>1 campaign &rarr; 1 ad set &rarr; 3&ndash;4 ads. That&rsquo;s it. Complexity is not sophistication at &pound;15/day &mdash; it&rsquo;s just less data per box and slower learning.</div>
+  </div>
+</section>
+
+<section class="sec" id="m4">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">04</div>
+      <div>
+        <h2>Loading the creative you&rsquo;ve made</h2>
+        <div class="why">Which asset goes in which slot, what to write in the boxes, and the rejections that catch academies out.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Asset formats</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Placement</th><th>Ratio</th><th>Notes</th></tr>
+          <tr><td>Feed (FB + IG)</td><td><b>4:5</b> vertical</td><td>Takes the most screen height allowed in feed. Use this as your main upload.</td></tr>
+          <tr><td>Stories &amp; Reels</td><td><b>9:16</b> full screen</td><td>Use <span class="field">Edit per placement</span> to swap your vertical cut in. Keep text out of the top and bottom 14% &mdash; the UI covers it.</td></tr>
+          <tr><td>Video length</td><td><b>15&ndash;30 sec</b></td><td>Hook in the first 2 seconds. Most viewers never hear audio &mdash; burn captions in.</td></tr>
+          <tr><td>Thumbnail</td><td>&mdash;</td><td>Pick the frame with a face and a ball in it, not a logo card.</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>The text fields, and what actually goes in them</h3>
+      <div class="kv">
+        <dt>Primary text</dt><dd>First line is everything &mdash; Facebook cuts it off at roughly 125 characters on mobile. Lead with the place and the offer: <em>&ldquo;Free trial session in [Town] this Saturday &mdash; ages 6&ndash;12.&rdquo;</em></dd>
+        <dt>Headline</dt><dd>Short and concrete: <em>&ldquo;Free Trial &mdash; Saturday 9am, [Venue]&rdquo;</em>. This sits under the video in bold; it is not a slogan slot.</dd>
+        <dt>Description</dt><dd>Often not shown. Don&rsquo;t put anything essential here.</dd>
+        <dt>Call to action</dt><dd><span class="field">Book Now</span> or <span class="field">Sign Up</span>. Not &ldquo;Learn More&rdquo; &mdash; you want the ones ready to act, not readers.</dd>
+        <dt>Website URL</dt><dd>Your funnel page, with UTMs (below). Test the exact link by pasting it in your phone browser first.</dd>
+        <dt>Display link</dt><dd>Clean version without the tracking: <code>youracademy.co.uk/trial</code></dd>
+      </div>
+      <h4>URL parameters (copy this into the &ldquo;URL parameters&rdquo; box)</h4>
+      <p><code>utm_source=facebook&amp;utm_medium=paid&amp;utm_campaign={{campaign.name}}&amp;utm_content={{ad.name}}</code></p>
+      <p>Those double-brace bits fill themselves in. Then, when a parent says &ldquo;I saw you online,&rdquo; your form data tells you exactly which ad it was.</p>
+    </div>
+
+    <div class="card">
+      <h3>Rejections that hit academies (and the fix)</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Trigger</th><th>Why it trips</th><th>Write this instead</th></tr>
+          <tr><td>&ldquo;Is <b>your child</b> struggling with confidence?&rdquo;</td><td>Personal attributes policy &mdash; implies you know something about them</td><td>&ldquo;We help kids build confidence on the pitch.&rdquo;</td></tr>
+          <tr><td>&ldquo;Overweight / unfit kids welcome&rdquo;</td><td>Health &amp; body-image policy</td><td>&ldquo;All abilities welcome &mdash; no experience needed.&rdquo;</td></tr>
+          <tr><td>Before / after body images</td><td>Banned outright</td><td>Session footage, smiling faces, parents watching</td></tr>
+          <tr><td>Club badges &amp; crests you don&rsquo;t own</td><td>Trademark / IP</td><td>Your own branding only</td></tr>
+          <tr><td>&ldquo;FIFA&rdquo;, &ldquo;Premier League&rdquo;, pro club names</td><td>Trademark</td><td>Describe the standard without borrowing the brand</td></tr>
+        </table>
+      </div>
+      <div class="warn"><b>If an ad gets rejected</b>Request a review once &mdash; roughly half get overturned within a day. Do not delete and re-upload the same creative repeatedly; repeated rejections put your whole ad account at risk, and getting a disabled account back is genuinely painful.</div>
+    </div>
+
+    <div class="card">
+      <h3>Safeguarding &mdash; the bit ads training usually skips</h3>
+      <ul class="bul">
+        <li><b>Written parental consent</b> for any child identifiable in your creative. Keep it on file. This isn&rsquo;t a Meta rule, it&rsquo;s a you rule &mdash; and one angry parent in a local Facebook group costs more than the campaign made.</li>
+        <li>Never name a child in ad copy or in a comment reply.</li>
+        <li>Never post the exact address <b>and</b> exact session time for a specific named child.</li>
+        <li>Check your consent list before you scale a winning ad to a wider radius.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="m5">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">05</div>
+      <div>
+        <h2>Launch day</h2>
+        <div class="why">Twelve checks. Ten minutes. Every one of these is a mistake somebody has already paid for.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <ul class="check" data-store="launch">
+        <li><input type="checkbox"><span>Objective is <b>Leads</b> &mdash; not Traffic, not Engagement, not a boosted post.</span></li>
+        <li><input type="checkbox"><span>Location is a <b>pin on the venue</b> with a radius, set to <b>people living in this location</b>.</span></li>
+        <li><input type="checkbox"><span>Age range is <b>25&ndash;50</b> (parents), all genders.</span></li>
+        <li><input type="checkbox"><span>Daily budget is the number you meant &mdash; read it twice. <b>&pound;15</b> and <b>&pound;150</b> look similar at speed.</span></li>
+        <li><input type="checkbox"><span>Account spending limit is set as a hard stop.</span></li>
+        <li><input type="checkbox"><span>Placements are <b>Advantage+ (all)</b>, with a 9:16 cut loaded for Stories and Reels.</span></li>
+        <li><input type="checkbox"><span>Pixel Helper shows <b>PageView</b> and <b>Lead</b> firing on your funnel page.</span></li>
+        <li><input type="checkbox"><span>You clicked your own ad link on your phone and the page loaded correctly, on 4G.</span></li>
+        <li><input type="checkbox"><span>You submitted a <b>real test lead</b> and the alert reached your phone.</span></li>
+        <li><input type="checkbox"><span>The date, venue and age group in the ad match what&rsquo;s on the page &mdash; exactly.</span></li>
+        <li><input type="checkbox"><span>You have <b>time in your diary</b> to answer leads for the next 7 days.</span></li>
+        <li><input type="checkbox"><span>Page comment notifications are ON &mdash; parents ask questions in the comments, and a question ignored for two days is a lead lost in public.</span></li>
+      </ul>
+      <button class="resetbtn" data-reset="launch">Reset this checklist</button>
+    </div>
+
+    <div class="john"><b>John says</b>&ldquo;The night before a launch I still send myself a test lead from my own phone. Every single time. It&rsquo;s caught a broken form twice, and each of those would&rsquo;ve been a week of spend into a dead end.&rdquo;</div>
+  </div>
+</section>
+
+<section class="sec" id="m6">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">06</div>
+      <div>
+        <h2>The first 7 days</h2>
+        <div class="why">The part almost everybody gets wrong: doing nothing, on purpose.</div>
+      </div>
+    </div>
+
+    <p class="lead">When a new ad set launches it enters the <b>learning phase</b>. Meta is spending your money buying information about who converts. It needs roughly <b>50 conversion events in 7 days</b> to stabilise. Until then the numbers bounce wildly, and every edit you make <b>restarts the whole thing</b>, throwing away what it learned and what you paid for it.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Days 1&ndash;3: hands off</h3>
+        <ul class="bul">
+          <li>Do not change the budget.</li>
+          <li>Do not pause an ad because it &ldquo;looks bad&rdquo;.</li>
+          <li>Do not add or swap creative.</li>
+          <li>Do not touch the audience.</li>
+          <li><b>Do</b> answer every lead within 5 minutes.</li>
+          <li><b>Do</b> reply to every comment on the ad.</li>
+        </ul>
+        <div class="warn"><b>Day 1 costs lie</b>A &pound;22 cost per lead on day one routinely settles to &pound;5 by day four. Judging an ad after 12 hours is judging noise.</div>
+      </div>
+      <div class="card">
+        <h3>Days 4&ndash;7: first real read</h3>
+        <p>Now you look. Compare against the benchmarks in Module 07 and take <b>one</b> action, not five:</p>
+        <ul class="bul">
+          <li><b>Leads coming in at or under target CPL</b> &rarr; leave it completely alone. It&rsquo;s working.</li>
+          <li><b>Leads coming, but expensive</b> &rarr; leave it another 3 days. It often improves as it exits learning.</li>
+          <li><b>Spend over 3&times; your target CPL with zero leads</b> &rarr; something is broken. Module 08.</li>
+          <li><b>One ad has taken 80%+ of spend</b> &rarr; that&rsquo;s normal and good. Meta found your winner.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>The 20% rule</h3>
+      <p>Once you&rsquo;re out of learning, budget changes over <b>about 20% at a time</b> re-trigger the learning phase. So scale in steps: &pound;15 &rarr; &pound;18 &rarr; &pound;21, leaving 3&ndash;4 days between each. Doubling a budget overnight is the most reliable way to break an ad that was working.</p>
+      <div class="note"><b>&ldquo;Learning limited&rdquo;</b>This label means the ad set isn&rsquo;t getting ~50 conversions a week. At &pound;15/day and a &pound;6 lead you&rsquo;ll live in &ldquo;learning limited&rdquo; permanently &mdash; and that is completely fine for a local academy. It is a warning, not a failure. Judge on cost per lead and bums on grass, not on Meta&rsquo;s label.</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="m7">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">07</div>
+      <div>
+        <h2>The only numbers that matter</h2>
+        <div class="why">Six metrics, in order. Everything else in Ads Manager is decoration.</div>
+      </div>
+    </div>
+
+    <p class="lead">Set your Ads Manager columns to a custom view with exactly these, and never look at the default view again: <b>Amount spent, Impressions, CPM, CTR (link), CPC (link), Leads, Cost per lead.</b></p>
+
+    <div class="card">
+      <h3>What each one tells you</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Metric</th><th>Plain English</th><th>UK local academy range</th></tr>
+          <tr><td><b>CPM</b></td><td>Cost to show your ad 1,000 times &mdash; the price of attention in your area</td><td>&pound;4&ndash;&pound;14 (small radius runs higher)</td></tr>
+          <tr><td><b>CTR (link)</b></td><td>Of the people who saw it, how many clicked &mdash; creative and audience fit</td><td>1.0&ndash;2.5% is healthy, under 0.8% is a problem</td></tr>
+          <tr><td><b>CPC (link)</b></td><td>What one click costs you</td><td>&pound;0.35&ndash;&pound;1.20</td></tr>
+          <tr><td><b>Landing page conversion</b></td><td>Of the clickers, how many filled the form &mdash; your page&rsquo;s job</td><td>15&ndash;35% is healthy, under 10% means fix the page</td></tr>
+          <tr><td><b>Cost per lead</b></td><td>What one name and number costs</td><td>Free trial &pound;2&ndash;&pound;8 &middot; Paid camp &pound;6&ndash;&pound;18</td></tr>
+          <tr><td><b>Cost per enrolled player</b></td><td class="good">The only one that decides if this worked</td><td>Compare it to the calculator below</td></tr>
+        </table>
+      </div>
+      <div class="warn"><b>Ranges, not laws</b>These are typical UK grassroots numbers, not guarantees. Your area, your season and your offer all move them. After a month, <b>your own</b> first month becomes the benchmark you measure against &mdash; that&rsquo;s the number that actually matters.</div>
+    </div>
+
+    <div class="card">
+      <h3>The funnel maths, all the way to the bank</h3>
+      <p>Track these four conversion steps every month. Where the drop-off is tells you what to fix &mdash; and it is very rarely the ad.</p>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Step</th><th>Healthy</th><th>If it&rsquo;s below</th></tr>
+          <tr><td>Lead &rarr; contacted</td><td class="good">100% within 1 hour</td><td>It&rsquo;s you, not the ads. Module 09.</td></tr>
+          <tr><td>Lead &rarr; trial booked</td><td>60&ndash;80%</td><td>Your follow-up is too slow or too soft</td></tr>
+          <tr><td>Booked &rarr; turned up</td><td>60&ndash;75%</td><td>You&rsquo;re not reminding them the day before</td></tr>
+          <tr><td>Turned up &rarr; enrolled</td><td>50&ndash;70%</td><td>The session or the ask at the end needs work</td></tr>
+        </table>
+      </div>
+      <p>Run those together: 100 leads &rarr; 70 booked &rarr; 47 attend &rarr; 28 enrol. At &pound;5 a lead that&rsquo;s <b>&pound;500 spent for 28 players</b> &mdash; about &pound;18 to acquire a player who pays you monthly for years.</p>
+    </div>
+
+    <div class="card calc">
+      <h3>What can you afford to pay for a lead?</h3>
+      <p style="color:var(--soft);font-size:.95rem">Ads aren&rsquo;t expensive or cheap in the abstract. They&rsquo;re expensive or cheap <b>relative to what a player is worth to you</b>. Put your real numbers in.</p>
+      <div class="calcgrid">
+        <div><label>Monthly fee per player (&pound;)</label><input id="fee" type="number" value="35" min="0" step="1"></div>
+        <div><label>Average months they stay</label><input id="months" type="number" value="10" min="1" step="1"></div>
+        <div><label>Your delivery cost per player per month (&pound;)</label><input id="cost" type="number" value="14" min="0" step="1"></div>
+        <div><label>Of 100 leads, how many enrol?</label><input id="conv" type="number" value="28" min="1" max="100" step="1"></div>
+      </div>
+      <div class="out">
+        <div><div class="k">Player is worth</div><div class="v" id="ltv">&pound;0</div><div class="h">gross profit over their stay</div></div>
+        <div><div class="k">Break-even per lead</div><div class="v" id="be">&pound;0</div><div class="h">above this you lose money</div></div>
+        <div><div class="k">Target cost per lead</div><div class="v" id="target">&pound;0</div><div class="h">keeps 2/3 of the profit</div></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <p style="color:var(--mute);font-size:.86rem;margin-top:14px">Gross profit per player = (fee &minus; delivery cost) &times; months. Break-even per lead = that, &times; your enrol rate. Target = a third of break-even, so the campaign pays for itself roughly 3&times; over. Doesn&rsquo;t include siblings, referrals or camp upsells &mdash; which is why real numbers usually beat this.</p>
+    </div>
+
+    <div class="john"><b>John says</b>&ldquo;Once you know a player is worth &pound;200 to you, a &pound;9 lead stops feeling expensive and starts feeling like a bargain you should buy more of. Most owners never do this sum, so they panic at &pound;9 and switch the ads off the week before they&rsquo;d have started printing.&rdquo;</div>
+  </div>
+</section>
+
+<section class="sec" id="m8">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">08</div>
+      <div>
+        <h2>When it&rsquo;s not working</h2>
+        <div class="why">Find the broken layer in 60 seconds. Read the symptoms top to bottom &mdash; the first one that matches is your problem.</div>
+      </div>
+    </div>
+
+    <div class="tree">
+      <div class="sym">Barely any impressions &middot; spend not going out</div>
+      <div class="cause">The delivery layer is blocked, not the creative.</div>
+      <p>Audience too small (under ~15k in radius) &rarr; widen it. Ad still in review &rarr; wait, it can take 24h. Payment method failed &rarr; check billing. Schedule set to start in the future &rarr; check the dates. Bid cap set &rarr; remove it.</p>
+    </div>
+    <div class="tree">
+      <div class="sym">High CPM (&pound;20+)</div>
+      <div class="cause">You&rsquo;re paying a premium for the audience you asked for.</div>
+      <p>Radius too tight, or interest stacking on top of a small radius &rarr; widen the radius, strip the interests. Same people seeing it repeatedly (frequency over 3&ndash;4 in a fortnight) &rarr; refresh creative. December and late August are genuinely expensive months &mdash; sometimes it&rsquo;s just the calendar.</p>
+    </div>
+    <div class="tree">
+      <div class="sym">Impressions fine, CTR under 0.8%</div>
+      <div class="cause">Creative and audience aren&rsquo;t matching.</div>
+      <p>The one place this training defers to your creative work: swap in a different hook, lead with the location in the first 2 seconds, put a real face and a real pitch on screen. Also check the obvious &mdash; is the offer in the ad actually appealing to a parent, or is it about you?</p>
+    </div>
+    <div class="tree">
+      <div class="sym">Clicks coming, no leads</div>
+      <div class="cause">The page, not the ad. This is the most common one.</div>
+      <p>Load it on 4G on your phone. Is it slow? Is the offer above the fold? Does the form work? Does the ad promise something the page doesn&rsquo;t mention? Check the pixel is actually firing <span class="field">Lead</span> &mdash; sometimes the leads are arriving and simply aren&rsquo;t being counted.</p>
+    </div>
+    <div class="tree">
+      <div class="sym">Leads coming, nobody turns up</div>
+      <div class="cause">Speed of follow-up, nine times out of ten.</div>
+      <p>How long between form submission and your first message? If it&rsquo;s over an hour, that&rsquo;s your answer. Also: are you sending a day-before reminder? Is the venue and parking crystal clear? Module 09.</p>
+    </div>
+    <div class="tree">
+      <div class="sym">They turn up, they don&rsquo;t join</div>
+      <div class="cause">The session or the ask &mdash; not the ads.</div>
+      <p>Did you speak to the parent for two minutes at the end? Did you actually invite them to join, with a price and a next date? Did the child have a great time and say so in the car? Ads cannot fix a trial session with no ask at the end of it.</p>
+    </div>
+    <div class="tree">
+      <div class="sym">It worked for 3 weeks, now it&rsquo;s dying</div>
+      <div class="cause">Creative fatigue in a small audience.</div>
+      <p>Check <b>frequency</b>. Over 3&ndash;4 in a small radius means your whole area has seen it several times. Rotate in fresh creative from your library, keep everything else identical. This is why you make creative in batches.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="m9">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">09</div>
+      <div>
+        <h2>Delivering the lead</h2>
+        <div class="why">The ad&rsquo;s job ends at the form. This module is where the money is actually made or lost.</div>
+      </div>
+    </div>
+
+    <p class="lead">A lead is not a customer. It&rsquo;s a parent who half-decided something while scrolling, and whose interest starts decaying the second they close the app. Speed beats polish, every time.</p>
+
+    <div class="card">
+      <h3>The 5-minute rule</h3>
+      <p>Contact rates fall off a cliff with time. The numbers across every industry that&rsquo;s ever measured this are brutal:</p>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Time to first contact</th><th>Roughly what happens</th></tr>
+          <tr><td><b>Under 5 minutes</b></td><td class="good">You catch most of them while the phone is still in their hand</td></tr>
+          <tr><td>Under 1 hour</td><td class="mid">Still decent &mdash; the minimum acceptable standard</td></tr>
+          <tr><td>Same day</td><td class="mid">You&rsquo;ve lost a chunk of them</td></tr>
+          <tr><td>Next day or later</td><td class="bad">Most are gone, and they&rsquo;ve often booked with someone else</td></tr>
+        </table>
+      </div>
+      <div class="note"><b>Set this up before you launch</b>Lead alert to your phone as a <b>push notification</b>, not just an email. Then either you or one named person answers it. If you coach 6&ndash;8pm, either an assistant handles the window or you set an auto-reply that buys you the evening (below).</div>
+    </div>
+
+    <div class="card">
+      <h3>The contact sequence</h3>
+      <p>Text or WhatsApp first &mdash; parents of young kids don&rsquo;t answer unknown numbers, but they read texts. Adapt the wording to sound like you; the timings are the part that matters.</p>
+      <ol class="steps">
+        <li><b>Instant &mdash; automatic reply</b><em>&ldquo;Hi [name], thanks for booking [child] in for the free trial at [venue]. It&rsquo;s [day] at [time]. I&rsquo;ll message you personally shortly to confirm &mdash; any questions in the meantime, just reply here. John, [Academy].&rdquo;</em></li>
+        <li><b>Within 5 minutes &mdash; personal text/WhatsApp</b><em>&ldquo;Hi [name] &mdash; [your name] from [Academy]. Just seen [child]&rsquo;s booking for Saturday. Quick one: what age is [child], and have they played much before? Wanted to make sure I put them in the right group.&rdquo;</em> A question they can answer in three words starts a conversation and confirms the booking without asking for a commitment.</li>
+        <li><b>Within 1 hour &mdash; phone call, if no reply</b>Say who you are, confirm the spot, tell them what to bring. Ninety seconds. If they don&rsquo;t answer, leave a voicemail and text saying you&rsquo;ve called.</li>
+        <li><b>Day before &mdash; reminder</b><em>&ldquo;Looking forward to seeing [child] tomorrow at [time], [venue] &mdash; we&rsquo;re on the [pitch/hall]. Just boots, shin pads and a water bottle. Parking is [detail]. See you there.&rdquo;</em> This single message is worth 15&ndash;20 points of show-up rate.</li>
+        <li><b>Morning of &mdash; short nudge</b><em>&ldquo;Morning! All set for [time] today. Text me if you&rsquo;re running late &mdash; no problem at all.&rdquo;</em></li>
+        <li><b>Immediately after the session &mdash; the ask</b>Speak to the parent at pickup, face to face: <em>&ldquo;[Child] did really well today &mdash; especially [specific thing]. We&rsquo;d love to have them regularly. It&rsquo;s &pound;[price] a month, same time every week. Shall I get them signed up for next Saturday?&rdquo;</em> Then <b>stop talking</b>. This is the whole ballgame and most owners skip it.</li>
+        <li><b>Same evening &mdash; the link</b><em>&ldquo;Great to meet you today. Here&rsquo;s the sign-up link for [child] &mdash; takes two minutes: [link]. Any questions just shout.&rdquo;</em></li>
+        <li><b>+2 days &mdash; one soft chase</b><em>&ldquo;Hi [name], just checking whether [child] fancied coming back this week? Happy to hold their spot until Friday if that helps.&rdquo;</em></li>
+        <li><b>+7 days &mdash; the close-off</b><em>&ldquo;No problem if the timing isn&rsquo;t right &mdash; I&rsquo;ll keep you posted when we&rsquo;ve got space or a camp coming up. Doors are always open.&rdquo;</em> Then stop, and put them on the list for the next camp. Chasing past this point costs goodwill and gains nothing.</li>
+      </ol>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Never-let-a-lead-die rules</h3>
+        <ul class="bul">
+          <li>Every lead goes on the board the day it arrives, with a <b>status</b> and a <b>next action date</b>. Your Academy Leads base does this.</li>
+          <li>No-shows are <b>not</b> dead. One text: &ldquo;Missed you Saturday &mdash; want me to put [child] in for this week instead?&rdquo; A big share come back.</li>
+          <li>&ldquo;Not right now&rdquo; means <b>next camp</b>, not never. Tag them and message when the camp opens.</li>
+          <li>Weekly: five minutes scanning for anything with no next action set. That&rsquo;s where the money hides.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Comments are leads too</h3>
+        <ul class="bul">
+          <li>Reply to <b>every</b> comment, even &ldquo;how much is it?&rdquo; &mdash; publicly, then DM.</li>
+          <li>Answer the price question straight. Dodging it in public reads as expensive.</li>
+          <li>Hide, don&rsquo;t delete, anything abusive &mdash; hiding is invisible to them, deleting starts a fight.</li>
+          <li>Tagged friends (&ldquo;@Claire look at this&rdquo;) are gold. Reply to both.</li>
+          <li>Comments and reactions are social proof that lowers your CPM. An engaged ad literally costs less to run.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="john"><b>John says</b>&ldquo;For years I told myself I&rsquo;d ring the leads after training. By then it was 9:30pm, I was knackered, and it waited until tomorrow &mdash; and tomorrow it was a stranger asking about something they&rsquo;d forgotten. The academies that grow aren&rsquo;t the ones with the best ads. They&rsquo;re the ones that answer first.&rdquo;</div>
+  </div>
+</section>
+
+<section class="sec" id="m10">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">10</div>
+      <div>
+        <h2>The weekly rhythm</h2>
+        <div class="why">15 minutes, once a week. Same day, same time. This is the whole ongoing job.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Monday, 15 minutes</h3>
+      <ol class="steps">
+        <li><b>Open Ads Manager, last 7 days</b>Write down four numbers in the same place every week: spend, leads, cost per lead, frequency.</li>
+        <li><b>Compare to your target CPL</b>The number from the calculator in Module 07 &mdash; not a number you feel about.</li>
+        <li><b>Check frequency</b>Under 2.5 is fine. Over 3.5 in a small radius, plan a creative swap this week.</li>
+        <li><b>Take at most one action</b>Scale up 20%, swap creative, or nothing. One. Multiple changes at once means you never learn which one did it.</li>
+        <li><b>Check the lead board</b>Anything without a next action, deal with it now.</li>
+        <li><b>Count the actual outcome</b>How many trials booked, attended, enrolled last week? That&rsquo;s the scoreboard. Ads Manager is just the engine noise.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>Your monthly one-pager</h3>
+      <p>Keep this in a notebook or a spreadsheet. Twelve of these rows is worth more than any dashboard.</p>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Month</th><th>Spend</th><th>Leads</th><th>CPL</th><th>Trials</th><th>Enrolled</th><th>Cost / player</th><th>Revenue added /mo</th></tr>
+          <tr><td>Sep</td><td>&pound;450</td><td>82</td><td>&pound;5.49</td><td>48</td><td>26</td><td>&pound;17.31</td><td>&pound;910</td></tr>
+          <tr><td colspan="8" style="color:var(--mute)">&hellip; your rows here. The last column is why you do any of this.</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="m11">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">11</div>
+      <div>
+        <h2>Scaling &amp; retargeting</h2>
+        <div class="why">Only once you have a campaign hitting target CPL for two straight weeks. Not before.</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>How to scale without breaking it</h3>
+        <ul class="bul">
+          <li><b>Vertical:</b> +20% budget every 3&ndash;4 days while CPL holds. Slow, boring, reliable.</li>
+          <li><b>Horizontal:</b> duplicate the ad set with a different <b>location</b> (a second venue or a new town). Same creative, same settings. This is how a local academy actually grows &mdash; more places, not more money in one place.</li>
+          <li><b>Capacity first:</b> before you scale, check you can physically take the players. Filling a session you can&rsquo;t staff is worse than no ads at all.</li>
+          <li><b>When CPL rises as you scale:</b> hold at the last budget that worked for a week. There&rsquo;s a natural ceiling in a small radius &mdash; find it, sit under it.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>When to kill something</h3>
+        <ul class="bul">
+          <li>Spent 3&times; your target CPL, zero leads, and Module 08 found nothing broken &rarr; kill the ad, keep the ad set.</li>
+          <li>CPL more than double target for 7 days after learning &rarr; pause and rebuild with different creative.</li>
+          <li>Frequency over 5 and CTR falling &rarr; the area is saturated. Rest it for 2 weeks.</li>
+          <li>Never kill during learning. You&rsquo;re killing an incomplete experiment you already paid for.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Retargeting &mdash; the cheapest leads you&rsquo;ll ever buy</h3>
+      <p>Wait until you have 30 days of traffic, then add a second, small ad set (&pound;3&ndash;5/day) aimed only at people who already know you. These audiences convert several times better than cold, because the ad is a nudge, not an introduction.</p>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Audience to build</th><th>Where</th><th>What to show them</th></tr>
+          <tr><td>Visited your funnel page, didn&rsquo;t submit (30 days)</td><td>Custom audience &rarr; Website</td><td>&ldquo;Still thinking about it? Spots left for Saturday.&rdquo;</td></tr>
+          <tr><td>Watched 50%+ of any video (90 days)</td><td>Custom audience &rarr; Video</td><td>Parent testimonial + the trial offer</td></tr>
+          <tr><td>Engaged with your IG or Page (365 days)</td><td>Custom audience &rarr; Page / IG account</td><td>Session footage + &ldquo;here&rsquo;s how to join&rdquo;</td></tr>
+          <tr><td>Your existing parent list</td><td>Customer list upload</td><td><b>Exclude</b> from cold ads &mdash; and target separately for camps and siblings</td></tr>
+          <tr><td>Lookalike 1% of your enrolled parents</td><td>Lookalike from customer list</td><td>Your best cold audience, once you have 100+ on the list</td></tr>
+        </table>
+      </div>
+      <div class="warn"><b>Always exclude current customers from cold ads</b>Nothing annoys a paying parent like being advertised a free trial for the thing they already pay you for &mdash; and you&rsquo;re paying for the privilege of irritating them.</div>
+    </div>
+
+    <div class="card">
+      <h3>Budget plans by stage</h3>
+      <div class="tablewrap">
+        <table>
+          <tr><th>Stage</th><th>Daily</th><th>Structure</th><th>Realistic monthly outcome</th></tr>
+          <tr><td><b>Testing</b></td><td>&pound;10&ndash;15</td><td>1 campaign, 1 ad set, 3&ndash;4 ads, cold only</td><td>40&ndash;80 leads &rarr; roughly 10&ndash;25 players</td></tr>
+          <tr><td><b>Working</b></td><td>&pound;20&ndash;30</td><td>Add a &pound;4/day retargeting ad set</td><td>80&ndash;160 leads, better show-up rate</td></tr>
+          <tr><td><b>Expanding</b></td><td>&pound;40&ndash;60</td><td>Duplicate per venue, plus retargeting</td><td>Multi-venue intake &mdash; check your staffing first</td></tr>
+          <tr><td><b>Camp burst</b></td><td>&pound;30&ndash;80 for 10&ndash;14 days</td><td>Separate campaign, hard deadline, then off</td><td>Camps fill fastest of anything you&rsquo;ll run</td></tr>
+        </table>
+      </div>
+      <p style="color:var(--mute);font-size:.88rem">Outcomes assume the follow-up in Module 09 is actually happening. Without it, halve them.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="checklist">
+  <div class="wrap">
+    <div class="modhead">
+      <div class="modnum">12</div>
+      <div>
+        <h2>Your first 30 days</h2>
+        <div class="why">Work down it. Tick as you go &mdash; your progress saves in this browser.</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Week 1 &mdash; build</h3>
+        <ul class="check" data-store="w1">
+          <li><input type="checkbox"><span>Business portfolio, Page and ad account created, 2FA on</span></li>
+          <li><input type="checkbox"><span>Payment method added, spending limit set</span></li>
+          <li><input type="checkbox"><span>Dataset created, installed, <b>Lead</b> event verified with Pixel Helper</span></li>
+          <li><input type="checkbox"><span>Domain verified, Lead set as priority event</span></li>
+          <li><input type="checkbox"><span>One offer chosen, with a date and a venue</span></li>
+          <li><input type="checkbox"><span>Funnel page live, tested on 4G, alert reaching your phone</span></li>
+          <li><input type="checkbox"><span>Lead board ready, with statuses and next-action dates</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Week 2 &mdash; launch</h3>
+        <ul class="check" data-store="w2">
+          <li><input type="checkbox"><span>Campaign built: Leads objective, venue pin + radius, ages 25&ndash;50</span></li>
+          <li><input type="checkbox"><span>3&ndash;4 creatives loaded, 9:16 versions in for Stories and Reels</span></li>
+          <li><input type="checkbox"><span>UTMs on the link, link tested on your own phone</span></li>
+          <li><input type="checkbox"><span>12-point launch checklist completed</span></li>
+          <li><input type="checkbox"><span>Live &mdash; and hands off for 72 hours</span></li>
+          <li><input type="checkbox"><span>Every lead answered inside 5 minutes; every comment replied to</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Week 3 &mdash; read &amp; fix</h3>
+        <ul class="check" data-store="w3">
+          <li><input type="checkbox"><span>Custom column view set up in Ads Manager</span></li>
+          <li><input type="checkbox"><span>Target CPL calculated from your own player value</span></li>
+          <li><input type="checkbox"><span>First weekly 15-minute review done and written down</span></li>
+          <li><input type="checkbox"><span>Any broken layer diagnosed with Module 08 &mdash; one change made</span></li>
+          <li><input type="checkbox"><span>Show-up rate measured: booked vs attended</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Week 4 &mdash; convert &amp; compound</h3>
+        <ul class="check" data-store="w4">
+          <li><input type="checkbox"><span>The face-to-face ask made at every trial session</span></li>
+          <li><input type="checkbox"><span>Full funnel counted: leads &rarr; booked &rarr; attended &rarr; enrolled</span></li>
+          <li><input type="checkbox"><span>Cost per <b>enrolled player</b> worked out</span></li>
+          <li><input type="checkbox"><span>Retargeting ad set added at &pound;3&ndash;5/day</span></li>
+          <li><input type="checkbox"><span>Existing parents uploaded and excluded from cold ads</span></li>
+          <li><input type="checkbox"><span>Month one written on the one-pager &mdash; that&rsquo;s now your benchmark</span></li>
+        </ul>
+      </div>
+    </div>
+    <button class="resetbtn" data-reset="all">Reset all checklists</button>
+
+    <div class="note" style="margin-top:26px"><b>Bring this to your ASCEND session</b>Turn up with your four numbers &mdash; spend, leads, cost per lead, players enrolled. That&rsquo;s a 40-minute conversation about what to change. Turning up with &ldquo;the ads aren&rsquo;t really working&rdquo; is a 40-minute conversation about nothing.</div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><b>The Ads Engine</b> &middot; ASCEND member training &middot; by John Leitch</p>
+    <p style="margin-top:8px">Pairs with your creative library and the ASCEND Lead Machine. Meta moves its buttons regularly &mdash; the functions in this training don&rsquo;t.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  /* --- checklist persistence --- */
+  var lists = document.querySelectorAll('.check[data-store]');
+  lists.forEach(function(list){
+    var key = 'jl_ads_' + list.getAttribute('data-store');
+    var saved = [];
+    try { saved = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e){ saved = []; }
+    var boxes = list.querySelectorAll('input[type=checkbox]');
+    boxes.forEach(function(box, i){
+      if (saved[i]) box.checked = true;
+      box.addEventListener('change', function(){
+        var state = [];
+        boxes.forEach(function(b){ state.push(b.checked); });
+        try { localStorage.setItem(key, JSON.stringify(state)); } catch(e){}
+      });
+    });
+  });
+  document.querySelectorAll('[data-reset]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-reset');
+      lists.forEach(function(list){
+        var name = list.getAttribute('data-store');
+        if (target !== 'all' && name !== target) return;
+        list.querySelectorAll('input[type=checkbox]').forEach(function(b){ b.checked = false; });
+        try { localStorage.removeItem('jl_ads_' + name); } catch(e){}
+      });
+    });
+  });
+
+  /* --- lead value calculator --- */
+  var P = String.fromCharCode(163); /* pound */
+  var ids = ['fee','months','cost','conv'];
+  function num(id){ var v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : v; }
+  function money(n){
+    if (!isFinite(n) || n <= 0) return P + '0';
+    return P + (n >= 100 ? Math.round(n).toLocaleString('en-GB') : n.toFixed(2));
+  }
+  function calc(){
+    var fee = num('fee'), months = num('months'), cost = num('cost');
+    var conv = Math.min(100, Math.max(0, num('conv')));
+    var perMonth = fee - cost;
+    var ltv = perMonth * months;
+    var rate = conv / 100;
+    var be = ltv * rate;
+    var target = be / 3;
+    document.getElementById('ltv').textContent = money(ltv);
+    document.getElementById('be').textContent = money(be);
+    document.getElementById('target').textContent = money(target);
+
+    var v = document.getElementById('verdict');
+    if (perMonth <= 0){
+      v.style.borderColor = 'rgba(240,82,107,.5)';
+      v.innerHTML = '<b style="color:#F0526B">Stop.</b> Your delivery cost is at or above your fee, so every extra player loses you money. No ad campaign fixes that ' + String.fromCharCode(8212) + ' fix the pricing first (Pricing Calculator, Traction Stage Resource 01).';
+    } else if (ltv <= 0 || rate <= 0){
+      v.style.borderColor = 'rgba(255,255,255,.10)';
+      v.innerHTML = 'Put your real numbers in above to see what a lead is worth to you.';
+    } else {
+      var leadsPerPlayer = Math.round(1 / rate);
+      v.style.borderColor = 'rgba(34,211,238,.35)';
+      v.innerHTML = 'A player is worth <b style="color:#22D3EE">' + money(ltv) + '</b> in gross profit. It takes about <b style="color:#22D3EE">' + leadsPerPlayer + ' leads</b> to get one, so anything under <b style="color:#22D3EE">' + money(target) + '</b> per lead is a good buy ' + String.fromCharCode(8212) + ' and you only stop making money above <b>' + money(be) + '</b>. At ' + money(target) + ' a lead, a ' + P + '15/day budget should bring in roughly <b style="color:#22D3EE">' + Math.max(1, Math.round((15 * 30 / Math.max(target, 0.5)) * rate)) + ' new players a month</b>.';
+    }
+  }
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', calc);
+    el.addEventListener('change', calc);
+  });
+  calc();
+})();
+</script>
+
+</body>
+</html>

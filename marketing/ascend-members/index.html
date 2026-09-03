@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>ASCEND Members</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ascend.css">
+<style>
+  .hero{padding:56px 0 40px}
+  .hero .greet{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+  .hero .greet b{color:var(--cyan)}
+  .nowcard{
+    border:1px solid var(--cyan-dim);border-radius:16px;
+    background:linear-gradient(180deg,rgba(51,227,227,.06),rgba(51,227,227,.015));
+    padding:24px 26px;margin:8px 0 0;
+  }
+  .nowcard .lbl{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:9px}
+  .nowcard h2{margin-bottom:6px}
+  .nowcard p{color:var(--muted);font-size:14.5px;margin-bottom:16px;max-width:56ch}
+  .rhythm{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .rh{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px}
+  .rh .when{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:7px}
+  .rh b{display:block;font-size:15px;margin-bottom:4px}
+  .rh span{color:var(--muted);font-size:13px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html">ASCEND<span>.</span></a>
+  <nav class="navlinks">
+    <a href="index.html" class="on">Hub</a>
+    <a href="start-here.html">Start here</a>
+    <a href="library.html">Library</a>
+    <a href="diagnostic.html">Diagnostic</a>
+    <a href="pricing-calculator.html">Calculator</a>
+    <a href="work-with-me.html">Work with me</a>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+  <div class="hero">
+    <p class="greet">ASCEND Membership &middot; <b id="daycount">Your member hub</b></p>
+    <h1>Everything you need to<br>build the academy properly.</h1>
+    <p class="lede">This is your home. The path below is the order things work best in &mdash; know your numbers, fix what's leaking, then build the systems so the place runs without you. Work at your pace. I'll be checking in.</p>
+
+    <div class="nowcard">
+      <div class="lbl">Start with this</div>
+      <h2 id="nowTitle">Your first 30 days</h2>
+      <p id="nowText">Nine steps, in order. Most of it is you getting honest about the numbers &mdash; which is the bit everyone skips and the bit everything else depends on.</p>
+      <a class="btn" href="start-here.html" id="nowBtn">Open the 30-day path &rarr;</a>
+    </div>
+  </div>
+
+  <section>
+    <div class="sechead"><span class="num">01</span><h2>Your progress</h2></div>
+    <p class="lede" style="margin-bottom:22px">Ticked steps are saved on this device. Pick up wherever you left off.</p>
+    <div class="prog"><div class="bar"><i id="barFill"></i></div><span class="pct" id="pctText">0 / 9</span></div>
+    <div class="cards two">
+      <a class="card" href="start-here.html">
+        <div class="step">Continue</div>
+        <h3 id="nextStepTitle">Step 1 &middot; Book your kickoff call</h3>
+        <p id="nextStepText">The 45 minutes that sets the direction for everything else.</p>
+        <span class="go">Go to the path &rarr;</span>
+      </a>
+      <a class="card" href="library.html">
+        <div class="step">Browse</div>
+        <h3>The library</h3>
+        <p>Every workbook, template, deck and tool, filed under the ASCEND stage it belongs to.</p>
+        <span class="go">Open the library &rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">02</span><h2>The six stages</h2></div>
+    <p class="lede">Every academy problem sits in one of these. The diagnostic tells you which one is holding you back &mdash; work that one, not the one that feels most urgent.</p>
+
+    <div class="stagerow"><div class="letter">A</div><div>
+      <div class="nm">Audit</div><div class="q">Do you actually know your numbers?</div></div></div>
+    <div class="stagerow"><div class="letter">S</div><div>
+      <div class="nm">Sell</div><div class="q">Are you filling sessions consistently?</div></div></div>
+    <div class="stagerow"><div class="letter">C</div><div>
+      <div class="nm">Capacity</div><div class="q">Can your operation handle growth?</div></div></div>
+    <div class="stagerow"><div class="letter">E</div><div>
+      <div class="nm">Expand</div><div class="q">Are you growing the business, or just the workload?</div></div></div>
+    <div class="stagerow"><div class="letter">N</div><div>
+      <div class="nm">Normalise</div><div class="q">Does your business run the same way every time?</div></div></div>
+    <div class="stagerow"><div class="letter">D</div><div>
+      <div class="nm">Delegate</div><div class="q">Are you the owner, or still the operator?</div></div></div>
+
+    <div class="callout">
+      <div class="lbl">Don't guess</div>
+      <p>The diagnostic scores you out of 25 on each stage and tells you your weakest one. It takes about 10 minutes and it is the single most useful thing you can do in week one.</p>
+      <p style="margin-top:14px"><a class="btn ghost" href="diagnostic.html">Take the diagnostic &rarr;</a></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">03</span><h2>Your working tools</h2></div>
+    <p class="lede">Live tools, not PDFs. They run on your phone, save nothing to a server, and give you a real number at the end.</p>
+    <div class="cards two">
+      <a class="card" href="diagnostic.html">
+        <div class="step">Stage A &middot; Audit</div><h3>The ASCEND Diagnostic</h3>
+        <p>30 questions across the six stages. Reveals your level, your total, and the one stage to fix first.</p>
+        <span class="go">Open &rarr;</span></a>
+      <a class="card" href="pricing-calculator.html">
+        <div class="step">Stage A &middot; Audit</div><h3>The Pricing Calculator</h3>
+        <p>Your real hourly rate once venue, coaches, tax and admin time come out. Usually a shock.</p>
+        <span class="go">Open &rarr;</span></a>
+      <a class="card" href="money-map.html">
+        <div class="step">Stage A &middot; Audit</div><h3>The Money Map</h3>
+        <p>Where you are now, where you could be, and what the gap is worth over a year.</p>
+        <span class="go">Open &rarr;</span></a>
+      <a class="card" href="time-audit.html">
+        <div class="step">Stage D &middot; Delegate</div><h3>The Time Audit</h3>
+        <p>Where your week actually goes. What only you can do versus what you should hand off first.</p>
+        <span class="go">Open &rarr;</span></a>
+      <a class="card" href="roles-audit.html">
+        <div class="step">Stage D &middot; Delegate</div><h3>Roles &amp; Responsibilities</h3>
+        <p>Every job in the academy, and who owns it. Shows how many still run through you.</p>
+        <span class="go">Open &rarr;</span></a>
+      <a class="card" href="library.html">
+        <div class="step">All stages</div><h3>The full library</h3>
+        <p>Workbooks, playbooks, templates and session material, filed by stage.</p>
+        <span class="go">Open &rarr;</span></a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">04</span><h2>How the membership runs</h2></div>
+    <p class="lede">So you know exactly what to expect from me, and what I expect from you.</p>
+    <div class="rhythm">
+      <div class="rh"><div class="when">Week 1</div><b>Kickoff call</b><span>45 minutes. We go through your intake numbers and agree the one thing you're fixing first.</span></div>
+      <div class="rh"><div class="when">Every month</div><b>Coaching call</b><span>30 minutes, one-to-one. What moved, what didn't, what's next.</span></div>
+      <div class="rh"><div class="when">Any time</div><b>WhatsApp access</b><span>Stuck on something between calls? Message me. I answer within a working day.</span></div>
+      <div class="rh"><div class="when">Ongoing</div><b>The library</b><span>New material lands here as I build it. You'll get an email when something worth your time drops.</span></div>
+    </div>
+    <div class="callout">
+      <div class="lbl">What I ask of you</div>
+      <p>Turn up to the calls with your numbers, and do the one thing we agree on between them. That's it. The members who move fastest are the ones who bring evidence, not intentions.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sechead"><span class="num">05</span><h2>Need me?</h2></div>
+    <div class="cards two">
+      <a class="card" href="work-with-me.html">
+        <div class="step">Calls &amp; contact</div><h3>Work with me</h3>
+        <p>Book your kickoff or monthly call, get my WhatsApp, and see what else is available.</p>
+        <span class="go">Open &rarr;</span></a>
+      <a class="card" href="intake.html">
+        <div class="step">Do this first</div><h3>Member intake</h3>
+        <p>Your baseline numbers. Five minutes, and it means our first call starts at the useful bit.</p>
+        <span class="go">Fill it in &rarr;</span></a>
+    </div>
+  </section>
+
+</div>
+
+<footer><div class="wrap">
+  <span>John Leitch &middot; ASCEND</span>
+  <span><a href="start-here.html">Start here</a> &middot; <a href="library.html">Library</a> &middot; <a href="work-with-me.html">Contact</a></span>
+</div></footer>
+
+<script>
+/* Mirror of the 9 steps in start-here.html — keep the count and ids in sync. */
+var STEP_TITLES = [
+  ['Step 1 · Book your kickoff call','The 45 minutes that sets the direction for everything else.'],
+  ['Step 2 · Fill in your intake','Your baseline numbers, so call one starts at the useful bit.'],
+  ['Step 3 · Take the diagnostic','Find the stage that is actually holding you back.'],
+  ['Step 4 · Run the pricing calculator','Your real hourly rate, after everything comes out.'],
+  ['Step 5 · Map your money','Where you are, where you could be, what the gap is worth.'],
+  ['Step 6 · Audit your week','Where your time goes and what to hand off first.'],
+  ['Step 7 · Pick your one thing','One fix for the next 30 days. Not five.'],
+  ['Step 8 · Work your stage folder','The library material that matches your weakest stage.'],
+  ['Step 9 · Report back','Bring the numbers to your first monthly call.']
+];
+var TOTAL = STEP_TITLES.length;
+var KEY = 'ascend_onboarding_v1';
+
+function load(){
+  try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; }
+}
+var state = load();
+var done = 0, firstOpen = -1;
+for(var i=0;i<TOTAL;i++){
+  if(state['s'+i]){ done++; } else if(firstOpen<0){ firstOpen = i; }
+}
+var pct = Math.round((done/TOTAL)*100);
+document.getElementById('barFill').style.width = pct+'%';
+document.getElementById('pctText').textContent = done+' / '+TOTAL;
+
+if(done===0){
+  document.getElementById('daycount').textContent = 'Welcome in';
+}else if(done===TOTAL){
+  document.getElementById('daycount').textContent = 'Onboarding complete';
+  document.getElementById('nowTitle').textContent = 'You are through the first 30 days';
+  document.getElementById('nowText').textContent = 'Now it is rhythm: monthly call, one fix at a time, keep working your weakest stage in the library.';
+  document.getElementById('nowBtn').textContent = 'Open the library →';
+  document.getElementById('nowBtn').setAttribute('href','library.html');
+  document.getElementById('nextStepTitle').textContent = 'All nine steps done';
+  document.getElementById('nextStepText').textContent = 'Revisit the path any time to check your working.';
+}else{
+  document.getElementById('daycount').textContent = done+' of '+TOTAL+' steps done';
+  document.getElementById('nowTitle').textContent = 'Pick up where you left off';
+  document.getElementById('nowText').textContent = STEP_TITLES[firstOpen][0]+' — '+STEP_TITLES[firstOpen][1];
+  document.getElementById('nowBtn').textContent = 'Continue the path →';
+}
+if(firstOpen>=0){
+  document.getElementById('nextStepTitle').textContent = STEP_TITLES[firstOpen][0];
+  document.getElementById('nextStepText').textContent = STEP_TITLES[firstOpen][1];
+}
+</script>
+</body>
+</html>

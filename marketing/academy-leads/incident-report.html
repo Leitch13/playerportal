@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  ACADEMY OS - INCIDENT REPORT  (give-to-client template)
+  ============================================================
+  The playbook module's front door. A COACH opens this on their phone at the
+  side of a pitch and files a report in 60 seconds. Deliberately NOT a
+  marketing page: one form, a playbook reminder, nothing else.
+
+  Coaches reach it via a bookmark / QR code on the playbook cards.
+  Same CONFIG + webhook pattern as trial-funnel.html and
+  coach-application.html. Wire-up lives in BUILD-phase4-playbooks-retention.md.
+
+  --------- SET-UP: 3 THINGS TO FILL IN (search for "REPLACE") ---------
+    A. ACADEMY       - name, brand colour, logo
+    B. FORM_ENDPOINT - the Airtable webhook URL (Phase 4 build doc, Part 2)
+    C. NOTIFY_EMAIL  - owner's email (footer only; alerts come from Airtable)
+
+  100% ASCII source on purpose - survives any embed box.
+  ============================================================
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --ink:#090C10; --ink-2:#10161C;
+        --paper:#EEF3F5; --mute:#7E8C99;
+        --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+        --red:#F0526B; --amber:#F2B441; --green:#38D39F;
+        --line:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:560px;margin:0 auto;padding:0 18px 60px}
+    .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98}
+    a{color:inherit;text-decoration:none}
+
+    .nav{display:flex;align-items:center;gap:12px;padding:20px 0 6px}
+    .logo{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.05rem;color:var(--brand-ink);background-size:cover;background-position:center;flex:none}
+    .navname{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.03em;font-size:1.05rem}
+
+    h1{font-size:clamp(1.9rem,7vw,2.6rem);margin:18px 0 8px}
+    .sub{color:#B6C2CA;font-size:.98rem;margin-bottom:20px}
+
+    /* playbook reminder */
+    .playbook{border:1px solid var(--amber);border-radius:12px;background:rgba(242,180,65,.07);padding:16px 18px;margin-bottom:18px}
+    .playbook.crit{border-color:var(--red);background:rgba(240,82,107,.08)}
+    .playbook h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.02rem;letter-spacing:.03em;color:var(--amber);margin-bottom:8px}
+    .playbook.crit h2{color:var(--red)}
+    .playbook ol{margin:0 0 0 20px;display:grid;gap:5px;font-size:.93rem;color:#E4ECF0}
+    .playbook .never{margin-top:10px;font-size:.86rem;color:#DCA}
+    .playbook.crit .never{color:#F0B7C0}
+    .playbook .never b{letter-spacing:.06em}
+
+    /* form */
+    .card{border:1px solid var(--brand);border-radius:14px;padding:22px 20px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.08),transparent 60%),var(--ink-2)}
+    form{display:grid;gap:13px}
+    label{display:block;font-size:.78rem;letter-spacing:.04em;color:#C4D0D8;margin-bottom:5px}
+    input,select,textarea{width:100%;padding:13px 14px;border-radius:6px;border:1px solid var(--line);background:var(--ink);color:var(--paper);font-family:inherit;font-size:1rem;appearance:none;-webkit-appearance:none}
+    textarea{min-height:88px;resize:vertical}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:430px){ .row{grid-template-columns:1fr} }
+    .btn{display:flex;justify-content:center;align-items:center;gap:.5em;width:100%;background:var(--brand);color:var(--brand-ink);font-weight:700;font-size:1.05rem;padding:16px;border-radius:6px;border:1px solid var(--brand);cursor:pointer;font-family:inherit;margin-top:4px}
+    .btn:active{transform:scale(.99)}
+    .err{color:var(--red);font-size:.84rem;min-height:0}
+    .micro{font-size:.8rem;color:var(--mute);text-align:center;margin-top:10px}
+    .done{text-align:center;padding:26px 8px}
+    .done .big{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.5rem;color:var(--brand);margin-bottom:10px}
+    .done p{color:#C4D0D8;font-size:.98rem}
+    footer{margin-top:26px;color:var(--mute);font-size:.8rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nav">
+    <div class="logo" id="navLogo">A</div>
+    <span class="navname" id="navName">Academy</span>
+  </div>
+
+  <h1 class="display">Incident report</h1>
+  <p class="sub">Deal with the situation first &mdash; the playbook card tells you how. Then file this within 24 hours. It takes about a minute.</p>
+
+  <div class="playbook" id="playbookBox" hidden>
+    <h2 id="pbTitle">In the moment</h2>
+    <ol id="pbSteps"></ol>
+    <div class="never" id="pbNever"></div>
+  </div>
+
+  <div class="card">
+    <div id="formInner">
+      <form id="incForm" novalidate>
+        <div>
+          <label for="iType">What happened?</label>
+          <select id="iType" name="type" required>
+            <option value="">Choose the type</option>
+            <option>Injury</option>
+            <option>Safeguarding concern</option>
+            <option>Missing child</option>
+            <option>Angry parent / confrontation</option>
+            <option>Behaviour incident</option>
+            <option>Coach no-show / staffing</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="row">
+          <div>
+            <label for="iSev">How serious?</label>
+            <select id="iSev" name="severity" required>
+              <option value="">Select</option>
+              <option>Minor - handled on the day</option>
+              <option>Serious - owner needs to act</option>
+            </select>
+          </div>
+          <div>
+            <label for="iWho">Who was involved?</label>
+            <input type="text" id="iWho" name="person" placeholder="Child / person's name">
+          </div>
+        </div>
+        <div>
+          <label for="iWhat">What happened? (facts only)</label>
+          <textarea id="iWhat" name="what_happened" placeholder="What you saw and heard - times, places, exact words if relevant" required></textarea>
+        </div>
+        <div>
+          <label for="iAction">What did you do?</label>
+          <textarea id="iAction" name="action_taken" placeholder="Action taken on the day" required></textarea>
+        </div>
+        <div class="row">
+          <div>
+            <label for="iParent">Parent informed?</label>
+            <select id="iParent" name="parent_informed">
+              <option>Yes</option>
+              <option>Not yet</option>
+              <option>Not applicable</option>
+            </select>
+          </div>
+          <div>
+            <label for="iName">Your name</label>
+            <input type="text" id="iName" name="reporter" placeholder="Coach filing this" required>
+          </div>
+        </div>
+        <div class="err" id="formErr"></div>
+        <button type="submit" class="btn" id="formBtn">File report &rarr;</button>
+        <div class="micro">Goes straight to the owner. Safeguarding details stay restricted.</div>
+      </form>
+    </div>
+  </div>
+
+  <footer id="footContact"></footer>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG - the only part a client edits. Search for "REPLACE".
+   ============================================================ */
+var CONFIG = {
+  /* A. ACADEMY -------------------------------------------------- */
+  academyName: 'Your Academy Name',           // REPLACE
+  brandColor:  '#22D3EE',                     // REPLACE
+  logoUrl:     '',                            // REPLACE (optional)
+
+  /* B. FORM ENDPOINT --------------------------------------------- */
+  // Airtable webhook URL from BUILD-phase4-playbooks-retention.md, Part 2.
+  formEndpoint: 'REPLACE_WITH_FORM_ENDPOINT',
+
+  /* C. OWNER CONTACT -------------------------------------------- */
+  notifyEmail: 'you@youracademy.com'          // REPLACE - footer only
+};
+
+/* Playbook reminders shown above the form once a type is picked.
+   Keep in sync with the printed playbook cards. */
+var PLAYBOOKS = {
+  'Injury': { crit:false, steps:[
+      'Stop the activity and make the area safe.',
+      'First aider assesses. Serious or any head/neck concern: call 999 first.',
+      'Treat, reassure, keep the child warm and calm.',
+      'Tell the parent at pick-up (or phone them now if serious).'
+    ], never:'NEVER move a child with a suspected head, neck or back injury. NEVER give medication.' },
+  'Safeguarding concern': { crit:true, steps:[
+      'Listen calmly. Let them talk - do not ask leading questions.',
+      'Never promise to keep it secret. Say you must pass it on to keep them safe.',
+      'Reassure them they did the right thing telling you.',
+      'Write down their exact words as soon as you can.',
+      'Tell the welfare officer / owner TODAY - not after the weekend.'
+    ], never:'NEVER investigate yourself. NEVER confront the person involved. NEVER discuss it with anyone else.' },
+  'Missing child': { crit:true, steps:[
+      'Alert the lead coach immediately - say the child\'s name and where last seen.',
+      'One coach holds and headcounts the rest of the group.',
+      'Others search now: toilets, exits, car park, last place seen.',
+      'Not found within minutes? Call 999, then the parents. Do not wait.'
+    ], never:'NEVER leave the rest of the group unsupervised to search.' },
+  'Angry parent / confrontation': { crit:false, steps:[
+      'Move the conversation away from the children.',
+      'Stay calm, lower your voice, listen first.',
+      'Do not argue back or match their tone.',
+      'If it continues or turns threatening: end it - "I\'m going to get [owner] to call you today" - and walk away.'
+    ], never:'NEVER have this conversation in front of the kids. NEVER put hands on anyone.' },
+  'Coach no-show / staffing': { crit:false, steps:[
+      'Count heads vs adults - can you run safely at ratio?',
+      'Merge or simplify groups if you can do it safely.',
+      'Call the owner now - do not soldier on in silence.',
+      'If ratios are impossible, keep everyone together in one supervised space until help or parents arrive.'
+    ], never:'NEVER leave a group unsupervised. NEVER send children away early without a parent.' }
+};
+
+(function(){
+  var el = function(id){ return document.getElementById(id); };
+  var C = CONFIG;
+
+  if (C.brandColor){
+    var r = document.documentElement.style;
+    r.setProperty('--brand', C.brandColor);
+    var hex = C.brandColor.replace('#','');
+    if (hex.length === 3){ hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2]; }
+    var rr = parseInt(hex.substr(0,2),16), gg = parseInt(hex.substr(2,2),16), bb = parseInt(hex.substr(4,2),16);
+    r.setProperty('--brand-ink', (0.299*rr + 0.587*gg + 0.114*bb) > 150 ? '#04181C' : '#FFFFFF');
+  }
+  var mono = (C.academyName||'A').trim().charAt(0).toUpperCase();
+  if (C.logoUrl){ el('navLogo').style.backgroundImage = 'url('+C.logoUrl+')'; el('navLogo').textContent=''; }
+  else { el('navLogo').textContent = mono; }
+  el('navName').textContent = C.academyName;
+  el('footContact').textContent = C.academyName + (C.notifyEmail ? ' - ' + C.notifyEmail : '');
+
+  /* playbook reminder swaps with the chosen type */
+  el('iType').addEventListener('change', function(){
+    var pb = PLAYBOOKS[this.value];
+    var box = el('playbookBox');
+    if (!pb){ box.hidden = true; return; }
+    box.hidden = false;
+    box.className = 'playbook' + (pb.crit ? ' crit' : '');
+    el('pbTitle').textContent = 'In the moment - ' + this.value;
+    el('pbSteps').innerHTML = pb.steps.map(function(s){ return '<li>'+s+'</li>'; }).join('');
+    el('pbNever').innerHTML = '<b>' + pb.never + '</b>';
+    /* safeguarding + missing child are always serious */
+    if (this.value === 'Safeguarding concern' || this.value === 'Missing child'){
+      el('iSev').value = 'Serious - owner needs to act';
+    }
+  });
+
+  var form = el('incForm');
+  var errBox = el('formErr');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    errBox.textContent = '';
+    var data = {
+      type:            el('iType').value,
+      severity:        el('iSev').value,
+      person:          el('iWho').value.trim(),
+      what_happened:   el('iWhat').value.trim(),
+      action_taken:    el('iAction').value.trim(),
+      parent_informed: el('iParent').value,
+      reporter:        el('iName').value.trim(),
+      academy:         C.academyName,
+      source:          'incident-report',
+      page:            (location && location.href) ? location.href : ''
+    };
+    if (!data.type || !data.severity){ errBox.textContent = 'Pick the incident type and how serious it was.'; return; }
+    if (!data.what_happened || !data.action_taken || !data.reporter){ errBox.textContent = 'Fill in what happened, what you did, and your name.'; return; }
+
+    var btn = el('formBtn'); btn.textContent = 'Filing...'; btn.disabled = true;
+
+    var done = function(){
+      el('formInner').innerHTML =
+        '<div class="done">' +
+          '<div class="big">Report filed</div>' +
+          '<p>Thanks ' + escapeHtml(firstName(data.reporter)) + ' - the owner has been alerted and this is now on record. ' +
+          (data.type === 'Safeguarding concern' ? 'Make sure you have ALSO spoken to the welfare officer or owner directly today.' : 'Nothing else for you to do unless they call.') +
+          '</p>' +
+        '</div>';
+    };
+
+    if (C.formEndpoint.indexOf('REPLACE') === 0){ done(); return; }
+    fetch(C.formEndpoint, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Accept':'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(){ done(); }).catch(function(){ done(); });
+  });
+
+  function firstName(s){ return (s||'').split(' ')[0]; }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+})();
+</script>
+</body>
+</html>

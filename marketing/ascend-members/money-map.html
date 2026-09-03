@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Money Map — ASCEND</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1214; --panel:#121E21; --panel2:#0F181A;
+    --ink:#EAF3F3; --muted:#8DA0A1; --muted-dim:#5C6B6C;
+    --cyan:#33E3E3; --line:#223034; --green:#5FC2A2; --amber:#F0A24B;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    padding:24px clamp(14px,3vw,36px) 80px; max-width:860px; margin:0 auto;
+  }
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin:0 0 8px}
+  h1{font-family:'Archivo',sans-serif;font-weight:900;font-size:clamp(30px,5vw,46px);line-height:0.96;margin:0 0 12px}
+  h1 .who{color:var(--cyan)}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.6;max-width:60ch;margin:0}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}
+  .panel{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 20px}
+  .panel.target{border-color:rgba(51,227,227,0.4)}
+  .panel h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:18px;margin:0 0 3px}
+  .panel .ph{color:var(--muted);font-size:12.5px;margin:0 0 16px;line-height:1.4}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:500}
+  .inp{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--panel2);overflow:hidden}
+  .inp .pre{padding:0 0 0 12px;color:var(--muted-dim);font-family:'Space Mono',monospace;font-size:14px}
+  .inp input{
+    width:100%;border:0;background:transparent;color:var(--ink);
+    font-family:'Inter',sans-serif;font-size:15px;font-weight:600;padding:10px 12px;outline:none;
+  }
+  .inp input::placeholder{color:var(--muted-dim);font-weight:400}
+  .inp:focus-within{border-color:var(--cyan)}
+  .hintnow{font-size:11px;color:var(--muted-dim);font-family:'Space Mono',monospace;margin-top:5px}
+
+  .results{margin-top:20px;display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:12px}
+  .rcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 20px}
+  .rcard.pot{border-color:var(--cyan)}
+  .rcard .lbl{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  .rcard .big{font-family:'Archivo',sans-serif;font-weight:900;font-size:clamp(26px,4vw,34px);line-height:1;margin-bottom:4px}
+  .rcard.now .big{color:var(--ink)}
+  .rcard.pot .big{color:var(--cyan)}
+  .rcard .yr{font-size:13px;color:var(--muted)}
+  .rcard .profit{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .rcard .profit b{color:var(--green);font-weight:600}
+  .arrow{display:flex;align-items:center;justify-content:center;color:var(--muted-dim);font-size:24px}
+
+  .gap{margin-top:16px;border:1px solid var(--cyan);border-radius:14px;background:rgba(51,227,227,0.06);padding:20px 22px;text-align:center}
+  .gap .k{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin:0 0 8px}
+  .gap .v{font-family:'Archivo',sans-serif;font-weight:900;font-size:clamp(34px,6vw,52px);line-height:1;color:var(--cyan)}
+  .gap .v small{font-size:20px;color:var(--muted)}
+  .gap .pct{margin-top:8px;font-size:14px;color:var(--ink)}
+  .gap .pct b{color:var(--cyan)}
+
+  .insight{margin-top:18px;border-left:3px solid var(--cyan);background:var(--panel);border-radius:0 10px 10px 0;padding:14px 18px;font-size:14px;line-height:1.6;color:var(--muted)}
+  .insight b{color:var(--ink);font-weight:600}
+
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:24px}
+  .hint{color:var(--muted-dim);font-size:12px;font-family:'Space Mono',monospace}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+  .btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn.reset:hover{border-color:var(--amber);color:var(--amber)}
+  .sig{text-align:center;color:var(--muted-dim);font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
+  textarea{width:100%;margin-top:14px;min-height:150px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:14px;font-family:'Space Mono',monospace;font-size:12px;line-height:1.6;display:none}
+
+  @media(max-width:640px){
+    .grid{grid-template-columns:1fr}
+    .results{grid-template-columns:1fr;gap:10px}
+    .arrow{transform:rotate(90deg);height:24px}
+  }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:7px;background:#121E21;border:1px solid #2E4247;color:#33E3E3;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 13px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.35)">&#8592; ASCEND hub</a>
+
+
+  <p class="eyebrow">Ascend · Step 1 — Audit</p>
+  <h1>The Money Map<br><span class="who">Where you're at &amp; where you could go</span></h1>
+  <p class="sub">Most owners know their revenue but not their real number — and have never modelled what a few changes would actually be worth. Put your real figures in the left, set some honest targets on the right, and see the gap. This is your Audit number.</p>
+
+  <div class="grid">
+    <div class="panel now">
+      <h2>Your academy now</h2>
+      <p class="ph">The real numbers, today. Be honest — this only works if it's true.</p>
+
+      <div class="field">
+        <label>Regular weekly players</label>
+        <div class="inp"><input id="n-players" type="number" inputmode="numeric" placeholder="e.g. 60" value=""></div>
+      </div>
+      <div class="field">
+        <label>Average price per player, per week</label>
+        <div class="inp"><span class="pre">£</span><input id="n-price" type="number" inputmode="decimal" placeholder="e.g. 6" value=""></div>
+      </div>
+      <div class="field">
+        <label>Weeks you run per year</label>
+        <div class="inp"><input id="n-weeks" type="number" inputmode="numeric" placeholder="e.g. 46" value="46"></div>
+      </div>
+      <div class="field">
+        <label>Other income per month <span style="color:var(--muted-dim)">(camps, 1-to-1, parties — optional)</span></label>
+        <div class="inp"><span class="pre">£</span><input id="n-other" type="number" inputmode="decimal" placeholder="0" value=""></div>
+      </div>
+      <div class="field">
+        <label>Running costs per month <span style="color:var(--muted-dim)">(optional — to show profit)</span></label>
+        <div class="inp"><span class="pre">£</span><input id="n-costs" type="number" inputmode="decimal" placeholder="0" value=""></div>
+      </div>
+    </div>
+
+    <div class="panel target">
+      <h2>Where you could go</h2>
+      <p class="ph">Set targets on the three levers. Leave one blank to keep it as it is now.</p>
+
+      <div class="field">
+        <label>Weekly players — target</label>
+        <div class="inp"><input id="t-players" type="number" inputmode="numeric" placeholder="—" value=""></div>
+        <div class="hintnow" id="hint-players">now: —</div>
+      </div>
+      <div class="field">
+        <label>Price per player, per week — target</label>
+        <div class="inp"><span class="pre">£</span><input id="t-price" type="number" inputmode="decimal" placeholder="—" value=""></div>
+        <div class="hintnow" id="hint-price">now: —</div>
+      </div>
+      <div class="field">
+        <label>Other income per month — target</label>
+        <div class="inp"><span class="pre">£</span><input id="t-other" type="number" inputmode="decimal" placeholder="—" value=""></div>
+        <div class="hintnow" id="hint-other">now: —</div>
+      </div>
+      <p class="ph" style="margin-top:18px">Weeks per year and monthly costs are carried across from your current numbers.</p>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="rcard now">
+      <p class="lbl">Where you're at</p>
+      <div class="big" id="now-month">£0<small style="font-size:14px;color:var(--muted)"> /mo</small></div>
+      <div class="yr" id="now-year">£0 a year</div>
+      <div class="profit" id="now-profit" style="display:none"></div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="rcard pot">
+      <p class="lbl">Where you could be</p>
+      <div class="big" id="pot-month">£0<small style="font-size:14px;color:var(--muted)"> /mo</small></div>
+      <div class="yr" id="pot-year">£0 a year</div>
+      <div class="profit" id="pot-profit" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="gap">
+    <p class="k">The gap — what it's worth to close it</p>
+    <div class="v" id="gap-year">£0<small> a year</small></div>
+    <div class="pct" id="gap-pct"></div>
+  </div>
+
+  <div class="insight" id="insight">Fill in your real numbers to see where you are — then set targets to see the opportunity. <b>Knowing this number is the whole point of the Audit stage.</b></div>
+
+  <div class="foot">
+    <span class="hint">Nothing is saved — your numbers stay on your device</span>
+    <div class="btns">
+      <button class="btn" id="copy">Copy my numbers</button>
+      <button class="btn reset" id="reset">Reset</button>
+    </div>
+  </div>
+  <textarea id="out" readonly></textarea>
+
+  <div class="sig">John Leitch · Football Business Coach · The ASCEND Method</div>
+
+<script>
+  function num(id){ var v=parseFloat(document.getElementById(id).value); return isNaN(v)?null:v; }
+  function gbp(n){ return '£'+Math.round(n).toLocaleString('en-GB'); }
+
+  function recalc(){
+    var players = num('n-players') || 0;
+    var price   = num('n-price')   || 0;
+    var weeks   = num('n-weeks');   if(weeks===null) weeks=46;
+    var other   = num('n-other')   || 0;
+    var costs   = num('n-costs');
+
+    // targets fall back to current if left blank
+    var tPlayers = (num('t-players')!==null)? num('t-players') : players;
+    var tPrice   = (num('t-price')  !==null)? num('t-price')   : price;
+    var tOther   = (num('t-other')  !==null)? num('t-other')   : other;
+
+    // update "now:" hints
+    document.getElementById('hint-players').textContent = 'now: ' + (players||0);
+    document.getElementById('hint-price').textContent   = 'now: £' + (price||0);
+    document.getElementById('hint-other').textContent   = 'now: £' + (other||0) + '/mo';
+
+    // annual revenue = weekly sessions revenue + other monthly ×12
+    var nowAnnual = (players*price*weeks) + (other*12);
+    var potAnnual = (tPlayers*tPrice*weeks) + (tOther*12);
+    var nowMonth = nowAnnual/12;
+    var potMonth = potAnnual/12;
+
+    document.getElementById('now-month').innerHTML = gbp(nowMonth)+'<small style="font-size:14px;color:var(--muted)"> /mo</small>';
+    document.getElementById('now-year').textContent = gbp(nowAnnual)+' a year';
+    document.getElementById('pot-month').innerHTML = gbp(potMonth)+'<small style="font-size:14px;color:var(--muted)"> /mo</small>';
+    document.getElementById('pot-year').textContent = gbp(potAnnual)+' a year';
+
+    // profit (optional, same cost base)
+    var npEl=document.getElementById('now-profit'), ppEl=document.getElementById('pot-profit');
+    if(costs!==null && costs>0){
+      var nowProfit = nowAnnual - costs*12;
+      var potProfit = potAnnual - costs*12;
+      npEl.style.display='block'; ppEl.style.display='block';
+      npEl.innerHTML = 'Profit: <b>'+gbp(nowProfit)+'</b>/yr';
+      ppEl.innerHTML = 'Profit: <b>'+gbp(potProfit)+'</b>/yr';
+    } else {
+      npEl.style.display='none'; ppEl.style.display='none';
+    }
+
+    // gap
+    var gap = potAnnual - nowAnnual;
+    document.getElementById('gap-year').innerHTML = gbp(gap)+'<small> a year</small>';
+    var pctEl = document.getElementById('gap-pct');
+    if(nowAnnual>0 && gap>0){
+      var pct = Math.round(gap/nowAnnual*100);
+      pctEl.innerHTML = "That's a <b>"+pct+"% uplift</b> — roughly "+gbp(gap/12)+" more every month.";
+    } else if(gap>0){
+      pctEl.innerHTML = "Roughly <b>"+gbp(gap/12)+"</b> more every month.";
+    } else {
+      pctEl.innerHTML = "Set your targets above to see the opportunity.";
+    }
+
+    // insight
+    var ins = document.getElementById('insight');
+    if(nowAnnual<=0){
+      ins.innerHTML = 'Fill in your real numbers to see where you are — then set targets to see the opportunity. <b>Knowing this number is the whole point of the Audit stage.</b>';
+    } else if(gap>0){
+      ins.innerHTML = 'That gap isn\u2019t a fantasy — it\u2019s three concrete levers: <b>more players</b> (Sell &amp; Capacity), <b>better pricing</b> (Sell), and <b>a second revenue stream</b> (Expand). The diagnostic tells you which to pull first.';
+    } else {
+      ins.innerHTML = 'This is your Audit number. <b>Now push the levers</b> — even a small move on players, price, or a second stream changes the picture fast.';
+    }
+  }
+
+  document.querySelectorAll('input').forEach(function(el){ el.addEventListener('input', recalc); });
+
+  document.getElementById('copy').addEventListener('click', function(){
+    var players=num('n-players')||0, price=num('n-price')||0, weeks=num('n-weeks')||46, other=num('n-other')||0;
+    var tPlayers=(num('t-players')!==null)?num('t-players'):players;
+    var tPrice=(num('t-price')!==null)?num('t-price'):price;
+    var tOther=(num('t-other')!==null)?num('t-other'):other;
+    var nowAnnual=(players*price*weeks)+(other*12);
+    var potAnnual=(tPlayers*tPrice*weeks)+(tOther*12);
+    var lines=[
+      'THE MONEY MAP — MY NUMBERS','',
+      'NOW: '+players+' players @ £'+price+'/wk over '+weeks+' weeks'+(other>0?' + £'+other+'/mo other':''),
+      '  = '+gbp(nowAnnual/12)+' /month · '+gbp(nowAnnual)+' /year','',
+      'TARGET: '+tPlayers+' players @ £'+tPrice+'/wk'+(tOther>0?' + £'+tOther+'/mo other':''),
+      '  = '+gbp(potAnnual/12)+' /month · '+gbp(potAnnual)+' /year','',
+      'THE GAP: '+gbp(potAnnual-nowAnnual)+' a year'
+    ];
+    var text=lines.join('\n');
+    var out=document.getElementById('out');
+    out.value=text; out.style.display='block'; out.focus(); out.select();
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(function(){}); }
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    ['n-players','n-price','n-other','n-costs','t-players','t-price','t-other'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('n-weeks').value='46';
+    document.getElementById('out').style.display='none';
+    recalc();
+  });
+
+  recalc();
+</script>
+</body>
+</html>

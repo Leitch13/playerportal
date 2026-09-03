@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<title>ASCEND &middot; by John Leitch Coaching</title>
+</head>
+<body style="margin:0">
+
+<style>
+
+
+
+
+:root{
+  --ink:#090C10; --paper:#F4F4F5; --cyan:#22D3EE; --grey:#6B6E73; --line:#e2e2e5; --dline:#24272c;
+  --anton:'Anton',Impact,'Arial Narrow Bold',sans-serif;
+  --inter:'Space Grotesk',system-ui,-apple-system,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+.pg{font-family:var(--inter);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased;line-height:1.6}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.h1{font-family:var(--anton);font-weight:400;text-transform:uppercase;line-height:.95;letter-spacing:.005em;font-size:clamp(38px,7vw,88px)}
+.h2{font-family:var(--anton);font-weight:400;text-transform:uppercase;line-height:.98;letter-spacing:.005em;font-size:clamp(28px,4.5vw,52px)}
+.eyebrow{font-family:var(--inter);font-weight:700;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan)}
+.lead{font-size:clamp(17px,2.2vw,21px);line-height:1.55;color:var(--grey)}
+.cyan{color:var(--cyan)} .mut{color:var(--grey)}
+.btn{display:inline-block;font-family:var(--inter);font-weight:700;font-size:16px;background:var(--cyan);color:#04121a;
+  text-decoration:none;padding:16px 34px;border-radius:999px;transition:transform .15s,filter .15s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.btn.big{font-size:18px;padding:18px 42px}
+.sub{font-size:13.5px;color:var(--grey);margin-top:14px}
+section{padding:clamp(56px,9vw,110px) 0}
+.rule{width:56px;height:5px;background:var(--cyan);border-radius:3px;margin-bottom:26px}
+
+/* hero */
+.hero{background:var(--ink);color:var(--paper);position:relative;overflow:hidden;padding:clamp(58px,9vw,104px) 0 clamp(52px,7vw,92px)}
+.hero .tex{position:absolute;inset:0;opacity:.3;pointer-events:none;
+  background-image:repeating-linear-gradient(-45deg,var(--cyan) 0 1px,transparent 1px 15px);
+  -webkit-mask:radial-gradient(120% 85% at 50% 0,#000,transparent 70%);mask:radial-gradient(120% 85% at 50% 0,#000,transparent 70%)}
+.hero .wrap{position:relative;z-index:1;max-width:900px;text-align:center}
+.hero .h1{margin:22px auto 22px;max-width:15ch;text-wrap:balance}
+.hero .lead{color:#c7cace;max-width:50ch;margin:0 auto 30px;text-wrap:balance}
+.hero .trust{margin-top:22px;font-size:14px;color:#8a9096;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.hero .trust b{color:var(--paper);font-weight:600}
+
+/* problem */
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:20px 40px;margin-top:34px}
+@media(max-width:680px){.plist{grid-template-columns:1fr}}
+.pitem{display:flex;gap:14px;align-items:flex-start;font-size:17px}
+.pitem .x{color:var(--cyan);font-weight:800;flex:none;font-size:20px;line-height:1.3}
+
+/* dark band */
+.band{background:var(--ink);color:var(--paper)}
+.band .h2{color:var(--paper)}
+.band .lead{color:#c7cace}
+
+/* pillars */
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--dline);border:1px solid var(--dline);border-radius:16px;overflow:hidden;margin-top:44px}
+@media(max-width:680px){.pillars{grid-template-columns:1fr}}
+.pill{background:var(--ink);padding:34px 32px}
+.pill .n{font-family:var(--anton);font-size:34px;color:var(--cyan);line-height:1}
+.pill h3{font-family:var(--inter);font-weight:700;font-size:21px;margin:14px 0 8px}
+.pill p{font-size:15.5px;color:#adb1b6;line-height:1.55}
+
+/* for / not for */
+.fortwo{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:40px}
+@media(max-width:680px){.fortwo{grid-template-columns:1fr}}
+.forcard{border:1px solid var(--line);border-radius:14px;padding:30px 30px 26px;background:#fff}
+.forcard h3{font-family:var(--inter);font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px}
+.forcard.yes h3{color:#12a150} .forcard.no h3{color:#c0392b}
+.forcard ul{list-style:none} .forcard li{font-size:16px;padding:8px 0 8px 28px;position:relative;color:#2a2c30}
+.forcard li::before{position:absolute;left:0;top:8px;font-weight:700}
+.forcard.yes li::before{content:"\2713";color:#12a150} .forcard.no li::before{content:"\2715";color:#c0392b}
+
+/* quote */
+.quote{text-align:center;max-width:40ch;margin:0 auto}
+.quote .q{font-family:var(--anton);text-transform:none;font-weight:400;font-size:clamp(24px,3.6vw,38px);line-height:1.15;letter-spacing:0}
+.quote .by{margin-top:22px;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);font-weight:700}
+
+/* about */
+.about{display:grid;grid-template-columns:1fr;gap:20px;max-width:64ch}
+.about p{font-size:18px;color:#2a2c30}
+
+/* pricing */
+.price{background:#0d1116;color:var(--paper);border-radius:20px;padding:clamp(36px,5vw,56px);text-align:center;max-width:620px;margin:44px auto 0;position:relative;overflow:hidden;border:1px solid rgba(34,211,238,.3);box-shadow:inset 0 0 130px rgba(34,211,238,.06),0 34px 90px rgba(0,0,0,.55)}
+.price .tex{position:absolute;inset:0;opacity:.4;pointer-events:none;background-image:repeating-linear-gradient(-45deg,var(--cyan) 0 1px,transparent 1px 15px);-webkit-mask:linear-gradient(180deg,#000,transparent 70%);mask:linear-gradient(180deg,#000,transparent 70%)}
+.price>*{position:relative;z-index:1}
+.price .amt{font-family:var(--anton);font-size:clamp(66px,11vw,104px);line-height:.9;letter-spacing:-.01em}
+.price .per{font-size:20px;color:#9aa0a6;font-weight:600}
+.price .inc{list-style:none;text-align:left;max-width:360px;margin:26px auto 30px}
+.price .inc li{font-size:16px;padding:9px 0 9px 30px;position:relative;color:#dfe2e5}
+.price .inc li::before{content:"\2713";position:absolute;left:0;color:var(--cyan);font-weight:700}
+
+/* faq */
+.faq{max-width:760px;margin:40px auto 0}
+.faq details{border-bottom:1px solid var(--line);padding:22px 0}
+.faq summary{font-family:var(--inter);font-weight:700;font-size:18px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--cyan);font-weight:700;font-size:24px;line-height:1}
+.faq details[open] summary::after{content:"\2013"}
+.faq p{margin-top:14px;font-size:16px;color:var(--grey)}
+
+/* final */
+.final{background:var(--ink);color:var(--paper);text-align:center}
+.final .h2{margin-bottom:26px}
+
+.foot{background:var(--ink);color:#6b7075;text-align:center;padding:30px 0;font-size:13px;border-top:1px solid var(--dline)}
+.center{text-align:center}
+.mt{margin-top:34px}
+/* hero photo (swap in the VSL later by restoring a videobox iframe here) */
+.photobox{max-width:420px;margin:8px auto 30px;border-radius:16px;overflow:hidden;background:#0d1116;position:relative;border:1px solid rgba(34,211,238,.28);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.photobox img{width:100%;display:block;aspect-ratio:4/5;object-fit:cover}
+.photobox .cap{position:absolute;left:0;right:0;bottom:0;padding:14px 16px 12px;background:linear-gradient(transparent,rgba(4,10,14,.92));text-align:left}
+.photobox .cap .nm{font-family:var(--anton);font-size:19px;letter-spacing:.5px;color:#fff;text-transform:uppercase}
+.photobox .cap .rl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);font-weight:600;margin-top:2px}
+.photoph{aspect-ratio:4/5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.photoph .mono{width:110px;height:110px;border-radius:50%;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:var(--anton);font-size:44px;color:var(--cyan)}
+.photoph .tex{position:absolute;inset:0;opacity:.4;pointer-events:none;background-image:repeating-linear-gradient(-45deg,var(--cyan) 0 1px,transparent 1px 15px);-webkit-mask:linear-gradient(160deg,#000,transparent 60%);mask:linear-gradient(160deg,#000,transparent 60%)}
+/* credibility strip */
+.cred{background:#0d1116;border-top:1px solid var(--dline);border-bottom:1px solid var(--dline)}
+.cred .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:32px 24px;text-align:center;max-width:1000px}
+.cred .c .n{font-family:var(--anton);font-size:clamp(28px,3.6vw,42px);line-height:1;color:var(--cyan)}
+.cred .c .l{font-size:12.5px;letter-spacing:.06em;color:#9aa0a6;margin-top:9px;text-transform:uppercase;font-weight:600}
+@media(max-width:640px){.cred .wrap{grid-template-columns:1fr 1fr;gap:26px 16px}}
+/* sticky CTA */
+.sticky{position:fixed;left:50%;bottom:20px;z-index:60;transform:translate(-50%,150%);opacity:0;transition:transform .35s ease,opacity .35s ease;box-shadow:0 16px 44px rgba(0,0,0,.45)}
+.sticky.show{transform:translate(-50%,0);opacity:1}
+/* value + guarantee */
+.valueline{color:#c7cace;max-width:46ch;margin:14px auto 0;font-size:17px}
+/* results / case studies */
+.results{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;margin:44px auto 0;text-align:left}
+@media(max-width:680px){.results{grid-template-columns:1fr}}
+.rcard{background:#0d1116;border:1px solid rgba(34,211,238,.28);border-radius:16px;padding:32px 30px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.rcard .rname{font-family:var(--inter);font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--cyan);margin-bottom:16px}
+.rcard .rresult{font-family:var(--anton);text-transform:uppercase;font-size:clamp(21px,2.5vw,29px);line-height:1.06;color:var(--paper);margin-bottom:16px}
+.rcard .rquote{font-size:16px;line-height:1.55;color:#adb1b6;font-style:italic;margin:0}
+</style>
+
+<div class="pg">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="tex"></div>
+    <div class="wrap">
+      <span class="eyebrow">ASCEND &middot; by John Leitch Coaching</span>
+      <h1 class="h1">Build an academy that runs &mdash; and grows &mdash; without running you into the ground.</h1>
+      <p class="lead">The mentorship for football academy owners who are brilliant on the grass but drowning in the business. Get your pricing, your systems and your coaching sorted &mdash; so you can step back and scale <span class="cyan">without diluting what made you good.</span></p>
+      <div class="photobox">
+        <!-- PHOTO: replace the .photoph block below with:
+               <img src="REPLACE_WITH_PHOTO_URL" alt="John Leitch">
+             (hosted URL - upload to Wix Media and copy its URL, or any https image link.
+              Until then the monogram card below shows, so the page still looks finished.)
+             LATER, for the VSL: swap this whole .photobox for a 16/9 iframe embed. -->
+        <div class="photoph"><div class="tex"></div><div class="mono">JL</div></div>
+        <div class="cap">
+          <div class="nm">John Leitch</div>
+          <div class="rl">Built &amp; sold a football academy &middot; 350 players a week</div>
+        </div>
+      </div>
+      <a class="btn big" href="REPLACE_WITH_BOOKING_LINK" target="_blank" rel="noopener">Book a free intro call &rarr;</a>
+      <div class="trust">From the coach who <b>built a football academy from scratch &mdash; and sold it.</b></div>
+    </div>
+  </header>
+
+  <!-- CREDIBILITY -->
+  <div class="cred"><div class="wrap">
+    <div class="c"><div class="n">350</div><div class="l">Weekly players</div></div>
+    <div class="c"><div class="n">Sold</div><div class="l">The academy he built</div></div>
+    <div class="c"><div class="n">10 Years</div><div class="l">Building the academy</div></div>
+    <div class="c"><div class="n">6 Stages</div><div class="l">The ASCEND Method</div></div>
+  </div></div>
+
+  <!-- PROBLEM -->
+  <section>
+    <div class="wrap">
+      <div class="rule"></div>
+      <h2 class="h2">Sound familiar?</h2>
+      <div class="plist">
+        <div class="pitem"><span class="x">&rarr;</span><span>You're almost certainly <b>underpricing</b> &mdash; and you don't actually know your real numbers.</span></div>
+        <div class="pitem"><span class="x">&rarr;</span><span>You're the <b>only one</b> who can run a proper session. Nothing works without you on the grass.</span></div>
+        <div class="pitem"><span class="x">&rarr;</span><span>You can't take a <b>week off</b> without it all wobbling.</span></div>
+        <div class="pitem"><span class="x">&rarr;</span><span>Every new kid means <b>more work for you</b>, not more freedom.</span></div>
+        <div class="pitem"><span class="x">&rarr;</span><span>Marketing is <b>post and pray</b> &mdash; no system, no consistency.</span></div>
+        <div class="pitem"><span class="x">&rarr;</span><span>You know you're good. You just can't seem to <b>turn good into a business.</b></span></div>
+      </div>
+      <p class="lead mt">None of that means you're a bad coach. It means nobody ever showed you the business behind the coaching. That's the whole job of ASCEND.</p>
+    </div>
+  </section>
+
+  <!-- WHAT IT IS -->
+  <section class="band">
+    <div class="wrap">
+      <div class="rule"></div>
+      <h2 class="h2">What ASCEND actually is</h2>
+      <p class="lead mt" style="max-width:56ch">A mentorship and a community that gives you the <b style="color:#fff">business behind the coaching</b> &mdash; your pricing, your systems, your marketing, and a curriculum your coaches actually deliver &mdash; alongside a room full of academy owners building the same thing. So the academy stops depending on you, and starts growing because of you.</p>
+      <div class="pillars">
+        <div class="pill"><div class="n">01</div><h3>Know your numbers</h3><p>Price with confidence. The cost-model calculator and the sessions to build a business that pays you properly &mdash; not one you're subsidising.</p></div>
+        <div class="pill"><div class="n">02</div><h3>Systemise &amp; delegate</h3><p>Get it out of your head and onto paper, so a coach you hire can deliver your academy to your standard &mdash; and you can finally step off the grass.</p></div>
+        <div class="pill"><div class="n">03</div><h3>The curriculum</h3><p>A done-for-you, fully-branded coaching curriculum framework &mdash; the exact thing that lets you scale without diluting the product.</p></div>
+        <div class="pill"><div class="n">04</div><h3>Marketing that fills sessions</h3><p>Simple, repeatable ways to be seen and trusted locally. No gimmicks, no dancing on TikTok &mdash; just what actually brings kids through the door.</p></div>
+        <div class="pill"><div class="n">05</div><h3>The community</h3><p>Weekly support, other owners in the trenches with you, and direct access to me. You stop guessing alone.</p></div>
+        <div class="pill"><div class="n">06</div><h3>Direct access to John</h3><p>Not a faceless course. Me, in the room, answering your actual questions about your actual academy.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOR / NOT FOR -->
+  <section>
+    <div class="wrap">
+      <div class="rule"></div>
+      <h2 class="h2">Is it for you?</h2>
+      <div class="fortwo">
+        <div class="forcard yes">
+          <h3>ASCEND is for you if&hellip;</h3>
+          <ul>
+            <li>You run (or are starting) a football academy or coaching business</li>
+            <li>You're good with the kids but stuck on the business side</li>
+            <li>You want to grow without burning out or lowering the standard</li>
+            <li>You're ready to build systems, not just work harder</li>
+            <li>You'll actually do the work</li>
+          </ul>
+        </div>
+        <div class="forcard no">
+          <h3>It's not for you if&hellip;</h3>
+          <ul>
+            <li>You want a magic button and none of the graft</li>
+            <li>You're happy staying a one-person operation forever</li>
+            <li>You think coaching quality and business don't mix</li>
+            <li>You won't turn up or put anything into practice</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:26px;border:1px solid rgba(34,211,238,.45);border-radius:14px;padding:20px 22px;text-align:center">
+        <p style="font-family:'Anton',sans-serif;font-size:20px;letter-spacing:.5px;margin:0 0 6px">NOT SURE WHERE YOU STAND?</p>
+        <p style="margin:0 0 14px;opacity:.75;font-size:14.5px;line-height:1.6">Take the free ASCEND Diagnostic &mdash; 30 quick questions, 10 minutes. It scores your academy across all six stages and tells you exactly which one is holding you back. Bring your results to your call.</p>
+        <a class="btn" href="https://ascendtools.netlify.app/diagnostic" target="_blank" rel="noopener">Take the free diagnostic &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  
+
+  <!-- ABOUT -->
+  <section>
+    <div class="wrap">
+      <div class="rule"></div>
+      <h2 class="h2">Why me</h2>
+      <div class="about mt">
+        <p>I didn't read this in a book. I <b>built a football academy from nothing and sold it</b> &mdash; so I've made every mistake there is on pricing, hiring, systems and marketing, and figured out what actually works.</p>
+        <p>Now I help other coaches and academy owners do the same: turn a talent for coaching into a business that grows, pays them properly, and doesn't fall apart the moment they step off the grass.</p>
+        <p class="mut">That's ASCEND. No fluff, no theory &mdash; the real system, from someone who's actually done it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="band">
+    <div class="wrap center">
+      <div class="rule" style="margin:0 auto 26px"></div>
+      <h2 class="h2">One membership. Everything in.</h2>
+      <p class="valueline">Less than you charge a single member &mdash; for everything that grows the whole academy.</p>
+      <div class="price">
+        <div class="tex"></div>
+        <div class="amt">&pound;50</div>
+        <div class="per">per month &middot; cancel anytime</div>
+        <ul class="inc">
+          <li>The full ASCEND system &amp; sessions</li>
+          <li>The pricing &amp; cost-model calculator</li>
+          <li>The done-for-you curriculum framework</li>
+          <li>Marketing playbook that fills sessions</li>
+          <li>The community of academy owners</li>
+          <li>Direct access to John</li>
+        </ul>
+        <a class="btn big" href="REPLACE_WITH_BOOKING_LINK" target="_blank" rel="noopener">Book a free intro call &rarr;</a>
+        <p class="sub" style="color:#8a9096">No lock-in, cancel anytime &mdash; most members make their &pound;50 back with one pricing tweak.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section>
+    <div class="wrap">
+      <div class="rule"></div>
+      <h2 class="h2">Questions</h2>
+      <div class="faq">
+        <details open><summary>I'm just starting out &mdash; is this too advanced?</summary><p>No. Whether you've got 5 kids or 500, the principles are the same &mdash; get your pricing, systems and marketing right from the start and you skip years of mistakes.</p></details>
+        <details><summary>How much time does it take?</summary><p>As much or as little as you put in. The system is there when you need it; the community is there weekly. Most members get value from their first session.</p></details>
+        <details><summary>Is it really just &pound;50 a month?</summary><p>Yes &mdash; one membership, everything included, cancel any time. No upsells, no "real price revealed on a call."</p></details>
+        <details><summary>Will this work in my area?</summary><p>It's built on universal principles &mdash; trust, value, consistency, smart operations. Members apply it in cities, towns and rural areas. The framework works because it's about people, not postcode.</p></details>
+        <details><summary>What if it's not for me?</summary><p>Then you cancel &mdash; no lock-in. But give it a real go first: turn up, do the work, ask questions.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final">
+    <div class="wrap">
+      <h2 class="h2">Stop guessing. Start scaling.</h2>
+      <p class="lead" style="color:#c7cace;max-width:44ch;margin:0 auto 30px">Get the business behind the coaching sorted &mdash; and build an academy that grows without running you into the ground.</p>
+      <a class="btn big" href="REPLACE_WITH_BOOKING_LINK" target="_blank" rel="noopener">Book a free intro call &rarr;</a>
+    </div>
+  </section>
+
+  <a class="btn big sticky" id="stickyCta" href="REPLACE_WITH_BOOKING_LINK" target="_blank" rel="noopener">Book a free intro call &rarr;</a>
+  <div class="foot">ASCEND &middot; by John Leitch Coaching</div>
+</div>
+<script>
+(function(){var s=document.getElementById('stickyCta');function o(){s.classList.toggle('show',window.scrollY>760);}window.addEventListener('scroll',o,{passive:true});o();})();
+</script>
+
+
+</body>
+</html>

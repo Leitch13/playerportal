@@ -631,6 +631,276 @@
             line-height: 1.7;
         }
 
+        /* ===== PRICING CALCULATOR ===== */
+        .calculator {
+            background: var(--bg-primary);
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .calc-inputs,
+        .calc-results {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+        }
+
+        .calc-panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .calc-prefix-wrap {
+            position: relative;
+        }
+
+        .calc-prefix {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 15px;
+            pointer-events: none;
+        }
+
+        .calc-prefix + input {
+            padding-left: 30px;
+        }
+
+        .calc-live-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .calc-stat {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 16px;
+            text-align: center;
+        }
+
+        .calc-stat-value {
+            font-size: clamp(24px, 4vw, 32px);
+            font-weight: 900;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .calc-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calc-gauge-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .calc-gauge-label strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .calc-gauge {
+            position: relative;
+            height: 8px;
+            border-radius: 100px;
+            background: linear-gradient(90deg, #ef4444 0%, #eab308 50%, #22c55e 100%);
+            margin: 32px 0 8px;
+        }
+
+        .calc-gauge-marker {
+            position: absolute;
+            top: 50%;
+            width: 4px;
+            height: 20px;
+            border-radius: 2px;
+            background: #fff;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 2px var(--bg-card);
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .calc-gauge-marker.rec {
+            background: var(--accent);
+            height: 24px;
+        }
+
+        .calc-gauge-tag {
+            position: absolute;
+            top: -24px;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .calc-gauge-tag.you { color: #fff; }
+        .calc-gauge-tag.rec { color: var(--accent); }
+
+        .calc-gauge-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .calc-gate {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .calc-gate-teaser {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .calc-gate-teaser svg { flex-shrink: 0; }
+
+        .calc-gate-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calc-gate-form input {
+            flex: 1;
+            min-width: 0;
+            padding: 13px 15px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 15px;
+        }
+
+        .calc-gate-form input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .calc-gate-form input::placeholder { color: var(--text-muted); }
+        .calc-gate-form .btn { flex-shrink: 0; }
+
+        .calc-gate-privacy {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 12px;
+        }
+
+        .calc-gate-error {
+            font-size: 13px;
+            color: #ef4444;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .calc-gate-error.show { display: block; }
+
+        .calc-plan {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .calc-plan-rec {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .calc-plan-rec-price {
+            font-size: clamp(36px, 6vw, 48px);
+            font-weight: 900;
+            color: var(--accent);
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .calc-plan-rec-sub {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .calc-plan-uplift {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .calc-plan-uplift .calc-stat-value { color: var(--accent); }
+
+        .calc-plan-tips {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .calc-plan-tips li {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding: 7px 0;
+            line-height: 1.6;
+        }
+
+        .calc-plan-tips li::before {
+            content: '';
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='9' fill='none'%3E%3Cpath d='M1 5l3 3 6-7' stroke='%234ecde6' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .calc-disclaimer {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .calc-grid { grid-template-columns: 1fr; }
+            .calc-gate-form { flex-direction: column; }
+        }
+
         /* ===== SOCIAL PROOF ===== */
         .proof-stats {
             display: grid;
@@ -1720,6 +1990,7 @@
             <nav class="header-nav">
                 <a href="#story">My Story</a>
                 <a href="#system">The System</a>
+                <a href="#calculator">Calculator</a>
                 <a href="#mentorship">Work With Me</a>
                 <a href="#capture" class="btn btn-primary header-cta">Get the Free Guide</a>
             </nav>
@@ -2007,6 +2278,107 @@
                     <div class="step-number">5</div>
                     <h3>Building a Team So You're Not Doing It All</h3>
                     <p>When to hire, who to hire, and how to build a coaching team that delivers your standard without you being on every pitch.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING CALCULATOR -->
+    <section class="section calculator" id="calculator">
+        <div class="container">
+            <div class="system-header reveal">
+                <span class="section-label">Free tool &middot; 60 seconds</span>
+                <h2 class="section-title">What Should You Actually Be Charging?</h2>
+                <p class="section-subtitle" style="margin:0 auto;">Most coaches undercharge and never realise it. Enter your numbers to see what your sessions are worth right now &mdash; and what a smarter price could add, without signing a single new player.</p>
+            </div>
+            <div class="calc-grid reveal reveal-delay-1">
+                <!-- INPUTS -->
+                <div class="calc-inputs">
+                    <div class="calc-panel-title">Your Setup</div>
+                    <div class="form-group">
+                        <label for="calcFormat">What do you run?</label>
+                        <select id="calcFormat">
+                            <option value="group">Group session (8+ players)</option>
+                            <option value="small">Small group (3&ndash;6 players)</option>
+                            <option value="oneToOne">1-to-1 coaching</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="calcPlayers">How many players in total?</label>
+                        <input type="number" id="calcPlayers" min="0" step="1" value="30" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label for="calcSessions">Sessions each player does per week</label>
+                        <input type="number" id="calcSessions" min="0" step="1" value="1" inputmode="numeric">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="calcPrice">What you charge per session</label>
+                        <div class="calc-prefix-wrap">
+                            <span class="calc-prefix">&pound;</span>
+                            <input type="number" id="calcPrice" min="0" step="0.5" value="5" inputmode="decimal">
+                        </div>
+                    </div>
+                </div>
+                <!-- RESULTS -->
+                <div class="calc-results">
+                    <div class="calc-panel-title">Where You Stand</div>
+                    <div class="calc-live-stats">
+                        <div class="calc-stat">
+                            <div class="calc-stat-value" id="calcMonthly">&pound;0</div>
+                            <div class="calc-stat-label">Per month</div>
+                        </div>
+                        <div class="calc-stat">
+                            <div class="calc-stat-value" id="calcAnnual">&pound;0</div>
+                            <div class="calc-stat-label">Per year</div>
+                        </div>
+                    </div>
+                    <div class="calc-gauge-label">Your rate: <strong id="calcRateNote">&mdash;</strong></div>
+                    <div class="calc-gauge">
+                        <span class="calc-gauge-tag you" id="calcTagYou">You</span>
+                        <span class="calc-gauge-marker you" id="calcMarkYou"></span>
+                        <span class="calc-gauge-tag rec" id="calcTagRec">Target</span>
+                        <span class="calc-gauge-marker rec" id="calcMarkRec"></span>
+                    </div>
+                    <div class="calc-gauge-scale">
+                        <span id="calcScaleMin">&pound;0</span>
+                        <span>Typical range</span>
+                        <span id="calcScaleMax">&pound;0</span>
+                    </div>
+
+                    <!-- EMAIL GATE -->
+                    <div class="calc-gate" id="calcGate">
+                        <div class="calc-gate-teaser" id="calcTeaser">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <span id="calcTeaserText">Unlock your personalised pricing plan</span>
+                        </div>
+                        <form class="calc-gate-form" id="calcGateForm" novalidate>
+                            <input type="email" id="calcEmail" placeholder="Your email address" autocomplete="email" aria-label="Your email address">
+                            <button type="submit" class="btn btn-primary">Show my plan</button>
+                        </form>
+                        <div class="calc-gate-error" id="calcEmailError">Please enter a valid email address.</div>
+                        <p class="calc-gate-privacy">We'll email your plan and the free guide. No spam &mdash; unsubscribe anytime.</p>
+                    </div>
+
+                    <!-- REVEALED PLAN -->
+                    <div class="calc-plan" id="calcPlan" hidden>
+                        <div class="calc-plan-rec">
+                            <div class="calc-plan-rec-price" id="planRecPrice">&pound;0</div>
+                            <div class="calc-plan-rec-sub" id="planRecSub">recommended per session</div>
+                        </div>
+                        <div class="calc-plan-uplift">
+                            <div class="calc-stat">
+                                <div class="calc-stat-value" id="planMonthlyUp">&pound;0</div>
+                                <div class="calc-stat-label">Added / month</div>
+                            </div>
+                            <div class="calc-stat">
+                                <div class="calc-stat-value" id="planAnnualUp">&pound;0</div>
+                                <div class="calc-stat-label">Added / year</div>
+                            </div>
+                        </div>
+                        <ul class="calc-plan-tips" id="planTips"></ul>
+                        <a href="#capture" class="btn btn-primary" style="width:100%;">Get the full playbook</a>
+                        <p class="calc-disclaimer">These figures are a guide based on typical UK grassroots rates and the numbers you entered &mdash; not a guarantee. Your plan and the free guide are on their way to your inbox.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2647,6 +3019,174 @@
                         '</div>';
                 }
             });
+        })();
+
+        /* ===== PRICING CALCULATOR ===== */
+        (function() {
+            var el = function(id) { return document.getElementById(id); };
+            var formatEl = el('calcFormat'),
+                playersEl = el('calcPlayers'),
+                sessionsEl = el('calcSessions'),
+                priceEl = el('calcPrice');
+            if (!formatEl) return;
+
+            // Typical UK grassroots rates per session, by format (guide only).
+            var FORMATS = {
+                group:    { min: 5,  max: 8,  mid: 6.5 },
+                small:    { min: 8,  max: 12, mid: 10  },
+                oneToOne: { min: 25, max: 45, mid: 35  }
+            };
+            var WEEKS_PER_MONTH = 4.333, WEEKS_PER_YEAR = 52;
+            var planShown = false, lastState = null;
+
+            function num(v) { var n = parseFloat(v); return isFinite(n) && n > 0 ? n : 0; }
+            function gbp(n) { return '£' + Math.round(n).toLocaleString('en-GB'); }
+            function price(n) {
+                var r = Math.round(n * 100) / 100;
+                return '£' + (r % 1 === 0 ? r.toString() : r.toFixed(2));
+            }
+
+            function recommend(cur, band) {
+                if (cur < band.mid) return band.mid;
+                if (cur < band.max) return band.max;
+                return Math.round(cur * 1.05 * 2) / 2; // already premium: nudge +5%, to nearest 50p
+            }
+
+            function pctInBand(v, band) {
+                if (band.max === band.min) return 50;
+                return Math.max(0, Math.min(100, ((v - band.min) / (band.max - band.min)) * 100));
+            }
+
+            function compute() {
+                var band = FORMATS[formatEl.value] || FORMATS.group;
+                var players = num(playersEl.value),
+                    sessions = num(sessionsEl.value),
+                    cur = num(priceEl.value);
+                var weekly = players * sessions * cur;
+                var rec = recommend(cur, band);
+                var upWeekly = players * sessions * Math.max(0, rec - cur);
+                lastState = {
+                    band: band, players: players, sessions: sessions, cur: cur, rec: rec,
+                    monthly: weekly * WEEKS_PER_MONTH,
+                    annual: weekly * WEEKS_PER_YEAR,
+                    monthlyUp: upWeekly * WEEKS_PER_MONTH,
+                    annualUp: upWeekly * WEEKS_PER_YEAR
+                };
+                return lastState;
+            }
+
+            function renderLive() {
+                var s = compute();
+                el('calcMonthly').textContent = gbp(s.monthly);
+                el('calcAnnual').textContent = gbp(s.annual);
+                el('calcScaleMin').textContent = price(s.band.min);
+                el('calcScaleMax').textContent = price(s.band.max);
+
+                var youPct = pctInBand(s.cur, s.band), recPct = pctInBand(s.rec, s.band);
+                el('calcMarkYou').style.left = youPct + '%';
+                el('calcTagYou').style.left = youPct + '%';
+                el('calcMarkRec').style.left = recPct + '%';
+                el('calcTagRec').style.left = recPct + '%';
+
+                var note;
+                if (s.cur === 0) note = 'enter your price to see where you stand';
+                else if (s.cur < s.band.min) note = price(s.cur) + ' — below the typical range';
+                else if (s.cur >= s.band.max) note = price(s.cur) + ' — top of the range';
+                else note = price(s.cur) + ' — within the typical range';
+                el('calcRateNote').textContent = note;
+
+                if (s.monthlyUp > 0 && s.monthly > 0) {
+                    el('calcTeaserText').textContent = 'You could be adding ' + gbp(s.monthlyUp) + '/month — unlock your plan';
+                } else {
+                    el('calcTeaserText').textContent = 'Unlock your personalised pricing plan';
+                }
+
+                if (planShown) renderPlan();
+            }
+
+            function renderPlan() {
+                var s = lastState || compute();
+                el('planRecPrice').textContent = price(s.rec);
+                el('planRecSub').textContent = 'recommended per session (up from ' + price(s.cur) + ')';
+                el('planMonthlyUp').textContent = '+' + gbp(s.monthlyUp);
+                el('planAnnualUp').textContent = '+' + gbp(s.annualUp);
+
+                var tips = [];
+                if (s.rec > s.cur) {
+                    tips.push('Move to ' + price(s.rec) + ' per session — that’s ' + gbp(s.annualUp) + ' more a year at your current ' + s.players + ' players, with zero new sign-ups.');
+                } else {
+                    tips.push('You’re already priced at the top of your range — add a premium tier to grow revenue without more players.');
+                }
+                tips.push('Sell in 6-week blocks at ' + gbp(s.rec * 6) + ' up front — steadier cash flow and far fewer drop-offs.');
+                tips.push('Raise prices for new joiners first, then existing families with notice — the guide has the exact scripts.');
+                tips.push('Add a premium small-group or 1-to-1 option above your core price to lift your average.');
+
+                var ul = el('planTips');
+                ul.innerHTML = '';
+                tips.forEach(function(t) {
+                    var li = document.createElement('li');
+                    li.textContent = t;
+                    ul.appendChild(li);
+                });
+            }
+
+            function showPlan() {
+                planShown = true;
+                renderPlan();
+                var gate = el('calcGate');
+                gate.setAttribute('hidden', '');
+                gate.style.display = 'none';
+                el('calcPlan').removeAttribute('hidden');
+            }
+
+            [formatEl, playersEl, sessionsEl, priceEl].forEach(function(f) {
+                f.addEventListener('input', renderLive);
+                f.addEventListener('change', renderLive);
+            });
+
+            el('calcGateForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var emailEl = el('calcEmail'), errEl = el('calcEmailError');
+                var email = emailEl.value.trim();
+                var ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                errEl.classList.toggle('show', !ok);
+                emailEl.style.borderColor = ok ? '' : '#ef4444';
+                if (!ok) return;
+
+                var btn = this.querySelector('button[type="submit"]');
+                btn.innerHTML = '<span class="spinner"></span>';
+
+                var s = compute();
+                var data = {
+                    email: email,
+                    source: 'pricing-calculator',
+                    format: formatEl.value,
+                    players: s.players,
+                    sessions_per_week: s.sessions,
+                    current_price: s.cur,
+                    recommended_price: s.rec,
+                    monthly_revenue: Math.round(s.monthly),
+                    monthly_uplift: Math.round(s.monthlyUp),
+                    submitted_at: new Date().toISOString()
+                };
+
+                // Same endpoint + storage key as the main lead form (see CONFIG).
+                fetch(CONFIG.formEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).catch(function() {});
+
+                localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+                showPlan();
+            });
+
+            renderLive();
+
+            // Returning lead who already gave their email? Skip the gate.
+            if (localStorage.getItem(CONFIG.storageKey)) {
+                showPlan();
+            }
         })();
     </script>
 </body>

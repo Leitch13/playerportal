@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+  INSTAGRAM STORY - "5 spaces left" founding-members urgency (ASCEND).
+  1080 x 1920. Content kept in the safe centre (top/bottom ~200px left clear for IG UI).
+  Screenshot / export the card as a PNG and post to your story. Add a DM / link sticker
+  over the CTA area.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Founding spots — IG story</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --line:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#04070a;font-family:"Space Grotesk",system-ui,sans-serif;display:flex;justify-content:center;padding:20px}
+  .story{
+    width:1080px;height:1920px;position:relative;overflow:hidden;color:var(--paper);
+    padding:170px 96px 180px;display:flex;flex-direction:column;align-items:center;text-align:center;
+    background:
+      radial-gradient(42% 26% at 84% 8%,rgba(34,211,238,.20),transparent 60%),
+      radial-gradient(42% 26% at 6% 94%,rgba(11,110,124,.30),transparent 60%),
+      linear-gradient(165deg,#0b1116,#090C10 55%);
+  }
+  .story::before{content:"";position:absolute;inset:0;background-image:
+     linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+     background-size:66px 66px;mask-image:radial-gradient(75% 60% at 50% 42%,#000,transparent 85%);pointer-events:none}
+  .story > *{position:relative;z-index:1}
+
+  .brandrow{display:flex;align-items:center;gap:15px;justify-content:center}
+  .logo{width:58px;height:58px;border-radius:13px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.7rem;color:var(--brand-ink)}
+  .brandrow .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:1.5rem;line-height:1;text-align:left}
+  .brandrow .name small{display:block;font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:.72rem;letter-spacing:.18em;color:var(--mute);margin-top:4px}
+
+  .pill{display:inline-block;font-size:1.05rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);border:1.5px solid var(--brand);border-radius:40px;padding:12px 26px;margin-top:70px}
+
+  .only{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:2.6rem;letter-spacing:.14em;color:#D6E0E6;margin-top:64px}
+  .num{font-family:"Anton",sans-serif;font-size:24rem;line-height:.78;color:var(--brand);text-shadow:0 0 90px rgba(34,211,238,.55);margin:6px 0 0}
+  .left{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:4.8rem;line-height:.95;margin-top:4px}
+
+  .rule{width:120px;height:3px;background:var(--brand);border-radius:3px;margin:56px auto 0;opacity:.8}
+
+  .machine{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:3.4rem;line-height:.95;margin-top:44px}
+  .machine .cy{color:var(--brand)}
+  .desc{font-size:1.7rem;color:#C4D0D8;margin-top:24px;max-width:26ch;line-height:1.35;font-weight:500}
+  .desc b{color:#fff;font-weight:700}
+
+  .spacer{flex:1}
+
+  .cta{border:2px solid var(--brand);border-radius:20px;padding:30px 40px;background:radial-gradient(120% 160% at 50% 0%,rgba(34,211,238,.14),transparent 60%),rgba(16,22,28,.6);width:100%}
+  .cta .v{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:2.5rem;color:#fff;line-height:1.05}
+  .cta .v span{color:var(--brand)}
+  .cta .s{color:#BAC6CE;font-size:1.2rem;margin-top:12px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+  <div class="story">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+
+    <span class="pill">Founding members</span>
+
+    <div class="only">Only</div>
+    <div class="num">5</div>
+    <div class="left">Spaces left</div>
+
+    <div class="rule"></div>
+
+    <div class="machine">THE <span class="cy">LEAD</span> MACHINE</div>
+    <div class="desc">Your academy&rsquo;s lead system &mdash; <b>built for you.</b> Free inside ASCEND.</div>
+
+    <div class="spacer"></div>
+
+    <div class="cta">
+      <div class="v">DM me <span>&ldquo;MACHINE&rdquo;</span></div>
+      <div class="s">to grab a founding spot &rarr;</div>
+    </div>
+  </div>
+</body>
+</html>

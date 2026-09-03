@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Time Audit — ASCEND</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1214; --panel:#121E21; --panel2:#0F181A;
+    --ink:#EAF3F3; --muted:#8DA0A1; --muted-dim:#5C6B6C;
+    --cyan:#33E3E3; --line:#223034;
+    --coach:#33E3E3; --match:#5FC2A2; --plan:#4EA8DE;
+    --admin:#F0A24B; --pay:#F2685E; --parent:#B58BF2;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    padding:24px clamp(14px,3vw,36px) 64px;
+  }
+  .top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px}
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin:0 0 8px}
+  h1{font-family:'Archivo',sans-serif;font-weight:900;font-size:clamp(28px,4vw,42px);line-height:0.98;margin:0}
+  h1 .who{color:var(--cyan)}
+  .sub{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:52ch;line-height:1.5}
+  .brand{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--muted-dim);text-transform:uppercase;text-align:right;white-space:nowrap}
+
+  .brushbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+  .brushbar .lbl{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-right:4px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer;font-size:13px;font-weight:500;color:var(--ink);transition:border-color .12s,transform .05s;user-select:none}
+  .chip:hover{border-color:var(--muted-dim)}
+  .chip:active{transform:translateY(1px)}
+  .chip .dot{width:12px;height:12px;border-radius:3px;flex:none}
+  .chip .n{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);min-width:14px;text-align:right}
+  .chip.on{border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
+  .chip.erase{color:var(--muted)}
+  .chip.erase .dot{background:repeating-linear-gradient(45deg,#2a3a3e,#2a3a3e 3px,transparent 3px,transparent 6px);border:1px solid var(--line)}
+
+  .gridwrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+  table{border-collapse:collapse;width:100%;min-width:680px}
+  th,td{border:1px solid var(--line);text-align:center}
+  thead th{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:11px 6px;background:var(--panel);position:sticky;top:0}
+  thead th.corner{background:var(--panel2)}
+  tbody td.time{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted-dim);padding:0 10px;white-space:nowrap;background:var(--panel);width:58px}
+  tbody td.cell{height:34px;cursor:crosshair;transition:box-shadow .08s;touch-action:none}
+  tbody td.cell:hover{box-shadow:inset 0 0 0 2px var(--cyan)}
+
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:20px}
+  .stat{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:15px 16px}
+  .stat .k{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  .stat .v{font-family:'Archivo',sans-serif;font-weight:800;font-size:30px;line-height:1}
+  .stat .v small{font-size:14px;font-weight:600;color:var(--muted);margin-left:3px}
+  .stat.protect .v{color:var(--match)}
+  .stat.reclaim .v{color:var(--admin)}
+  .stat.total .v{color:var(--ink)}
+
+  .insight{margin-top:14px;border-left:3px solid var(--cyan);background:var(--panel);border-radius:0 10px 10px 0;padding:14px 16px;font-size:15px;line-height:1.55}
+  .insight b{color:var(--cyan);font-weight:600}
+
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:20px}
+  .hint{color:var(--muted-dim);font-size:12px;font-family:'Space Mono',monospace}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+  .btn:hover{border-color:var(--pay);color:var(--pay)}
+
+  @media(max-width:600px){
+    table{min-width:0}
+    thead th{padding:8px 2px;font-size:9px;letter-spacing:0}
+    tbody td.time{width:38px;font-size:9px;padding:0 4px}
+    tbody td.cell{height:32px}
+    .brushbar{gap:6px}
+    .chip{padding:7px 10px;font-size:12px}
+  }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:7px;background:#121E21;border:1px solid #2E4247;color:#33E3E3;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 13px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.35)">&#8592; ASCEND hub</a>
+
+
+  <div class="top">
+    <div>
+      <p class="eyebrow">Ascend · Step 1 — Audit</p>
+      <h1>The Time Audit<br><span class="who">Where your week really goes</span></h1>
+      <p class="sub">Paint where your week actually goes. Pick a category, then click and drag across the grid. Each block is one hour. The tally shows what only you can do versus what you can reclaim first.</p>
+    </div>
+    <div class="brand">Ascend<br>Founder to founder</div>
+  </div>
+
+  <div class="brushbar" id="brushbar">
+    <span class="lbl">Brush</span>
+  </div>
+
+  <div class="gridwrap">
+    <table id="grid"></table>
+  </div>
+
+  <div class="summary">
+    <div class="stat total"><p class="k">Hours logged</p><div class="v" id="v-total">0<small>hrs</small></div></div>
+    <div class="stat protect"><p class="k">Only you</p><div class="v" id="v-protect">0<small>hrs</small></div></div>
+    <div class="stat reclaim"><p class="k">Reclaimable</p><div class="v" id="v-reclaim">0<small>hrs</small></div></div>
+    <div class="stat reclaim"><p class="k">Could hand off</p><div class="v" id="v-pct">0<small>%</small></div></div>
+  </div>
+
+  <div class="insight" id="insight">Start painting your week to see where the hours go — and how much of it isn't really your job.</div>
+
+  <div class="foot">
+    <span class="hint">Tip: one cell = one hour · drag to fill a block</span>
+    <button class="btn" id="clear">Clear the week</button>
+  </div>
+
+<script>
+  var CATS = [
+    {id:'coach',  label:'Coaching on the pitch', color:'#33E3E3', bucket:'protect'},
+    {id:'match',  label:'Matchdays & fixtures',  color:'#5FC2A2', bucket:'protect'},
+    {id:'plan',   label:'Session planning',      color:'#4EA8DE', bucket:'reclaim'},
+    {id:'admin',  label:'Admin & bookings',      color:'#F0A24B', bucket:'reclaim'},
+    {id:'pay',    label:'Payments & chasing',    color:'#F2685E', bucket:'reclaim'},
+    {id:'parent', label:'Parent messages',       color:'#B58BF2', bucket:'reclaim'}
+  ];
+  var DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var HOURS = []; for(var h=7; h<=20; h++){ HOURS.push(h); }
+
+  var state = {};
+  var active = 'coach';
+  var painting = false;
+
+  var bar = document.getElementById('brushbar');
+  function chip(id,label,color,erase){
+    var c = document.createElement('button');
+    c.className = 'chip' + (erase?' erase':'') + (id===active?' on':'');
+    c.dataset.id = id;
+    var dot = document.createElement('span'); dot.className='dot';
+    if(!erase) dot.style.background = color;
+    var txt = document.createElement('span'); txt.textContent = label;
+    c.appendChild(dot); c.appendChild(txt);
+    if(!erase){ var n=document.createElement('span'); n.className='n'; n.id='n-'+id; n.textContent='0'; c.appendChild(n); }
+    c.addEventListener('click', function(){ setBrush(id); });
+    bar.appendChild(c);
+  }
+  CATS.forEach(function(c){ chip(c.id,c.label,c.color,false); });
+  chip('erase','Erase',null,true);
+
+  function setBrush(id){
+    active = id;
+    document.querySelectorAll('.chip').forEach(function(el){
+      el.classList.toggle('on', el.dataset.id===id);
+    });
+  }
+
+  var table = document.getElementById('grid');
+  var thead = document.createElement('thead');
+  var hr = document.createElement('tr');
+  var corner = document.createElement('th'); corner.className='corner'; corner.textContent=''; hr.appendChild(corner);
+  DAYS.forEach(function(d){ var th=document.createElement('th'); th.textContent=d; hr.appendChild(th); });
+  thead.appendChild(hr); table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  HOURS.forEach(function(h){
+    var tr = document.createElement('tr');
+    var t = document.createElement('td'); t.className='time';
+    t.textContent = (h<10?'0'+h:h)+':00';
+    tr.appendChild(t);
+    DAYS.forEach(function(d){
+      var td = document.createElement('td');
+      td.className='cell';
+      td.dataset.key = d+'-'+h;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  function colorFor(id){ for(var i=0;i<CATS.length;i++){ if(CATS[i].id===id) return CATS[i].color; } return null; }
+
+  function paint(td){
+    var key = td.dataset.key;
+    if(active==='erase'){
+      delete state[key];
+      td.style.background='';
+    } else {
+      state[key] = active;
+      td.style.background = colorFor(active);
+    }
+  }
+
+  table.addEventListener('pointerdown', function(e){
+    var td = e.target.closest('td.cell'); if(!td) return;
+    painting = true; paint(td); recalc();
+    e.preventDefault();
+  });
+  // Use elementFromPoint so drag-painting works with touch (pointerover
+  // doesn't fire under a moving finger the way it does under a mouse).
+  document.addEventListener('pointermove', function(e){
+    if(!painting) return;
+    var el = document.elementFromPoint(e.clientX, e.clientY);
+    var td = el && el.closest ? el.closest('td.cell') : null;
+    if(td){ paint(td); recalc(); }
+    e.preventDefault();
+  });
+  document.addEventListener('pointerup', function(){ painting=false; });
+  document.addEventListener('pointercancel', function(){ painting=false; });
+
+  function recalc(){
+    var counts = {}; CATS.forEach(function(c){ counts[c.id]=0; });
+    var protect=0, reclaim=0;
+    for(var k in state){
+      var id = state[k]; if(counts[id]===undefined) continue;
+      counts[id]++;
+    }
+    CATS.forEach(function(c){
+      document.getElementById('n-'+c.id).textContent = counts[c.id];
+      if(c.bucket==='protect') protect += counts[c.id]; else reclaim += counts[c.id];
+    });
+    var total = protect + reclaim;
+    document.getElementById('v-total').innerHTML = total + '<small>hrs</small>';
+    document.getElementById('v-protect').innerHTML = protect + '<small>hrs</small>';
+    document.getElementById('v-reclaim').innerHTML = reclaim + '<small>hrs</small>';
+    var pct = total ? Math.round(reclaim/total*100) : 0;
+    document.getElementById('v-pct').innerHTML = pct + '<small>%</small>';
+
+    var ins = document.getElementById('insight');
+    if(total===0){
+      ins.innerHTML = "Start painting your week to see where the hours go \u2014 and how much of it isn't really your job.";
+    } else {
+      ins.innerHTML = '<b>'+reclaim+' of '+total+' logged hours ('+pct+'%)</b> could be handed off or systemised. That\u2019s the time you reclaim first \u2014 before touching the offer or lead gen.';
+    }
+  }
+
+  document.getElementById('clear').addEventListener('click', function(){
+    state = {};
+    document.querySelectorAll('td.cell').forEach(function(td){ td.style.background=''; });
+    recalc();
+  });
+
+  recalc();
+</script>
+</body>
+</html>

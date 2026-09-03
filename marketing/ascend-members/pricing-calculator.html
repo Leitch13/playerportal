@@ -204,6 +204,8 @@
 </style>
 </head>
 <body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:7px;background:#121E21;border:1px solid #2E4247;color:#33E3E3;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 13px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.35)">&#8592; ASCEND hub</a>
+
 
 <!-- ===== HERO ===== -->
 <header class="hero">
@@ -359,10 +361,10 @@
     <div class="author" style="margin-top:18px">
       <div class="crest" id="authorPhoto">JL</div>
       <div>
-        <p>I built Play It Love It from nothing to 300-350 players a week across Aberdeenshire over eight years &mdash; then sold it. Every pricing mistake baked into this calculator is one I made first and fixed the hard way. Now I help academy owners build businesses that actually pay them properly.</p>
+        <p>I built Play It Love It from nothing to 300-350 players a week across Aberdeenshire over ten years &mdash; then sold it. Every pricing mistake baked into this calculator is one I made first and fixed the hard way. Now I help academy owners build businesses that actually pay them properly.</p>
         <div class="sign">&mdash; John Leitch</div>
         <div class="creds">
-          <span>8 Years</span>
+          <span>10 Years</span>
           <span>350 Weekly Players</span>
           <span>Built &middot; Scaled &middot; Sold</span>
         </div>
@@ -425,7 +427,7 @@
     if (AUTHOR_PHOTO){ var a = el('authorPhoto'); a.style.backgroundImage = 'url(' + AUTHOR_PHOTO + ')'; a.textContent = ''; }
 
     /* ===== EMAIL FORM ===== paste your Formspree endpoint to capture leads ===== */
-    var FORM_ENDPOINT = 'https://www.theplayerportal.net/api/ascend/lead'; // ASCEND lead capture — alerts John + adds to the "ASCEND Leads" Resend audience + auto-sends the calculator (re-wired from Formspree 2026-08-19)
+    var FORM_ENDPOINT = 'https://formspree.io/f/xjybwyqv'; // ASCEND Calculator form (Formspree, wired 2026-08-10)
     window.FORM_ENDPOINT = FORM_ENDPOINT; // exposed for the calculator gate script
 
     /* ===== CALCULATOR ===== */
@@ -524,18 +526,7 @@
   document.getElementById('gateForm').addEventListener('submit', function(e){
     e.preventDefault();
     var name = document.getElementById('gateName').value.trim();
-    var email = document.getElementById('gateEmail').value.trim().toLowerCase();
-    var err0 = document.getElementById('gateErr');
-    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) {
-      err0.textContent = 'That email does not look right - check it and try again.';
-      err0.style.display = 'block'; return;
-    }
-    var typos = {'gmial.com':'gmail.com','gamil.com':'gmail.com','gmal.com':'gmail.com','gnail.com':'gmail.com','hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','outlok.com':'outlook.com','yaho.com':'yahoo.com','iclould.com':'icloud.com','icoud.com':'icloud.com'};
-    var dom = email.split('@')[1];
-    if (typos[dom]) {
-      err0.textContent = 'Did you mean ' + email.split('@')[0] + '@' + typos[dom] + '? Fix it and hit the button again.';
-      err0.style.display = 'block'; return;
-    }
+    var email = document.getElementById('gateEmail').value.trim();
     var err = document.getElementById('gateErr');
     err.style.display = 'none';
     if (!name || !email) { return; }

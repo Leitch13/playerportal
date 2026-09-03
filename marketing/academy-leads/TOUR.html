@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<!--
+  THE ACADEMY OS - COMPLETE WALKTHROUGH
+  The detailed tour: every module shown as its full reaction chain - records,
+  real email copy, timing, automation numbers matching the BUILD docs, and
+  what the owner's only job is at each point. Links open the real pages.
+  All links relative - works locally and wherever this folder is hosted.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academy OS — Complete Walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441; --red:#F0526B;
+    --line:rgba(255,255,255,.10); --maxw:900px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.97}
+  .eyebrow{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  a{color:var(--brand);text-decoration:none}
+  .btn{display:inline-flex;align-items:center;gap:.5em;background:var(--brand);color:var(--brand-ink);font-weight:700;font-size:.9rem;padding:11px 20px;border-radius:5px;border:1px solid var(--brand)}
+  .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+
+  header{padding:54px 0 30px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 90% 0%,rgba(34,211,238,.12),transparent 60%)}
+  header h1{font-size:clamp(2.1rem,5.6vw,3.3rem);margin:12px 0 14px;max-width:20ch}
+  header p{color:#C4D0D8;max-width:60ch;font-size:1.02rem}
+
+  /* contents */
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .toc a{font-size:.8rem;font-weight:700;border:1px solid var(--line);border-radius:30px;padding:7px 14px;color:#CBD5DC}
+  .toc a:hover{border-color:var(--brand);color:var(--brand)}
+
+  section.act{padding:52px 0;border-bottom:1px solid var(--line)}
+  .act-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .act-no{font-family:"Anton",sans-serif;font-size:2.4rem;color:var(--brand);line-height:1}
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(1.5rem,4vw,2.2rem);line-height:1.02}
+  .act-lead{color:#BAC6CE;max-width:62ch;margin:10px 0 8px;font-size:.99rem}
+  .act-lead b{color:#fff}
+  .trylive{margin:14px 0 22px}
+
+  /* the chain */
+  .chain{display:grid;gap:0;margin-top:10px}
+  .link{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:14px 0;border-top:1px solid rgba(255,255,255,.07);position:relative}
+  .link:first-child{border-top:0}
+  .when{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);padding-top:4px}
+  .when small{display:block;font-weight:500;letter-spacing:.04em;color:var(--mute);text-transform:none;font-size:.72rem;margin-top:2px}
+  .what{min-width:0}
+  .what > p{font-size:.95rem;color:#DCE5EA;margin-bottom:8px}
+  .what > p b{color:#fff}
+  .auto{display:inline-block;font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);border:1px solid rgba(34,211,238,.4);border-radius:4px;padding:2px 8px;margin-left:6px;vertical-align:2px}
+  .owner-job .when{color:var(--green)}
+  .owner-job{background:linear-gradient(90deg,rgba(56,211,159,.05),transparent 60%)}
+
+  /* record chip */
+  .rec{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;background:var(--ink-3);border:1px solid var(--line);border-radius:7px;padding:9px 12px;color:#C9D6DE;line-height:1.7;overflow-x:auto;white-space:nowrap}
+  .rec b{color:var(--brand);font-weight:600}
+  .rec .st{color:var(--amber)}
+  .rec .ok{color:var(--green)}
+  .rec .bad{color:var(--red)}
+
+  /* email mock */
+  .mail{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:8px;max-width:640px}
+  .mail-h{padding:8px 13px;background:var(--ink-3);border-bottom:1px solid var(--line);font-size:.76rem;color:var(--mute);display:grid;gap:1px}
+  .mail-h b{color:#E8EEF1;font-weight:700}
+  .mail-b{padding:11px 13px;font-size:.86rem;color:#CDD8DE;line-height:1.6;background:var(--ink-2)}
+  .mail-b p{margin-bottom:6px}.mail-b p:last-child{margin-bottom:0}
+  .mail-b ul{margin:4px 0 6px 18px}
+  .mail.owner .mail-h{border-left:3px solid var(--brand)}
+  .mail.alarm .mail-h{border-left:3px solid var(--red)}
+
+  /* checklist */
+  .tasks{border:1px solid var(--line);border-radius:9px;padding:10px 14px;font-size:.86rem;background:var(--ink-2);max-width:640px;margin-top:8px}
+  .tasks .t{display:flex;gap:9px;padding:2.5px 0;color:#DCE5EA}
+  .tasks .t .bx{font-family:ui-monospace,monospace;color:var(--mute);flex:none}
+  .tasks .t.done .bx{color:var(--green)}
+  .tasks .t.done span{color:var(--mute);text-decoration:line-through}
+  .tasks .t.due span{color:var(--red);font-weight:700}
+
+  .note{font-size:.85rem;color:var(--mute);font-style:italic;margin-top:8px;max-width:62ch}
+  .note b{color:var(--amber);font-style:normal}
+
+  /* tables section */
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-top:18px;background:var(--ink-2)}
+  table{border-collapse:collapse;width:100%;min-width:620px;font-size:.88rem}
+  th{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);color:#CDD8DE;vertical-align:top;line-height:1.5}
+  tr:last-child td{border-bottom:0}
+  td.n{font-weight:700;color:#fff;white-space:nowrap}
+
+  footer{padding:36px 0 70px;color:var(--mute);font-size:.85rem;text-align:center}
+  @media (max-width:620px){ .link{grid-template-columns:1fr;gap:5px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="eyebrow">The Academy OS &middot; complete walkthrough</span>
+    <h1 class="display">Every event. Every reaction. In full.</h1>
+    <p>Eight acts, in the order life throws them at an academy. Each one shows the <strong style="color:#fff">complete chain</strong>: the trigger, every record and email with its real copy, the timing, which automation fires (numbered to match the build docs) &mdash; and the one job left for a human, marked in green. The "try it live" buttons open the real pages.</p>
+    <div class="toc">
+      <a href="#act1">1 &middot; Lead in</a>
+      <a href="#act2">2 &middot; Trial &rarr; enrolled</a>
+      <a href="#act3">3 &middot; Coach hired</a>
+      <a href="#act4">4 &middot; Coach kept</a>
+      <a href="#act5">5 &middot; The bad day</a>
+      <a href="#act6">6 &middot; Member kept &amp; won back</a>
+      <a href="#act7">7 &middot; The command centre</a>
+      <a href="#act8">8 &middot; Under the hood</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============================== ACT 1 ============================== -->
+<section class="act" id="act1">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">1</span><h2>A lead comes in</h2></div>
+    <p class="act-lead">Tuesday, 7:42pm. Claire Robertson sees the academy's ad, taps it, and lands on the trial funnel. She fills four fields for her son Max, 8. <b>Total human effort from the academy so far: zero.</b></p>
+    <div class="trylive"><a class="btn" href="trial-funnel.html">Try it live &mdash; be Claire &rarr;</a> &nbsp;<a class="btn ghost" href="OS-demo.html">Or watch it simulated &rarr;</a></div>
+    <div class="chain">
+
+      <div class="link">
+        <div class="when">7:42:31pm<small>the instant she taps submit</small></div>
+        <div class="what">
+          <p><b>A lead record is born.</b> <span class="auto">Webhook &rarr; Leads</span></p>
+          <div class="rec">Leads &larr; <b>Max Robertson</b> &middot; age 8 &middot; Claire Robertson &middot; 07700 900123 &middot; claire@ex.com &middot; source: Facebook &middot; <span class="st">Status: New</span> &middot; Follow-up: today</div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">7:42:33pm</div>
+        <div class="what">
+          <p><b>The owner's phone buzzes.</b> <span class="auto">Automation 1</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>New lead: Max (age 8)</b></span></div>
+          <div class="mail-b"><p>New enquiry from <strong>Claire Robertson</strong>.</p><p>Child: Max, age 8. Phone: 07700 900123. Email: claire@ex.com. Source: Facebook.</p><p><strong>Call them today.</strong></p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">7:42:33pm</div>
+        <div class="what">
+          <p><b>Claire gets an instant reply</b> &mdash; so the enquiry never feels like it fell into a void. <span class="auto">Automation 2</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>Thanks — let's get Max booked in</b></span></div>
+          <div class="mail-b"><p>Hi Claire, thanks for booking a free trial for Max! We'll be in touch today to confirm the time. Reply to this email with any questions.</p><p>— [Academy name]</p></div></div>
+        </div>
+      </div>
+
+      <div class="link owner-job">
+        <div class="when">The human bit<small>tonight or tomorrow</small></div>
+        <div class="what"><p><b>The owner rings Claire while the lead is hot.</b> That's the entire job. If it slips &mdash; the next act catches it.</p></div>
+      </div>
+
+      <div class="link">
+        <div class="when">Every day, 8am<small>until she books or says no</small></div>
+        <div class="what">
+          <p><b>The chase list refuses to forget her.</b> <span class="auto">Automation 4</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>Leads to chase today</b></span></div>
+          <div class="mail-b"><p>Claire Robertson &middot; 07700 900123 &middot; New (Max, 8)</p><p>+ anyone else whose follow-up date has arrived. Nothing goes cold by accident.</p></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 2 ============================== -->
+<section class="act" id="act2">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">2</span><h2>Trial &rarr; enrolled</h2></div>
+    <p class="act-lead">The owner rang; Max is coming Saturday 10am. From here the owner's total involvement is <b>two drags of a card</b> &mdash; the system does the other nine things.</p>
+    <div class="chain">
+
+      <div class="link owner-job">
+        <div class="when">The human bit<small>after the call</small></div>
+        <div class="what">
+          <p><b>Owner drags Max's card to "Trial booked"</b> and sets the trial date. One drag &mdash; watch what it triggers:</p>
+          <div class="rec">Leads &larr; Max Robertson &middot; <span class="st">Status: Trial booked</span> &middot; Trial date: Sat 10:00 &middot; Meadowbank</div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">Seconds later</div>
+        <div class="what">
+          <p><b>Confirmation goes out.</b> <span class="auto">Automation 5</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>Max's trial is booked &#127881;</b></span></div>
+          <div class="mail-b"><p>Great news Claire — Max's trial is confirmed for <strong>Saturday 10am at Meadowbank</strong>. Bring boots, shin pads and water. Any problems on the day, just reply here.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">Friday, 5pm<small>the day before</small></div>
+        <div class="what">
+          <p><b>The reminder that kills no-shows.</b> A daily 5pm sweep finds every trial happening tomorrow. <span class="auto">Automation 6</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>See you tomorrow, Max!</b></span></div>
+          <div class="mail-b"><p>Quick reminder — Max's trial is tomorrow at 10am, Meadowbank. See you there!</p></div></div>
+        </div>
+      </div>
+
+      <div class="link owner-job">
+        <div class="when">The human bit<small>after Saturday's session</small></div>
+        <div class="what"><p><b>Owner drags the card again:</b> "Trial attended" (or "No-show" &mdash; both are caught). Second and final drag.</p></div>
+      </div>
+
+      <div class="link">
+        <div class="when">On "attended"</div>
+        <div class="what">
+          <p><b>The enrol nudge</b> &mdash; and a safety net: follow-up auto-set to +2 days, so if Claire goes quiet she lands back on the 8am chase list. <span class="auto">Automation 7</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>How did Max find it?</b></span></div>
+          <div class="mail-b"><p>Great to have Max down! If he loved it, here's the link to enrol and lock in his spot: <strong>[enrol link]</strong></p><p>Questions about groups, fees or anything else — just reply.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">If "no-show"</div>
+        <div class="what">
+          <p><b>The rescue, not the bin.</b> Most academies silently lose these. <span class="auto">Automation 8</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>We missed Max — want to rebook?</b></span></div>
+          <div class="mail-b"><p>No worries at all Claire — life happens! Max's free trial is still there. Reply with a day that suits and we'll get him booked straight in.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">On "enrolled"<small>the win</small></div>
+        <div class="what">
+          <p><b>Four things happen off one drag.</b> <span class="auto">Automation 9</span></p>
+          <div class="rec">Members &larr; <b>Max Robertson</b> &middot; joined today &middot; <span class="ok">Status: Active</span> &middot; linked to original lead &middot; fee &pound;39/mo</div>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>Welcome to [Academy], Max! &#9917;</b></span></div>
+          <div class="mail-b"><p>You're in! Everything you need:</p><ul><li>Kit list &amp; what to bring</li><li>Term dates &amp; venue</li><li>How payment works</li><li>Parents' WhatsApp group invite</li></ul><p>Any questions, reply here. See you at training!</p></div></div>
+          <p class="note">Plus: the lead is archived as won, the Scoreboard counts the conversion, and the owner gets an optional "&#127881; New member: Max" ping.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 3 ============================== -->
+<section class="act" id="act3">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">3</span><h2>A coach is hired</h2></div>
+    <p class="act-lead">Ryan Ferguson, UEFA C, sees the "we're hiring" page. No CV, 60 seconds. From application to fully-cleared coach, the owner makes <b>two decisions</b>; the system runs the paperwork.</p>
+    <div class="trylive"><a class="btn" href="coach-application.html">Try it live &mdash; be Ryan &rarr;</a></div>
+    <div class="chain">
+
+      <div class="link">
+        <div class="when">On submit</div>
+        <div class="what">
+          <p><b>Ryan lands in the hiring pipeline; both sides hear back instantly.</b> <span class="auto">Automation 10</span></p>
+          <div class="rec">Staff &larr; <b>Ryan Ferguson</b> &middot; UEFA C &middot; 1-3 yrs &middot; avail: weekday eves, Saturdays &middot; <span class="st">Status: Applied</span></div>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>New coach application: Ryan Ferguson</b></span></div>
+          <div class="mail-b"><p><strong>Ryan Ferguson</strong> wants to coach. UEFA C &middot; 1-3 years &middot; available weekday evenings, Saturdays.</p><p>Reply today — good coaches get taken fast.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link owner-job">
+        <div class="when">Human decision 1<small>chat + trial session</small></div>
+        <div class="what"><p><b>Owner rings Ryan, likes him, has him assist at a session.</b> Drags the card: Applied &rarr; Chat booked &rarr; Trial session &rarr; <b>Offer made</b>. That last drag opens the floodgates:</p></div>
+      </div>
+
+      <div class="link">
+        <div class="when">On "offer made"</div>
+        <div class="what">
+          <p><b>The onboarding checklist creates itself</b> &mdash; seven tasks, each with a due date, linked to Ryan. <span class="auto">Automation 11</span></p>
+          <div class="tasks">
+            <div class="t"><span class="bx">[ ]</span><span>Contract sent &amp; signed &middot; due +14d</span></div>
+            <div class="t due"><span class="bx">[ ]</span><span>PVG / DBS submitted &middot; due +7d</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>Safeguarding certificate uploaded</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>First-aid certificate uploaded</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>Bank details for payroll</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>Kit ordered</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>Handbook read + walkthrough videos watched</span></div>
+          </div>
+          <div class="mail"><div class="mail-h"><span>To: <b>ryan@ex.com</b></span><span>Subject: <b>Welcome aboard, Ryan &#127881;</b></span></div>
+          <div class="mail-b"><p>Delighted to have you. Two links to save:</p><ul><li><strong>Staff hub</strong> (bookmark this) — session plans, playbook cards, walkthrough videos, everything</li><li>Your handbook is in there under Admin — have a read before your first session</li></ul><p>Your onboarding checklist is underway — we'll nudge you (and us) about the PVG and first-aid bits.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">While tasks open<small>every 8am</small></div>
+        <div class="what"><p><b>Overdue tasks appear in the owner's morning briefing</b> until ticked. Ryan cannot quietly start coaching kids with a missing PVG &mdash; the system nags on purpose.</p></div>
+      </div>
+
+      <div class="link">
+        <div class="when">Last task ticked</div>
+        <div class="what">
+          <p><b>Ryan flips to Active automatically</b> &mdash; start date stamped, milestone clock started. <span class="auto">Automation 12</span></p>
+          <div class="rec">Staff &larr; Ryan Ferguson &middot; <span class="ok">Status: Active</span> &middot; Start date: today &middot; open tasks: 0</div>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>&#9989; Ryan Ferguson is fully onboarded and ready to coach</b></span></div>
+          <div class="mail-b"><p>Contract, PVG, safeguarding, first aid, payroll, kit, handbook — all done. Put him on the rota.</p></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 4 ============================== -->
+<section class="act" id="act4">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">4</span><h2>The coach is trained &mdash; and kept</h2></div>
+    <p class="act-lead">Hiring is act 3. Most academies stop there. The OS keeps going: <b>training lives in one link, compliance renews itself, and good coaches get asked how they're doing before they leave.</b></p>
+    <div class="chain">
+
+      <div class="link">
+        <div class="when">Day one<small>and forever</small></div>
+        <div class="what">
+          <p><b>The staff hub</b> &mdash; one read-only link Ryan bookmarks on his phone. No logins, no per-seat cost, never stale:</p>
+          <div class="rec">Resources &middot; <b>Coaching:</b> session plans (Canva links &mdash; always latest version) &middot; <b>Admin:</b> handbook PDF, "your first session here" video &middot; <b>Playbooks:</b> the 5 cards &middot; <b>Safeguarding:</b> policy PDFs</div>
+          <p class="note">Canva view links mean you edit the design once and every coach sees the update. Videos are Loom / unlisted YouTube. PDFs attach directly.</p>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">30 days before<small>any cert expires</small></div>
+        <div class="what">
+          <p><b>Renewal warning</b> &mdash; a formula watches Ryan's PVG, first-aid and safeguarding dates; both he and the owner get told. <span class="auto">Automation 13</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>Cert expiring in 30 days: Ryan Ferguson</b></span></div>
+          <div class="mail-b"><p>One of Ryan's certificates (PVG / first aid / safeguarding) expires in 30 days — check the Cert watch view and get the renewal booked.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">7 days before</div>
+        <div class="what">
+          <p><b>The red flag.</b> <span class="auto">Automation 14</span></p>
+          <div class="mail alarm"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>&#128680; 7 DAYS: Ryan Ferguson's certificate expires</b></span></div>
+          <div class="mail-b"><p>If this is the PVG, Ryan cannot coach alone once it lapses. Sort it this week.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">3 / 6 / 12 months<small>from start date</small></div>
+        <div class="what">
+          <p><b>The check-in prompt</b> &mdash; staff retention is cheaper than staff recruitment. <span class="auto">Automation 15</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>Ryan hits 3 months this week — book a check-in</b></span></div>
+          <div class="mail-b"><p>Ten minutes over a coffee: how's it going, what does he need, where does he want to grow? At 12 months: say thank you properly, and review his rate.</p></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 5 ============================== -->
+<section class="act" id="act5">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">5</span><h2>The bad day</h2></div>
+    <p class="act-lead">Wednesday session. Max goes down awkwardly &mdash; or worse, a child tells a coach something that can't wait. <b>Good events get automations; bad events get a rehearsed reaction.</b> The coach never has to improvise.</p>
+    <div class="trylive"><a class="btn" href="incident-report.html">Try it live &mdash; pick "Safeguarding concern" and watch the page &rarr;</a> &nbsp;<a class="btn ghost" href="PLAYBOOK-cards.print.html">See the printed cards &rarr;</a></div>
+    <div class="chain">
+
+      <div class="link owner-job">
+        <div class="when">At the pitch<small>the human bit comes FIRST here</small></div>
+        <div class="what"><p><b>The coach follows the laminated playbook card from the kit bag</b> &mdash; injury: stop, assess, treat, tell the parent. The reaction was decided on a calm Tuesday, printed, and rehearsed at a staff meeting. Nobody improvises on the worst day.</p></div>
+      </div>
+
+      <div class="link">
+        <div class="when">Within the hour<small>60 seconds on the coach's phone</small></div>
+        <div class="what">
+          <p><b>The report</b> &mdash; and the page itself shows the playbook steps above the form as a double-check. On submit: <span class="auto">Automation 16</span></p>
+          <div class="rec">Incidents &larr; #47 &middot; <b>Injury</b> &middot; minor &middot; Max R. &middot; "went over on his ankle, ice applied, walked it off" &middot; parent informed: Yes &middot; by R. Ferguson</div>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>&#9888;&#65039; Injury — Minor, handled on the day</b></span></div>
+          <div class="mail-b"><p><strong>Injury</strong> reported by Ryan Ferguson. Who: Max R. Parent informed: Yes.</p><p><strong>What happened:</strong> went over on his ankle... <strong>Action taken:</strong> ice, sat out, parent told at pick-up.</p></div></div>
+          <p class="note">This record <b>is</b> the accident log &mdash; dated, attributable, exportable if an insurer or governing body ever asks. No more "it's in a notebook somewhere".</p>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">Next day, 9am</div>
+        <div class="what">
+          <p><b>The follow-up call that builds trust.</b> <span class="auto">Automation 17</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>Call Max's parents today</b></span></div>
+          <div class="mail-b"><p>Quick check-in on yesterday's knock. Two minutes on the phone turns a bad moment into the reason they trust you. Tick "Follow-up done" after the call.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">If it's safeguarding<small>different rules entirely</small></div>
+        <div class="what">
+          <p><b>The page auto-escalates severity, the alert reads like an alarm, and a three-step checklist opens on the record</b> &mdash; it appears in every morning briefing until all three are ticked. It cannot be quietly dropped; that's the point.</p>
+          <div class="tasks">
+            <div class="t"><span class="bx">[ ]</span><span>Welfare officer informed</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>Written record completed same day</span></div>
+            <div class="t"><span class="bx">[ ]</span><span>Referral decision made &amp; logged</span></div>
+          </div>
+          <div class="mail alarm"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>&#9888;&#65039; Safeguarding concern — Serious</b></span></div>
+          <div class="mail-b"><p>Reported by R. Ferguson. Open the record now. The three SG steps on the record are your checklist. <strong>Today.</strong></p></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 6 ============================== -->
+<section class="act" id="act6">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">6</span><h2>A member is kept &mdash; or won back</h2></div>
+    <p class="act-lead">Eighteen months later. Most academies find out about churn <b>when the money stops</b>. Here, every member has a lifecycle &mdash; and leaving triggers a sequence, not a shrug.</p>
+    <div class="chain">
+
+      <div class="link">
+        <div class="when">7 days before<small>a birthday</small></div>
+        <div class="what">
+          <p><b>Birthday email</b> &mdash; and the party pitch, if the academy runs them. <span class="auto">Automation 20</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>&#127874; Max's birthday is coming up!</b></span></div>
+          <div class="mail-b"><p>Happy almost-birthday Max! Did you know we do football birthday parties? Reply for details — Max's mates, a pitch, and zero mess in your living room.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">6 months in</div>
+        <div class="what">
+          <p><b>The review ask</b> &mdash; timed for peak happiness, fires once. <span class="auto">Automation 21</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>Six months of Max &#9917;</b></span></div>
+          <div class="mail-b"><p>Max's been with us six months! If you've been happy, a Google review takes 60 seconds and genuinely keeps a small academy alive: <strong>[review link]</strong></p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">12 months in</div>
+        <div class="what">
+          <p><b>The referral ask</b> &mdash; a year of trust converted into the cheapest lead you'll ever get. <span class="auto">Automation 21b</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>claire@ex.com</b></span><span>Subject: <b>One year! Bring a friend on us</b></span></div>
+          <div class="mail-b"><p>A whole year — thank you. If Max has a mate who'd love it, their first session's free: just reply with a name.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link owner-job">
+        <div class="when">The human bit<small>if they cancel</small></div>
+        <div class="what">
+          <p><b>Owner sets Status to Cancelled and picks a reason from the list</b> (cost &middot; moved &middot; lost interest &middot; other club &middot; schedule). Ten seconds &mdash; and the reason is the valuable part:</p>
+          <div class="rec">Members &larr; Ava Henderson &middot; <span class="bad">Status: Cancelled</span> &middot; reason: schedule clash &middot; cancelled on: today</div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">Same minute</div>
+        <div class="what">
+          <p><b>The graceful exit</b> &mdash; leaves the door open instead of slamming it. <span class="auto">Automation 18</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>l.henderson@ex.com</b></span><span>Subject: <b>Sorry to see Ava go</b></span></div>
+          <div class="mail-b"><p>Thanks for everything — Ava's been brilliant to have around. If things change, her spot is always here. The door's open.</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">30 days later<small>fires exactly once</small></div>
+        <div class="what">
+          <p><b>The win-back</b> &mdash; timed for when the schedule clash has often eased. <span class="auto">Automation 19</span></p>
+          <div class="mail"><div class="mail-h"><span>To: <b>l.henderson@ex.com</b></span><span>Subject: <b>We'd love Ava back — first month on us</b></span></div>
+          <div class="mail-b"><p>No pressure at all — but if the reason for leaving has eased, Ava's spot is still here and the first month back is free. Just reply to this email.</p></div></div>
+          <p class="note">Meanwhile the cancellation reason feeds the Scoreboard &mdash; so after six months the owner knows <b>why</b> people leave, not just that they left. If "schedule" keeps winning, that's a timetable decision, not a mystery.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 7 ============================== -->
+<section class="act" id="act7">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">7</span><h2>The command centre</h2></div>
+    <p class="act-lead">Everything above rolls up into three emails. <b>The owner never has to open a dashboard</b> &mdash; the system comes to them. This is the module that sells the whole OS in a demo.</p>
+    <div class="trylive"><a class="btn" href="OS-demo.html">See it build itself in the demo &rarr;</a></div>
+    <div class="chain">
+
+      <div class="link">
+        <div class="when">Every day, 8am</div>
+        <div class="what">
+          <p><b>The morning briefing</b> &mdash; five sections, pulled live from Leads, Onboarding, Staff and Incidents. <span class="auto">Automation 22</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>Your academy today</b></span></div>
+          <div class="mail-b">
+            <p>&#9742;&#65039; <strong>Chase today</strong> — Claire Robertson &middot; 07700 900123 &middot; New (Max, 8)</p>
+            <p>&#9917; <strong>Trials today</strong> — Max Robertson &middot; Sat 10:00 Meadowbank</p>
+            <p>&#128203; <strong>Onboarding overdue</strong> — PVG / DBS submitted &middot; Ryan Ferguson</p>
+            <p>&#128196; <strong>Certs expiring &le;30 days</strong> — Jess Muir &middot; 24 days</p>
+            <p>&#128680; <strong>Open incidents</strong> — Safeguarding &middot; 2 steps unticked</p>
+            <p><em>Everything else is handled.</em></p>
+          </div></div>
+          <p class="note">Five modules, one email, zero logins. On a clean day it reads "everything's handled" &mdash; which is its own small pleasure.</p>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">Monday, 8:30am</div>
+        <div class="what">
+          <p><b>The pulse</b> &mdash; last week in four numbers. <span class="auto">Automation 23</span></p>
+          <div class="mail owner"><div class="mail-h"><span>To: <b>owner@academy.com</b></span><span>Subject: <b>Last week in numbers</b></span></div>
+          <div class="mail-b"><p>New leads: <strong>11</strong> &middot; Trials booked: <strong>6</strong> &middot; New members: <strong>4</strong> &middot; Cancelled: <strong>1</strong></p><p>(The numbers a mentor would ask for — you just got them without lifting a finger.)</p></div></div>
+        </div>
+      </div>
+
+      <div class="link">
+        <div class="when">1st of the month, 7am</div>
+        <div class="what">
+          <p><b>The scoreboard</b> &mdash; a permanent row per month, plus the email. Six months of these is a business you can steer (and a bank/buyer can read). <span class="auto">Automation 24</span></p>
+          <div class="rec">Scoreboard &larr; <b>Aug 2026</b> &middot; leads: 43 &middot; new members: 12 &middot; cancelled: 3 &middot; active: 118 &middot; est. revenue: &pound;4,602</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================== ACT 8 ============================== -->
+<section class="act" id="act8">
+  <div class="wrap">
+    <div class="act-head"><span class="act-no">8</span><h2>Under the hood</h2></div>
+    <p class="act-lead">Everything above runs on <b>one Airtable base, four one-file pages, and ~24 pre-written automations</b>. Free tier. The client duplicates their own copy and owns it forever. Built once from three build docs; each client sets it up in an afternoon from the setup guide.</p>
+    <div class="trylive"><a class="btn ghost" href="SETUP-GUIDE-academy-os.html">The client setup guide &rarr;</a> &nbsp;<a class="btn ghost" href="SALES-SHEET-academy-os.html">The sales sheet &rarr;</a></div>
+    <div class="tbl">
+      <table>
+        <tr><th>Table</th><th>What it holds</th><th>Which acts use it</th></tr>
+        <tr><td class="n">Leads</td><td>Every enquiry from every front door; the pipeline board. The original Lead Machine table, unchanged.</td><td>Acts 1&ndash;2</td></tr>
+        <tr><td class="n">Members</td><td>Enrolled players: joined date, fee, DOB, status, cancel reason. Created automatically from won leads.</td><td>Acts 2, 6, 7</td></tr>
+        <tr><td class="n">Staff</td><td>Coaches from Applied to Active: quals, availability, three cert expiry dates + a days-to-expiry formula, start date.</td><td>Acts 3&ndash;4</td></tr>
+        <tr><td class="n">Onboarding tasks</td><td>Checklist rows auto-created per hire, linked to the coach, with due dates.</td><td>Acts 3, 7</td></tr>
+        <tr><td class="n">Resources</td><td>The staff hub: Canva links, PDFs, videos, playbook cards. Shared to staff as one read-only view link.</td><td>Act 4</td></tr>
+        <tr><td class="n">Incidents</td><td>The accident &amp; incident log, fed by the phone form; safeguarding checklist lives on the record.</td><td>Acts 5, 7</td></tr>
+        <tr><td class="n">Sessions</td><td>The weekly timetable: venue, day, age group, lead coach. Reference data the emails pull from.</td><td>Supporting</td></tr>
+        <tr><td class="n">Scoreboard</td><td>One auto-filled row per month: leads, joins, cancels, actives, est. revenue.</td><td>Act 7</td></tr>
+      </table>
+    </div>
+    <p class="note" style="margin-top:16px">Deliberately <b>not</b> in the base: payments and bookings. Whatever the academy uses for money (Player Portal, standing orders, anything) stays where it is &mdash; the OS records the fee number for the scoreboard and never touches a card. That keeps the template universal.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">The Academy OS &middot; every event gets a pre-decided reaction &middot; run this walkthrough on every sales call.</div>
+</footer>
+
+</body>
+</html>

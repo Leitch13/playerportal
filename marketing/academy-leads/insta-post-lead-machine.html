@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!--
+  INSTAGRAM POST GRAPHIC - "The Lead Machine" (ASCEND).
+  Sized 1080 x 1350 (IG portrait). Open it, screenshot / export the card as a PNG,
+  and post. Caption is provided separately in chat.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lead Machine — IG post</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F;
+    --line:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#04070a;display:flex;justify-content:center;align-items:flex-start;padding:24px;font-family:"Space Grotesk",system-ui,sans-serif}
+
+  .post{
+    width:1080px;height:1080px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(45% 32% at 82% 8%,rgba(34,211,238,.20),transparent 60%),
+      radial-gradient(40% 30% at 6% 96%,rgba(11,110,124,.28),transparent 60%),
+      linear-gradient(160deg,#0b1116,#090C10 55%);
+    color:var(--paper);padding:58px 62px;display:flex;flex-direction:column;
+  }
+  /* subtle grid texture */
+  .post::before{content:"";position:absolute;inset:0;background-image:
+     linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+     background-size:60px 60px;mask-image:radial-gradient(80% 70% at 50% 40%,#000,transparent 85%);pointer-events:none}
+  .post > *{position:relative;z-index:1}
+
+  .brandrow{display:flex;align-items:center;gap:16px}
+  .logo{width:60px;height:60px;border-radius:13px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.7rem;color:var(--brand-ink)}
+  .brandrow .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:1.5rem;line-height:1}
+  .brandrow .name small{display:block;font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:.78rem;letter-spacing:.18em;color:var(--mute);margin-top:4px}
+
+  .eyebrow{font-size:.95rem;letter-spacing:.32em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-top:40px}
+  h1{font-family:"Anton",sans-serif;text-transform:uppercase;line-height:.9;letter-spacing:.005em;font-size:6rem;margin:14px 0 0}
+  h1 .cy{color:var(--brand);text-shadow:0 0 60px rgba(34,211,238,.45)}
+  .tagline{font-size:1.62rem;color:#D2DCE2;margin-top:20px;font-weight:500;max-width:22ch;line-height:1.25}
+  .tagline b{color:#fff;font-weight:700}
+
+  .bullets{margin-top:32px;display:grid;gap:14px}
+  .b{display:flex;align-items:center;gap:18px;font-size:1.34rem;color:#E4ECF0;font-weight:500}
+  .b .tick{width:40px;height:40px;flex:0 0 auto;border-radius:10px;background:rgba(34,211,238,.14);border:1.5px solid var(--brand);display:flex;align-items:center;justify-content:center}
+  .b .tick svg{width:22px;height:22px}
+
+  .spacer{flex:1}
+
+  .cta{display:flex;align-items:center;justify-content:space-between;gap:20px;border:1.5px solid var(--brand);border-radius:16px;padding:22px 30px;background:radial-gradient(120% 160% at 0% 0%,rgba(34,211,238,.12),transparent 60%),rgba(16,22,28,.6)}
+  .cta .l .k{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700}
+  .cta .l .v{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:2.1rem;color:#fff;line-height:1;margin-top:6px}
+  .cta .l .v span{color:var(--brand)}
+  .cta .arrow{font-family:"Anton",sans-serif;font-size:2.8rem;color:var(--brand)}
+
+  .handle{margin-top:18px;text-align:center;color:var(--mute);font-size:1.02rem;letter-spacing:.05em}
+  .handle b{color:var(--paper);font-weight:700}
+</style>
+</head>
+<body>
+  <div class="post">
+    <div class="brandrow">
+      <div class="logo">A</div>
+      <div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div>
+    </div>
+
+    <div class="eyebrow">For academy owners</div>
+    <h1>THE<br><span class="cy">LEAD</span><br>MACHINE</h1>
+    <div class="tagline">Fill your academy <b>on autopilot</b> &mdash; without chasing a single parent.</div>
+
+    <div class="bullets">
+      <div class="b"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Capture every enquiry automatically</div>
+      <div class="b"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Match parents to the right session</div>
+      <div class="b"><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> Follow up &amp; book trials for you</div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="cta">
+      <div class="l">
+        <div class="k">Free for members</div>
+        <div class="v">Inside <span>ASCEND</span></div>
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+    <div class="handle">Save this &middot; link in bio &middot; <b>@johnleitchcoaching</b></div>
+  </div>
+</body>
+</html>

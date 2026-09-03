@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<!--
+  CLIENT-FACING SETUP GUIDE - the "duplicate + connect + go live" doc you hand to
+  each academy owner. Self-contained HTML; host it or export to PDF.
+  Fill the two REPLACE links (Airtable copy link + funnel file) before sending.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Automated Leads System — Setup Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441;
+    --line:rgba(255,255,255,.10); --maxw:820px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98}
+  .eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .accent{color:var(--brand)}
+  a{color:var(--brand)}
+  strong{color:#fff}
+
+  header.top{padding:58px 0 30px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 90% 0%,rgba(34,211,238,.12),transparent 60%)}
+  header.top h1{font-size:clamp(2.1rem,6vw,3.2rem);margin:12px 0 14px;max-width:16ch}
+  header.top p{color:#C4D0D8;max-width:56ch;font-size:1.05rem}
+  .badge{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);border:1px solid var(--brand);border-radius:40px;padding:6px 14px;margin-top:20px}
+
+  section{padding:44px 0;border-bottom:1px solid var(--line)}
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(1.5rem,4vw,2.1rem);margin-bottom:8px;line-height:1.02}
+  h2 .num{color:var(--brand)}
+  .lead{color:#BAC6CE;max-width:60ch;margin-bottom:22px}
+
+  /* what you get - three parts */
+  .parts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+  .part{border:1px solid var(--line);border-radius:10px;padding:20px;background:var(--ink-2)}
+  .part .ic{font-size:1.5rem;margin-bottom:10px}
+  .part h4{font-size:1rem;font-weight:700;margin-bottom:5px}
+  .part p{font-size:.9rem;color:#B6C2CA}
+
+  /* mode cards */
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .mode{border:1px solid var(--line);border-radius:12px;padding:22px;background:var(--ink-2)}
+  .mode.rec{border-color:var(--brand);background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.08),transparent 60%),var(--ink-2)}
+  .mode .tag{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-bottom:12px}
+  .mode.rec .tag{background:var(--brand);color:var(--brand-ink)}
+  .mode.alt .tag{background:var(--ink-3);color:var(--mute)}
+  .mode h4{font-size:1.1rem;font-weight:700;margin-bottom:10px}
+  .flow{font-family:"Space Grotesk",sans-serif;font-size:.86rem;color:#CBD5DC;background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px;line-height:1.7}
+  .flow .b{color:var(--brand);font-weight:700}
+  .mode p{font-size:.92rem;color:#B6C2CA}
+
+  /* step cards */
+  .step{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  .step:last-child{border-bottom:0}
+  .step .no{width:40px;height:40px;flex:0 0 auto;border-radius:9px;background:var(--brand);color:var(--brand-ink);font-family:"Anton",sans-serif;font-size:1.2rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;font-weight:700;margin-bottom:6px}
+  .step p{color:#C4D0D8;font-size:.98rem}
+  .step ul{margin:8px 0 0 0;padding-left:18px;color:#B6C2CA;font-size:.93rem}
+  .step ul li{margin-bottom:4px}
+  .step code{background:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-size:.86em;color:var(--brand)}
+  .tip{margin-top:10px;font-size:.86rem;color:var(--amber);background:rgba(242,180,65,.08);border:1px solid rgba(242,180,65,.25);border-radius:8px;padding:9px 12px}
+
+  /* daily routine */
+  .routine{display:grid;gap:10px;margin-top:16px}
+  .routine .r{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:var(--ink-2)}
+  .routine .r .dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-top:8px;flex:0 0 auto;box-shadow:0 0 10px var(--green)}
+  .routine .r p{font-size:.96rem;color:#C4D0D8}
+
+  .checklist{list-style:none;display:grid;gap:11px;margin-top:14px}
+  .checklist li{display:flex;gap:12px;align-items:flex-start;font-size:1rem;color:#DCE5EA}
+  .checklist li::before{content:"";flex:0 0 auto;width:22px;height:22px;margin-top:2px;border-radius:5px;border:1px solid var(--brand);background:rgba(34,211,238,.1)}
+
+  footer{padding:34px 0;color:var(--mute);font-size:.85rem;text-align:center}
+  .callout{border:1px solid var(--brand);border-radius:12px;padding:20px 22px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.08),transparent 60%),var(--ink-2);margin-top:8px}
+  .callout p{color:#DCE5EA;font-size:.98rem}
+
+  @media (max-width:720px){
+    .parts{grid-template-columns:1fr}
+    .modes{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="eyebrow">Your automated leads system</span>
+    <h1 class="display">Set it up in about 20 minutes.</h1>
+    <p>This turns every interested parent into a tracked lead that gets chased automatically &mdash; then chases the trial all the way to a paying member. No tech skills needed. Just follow the steps.</p>
+    <span class="badge">3 parts &middot; ~20 min &middot; free tools</span>
+  </div>
+</header>
+
+<!-- WHAT YOU'RE SETTING UP -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">What you're setting up</span>
+    <h2>Three parts, one system</h2>
+    <div class="parts">
+      <div class="part"><div class="ic">&#127760;</div><h4>1. Your funnel page</h4><p>A branded page where parents claim a free trial. Your name, colours, offer.</p></div>
+      <div class="part"><div class="ic">&#128202;</div><h4>2. Your leads tracker</h4><p>Every enquiry lands on a board you move from New &rarr; Booked &rarr; Enrolled &mdash; plus a Members table that fills itself when you win.</p></div>
+      <div class="part"><div class="ic">&#9889;</div><h4>3. Nine automations</h4><p>Instant alerts, instant replies, follow-up chasing &mdash; and trial confirmations, day-before reminders, no-show rescues and the welcome pack, all hands-off.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKS WITH YOUR BOOKING SYSTEM -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Important</span>
+    <h2>It works <span class="accent">with</span> your booking system</h2>
+    <p class="lead">This doesn't replace how you take bookings or payments (Player Portal, Spond, Coacha, Eventbrite, your own site &mdash; whatever you use). Your booking system captures the parents who <strong>finish</strong> booking. This captures <strong>everyone who was interested</strong> &mdash; and chases the ones who didn't book yet. Pick how it hands parents over:</p>
+    <div class="modes">
+      <div class="mode rec">
+        <span class="tag">Recommended</span>
+        <h4>Mode A &mdash; Capture first, then book</h4>
+        <div class="flow">Parent &rarr; <span class="b">your funnel</span> &rarr; saved as a lead &rarr; <span class="b">"Book your time"</span> &rarr; your booking system</div>
+        <p>You get the lead <strong>before</strong> they book &mdash; so even if they don't finish, you have their details and the system chases them. This is what makes it a leads system, not just a link.</p>
+      </div>
+      <div class="mode alt">
+        <span class="tag">Simpler</span>
+        <h4>Mode B &mdash; Straight to booking</h4>
+        <div class="flow">Parent &rarr; <span class="b">your funnel</span> &rarr; button goes straight to your booking system</div>
+        <p>The page is just a prettier front door. Easier, but you only "have" the parents your booking system captures &mdash; you lose the ones who drop off.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:14px">
+      <p><strong>No booking system yet?</strong> Leave the booking link blank. Parents get a "we'll be in touch" message, you get an instant alert, and you book them in yourself. The funnel + tracker <em>is</em> your system.</p>
+    </div>
+  </div>
+</section>
+
+<!-- THE STEPS -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Do this once</span>
+    <h2>The setup <span class="num">&mdash;</span> 6 steps</h2>
+
+    <div class="step">
+      <div class="no">1</div>
+      <div>
+        <h3>Copy your leads tracker</h3>
+        <p>Open the tracker link we sent you and click <strong>"Copy base"</strong>. You now have your own private board &mdash; nobody else can see your leads. It comes with the Pipeline board, a <strong>Members</strong> table, and all nine automations pre-written.</p>
+        <ul><li>Tracker link: <a href="REPLACE_WITH_AIRTABLE_COPY_LINK">open your leads tracker &rarr;</a></li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">2</div>
+      <div>
+        <h3>Make the funnel page yours</h3>
+        <p>Open your funnel file and fill in the short <code>CONFIG</code> block at the bottom &mdash; it's all plain English:</p>
+        <ul>
+          <li><strong>Academy name, town, brand colour, logo</strong></li>
+          <li><strong>Your offer</strong> (free trial is the default) and the age range you accept</li>
+          <li><strong>Your email</strong> &mdash; where alerts go</li>
+          <li><strong>Your booking link</strong> &mdash; paste your booking system's URL here (Mode A). Leave blank for Mode B / no system.</li>
+        </ul>
+        <div class="tip">&#9888; Don't paste any passwords or keys into this page &mdash; it's public. Only the details above.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">3</div>
+      <div>
+        <h3>Connect the page to your tracker</h3>
+        <p>In your tracker, grab the <strong>connection link</strong> (we've pre-built it &mdash; open Automations &rarr; the first one shows the link). Paste it into the funnel's <code>formEndpoint</code> field. That's the pipe that carries each new lead into your board.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">4</div>
+      <div>
+        <h3>Set your email on the alerts</h3>
+        <p>In the tracker's Automations, two of them email <strong>you</strong> (new-lead alert + daily follow-up list). Pop your own email address into those, and switch all the automations <strong>On</strong>. They're already written &mdash; you can tweak the wording if you like.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">5</div>
+      <div>
+        <h3>Personalise the trial-to-member emails</h3>
+        <p><strong>First, pick your voice.</strong> Open the <a href="VOICE-PACK.html">Email Voice Pack</a> &mdash; every parent email written three ways (local &amp; friendly, professional, community club). Read version one of each out loud; the one that sounds like something you'd actually say is yours. Copy those six into the automations. Then fill the three blanks:</p>
+        <ul>
+          <li><strong>Your enrol / booking link</strong> &mdash; goes in the "How did they find it?" email (the one that lands the morning after a trial)</li>
+          <li><strong>The welcome pack</strong> &mdash; four lines in the welcome email: kit list, term dates, how payment works, your parents' WhatsApp group link</li>
+          <li><strong>Your standard monthly fee</strong> &mdash; the default on the Members table</li>
+        </ul>
+        <div class="tip">&#128161; From now on your only job after a session is dragging cards to <strong>Trial attended</strong> or <strong>No-show</strong> &mdash; the emails handle themselves either way.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">6</div>
+      <div>
+        <h3>Test it, then go live</h3>
+        <p>Fill in your own funnel form as if you were a parent, then walk your test lead down the whole board. Check five things:</p>
+        <ul>
+          <li>A new card appears on your board</li>
+          <li>You get the "new lead" email; the test parent (you) gets the auto-reply</li>
+          <li>Drag to <strong>Trial booked</strong> (set a trial date) &rarr; confirmation email arrives</li>
+          <li>Drag to <strong>Trial attended</strong> &rarr; the "how did it go?" email arrives with your enrol link</li>
+          <li>Drag to <strong>Enrolled</strong> &rarr; a row appears in Members and the welcome pack sends</li>
+        </ul>
+        <p style="margin-top:8px">All five working? Delete the test lead, publish the funnel page (or paste it into your website) and share the link. You're live.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAILY ROUTINE -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Once it's running</span>
+    <h2>Your 2-minute daily routine</h2>
+    <p class="lead">The system does the chasing. Your only job is to move cards and make the calls.</p>
+    <div class="routine">
+      <div class="r"><span class="dot"></span><p><strong>New lead comes in</strong> &rarr; you get an email in seconds. Call or message them while they're hot.</p></div>
+      <div class="r"><span class="dot"></span><p><strong>Open your Pipeline board each morning</strong> &rarr; drag each card along: New &rarr; Contacted &rarr; Trial booked &rarr; Trial attended (or No-show) &rarr; Enrolled.</p></div>
+      <div class="r"><span class="dot"></span><p><strong>The system handles the rest</strong> &rarr; trial confirmations, day-before reminders, morning-after follow-ups, no-show rescues and the welcome pack all send themselves.</p></div>
+      <div class="r"><span class="dot"></span><p><strong>Nothing goes cold</strong> &rarr; each morning you get a "chase these today" email of anyone waiting on you &mdash; including trial kids whose parents went quiet.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Before you share it</span>
+    <h2>Go-live checklist</h2>
+    <ul class="checklist">
+      <li>Tracker copied to my own workspace</li>
+      <li>Funnel CONFIG filled in (name, colour, offer, my email, booking link)</li>
+      <li>Funnel connected to the tracker (connection link pasted in)</li>
+      <li>My email set on the owner alerts, all nine automations switched On</li>
+      <li>Enrol link, welcome-pack lines and standard fee filled in</li>
+      <li>Test lead walked New &rarr; Enrolled &mdash; all five checks passed, then deleted</li>
+      <li>Funnel page published / added to my website and link shared</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Stuck on any step? Send me a message and I'll sort it. &nbsp;&middot;&nbsp; Your automated leads system.
+  </div>
+</footer>
+
+</body>
+</html>

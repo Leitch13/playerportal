@@ -1,0 +1,16 @@
+{
+  "name": "academy-toolkit",
+  "version": "1.0.0",
+  "description": "Editable Word templates each academy fills in to make its own. Everything here is built from `builders/_helpers.js` so the whole toolkit looks like one family.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "docx": "^9.7.1"
+  }
+}

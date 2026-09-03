@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<!--
+  ASCEND LEAD MACHINE - KIT OVERVIEW (print / PDF source).
+  A4 portrait, dark ASCEND brand. Render to PDF with headless Chrome:
+    "Google Chrome" --headless --print-to-pdf=out.pdf --no-pdf-header-footer file://...
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441;
+    --line:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:0}
+  html,body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif}
+  .page{
+    width:210mm;height:297mm;position:relative;overflow:hidden;
+    padding:20mm 18mm;display:flex;flex-direction:column;
+    background:
+      radial-gradient(45% 30% at 88% 4%,rgba(34,211,238,.16),transparent 60%),
+      radial-gradient(40% 26% at 2% 98%,rgba(11,110,124,.22),transparent 60%),
+      linear-gradient(165deg,#0b1116,#090C10 55%);
+    page-break-after:always;break-after:page;
+  }
+  .page:last-child{page-break-after:auto;break-after:auto}
+  .grid-tex{position:absolute;inset:0;background-image:
+     linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+     background-size:52px 52px;pointer-events:none}
+  .z{position:relative;z-index:1}
+
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+  .eyebrow{font-size:9pt;letter-spacing:.28em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .accent{color:var(--brand)}
+
+  .brandrow{display:flex;align-items:center;gap:12px}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:18pt;color:var(--brand-ink)}
+  .brandrow .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:13pt;line-height:1}
+  .brandrow .name small{display:block;font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:6.5pt;letter-spacing:.16em;color:var(--mute);margin-top:3px}
+
+  h1.cover{font-family:"Anton",sans-serif;text-transform:uppercase;line-height:.9;font-size:58pt;margin:14px 0 0}
+  h1.cover .cy{color:var(--brand)}
+  .cover-tag{font-size:16pt;color:#D6E0E6;margin-top:16px;max-width:22ch;line-height:1.3;font-weight:500}
+  .cover-tag b{color:#fff;font-weight:700}
+  .pill{display:inline-block;font-size:8.5pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);border:1px solid var(--brand);border-radius:30px;padding:6px 14px;margin-top:22px}
+
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:26pt;line-height:1;margin:10px 0 6px}
+  h2 .cy{color:var(--brand)}
+  .lead{color:#BAC6CE;font-size:11pt;max-width:60ch;margin-bottom:16px}
+
+  /* loop */
+  .loop{display:flex;flex-direction:column;gap:0;margin-top:6px}
+  .stage{border:1px solid var(--line);border-radius:10px;background:var(--ink-2);padding:12px 16px}
+  .stage.brand{border-color:var(--brand);background:rgba(34,211,238,.06)}
+  .stage .l{font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-bottom:2px}
+  .stage h4{font-size:12pt;font-weight:700;margin-bottom:1px}
+  .stage p{font-size:9.5pt;color:#AEBAC2}
+  .conn{width:2px;height:16px;background:var(--brand);margin:0 auto}
+
+  /* kit list */
+  .kit{display:grid;gap:10px;margin-top:6px}
+  .item{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;background:var(--ink-2);padding:14px 16px}
+  .item .ic{width:38px;height:38px;flex:0 0 auto;border-radius:9px;background:rgba(34,211,238,.12);border:1px solid var(--brand);display:flex;align-items:center;justify-content:center;font-size:15pt}
+  .item h4{font-size:12pt;font-weight:700;margin-bottom:2px}
+  .item p{font-size:9.5pt;color:#AEBAC2}
+
+  /* steps */
+  .steps{display:grid;gap:12px;margin-top:6px}
+  .step{display:flex;gap:16px;align-items:flex-start}
+  .step .no{width:38px;height:38px;flex:0 0 auto;border-radius:9px;background:var(--brand);color:var(--brand-ink);font-family:"Anton",sans-serif;font-size:15pt;display:flex;align-items:center;justify-content:center}
+  .step h4{font-size:13pt;font-weight:700;margin-bottom:2px}
+  .step p{font-size:10pt;color:#C4D0D8}
+
+  /* value */
+  .vals{display:grid;gap:12px;margin-top:6px}
+  .val{border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--ink-2)}
+  .val b{color:#fff;display:block;margin-bottom:4px;font-size:12pt}
+  .val p{font-size:10pt;color:#AEBAC2}
+
+  .cta{border:1.5px solid var(--brand);border-radius:14px;padding:22px 26px;background:rgba(34,211,238,.06);text-align:center;margin-top:20px}
+  .cta .v{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:22pt;color:#fff;line-height:1.05}
+  .cta .v span{color:var(--brand)}
+  .cta .s{color:#BAC6CE;font-size:10pt;margin-top:8px}
+
+  .spacer{flex:1}
+  .foot{border-top:1px solid var(--line);padding-top:10px;margin-top:12px;display:flex;justify-content:space-between;color:var(--mute);font-size:8pt}
+  .foot .b{font-family:"Anton",sans-serif;color:var(--paper);letter-spacing:.05em}
+  .secnum{position:absolute;top:20mm;right:18mm;font-family:"Anton",sans-serif;color:rgba(255,255,255,.10);font-size:44pt;line-height:1}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 - COVER -->
+<div class="page">
+  <div class="grid-tex"></div>
+  <div class="z brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+  <div class="z spacer"></div>
+  <div class="z">
+    <div class="eyebrow">For ASCEND members</div>
+    <h1 class="cover display">THE<br><span class="cy">LEAD</span> MACHINE</h1>
+    <div class="cover-tag">Fill your academy <b>on autopilot</b> &mdash; without chasing a single parent.</div>
+    <span class="pill">Your complete lead system + training</span>
+  </div>
+  <div class="z spacer"></div>
+  <div class="z foot"><span class="b">ASCEND LEAD MACHINE</span><span>&copy; 2026 John Leitch Coaching</span></div>
+</div>
+
+<!-- PAGE 2 - HOW IT RUNS -->
+<div class="page">
+  <div class="grid-tex"></div>
+  <div class="secnum">01</div>
+  <div class="z brandrow"><div class="logo">A</div><div class="name">ASCEND<small>LEAD MACHINE</small></div></div>
+  <div class="z" style="margin-top:22px">
+    <span class="eyebrow">How it runs</span>
+    <h2>One loop, running <span class="cy">itself</span></h2>
+    <p class="lead">Every part feeds the next. You only step in to coach the session and close.</p>
+    <div class="loop">
+      <div class="stage"><div class="l">1 &middot; Traffic</div><h4>Ads &amp; your website</h4><p>Facebook, Instagram, Google or your own site &mdash; the pixel tracks and retargets.</p></div>
+      <div class="conn"></div>
+      <div class="stage brand"><div class="l">2 &middot; Capture + match</div><h4>The smart funnel</h4><p>Parent says what they want &rarr; instantly sees the right session &rarr; claims a free trial.</p></div>
+      <div class="conn"></div>
+      <div class="stage"><div class="l">3 &middot; Track + automate</div><h4>Your leads board</h4><p>Lead lands, you&rsquo;re alerted, the parent gets an auto-reply, and follow-ups chase themselves.</p></div>
+      <div class="conn"></div>
+      <div class="stage"><div class="l">4 &middot; Convert</div><h4>Book &amp; enrol</h4><p>They book into your system and become a paying member.</p></div>
+    </div>
+  </div>
+  <div class="z spacer"></div>
+  <div class="z foot"><span class="b">ASCEND LEAD MACHINE</span><span>How it runs</span></div>
+</div>
+
+<!-- PAGE 3 - WHAT'S INSIDE -->
+<div class="page">
+  <div class="grid-tex"></div>
+  <div class="secnum">02</div>
+  <div class="z brandrow"><div class="logo">A</div><div class="name">ASCEND<small>LEAD MACHINE</small></div></div>
+  <div class="z" style="margin-top:22px">
+    <span class="eyebrow">What&rsquo;s inside</span>
+    <h2>The full <span class="cy">kit</span></h2>
+    <p class="lead">A done-for-you system plus the training to run it.</p>
+    <div class="kit">
+      <div class="item"><div class="ic">&#127919;</div><div><h4>The smart funnel</h4><p>A branded page that matches each parent to the right session, then books a free trial.</p></div></div>
+      <div class="item"><div class="ic">&#128295;</div><div><h4>Session Builder</h4><p>Add your classes in a simple form &mdash; no code. It sets your funnel up for you.</p></div></div>
+      <div class="item"><div class="ic">&#128202;</div><div><h4>Leads tracker</h4><p>One board that tracks every enquiry from new &rarr; trial booked &rarr; enrolled.</p></div></div>
+      <div class="item"><div class="ic">&#9889;</div><div><h4>Automatic follow-ups</h4><p>Instant replies, reminders and a chase sequence that runs on its own.</p></div></div>
+      <div class="item"><div class="ic">&#127760;</div><div><h4>Website embed kit</h4><p>Copy-paste it onto Wix, Squarespace or WordPress &mdash; it fits itself to your site.</p></div></div>
+      <div class="item"><div class="ic">&#127909;</div><div><h4>The training</h4><p>4 videos on the 4 lead areas, email templates, PDFs, and 50 slides on ads &mdash; more coming.</p></div></div>
+    </div>
+  </div>
+  <div class="z spacer"></div>
+  <div class="z foot"><span class="b">ASCEND LEAD MACHINE</span><span>What&rsquo;s inside</span></div>
+</div>
+
+<!-- PAGE 4 - SET IT UP -->
+<div class="page">
+  <div class="grid-tex"></div>
+  <div class="secnum">03</div>
+  <div class="z brandrow"><div class="logo">A</div><div class="name">ASCEND<small>LEAD MACHINE</small></div></div>
+  <div class="z" style="margin-top:22px">
+    <span class="eyebrow">Switch it on</span>
+    <h2>Live in <span class="cy">four steps</span></h2>
+    <p class="lead">Do it yourself with the guides, or let us build it for you &mdash; both included.</p>
+    <div class="steps">
+      <div class="step"><div class="no">1</div><div><h4>Add your sessions</h4><p>Use the Session Builder to load your classes &mdash; no code, it does the setup for you.</p></div></div>
+      <div class="step"><div class="no">2</div><div><h4>Brand your funnel</h4><p>Your name, colour and offer. This is the page parents land on and book from.</p></div></div>
+      <div class="step"><div class="no">3</div><div><h4>Put it on your site</h4><p>Copy-paste it onto your website, or link it from your ads and Instagram bio.</p></div></div>
+      <div class="step"><div class="no">4</div><div><h4>Turn on your tracker</h4><p>Copy the leads board, switch the automations on, send a test lead &mdash; you&rsquo;re live.</p></div></div>
+    </div>
+  </div>
+  <div class="z spacer"></div>
+  <div class="z foot"><span class="b">ASCEND LEAD MACHINE</span><span>Switch it on</span></div>
+</div>
+
+<!-- PAGE 5 - WHY + CTA -->
+<div class="page">
+  <div class="grid-tex"></div>
+  <div class="secnum">04</div>
+  <div class="z brandrow"><div class="logo">A</div><div class="name">ASCEND<small>LEAD MACHINE</small></div></div>
+  <div class="z" style="margin-top:22px">
+    <span class="eyebrow">Why it works</span>
+    <h2>Built to <span class="cy">fill your academy</span></h2>
+    <div class="vals">
+      <div class="val"><b>No lead ever slips</b><p>Every interested parent is captured and chased automatically &mdash; even the ones who don&rsquo;t finish booking.</p></div>
+      <div class="val"><b>You know what they want</b><p>Not just a name &mdash; which child, what they&rsquo;re after, matched to the right session before you call.</p></div>
+      <div class="val"><b>Zero admin</b><p>Leads flow in and the board updates itself. Your only job is the call and the coaching.</p></div>
+    </div>
+    <div class="cta">
+      <div class="v">Free for every member<br>inside <span>ASCEND</span></div>
+      <div class="s">Set it up yourself, or we&rsquo;ll build it for you.</div>
+    </div>
+  </div>
+  <div class="z spacer"></div>
+  <div class="z foot"><span class="b">ASCEND LEAD MACHINE</span><span>&copy; 2026 John Leitch Coaching</span></div>
+</div>
+
+</body>
+</html>

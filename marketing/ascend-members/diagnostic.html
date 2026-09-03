@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The ASCEND Diagnostic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1214; --panel:#121E21; --panel2:#0F181A;
+    --ink:#EAF3F3; --muted:#8DA0A1; --muted-dim:#5C6B6C;
+    --cyan:#33E3E3; --line:#223034; --amber:#F0A24B; --red:#F2685E;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    padding:24px clamp(14px,3vw,36px) 80px;
+    max-width:900px; margin:0 auto;
+  }
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);margin:0 0 8px}
+  h1{font-family:'Archivo',sans-serif;font-weight:900;font-size:clamp(30px,5vw,48px);line-height:0.96;margin:0 0 14px}
+  .intro{color:var(--muted);font-size:14.5px;line-height:1.6;max-width:64ch}
+  .intro b{color:var(--ink);font-weight:600}
+  .brand{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;color:var(--muted-dim);text-transform:uppercase;margin-top:10px}
+
+  .howto{border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:0 10px 10px 0;background:var(--panel);padding:14px 18px;margin:22px 0 8px;font-size:13.5px;line-height:1.7;color:var(--muted)}
+  .howto b{color:var(--ink);font-weight:600;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:6px}
+
+  .stage{margin-top:34px}
+  .stagehead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:2px solid var(--line);padding-bottom:10px;margin-bottom:6px}
+  .stagehead .lhs{display:flex;align-items:baseline;gap:12px}
+  .stagehead .letter{font-family:'Archivo',sans-serif;font-weight:900;font-size:26px;color:var(--cyan);line-height:1}
+  .stagehead .nm{font-family:'Archivo',sans-serif;font-weight:800;font-size:21px}
+  .stagehead .q{color:var(--muted);font-size:13px;font-style:italic}
+  .stagehead .score{font-family:'Space Mono',monospace;font-size:13px;color:var(--muted);white-space:nowrap}
+  .stagehead .score b{color:var(--cyan);font-size:18px}
+
+  .qrow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;padding:13px 4px;border-bottom:1px solid var(--line)}
+  .qrow .txt{font-size:14.5px;line-height:1.45}
+  .qrow .txt .num{font-family:'Space Mono',monospace;color:var(--muted-dim);margin-right:8px}
+  .scale{display:inline-flex;gap:5px}
+  .scale button{
+    width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--panel);
+    color:var(--muted);font-family:'Space Mono',monospace;font-size:14px;font-weight:700;cursor:pointer;
+    transition:all .1s;
+  }
+  .scale button:hover{border-color:var(--muted-dim);color:var(--ink)}
+  .scale button.sel{background:var(--cyan);border-color:var(--cyan);color:#08201F}
+  .scalekey{font-family:'Space Mono',monospace;font-size:10.5px;color:var(--muted-dim);margin:8px 0 2px;letter-spacing:.5px}
+
+  /* email capture */
+  .capture{display:none;margin-top:20px;border:1px solid var(--cyan);border-radius:12px;background:var(--panel2);padding:18px 18px 16px}
+  .capture .ct{font-family:'Archivo',sans-serif;font-weight:800;font-size:17px;margin:0 0 4px}
+  .capture .cd{color:var(--muted);font-size:13px;line-height:1.55;margin:0 0 14px}
+  .capture .row{display:grid;grid-template-columns:1fr 1.4fr auto;gap:10px}
+  .capture input[type=text],.capture input[type=email]{
+    width:100%;padding:11px 13px;border-radius:8px;border:1px solid var(--line);
+    background:var(--bg);color:var(--ink);font:inherit;font-size:14px;
+  }
+  .capture input:focus{outline:none;border-color:var(--cyan)}
+  .capture .send{
+    padding:11px 18px;border-radius:8px;border:1px solid var(--cyan);background:var(--cyan);
+    color:#08201F;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .capture .send:disabled{opacity:.6;cursor:default}
+  .capture .fine{font-size:11px;color:var(--muted-dim);margin:10px 0 0}
+  .capture .cerr{display:none;color:var(--red);font-size:12.5px;margin-top:10px}
+  .capture .cok{display:none;font-size:14px;line-height:1.6}
+  .capture .cok b{color:var(--cyan)}
+  @media (max-width:640px){ .capture .row{grid-template-columns:1fr} }
+
+  /* results */
+  .results{margin-top:40px;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:22px clamp(16px,3vw,26px)}
+  .results h2{font-family:'Archivo',sans-serif;font-weight:900;font-size:26px;margin:0 0 4px}
+  .progress{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:18px}
+  .totalline{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:20px}
+  .totalline .big{font-family:'Archivo',sans-serif;font-weight:900;font-size:52px;line-height:1;color:var(--cyan)}
+  .totalline .big small{font-size:22px;color:var(--muted)}
+  .band{display:inline-block;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;border-radius:999px;background:rgba(51,227,227,0.12);color:var(--cyan);border:1px solid var(--cyan)}
+  .bandfocus{color:var(--muted);font-size:14px;margin:14px 0 0;line-height:1.5}
+
+  .bars{margin:22px 0 6px;display:flex;flex-direction:column;gap:9px}
+  .bar{display:grid;grid-template-columns:120px 1fr 52px;align-items:center;gap:12px}
+  .bar .blabel{font-size:13px;font-weight:500}
+  .bar .track{height:14px;border-radius:7px;background:var(--panel2);overflow:hidden}
+  .bar .fill{height:100%;border-radius:7px;background:var(--cyan);width:0;transition:width .3s}
+  .bar.low .fill{background:var(--amber)}
+  .bar .bval{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);text-align:right}
+  .bar.low .blabel{color:var(--amber)}
+
+  .callout{margin-top:20px;border-left:3px solid var(--amber);background:var(--panel2);border-radius:0 10px 10px 0;padding:15px 18px;font-size:14.5px;line-height:1.6}
+  .callout b{color:var(--amber);font-weight:600}
+  .callout.sand{border-left-color:var(--red)}
+  .callout.sand b{color:var(--red)}
+
+  .next{margin-top:34px}
+  .next h2{font-family:'Archivo',sans-serif;font-weight:900;font-size:24px;margin:0 0 4px}
+  .next .sub{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:16px}
+  .step{margin-bottom:16px}
+  .step .t{font-weight:600;font-size:15px;margin-bottom:3px}
+  .step .d{color:var(--muted);font-size:13.5px;line-height:1.55}
+  .lastthing{margin-top:26px;background:#000;border-radius:14px;padding:20px 22px}
+  .lastthing .t{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+  .lastthing p{color:var(--ink);font-size:14px;line-height:1.6;margin:0 0 10px}
+  .lastthing .kick{font-weight:700;margin:0}
+
+  .foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:26px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+  .btn:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn.reset:hover{border-color:var(--red);color:var(--red)}
+  .sig{text-align:center;color:var(--muted-dim);font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
+  textarea{width:100%;margin-top:14px;min-height:170px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:11px;padding:14px;font-family:'Space Mono',monospace;font-size:12px;line-height:1.6;display:none}
+
+  @media(max-width:600px){
+    .qrow{grid-template-columns:1fr;gap:10px}
+    .scale{justify-content:space-between;width:100%}
+    .scale button{flex:1;max-width:56px}
+    .bar{grid-template-columns:96px 1fr 46px;gap:8px}
+    .totalline .big{font-size:44px}
+  }
+</style>
+</head>
+<body>
+<a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:7px;background:#121E21;border:1px solid #2E4247;color:#33E3E3;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:600;text-decoration:none;padding:8px 13px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.35)">&#8592; ASCEND hub</a>
+
+
+  <p class="eyebrow">John Leitch · The ASCEND Method</p>
+  <h1>The ASCEND Diagnostic</h1>
+  <p class="intro">Thirty statements across the six stages of ASCEND — <b>Audit · Sell · Capacity · Expand · Normalise · Delegate</b>. Score each one honestly and you'll know exactly where you are on the map, and just as importantly, which stage you've skipped. Most owners think they're stuck where they are. Usually they're stuck because they skipped an earlier stage. This finds it.</p>
+  <div class="brand">Football Business Coach</div>
+
+  <div class="howto">
+    <b>How it works</b>
+    Read each statement and score yourself 1–5 (1 = strongly disagree / not happening at all · 5 = strongly agree / consistent and dialled in). Be brutally honest — if you've "kind of" got something but it's inconsistent, that's a 2 or 3, not a 4. Score every statement, even for stages that feel like they're not relevant yet. Takes about 10 minutes.
+  </div>
+
+  <div id="quiz"></div>
+
+  <div class="results" id="results">
+    <h2>Your results</h2>
+    <div class="progress" id="progress">Answered 0 / 30 — score every statement to reveal your stage.</div>
+
+    <div class="totalline">
+      <span class="big" id="total-big">—<small> / 150</small></span>
+      <span class="band" id="band" style="display:none"></span>
+    </div>
+    <p class="bandfocus" id="bandfocus" style="display:none"></p>
+
+    <div class="bars" id="bars"></div>
+
+    <div class="callout" id="callout" style="display:none"></div>
+
+    <div class="capture" id="capture">
+      <form id="capture-form" name="diagnostic-results" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <p style="display:none"><label>Don't fill this in: <input name="bot-field"></label></p>
+        <input type="hidden" name="form-name" value="diagnostic-results">
+        <input type="hidden" name="score" id="cap-score">
+        <input type="hidden" name="stage" id="cap-stage">
+        <input type="hidden" name="weakest" id="cap-weakest">
+        <input type="hidden" name="breakdown" id="cap-breakdown">
+        <p class="ct">Get your results + the fix plan for your weakest stage</p>
+        <p class="cd">Pop your name and email in and I'll send your full breakdown plus the exact resources for the stage that's holding you back &mdash; so you don't lose this the moment you close the tab.</p>
+        <div class="row">
+          <input type="text" name="name" placeholder="First name" autocomplete="given-name" required>
+          <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+          <button class="send" type="submit">Send my results &rarr;</button>
+        </div>
+        <p class="fine">No spam. One useful email a week for academy owners &mdash; unsubscribe any time.</p>
+        <p class="cerr" id="cap-err"></p>
+      </form>
+      <div class="cok" id="cap-ok">
+        <b>Done &mdash; check your inbox.</b> Your results and your weakest-stage fix plan are on the way.
+      </div>
+    </div>
+  </div>
+
+  <div class="next">
+    <h2>What to do next</h2>
+    <div class="sub">Three steps based on your results</div>
+    <div class="step"><div class="t">1. Go to your weakest stage in the library.</div><div class="d">The library is filed by the six stages. Open the one you scored lowest on &mdash; the tools at the top of each stage come before the reading. <a href="library.html" style="color:#33E3E3">Open the library</a>.</div></div>
+    <div class="step"><div class="t">2. Focus on your lowest-scoring stage, not your overall stage.</div><div class="d">Even if you're a Traction owner overall, if your Audit score is the lowest, that's where to start. Use the resources that match your weakest area.</div></div>
+    <div class="step"><div class="t">3. Bring this score to your next call.</div><div class="d">Your stage totals are the fastest way for us to agree what to work on. If you have been stuck on the same stage for six months or more, say so &mdash; that is a different conversation. <a href="work-with-me.html" style="color:#33E3E3">Book a call</a>.</div></div>
+
+    <div class="lastthing">
+      <div class="t">One last thing</div>
+      <p>This diagnostic is a snapshot, not a verdict. Where you are right now isn't where you have to stay — every stage of ASCEND is solvable, usually faster than you'd think.</p>
+      <p class="kick">The work starts now.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span></span>
+    <div class="btns">
+      <button class="btn" id="copy">Copy my results</button>
+      <button class="btn reset" id="reset">Reset</button>
+    </div>
+  </div>
+  <textarea id="out" readonly></textarea>
+
+  <div class="sig">John Leitch · Football Business Coach · The ASCEND Method</div>
+
+<script>
+  var STAGES = [
+    { key:'A', name:'Audit', q:'Do you actually know your numbers?', items:[
+      'I know exactly how many regular weekly players I have right now.',
+      'I know my profit margin per session (not just revenue).',
+      'I know my cost-per-acquisition for new players.',
+      "I have a clear picture of which sessions, camps, or services make me money — and which don't.",
+      'I review my numbers (income, costs, retention) at least monthly.'
+    ]},
+    { key:'S', name:'Sell', q:'Are you filling sessions consistently?', items:[
+      'I have a predictable way of getting new players in every month (not just word of mouth).',
+      'I know how to run a paid social media ad campaign that converts.',
+      "I have a follow-up sequence for new leads that doesn't rely on me messaging individually.",
+      'My pricing reflects the value I deliver, not what other academies charge.',
+      'I have multiple revenue streams beyond weekly sessions (e.g. camps, parties, 1-to-1).'
+    ]},
+    { key:'C', name:'Capacity', q:'Can your operation handle growth?', items:[
+      'I have at least one coach other than myself who can deliver sessions to my standard.',
+      'My booking and admin process runs smoothly without me firefighting every week.',
+      'I have a clear process for onboarding new players and parents.',
+      'I have venues, equipment, and resources to take on 30% more players tomorrow if needed.',
+      'I have a referral system that brings me players without me asking each time.'
+    ]},
+    { key:'E', name:'Expand', q:'Are you growing the business, or just the workload?', items:[
+      'My monthly revenue has grown over each of the last 6 months.',
+      'I retain players for longer than the average grassroots academy (12+ months).',
+      'I have premium offers (1-to-1, VIP camps, etc.) that earn higher margin.',
+      "I'm running structured offers and campaigns through the year, not just ad-hoc.",
+      "I'm hiring or expanding (more coaches, venues, services) as a result of growth."
+    ]},
+    { key:'N', name:'Normalise', q:'Does your business run the same way every time?', items:[
+      'I have written SOPs for the key processes in my business (sessions, camps, admin, hiring).',
+      'Anyone new to my team could follow the SOPs and run their part of the business.',
+      'I have an operations manual that documents how the business works.',
+      'Routine admin and communications are automated where possible.',
+      "I track key metrics weekly and they're visible to me on a single dashboard or document."
+    ]},
+    { key:'D', name:'Delegate', q:'Are you the owner, or still the operator?', items:[
+      'I spend less than 6 hours a week coaching on the grass.',
+      'I have a coaching team that delivers sessions without me being there.',
+      'Day-to-day admin, comms, and ops happen without me touching them.',
+      'I could take a 2-week holiday and the business would run without me.',
+      "I'm working ON the business (strategy, growth, leadership) more than IN it (delivery)."
+    ]}
+  ];
+
+  // answers[stageIndex][itemIndex] = 1..5 or 0
+  var answers = STAGES.map(function(){ return [0,0,0,0,0]; });
+
+  var quiz = document.getElementById('quiz');
+  STAGES.forEach(function(stage, si){
+    var wrap = document.createElement('div'); wrap.className='stage';
+    var head = document.createElement('div'); head.className='stagehead';
+    head.innerHTML =
+      '<div class="lhs"><span class="letter">'+stage.key+'</span>'+
+      '<span><span class="nm">'+stage.name+'</span> &nbsp;<span class="q">'+stage.q+'</span></span></div>'+
+      '<span class="score">Stage total <b id="st-'+si+'">0</b> / 25</span>';
+    wrap.appendChild(head);
+
+    if(si===0){
+      var key = document.createElement('div'); key.className='scalekey';
+      key.textContent='1 = strongly disagree · 5 = strongly agree';
+      wrap.appendChild(key);
+    }
+
+    stage.items.forEach(function(text, ii){
+      var row = document.createElement('div'); row.className='qrow';
+      var txt = document.createElement('div'); txt.className='txt';
+      txt.innerHTML = '<span class="num">'+(ii+1)+'</span>'+text;
+      var scale = document.createElement('div'); scale.className='scale';
+      for(var v=1; v<=5; v++){
+        (function(val){
+          var b = document.createElement('button');
+          b.textContent = val;
+          b.addEventListener('click', function(){
+            answers[si][ii] = val;
+            scale.querySelectorAll('button').forEach(function(x){ x.classList.remove('sel'); });
+            b.classList.add('sel');
+            recalc();
+          });
+          scale.appendChild(b);
+        })(v);
+      }
+      row.appendChild(txt); row.appendChild(scale);
+      wrap.appendChild(row);
+    });
+    quiz.appendChild(wrap);
+  });
+
+  function stageTotal(si){ return answers[si].reduce(function(a,b){ return a+b; }, 0); }
+  function answeredCount(){
+    var n=0; answers.forEach(function(s){ s.forEach(function(v){ if(v>0) n++; }); }); return n;
+  }
+  function bandFor(total){
+    if(total<=70)  return {name:'Foundation', focus:'Building a stable academy. Get players in. Build trust.'};
+    if(total<=110) return {name:'Traction',   focus:'Systems for growth. Pricing, leads, retention, hiring.'};
+    return {name:'Scaling', focus:'SOPs, leadership, automation, stepping out of operations.'};
+  }
+
+  // build bar rows once
+  var barsWrap = document.getElementById('bars');
+  STAGES.forEach(function(stage, si){
+    var bar = document.createElement('div'); bar.className='bar'; bar.id='bar-'+si;
+    bar.innerHTML = '<span class="blabel">'+stage.key+' — '+stage.name+'</span>'+
+      '<span class="track"><span class="fill" id="fill-'+si+'"></span></span>'+
+      '<span class="bval" id="bval-'+si+'">0 / 25</span>';
+    barsWrap.appendChild(bar);
+  });
+
+  function recalc(){
+    var total=0, lowIdx=0, lowVal=999;
+    STAGES.forEach(function(stage, si){
+      var t = stageTotal(si); total += t;
+      document.getElementById('st-'+si).textContent = t;
+      document.getElementById('fill-'+si).style.width = (t/25*100)+'%';
+      document.getElementById('bval-'+si).textContent = t+' / 25';
+      // earliest stage wins ties (fix the earlier stage first)
+      if(t < lowVal){ lowVal = t; lowIdx = si; }
+    });
+
+    var answered = answeredCount();
+    var complete = answered===30;
+
+    document.getElementById('progress').textContent = complete
+      ? 'All 30 answered. Here\u2019s where you are.'
+      : 'Answered '+answered+' / 30 — score every statement to reveal your stage.';
+
+    document.getElementById('total-big').innerHTML = (complete? total : '\u2014')+'<small> / 150</small>';
+
+    var bandEl = document.getElementById('band');
+    var focusEl = document.getElementById('bandfocus');
+    var callout = document.getElementById('callout');
+
+    // highlight lowest bar only once complete
+    STAGES.forEach(function(s, si){ document.getElementById('bar-'+si).classList.remove('low'); });
+
+    if(complete){
+      var band = bandFor(total);
+      bandEl.style.display='inline-block'; bandEl.textContent = band.name;
+      focusEl.style.display='block'; focusEl.textContent = band.focus;
+      document.getElementById('bar-'+lowIdx).classList.add('low');
+
+      var low = STAGES[lowIdx];
+      callout.style.display='block';
+      if(low.key==='A'){
+        callout.className='callout sand';
+        callout.innerHTML = '<b>Start with Audit.</b> Your lowest stage is A — Audit ('+lowVal+'/25). If Audit is low but later stages are higher, you\u2019re building on sand — the numbers underneath aren\u2019t solid yet. Fix this first, even though it feels like a step backward. It isn\u2019t.';
+      } else {
+        callout.className='callout';
+        callout.innerHTML = '<b>Focus here first: '+low.key+' — '+low.name+' ('+lowVal+'/25).</b> This is your lowest-scoring stage, so it\u2019s where to start next — even if it feels earlier than where you\u2019d place yourself. The lowest stage is the one holding the rest back.';
+      }
+    } else {
+      bandEl.style.display='none'; focusEl.style.display='none'; callout.style.display='none';
+    }
+
+    // email capture - reveal once complete, pre-filled with their results
+    var cap = document.getElementById('capture');
+    if(complete && !captureSent){
+      var lowS = STAGES[lowIdx];
+      document.getElementById('cap-score').value = total+' / 150';
+      document.getElementById('cap-stage').value = bandFor(total).name;
+      document.getElementById('cap-weakest').value = lowS.key+' - '+lowS.name+' ('+lowVal+'/25)';
+      document.getElementById('cap-breakdown').value = STAGES.map(function(s,si){ return s.key+':'+stageTotal(si); }).join(' ');
+      cap.style.display='block';
+    } else if(!complete){
+      cap.style.display='none';
+    }
+  }
+
+  // email capture - AJAX post to Netlify Forms (no page reload)
+  var captureSent = false;
+  document.getElementById('capture-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var form = e.target;
+    var err = document.getElementById('cap-err');
+    err.style.display='none';
+    var btn = form.querySelector('.send');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    var body = new URLSearchParams(new FormData(form)).toString();
+    fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body })
+      .then(function(res){
+        if(!res.ok) throw new Error('bad status');
+        captureSent = true;
+        form.style.display='none';
+        document.getElementById('cap-ok').style.display='block';
+      })
+      .catch(function(){
+        btn.disabled = false; btn.textContent = 'Send my results →';
+        err.textContent = 'Something went wrong — please try again.';
+        err.style.display='block';
+      });
+  });
+
+  document.getElementById('copy').addEventListener('click', function(){
+    var total=0, lines=['THE ASCEND DIAGNOSTIC — MY RESULTS',''];
+    STAGES.forEach(function(stage, si){
+      var t=stageTotal(si); total+=t;
+      lines.push(stage.key+' — '+stage.name+': '+t+' / 25');
+    });
+    lines.push(''); lines.push('TOTAL: '+total+' / 150');
+    if(answeredCount()===30){
+      var band=bandFor(total);
+      var lowIdx=0,lowVal=999;
+      STAGES.forEach(function(s,si){ var t=stageTotal(si); if(t<lowVal){lowVal=t;lowIdx=si;} });
+      lines.push('Stage: '+band.name.toUpperCase());
+      lines.push('Focus first: '+STAGES[lowIdx].key+' — '+STAGES[lowIdx].name+' ('+lowVal+'/25)');
+    } else {
+      lines.push('(Incomplete — '+answeredCount()+'/30 answered)');
+    }
+    var text=lines.join('\n');
+    var out=document.getElementById('out');
+    out.value=text; out.style.display='block'; out.focus(); out.select();
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(function(){}); }
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    answers = STAGES.map(function(){ return [0,0,0,0,0]; });
+    document.querySelectorAll('.scale button').forEach(function(b){ b.classList.remove('sel'); });
+    document.getElementById('out').style.display='none';
+    recalc();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  recalc();
+</script>
+</body>
+</html>

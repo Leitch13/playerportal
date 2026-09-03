@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<!--
+  CLIENT-FACING SETUP GUIDE - THE ACADEMY OS (full system).
+  The "duplicate + connect + go live" doc for an owner taking the WHOLE OS,
+  not just the Lead Machine. Self-contained HTML; host it or export to PDF.
+  Fill the REPLACE links (Airtable copy link + the four page files) before sending.
+  Owners who already run the Lead Machine: point them at section "Already running
+  the Lead Machine?" - their upgrade is shorter.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Academy OS — Setup Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441;
+    --line:rgba(255,255,255,.10); --maxw:820px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98}
+  .eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .accent{color:var(--brand)}
+  a{color:var(--brand)}
+  strong{color:#fff}
+
+  header.top{padding:58px 0 30px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 90% 0%,rgba(34,211,238,.12),transparent 60%)}
+  header.top h1{font-size:clamp(2.1rem,6vw,3.2rem);margin:12px 0 14px;max-width:16ch}
+  header.top p{color:#C4D0D8;max-width:56ch;font-size:1.05rem}
+  .badge{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);border:1px solid var(--brand);border-radius:40px;padding:6px 14px;margin-top:20px}
+
+  section{padding:44px 0;border-bottom:1px solid var(--line)}
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:clamp(1.5rem,4vw,2.1rem);margin-bottom:8px;line-height:1.02}
+  h2 .num{color:var(--brand)}
+  .lead{color:#BAC6CE;max-width:60ch;margin-bottom:22px}
+
+  .parts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+  .part{border:1px solid var(--line);border-radius:10px;padding:20px;background:var(--ink-2)}
+  .part .ic{font-size:1.5rem;margin-bottom:10px}
+  .part h4{font-size:1rem;font-weight:700;margin-bottom:5px}
+  .part p{font-size:.9rem;color:#B6C2CA}
+
+  .step{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  .step:last-child{border-bottom:0}
+  .step .no{width:40px;height:40px;flex:0 0 auto;border-radius:9px;background:var(--brand);color:var(--brand-ink);font-family:"Anton",sans-serif;font-size:1.2rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;font-weight:700;margin-bottom:6px}
+  .step p{color:#C4D0D8;font-size:.98rem}
+  .step ul{margin:8px 0 0 0;padding-left:18px;color:#B6C2CA;font-size:.93rem}
+  .step ul li{margin-bottom:4px}
+  .step code{background:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 7px;font-size:.86em;color:var(--brand)}
+  .tip{margin-top:10px;font-size:.86rem;color:var(--amber);background:rgba(242,180,65,.08);border:1px solid rgba(242,180,65,.25);border-radius:8px;padding:9px 12px}
+
+  .routine{display:grid;gap:10px;margin-top:16px}
+  .routine .r{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:14px 16px;background:var(--ink-2)}
+  .routine .r .dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-top:8px;flex:0 0 auto;box-shadow:0 0 10px var(--green)}
+  .routine .r p{font-size:.96rem;color:#C4D0D8}
+
+  .checklist{list-style:none;display:grid;gap:11px;margin-top:14px}
+  .checklist li{display:flex;gap:12px;align-items:flex-start;font-size:1rem;color:#DCE5EA}
+  .checklist li::before{content:"";flex:0 0 auto;width:22px;height:22px;margin-top:2px;border-radius:5px;border:1px solid var(--brand);background:rgba(34,211,238,.1)}
+
+  footer{padding:34px 0;color:var(--mute);font-size:.85rem;text-align:center}
+  .callout{border:1px solid var(--brand);border-radius:12px;padding:20px 22px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.08),transparent 60%),var(--ink-2);margin-top:8px}
+  .callout p{color:#DCE5EA;font-size:.98rem}
+
+  @media (max-width:720px){ .parts{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="eyebrow">The Academy OS</span>
+    <h1 class="display">Your whole back office, set up in an afternoon.</h1>
+    <p>Leads chased, trials converted, coaches hired and onboarded, incidents handled, cancellations won back &mdash; and one email every morning telling you the few things that actually need you. No tech skills needed. Follow the steps once.</p>
+    <span class="badge">4 pages &middot; 1 board &middot; ~2 hrs once &middot; free tools</span>
+  </div>
+</header>
+
+<!-- WHAT YOU'RE SETTING UP -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">What you're setting up</span>
+    <h2>Three layers, one system</h2>
+    <div class="parts">
+      <div class="part"><div class="ic">&#127760;</div><h4>1. Four front doors</h4><p>Trial funnel &middot; coach application &middot; incident report &middot; general enquiry. Branded pages, each takes minutes to make yours.</p></div>
+      <div class="part"><div class="ic">&#128202;</div><h4>2. Your HQ board</h4><p>One private base: leads, members, staff, onboarding, resources, incidents, scoreboard. Everything in one place.</p></div>
+      <div class="part"><div class="ic">&#9889;</div><h4>3. The invisible staff</h4><p>~24 automations that alert, reply, chase, remind and report &mdash; so nothing lives in your head.</p></div>
+    </div>
+    <div class="callout" style="margin-top:14px">
+      <p><strong>Already running the Lead Machine?</strong> Your upgrade is shorter: your leads board and funnel stay exactly as they are &mdash; skip straight to steps 3&ndash;7. Nothing gets rebuilt and no lead is lost.</p>
+    </div>
+  </div>
+</section>
+
+<!-- THE STEPS -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Do this once</span>
+    <h2>The setup <span class="num">&mdash;</span> 7 steps</h2>
+
+    <div class="step">
+      <div class="no">1</div>
+      <div>
+        <h3>Copy your HQ board</h3>
+        <p>Open the link we sent and click <strong>"Copy base"</strong>. You now own a private copy &mdash; your leads, members, staff and incidents are visible to nobody else.</p>
+        <ul><li>HQ board link: <a href="REPLACE_WITH_AIRTABLE_COPY_LINK">open your Academy HQ &rarr;</a></li></ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">2</div>
+      <div>
+        <h3>Brand your trial funnel</h3>
+        <p>Open the funnel file and fill the plain-English <code>CONFIG</code> block: academy name, colour, logo, offer, your email, your booking link. Full detail is in the Lead Machine guide &mdash; this is the same page.</p>
+        <div class="tip">&#9888; Never paste passwords or keys into any of the four pages &mdash; they're public.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">3</div>
+      <div>
+        <h3>Brand the other two pages</h3>
+        <p>Same trick, two more files, five minutes each:</p>
+        <ul>
+          <li><strong>Coach application</strong> &mdash; fill in the four "why coach with us" perks while you're in there. They're your hiring pitch.</li>
+          <li><strong>Incident report</strong> &mdash; just name, colour, logo. The playbook wording is already written.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">4</div>
+      <div>
+        <h3>Connect the pipes</h3>
+        <p>Each page has a <code>formEndpoint</code> line; your HQ board has a matching <strong>connection link</strong> for each (Automations &rarr; the webhook at the top of each one). Paste trial&rarr;trial, coach&rarr;coach, incident&rarr;incident. Three pastes, done.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">5</div>
+      <div>
+        <h3>Put your email on the alerts, switch everything On</h3>
+        <p>The automations are pre-written. Anywhere an email goes to <strong>the owner</strong>, make it yours (new lead, new applicant, incident alert, the daily briefing, the Monday pulse, the monthly scoreboard). Then switch all automations <strong>On</strong>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">6</div>
+      <div>
+        <h3>Load your staff hub &amp; print the playbook cards</h3>
+        <p>The <strong>Resources</strong> table is your staff hub &mdash; coaches see it through one read-only link they bookmark. Load it before your first hire:</p>
+        <ul>
+          <li>Your coach handbook (PDF)</li>
+          <li>2&ndash;3 session plans (PDF or a Canva view link &mdash; updates itself forever)</li>
+          <li>A short "your first session here" phone video</li>
+          <li>The five playbook cards (PDF) &mdash; then <strong>print and laminate a set for the kit bag</strong>, with the incident page's QR code and your welfare officer's number filled in</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="no">7</div>
+      <div>
+        <h3>Run the test day, then go live</h3>
+        <p>Pretend to be everyone for ten minutes: submit a fake lead, book and attend its trial, apply as a fake coach, make the offer, file a fake incident from your phone, cancel a fake member. Watch the board fill and the emails land. Delete the fakes, publish the pages, share the links. You're live.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAILY ROUTINE -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Once it's running</span>
+    <h2>Your 5-minute daily routine</h2>
+    <p class="lead">The system runs the academy's reactions. You make decisions and phone calls.</p>
+    <div class="routine">
+      <div class="r"><span class="dot"></span><p><strong>8am: read one email.</strong> Who to chase, trials today, onboarding overdue, certs expiring, open incidents. If it says "everything's handled" &mdash; it is.</p></div>
+      <div class="r"><span class="dot"></span><p><strong>Drag cards after sessions.</strong> Trial attended or no-show; applicant to offer; tick onboarding tasks. Every drag fires the right emails for you.</p></div>
+      <div class="r"><span class="dot"></span><p><strong>Make the calls the system queues.</strong> The hot lead, the day-after-injury check-in, the coach's 3-month coffee. It remembers; you ring.</p></div>
+      <div class="r"><span class="dot"></span><p><strong>Monday &amp; the 1st: your numbers arrive.</strong> Leads, trials, joins, cancellations &mdash; the scoreboard a mentor would ask for, built while you slept.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section>
+  <div class="wrap">
+    <span class="eyebrow">Before you share it</span>
+    <h2>Go-live checklist</h2>
+    <ul class="checklist">
+      <li>HQ board copied to my own workspace</li>
+      <li>All three CONFIG blocks filled (trial funnel &middot; coach application &middot; incident report)</li>
+      <li>Three connection links pasted, one per page</li>
+      <li>My email on every owner alert; all automations On</li>
+      <li>Staff hub loaded (handbook, session plans, video, playbook cards)</li>
+      <li>Playbook cards printed &amp; laminated, QR + welfare officer filled in, coaches walked through them</li>
+      <li>Test day run end-to-end and fake records deleted</li>
+      <li>Pages published and links shared (trial funnel public; incident page bookmarked by every coach)</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Stuck on any step? Send me a message and I'll sort it. &nbsp;&middot;&nbsp; The Academy OS.
+  </div>
+</footer>
+
+</body>
+</html>

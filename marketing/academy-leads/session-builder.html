@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<!--
+  SESSION BUILDER - no-code setup for the matcher funnel.
+  The academy owner fills in their details + sessions, clicks Generate, and copies
+  a ready-made CONFIG block to paste into trial-funnel-matcher.html.
+  No JavaScript editing by hand. Self-contained.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Builder — set up your funnel with no code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441; --red:#F0526B;
+    --line:rgba(255,255,255,.10); --maxw:960px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.98}
+  .eyebrow{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  a{color:var(--brand)}
+
+  header.top{padding:46px 0 26px;border-bottom:1px solid var(--line);background:radial-gradient(60% 80% at 92% 0%,rgba(34,211,238,.12),transparent 60%)}
+  header.top h1{font-size:clamp(1.9rem,5vw,2.7rem);margin:10px 0 12px}
+  header.top p{color:#C4D0D8;max-width:60ch}
+  .how{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .how span{font-size:.8rem;color:#C4D0D8;background:var(--ink-2);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+  .how b{color:var(--brand)}
+
+  section{padding:30px 0;border-bottom:1px solid var(--line)}
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.4rem;margin-bottom:4px}
+  h2 .n{color:var(--brand)}
+  .sub{color:var(--mute);font-size:.92rem;margin-bottom:18px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid.three{grid-template-columns:1fr 1fr 1fr}
+  .field{margin-bottom:2px}
+  .field.full{grid-column:1/-1}
+  label{display:block;font-size:.78rem;letter-spacing:.02em;color:#C4D0D8;margin-bottom:6px;font-weight:500}
+  input,select,textarea{width:100%;padding:11px 12px;border-radius:7px;border:1px solid var(--line);background:var(--ink-2);color:var(--paper);font-family:inherit;font-size:.95rem;appearance:none;-webkit-appearance:none}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(34,211,238,.16)}
+  input[type=color]{padding:4px;height:42px}
+  .hint{font-size:.74rem;color:var(--mute);margin-top:5px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;background:var(--brand);color:var(--brand-ink);font-family:inherit;font-weight:700;font-size:.98rem;padding:13px 22px;border-radius:6px;border:1px solid var(--brand);cursor:pointer;transition:transform .15s,box-shadow .25s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(34,211,238,.3)}
+  .btn.ghost{background:transparent;color:var(--paper);border-color:var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);box-shadow:none}
+  .btn.sm{padding:9px 15px;font-size:.85rem}
+
+  /* session add row */
+  .addbox{border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--ink-2)}
+  .addbox .grid{margin-bottom:12px}
+  .err{color:var(--red);font-size:.82rem;min-height:0;margin:2px 0 10px}
+
+  /* session list */
+  .list{display:grid;gap:10px;margin-top:18px}
+  .sess{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--ink-2)}
+  .sess .info .nm{font-weight:700}
+  .sess .info .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+  .sess .tag{font-size:.72rem;font-weight:600;background:var(--ink-3);color:#C4D0D8;border-radius:6px;padding:3px 9px}
+  .sess .tag.b{background:rgba(34,211,238,.14);color:var(--brand)}
+  .sess .note{color:var(--mute);font-size:.84rem;margin-top:8px}
+  .sess .rm{flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--mute);border-radius:6px;padding:6px 11px;font-size:.82rem;cursor:pointer}
+  .sess .rm:hover{border-color:var(--red);color:var(--red)}
+  .empty{color:var(--mute);font-size:.9rem;border:1px dashed var(--line);border-radius:10px;padding:20px;text-align:center}
+
+  /* output */
+  .outwrap{position:relative}
+  textarea.out{min-height:280px;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.5;background:#05080b;color:#CFE8ee;white-space:pre}
+  .outbar{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .copied{color:var(--green);font-size:.85rem;font-weight:600}
+  .steps{margin:10px 0 0 18px;color:#C4D0D8;font-size:.92rem}
+  .steps li{margin-bottom:5px}
+  .tip{margin-top:14px;font-size:.86rem;color:var(--amber);background:rgba(242,180,65,.08);border:1px solid rgba(242,180,65,.25);border-radius:8px;padding:10px 13px}
+
+  @media (max-width:680px){ .grid,.grid.three{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="eyebrow">Session Builder</span>
+    <h1 class="display">Set up your funnel &mdash; no code.</h1>
+    <p>Fill in your academy details and add your sessions. When you're done, hit Generate and copy the code into your funnel file. That's the only setup step.</p>
+    <div class="how"><span><b>1.</b> Your details</span><span><b>2.</b> Add each session</span><span><b>3.</b> Generate &amp; copy</span><span><b>4.</b> Paste into the funnel</span></div>
+  </div>
+</header>
+
+<!-- ACADEMY DETAILS -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">1.</span> Your academy</h2>
+    <div class="sub">The basics that brand your page and where leads go.</div>
+    <div class="grid">
+      <div class="field"><label>Academy name</label><input id="acName" placeholder="e.g. Aberdeen Football Academy"></div>
+      <div class="field"><label>Brand colour</label><input type="color" id="acColor" value="#22D3EE"></div>
+      <div class="field"><label>Your email (where lead alerts go)</label><input id="acEmail" placeholder="you@youracademy.com"></div>
+      <div class="field"><label>Logo image URL <span style="color:var(--mute)">(optional)</span></label><input id="acLogo" placeholder="https://.../logo.png"></div>
+      <div class="field"><label>Form connection link <span style="color:var(--mute)">(from your tracker)</span></label><input id="acEndpoint" placeholder="paste the webhook / form endpoint"></div>
+      <div class="field"><label>Booking link <span style="color:var(--mute)">(optional)</span></label><input id="acBooking" placeholder="Calendly / booking page URL"></div>
+      <div class="field"><label>Meta Pixel ID <span style="color:var(--mute)">(optional, for FB ads)</span></label><input id="acPixel" placeholder="1234567890"></div>
+      <div class="field"><label>Headline <span style="color:var(--mute)">(optional)</span></label><input id="acHeadline" placeholder="Find your child's perfect session."></div>
+    </div>
+  </div>
+</section>
+
+<!-- ADD SESSIONS -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">2.</span> Your sessions</h2>
+    <div class="sub">Add each class, camp or programme you run. The page uses these to match parents to the right one.</div>
+
+    <div class="addbox">
+      <div class="grid">
+        <div class="field full"><label>Session name</label><input id="sName" placeholder="e.g. Development Squad U7-U9"></div>
+      </div>
+      <div class="grid three">
+        <div class="field"><label>Youngest age</label><input type="number" id="sMin" min="2" max="18" placeholder="6"></div>
+        <div class="field"><label>Oldest age</label><input type="number" id="sMax" min="2" max="18" placeholder="9"></div>
+        <div class="field"><label>Type</label>
+          <select id="sType">
+            <option value="weekly">Weekly training</option>
+            <option value="camp">Holiday camp</option>
+            <option value="goalkeeping">Goalkeeping</option>
+            <option value="onetoone">1-to-1</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid three">
+        <div class="field"><label>When</label>
+          <select id="sDays"><option value="weekday">Weekdays</option><option value="weekend">Weekends</option><option value="any">Any / flexible</option></select>
+        </div>
+        <div class="field"><label>Day &amp; time</label><input id="sWhen" placeholder="Tue 5:00-6:00pm"></div>
+        <div class="field"><label>Venue</label><input id="sVenue" placeholder="3G Pitch"></div>
+      </div>
+      <div class="grid">
+        <div class="field full"><label>One-line description <span style="color:var(--mute)">(optional)</span></label><input id="sNote" placeholder="Core skills, small groups, real coaching attention."></div>
+      </div>
+      <div class="err" id="sErr"></div>
+      <button class="btn" id="addBtn">+ Add this session</button>
+    </div>
+
+    <div class="list" id="list"></div>
+  </div>
+</section>
+
+<!-- GENERATE -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">3.</span> Generate your code</h2>
+    <div class="sub">Click Generate, copy the block, and paste it into your funnel file.</div>
+    <button class="btn" id="genBtn">Generate my funnel code &darr;</button>
+
+    <div id="outArea" style="display:none;margin-top:18px">
+      <div class="outwrap">
+        <textarea class="out" id="out" readonly spellcheck="false"></textarea>
+      </div>
+      <div class="outbar">
+        <button class="btn sm" id="copyBtn">Copy code</button>
+        <span class="copied" id="copiedMsg" style="display:none">Copied!</span>
+      </div>
+      <ol class="steps">
+        <li>Open <b>trial-funnel-matcher.html</b> in any text editor.</li>
+        <li>Find the block that starts with <b>var CONFIG = {</b> and ends with <b>};</b></li>
+        <li>Delete that whole block and paste this in its place. Save. Done.</li>
+      </ol>
+      <div class="tip">Tip: keep this Session Builder page. Any time you add or change a session, come back, rebuild and re-paste &mdash; it takes a minute.</div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var el=function(id){return document.getElementById(id);};
+  var sessions=[];
+
+  var TYPE_LABEL={ weekly:'Weekly training', camp:'Holiday camp', goalkeeping:'Goalkeeping', onetoone:'1-to-1' };
+  var DAYS_LABEL={ weekday:'Weekdays', weekend:'Weekends', any:'Any' };
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function jss(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+
+  function renderList(){
+    var box=el('list');
+    if(!sessions.length){ box.innerHTML='<div class="empty">No sessions yet — add your first one above.</div>'; return; }
+    box.innerHTML = sessions.map(function(s,i){
+      return '<div class="sess"><div class="info">'
+        + '<div class="nm">'+esc(s.name)+'</div>'
+        + '<div class="meta">'
+          + '<span class="tag b">Ages '+s.ageMin+'-'+s.ageMax+'</span>'
+          + '<span class="tag">'+esc(TYPE_LABEL[s.type])+'</span>'
+          + '<span class="tag">'+esc(DAYS_LABEL[s.days])+'</span>'
+          + (s.when?'<span class="tag">'+esc(s.when)+'</span>':'')
+          + (s.venue?'<span class="tag">'+esc(s.venue)+'</span>':'')
+        + '</div>'
+        + (s.note?'<div class="note">'+esc(s.note)+'</div>':'')
+        + '</div>'
+        + '<button class="rm" data-i="'+i+'">Remove</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.rm'),function(b){
+      b.addEventListener('click',function(){ sessions.splice(parseInt(b.getAttribute('data-i'),10),1); renderList(); });
+    });
+  }
+
+  el('addBtn').addEventListener('click',function(){
+    el('sErr').textContent='';
+    var name=el('sName').value.trim();
+    var mn=parseInt(el('sMin').value,10), mx=parseInt(el('sMax').value,10);
+    if(!name){ el('sErr').textContent='Give the session a name.'; return; }
+    if(!(mn>0)||!(mx>0)){ el('sErr').textContent='Enter the youngest and oldest age.'; return; }
+    if(mn>mx){ el('sErr').textContent='Youngest age can’t be higher than oldest.'; return; }
+    sessions.push({ name:name, ageMin:mn, ageMax:mx, type:el('sType').value, days:el('sDays').value,
+      when:el('sWhen').value.trim(), venue:el('sVenue').value.trim(), note:el('sNote').value.trim() });
+    // clear the row (keep type/days selection)
+    el('sName').value=''; el('sMin').value=''; el('sMax').value=''; el('sWhen').value=''; el('sVenue').value=''; el('sNote').value='';
+    el('sName').focus();
+    renderList();
+  });
+
+  el('genBtn').addEventListener('click',function(){
+    if(!sessions.length){ alert('Add at least one session first.'); return; }
+
+    // derive the age range of the dropdown from the sessions
+    var ageMin=Math.min.apply(null,sessions.map(function(s){return s.ageMin;}));
+    var ageMax=Math.max.apply(null,sessions.map(function(s){return s.ageMax;}));
+
+    // only offer the "what are you looking for" types the academy actually uses, in a sensible order
+    var order=['weekly','camp','goalkeeping','onetoone'];
+    var used={}; sessions.forEach(function(s){ used[s.type]=true; });
+    var typesArr=order.filter(function(k){return used[k];});
+    var typesCode=typesArr.map(function(k){ return "    { key:'"+k+"', label:'"+jss(TYPE_LABEL[k])+"' }"; }).join(',\n');
+
+    var progCode=sessions.map(function(s){
+      return "    { name:'"+jss(s.name)+"', ageMin:"+s.ageMin+", ageMax:"+s.ageMax
+        +", type:'"+s.type+"', days:'"+s.days+"', when:'"+jss(s.when)+"', venue:'"+jss(s.venue)+"', note:'"+jss(s.note)+"' }";
+    }).join(',\n');
+
+    var headline = el('acHeadline').value.trim() || "Find your child's perfect session.";
+
+    var code =
+"var CONFIG = {\n"+
+"  academyName: '"+jss(el('acName').value.trim()||'Your Academy')+"',\n"+
+"  brandColor:  '"+jss(el('acColor').value)+"',\n"+
+"  logoUrl:     '"+jss(el('acLogo').value.trim())+"',\n\n"+
+"  heroPill:      'Find the right fit',\n"+
+"  headline:      '"+jss(headline)+"',\n"+
+"  heroLead:      'Answer three quick questions and we will show you exactly which session suits your child - then book a free trial in seconds.',\n\n"+
+"  ageMin: "+ageMin+", ageMax: "+ageMax+",\n\n"+
+"  types: [\n"+typesCode+"\n  ],\n\n"+
+"  programmes: [\n"+progCode+"\n  ],\n\n"+
+"  formEndpoint: '"+jss(el('acEndpoint').value.trim()||'REPLACE_WITH_FORM_ENDPOINT')+"',\n"+
+"  bookingLink:  '"+jss(el('acBooking').value.trim())+"',\n"+
+"  bookingLabel: 'Pick your trial time',\n"+
+"  notifyEmail:  '"+jss(el('acEmail').value.trim()||'you@youracademy.com')+"',\n\n"+
+"  metaPixelId:  '"+jss(el('acPixel').value.trim())+"',\n"+
+"  defaultSource:'Website'\n"+
+"};";
+
+    el('out').value=code;
+    el('outArea').style.display='block';
+    el('outArea').scrollIntoView({behavior:'smooth'});
+  });
+
+  el('copyBtn').addEventListener('click',function(){
+    var ta=el('out'); ta.select(); ta.setSelectionRange(0,99999);
+    var ok=false;
+    try{ ok=document.execCommand('copy'); }catch(e){}
+    if(navigator.clipboard){ navigator.clipboard.writeText(ta.value).catch(function(){}); ok=true; }
+    if(ok){ var m=el('copiedMsg'); m.style.display='inline'; setTimeout(function(){m.style.display='none';},1800); }
+  });
+
+  renderList();
+})();
+</script>
+</body>
+</html>

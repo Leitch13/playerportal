@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  ASCEND -- THE PRICING CALCULATOR  (interactive web version)
+  Wix HTML EMBED, drag-and-drop, no code.
+  ============================================================
+  1. Wix Editor -> Add (+) -> Embed Code -> Embed HTML -> "Code" -> paste this whole file.
+  2. Height ~700px desktop / ~1320px mobile (panels stack; set per breakpoint).
+  3. Directly BELOW, drop a native Wix Form (First name + Email) titled
+     "Send me the calculator + guide". Wix captures it; a Wix Automation emails
+     the spreadsheet + the PDF guide. (Steps in chat.)
+  Transparent background. ASCEND palette: cyan #22D3EE, Anton + Space Grotesk.
+  Faithful to the PDF cost model (real hourly rate / profit / margin / break-even).
+  ============================================================
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+    :root{
+        --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+        --paper:#EEF3F5; --mute:#7E8C99;
+        --cyan:#22D3EE; --cyan-deep:#0B6E7C;
+        --red:#F0526B; --amber:#F2B441; --green:#38D39F;
+        --line:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:transparent}
+    body{
+        font-family:"Space Grotesk",system-ui,-apple-system,sans-serif;
+        color:var(--paper); line-height:1.5; -webkit-font-smoothing:antialiased; padding:4px;
+    }
+    .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+    input,select{font-family:inherit}
+
+    .ac-grid{display:grid;grid-template-columns:.92fr 1.08fr;gap:18px;max-width:1080px;margin:0 auto;align-items:start}
+    .ac-panel{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--ink-2),#0b1116);padding:26px}
+    .ac-eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:18px}
+
+    .ac-group{margin-bottom:20px}
+    .ac-group:last-child{margin-bottom:0}
+    .ac-group-title{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+    .ac-field{margin-bottom:13px}
+    .ac-field:last-child{margin-bottom:0}
+    .ac-field label{display:block;font-size:.86rem;font-weight:500;color:#C4D0D8;margin-bottom:6px}
+    .ac-inwrap{position:relative}
+    .ac-pre,.ac-suf{position:absolute;top:50%;transform:translateY(-50%);color:var(--mute);font-size:.95rem;pointer-events:none}
+    .ac-pre{left:13px} .ac-suf{right:13px}
+    .ac-field input{
+        width:100%;padding:11px 13px;background:var(--ink);border:1px solid var(--line);
+        border-radius:6px;color:var(--paper);font-size:1rem;appearance:none;-webkit-appearance:none;
+        transition:border-color .15s,box-shadow .15s;
+    }
+    .ac-pre ~ input{padding-left:26px}
+    .ac-field input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+
+    /* headline hourly rate */
+    .ac-hero{text-align:center;border:1px solid var(--line);border-radius:10px;background:var(--ink);padding:24px 18px;margin-bottom:16px}
+    .ac-hero-lab{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+    .ac-hero-num{font-family:"Anton",sans-serif;font-size:clamp(3.2rem,10vw,5rem);line-height:.88;font-variant-numeric:tabular-nums}
+    .ac-hero-band{display:inline-block;margin-top:12px;font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;border-radius:40px;border:1px solid currentColor}
+
+    .ac-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .ac-stat{background:var(--ink);border:1px solid var(--line);border-radius:8px;padding:14px 10px;text-align:center}
+    .ac-stat-num{font-family:"Anton",sans-serif;font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums}
+    .ac-stat-lab{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-top:7px}
+
+    /* recommendation */
+    .ac-rec{border:1px solid var(--cyan);border-radius:10px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.10),transparent 60%),var(--ink-2);padding:22px;text-align:center}
+    .ac-rec-lab{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin-bottom:8px}
+    .ac-rec-price{font-family:"Anton",sans-serif;font-size:clamp(2.6rem,8vw,3.6rem);line-height:.9;color:var(--cyan);text-shadow:0 0 34px rgba(34,211,238,.4)}
+    .ac-rec-sub{font-size:.9rem;color:#C4D0D8;margin-top:8px}
+    .ac-rec-uplift{display:flex;justify-content:center;gap:22px;margin-top:16px;flex-wrap:wrap}
+    .ac-rec-uplift div{text-align:center}
+    .ac-rec-uplift b{font-family:"Anton",sans-serif;font-size:1.4rem;color:var(--green);display:block;line-height:1}
+    .ac-rec-uplift small{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+
+    .ac-cta{max-width:1080px;margin:16px auto 0;border:1px solid rgba(34,211,238,.28);border-radius:12px;background:radial-gradient(120% 100% at 50% 0%,rgba(34,211,238,.10),transparent 60%),var(--ink-2);padding:18px 22px;text-align:center}
+    .ac-cta-title{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.15rem;letter-spacing:.02em}
+    .ac-cta-sub{font-size:.9rem;color:#B6C2CA;margin-top:5px}
+    .ac-cta-arrow{color:var(--cyan);font-size:1.3rem;margin-top:6px}
+
+    @media (max-width:720px){
+        .ac-grid{grid-template-columns:1fr}
+        .ac-stats{grid-template-columns:1fr 1fr}
+    }
+</style>
+</head>
+<body>
+    <div class="ac-grid">
+        <!-- ===== INPUTS ===== -->
+        <div class="ac-panel">
+            <div class="ac-eyebrow">ASCEND &middot; The Pricing Calculator</div>
+
+            <div class="ac-group">
+                <div class="ac-group-title">Your session</div>
+                <div class="ac-field">
+                    <label for="acPrice">Current price per player</label>
+                    <div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acPrice" min="0" step="0.5" value="5"></div>
+                </div>
+                <div class="ac-field">
+                    <label for="acPlayers">Average players per session</label>
+                    <div class="ac-inwrap"><input type="number" id="acPlayers" min="0" step="1" value="20"></div>
+                </div>
+                <div class="ac-field">
+                    <label for="acLength">Session length</label>
+                    <div class="ac-inwrap"><input type="number" id="acLength" min="0" step="0.25" value="1"><span class="ac-suf">hours</span></div>
+                </div>
+            </div>
+
+            <div class="ac-group">
+                <div class="ac-group-title">Your costs (per session)</div>
+                <div class="ac-field">
+                    <label for="acVenue">Venue / pitch hire</label>
+                    <div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acVenue" min="0" step="1" value="35"></div>
+                </div>
+                <div class="ac-field">
+                    <label for="acCoach">Coach cost (pay yourself too)</label>
+                    <div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acCoach" min="0" step="1" value="25"></div>
+                </div>
+                <div class="ac-field">
+                    <label for="acOther">Other (kit, insurance, admin)</label>
+                    <div class="ac-inwrap"><span class="ac-pre">&pound;</span><input type="number" id="acOther" min="0" step="1" value="10"></div>
+                </div>
+            </div>
+
+            <div class="ac-group">
+                <div class="ac-group-title">The reality</div>
+                <div class="ac-field">
+                    <label for="acTax">Tax set-aside</label>
+                    <div class="ac-inwrap"><input type="number" id="acTax" min="0" max="100" step="1" value="15"><span class="ac-suf">%</span></div>
+                </div>
+                <div class="ac-field">
+                    <label for="acAdmin">Planning + admin time per session</label>
+                    <div class="ac-inwrap"><input type="number" id="acAdmin" min="0" step="0.25" value="2"><span class="ac-suf">hours</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== RESULTS ===== -->
+        <div class="ac-panel">
+            <div class="ac-eyebrow">The verdict</div>
+            <div class="ac-hero">
+                <div class="ac-hero-lab">Your real hourly rate</div>
+                <div class="ac-hero-num" id="acHourly">&pound;0</div>
+                <div class="ac-hero-band" id="acBand">&mdash;</div>
+            </div>
+            <div class="ac-stats">
+                <div class="ac-stat"><div class="ac-stat-num" id="acRevenue">&pound;0</div><div class="ac-stat-lab">Revenue / session</div></div>
+                <div class="ac-stat"><div class="ac-stat-num" id="acProfit">&pound;0</div><div class="ac-stat-lab">Profit / session</div></div>
+                <div class="ac-stat"><div class="ac-stat-num" id="acMargin">0%</div><div class="ac-stat-lab">Margin</div></div>
+                <div class="ac-stat"><div class="ac-stat-num" id="acCosts">&pound;0</div><div class="ac-stat-lab">Total cost</div></div>
+                <div class="ac-stat"><div class="ac-stat-num" id="acBreakeven">0</div><div class="ac-stat-lab">Break-even players</div></div>
+                <div class="ac-stat"><div class="ac-stat-num" id="acTime">0h</div><div class="ac-stat-lab">Time invested</div></div>
+            </div>
+            <div class="ac-rec">
+                <div class="ac-rec-lab">You should be charging</div>
+                <div class="ac-rec-price" id="acRecPrice">&pound;0</div>
+                <div class="ac-rec-sub" id="acRecSub">for a healthy 40% margin</div>
+                <div class="ac-rec-uplift" id="acUplift">
+                    <div><b id="acRecHourly">&pound;0</b><small>New hourly rate</small></div>
+                    <div><b id="acRecProfit">&pound;0</b><small>New profit / session</small></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ac-cta">
+        <div class="ac-cta-title" id="acCtaTitle">Get the full calculator + the guide</div>
+        <div class="ac-cta-sub">The spreadsheet to keep, plus the how-to guide with the worked example &mdash; pop your email in just below.</div>
+        <div class="ac-cta-arrow">&#8595;</div>
+    </div>
+
+<script>
+(function(){
+    var el = function(id){ return document.getElementById(id); };
+    var ids = ['acPrice','acPlayers','acLength','acVenue','acCoach','acOther','acTax','acAdmin'];
+    var TARGET_MARGIN = 0.40; // "healthy" band from the guide
+
+    // ASCII-only source (Wix's embed box can corrupt raw pound/dash/quote bytes) -- build glyphs at runtime
+    var POUND = String.fromCharCode(163), EMDASH = String.fromCharCode(8212), RSQUO = String.fromCharCode(8217);
+
+    function num(v){ var n = parseFloat(v); return isFinite(n) && n > 0 ? n : 0; }
+    function gbp(n){ return POUND + Math.round(n).toLocaleString('en-GB'); }
+    function gbp2(n){ var r = Math.round(n*100)/100; return POUND + (r % 1 === 0 ? r.toString() : r.toFixed(2)); }
+
+    // hourly-rate interpretation bands (from the guide, page 07)
+    function band(h){
+        if (h < 10)  return { t:'Below minimum wage', c:'var(--red)' };
+        if (h < 20)  return { t:'Working poor',        c:'var(--amber)' };
+        if (h < 40)  return { t:'Room to grow',        c:'var(--cyan)' };
+        if (h < 80)  return { t:'Healthy',             c:'var(--green)' };
+        return              { t:'Premium territory',  c:'var(--green)' };
+    }
+
+    function render(){
+        var price = num(el('acPrice').value), players = num(el('acPlayers').value),
+            length = num(el('acLength').value), venue = num(el('acVenue').value),
+            coach = num(el('acCoach').value), other = num(el('acOther').value),
+            taxRate = Math.min(0.95, num(el('acTax').value) / 100), admin = num(el('acAdmin').value);
+
+        var fixed = venue + coach + other;
+        var revenue = price * players;
+        var totalCost = fixed + revenue * taxRate;
+        var profit = revenue - totalCost;
+        var time = length + admin;
+        var hourly = time > 0 ? profit / time : 0;
+        var margin = revenue > 0 ? profit / revenue : 0;
+        var breakeven = price > 0 ? Math.ceil(fixed / price) : 0;
+
+        el('acRevenue').textContent = gbp(revenue);
+        el('acCosts').textContent = gbp(totalCost);
+        el('acProfit').textContent = (profit < 0 ? '-' + POUND + Math.abs(Math.round(profit)).toLocaleString('en-GB') : gbp(profit));
+        el('acProfit').style.color = profit < 0 ? 'var(--red)' : 'var(--paper)';
+        el('acMargin').textContent = Math.round(margin * 100) + '%';
+        el('acBreakeven').textContent = breakeven;
+        el('acTime').textContent = (Math.round(time * 10) / 10) + 'h';
+
+        el('acHourly').textContent = (hourly < 0 ? '-' + POUND + Math.abs(Math.round(hourly)) : gbp(hourly));
+        var b = band(hourly);
+        el('acHourly').style.color = b.c;
+        el('acBand').textContent = b.t;
+        el('acBand').style.color = b.c;
+
+        // recommended price to hit TARGET_MARGIN:  p = fixed / (players * ((1 - tax) - margin))
+        var denom = players * ((1 - taxRate) - TARGET_MARGIN);
+        var rec = denom > 0 ? fixed / denom : 0;
+        rec = Math.round(rec / 0.5) * 0.5;               // to nearest 50p
+        if (rec < price) rec = price;                     // never suggest a cut here
+
+        var recRevenue = rec * players;
+        var recProfit = recRevenue - (fixed + recRevenue * taxRate);
+        var recHourly = time > 0 ? recProfit / time : 0;
+
+        el('acRecPrice').textContent = gbp2(rec);
+        if (rec > price) {
+            el('acRecSub').textContent = 'up from ' + gbp2(price) + ' ' + EMDASH + ' for a healthy 40% margin';
+            el('acRecHourly').textContent = gbp(recHourly);
+            el('acRecProfit').textContent = gbp(recProfit);
+            el('acUplift').style.display = 'flex';
+            el('acCtaTitle').textContent = 'That' + RSQUO + 's ' + gbp(recProfit - profit) + ' more profit per session ' + EMDASH + ' get the full calculator';
+        } else {
+            el('acRecSub').textContent = 'you' + RSQUO + 're already at or above a healthy margin ' + EMDASH + ' protect it';
+            el('acUplift').style.display = 'none';
+            el('acCtaTitle').textContent = 'Get the full calculator + the guide';
+        }
+    }
+
+    ids.forEach(function(id){
+        el(id).addEventListener('input', render);
+        el(id).addEventListener('change', render);
+    });
+    render();
+})();
+</script>
+</body>
+</html>

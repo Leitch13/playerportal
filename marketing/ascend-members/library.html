@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>The Library &middot; ASCEND Members</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ascend.css">
+<style>
+  .stage{border:1px solid var(--line);border-radius:16px;background:var(--panel);margin-bottom:16px;overflow:hidden}
+  .stage-head{display:flex;gap:16px;align-items:flex-start;padding:22px 24px;cursor:pointer;user-select:none}
+  .stage-head .letter{flex:0 0 46px}
+  .stage-head .hm{flex:1;min-width:0}
+  .stage-head .nm{font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;margin-bottom:3px}
+  .stage-head .q{color:var(--muted);font-size:13.5px}
+  .stage-head .count{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted-dim);letter-spacing:1px;white-space:nowrap;margin-top:4px}
+  .chev{flex:0 0 auto;color:var(--muted-dim);font-size:15px;transition:transform .18s;margin-top:12px}
+  .stage.open .chev{transform:rotate(90deg);color:var(--cyan)}
+  .stage-body{display:none;padding:0 24px 22px;border-top:1px solid var(--line)}
+  .stage.open .stage-body{display:block}
+  .stage-body .intro{color:var(--muted);font-size:13.5px;line-height:1.6;margin:18px 0 18px;max-width:64ch}
+
+  .folderbtn{display:inline-flex;align-items:center;gap:9px;background:rgba(51,227,227,.07);border:1px solid var(--cyan-dim);
+    color:var(--cyan);font-weight:600;font-size:13.5px;padding:11px 18px;border-radius:10px;text-decoration:none;margin-bottom:20px}
+  .folderbtn:hover{background:rgba(51,227,227,.14)}
+
+  .grp{margin-bottom:20px}
+  .grp .gl{font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted-dim);margin-bottom:9px}
+  .items{list-style:none;padding:0;margin:0;display:grid;gap:7px}
+  .items li{display:flex;gap:11px;align-items:baseline;font-size:14px;line-height:1.5;
+    padding:10px 13px;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}
+  .items li .t{flex:1;min-width:0}
+  .items li .t b{font-weight:600;display:block}
+  .items li .t span{color:var(--muted);font-size:12.5px}
+  .items li a{text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap}
+  .items li.tool{border-color:var(--line-lit)}
+  .kind{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted-dim);
+    border:1px solid var(--line-lit);border-radius:5px;padding:2px 6px;white-space:nowrap;flex:0 0 auto}
+  .kind.tool{color:var(--cyan);border-color:var(--cyan-dim)}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="brand" href="index.html">ASCEND<span>.</span></a>
+  <nav class="navlinks">
+    <a href="index.html">Hub</a>
+    <a href="start-here.html">Start here</a>
+    <a href="library.html" class="on">Library</a>
+    <a href="diagnostic.html">Diagnostic</a>
+    <a href="pricing-calculator.html">Calculator</a>
+    <a href="work-with-me.html">Work with me</a>
+  </nav>
+</div></div>
+
+<div class="wrap">
+
+  <div style="padding:46px 0 12px">
+    <p class="eyebrow">Every resource, filed by stage</p>
+    <h1>The library.</h1>
+    <p class="lede">Filed under the six ASCEND stages rather than by format, because the question is never "do I want a PDF or a spreadsheet", it's "what's broken". Go to the stage the diagnostic flagged as your weakest and work that one. Tap a stage to open it.</p>
+    <p class="small" style="margin-bottom:0"><a href="diagnostic.html">Not sure which stage is yours? Take the diagnostic &rarr;</a></p>
+  </div>
+
+  <div style="padding:22px 0 40px">
+
+    <!-- ============ A · AUDIT ============ -->
+    <div class="stage" id="st-a">
+      <div class="stage-head">
+        <div class="letter">A</div>
+        <div class="hm">
+          <div class="nm">Audit</div>
+          <div class="q">Do you actually know your numbers?</div>
+          <div class="count">3 live tools &middot; 3 documents</div>
+        </div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="stage-body">
+        <p class="intro">Everything starts here, and almost everyone wants to skip it. You cannot price, hire, or market your way out of a business whose numbers you can't state from memory. Do the three tools first &mdash; they take 40 minutes between them and they'll change what you think your problem is.</p>
+        <a class="folderbtn" href="https://drive.google.com/drive/folders/1xNFB09sjtbKMJfA2jnN4I_1AqDBSh_kV" target="_blank" rel="noopener"><span aria-hidden="true">&#128193;</span> Open the Audit folder in Drive</a>
+
+        <div class="grp"><div class="gl">Live tools &mdash; do these first</div>
+          <ul class="items">
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>The ASCEND Diagnostic</b><span>30 statements, scored /25 per stage. Tells you your level and your weakest stage.</span></span><a href="diagnostic.html">Open &rarr;</a></li>
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>The Pricing Calculator</b><span>Your real hourly rate once venue, coaches, tax and admin time come out.</span></span><a href="pricing-calculator.html">Open &rarr;</a></li>
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>The Money Map</b><span>Now versus target, and what the twelve-month gap is worth.</span></span><a href="money-map.html">Open &rarr;</a></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">In the Drive folder</div>
+          <ul class="items">
+            <li><span class="kind">Slides</span><span class="t"><b>Start Here</b><span>How the programme works and the order the stages run in.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>The Bottleneck</b><span>Finding the single constraint holding the whole thing back.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>The Pricing Calculator guide</b><span>The worked "Meet Dave" example and how to read your result.</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ S · SELL ============ -->
+    <div class="stage" id="st-s">
+      <div class="stage-head">
+        <div class="letter">S</div>
+        <div class="hm">
+          <div class="nm">Sell</div>
+          <div class="q">Are you filling sessions consistently?</div>
+          <div class="count">1 live tool &middot; 10 documents</div>
+        </div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="stage-body">
+        <p class="intro">The biggest folder, because it's where most academies bleed. Word of mouth is not a marketing strategy &mdash; it's what happens when you haven't got one. Work the Marketing Playbook first, then the Ads Engine once you've got an offer worth running traffic at.</p>
+        <a class="folderbtn" href="https://drive.google.com/drive/folders/1Q_2oBEmRrFdi83FQEDQrQOm7ZWkpEd6z" target="_blank" rel="noopener"><span aria-hidden="true">&#128193;</span> Open the Sell folder in Drive</a>
+
+        <div class="grp"><div class="gl">Live tools</div>
+          <ul class="items">
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>Ads Training</b><span>The full paid-social walkthrough, start to finish.</span></span><a href="ads-training.html">Open &rarr;</a></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">Start with these</div>
+          <ul class="items">
+            <li><span class="kind">PDF</span><span class="t"><b>The Marketing Playbook</b><span>The whole approach in one document. Read before anything else in this folder.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>The Lead Machine</b><span>Capture, chase, convert &mdash; the system that stops leads dying in your inbox.</span></span></li>
+            <li><span class="kind">Workbook</span><span class="t"><b>The Ads Engine Workbook</b><span>Build and run a campaign that actually converts, with the numbers to judge it by.</span></span></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">Then</div>
+          <ul class="items">
+            <li><span class="kind">Slides</span><span class="t"><b>Stage S &mdash; Sell</b><span>The teaching session for this stage.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>First Leads</b><span>For anyone starting from nothing or close to it.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Your First 50 Customers</b><span>Getting to a full session without a budget.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>The Lead Gen Vault</b><span>Every channel that works for academies, ranked by effort against return.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Build Your Funnel</b><span>Turning attention into a booked trial.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>Promotional Copy Templates</b><span>Fill-in-the-blank copy for posts, ads and emails.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>Social Media Starter Pack</b><span>What to post, how often, and what to stop posting.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>Features vs Benefits</b><span>Why parents don't care about your coaching badges. Print this one out.</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ C · CAPACITY ============ -->
+    <div class="stage" id="st-c">
+      <div class="stage-head">
+        <div class="letter">C</div>
+        <div class="hm">
+          <div class="nm">Capacity</div>
+          <div class="q">Can your operation handle growth?</div>
+          <div class="count">2 live tools &middot; 5 documents</div>
+        </div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="stage-body">
+        <p class="intro">There's no point filling the funnel if the thing behind it falls over. Capacity is admin that runs without you firefighting, a product good enough that any coach can deliver it, and enough slack to absorb thirty per cent more players tomorrow.</p>
+        <a class="folderbtn" href="https://drive.google.com/drive/folders/1AyQtROMlimrWvPV_Y3lAnLfumZuHnU7E" target="_blank" rel="noopener"><span aria-hidden="true">&#128193;</span> Open the Capacity folder in Drive</a>
+
+        <div class="grp"><div class="gl">Live tools</div>
+          <ul class="items">
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>Player Portal</b><span>The booking, payments and admin software. Members get onboarding help setting it up.</span></span><a href="https://www.theplayerportal.net" target="_blank" rel="noopener">Open &rarr;</a></li>
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>The Year Planner</b><span>Map your terms, camps and campaigns across twelve months.</span></span><a href="year-planner.html">Open &rarr;</a></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">In the Drive folder</div>
+          <ul class="items">
+            <li><span class="kind">PDF</span><span class="t"><b>The ASCEND Curriculum, U5&ndash;U16</b><span>53 pages showing what a proper curriculum looks like &mdash; the exemplar to model yours on.</span></span></li>
+            <li><span class="kind">Canva</span><span class="t"><b>The Curriculum Template</b><span>The editable version. Clone it and pour your own identity in.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>Name, Build &amp; Launch the Class</b><span>Taking a new session from idea to first paying player.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Get Paid</b><span>Payments, direct debits and chasing less.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>Player Portal Academy Manual</b><span>The full software manual if you're running your academy on it.</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ E · EXPAND ============ -->
+    <div class="stage" id="st-e">
+      <div class="stage-head">
+        <div class="letter">E</div>
+        <div class="hm">
+          <div class="nm">Expand</div>
+          <div class="q">Are you growing the business, or just the workload?</div>
+          <div class="count">1 live tool &middot; 4 documents</div>
+        </div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="stage-body">
+        <p class="intro">Growth that adds hours isn't growth, it's a second job. This stage is about margin and structure &mdash; premium offers, planned campaigns instead of ad-hoc panic, and revenue that doesn't cost you another night a week.</p>
+        <a class="folderbtn" href="https://drive.google.com/drive/folders/1JdJHzZj8OBVMEYBi63dXWCaa-h1BxyeN" target="_blank" rel="noopener"><span aria-hidden="true">&#128193;</span> Open the Expand folder in Drive</a>
+
+        <div class="grp"><div class="gl">Live tools</div>
+          <ul class="items">
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>The Mindset Test</b><span>Where your head is at as an owner &mdash; usually the real ceiling at this stage.</span></span><a href="mindset-test.html">Open &rarr;</a></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">In the Drive folder</div>
+          <ul class="items">
+            <li><span class="kind">Slides</span><span class="t"><b>Strategy &amp; Planning</b><span>Setting a direction you can actually hold for twelve months.</span></span></li>
+            <li><span class="kind">Doc</span><span class="t"><b>Revenue Growth Playbook</b><span>The routes to more revenue, ranked by margin rather than by noise.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Why Don't You Promote?</b><span>The self-inflicted reasons owners undersell good products.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>Proposal template</b><span>For schools, clubs and partnerships &mdash; a real one that's won work.</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ N · NORMALISE ============ -->
+    <div class="stage" id="st-n">
+      <div class="stage-head">
+        <div class="letter">N</div>
+        <div class="hm">
+          <div class="nm">Normalise</div>
+          <div class="q">Does your business run the same way every time?</div>
+          <div class="count">5 documents</div>
+        </div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="stage-body">
+        <p class="intro">The unglamorous stage that makes selling the business possible one day. If the way things get done lives only in your head, you don't own an academy &mdash; you are the academy. The Academy Bible is the centrepiece here; give it a fortnight and it'll outlast everything else you build.</p>
+        <a class="folderbtn" href="https://drive.google.com/drive/folders/1jP83ZVlBkh3-dwhoCXDvw65tR0f5rU2X" target="_blank" rel="noopener"><span aria-hidden="true">&#128193;</span> Open the Normalise folder in Drive</a>
+
+        <div class="grp"><div class="gl">Start here</div>
+          <ul class="items">
+            <li><span class="kind">Template</span><span class="t"><b>The Academy Bible</b><span>Your staff handbook and operations manual in one editable document. The flagship of this stage.</span></span></li>
+            <li><span class="kind">Template</span><span class="t"><b>Academy on a Page</b><span>The one-pager version, for when the full Bible is too much to start with.</span></span></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">Then</div>
+          <ul class="items">
+            <li><span class="kind">Slides</span><span class="t"><b>We Are [Academy]</b><span>Your identity deck &mdash; who you are, what you stand for, what a session feels like.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>The Operating Rhythm</b><span>The weekly, monthly and termly beats that keep it running without heroics.</span></span></li>
+            <li><span class="kind">Doc</span><span class="t"><b>Operations Manual Template</b><span>The skeleton to fill in if you'd rather build it from scratch.</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ D · DELEGATE ============ -->
+    <div class="stage" id="st-d">
+      <div class="stage-head">
+        <div class="letter">D</div>
+        <div class="hm">
+          <div class="nm">Delegate</div>
+          <div class="q">Are you the owner, or still the operator?</div>
+          <div class="count">2 live tools &middot; 5 documents</div>
+        </div>
+        <div class="chev">&#9656;</div>
+      </div>
+      <div class="stage-body">
+        <p class="intro">The end of the road: fewer than six hours a week on the grass, and a fortnight's holiday that doesn't break anything. It only works if the jobs are written down and owned by name. Do the two audits first &mdash; they show you what to hand over and in what order.</p>
+        <a class="folderbtn" href="https://drive.google.com/drive/folders/1EZ4vcXclki-bgC2AXb2pIvakQZiH1B4P" target="_blank" rel="noopener"><span aria-hidden="true">&#128193;</span> Open the Delegate folder in Drive</a>
+
+        <div class="grp"><div class="gl">Live tools &mdash; do these first</div>
+          <ul class="items">
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>The Time Audit</b><span>Where your week actually goes, and what only you can do.</span></span><a href="time-audit.html">Open &rarr;</a></li>
+            <li class="tool"><span class="kind tool">Tool</span><span class="t"><b>Roles &amp; Responsibilities</b><span>Every job, assigned by name. Shows how many still run through you.</span></span><a href="roles-audit.html">Open &rarr;</a></li>
+          </ul>
+        </div>
+
+        <div class="grp"><div class="gl">In the Drive folder</div>
+          <ul class="items">
+            <li><span class="kind">Docs &times;7</span><span class="t"><b>Role Profiles</b><span>Session Coach, Lead Coach, Head of Coaching, Administrator, Marketing, 1-2-1 Coordinator, plus a blank.</span></span></li>
+            <li><span class="kind">PDF</span><span class="t"><b>The CEO Table</b><span>Every job in an academy on one page, and who should own it.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Functional Structure</b><span>What the org chart looks like at 100, 200 and 350 players.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Team Culture &amp; Building the Team</b><span>Hiring coaches who hold your standard when you're not there.</span></span></li>
+            <li><span class="kind">Slides</span><span class="t"><b>Part-Time Staff</b><span>Contracts, rates and expectations for a casual coaching team.</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout" style="margin-bottom:44px">
+    <div class="lbl">Something missing?</div>
+    <p>If you need something that isn't here, tell me. Most of this library exists because a member asked for it first.</p>
+  </div>
+
+</div>
+
+<footer><div class="wrap">
+  <span>John Leitch &middot; ASCEND</span>
+  <span><a href="index.html">Hub</a> &middot; <a href="start-here.html">Start here</a> &middot; <a href="work-with-me.html">Contact</a></span>
+</div></footer>
+
+<script>
+var stages = Array.prototype.slice.call(document.querySelectorAll('.stage'));
+stages.forEach(function(st){
+  st.querySelector('.stage-head').addEventListener('click', function(){
+    st.classList.toggle('open');
+  });
+});
+/* Deep link: library.html#st-s opens and scrolls to that stage. */
+if(location.hash){
+  var target = document.querySelector(location.hash);
+  if(target && target.classList.contains('stage')){
+    target.classList.add('open');
+    setTimeout(function(){ target.scrollIntoView({behavior:'smooth', block:'start'}); }, 80);
+  }
+} else {
+  stages[0].classList.add('open');
+}
+</script>
+</body>
+</html>

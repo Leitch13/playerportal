@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<!--
+  INSTAGRAM CAROUSEL - "The Lead Machine" breakdown (ASCEND).
+  7 slides, each 1080 x 1080. Screenshot / export each card as a PNG, upload in order.
+  Plain, easy-to-say copy - one idea per slide.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lead Machine — IG carousel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F;
+    --line:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#04070a;font-family:"Space Grotesk",system-ui,sans-serif;padding:30px 0;display:flex;flex-direction:column;align-items:center;gap:34px}
+  .slidelabel{color:var(--mute);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+
+  .slide{
+    width:1080px;height:1080px;position:relative;overflow:hidden;color:var(--paper);
+    background:
+      radial-gradient(45% 32% at 84% 6%,rgba(34,211,238,.18),transparent 60%),
+      radial-gradient(40% 30% at 4% 98%,rgba(11,110,124,.26),transparent 60%),
+      linear-gradient(160deg,#0b1116,#090C10 55%);
+    padding:70px 74px;display:flex;flex-direction:column;
+  }
+  .slide::before{content:"";position:absolute;inset:0;background-image:
+     linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+     linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+     background-size:64px 64px;mask-image:radial-gradient(80% 70% at 50% 40%,#000,transparent 85%);pointer-events:none}
+  .slide > *{position:relative;z-index:1}
+
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .brandrow{display:flex;align-items:center;gap:13px}
+  .logo{width:48px;height:48px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-family:"Anton",sans-serif;font-size:1.35rem;color:var(--brand-ink)}
+  .brandrow .name{font-family:"Anton",sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:1.15rem;line-height:1}
+  .brandrow .name small{display:block;font-family:"Space Grotesk",sans-serif;font-weight:500;font-size:.62rem;letter-spacing:.16em;color:var(--mute);margin-top:3px}
+  .count{font-family:"Anton",sans-serif;font-size:1.1rem;color:var(--mute);letter-spacing:.08em}
+  .count b{color:var(--brand)}
+
+  .mid{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .eyebrow{font-size:1rem;letter-spacing:.28em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-bottom:22px}
+  .huge{font-family:"Anton",sans-serif;text-transform:uppercase;line-height:.9;font-size:7.4rem}
+  .huge .cy{color:var(--brand);text-shadow:0 0 60px rgba(34,211,238,.4)}
+  .stepno{font-family:"Anton",sans-serif;font-size:5.4rem;line-height:.8;color:var(--brand);text-shadow:0 0 50px rgba(34,211,238,.35);margin-bottom:18px}
+  h2{font-family:"Anton",sans-serif;text-transform:uppercase;line-height:.98;font-size:4.2rem;margin-bottom:26px}
+  h2 .cy{color:var(--brand)}
+  .say{font-size:1.9rem;color:#D6E0E6;line-height:1.4;max-width:24ch;font-weight:500}
+  .say b{color:#fff;font-weight:700}
+
+  .bottom{display:flex;align-items:center;gap:12px;color:var(--mute);font-size:1.05rem;font-weight:600;letter-spacing:.02em}
+  .bottom .arrow{color:var(--brand);font-family:"Anton",sans-serif;font-size:1.5rem}
+
+  /* cta slide */
+  .cta{border:1.5px solid var(--brand);border-radius:18px;padding:30px 36px;background:radial-gradient(120% 160% at 0% 0%,rgba(34,211,238,.12),transparent 60%),rgba(16,22,28,.6);display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:8px}
+  .cta .k{font-size:1rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:700}
+  .cta .v{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:2.6rem;color:#fff;line-height:1;margin-top:8px}
+  .cta .v span{color:var(--brand)}
+  .cta .arrow{font-family:"Anton",sans-serif;font-size:3rem;color:var(--brand)}
+  .handle{margin-top:24px;text-align:center;color:var(--mute);font-size:1.1rem}
+  .handle b{color:var(--paper)}
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 - COVER -->
+<div class="slidelabel">Slide 1 — Cover</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>01</b> / 07</div>
+  </div>
+  <div class="mid">
+    <div class="eyebrow">For academy owners</div>
+    <div class="huge">THE<br><span class="cy">LEAD</span><br>MACHINE</div>
+    <div class="say" style="margin-top:30px">Here&rsquo;s <b>exactly</b> what it does &mdash; and why it fills your academy.</div>
+  </div>
+  <div class="bottom"><span class="arrow">&rarr;</span> Swipe</div>
+</div>
+
+<!-- SLIDE 2 - PROBLEM -->
+<div class="slidelabel">Slide 2 — The problem</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>02</b> / 07</div>
+  </div>
+  <div class="mid">
+    <div class="eyebrow">Right now&hellip;</div>
+    <h2>You&rsquo;re losing parents <span class="cy">every week</span></h2>
+    <div class="say">A parent messages. You&rsquo;re on the pitch. You mean to reply&hellip; and by the time you do, they&rsquo;ve joined the club down the road.</div>
+  </div>
+  <div class="bottom"><span class="arrow">&rarr;</span> Here&rsquo;s the fix</div>
+</div>
+
+<!-- SLIDE 3 - CAPTURE -->
+<div class="slidelabel">Slide 3 — Catches every enquiry</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>03</b> / 07</div>
+  </div>
+  <div class="mid">
+    <div class="stepno">1</div>
+    <h2>It catches <span class="cy">every</span> enquiry</h2>
+    <div class="say">Parents fill in one quick form. It lands on your board <b>instantly</b>. Nothing slips through the cracks &mdash; ever.</div>
+  </div>
+  <div class="bottom"><span class="arrow">&rarr;</span> Keep swiping</div>
+</div>
+
+<!-- SLIDE 4 - MATCH -->
+<div class="slidelabel">Slide 4 — Matches the right session</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>04</b> / 07</div>
+  </div>
+  <div class="mid">
+    <div class="stepno">2</div>
+    <h2>It finds the <span class="cy">right session</span></h2>
+    <div class="say">They pop in their child&rsquo;s age and what they want. It shows them the perfect class for them &mdash; on the spot.</div>
+  </div>
+  <div class="bottom"><span class="arrow">&rarr;</span> Keep swiping</div>
+</div>
+
+<!-- SLIDE 5 - REPLY -->
+<div class="slidelabel">Slide 5 — Replies instantly</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>05</b> / 07</div>
+  </div>
+  <div class="mid">
+    <div class="stepno">3</div>
+    <h2>It replies <span class="cy">for you</span> &mdash; instantly</h2>
+    <div class="say">The second they enquire, they get a friendly &ldquo;let&rsquo;s get you booked&rdquo; message. You look switched-on, 24/7.</div>
+  </div>
+  <div class="bottom"><span class="arrow">&rarr;</span> Keep swiping</div>
+</div>
+
+<!-- SLIDE 6 - FOLLOW UP -->
+<div class="slidelabel">Slide 6 — Chases till they book</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>06</b> / 07</div>
+  </div>
+  <div class="mid">
+    <div class="stepno">4</div>
+    <h2>It <span class="cy">chases</span> them till they book</h2>
+    <div class="say">Not booked yet? It nudges them again. And again. Automatically. <b>No lead ever goes cold.</b></div>
+  </div>
+  <div class="bottom"><span class="arrow">&rarr;</span> One more</div>
+</div>
+
+<!-- SLIDE 7 - CTA -->
+<div class="slidelabel">Slide 7 — Result + CTA</div>
+<div class="slide">
+  <div class="top">
+    <div class="brandrow"><div class="logo">A</div><div class="name">ASCEND<small>BY JOHN LEITCH COACHING</small></div></div>
+    <div class="count"><b>07</b> / 07</div>
+  </div>
+  <div class="mid">
+    <h2>You just coach.<br>It <span class="cy">fills the academy.</span></h2>
+    <div class="say">No spreadsheets. No chasing. No leads walking out the gate.</div>
+    <div class="cta">
+      <div class="l">
+        <div class="k">Free for members</div>
+        <div class="v">Inside <span>ASCEND</span></div>
+      </div>
+      <div class="arrow">&rarr;</div>
+    </div>
+    <div class="handle">Link in bio &middot; <b>@johnleitchcoaching</b></div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!--
+  MOCKUP - The Automatic Follow-Up Plan for the ASCEND Lead Machine.
+  Shows what fires automatically after a parent enquires: instant reply + owner
+  alert, then a timed chase sequence to the parent, the booking branch, and the
+  stop rule. This is the plan to build as Airtable automations.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Automatic Follow-Up Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090C10; --ink-2:#10161C; --ink-3:#1A232B;
+    --paper:#EEF3F5; --mute:#8695A2;
+    --brand:#22D3EE; --brand-deep:#0B6E7C; --brand-ink:#04181C;
+    --green:#38D39F; --amber:#F2B441; --violet:#A98BFF;
+    --line:rgba(255,255,255,.10); --maxw:900px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--paper);font-family:"Space Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;padding:30px 0 60px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .display{font-family:"Anton",Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:1}
+  .eyebrow{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  h1{font-size:clamp(1.9rem,5vw,2.8rem);margin:10px 0 12px}
+  .sub{color:#C4D0D8;max-width:60ch;margin-bottom:20px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 30px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--ink-2)}
+  .legend div{display:flex;align-items:center;gap:8px;font-size:.84rem;color:#C4D0D8}
+  .sw{width:12px;height:12px;border-radius:4px}
+  .sw.p{background:var(--brand)} .sw.o{background:var(--amber)} .sw.s{background:var(--green)}
+
+  /* timeline */
+  .tl{position:relative;margin-left:14px;padding-left:34px;border-left:2px solid var(--ink-3)}
+  .node{position:relative;margin-bottom:16px}
+  .node::before{content:"";position:absolute;left:-43px;top:20px;width:16px;height:16px;border-radius:50%;background:var(--ink);border:3px solid var(--brand)}
+  .node.owner::before{border-color:var(--amber)}
+  .node.stop::before{border-color:var(--green)}
+  .node.book::before{border-color:var(--violet)}
+
+  .day{position:absolute;left:-118px;top:16px;width:66px;text-align:right;font-family:"Anton",sans-serif;font-size:.85rem;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+  .card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--ink-2)}
+  .card.p{border-left:3px solid var(--brand)}
+  .card.o{border-left:3px solid var(--amber)}
+  .card.s{border-left:3px solid var(--green);background:radial-gradient(120% 100% at 0% 0%,rgba(56,211,159,.08),transparent 60%),var(--ink-2)}
+  .card.b{border-left:3px solid var(--violet)}
+  .to{display:inline-flex;align-items:center;gap:6px;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:9px}
+  .to.p{background:rgba(34,211,238,.14);color:var(--brand)}
+  .to.o{background:rgba(242,180,65,.14);color:var(--amber)}
+  .to.s{background:rgba(56,211,159,.14);color:var(--green)}
+  .to.b{background:rgba(169,139,255,.16);color:var(--violet)}
+  .card h3{font-size:1.05rem;font-weight:700;margin-bottom:4px}
+  .card .msg{color:#C4D0D8;font-size:.92rem}
+  .card .msg em{color:#93A0A9;font-style:normal}
+  .trig{font-size:.76rem;color:var(--mute);margin-top:9px;border-top:1px solid var(--line);padding-top:8px}
+  .trig b{color:#C4D0D8;font-weight:600}
+
+  .daymark{position:relative;margin:26px 0 10px}
+  .daymark span{font-family:"Anton",sans-serif;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);background:var(--ink);padding-right:12px}
+  .daymark::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ink-3);z-index:-1}
+
+  .branch{border:1px dashed rgba(169,139,255,.4);border-radius:12px;padding:14px 16px;margin:6px 0 16px;background:rgba(169,139,255,.05)}
+  .branch .lab{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);margin-bottom:6px}
+  .branch p{font-size:.9rem;color:#C4D0D8}
+
+  .stopbox{border:1px solid var(--green);border-radius:12px;padding:18px 20px;margin-top:24px;background:radial-gradient(120% 100% at 50% 0%,rgba(56,211,159,.08),transparent 60%),var(--ink-2)}
+  .stopbox h3{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:1.1rem;color:var(--green);margin-bottom:6px}
+  .stopbox p{font-size:.92rem;color:#C4D0D8}
+
+  .foot{margin-top:26px;color:var(--mute);font-size:.84rem;border-top:1px solid var(--line);padding-top:16px}
+  .foot b{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">ASCEND Lead Machine</span>
+  <h1 class="display">The automatic follow-up plan</h1>
+  <p class="sub">What fires on its own after a parent enquires &mdash; no one lifts a finger. Cyan = goes to the parent. Amber = alerts the academy. Green = the sequence stops.</p>
+
+  <div class="legend">
+    <div><span class="sw p"></span> Message to the parent</div>
+    <div><span class="sw o"></span> Alert to the academy</div>
+    <div><span class="sw s"></span> Auto-stop</div>
+  </div>
+
+  <div class="daymark"><span>The moment they enquire</span></div>
+  <div class="tl">
+
+    <div class="node"><div class="day">Day 0</div>
+      <div class="card p">
+        <span class="to p">&rarr; Parent &middot; email, instant</span>
+        <h3>&ldquo;Thanks &mdash; let&rsquo;s get Leo booked in&rdquo;</h3>
+        <div class="msg">Warm welcome, what happens next, and a <em>Book your trial</em> button.</div>
+        <div class="trig"><b>Trigger:</b> new lead created</div>
+      </div>
+    </div>
+
+    <div class="node owner"><div class="day">Day 0</div>
+      <div class="card o">
+        <span class="to o">&rarr; Academy &middot; email, instant</span>
+        <h3>&ldquo;New lead: Leo, age 8 &mdash; call 07700&hellip;&rdquo;</h3>
+        <div class="msg">Speed-to-lead alert with the parent&rsquo;s details and matched session.</div>
+        <div class="trig"><b>Trigger:</b> new lead created</div>
+      </div>
+    </div>
+
+    <div class="node"><div class="day">Day 2</div>
+      <div class="card p">
+        <span class="to p">&rarr; Parent &middot; email</span>
+        <h3>&ldquo;Still keen to get Leo along?&rdquo;</h3>
+        <div class="msg">Gentle nudge &mdash; reassures beginners are welcome, one tap to book.</div>
+        <div class="trig"><b>Trigger:</b> 2 days on, still not booked</div>
+      </div>
+    </div>
+
+    <div class="node"><div class="day">Day 5</div>
+      <div class="card p">
+        <span class="to p">&rarr; Parent &middot; email</span>
+        <h3>&ldquo;Here&rsquo;s what a session looks like&rdquo;</h3>
+        <div class="msg">A bit of proof &mdash; what to expect, a happy-parent line, book link.</div>
+        <div class="trig"><b>Trigger:</b> 5 days on, still not booked</div>
+      </div>
+    </div>
+
+    <div class="node"><div class="day">Day 9</div>
+      <div class="card p">
+        <span class="to p">&rarr; Parent &middot; email</span>
+        <h3>&ldquo;Shall we hold a space for Leo?&rdquo;</h3>
+        <div class="msg">Last nudge &mdash; a little urgency, easy yes, then it goes quiet.</div>
+        <div class="trig"><b>Trigger:</b> 9 days on, still not booked</div>
+      </div>
+    </div>
+
+    <div class="node owner"><div class="day">Daily</div>
+      <div class="card o">
+        <span class="to o">&rarr; Academy &middot; email, every morning</span>
+        <h3>&ldquo;Leads to chase today&rdquo;</h3>
+        <div class="msg">Anyone due a follow-up, so the human call never gets forgotten either.</div>
+        <div class="trig"><b>Trigger:</b> follow-up date is today</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="daymark"><span>The moment they book a trial</span></div>
+  <div class="tl">
+    <div class="node book"><div class="day">On book</div>
+      <div class="card b">
+        <span class="to b">&rarr; Parent &middot; email</span>
+        <h3>&ldquo;Your trial is booked &#127881;&rdquo;</h3>
+        <div class="msg">Confirmation with time, place and what to bring.</div>
+        <div class="trig"><b>Trigger:</b> status = Trial booked</div>
+      </div>
+    </div>
+    <div class="node book"><div class="day">Day before</div>
+      <div class="card b">
+        <span class="to b">&rarr; Parent &middot; email</span>
+        <h3>&ldquo;See you tomorrow!&rdquo;</h3>
+        <div class="msg">Day-before reminder &mdash; cuts no-shows.</div>
+        <div class="trig"><b>Trigger:</b> trial date is tomorrow</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stopbox">
+    <h3>&#10003; It stops itself</h3>
+    <p>The chase sequence ends the instant the parent books, enrols, or you mark them done &mdash; so no one ever gets a &ldquo;still keen?&rdquo; email after they&rsquo;ve already signed up.</p>
+  </div>
+
+  <div class="foot">
+    <b>To build:</b> 4 short emails (Day 0 / 2 / 5 / 9) + the booking confirmations &mdash; each one an Airtable automation on a timer. <b>Already live in the plan:</b> the instant reply, the owner alert, and the daily chase list. &nbsp;<i>(Mockup of the follow-up sequence.)</i>
+  </div>
+</div>
+</body>
+</html>
