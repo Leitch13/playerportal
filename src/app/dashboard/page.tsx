@@ -86,8 +86,10 @@ async function loadParentHub(
   userId: string,
   name: string,
 ): Promise<React.ComponentProps<typeof ParentHub>> {
+  // players_active (migration 109): a parent must never be shown their own
+  // archived child.
   const { data: playersData } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id, first_name, last_name, age_group, photo_url, enrolments(id, status, group:training_groups(name, day_of_week, time_slot, location))')
     .eq('parent_id', userId)
   const pls = playersData || []
@@ -259,8 +261,9 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
     return <ParentHub {...await loadParentHub(supabase, userId, name)} />
   }
 
+  // players_active (migration 109): parent-facing child list.
   const { data: players } = await supabase
-    .from('players')
+    .from('players_active')
     .select(`
       id, first_name, last_name, age_group, position, photo_url,
       enrolments(id, status, group:training_groups(name, day_of_week, time_slot, location))
@@ -1479,8 +1482,11 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
   }))
 
   // Key stats
+  // players_active (migration 109). This is the academy's headline player
+  // number. It counted archived duplicates: 236 at one academy where 177 are
+  // live, so the owner archived a duplicate and watched the figure not move.
   const { count: totalPlayers } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id', { count: 'exact', head: true })
     .eq('organisation_id', orgId)
 
@@ -1553,13 +1559,13 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
 
   // Player count trend (this month vs last)
   const { count: newPlayersThisMonth } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id', { count: 'exact', head: true })
     .eq('organisation_id', orgId)
     .gte('created_at', monthStart)
 
   const { count: newPlayersLastMonth } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id', { count: 'exact', head: true })
     .eq('organisation_id', orgId)
     .gte('created_at', prevMonthStart)

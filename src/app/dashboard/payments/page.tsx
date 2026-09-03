@@ -147,8 +147,10 @@ async function ParentPayments({
     .eq('active', true)
     .order('sort_order')
 
+  // players_active (migration 109) — parent's own children. A parent must
+  // never be shown their own archived child.
   const { data: myPlayers } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id, first_name, last_name, date_of_birth')
     .eq('parent_id', userId)
 
@@ -737,8 +739,10 @@ async function AdminPayments({
     .limit(200)
 
   // ─── Players with parent names for assignment (org-scoped) ───
+  // players_active (migration 109): you cannot assign a NEW payment to a
+  // child who has left. This is a "who is here now" read.
   const { data: playersRaw } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id, first_name, last_name, parent_id, parent:profiles!players_parent_id_fkey(full_name)')
     .eq('organisation_id', orgId)
     .order('first_name')
@@ -907,11 +911,41 @@ async function AdminPayments({
   }
 
   // ─── All Players (org-scoped) ───
+  // players_active (migration 109). This one is worth being explicit about,
+  // because it feeds a FINANCIAL number and the instinct is to leave financial
+  // reads on the raw table.
+  //
+  // It feeds three things, and all three want live players:
+  //   • parentsWithPlayers — a current headcount
+  //   • avgRevenuePerPlayer = monthlyRecurring / players.length. Dividing
+  //     CURRENT recurring revenue by a player count inflated with archived
+  //     duplicates understates revenue per player by a third. Using the raw
+  //     table here does not make the number more honest, it makes it wrong.
+  //   • the PaymentManager assignment picker — same reason as above.
+  //
+  // The rule is not "financial reads use the raw table". It is that a read
+  // covering a PERIOD uses the raw table, and a read describing NOW uses the
+  // view. This one describes now.
   const { data: allPlayers } = await supabase
-    .from('players')
+    .from('players_active')
     .select('id, first_name, last_name, parent_id, created_at')
     .eq('organisation_id', orgId)
     .order('first_name')
+
+  // ── WHAT DELIBERATELY STAYS ON THE RAW `players` TABLE ──────────────
+  // The embedded reads on payments and subscriptions — `player:players(...)`
+  // at lines ~134, ~140, ~736 and ~773 — resolve the CHILD'S NAME against a
+  // payment or a subscription that already exists.
+  //
+  // Those must never be narrowed. A payment made in March by a family whose
+  // child left in June is still a real payment, and it has to render with a
+  // name on it. Pointing those at players_active would leave the name blank
+  // and quietly drop rows from a financial history — which is exactly the
+  // failure this change is meant to avoid, in the opposite direction.
+  //
+  // The split, stated once: a read describing WHO IS HERE NOW uses the view.
+  // A read covering a PERIOD, or resolving a name against a record that
+  // already happened, uses the table.
 
   // ═══════════════════════════════════════
   // FINANCIAL ANALYTICS DATA

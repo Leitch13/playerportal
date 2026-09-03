@@ -69,7 +69,9 @@ export default async function EnrolmentsPage() {
       .eq('organisation_id', orgId)
       .order('enrolled_at', { ascending: false }),
     supabase
-      .from('players')
+      .from('players_active')
+      // players_active (migration 109): an archived child must not be
+      // offered as assignable to a class.
       .select('id, first_name, last_name')
       .eq('organisation_id', orgId)
       .order('first_name'),

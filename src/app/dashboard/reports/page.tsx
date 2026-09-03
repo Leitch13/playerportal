@@ -30,7 +30,10 @@ export default async function ReportsPage() {
 
   // ─── Gather all stats ───
   const { data: players } = await supabase
-    .from('players')
+    // players_active (migration 109): growth charts and per-player rollups
+    // describe who is here now. Counting archived duplicates inflated one
+    // academy's figures by 33%.
+    .from('players_active')
     .select('id, first_name, last_name, age_group, parent_id, position, created_at')
     .eq('organisation_id', orgId)
 
