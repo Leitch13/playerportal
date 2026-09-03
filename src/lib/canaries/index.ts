@@ -29,7 +29,36 @@ export interface CanaryResult {
   rowCount: number
   /** One human-readable line per finding, e.g. "JAF: Mason Cummings — pending since 2026-06-02". */
   lines: string[]
+  /**
+   * Structured findings. `lines` stays for the plain-text log; these drive the
+   * alert email so it can group by academy, sort oldest-first, show what is NEW
+   * since yesterday, and total the money at risk.
+   *
+   * Sprint 2026-08-31: added after canary 7 correctly reported 21 unbilled
+   * children every morning for 15 days and was tuned out, because every email
+   * looked identical and none of them said what it was costing.
+   */
+  findings?: CanaryFinding[]
   error?: string
+}
+
+export interface CanaryFinding {
+  /** Academy name, for grouping. */
+  org: string
+  /** What is wrong, WITHOUT the canary's boilerplate suffix. */
+  what: string
+  /** ISO date the underlying problem started — drives new-vs-ongoing and sorting. */
+  since?: string
+  /** Best estimate of monthly money at risk, so the email can lead with a number. */
+  estPerMonth?: number
+}
+
+/** Days between an ISO date and today. Returns null for a missing/unparseable date. */
+export function ageInDays(iso?: string): number | null {
+  if (!iso) return null
+  const then = Date.parse(iso.slice(0, 10))
+  if (Number.isNaN(then)) return null
+  return Math.max(0, Math.floor((Date.now() - then) / 86400000))
 }
 
 /**
@@ -378,12 +407,14 @@ async function canary6DuplicateCampDay(sb: Supabase): Promise<Omit<CanaryResult,
  * at a real academy could still show up — that's a fair thing to surface too.
  */
 async function canary7EnrolledNotPaying(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
-  const cutoff = new Date(Date.now() - 14 * 86400 * 1000).toISOString()
+  // NO date cutoff. This used to look back only 14 days, which meant a child
+  // enrolled-but-unbilled for three weeks silently DROPPED OFF the report —
+  // exactly backwards, since the longer it runs the more it costs. 19 of
+  // Jamie's children aged out this way between 24 and 31 Aug 2026.
   const enrols = await fetchAll<{ id: string; player_id: string; organisation_id: string; enrolled_at: string }>((f, t) =>
     sb.from('enrolments')
       .select('id, player_id, organisation_id, enrolled_at')
       .eq('status', 'active')
-      .gte('enrolled_at', cutoff)
       .range(f, t))
   if (!enrols.length) return { rowCount: 0, lines: [] }
 
@@ -416,10 +447,262 @@ async function canary7EnrolledNotPaying(sb: Supabase): Promise<Omit<CanaryResult
 
   const orgs = await orgNames(sb, offenders.map((e) => e.organisation_id))
   const names = await playerNames(sb, offenders.map((e) => e.player_id))
+  const rate = await typicalPlanPrice(sb, [...new Set(offenders.map((e) => e.organisation_id))])
   return {
     rowCount: offenders.length,
     lines: offenders.map((e) =>
       `${orgs.get(e.organisation_id) ?? e.organisation_id}: ${names.get(e.player_id) ?? e.player_id} — enrolled ${e.enrolled_at?.slice(0, 10)} with NO active/trialing/pending subscription (paywall bypass?)`),
+    findings: offenders.map((e) => ({
+      org: orgs.get(e.organisation_id) ?? e.organisation_id,
+      what: `${names.get(e.player_id) ?? e.player_id} is in a class with no payment set up`,
+      since: e.enrolled_at?.slice(0, 10),
+      estPerMonth: rate.get(e.organisation_id),
+    })),
+  }
+}
+
+/**
+ * Median active plan price per org — used to put a rough £ on findings like
+ * "enrolled but not paying". Rough on purpose: it is there to make the alert
+ * impossible to ignore, not to be an invoice.
+ */
+async function typicalPlanPrice(sb: Supabase, orgIds: string[]): Promise<Map<string, number | undefined>> {
+  const out = new Map<string, number | undefined>()
+  if (!orgIds.length) return out
+  const plans = await fetchAllInChunks<{ organisation_id: string; amount: number | string }>(
+    orgIds,
+    (chunk) => (f, t) => sb.from('subscription_plans').select('organisation_id, amount').eq('active', true).in('organisation_id', chunk).range(f, t))
+  const byOrg = new Map<string, number[]>()
+  for (const p of plans) {
+    const n = Number(p.amount)
+    if (!Number.isFinite(n) || n <= 0) continue
+    const arr = byOrg.get(p.organisation_id) ?? []
+    arr.push(n)
+    byOrg.set(p.organisation_id, arr)
+  }
+  for (const id of orgIds) {
+    const arr = (byOrg.get(id) ?? []).sort((a, b) => a - b)
+    out.set(id, arr.length ? arr[Math.floor(arr.length / 2)] : undefined)
+  }
+  return out
+}
+
+/**
+ * CANARY 8 — Live subscription not linked to a child.
+ *
+ * The academy is taking money but the app cannot say who for. Breaks every
+ * per-child view and hides duplicates (Luca Wishart, 31 Aug 2026: the class
+ * sat on one record and the payment on another, so the parent could not pay
+ * at all). 39 such rows existed platform-wide when this was written.
+ */
+async function canary8SubWithoutPlayer(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const subs = await fetchAll<{ id: string; organisation_id: string; parent_id: string | null; created_at: string }>((f, t) =>
+    sb.from('subscriptions')
+      .select('id, organisation_id, parent_id, created_at')
+      .in('status', ['active', 'trialing'])
+      .is('player_id', null)
+      .range(f, t))
+  if (!subs.length) return { rowCount: 0, lines: [], findings: [] }
+  const orgs = await orgNames(sb, subs.map((s) => s.organisation_id))
+  const parents = await fetchAllInChunks<{ id: string; full_name: string | null }>(
+    subs.map((s) => s.parent_id).filter((x): x is string => !!x),
+    (chunk) => (f, t) => sb.from('profiles').select('id, full_name').in('id', chunk).range(f, t))
+  const nameOf = new Map(parents.map((p) => [p.id, p.full_name]))
+  return {
+    rowCount: subs.length,
+    lines: subs.map((s) =>
+      `${orgs.get(s.organisation_id) ?? s.organisation_id}: ${nameOf.get(s.parent_id ?? '') ?? 'unknown parent'} — live subscription with no child attached`),
+    findings: subs.map((s) => ({
+      org: orgs.get(s.organisation_id) ?? s.organisation_id,
+      what: `${nameOf.get(s.parent_id ?? '') ?? 'unknown parent'} is paying, but the payment is not linked to a child`,
+      since: s.created_at?.slice(0, 10),
+    })),
+  }
+}
+
+/**
+ * CANARY 9 — Duplicate player records.
+ *
+ * Same academy, same name, same date of birth, both unarchived. This is how a
+ * family ends up billed twice (Jill Marsters, 31 Aug 2026: £192 x2 for one boy
+ * across two accounts differing by a single full stop) or not at all.
+ */
+async function canary9DuplicatePlayers(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const players = await fetchAll<{ id: string; organisation_id: string; first_name: string | null; last_name: string | null; date_of_birth: string | null; created_at: string }>((f, t) =>
+    sb.from('players')
+      .select('id, organisation_id, first_name, last_name, date_of_birth, created_at')
+      .is('archived_at', null)
+      .range(f, t))
+  const groups = new Map<string, typeof players>()
+  for (const p of players) {
+    const key = [p.organisation_id, (p.first_name ?? '').trim().toLowerCase(), (p.last_name ?? '').trim().toLowerCase(), p.date_of_birth ?? ''].join('|')
+    if (!p.first_name && !p.last_name) continue
+    const arr = groups.get(key) ?? []
+    arr.push(p)
+    groups.set(key, arr)
+  }
+  const dupes = [...groups.values()].filter((g) => g.length > 1)
+  if (!dupes.length) return { rowCount: 0, lines: [], findings: [] }
+  const orgs = await orgNames(sb, dupes.map((g) => g[0].organisation_id))
+  return {
+    rowCount: dupes.length,
+    lines: dupes.map((g) =>
+      `${orgs.get(g[0].organisation_id) ?? g[0].organisation_id}: ${g[0].first_name} ${g[0].last_name} — ${g.length} duplicate records (same DOB)`),
+    findings: dupes.map((g) => ({
+      org: orgs.get(g[0].organisation_id) ?? g[0].organisation_id,
+      what: `${(g[0].first_name ?? '').trim()} ${(g[0].last_name ?? '').trim()} has ${g.length} records with the same date of birth — risk of double billing`,
+      since: g.map((x) => x.created_at).sort()[0]?.slice(0, 10),
+    })),
+  }
+}
+
+/**
+ * CANARY 10 — A membership that started and collected nothing.
+ *
+ * Nothing anywhere checked that a completed signup actually took money.
+ *
+ * Between 1 August and 2 September 2026, 26 Gold & Gray families joined
+ * mid-month and were charged £0 for the rest of that month — roughly £1,146 —
+ * because their academy was not on the list that routes to prorated billing.
+ * Every other signal looked healthy: the parent had a card saved, the
+ * subscription was active, the money arrived on the 1st exactly as expected.
+ * It went unnoticed for a month, and was found only because one parent thought
+ * a £0.00 checkout page meant the booking had failed.
+ *
+ * So: a live subscription, more than a day old, that has never had a single
+ * successful charge OR an explicit trial. £0 is legitimate when a parent joins
+ * after the last session of the month — this fires on £0 with no reason for it.
+ *
+ * Deliberately not scoped to one academy or one billing path. The failure was
+ * a per-academy setting nobody knew was wrong, so a check that needs the same
+ * setting to be right would have been just as blind.
+ */
+async function canary10ZeroValueSignup(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const dayAgo = new Date(Date.now() - 36 * 3600 * 1000).toISOString()
+  const subs = await fetchAll<{
+    id: string; organisation_id: string; parent_id: string | null
+    plan_id: string | null; created_at: string; status: string
+  }>((f, t) =>
+    sb.from('subscriptions')
+      .select('id, organisation_id, parent_id, plan_id, created_at, status')
+      .in('status', ['active', 'trialing', 'past_due'])
+      .lt('created_at', dayAgo)
+      .range(f, t))
+  if (!subs.length) return { rowCount: 0, lines: [], findings: [] }
+
+  // Anything this parent has ever actually paid, at this academy.
+  const payments = await fetchAllInChunks<{ parent_id: string; amount: number | null; status: string | null }>(
+    [...new Set(subs.map((s) => s.parent_id).filter((x): x is string => !!x))],
+    (chunk) => (f, t) => sb.from('payments').select('parent_id, amount, status').in('parent_id', chunk).range(f, t))
+  const everPaid = new Set(
+    payments.filter((p) => (Number(p.amount) || 0) > 0 && p.status !== 'failed').map((p) => p.parent_id),
+  )
+
+  const suspect = subs.filter((s) => s.parent_id && !everPaid.has(s.parent_id))
+  if (!suspect.length) return { rowCount: 0, lines: [], findings: [] }
+
+  const orgs = await orgNames(sb, suspect.map((s) => s.organisation_id))
+  const parents = await fetchAllInChunks<{ id: string; full_name: string | null }>(
+    suspect.map((s) => s.parent_id).filter((x): x is string => !!x),
+    (chunk) => (f, t) => sb.from('profiles').select('id, full_name').in('id', chunk).range(f, t))
+  const nameOf = new Map(parents.map((p) => [p.id, p.full_name]))
+  const plans = await fetchAllInChunks<{ id: string; name: string | null; amount: number | null }>(
+    suspect.map((s) => s.plan_id).filter((x): x is string => !!x),
+    (chunk) => (f, t) => sb.from('subscription_plans').select('id, name, amount').in('id', chunk).range(f, t))
+  const planOf = new Map(plans.map((p) => [p.id, p]))
+
+  return {
+    rowCount: suspect.length,
+    lines: suspect.map((s) => {
+      const plan = planOf.get(s.plan_id ?? '')
+      return `${orgs.get(s.organisation_id) ?? s.organisation_id}: ${nameOf.get(s.parent_id ?? '') ?? 'unknown parent'} — ` +
+        `signed up ${s.created_at?.slice(0, 10)} on ${plan?.name ?? 'a plan'} (£${Number(plan?.amount ?? 0).toFixed(2)}/mo) ` +
+        `and has never been charged anything`
+    }),
+    findings: suspect.map((s) => {
+      const plan = planOf.get(s.plan_id ?? '')
+      return {
+        org: orgs.get(s.organisation_id) ?? s.organisation_id,
+        what: `${nameOf.get(s.parent_id ?? '') ?? 'A family'} joined on ${plan?.name ?? 'a plan'} and no money has ever been collected`,
+        since: s.created_at?.slice(0, 10),
+        estPerMonth: Number(plan?.amount ?? 0),
+      }
+    }),
+  }
+}
+
+/**
+ * CANARY 11 — Archived players still being counted, or still live.
+ *
+ * Two checks in one, because they fail in opposite directions.
+ *
+ * FIRST: the gap between players and players_active per academy. Archiving
+ * works — the cascade cancels enrolments and subscriptions correctly — but on
+ * 2026-09-03 five surfaces read the raw table and counted archived children
+ * anyway. Gold and Gray showed 236 players where 177 were live, a 33%
+ * overcount on the academy's headline figure, and the owner had spent a week
+ * reconciling against it. Migration 109 added the view and moved those reads.
+ *
+ * A view cannot stop a future query using the raw table. This is what does:
+ * the gap is reported every morning, so the sixth call site nobody converted
+ * shows up as a number rather than in someone's reconciliation.
+ *
+ * SECOND: no archived player should hold a live subscription or an active
+ * enrolment. That figure is currently ZERO across all 66 archived players and
+ * must stay zero — anything else means the cascade in archive_player_safe
+ * failed and a family is being charged for a child the academy has removed.
+ *
+ * The first check is informational and expected to be non-zero. The second
+ * fires.
+ */
+async function canary11ArchivedStillCounted(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const players = await fetchAll<{ id: string; organisation_id: string; archived_at: string | null }>((f, t) =>
+    sb.from('players').select('id, organisation_id, archived_at').range(f, t))
+  const archived = players.filter((p) => p.archived_at)
+  if (!archived.length) return { rowCount: 0, lines: [], findings: [] }
+
+  const archivedIds = new Set(archived.map((p) => p.id))
+  const orgs = await orgNames(sb, archived.map((p) => p.organisation_id))
+
+  // The gap, per academy — informational.
+  const gap = new Map<string, { total: number; archived: number }>()
+  for (const p of players) {
+    const g = gap.get(p.organisation_id) ?? { total: 0, archived: 0 }
+    g.total += 1
+    if (p.archived_at) g.archived += 1
+    gap.set(p.organisation_id, g)
+  }
+
+  // The part that fires: archived AND still live somewhere.
+  const subs = await fetchAll<{ player_id: string | null; organisation_id: string; status: string }>((f, t) =>
+    sb.from('subscriptions').select('player_id, organisation_id, status')
+      .in('status', ['active', 'trialing', 'past_due']).range(f, t))
+  const enrols = await fetchAll<{ player_id: string | null; organisation_id: string; status: string }>((f, t) =>
+    sb.from('enrolments').select('player_id, organisation_id, status').eq('status', 'active').range(f, t))
+
+  const stillPaying = subs.filter((s) => s.player_id && archivedIds.has(s.player_id))
+  const stillEnrolled = enrols.filter((e) => e.player_id && archivedIds.has(e.player_id))
+  const bad = [...stillPaying, ...stillEnrolled]
+
+  const lines = [
+    ...[...gap.entries()]
+      .filter(([, g]) => g.archived > 0)
+      .map(([org, g]) =>
+        `${orgs.get(org) ?? org}: ${g.archived} archived of ${g.total} — any screen reading the players table shows ${g.total} where ${g.total - g.archived} are live`),
+    ...stillPaying.map((s) =>
+      `${orgs.get(s.organisation_id) ?? s.organisation_id}: ARCHIVED player ${s.player_id} still has a ${s.status} subscription`),
+    ...stillEnrolled.map((e) =>
+      `${orgs.get(e.organisation_id) ?? e.organisation_id}: ARCHIVED player ${e.player_id} is still in an active class`),
+  ]
+
+  return {
+    // Only the genuinely wrong rows fire. The gap is reported, not alarmed.
+    rowCount: bad.length,
+    lines,
+    findings: bad.map((b) => ({
+      org: orgs.get(b.organisation_id) ?? b.organisation_id,
+      what: `A player who has been archived is still ${'status' in b && ['active', 'trialing', 'past_due'].includes(b.status) ? 'being charged' : 'in an active class'}`,
+    })),
   }
 }
 
@@ -430,6 +713,10 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 4, name: 'cross-academy attribution', run: canary4CrossAcademy },
   { id: 6, name: 'duplicate camp day booking', run: canary6DuplicateCampDay },
   { id: 7, name: 'enrolled without paying', run: canary7EnrolledNotPaying },
+  { id: 8, name: 'payment not linked to a child', run: canary8SubWithoutPlayer },
+  { id: 9, name: 'duplicate player records', run: canary9DuplicatePlayers },
+  { id: 10, name: 'signed up but never charged', run: canary10ZeroValueSignup },
+  { id: 11, name: 'archived players still counted or still live', run: canary11ArchivedStillCounted },
 ]
 
 /**
@@ -462,4 +749,99 @@ export function formatCanaryLine(r: CanaryResult): string {
     return `CANARY ${r.id} (${r.name}): ${r.rowCount} row${r.rowCount === 1 ? '' : 's'}${detail}`
   }
   return `CANARY ${r.id} (${r.name}): 0 rows — healthy`
+}
+
+/** What to DO about each canary — the alert was unusable without this. */
+const CANARY_ACTION: Record<number, string> = {
+  1: 'Check the class start date against the term it belongs to.',
+  2: 'These enrolments never activated — activate them or cancel them.',
+  3: 'A family is paying with nothing to attend. Enrol them or refund.',
+  4: 'A class is attributed to the wrong academy. Fix before it bills.',
+  5: 'Billing feature flags disagree with each other. Do not deploy until resolved.',
+  6: 'A camp day is booked twice for the same child. Refund one.',
+  7: 'Ask the academy whether these children should be paying, then send payment invites.',
+  8: 'Attach the payment to the right child, or the academy cannot see who it is for.',
+  9: 'Merge the duplicates and archive the spare, before a family gets billed twice.',
+}
+
+function bucket(days: number | null): 'new' | 'recent' | 'ongoing' | 'stale' {
+  if (days === null) return 'ongoing'
+  if (days <= 1) return 'new'
+  if (days <= 6) return 'recent'
+  if (days <= 27) return 'ongoing'
+  return 'stale'
+}
+
+/**
+ * Build the alert email.
+ *
+ * Written 2026-08-31 to replace a version that sent an identical wall of text
+ * every morning for 15 days. It reported 21 unbilled children, Mason Cummings
+ * stuck since June and Luca Wishart's split record — all correct, all ignored,
+ * because nothing distinguished day 15 from day 1 and nothing said what it cost.
+ *
+ * Rules: lead with money; say what is NEW; sort oldest-first because age is
+ * cost; never bury a finding in boilerplate; always say what to do.
+ */
+export function buildAlertEmail(results: CanaryResult[]): { subject: string; html: string } {
+  const firing = results.filter((r) => r.status !== 'ok')
+  const all = firing.flatMap((r) => (r.findings ?? []).map((f) => ({ ...f, canary: r })))
+  const money = all.reduce((sum, f) => sum + (f.estPerMonth ?? 0), 0)
+  const newest = all.filter((f) => bucket(ageInDays(f.since)) === 'new').length
+  const errors = results.filter((r) => r.status === 'error')
+
+  if (!firing.length) {
+    return {
+      subject: '✅ Canary heartbeat: all clear',
+      html: `<div style="font-family:-apple-system,sans-serif;max-width:640px"><h2>All clear</h2>
+        <p style="color:#555">Every canary ran and returned zero rows. This email exists so a dead alarm cannot be mistaken for a healthy platform.</p>
+        <p style="color:#999;font-size:12px">${new Date().toISOString()} — /api/cron/canaries</p></div>`,
+    }
+  }
+
+  const parts: string[] = []
+  const headline = money > 0
+    ? `£${money.toLocaleString('en-GB', { maximumFractionDigits: 0 })}/mo at risk`
+    : `${all.length || firing.reduce((n, r) => n + r.rowCount, 0)} to look at`
+  const subject = errors.length
+    ? `⚠️ Canary: ${errors.length} CHECK BROKEN — ${headline}`
+    : `Canary: ${headline}${newest ? ` — ${newest} new today` : ' — nothing new'}`
+
+  parts.push(`<div style="font-family:-apple-system,sans-serif;max-width:680px;color:#111">`)
+  parts.push(`<div style="background:#0a0a0a;color:#fff;padding:18px 20px;border-radius:10px;margin-bottom:18px">
+    <div style="font-size:26px;font-weight:800">${headline}</div>
+    <div style="color:#9ca3af;font-size:13px;margin-top:4px">${newest} new since yesterday · ${all.length - newest} continuing${errors.length ? ` · ${errors.length} check(s) BROKEN` : ''}</div>
+  </div>`)
+
+  if (errors.length) {
+    parts.push(`<div style="border:2px solid #dc2626;border-radius:8px;padding:12px 14px;margin-bottom:16px">
+      <b style="color:#dc2626">A check itself is failing — it is reporting nothing, not zero.</b>
+      <ul style="margin:8px 0 0;padding-left:18px">${errors.map((e) => `<li>${e.name}: ${e.error}</li>`).join('')}</ul></div>`)
+  }
+
+  for (const r of firing.filter((x) => x.status === 'fired')) {
+    const fs = (r.findings ?? []).slice().sort((a, b) => (ageInDays(b.since) ?? 0) - (ageInDays(a.since) ?? 0))
+    const sum = fs.reduce((s, f) => s + (f.estPerMonth ?? 0), 0)
+    parts.push(`<h3 style="margin:20px 0 2px;font-size:15px">${r.name} — ${r.rowCount}${sum ? ` · ~£${sum.toLocaleString('en-GB', { maximumFractionDigits: 0 })}/mo` : ''}</h3>`)
+    parts.push(`<p style="margin:0 0 10px;color:#6b7280;font-size:13px">${CANARY_ACTION[r.id] ?? ''}</p>`)
+    if (!fs.length) {
+      parts.push(`<pre style="background:#f4f4f5;padding:10px;border-radius:6px;white-space:pre-wrap;font-size:12px">${r.lines.join('\n')}</pre>`)
+      continue
+    }
+    const byOrg = new Map<string, typeof fs>()
+    for (const f of fs) byOrg.set(f.org, [...(byOrg.get(f.org) ?? []), f])
+    for (const [org, items] of byOrg) {
+      parts.push(`<div style="font-weight:700;font-size:13px;margin:10px 0 4px">${org}</div>`)
+      parts.push(`<table style="width:100%;border-collapse:collapse;font-size:13px">${items.map((f) => {
+        const d = ageInDays(f.since)
+        const b = bucket(d)
+        const tag = b === 'new' ? '<span style="background:#dc2626;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700">NEW</span>'
+          : b === 'stale' ? `<span style="background:#b45309;color:#fff;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700">${d}d</span>`
+          : `<span style="color:#6b7280;font-size:11px">${d ?? '?'}d</span>`
+        return `<tr><td style="padding:3px 8px 3px 0;width:52px;vertical-align:top">${tag}</td><td style="padding:3px 0">${f.what}${f.estPerMonth ? ` <span style="color:#6b7280">(~£${f.estPerMonth}/mo)</span>` : ''}</td></tr>`
+      }).join('')}</table>`)
+    }
+  }
+  parts.push(`<p style="color:#9ca3af;font-size:12px;margin-top:22px">Oldest first — age is cost. ${new Date().toISOString()} — /api/cron/canaries</p></div>`)
+  return { subject, html: parts.join('') }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { runAllCanaries, formatCanaryLine } from '@/lib/canaries'
+import { runAllCanaries, formatCanaryLine, buildAlertEmail } from '@/lib/canaries'
 import { sendEmail } from '@/lib/email'
 
 /**
@@ -41,20 +41,11 @@ export async function GET(request: NextRequest) {
     let emailError: string | null = null
 
     if (firing.length > 0 || isHeartbeatDay) {
-      const lines = (firing.length > 0 ? firing : results).map(formatCanaryLine)
-      const subject = firing.length > 0
-        ? `🚨 Canary alert: ${firing.length} firing`
-        : '✅ Canary heartbeat: all clear'
-      const intro = firing.length > 0
-        ? 'The following canaries are firing or erroring. Any line here means a real problem — zero rows is the only healthy state.'
-        : 'Weekly heartbeat. Every canary ran and returned zero rows. This email exists so a dead alarm can’t be mistaken for a healthy platform.'
-      const html = `
-        <div style="font-family: -apple-system, sans-serif; max-width: 640px;">
-          <h2 style="margin: 0 0 8px;">${subject}</h2>
-          <p style="color: #555; margin: 0 0 16px;">${intro}</p>
-          <pre style="background: #0a0a0a; color: #e5e5e5; padding: 16px; border-radius: 8px; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">${lines.join('\n')}</pre>
-          <p style="color: #999; font-size: 12px;">Run at ${new Date().toISOString()} — /api/cron/canaries</p>
-        </div>`
+      // Alert body is built by buildAlertEmail: money first, NEW-since-yesterday
+      // called out, oldest first, one action line per canary. The old version
+      // sent an identical wall of text daily and was — reasonably — tuned out.
+      const { subject, html } = buildAlertEmail(firing.length > 0 ? results : [])
+      void formatCanaryLine // retained for the plain-text log format
 
       const sent = await sendEmail({ to: ALERT_TO, subject, html })
       if (!sent.success || ('skipped' in sent && sent.skipped)) {
