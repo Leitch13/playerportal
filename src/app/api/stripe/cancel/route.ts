@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { notifyOrgAdmins } from '@/lib/notify-admins'
 
 /**
@@ -36,6 +37,40 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: orgId } = await supabase.rpc('get_my_org')
+
+    // ── Is this subscription yours to cancel? ────────────────────────────
+    // Until 2026-09-02 this route checked only that the caller was signed in,
+    // then cancelled whatever subscription id arrived in the body. Cancelling
+    // kills a live membership, so an unchecked write here ends someone's
+    // place at an academy.
+    //
+    // Two ways to be entitled: it is your own subscription, or you are an
+    // admin of the academy that owns it. Anything else is a 404 — the same
+    // response as a subscription that does not exist, so this cannot be used
+    // to discover another academy's subscription ids.
+    //
+    // Service-role read on purpose: an RLS-hidden row must fail this check
+    // closed, not slip through as "not found, carry on".
+    const ownerDb = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    )
+    const { data: owning } = await ownerDb
+      .from('subscriptions')
+      .select('id, parent_id, organisation_id')
+      .eq('stripe_subscription_id', subscriptionId)
+      .limit(5)
+    const row = (owning || [])[0]
+    if (!row) {
+      return NextResponse.json({ error: 'Subscription not found.' }, { status: 404 })
+    }
+    const isOwnParent = row.parent_id === user.id
+    const { data: callerRole } = await supabase.rpc('get_my_role')
+    const isTheirAdmin = callerRole === 'admin' && row.organisation_id === orgId
+    if (!isOwnParent && !isTheirAdmin) {
+      return NextResponse.json({ error: 'Subscription not found.' }, { status: 404 })
+    }
 
     // Honour the academy's cancellation notice policy. If notice_days > 0,
     // schedule cancellation for (today + notice_days). Otherwise fall back to
