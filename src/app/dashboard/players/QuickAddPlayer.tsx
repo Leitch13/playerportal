@@ -53,6 +53,11 @@ export default function QuickAddPlayer({
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [parentPhone, setParentPhone] = useState('')
+  // Photo consent (migration 110). Optional here, unlike the parent-facing
+  // form: an academy adding a child on someone's behalf may genuinely not
+  // know yet, and guessing on a question about a child's image is worse than
+  // leaving it unanswered for someone to ask properly.
+  const [photoConsent, setPhotoConsent] = useState<'' | 'yes' | 'no'>('')
 
   // Payment request — close the "added to a register, money never asked for"
   // gap: ticking this fires the existing Request Payment machinery right after
@@ -100,6 +105,7 @@ export default function QuickAddPlayer({
           parentName,
           parentEmail,
           parentPhone,
+          ...(photoConsent ? { photoConsent: photoConsent === 'yes' } : {}),
           groupId,
         }),
       })
@@ -203,6 +209,23 @@ export default function QuickAddPlayer({
                 <option value="intermediate" className="bg-[#142236]">Intermediate — Good understanding</option>
                 <option value="advanced" className="bg-[#142236]">Advanced — Strong technical ability</option>
                 <option value="elite" className="bg-[#142236]">Elite — Academy/representative level</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Photos &amp; video</label>
+              {/* Optional. "Not asked yet" is a real answer here — an academy
+                  adding a child on a parent's behalf often will not know, and
+                  guessing on a question about a child's image is worse than
+                  leaving it for someone to ask properly. */}
+              <select
+                value={photoConsent}
+                onChange={(e) => setPhotoConsent(e.target.value as '' | 'yes' | 'no')}
+                data-testid="admin-photo-consent"
+                className={selectCls}
+              >
+                <option value="" className="bg-[#142236]">Not asked yet</option>
+                <option value="yes" className="bg-[#142236]">Consent given</option>
+                <option value="no" className="bg-[#142236]">Consent refused</option>
               </select>
             </div>
             <div>

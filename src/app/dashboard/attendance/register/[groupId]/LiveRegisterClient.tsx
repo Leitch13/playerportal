@@ -44,6 +44,14 @@ export interface LiveRegisterPlayer {
   // without a second round-trip. Server-side SELECT extended in
   // page.tsx; nothing else on the register reads it.
   parent_id: string | null
+  /**
+   * Photo and media consent (migration 110). Three states and they are not
+   * interchangeable:
+   *   true   the parent agreed
+   *   false  the parent said no — this is the one a coach must not miss
+   *   null   nobody has asked, which is NOT permission
+   */
+  photo_consent: boolean | null
 }
 
 export interface LiveRegisterTrial {
@@ -342,6 +350,37 @@ export default function LiveRegisterClient({
                             {p.first_name} {p.last_name}
                           </span>
                           {age != null && <span className="text-[11px] text-white/45">age {age}</span>}
+                          {/* Photo consent (migration 110).
+                              A refusal is loud — red, filled, with a slashed
+                              camera — because the cost of missing it is a
+                              child's picture on the internet against their
+                              family's wishes. Never-asked is quiet but present,
+                              because it is not permission either and an academy
+                              needs to see who still owes an answer.
+                              Consent given renders nothing: the common case
+                              should not add noise to a pitchside list. */}
+                          {p.photo_consent === false && (
+                            <span
+                              data-testid="live-register-row-no-photos"
+                              title="This family has asked that their child is not photographed or filmed"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500 text-white"
+                            >
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4} aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h3l2-2.5h6L17 8h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" />
+                                <path strokeLinecap="round" d="M3 3l18 18" />
+                              </svg>
+                              NO PHOTOS
+                            </span>
+                          )}
+                          {p.photo_consent == null && (
+                            <span
+                              data-testid="live-register-row-photo-unknown"
+                              title="Nobody has asked this family about photos yet — this is not consent"
+                              className="text-[11px] text-white/35"
+                            >
+                              photo consent not asked
+                            </span>
+                          )}
                           {hasMedical && (
                             <span
                               data-testid="live-register-row-medical"

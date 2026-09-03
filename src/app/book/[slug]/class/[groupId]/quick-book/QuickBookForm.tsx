@@ -111,7 +111,18 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [selectedChildId, setSelectedChildId] = useState<string | ''>('')
+  // Photo consent (migration 110). Deliberately THREE states, not a checkbox:
+  // a parent must actively answer rather than have silence read as agreement.
+  // '' = unanswered and the form will not submit; 'yes' / 'no' are recorded.
+  const [photoConsent, setPhotoConsent] = useState<'' | 'yes' | 'no'>('')
+  // Default to the parent's FIRST existing child, not "add a new one".
+  // Defaulting to blank meant a logged-in parent booking a second class got a
+  // form pre-set to create a NEW child; they retyped the same name and made a
+  // duplicate. 28 duplicate records were cleaned up on 1 Sep 2026 that had been
+  // created this exact way — original at migration, copy weeks later.
+  const [selectedChildId, setSelectedChildId] = useState<string | ''>(
+    existingChildren.length === 1 ? existingChildren[0].id : '',
+  )
   const [childFirstName, setChildFirstName] = useState('')
   const [childLastName, setChildLastName] = useState('')
   const [childDob, setChildDob] = useState('')
@@ -233,11 +244,63 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       let playerId: string
       if (isNewChild) {
         const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
-        const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id || orgId, parent_id: userId, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, playing_level: childLevel, league_level: childLeague || null }).select('id').single()
+        // Reuse rather than duplicate: if this parent already has a child with
+        // the same name (and DOB, when given) at this academy, book THAT child.
+        // Belt and braces alongside the dropdown default above — a parent can
+        // still pick "add a new child" and retype a name they already have.
+        const { data: priorMatch } = await supabase
+          .from('players')
+          .select('id, date_of_birth')
+          .eq('parent_id', userId)
+          .eq('organisation_id', profile?.organisation_id || orgId)
+          .ilike('first_name', childFirstName.trim())
+          .ilike('last_name', childLastName.trim())
+          .is('archived_at', null)
+          .limit(5)
+        const reusable = (priorMatch || []).find(
+          (m: { date_of_birth: string | null }) => !childDob || !m.date_of_birth || m.date_of_birth === childDob,
+        )
+        const { data: child, error: childError } = reusable
+          ? { data: { id: (reusable as { id: string }).id }, error: null }
+          : await supabase.from('players').insert({ organisation_id: profile?.organisation_id || orgId, parent_id: userId, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, playing_level: childLevel, league_level: childLeague || null,
+              // migration 110 — recorded only when the parent actually answered.
+              ...(photoConsent ? { photo_consent: photoConsent === 'yes', photo_consent_at: new Date().toISOString(), photo_consent_source: 'booking' } : {}) }).select('id').single()
         if (childError || !child) { setGlobalError(childError?.message || 'Failed to add child'); setLoading(false); return }
         playerId = child.id
       } else {
         playerId = selectedChildId
+      }
+
+      // ─── Photo consent, on EVERY path ───────────────────────────────
+      // The insert above only covers a brand-new child. Two other paths reach
+      // here with a playerId and skipped it entirely:
+      //   • the parent picked an existing child from the dropdown
+      //   • the form matched an existing child by name + DOB and reused them
+      //     rather than creating a duplicate
+      // On both, the parent was asked, had to answer to continue, and the
+      // answer was discarded — so a family that said NO would show on the
+      // register as "photo consent not asked", and a coach checking before
+      // posting a photo would see nothing stopping them. Worse than not
+      // asking at all.
+      //
+      // Written here for every path, so a returning parent's answer lands
+      // exactly as a new parent's does. Idempotent for the new-child case:
+      // it rewrites the same values it just inserted.
+      //
+      // Best-effort by design — a failure to record consent must never lose
+      // the parent their booking. It is logged, and the register's third
+      // state ("not asked") stays honest if this write does not land.
+      if (photoConsent && playerId) {
+        const { error: consentErr } = await supabase
+          .from('players')
+          .update({
+            photo_consent: photoConsent === 'yes',
+            photo_consent_at: new Date().toISOString(),
+            photo_consent_source: 'booking',
+          })
+          .eq('id', playerId)
+          .eq('parent_id', userId)   // a parent may only answer for their own child
+        if (consentErr) console.error('[quick-book] photo consent not recorded', consentErr.message)
       }
 
       // ─── Don't create the enrolment here ───
@@ -253,7 +316,11 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
         return
       }
 
-      setShowSuccess(true)
+      // The success overlay used to go up HERE, before the server had been
+      // asked anything. A booking the server then refused — class full, or a
+      // membership this child already has — showed the parent "success" and
+      // then replaced it with a red failure panel a moment later. It now waits
+      // until there is actually a checkout URL to send them to.
       const res = await postJson('/api/stripe/subscribe', {
         planId: selectedPlanId,
         playerId,
@@ -268,6 +335,9 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
       const data = res.data
       const url = data.url
       if (typeof url === 'string' && url) {
+        // Confirmed: there is somewhere to send them. Now the overlay is honest,
+        // and it covers the moment between here and the redirect below.
+        setShowSuccess(true)
         // Booking confirmation email fires from the Stripe webhook after payment,
         // not here — sending it now would be misleading if Checkout was abandoned.
         fbTrackSingle(metaPixelId, 'InitiateCheckout', { currency: 'GBP', ...(data.tonightAmount ? { value: Number(data.tonightAmount) } : {}) })
@@ -363,7 +433,42 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
             <div><label className="block text-xs text-white/50 mb-1.5">League Level</label><select value={childLeague} onChange={(e) => setChildLeague(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all appearance-none"><option value="" className="bg-[#111]">Select league level...</option><option value="recreational" className="bg-[#111]">Recreational</option><option value="grassroots" className="bg-[#111]">Grassroots</option><option value="b_league" className="bg-[#111]">B League</option><option value="a_league" className="bg-[#111]">A League</option><option value="academy" className="bg-[#111]">Academy</option><option value="professional" className="bg-[#111]">Professional Development</option></select></div>
           </div>
         )}
-        <button type="button" onClick={handleChildComplete} disabled={isNewChild ? !childFirstName || !childLastName : !selectedChildId} className="mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Continue to Choose Plan &rarr;</button>
+
+          {/* Photo consent — asked HERE, in the Child section, so it can name
+              the child. It sat in the Details section, which comes before the
+              name is entered, so the personalised wording could never fire and
+              every parent read the generic "your child".
+              Per-child consent should ask about a named child; that is the
+              whole point of storing it per child.
+              Two buttons rather than a tick: an unticked box is ambiguous
+              between "no" and "didn't notice", and this answer has to mean
+              something. */}
+          <div className="mt-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3.5">
+            <p className="text-xs text-white/70 font-medium mb-1">Photos &amp; video</p>
+            <p className="text-[11.5px] text-white/40 leading-relaxed mb-2.5">
+              {orgName} sometimes photographs or films sessions for social media and their website. Are you happy for {(isNewChild ? childFirstName.trim() : (existingChildren.find((c) => c.id === selectedChildId)?.first_name || '').trim()) || 'your child'} to appear? You can change this at any time.
+            </p>
+            <div className="flex gap-2">
+              {([['yes', 'Yes, that\u2019s fine'], ['no', 'No, please don\u2019t']] as const).map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setPhotoConsent(v)}
+                  data-testid={`photo-consent-${v}`}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
+                    photoConsent === v
+                      ? 'border-transparent text-[#0a0a0a]'
+                      : 'border-white/[0.12] text-white/60 hover:text-white hover:border-white/25'
+                  }`}
+                  style={photoConsent === v ? { backgroundColor: primaryColor } : undefined}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+        <button type="button" onClick={handleChildComplete} disabled={!photoConsent || (isNewChild ? !childFirstName || !childLastName : !selectedChildId)} className="mt-4 w-full py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>Continue to Choose Plan &rarr;</button>
       </section>
 
       {/* Section 3: Plan */}

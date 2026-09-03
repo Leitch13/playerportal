@@ -360,6 +360,31 @@ export default async function PlayerDetailPage({
         <div className="flex-1 min-w-0">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-1">{player.first_name} {player.last_name}</h1>
           <div className="flex flex-wrap gap-2 mt-1">
+            {/* Photo consent (migration 110). Shown to staff beside the level
+                badges so a coach can answer "can I post a picture of this
+                child" without leaving the page.
+                Three states, and "not asked" is deliberately visible rather
+                than blank — an academy chasing consent needs to tell a family
+                that declined apart from one nobody asked. */}
+            {isStaff && (() => {
+              const c = (player as Record<string, unknown>).photo_consent as boolean | null | undefined
+              const when = (player as Record<string, unknown>).photo_consent_at as string | null | undefined
+              const style = c === true
+                ? 'bg-green-500/15 text-green-400'
+                : c === false
+                  ? 'bg-red-500/15 text-red-400'
+                  : 'bg-white/10 text-white/50'
+              const label = c === true ? 'Photos OK' : c === false ? 'No photos' : 'Photo consent not asked'
+              return (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${style}`}
+                  title={when ? `Recorded ${new Date(when).toLocaleDateString('en-GB')}` : 'Nobody has asked this family yet'}
+                  data-testid="photo-consent-badge"
+                >
+                  {label}
+                </span>
+              )
+            })()}
             {isStaff ? (
               <PlayerLevelEditor
                 playerId={player.id}

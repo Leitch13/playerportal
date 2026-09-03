@@ -99,7 +99,8 @@ export default async function RegisterPage({
         photo_url, date_of_birth,
         medical_info,
         emergency_contact_name, emergency_contact_phone,
-        parent_id
+        parent_id,
+        photo_consent
       )
     `)
     .eq('group_id', groupId)

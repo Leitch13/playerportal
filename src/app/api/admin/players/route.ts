@@ -153,6 +153,16 @@ export async function POST(req: NextRequest) {
     age_group: (body.ageGroup as string | undefined) || null,
     playing_level: playingLevel,
     league_level: (body.leagueLevel as string | undefined) || null,
+    // Photo consent (migration 110). Three states: the academy either has an
+    // answer from the family or it does not, and "not asked" must not be
+    // written as a refusal. Only recorded when the admin actually picked one.
+    ...(body.photoConsent === true || body.photoConsent === false
+      ? {
+          photo_consent: body.photoConsent,
+          photo_consent_at: new Date().toISOString(),
+          photo_consent_source: 'admin',
+        }
+      : {}),
   }).select('id').single()
 
   if (playerErr) {
