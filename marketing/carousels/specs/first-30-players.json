@@ -1,0 +1,33 @@
+{
+  "name": "first-30-players",
+  "title": "First 30 players without ads (Day 9 carousel)",
+  "handle": "@playitloveit",
+  "slides": [
+    { "name": "Main", "title": "Hook", "mode": "dark",
+      "headline": "How to get your first <b>30 players</b> without spending a penny",
+      "sub": "Exactly what I did in 2018. No website. No ads.",
+      "foot": "Swipe",
+      "image": "a stack of orange training cones and a football" },
+    { "name": "Facebook", "title": "1 Facebook groups", "mode": "dark",
+      "headline": "<mark>1</mark> Facebook community groups",
+      "sub": "Post in local parent groups. Not as spam, as value.",
+      "foot": "2 of 6" },
+    { "name": "Schools", "title": "2 Schools", "mode": "dark",
+      "headline": "<mark>2</mark> Schools",
+      "sub": "Offer a free taster session during PE or after school.",
+      "foot": "3 of 6" },
+    { "name": "Referral", "title": "3 Referrals", "mode": "light",
+      "headline": "<mark>3</mark> Referral incentive",
+      "sub": "A free session for every friend they bring.",
+      "foot": "4 of 6" },
+    { "name": "Park", "title": "4 Park sessions", "mode": "dark",
+      "headline": "<mark>4</mark> Park sessions",
+      "sub": "Coach in a busy park. Let people see you in action.",
+      "foot": "5 of 6" },
+    { "name": "Flyers", "title": "5 Local shops + CTA", "mode": "dark",
+      "headline": "<mark>5</mark> Local shops and cafes",
+      "sub": "Put up a flyer. Old school works.",
+      "cta": "Which one first? Comment below",
+      "foot": "Save this" }
+  ]
+}
