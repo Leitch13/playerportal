@@ -25,6 +25,38 @@ const CLASS_TYPES = [
   { value: 'intensity', label: 'Intensity Training' },
 ]
 
+// Class times are picked from a list, not typed. The native <input type="time">
+// is a segmented hh:mm control that silently rejects "6pm", "6" or "18" — an
+// academy owner tried to add a 6pm class and could not, and a literal '6pm'
+// from the free-text era is still in the table. 06:00–22:00 in 15-minute
+// steps, 24h value with the 12h reading alongside so nobody has to convert.
+const TIME_OPTIONS: { value: string; label: string }[] = []
+for (let h = 6; h <= 22; h++) {
+  for (const m of [0, 15, 30, 45]) {
+    if (h === 22 && m > 0) break
+    const value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    const h12 = h % 12 === 0 ? 12 : h % 12
+    const label = `${value}  (${h12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'})`
+    TIME_OPTIONS.push({ value, label })
+  }
+}
+
+/**
+ * time_slot is one stored string — "18:00–19:00" (en dash), older rows
+ * "17:00-18:00" (hyphen) or a bare "18:00", and a few hand-typed oddities
+ * like "16:00–19:00 (45-min slots)". Pull start and end back out of it so an
+ * edit opens with the times it was saved with. Anything unparseable comes
+ * back as-is in the start slot so it is shown, not lost.
+ */
+function splitTimeSlot(slot: string | null | undefined): [string, string] {
+  if (!slot) return ['', '']
+  const m = slot.match(/^\s*(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/)
+  if (m) return [m[1].padStart(5, '0'), m[2].padStart(5, '0')]
+  const single = slot.match(/^\s*(\d{1,2}:\d{2})\s*$/)
+  if (single) return [single[1].padStart(5, '0'), '']
+  return [slot.trim(), '']
+}
+
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
   return (
     <button
@@ -104,8 +136,13 @@ export default function GroupForm({
 
   // Schedule
   const [dayOfWeek, setDayOfWeek] = useState(editGroup?.day_of_week || '')
-  const [startTime, setStartTime] = useState(editGroup?.time_slot || '')
-  const [endTime, setEndTime] = useState(editGroup?.end_time || '')
+  // time_slot is stored as one string — "18:00–19:00" (en dash) or, on older
+  // rows, "17:00-18:00" or just "18:00". There is no end_time column. Editing
+  // used to feed the whole string into <input type="time">, which only accepts
+  // "HH:MM", so every edit opened with both times blank and saving wiped them.
+  const [initialStart, initialEnd] = splitTimeSlot(editGroup?.time_slot)
+  const [startTime, setStartTime] = useState(initialStart)
+  const [endTime, setEndTime] = useState(initialEnd)
   const [location, setLocation] = useState(editGroup?.location || '')
   const [coachId, setCoachId] = useState(editGroup?.coach_id || '')
   // Phase 1B — term assignment.
@@ -481,11 +518,28 @@ export default function GroupForm({
               </div>
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-1.5">Start Time</label>
-                <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputCls} />
+                <select value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputCls}>
+                  <option value="">Select time...</option>
+                  {/* A stored value off the 15-minute grid still shows, so editing never loses it */}
+                  {startTime && !TIME_OPTIONS.some((t) => t.value === startTime) && (
+                    <option value={startTime}>{startTime}</option>
+                  )}
+                  {TIME_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-1.5">End Time</label>
-                <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
+                <select value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls}>
+                  <option value="">Select time...</option>
+                  {endTime && !TIME_OPTIONS.some((t) => t.value === endTime) && (
+                    <option value={endTime}>{endTime}</option>
+                  )}
+                  {TIME_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
