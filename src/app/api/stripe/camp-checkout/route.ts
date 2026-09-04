@@ -196,6 +196,21 @@ export async function POST(request: NextRequest) {
         .update({ payment_status: 'paid' })
         .eq('id', booking.id)
 
+      // Make the camp child a real player (migration 112). The webhook does
+      // this for paid camps; free camps never reach it, so it happens here.
+      // Best-effort — the booking is already paid.
+      try {
+        const { linkCampBookingToPlayer } = await import('@/lib/camp-player-link')
+        const link = await linkCampBookingToPlayer(
+          supabase,
+          { ...booking, photo_consent: photoConsent === true || photoConsent === false ? photoConsent : null },
+          { campName: (camp.name as string) || null },
+        )
+        if (link.skipped) console.warn('[camp-checkout:free_player_link] skipped:', booking.id, link.skipped)
+      } catch (linkErr) {
+        console.error('[camp-checkout:free_player_link] failed:', linkErr)
+      }
+
       // Free camps short-circuit the Stripe webhook (no Checkout Session is
       // created), so the parent confirmation + academy notification emails
       // must be fired inline here. Mirrors the webhook's paid-camp branch

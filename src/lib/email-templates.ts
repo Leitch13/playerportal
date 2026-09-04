@@ -1789,6 +1789,53 @@ export function staffInviteEmail(params: {
   }
 }
 
+/**
+ * A camp parent has just been given an account they did not ask for.
+ *
+ * Sent by src/lib/camp-player-link.ts the first time a parent pays for a camp
+ * with no existing account. Says why they have one (so their child can get
+ * reports and they can see them), gives a direct set-password link, and
+ * never mentions the temporary password — that is a random string nobody
+ * will ever type. Falls back to "Forgot password" if the link could not be
+ * minted, which always works.
+ */
+export function campParentAccountEmail(params: {
+  parentName: string
+  childName: string
+  campName: string | null
+  academyName: string
+  actionLink: string | null
+  signinUrl: string
+  supportEmail: string
+}) {
+  const academy = escapeHtml(params.academyName)
+  const child = escapeHtml(params.childName)
+  const first = escapeHtml(params.parentName)
+  const camp = params.campName ? escapeHtml(params.campName) : null
+  const cta = params.actionLink
+    ? `<div style="text-align:center;margin:24px 0">
+         <a href="${params.actionLink}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px">Set your password</a>
+       </div>
+       <p style="color:#888;font-size:13px;text-align:center;margin:0 0 8px">This link sets your password and signs you in. If it has expired, use “Forgot password” on the sign-in page.</p>`
+    : `<div style="text-align:center;margin:24px 0">
+         <a href="${params.signinUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;text-decoration:none;font-weight:700;padding:13px 28px;border-radius:10px;font-size:15px">Go to sign-in</a>
+       </div>
+       <p style="color:#888;font-size:13px;text-align:center;margin:0 0 8px">To get in for the first time, click “Forgot password” on the sign-in page and enter this email address to set your password.</p>`
+  return {
+    subject: `${child}'s progress from ${params.academyName} — your account is ready`,
+    html: baseLayout(`
+      <div style="text-align:center;margin-bottom:20px">
+        <h2 style="margin:0 0 4px;color:#ffffff;font-size:22px;font-weight:800">Your Player Portal account</h2>
+        <p style="margin:0;color:#4ecde6;font-size:16px;font-weight:600">${academy}</p>
+      </div>
+      <p style="color:#aaa;margin:0 0 12px">Hi ${first}, ${child} is booked${camp ? ` on <strong style="color:#fff">${camp}</strong>` : ''} with ${academy}.</p>
+      <p style="color:#aaa;margin:0 0 16px">So the coaches can write ${child} a progress report — and so you can read it — ${academy} has set you up with a Player Portal account under this email address. Nothing to do today; when a report is ready it will come to this inbox, and you can sign in any time to see it.</p>
+      ${cta}
+      <p style="color:#8a98a8;font-size:13px;text-align:center;margin:16px 0 0">Sign in any time at <a href="${params.signinUrl}" style="color:#4ecde6;text-decoration:none">${params.signinUrl}</a>. Questions? Contact <a href="mailto:${params.supportEmail}" style="color:#4ecde6;text-decoration:none">${params.supportEmail}</a>.</p>
+    `, '#4ecde6', params.academyName),
+  }
+}
+
 export function adminWelcomeEmail(params: { adminName: string; academyName: string; academySlug?: string; dashboardUrl: string }) {
   // Premium "red carpet" onboarding welcome. Bespoke full-document layout (does
   // not use baseLayout) — hosted white logo + founder photo in /public, real

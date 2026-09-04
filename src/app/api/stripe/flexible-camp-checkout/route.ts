@@ -398,6 +398,25 @@ export async function POST(request: NextRequest) {
         .update({ payment_status: 'paid' })
         .eq('id', bookingId)
 
+      // Make the camp child a real player (migration 112). The webhook does
+      // this for paid camps; free camps never reach it, so it happens here.
+      // Re-read the booking rather than trust local form variables — the RPC
+      // is what wrote it. Best-effort: the booking is already paid.
+      try {
+        const { linkCampBookingToPlayer } = await import('@/lib/camp-player-link')
+        const { data: paidBooking } = await supabase
+          .from('camp_bookings')
+          .select('id, organisation_id, parent_name, parent_email, parent_phone, child_name, child_dob, medical_info, photo_consent, player_id')
+          .eq('id', bookingId)
+          .maybeSingle()
+        if (paidBooking) {
+          const link = await linkCampBookingToPlayer(supabase, paidBooking, { campName: (camp.name as string) || null })
+          if (link.skipped) console.warn('[flexible-camp-checkout:free_player_link] skipped:', bookingId, link.skipped)
+        }
+      } catch (linkErr) {
+        console.error('[flexible-camp-checkout:free_player_link] failed:', linkErr)
+      }
+
       const selectedDayLabels = orderedRows.map((row) =>
         new Date(row.date + 'T00:00:00Z').toLocaleDateString('en-GB', {
           weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC',

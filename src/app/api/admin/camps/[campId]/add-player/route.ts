@@ -178,6 +178,7 @@ export async function POST(
     consent_given: true,           // admin attests to consent on the parent's behalf
     amount_paid: amountPaid,
     payment_status: 'paid',         // admin entries are recorded as paid
+    player_id: playerId,            // migration 112 — this route starts FROM a player, so the link is known
   }
 
   let { data: booking, error: insErr } = await svc

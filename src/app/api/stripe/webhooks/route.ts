@@ -536,7 +536,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .from('camp_bookings')
         .update({ payment_status: 'paid', stripe_session_id: session.id })
         .eq('id', session.metadata.camp_booking_id)
-        .select('id, organisation_id, parent_email, parent_name, child_name, amount_paid, camp_id, booking_mode')
+        .select('id, organisation_id, parent_email, parent_name, parent_phone, child_name, child_dob, medical_info, photo_consent, player_id, amount_paid, camp_id, booking_mode')
         .maybeSingle()
       if (campUpdErr) throw new Error(`camp_bookings.update failed: ${campUpdErr.message}`)
 
@@ -550,6 +550,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           p_promo_id: campPromoId,
         })
         if (promoIncErr) console.error('[webhook:camp_promo_increment] failed:', promoIncErr.message)
+      }
+
+      // ─── Make the camp child a real player (migration 112) ───
+      // Only here, on a verified payment. A pending booking never gets a
+      // player row. Best-effort by design: the booking is paid and the
+      // confirmation is about to go out; nothing in this block may fail
+      // the webhook. See src/lib/camp-player-link.ts for what it does.
+      if (booking?.parent_email && booking?.organisation_id) {
+        try {
+          const { linkCampBookingToPlayer } = await import('@/lib/camp-player-link')
+          const { data: campForName } = booking.camp_id
+            ? await supabase.from('camps').select('name').eq('id', booking.camp_id).maybeSingle()
+            : { data: null }
+          const link = await linkCampBookingToPlayer(supabase, booking, {
+            campName: (campForName as { name?: string } | null)?.name || null,
+          })
+          if (link.skipped) console.warn('[webhook:camp_player_link] skipped:', booking.id, link.skipped)
+        } catch (linkErr) {
+          console.error('[webhook:camp_player_link] failed:', linkErr)
+        }
       }
 
       // ─── Flexible Camps (Phase 3B) — fetch the booked day list ───
