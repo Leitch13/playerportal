@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
   const name = str(body.name, 120)
   const email = str(body.email, 200).toLowerCase()
   const stage = str(body.stage, 80)
+  const source = str(body.source, 40) || 'calculator'
 
   if (!name || !email) {
     return NextResponse.json({ error: 'Name and email are required.' }, { status: 400, headers: CORS })
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       ${row('Email', email)}
       ${row('Where they’re at', stage)}
     </table>
-    <p style="margin:20px 0 0;font-size:13px;color:#666;">Added to the “ASCEND Leads” audience in Resend. They’ve been sent the calculator. Reply straight to this email to reach them.</p>
+    <p style="margin:20px 0 0;font-size:13px;color:#666;">Added to the “ASCEND Leads” audience in Resend. They’ve been sent the ${source === 'content-guide' ? 'content guide' : 'calculator'}. Reply straight to this email to reach them.</p>
   </div>
 </div>`
 
@@ -101,7 +102,9 @@ export async function POST(request: NextRequest) {
   await addToAscendAudience(email, name)
 
   const calcUrl = 'https://www.theplayerportal.net/ascend/calculator.html'
-  const replyHtml = `
+  const guideUrl = 'https://www.theplayerportal.net/ascend/what-specific-content-to-post.pdf'
+
+  const calculatorReplyHtml = `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1d2530;">
   <div style="padding:24px;background:#10161C;border-radius:12px 12px 0 0;">
     <p style="margin:0;font-size:11px;letter-spacing:0.2em;color:#F2B441;font-weight:700;">ASCEND · BY JOHN LEITCH COACHING</p>
@@ -117,10 +120,26 @@ export async function POST(request: NextRequest) {
   </div>
 </div>`
 
+  const guideReplyHtml = `
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1d2530;">
+  <div style="padding:24px;background:#10161C;border-radius:12px 12px 0 0;">
+    <p style="margin:0;font-size:11px;letter-spacing:0.2em;color:#F2B441;font-weight:700;">ASCEND · BY JOHN LEITCH COACHING</p>
+    <h1 style="margin:10px 0 0;font-size:20px;font-weight:800;color:#fff;">Your guide, ${esc(name.split(' ')[0])} 👇</h1>
+  </div>
+  <div style="padding:24px;background:#fff;border:1px solid #e6e9ee;border-top:0;border-radius:0 0 12px 12px;font-size:15px;line-height:1.6;">
+    <p style="margin:0 0 16px;">Here&rsquo;s <strong>What Specific Content To Post</strong> — the exact fifteen-slot weekly plan I ran at my own academy, with the templates for every carousel, reel and story slot:</p>
+    <p style="margin:0 0 20px;"><a href="${guideUrl}" style="display:inline-block;background:#F2B441;color:#10161C;font-weight:800;padding:13px 26px;border-radius:999px;text-decoration:none;">Download the guide →</a></p>
+    <p style="margin:0 0 14px;">Marketing is one of the six stages every academy owner has to get right — most either post nothing consistent, or post the wrong things to the wrong people. This fixes both.</p>
+    <p style="margin:0 0 14px;">I built this from what actually filled sessions at my own academy — 350 players a week across six venues, before I sold it.</p>
+    <p style="margin:0;">Do one thing for me: <strong>pick one slot from the guide and post it this week, then reply and tell me how it landed.</strong> I read every reply.</p>
+    <p style="margin:18px 0 0;">— John Leitch</p>
+  </div>
+</div>`
+
   await sendEmail({
     to: email,
-    subject: 'Your Coaching Business Calculator (+ one question)',
-    html: replyHtml,
+    subject: source === 'content-guide' ? 'Your Content Guide (+ one thing to try)' : 'Your Coaching Business Calculator (+ one question)',
+    html: source === 'content-guide' ? guideReplyHtml : calculatorReplyHtml,
     fromName: 'John Leitch — ASCEND',
     replyTo: to,
   })
