@@ -76,37 +76,61 @@ export default function BookingPageHero({
   return (
     <div
       className="relative py-12 sm:py-28 px-4 sm:px-6 text-center text-white overflow-hidden"
-      style={{ background: `linear-gradient(160deg, #060606 0%, #0a0a0a 35%, ${primaryColor}40 100%)` }}
+      // With a photo, the photo is the hero: neutral dark base, no brand tint.
+      // Without one, the original cinematic gradient + brand glow carries it.
+      style={{
+        background: orgHeroImage
+          ? '#060606'
+          : `linear-gradient(160deg, #060606 0%, #0a0a0a 35%, ${primaryColor}40 100%)`,
+      }}
     >
-      {/* Hero image backdrop if set */}
+      {/* Hero image backdrop if set.
+          Was opacity-20 under two brand-colour orbs and a brand radial glow —
+          an academy's own photo came out as a murky wash of their brand colour
+          (green at WLFA, red at RZ Sports). Now the photo shows, with only a
+          neutral bottom scrim so the title and buttons stay legible on any image. */}
       {orgHeroImage && (
-        <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: `url(${orgHeroImage})` }} />
+        <>
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${orgHeroImage})` }} />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(180deg, rgba(6,6,6,0.35) 0%, rgba(6,6,6,0.45) 40%, rgba(6,6,6,0.94) 100%)' }}
+          />
+        </>
       )}
 
-      {/* Floating brand-colour orbs */}
-      <div
-        className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full blur-[120px] opacity-30 pointer-events-none animate-float-1"
-        style={{ background: primaryColor }}
-      />
-      <div
-        className="absolute -bottom-20 right-[20%] w-[300px] h-[300px] rounded-full blur-[100px] opacity-20 pointer-events-none animate-float-2"
-        style={{ background: primaryColor }}
-      />
+      {/* Floating brand-colour orbs — only when there is no photo to fight with */}
+      {!orgHeroImage && (
+        <>
+          <div
+            className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full blur-[120px] opacity-30 pointer-events-none animate-float-1"
+            style={{ background: primaryColor }}
+          />
+          <div
+            className="absolute -bottom-20 right-[20%] w-[300px] h-[300px] rounded-full blur-[100px] opacity-20 pointer-events-none animate-float-2"
+            style={{ background: primaryColor }}
+          />
+        </>
+      )}
 
       {/* Grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
-          backgroundSize: '64px 64px',
-        }}
-      />
+      {!orgHeroImage && (
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
+            backgroundSize: '64px 64px',
+          }}
+        />
+      )}
 
-      {/* Radial vignette to focus attention */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: `radial-gradient(ellipse at 50% 110%, ${primaryColor}30 0%, transparent 60%)` }}
-      />
+      {/* Radial brand vignette — no-photo look only */}
+      {!orgHeroImage && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: `radial-gradient(ellipse at 50% 110%, ${primaryColor}30 0%, transparent 60%)` }}
+        />
+      )}
 
       <div className="relative z-10 max-w-3xl mx-auto">
         {/* Trust badge above title — adapts to activity level */}
