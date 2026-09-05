@@ -36,12 +36,24 @@ export async function GET(request: NextRequest) {
   const jobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const group of groups || []) {
-    // Find all enrolled players and their parents
-    const { data: enrolments } = await supabase
+    // Find all enrolled players and their parents.
+    //
+    // players → profiles has TWO foreign keys since Archive Player added
+    // archived_by alongside parent_id. An un-hinted `parent:profiles(...)`
+    // is ambiguous and PostgREST refuses it (PGRST201). This route did not
+    // check the error, looped over nothing, and returned `sent: 0` as a
+    // success — 198 parents missed their next-day reminder in the first
+    // week of September before anyone noticed. Hint the relationship, and
+    // fail loudly if the query ever errors again.
+    const { data: enrolments, error: enrolmentsError } = await supabase
       .from('enrolments')
-      .select('player:players(id, first_name, last_name, parent:profiles(full_name, email))')
+      .select('player:players(id, first_name, last_name, parent:profiles!players_parent_id_fkey(full_name, email))')
       .eq('group_id', group.id)
       .eq('status', 'active')
+    if (enrolmentsError) {
+      console.error('[session-reminders] enrolments query failed for group', group.id, enrolmentsError.message)
+      return NextResponse.json({ error: `enrolments query failed: ${enrolmentsError.message}` }, { status: 500 })
+    }
 
     for (const enrolment of enrolments || []) {
       const player = enrolment.player as unknown as {

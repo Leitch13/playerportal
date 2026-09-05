@@ -38,12 +38,19 @@ export async function GET(request: NextRequest) {
   const missedJobs: Parameters<typeof sendEmail>[0][] = []
 
   for (const group of groups || []) {
-    // Get all enrolled players for this group
-    const { data: enrolments } = await supabase
+    // Get all enrolled players for this group.
+    // Relationship hint is required: players → profiles has two FKs
+    // (parent_id, archived_by) and the un-hinted form fails with PGRST201.
+    // Same silent failure as session-reminders — see that route's comment.
+    const { data: enrolments, error: enrolmentsError } = await supabase
       .from('enrolments')
-      .select('player:players(id, first_name, last_name, parent:profiles(full_name, email))')
+      .select('player:players(id, first_name, last_name, parent:profiles!players_parent_id_fkey(full_name, email))')
       .eq('group_id', group.id)
       .eq('status', 'active')
+    if (enrolmentsError) {
+      console.error('[post-session] enrolments query failed for group', group.id, enrolmentsError.message)
+      return NextResponse.json({ error: `enrolments query failed: ${enrolmentsError.message}` }, { status: 500 })
+    }
 
     // Get attendance records for today's session
     const { data: attendanceRecords } = await supabase
