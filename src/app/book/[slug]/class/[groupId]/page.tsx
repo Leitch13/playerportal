@@ -169,7 +169,7 @@ export default async function ClassBookingPage({
   }
 
   const enrolled = count || 0
-  const capacity = group.max_capacity || 20
+  const capacity = group.max_capacity ?? 20
   const spotsLeft = capacity - enrolled
   const isFull = spotsLeft <= 0
   const coach = group.coach as unknown as { full_name: string } | null

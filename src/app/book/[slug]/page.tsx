@@ -384,7 +384,7 @@ export default async function PublicBookingPage({
       const key = `${normName.toLowerCase().replace(/[^a-z0-9]/g, '')}|${g.term_id || ''}`
       const typeConfig = CLASS_TYPE_CONFIG[g.class_type || 'group'] || CLASS_TYPE_CONFIG.group
       const count = countByGroup.get(g.id) || 0
-      const capacity = g.max_capacity || 20
+      const capacity = g.max_capacity ?? 20
       const spotsLeft = Math.max(0, capacity - count)
       // Classes are sold as MONTHLY memberships (that's what checkout charges),
       // so show the cheapest matching plan's monthly amount to match the price
@@ -475,7 +475,7 @@ export default async function PublicBookingPage({
   if (!useGroupedView && isPremiumBookingOrg(org.id as string)) {
     const premiumClasses: PremiumClassCard[] = sortedGroups.map((group) => {
       const count = countByGroup.get(group.id) || 0
-      const capacity = (group as unknown as { max_capacity: number }).max_capacity || 20
+      const capacity = (group as unknown as { max_capacity: number }).max_capacity ?? 20
       const spotsLeft = capacity - count
       const isFull = spotsLeft <= 0
       const price = group.price_per_session as number | null
@@ -629,7 +629,7 @@ export default async function PublicBookingPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {sortedGroups.map((group) => {
               const count = countByGroup.get(group.id) || 0
-              const capacity = (group as unknown as { max_capacity: number }).max_capacity || 20
+              const capacity = (group as unknown as { max_capacity: number }).max_capacity ?? 20
               const spotsLeft = capacity - count
               const isFull = spotsLeft <= 0
               const coach = group.coach as unknown as { full_name: string } | null

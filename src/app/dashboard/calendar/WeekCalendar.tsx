@@ -663,7 +663,7 @@ function WeekView({
                   const bottom = timeToTop(endHour, endMin)
                   const height = Math.max(bottom - top, 24)
                   const color = getTypeColor(g.class_type)
-                  const capacity = g.max_capacity || 20
+                  const capacity = g.max_capacity ?? 20
 
                   return (
                     <button
@@ -836,7 +836,7 @@ function DayView({
               const bottom = timeToTop(endHour, endMin)
               const height = Math.max(bottom - top, 36)
               const color = getTypeColor(g.class_type)
-              const capacity = g.max_capacity || 20
+              const capacity = g.max_capacity ?? 20
               const fillPct = Math.min((g.enrolledCount / capacity) * 100, 100)
 
               return (
@@ -950,7 +950,7 @@ function ClassDetailModal({
   onClose: () => void
 }) {
   const color = getTypeColor(group.class_type)
-  const capacity = group.max_capacity || 20
+  const capacity = group.max_capacity ?? 20
   const fillPct = Math.min((group.enrolledCount / capacity) * 100, 100)
   const parsed = parseTime(group.time_slot || '')
 

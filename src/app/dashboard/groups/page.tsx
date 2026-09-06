@@ -13,7 +13,7 @@ import {
   type ClassIntel,
   type ClassesRollup,
 } from '@/lib/classes-revops'
-import ClassesRevenueStrip from '@/components/classes/ClassesRevenueStrip'
+import ClassesRevenueStrip, { type ClassesView } from '@/components/classes/ClassesRevenueStrip'
 
 // Mirrors the Waitlist page's column-duality handling (task #248/#249).
 const WAITLIST_SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
@@ -21,9 +21,14 @@ const WAITLIST_SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true
 export default async function GroupsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string }>
+  searchParams?: Promise<{ q?: string; view?: string }>
 }) {
-  const q = ((await searchParams)?.q || '').trim().toLowerCase()
+  const sp = await searchParams
+  const q = (sp?.q || '').trim().toLowerCase()
+  // ?view= comes from clicking a tile in the Revenue & Capacity strip: it
+  // narrows the grid to open / at-risk / waitlisted / full / needs-attention.
+  const VIEWS: ClassesView[] = ['open', 'risk', 'waitlist', 'full', 'attention']
+  const view: ClassesView | null = VIEWS.includes(sp?.view as ClassesView) ? (sp!.view as ClassesView) : null
   const supabase = await createClient()
   const {
     data: { user },
@@ -84,45 +89,13 @@ export default async function GroupsPage({
     countByGroup.set(e.group_id, (countByGroup.get(e.group_id) || 0) + 1)
   }
 
-  // ?q= filters by name / venue / coach / age group — server-side so it
-  // works without JS and survives refresh/share.
-  const visibleGroups = q
-    ? (groups || []).filter((g) => {
-        const coach = (g.coach as unknown as { full_name?: string } | null)?.full_name || ''
-        const hay = `${g.name || ''} ${g.location || ''} ${coach} ${(g as unknown as { age_group?: string | null }).age_group || ''}`.toLowerCase()
-        return hay.includes(q)
-      })
-    : (groups || [])
-
-  // Sort by day of week
-  const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-  const sortedGroups = [...visibleGroups].sort((a, b) => {
-    const dayA = DAY_ORDER.indexOf(a.day_of_week || '')
-    const dayB = DAY_ORDER.indexOf(b.day_of_week || '')
-    return (dayA === -1 ? 99 : dayA) - (dayB === -1 ? 99 : dayB)
-  })
-
-  // Group by day
-  const groupsByDay = new Map<string, typeof sortedGroups>()
-  for (const g of sortedGroups) {
-    const day = g.day_of_week || 'Unscheduled'
-    const list = groupsByDay.get(day) || []
-    list.push(g)
-    groupsByDay.set(day, list)
-  }
-
-  // Stats
-  const totalClasses = (groups || []).length
-  const totalEnrolled = Array.from(countByGroup.values()).reduce((a, b) => a + b, 0)
-  const totalCapacity = (groups || []).reduce((sum, g) => sum + ((g.max_capacity as number) || 20), 0)
-  const fillRate = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0
-
   // ── Classes Revenue Intelligence Phase 1A — read-only Revenue & Capacity strip.
   // Built only when the flag is ON, from three flag-gated reads (canonical seat
   // counts via get_group_seat_counts, org subscription plans, waitlist counts).
   // Flag OFF ⇒ none of this runs, no extra queries, byte-identical page. ──
   let classRollup: ClassesRollup | null = null
   let classNeedsAttention: ClassIntel[] = []
+  const classIntelById = new Map<string, ClassIntel>()
   if (CLASSES_REVOPS_ENABLED && (groups || []).length > 0) {
     // Canonical occupancy (active+pending), read-only RPC.
     const { data: seatRows } = await supabase.rpc('get_group_seat_counts', { p_org_id: orgId })
@@ -165,7 +138,62 @@ export default async function GroupsPage({
     )
     classRollup = intel.rollup
     classNeedsAttention = intel.needsAttention
+    for (const c of intel.classes) classIntelById.set(c.id, c)
   }
+
+  // ?q= filters by name / venue / coach / age group — server-side so it
+  // works without JS and survives refresh/share.
+  const visibleGroups = q
+    ? (groups || []).filter((g) => {
+        const coach = (g.coach as unknown as { full_name?: string } | null)?.full_name || ''
+        const hay = `${g.name || ''} ${g.location || ''} ${coach} ${(g as unknown as { age_group?: string | null }).age_group || ''}`.toLowerCase()
+        return hay.includes(q)
+      })
+    : (groups || [])
+
+  // ?view= (from the Revenue & Capacity tiles) narrows further. Only when the
+  // strip is on — otherwise there is no intel to filter by and the param is
+  // ignored, so the page never renders empty by accident.
+  const matchesView = (id: string): boolean => {
+    if (!view || classIntelById.size === 0) return true
+    const c = classIntelById.get(id)
+    if (!c) return false
+    switch (view) {
+      case 'open': return c.capacity > 0 && c.openSeats > 0
+      case 'risk': return c.status === 'at_risk'
+      case 'waitlist': return c.waiting > 0 || c.capacity === 0
+      case 'full': return c.status === 'full' || c.openSeats === 0
+      case 'attention': return c.status !== 'healthy'
+    }
+  }
+  const viewGroups = visibleGroups.filter((g) => matchesView(g.id))
+  const VIEW_LABEL: Record<ClassesView, string> = {
+    open: 'classes with open seats', risk: 'classes below viable', waitlist: 'classes with waitlist demand',
+    full: 'full classes', attention: 'classes needing attention',
+  }
+
+  // Sort by day of week
+  const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  const sortedGroups = [...viewGroups].sort((a, b) => {
+    const dayA = DAY_ORDER.indexOf(a.day_of_week || '')
+    const dayB = DAY_ORDER.indexOf(b.day_of_week || '')
+    return (dayA === -1 ? 99 : dayA) - (dayB === -1 ? 99 : dayB)
+  })
+
+  // Group by day
+  const groupsByDay = new Map<string, typeof sortedGroups>()
+  for (const g of sortedGroups) {
+    const day = g.day_of_week || 'Unscheduled'
+    const list = groupsByDay.get(day) || []
+    list.push(g)
+    groupsByDay.set(day, list)
+  }
+
+  // Stats
+  const totalClasses = (groups || []).length
+  const totalEnrolled = Array.from(countByGroup.values()).reduce((a, b) => a + b, 0)
+  const totalCapacity = (groups || []).reduce((sum, g) => sum + ((g.max_capacity as number) ?? 20), 0)
+  const fillRate = totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0
 
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
@@ -176,6 +204,12 @@ export default async function GroupsPage({
           <h1 className="text-2xl font-bold text-white">Classes</h1>
           <p className="mt-1 text-[13px] text-white/40">
             {totalClasses} class{totalClasses === 1 ? '' : 'es'} · {totalEnrolled} enrolled · {totalCapacity} capacity · {fillRate}% full
+            {view && classIntelById.size > 0 && (
+              <>
+                {' '}· showing <span className="font-semibold text-white/80">{sortedGroups.length}</span> {VIEW_LABEL[view]}
+                {' '}<Link href="/dashboard/groups" className="font-semibold text-[#4ecde6] hover:underline">Clear</Link>
+              </>
+            )}
           </p>
         </div>
         <form method="GET" className="relative">
@@ -193,7 +227,7 @@ export default async function GroupsPage({
       </div>
 
       {CLASSES_REVOPS_ENABLED && classRollup && (
-        <ClassesRevenueStrip rollup={classRollup} needsAttention={classNeedsAttention} />
+        <ClassesRevenueStrip rollup={classRollup} needsAttention={classNeedsAttention} active={view} />
       )}
 
       {/* Create new class (admin only) */}
@@ -210,8 +244,12 @@ export default async function GroupsPage({
         </div>
       ) : sortedGroups.length === 0 ? (
         <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-10 text-center">
-          <p className="text-sm text-white/60">Nothing matches <span className="font-semibold text-white">&ldquo;{q}&rdquo;</span></p>
-          <a href="/dashboard/groups" className="mt-2 inline-block text-xs font-semibold text-[#4ecde6] hover:underline">Clear search</a>
+          {q ? (
+            <p className="text-sm text-white/60">Nothing matches <span className="font-semibold text-white">&ldquo;{q}&rdquo;</span></p>
+          ) : (
+            <p className="text-sm text-white/60">No {view ? VIEW_LABEL[view] : 'classes'} right now.</p>
+          )}
+          <a href="/dashboard/groups" className="mt-2 inline-block text-xs font-semibold text-[#4ecde6] hover:underline">{q ? 'Clear search' : 'Show all classes'}</a>
         </div>
       ) : (
         <div className="space-y-8">
@@ -225,7 +263,7 @@ export default async function GroupsPage({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {dayGroups.map((g) => {
                   const enrolled = countByGroup.get(g.id) || 0
-                  const capacity = (g.max_capacity as number) || 20
+                  const capacity = (g.max_capacity as number) ?? 20
                   const coach = g.coach as unknown as { full_name: string } | null
 
                   return (

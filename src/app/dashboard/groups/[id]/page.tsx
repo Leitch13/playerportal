@@ -101,7 +101,7 @@ export default async function GroupDetailPage({
     .sort((a, b) => a.first_name.localeCompare(b.first_name))
 
   const coach = group.coach as unknown as { id: string; full_name: string; email: string } | null
-  const capacity = (group.max_capacity as number) || 20
+  const capacity = (group.max_capacity as number) ?? 20
   const enrolled = players.length
   const fillPercent = Math.min(100, Math.round((enrolled / capacity) * 100))
   const isFull = enrolled >= capacity

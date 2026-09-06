@@ -124,7 +124,7 @@ async function AdminSchedule({
       coachName: group.coach?.full_name || '',
       coachId: group.coach_id,
       playerCount: groupEnrolments.length,
-      maxCapacity: group.max_capacity || 20,
+      maxCapacity: group.max_capacity ?? 20,
       players: groupEnrolments.map((e) => ({
         id: e.player?.id || e.player_id,
         name: e.player ? `${e.player.first_name} ${e.player.last_name}` : '—',
@@ -473,7 +473,7 @@ async function ParentSchedule({
       coachName: group.coach?.full_name || '',
       coachId: group.coach_id,
       playerCount: enrolCountByGroup.get(group.id) || 0,
-      maxCapacity: group.max_capacity || 20,
+      maxCapacity: group.max_capacity ?? 20,
       players: enrolledPlayers.map(p => ({
         id: p.id,
         name: `${p.first_name} ${p.last_name}`,
@@ -815,7 +815,7 @@ async function ParentSchedule({
                       )
                       const allBooked = availablePlayers.length === 0 && enrolledPlayerIds.length > 0
                       const enrolled = enrolCountByGroup.get(group.id) || 0
-                      const capacity = group.max_capacity || 20
+                      const capacity = group.max_capacity ?? 20
                       const spots = capacity - enrolled
                       const fillPct = capacity > 0 ? Math.min(100, Math.round((enrolled / capacity) * 100)) : 0
                       const isFull = spots <= 0

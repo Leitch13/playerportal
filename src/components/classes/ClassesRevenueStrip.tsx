@@ -1,13 +1,18 @@
+import Link from 'next/link'
 import type { ClassIntel, ClassesRollup, ClassStatus } from '@/lib/classes-revops'
 
-// Classes Revenue Intelligence — Phase 1A "Revenue & Capacity" strip. Server
-// presentational, read-only. Sits above the existing Classes stat cards / grid
-// and answers "where's the money, what's dying, where's the demand?" in one
-// glance: open-seat £/mo potential + at-risk + waitlist + occupancy, then a
-// ranked "classes needing attention" list. No buttons (Phase 2 owns actions).
-// Dark theme to match the existing Classes page.
+// Classes Revenue Intelligence — "Revenue & Capacity" strip. Server
+// presentational, read-only. Answers "where's the money, what's dying, where's
+// the demand?" in one glance: open-seat £/mo potential + at-risk + waitlist +
+// occupancy, then a ranked "classes needing attention" list.
+//
+// The four tiles are FILTERS: clicking one narrows the class grid below to
+// just those classes (?view=…), and the active tile is outlined. Each
+// attention row opens that class. Dark theme to match the Classes page.
 
 const CAP = 6
+
+export type ClassesView = 'open' | 'risk' | 'waitlist' | 'full' | 'attention'
 
 function gbp(n: number): string {
   return `£${Math.round(n).toLocaleString('en-GB')}`
@@ -25,6 +30,7 @@ const STATUS_META: Record<Exclude<ClassStatus, 'healthy'>, { label: string; chip
 
 function rightDetail(c: ClassIntel): string {
   if (c.status === 'waitlist_demand') return `${c.waiting} waiting`
+  if (c.capacity === 0) return 'waiting list only'
   if (c.status === 'full') return 'at capacity'
   if (c.openSeats > 0) {
     return c.openSeatValueMo != null ? `${c.openSeats} seats · ${gbp(c.openSeatValueMo)}/mo` : `${c.openSeats} seats`
@@ -35,9 +41,12 @@ function rightDetail(c: ClassIntel): string {
 export default function ClassesRevenueStrip({
   rollup,
   needsAttention,
+  active = null,
 }: {
   rollup: ClassesRollup
   needsAttention: ClassIntel[]
+  /** The view currently filtering the grid below, if any. */
+  active?: ClassesView | null
 }) {
   const shown = needsAttention.slice(0, CAP)
   const more = needsAttention.length - shown.length
@@ -47,27 +56,63 @@ export default function ClassesRevenueStrip({
     <section aria-label="Revenue and capacity" className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-xs font-bold uppercase tracking-wider text-white/70">Revenue &amp; capacity</h2>
-        <span className="text-[11px] text-white/40">Where&rsquo;s the money today</span>
+        <span className="text-[11px] text-white/40">
+          {active ? (
+            <Link href="/dashboard/groups" className="font-semibold text-[#4ecde6] hover:underline">Show all classes</Link>
+          ) : (
+            'Click a tile to filter the list below'
+          )}
+        </span>
       </div>
 
-      {/* ── Headline metrics ── */}
+      {/* ── Headline metrics — each one is a filter ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <div className="rounded-xl border border-[#4ecde6]/20 bg-[#4ecde6]/[0.06] p-3">
-          <div className="text-2xl font-extrabold text-[#4ecde6] leading-none">{rollup.totalOpenSeats}</div>
-          <div className="text-[10px] uppercase tracking-wider text-white/60 mt-1">Open seats</div>
-          <div className="text-[11px] text-white/50 mt-0.5">
-            {gbp(rollup.openSeatValueMo)}/mo potential{rollup.someValueUnknown ? '+' : ''}
-          </div>
-        </div>
-        <Metric value={String(rollup.atRiskCount)} label="Classes at risk" tone={rollup.atRiskCount > 0 ? 'text-rose-400' : 'text-white/50'} hint="below viable" />
-        <Metric value={String(rollup.totalWaitlisted)} label="Waitlist demand" tone={rollup.totalWaitlisted > 0 ? 'text-amber-400' : 'text-white/50'} hint="players waiting" />
-        <Metric value={pct(rollup.avgOccupancyPct)} label="Avg occupancy" tone={occTone} hint="across classes" />
+        <Tile
+          view="open"
+          active={active}
+          value={String(rollup.totalOpenSeats)}
+          label="Open seats"
+          hint={`${gbp(rollup.openSeatValueMo)}/mo potential${rollup.someValueUnknown ? '+' : ''}`}
+          tone="text-[#4ecde6]"
+          accent="border-[#4ecde6]/20 bg-[#4ecde6]/[0.06] hover:border-[#4ecde6]/50"
+          ring="ring-[#4ecde6]/70"
+        />
+        <Tile
+          view="risk"
+          active={active}
+          value={String(rollup.atRiskCount)}
+          label="Classes at risk"
+          hint="below viable"
+          tone={rollup.atRiskCount > 0 ? 'text-rose-400' : 'text-white/50'}
+          accent="border-white/[0.08] bg-white/[0.03] hover:border-rose-400/50"
+          ring="ring-rose-400/70"
+        />
+        <Tile
+          view="waitlist"
+          active={active}
+          value={String(rollup.totalWaitlisted)}
+          label="Waitlist demand"
+          hint="players waiting"
+          tone={rollup.totalWaitlisted > 0 ? 'text-amber-400' : 'text-white/50'}
+          accent="border-white/[0.08] bg-white/[0.03] hover:border-amber-400/50"
+          ring="ring-amber-400/70"
+        />
+        <Tile
+          view="full"
+          active={active}
+          value={pct(rollup.avgOccupancyPct)}
+          label="Avg occupancy"
+          hint="click for full classes"
+          tone={occTone}
+          accent="border-white/[0.08] bg-white/[0.03] hover:border-emerald-400/50"
+          ring="ring-emerald-400/70"
+        />
       </div>
 
-      {/* ── Classes needing attention ── */}
+      {/* ── Classes needing attention — each row opens the class ── */}
       {shown.length === 0 ? (
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-4 text-center">
-          <p className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />All classes are healthy</p>
+          <p className="flex items-center justify-center gap-2 text-sm font-semibold text-emerald-300"><span className="h-2 w-2 rounded-full bg-emerald-400" />All classes are healthy</p>
           <p className="text-xs text-white/50 mt-1">No at-risk, underfilled, or waitlisted classes right now.</p>
         </div>
       ) : (
@@ -80,22 +125,34 @@ export default function ClassesRevenueStrip({
             {shown.map((c) => {
               const meta = STATUS_META[c.status as Exclude<ClassStatus, 'healthy'>]
               return (
-                <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{c.name}</p>
-                    <p className="text-[11px] text-white/50 truncate">
-                      {c.dayLabel ? `${c.dayLabel} · ` : ''}{c.enrolled}/{c.capacity} · {pct(c.occupancyPct)} full
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[11px] text-white/50 hidden sm:inline">{rightDetail(c)}</span>
-                    {meta && <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${meta.chip}`}>{meta.label}</span>}
-                  </div>
+                <li key={c.id}>
+                  <Link
+                    href={`/dashboard/groups/${c.id}`}
+                    className="group flex items-center justify-between gap-3 px-3 py-2.5 transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:bg-white/[0.06]"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white truncate group-hover:text-[#4ecde6] transition-colors">{c.name}</p>
+                      <p className="text-[11px] text-white/50 truncate">
+                        {c.dayLabel ? `${c.dayLabel} · ` : ''}{c.enrolled}/{c.capacity} · {pct(c.occupancyPct)} full
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[11px] text-white/50 hidden sm:inline">{rightDetail(c)}</span>
+                      {meta && <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${meta.chip}`}>{meta.label}</span>}
+                      <svg className="h-3.5 w-3.5 text-white/25 group-hover:text-white/60 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+                      </svg>
+                    </div>
+                  </Link>
                 </li>
               )
             })}
           </ul>
-          {more > 0 && <p className="text-[11px] text-white/40 px-1">+{more} more in the list below</p>}
+          {more > 0 && (
+            <p className="text-[11px] text-white/40 px-1">
+              <Link href="/dashboard/groups?view=attention" className="font-semibold text-[#4ecde6] hover:underline">+{more} more</Link> — show only the classes needing attention
+            </p>
+          )}
           {rollup.someValueUnknown && (
             <p className="text-[10px] text-white/30 px-1">£ potential covers classes with a matching membership plan; classes without one are excluded from the total.</p>
           )}
@@ -105,12 +162,29 @@ export default function ClassesRevenueStrip({
   )
 }
 
-function Metric({ value, label, tone, hint }: { value: string; label: string; tone: string; hint: string }) {
+function Tile({
+  view, active, value, label, hint, tone, accent, ring,
+}: {
+  view: ClassesView
+  active: ClassesView | null
+  value: string
+  label: string
+  hint: string
+  tone: string
+  accent: string
+  ring: string
+}) {
+  const isActive = active === view
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3">
+    <Link
+      href={isActive ? '/dashboard/groups' : `/dashboard/groups?view=${view}`}
+      aria-current={isActive ? 'true' : undefined}
+      title={isActive ? 'Show all classes' : `Show only these classes`}
+      className={`block rounded-xl border p-3 transition-all focus:outline-none focus-visible:ring-2 ${accent} ${isActive ? `ring-2 ${ring}` : ''}`}
+    >
       <div className={`text-2xl font-extrabold leading-none ${tone}`}>{value}</div>
       <div className="text-[10px] uppercase tracking-wider text-white/60 mt-1">{label}</div>
       <div className="text-[11px] text-white/50 mt-0.5">{hint}</div>
-    </div>
+    </Link>
   )
 }

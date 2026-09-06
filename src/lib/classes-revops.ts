@@ -18,7 +18,7 @@ export const CLASSES_REVOPS_ENABLED = process.env.CLASSES_REVOPS_ENABLED === 'tr
 export const MIN_VIABLE = 8
 // Below this occupancy (and not at-risk) = spare capacity worth filling.
 export const LOW_OCCUPANCY = 0.5
-const DEFAULT_CAPACITY = 20 // mirrors the page's `max_capacity || 20` convention
+const DEFAULT_CAPACITY = 20 // mirrors the page's `max_capacity ?? 20` convention
 
 // Interval-normalise a plan's amount to a MONTHLY figure. Quarterly ÷3, yearly
 // ÷12; anything else treated as already-monthly. Never sums raw amounts.
@@ -91,7 +91,8 @@ export function buildClassIntel(
   const classes: ClassIntel[] = []
 
   for (const g of groups) {
-    const capacity = (g.max_capacity ?? DEFAULT_CAPACITY) || DEFAULT_CAPACITY
+    // 0 is a real value: the class is open for the waiting list only.
+    const capacity = g.max_capacity ?? DEFAULT_CAPACITY
     const enrolled = seatByGroup.get(g.id) ?? 0
     const openSeats = Math.max(0, capacity - enrolled)
     const occupancyPct = capacity > 0 ? enrolled / capacity : 0
@@ -101,7 +102,8 @@ export function buildClassIntel(
 
     // Primary reason, ranked (at-risk most urgent → full least).
     let status: ClassStatus = 'healthy'
-    if (enrolled < MIN_VIABLE) status = 'at_risk'
+    if (capacity === 0) status = waiting > 0 ? 'waitlist_demand' : 'full' // waitlist-only, by design
+    else if (enrolled < MIN_VIABLE) status = 'at_risk'
     else if (waiting > 0) status = 'waitlist_demand'
     else if (occupancyPct < LOW_OCCUPANCY) status = 'low_occupancy'
     else if (occupancyPct >= 1) status = 'full'

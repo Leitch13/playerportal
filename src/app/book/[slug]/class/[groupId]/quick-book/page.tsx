@@ -89,7 +89,7 @@ export default async function QuickBookPage({
     .rpc('get_group_seat_counts', { p_org_id: org.id })
   const seatRow = (seatCounts || []).find((r: { group_id: string }) => r.group_id === groupId) as { seat_count: number | string } | undefined
   const enrolled = seatRow ? Number(seatRow.seat_count) || 0 : 0
-  const capacity = group.max_capacity || 20
+  const capacity = group.max_capacity ?? 20
   const spotsLeft = capacity - enrolled
   const isFull = spotsLeft <= 0
 

@@ -134,7 +134,7 @@ export default async function EmbedBookingPage({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
             {sortedGroups.map((group) => {
               const count = countByGroup.get(group.id) || 0
-              const capacity = (group as unknown as { max_capacity: number }).max_capacity || 20
+              const capacity = (group as unknown as { max_capacity: number }).max_capacity ?? 20
               const spotsLeft = capacity - count
               const isFull = spotsLeft <= 0
               const coach = group.coach as unknown as { full_name: string } | null

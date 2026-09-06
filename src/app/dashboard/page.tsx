@@ -2175,7 +2175,7 @@ async function AdminDashboard({ name, orgId }: { name: string; orgId: string }) 
                           {g.time_slot && <p className="text-sm font-bold text-[#4ecde6]">{g.time_slot}</p>}
                           <div className="flex items-center gap-1 mt-1">
                             <div className="w-14 h-1.5 bg-[#142236] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / (g.max_capacity || 20)) * 100, 100)}%` }} />
+                              <div className="h-full bg-[#4ecde6]/60 rounded-full" style={{ width: `${Math.min((playerCount / (g.max_capacity ?? 20)) * 100, 100)}%` }} />
                             </div>
                             <span className="font-mono text-[12px] tabular-nums text-[#93a2ba]">{playerCount}</span>
                           </div>

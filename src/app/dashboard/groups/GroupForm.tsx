@@ -475,6 +475,7 @@ export default function GroupForm({
                     placeholder="20"
                     className={inputCls}
                   />
+                  <p className="mt-1 text-[11px] text-white/40">Set to <span className="font-semibold text-white/70">0</span> to open this class for the waiting list only — parents see it as full and can join the queue. Raise the number when you're ready to fill it.</p>
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#888]">players</span>
                 </div>
               </div>

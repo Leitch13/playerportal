@@ -171,7 +171,7 @@ export default async function AnalyticsPage() {
   const classStats = (groups || [])
     .map((g) => {
       const enrolled = enrolCountMap.get(g.id) || 0
-      const capacity = g.max_capacity || 20
+      const capacity = g.max_capacity ?? 20
       return {
         name: g.name,
         enrolled,
@@ -400,7 +400,7 @@ export default async function AnalyticsPage() {
     const bucketIdx = bucketForHour(hour)
     if (bucketIdx < 0) continue
     const enrolled = enrolCountMap.get(g.id) || 0
-    const capacity = g.max_capacity || 20
+    const capacity = g.max_capacity ?? 20
     const fill = Math.round((enrolled / capacity) * 100)
     const cell = heatGrid[dayIdx][bucketIdx]
     cell.fillSum += fill

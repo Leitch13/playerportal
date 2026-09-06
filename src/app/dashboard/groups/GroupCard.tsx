@@ -127,8 +127,11 @@ export default function GroupCard({
     }
   }
 
-  const spotsLeft = group.max_capacity - enrolled
-  const fillPercent = Math.min(100, Math.round((enrolled / group.max_capacity) * 100))
+  // Capacity 0 = open for the waiting list only. Guard the division so the
+  // bar doesn't render NaN%; the class simply shows as full-with-a-queue.
+  const waitlistOnly = group.max_capacity === 0
+  const spotsLeft = Math.max(0, group.max_capacity - enrolled)
+  const fillPercent = waitlistOnly ? 100 : Math.min(100, Math.round((enrolled / group.max_capacity) * 100))
   const isFull = enrolled >= group.max_capacity
   const isNearFull = fillPercent >= 70 && !isFull
   const isWarning = fillPercent > 90 && !isFull
@@ -199,7 +202,9 @@ export default function GroupCard({
     )
   }
 
-  const statusChip = isFull ? (
+  const statusChip = waitlistOnly ? (
+    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30" title="Capacity is 0 — parents can only join the waiting list">WAITLIST ONLY</span>
+  ) : isFull ? (
     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">FULL</span>
   ) : isWarning ? (
     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">{spotsLeft} LEFT</span>
