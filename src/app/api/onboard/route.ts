@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
+import { checkSignupIp } from '@/lib/ip-reputation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,6 +57,40 @@ export async function POST(request: NextRequest) {
     const emailProblem = await checkLeadEmail(String(contactEmail), 'your academy')
     if (emailProblem) {
       return NextResponse.json({ error: emailProblem }, { status: 400 })
+    }
+
+    // ── Origin gate — datacentre / VPN / proxy addresses can't create an
+    // academy. Added 2026-09-06 after "Yapro": temp-mail inbox, Bucharest
+    // VPN exit, fake US phone, straight to the migration import. Real
+    // academies sign up from a phone or a house. Fails OPEN on any lookup
+    // trouble (see src/lib/ip-reputation.ts) — only a definitive "this is a
+    // hosting network" blocks, and John is told when it does. ──
+    const clientIp = ip.split(',')[0].trim()
+    const ipVerdict = await checkSignupIp(clientIp)
+    if (ipVerdict.block) {
+      console.warn('[onboard] blocked signup from', ipVerdict.reason, clientIp, ipVerdict.country, ipVerdict.isp, String(contactEmail), String(name))
+      try {
+        const { sendEmail } = await import('@/lib/email')
+        await sendEmail({
+          to: process.env.ADMIN_NOTIFICATION_EMAIL || 'john@theplayerportal.net',
+          subject: `Blocked signup: "${String(name)}" from a ${ipVerdict.reason} (${ipVerdict.country || '?'})`,
+          html: `<p>An academy signup was refused at the door.</p>
+<ul>
+<li>Academy: <strong>${String(name)}</strong> (slug ${String(slug)})</li>
+<li>Email: ${String(contactEmail)}</li>
+<li>Phone: ${String(contactPhone || '—')}</li>
+<li>Location typed: ${String(location || '—')}</li>
+<li>IP: ${clientIp} — ${ipVerdict.isp || '?'}, ${ipVerdict.country || '?'} — <strong>${ipVerdict.reason}</strong></li>
+</ul>
+<p>Nothing was created. If this was a real academy on a VPN, they'll have been told to turn it off and try again.</p>`,
+        })
+      } catch (alertErr) {
+        console.error('[onboard] blocked-signup alert failed', alertErr)
+      }
+      return NextResponse.json(
+        { error: 'It looks like you’re signing up through a VPN or a hosting network. Please turn it off and try again — or email support@theplayerportal.net and we’ll set you up by hand.' },
+        { status: 400 },
+      )
     }
 
     if (termsAccepted !== true || dpaAccepted !== true || authorityConfirmed !== true) {

@@ -21,6 +21,12 @@ const DISPOSABLE_DOMAINS = new Set([
   'tempmailo.com', 'emailfake.com', 'inboxkitten.com', 'harakirimail.com',
   'mailcatch.com', 'moakt.com', 'tmailor.com', 'crazymailing.com',
   'tempr.email', 'discard.email', 'spambog.com', 'trash-mail.com',
+  // Added 2026-09-06 after "Yapro" — a temp-mail.org inbox on this domain,
+  // signed up through a Bucharest datacentre VPN with a fake US phone, and
+  // went straight to the ClassForKids import. temp-mail.org rotates its
+  // domains, so this list will always be one behind; the datacentre-IP
+  // check in /api/onboard is the layer that catches the next one.
+  'fidhost.com',
 ])
 
 // Fat-finger domains that ARE registered (usually by squatters, so an MX
