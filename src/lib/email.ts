@@ -60,28 +60,87 @@ export async function sendEmail({ to, subject, html, fromName, replyTo }: EmailO
  * rate limits. Failures are counted, never thrown, so one bad address can't
  * abort the whole batch.
  */
+// The one address that is never a real inbox: the retired academy mailbox
+// every demo academy's placeholder parents point at (Resend has it
+// suppressed). Sending to it wastes the rate budget real families need. On
+// 6 Sep 2026 the session-reminder cron built 154 jobs of which 121 were
+// this address; Resend's 2-requests/second limit then rejected most of the
+// run and only 3 real parents out of 33 got their reminder.
+//
+// Deliberately NOT a domain rule: john@ and support@theplayerportal.net are
+// real inboxes that receive cron output.
+const PLACEHOLDER_RECIPIENT = /^john\.leitch@playitloveit\.com$/i
+
+const BATCH_MAX = 100 // Resend's per-call limit for /emails/batch
+
+function toResendPayload({ to, subject, html, fromName, replyTo }: EmailOptions) {
+  const cleanName = fromName?.replace(/[<>"]/g, '').trim()
+  return {
+    from: cleanName ? `${cleanName} <${senderAddress()}>` : FROM_EMAIL,
+    to,
+    subject,
+    html,
+    ...(replyTo ? { replyTo } : {}),
+  }
+}
+
+/**
+ * Send many emails. Used by the daily crons that fan out to hundreds of
+ * families.
+ *
+ * Goes through Resend's batch endpoint — one request per 100 emails — so a
+ * 154-recipient run is two calls, not 154. The previous version fired 8
+ * single sends at once into a 2-per-second limit and silently counted the
+ * rejections as "failed"; the route still returned 200.
+ *
+ * If a batch call fails outright, that chunk falls back to one-at-a-time at
+ * a rate Resend accepts, with one retry on a rate-limit response. Failures
+ * are counted, never thrown, so one bad address can't abort the run.
+ * Placeholder recipients are skipped before anything is sent.
+ */
 export async function sendEmailBatch(
   jobs: EmailOptions[],
-  concurrency = 8,
-): Promise<{ sent: number; failed: number }> {
+  // Kept so existing callers that pass a concurrency still compile; the batch
+  // endpoint makes it meaningless.
+  _concurrency?: number,
+): Promise<{ sent: number; failed: number; skipped: number }> {
+  if (!process.env.RESEND_API_KEY) return { sent: 0, failed: 0, skipped: jobs.length }
+  const real = jobs.filter((j) => j.to && !PLACEHOLDER_RECIPIENT.test(j.to))
   let sent = 0
   let failed = 0
-  let cursor = 0
+  const skipped = jobs.length - real.length
+  if (real.length === 0) return { sent, failed, skipped }
 
-  async function worker() {
-    while (cursor < jobs.length) {
-      const job = jobs[cursor++]
-      try {
-        const result = await sendEmail(job)
-        if (result.success) sent++
-        else failed++
-      } catch {
-        failed++
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+  for (let i = 0; i < real.length; i += BATCH_MAX) {
+    const chunk = real.slice(i, i + BATCH_MAX)
+    try {
+      // 'permissive': one bad address is reported, not a reason to reject the
+      // other 99. Default 'strict' would fail the whole chunk.
+      const { data, error } = await resend.batch.send(chunk.map(toResendPayload), { batchValidation: 'permissive' })
+      if (!error) {
+        const ok = data?.data?.length ?? chunk.length
+        sent += ok
+        failed += chunk.length - ok
+        continue
       }
+      console.error('[sendEmailBatch] batch call failed, falling back to sequential:', error)
+    } catch (err) {
+      console.error('[sendEmailBatch] batch call threw, falling back to sequential:', err)
+    }
+    // Fallback: sequential at ~2/s, one retry on a rate-limit response.
+    for (const job of chunk) {
+      let result = await sendEmail(job)
+      if (!result.success && /rate|429/i.test(String((result.error as { message?: string } | undefined)?.message ?? result.error))) {
+        await sleep(1100)
+        result = await sendEmail(job)
+      }
+      if (result.success) sent++
+      else failed++
+      await sleep(550)
     }
   }
-
-  const workers = Math.min(concurrency, jobs.length)
-  await Promise.all(Array.from({ length: workers }, () => worker()))
-  return { sent, failed }
+  return { sent, failed, skipped }
 }
