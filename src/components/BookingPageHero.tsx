@@ -19,6 +19,7 @@ export default function BookingPageHero({
   orgLogo,
   orgHeroImage,
   primaryColor,
+  trialHref,
   totalPlayers,
   totalSessions,
   totalClasses,
@@ -29,6 +30,10 @@ export default function BookingPageHero({
   orgLogo?: string | null
   orgHeroImage?: string | null
   primaryColor: string
+  /** Where "Book Your Trial" goes. The page passes the class list when the
+   *  academy prices every trial, so the hero never sends anyone to a page
+   *  headed "Free". Defaults to the quick-trial form. */
+  trialHref?: string
   totalPlayers: number
   totalSessions: number
   totalClasses: number
@@ -195,7 +200,7 @@ export default function BookingPageHero({
             Join Now &rarr;
           </Link>
           <Link
-            href={`/book/${slug}/trial/quick`}
+            href={trialHref ?? `/book/${slug}/trial/quick`}
             className="inline-block px-7 py-3.5 sm:px-10 sm:py-4 rounded-full text-base sm:text-lg font-extrabold bg-white text-[#0a0a0a] transition-all hover:scale-[1.05] active:scale-[0.98] hover:shadow-2xl"
           >
             Book Your Trial

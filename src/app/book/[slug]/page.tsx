@@ -226,6 +226,26 @@ export default async function PublicBookingPage({
   const trialWord = 'Trial'
   const trialCtaShort = 'Book Trial'
 
+  // Does this academy actually offer a FREE trial on any class? Only classes
+  // with no trial price (and not a paid-only type) qualify. If none do, every
+  // trial link on this page goes to the class list — where each class shows
+  // its real trial price — and nothing here says or implies "free". An
+  // academy pricing every trial at £2.50 was previously sent to a page
+  // headed "100% Free · Book a Free Trial".
+  const PAID_ONLY_TRIAL_TYPES = ['1-2-1', '2-1', 'intensity']
+  const trialPrices = (groups || []).map((g) => Number((g as { trial_price?: number | null }).trial_price ?? 0))
+  const offersFreeTrial = (groups || []).some(
+    (g, i) => trialPrices[i] <= 0 && !PAID_ONLY_TRIAL_TYPES.includes(((g as { class_type?: string | null }).class_type as string) || ''),
+  )
+  const paidTrialPrices = trialPrices.filter((p) => p > 0)
+  const minTrialPrice = paidTrialPrices.length ? Math.min(...paidTrialPrices) : null
+  const trialHref = offersFreeTrial ? `/book/${slug}/trial/quick` : '#classes'
+  const trialSubtitle = offersFreeTrial
+    ? 'No account needed. Takes 20 seconds to book.'
+    : minTrialPrice != null
+      ? `Trial sessions from £${minTrialPrice % 1 === 0 ? minTrialPrice : minTrialPrice.toFixed(2)} — pick a class below and choose "Trial".`
+      : 'Pick a class below to book a trial session.'
+
   // Class-card capacity counts include 'pending' (Stage 3 future-start) so
   // the seat is reserved at signup even before billing activates. Booking
   // gate enforces activates_on separately so this doesn't over-grant access.
@@ -546,6 +566,7 @@ export default async function PublicBookingPage({
         orgLogo={org.logo_url as string | null}
         orgHeroImage={org.hero_image_url as string | null}
         primaryColor={primaryColor as string}
+        trialHref={trialHref}
         totalPlayers={Math.max(parentCount || 0, anonVisiblePlayers)}
         totalSessions={sessionCount || 0}
         totalClasses={(groups || []).length}
@@ -573,7 +594,7 @@ export default async function PublicBookingPage({
         {/* Trial CTA Banner — neutral copy, never implies free/no-payment */}
         <section>
           <Link
-            href={`/book/${slug}/trial/quick`}
+            href={trialHref}
             className="group block relative overflow-hidden rounded-2xl border-2 p-4 sm:p-6 transition-all hover:scale-[1.01] hover:shadow-xl"
             style={{ borderColor: '#10b981', background: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' }}
           >
@@ -587,7 +608,7 @@ export default async function PublicBookingPage({
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">New</span>
                 </div>
                 <h3 className="text-base sm:text-xl font-extrabold">Book a {trialWord} Session</h3>
-                <p className="text-white/70 text-xs sm:text-sm mt-0.5">No account needed. Takes 20 seconds to book.</p>
+                <p className="text-white/70 text-xs sm:text-sm mt-0.5">{trialSubtitle}</p>
               </div>
               <div className="shrink-0 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
                 {trialCtaShort} &rarr;
@@ -621,7 +642,7 @@ export default async function PublicBookingPage({
             confused parents with prices that didn't match individual classes. */}
 
         <section>
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
+          <h2 id="classes" className="scroll-mt-24 text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
           <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Our regular training schedule</p>
           {useGroupedView ? (
             <GroupedClassList groups={programmeGroups} primaryColor={primaryColor} slug={slug} />
@@ -819,7 +840,7 @@ export default async function PublicBookingPage({
             <span className="text-2xl sm:text-3xl block mb-2">&#9917;</span>
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">Not sure yet? Book a trial session.</h2>
             <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-5 max-w-md mx-auto">See if it&apos;s the right fit for your child — no commitment needed.</p>
-            <Link href={`/book/${slug}/trial/quick`} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book a {trialWord} &rarr;</Link>
+            <Link href={trialHref} className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: 'white', color: '#0a0a0a' }}>Book a {trialWord} &rarr;</Link>
           </div>
         </section>
 
@@ -895,7 +916,7 @@ export default async function PublicBookingPage({
           <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Sign up today and book your child&apos;s first class</p>
           <div className="flex flex-wrap gap-3 justify-center items-center">
             <Link href={`/auth/signup?org=${slug}`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base text-white transition-transform hover:scale-105" style={{ backgroundColor: primaryColor }}>Sign Up Free</Link>
-            <Link href={`/book/${slug}/trial/quick`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a {trialWord}</Link>
+            <Link href={trialHref} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a {trialWord}</Link>
             <EnquiryButton orgId={org.id} academyName={org.name} primaryColor={primaryColor} />
           </div>
           {(org.contact_email || org.contact_phone) && (

@@ -1,108 +1,23 @@
-// Auth-contamination fix — fully public read surface. Use the
-// pure-anon client so a logged-in cross-org viewer sees the same trial
-// form as an anon viewer. The TrialBookingForm itself handles the
-// anon INSERT separately (protected system #5 — untouched).
-// See src/lib/supabase/public.ts.
-import { createPublicClient } from '@/lib/supabase/public'
-import { headers } from 'next/headers'
-import TrialBookingForm from './TrialBookingForm'
+import { redirect } from 'next/navigation'
 
+// Legacy route. Nothing links here any more, but it still rendered a
+// "Book a Free Trial" form for every academy — priced trials or not. The
+// quick-trial page knows whether this academy actually offers a free one
+// and sends the parent to the class list if it doesn't. Hand off to it,
+// keeping any UTM params so trial-source attribution survives.
 export default async function TrialBookingPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{
-    utm_source?: string
-    utm_medium?: string
-    utm_campaign?: string
-  }>
+  searchParams: Promise<Record<string, string | undefined>>
 }) {
   const { slug } = await params
-  const { utm_source: utmSource, utm_medium: utmMedium, utm_campaign: utmCampaign } = await searchParams
-  const supabase = createPublicClient()
-  // Sprint 5 — server-only signals (Referer header + URL UTM) passed
-  // as props to the client form. See trial-source-derive.ts for the
-  // priority chain that combines these with the dropdown.
-  const requestHeaders = await headers()
-  const refererHeader = requestHeaders.get('referer') || requestHeaders.get('referrer') || null
-
-  const { data: org } = await supabase
-    .from('organisations')
-    .select('id, name, primary_color, description, meta_pixel_id')
-    .ilike('slug', slug)
-    .single()
-
-  if (!org) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Academy Not Found</h1>
-          <p className="text-text-light">This booking page doesn&apos;t exist.</p>
-        </div>
-      </div>
-    )
+  const sp = await searchParams
+  const qs = new URLSearchParams()
+  for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'class']) {
+    if (sp[k]) qs.set(k, sp[k] as string)
   }
-
-  const { data: allGroups } = await supabase
-    .from('training_groups')
-    .select('id, name, day_of_week, time_slot, trial_price, class_type')
-    .eq('organisation_id', org.id)
-    .eq('is_published', true) // migration 103 — hide unpublished classes
-    .order('name')
-
-  // This page is the FREE-trial form — paid-trial classes (£15 1-2-1s) and
-  // inherently-paid class types (1-2-1 / 2-1 / intensity) must never appear,
-  // even if the academy forgot to set a trial_price.
-  const PAID_ONLY_TYPES = ['1-2-1', '2-1', 'intensity']
-  const groups = (allGroups || []).filter(g =>
-    Number(g.trial_price ?? 0) <= 0 &&
-    !PAID_ONLY_TYPES.includes((g.class_type as string) || '')
-  )
-
-  const primaryColor = org.primary_color || '#4ecde6'
-
-  return (
-    <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
-      {/* Hero */}
-      <div
-        className="py-16 px-6 text-center text-white"
-        style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor}33 100%)` }}
-      >
-        <div className="max-w-xl mx-auto">
-          <span
-            className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
-            style={{ backgroundColor: `${primaryColor}22`, color: primaryColor, border: `1px solid ${primaryColor}44` }}
-          >
-            FREE TRIAL
-          </span>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">{org.name}</h1>
-          <p className="text-white/70">
-            Book a free taster session for your child. No commitment, no payment — just come and try!
-          </p>
-        </div>
-      </div>
-
-      {/* Form */}
-      <div className="max-w-lg mx-auto px-6 -mt-4 pb-16">
-        <TrialBookingForm
-          metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}
-          orgId={org.id}
-          groups={(groups || []).map((g) => ({
-            id: g.id,
-            name: g.name,
-            day: g.day_of_week,
-            time: g.time_slot,
-          }))}
-          primaryColor={primaryColor}
-          slug={slug}
-          academyName={org.name}
-          utmSource={utmSource ?? null}
-          utmMedium={utmMedium ?? null}
-          utmCampaign={utmCampaign ?? null}
-          referer={refererHeader}
-        />
-      </div>
-    </div>
-  )
+  const suffix = qs.toString() ? `?${qs.toString()}` : ''
+  redirect(`/book/${slug}/trial/quick${suffix}`)
 }

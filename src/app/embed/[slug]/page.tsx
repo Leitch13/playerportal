@@ -116,13 +116,15 @@ export default async function EmbedBookingPage({
           >
             View Full Page
           </a>
+          {/* Never promise "free" from the embed — the academy may price its
+              trials. The full page works out free vs paid per class. */}
           <a
             href={`${baseUrl}/book/${slug}/trial/quick`}
             target="_blank"
             rel="noopener noreferrer"
             style={{ display: 'inline-block', padding: '10px 24px', borderRadius: 999, fontSize: 14, fontWeight: 700, border: `2px solid ${primaryColor}`, color: primaryColor, textDecoration: 'none', backgroundColor: 'transparent' }}
           >
-            Free Trial
+            Book a Trial
           </a>
         </div>
       </div>

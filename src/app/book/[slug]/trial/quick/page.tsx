@@ -91,6 +91,16 @@ export default async function QuickTrialPage({
     g => Number(g.trial_price ?? 0) <= 0 && !isPaidOnlyType(g)
   )
 
+  // No class offers a free trial → this page must not exist for this
+  // academy. It used to render "100% Free · Book a Free Trial" with an empty
+  // class picker and still accept the booking ("Any available class"), so an
+  // academy that prices every trial at £2.50 was advertising free ones and
+  // collecting class-less bookings. Send the parent to the class list, where
+  // each class shows its real trial price.
+  if (groups.length === 0) {
+    redirect(`/book/${slug}#classes`)
+  }
+
   const primaryColor = org.primary_color || '#4ecde6'
 
   return (
