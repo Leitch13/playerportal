@@ -77,6 +77,22 @@ export default async function CampsListingPage({
 
   const primaryColor = org.primary_color || '#4ecde6'
 
+  // Seats taken per camp (pending + paid, matching the camp page and the
+  // checkout's capacity check). The card used to show nothing about
+  // availability — a full camp looked bookable until you clicked in.
+  const takenByCamp = new Map<string, number>()
+  const campIds = ((camps || []) as Camp[]).map((c) => c.id)
+  if (campIds.length > 0) {
+    const { data: taken } = await supabase
+      .from('camp_bookings')
+      .select('camp_id')
+      .in('camp_id', campIds)
+      .in('payment_status', ['pending', 'paid'])
+    for (const row of (taken || []) as { camp_id: string }[]) {
+      takenByCamp.set(row.camp_id, (takenByCamp.get(row.camp_id) || 0) + 1)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Hero */}
@@ -186,25 +202,45 @@ export default async function CampsListingPage({
                       <div className="text-sm text-white/45">📍 {camp.location}</div>
                     )}
 
-                    <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
-                      {displayPrice != null && (
-                        <span className="flex items-baseline gap-1.5">
-                          <span className="text-2xl font-extrabold" style={{ color: primaryColor }}>
-                            &pound;{displayPrice.toFixed(0)}
-                          </span>
-                          {isEarlyBird && camp.price != null && (
-                            <span className="text-sm text-white/30 line-through">&pound;{Number(camp.price).toFixed(0)}</span>
+                    {(() => {
+                      const cap = camp.max_capacity ?? null
+                      const left = cap != null ? Math.max(0, cap - (takenByCamp.get(camp.id) || 0)) : null
+                      const isFull = left !== null && left <= 0
+                      return (
+                        <>
+                          {left !== null && (
+                            <div className={`text-xs font-semibold ${isFull ? 'text-red-300' : left <= 5 ? 'text-amber-300' : 'text-white/45'}`}>
+                              {isFull ? 'Fully booked' : `${left} place${left === 1 ? '' : 's'} left`}
+                            </div>
                           )}
-                          <span className="text-xs font-normal text-white/40">/ week</span>
-                        </span>
-                      )}
-                      <span
-                        className="px-4 py-2 rounded-full text-sm font-bold transition-transform group-hover:scale-105"
-                        style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
-                      >
-                        Book Now &rarr;
-                      </span>
-                    </div>
+                          <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.06]">
+                            {displayPrice != null && (
+                              <span className="flex items-baseline gap-1.5">
+                                <span className="text-2xl font-extrabold" style={{ color: primaryColor }}>
+                                  &pound;{displayPrice.toFixed(0)}
+                                </span>
+                                {isEarlyBird && camp.price != null && (
+                                  <span className="text-sm text-white/30 line-through">&pound;{Number(camp.price).toFixed(0)}</span>
+                                )}
+                                <span className="text-xs font-normal text-white/40">/ week</span>
+                              </span>
+                            )}
+                            {isFull ? (
+                              <span className="px-4 py-2 rounded-full text-sm font-bold bg-white/10 text-white/60">
+                                Full &middot; join waitlist
+                              </span>
+                            ) : (
+                              <span
+                                className="px-4 py-2 rounded-full text-sm font-bold transition-transform group-hover:scale-105"
+                                style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
+                              >
+                                Book Now &rarr;
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </Link>
               )

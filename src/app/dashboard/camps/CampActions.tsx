@@ -136,7 +136,26 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
       const { data: camp } = await supabase.from('camps').select('*').eq('id', campId).single()
       if (camp) {
         const { id: _id, created_at: _ca, ...rest } = camp
-        await supabase.from('camps').insert({ ...rest, name: campName + ' (Copy)', is_published: false })
+        const { data: copy, error: copyErr } = await supabase
+          .from('camps')
+          .insert({ ...rest, name: campName + ' (Copy)', is_published: false })
+          .select('id')
+          .single()
+        if (copyErr || !copy) throw copyErr || new Error('copy failed')
+        // A per-day camp is its days. Duplicating the camp without them
+        // produced a camp with nothing bookable; the days are copied
+        // verbatim (same dates, prices, caps) for the academy to edit.
+        const { data: days } = await supabase
+          .from('camp_days')
+          .select('date, price, max_capacity, is_available, sort_order')
+          .eq('camp_id', campId)
+          .order('sort_order')
+        if (days && days.length > 0) {
+          const { error: daysErr } = await supabase
+            .from('camp_days')
+            .insert(days.map((d) => ({ ...d, camp_id: copy.id })))
+          if (daysErr) console.error('[camp duplicate] days not copied', daysErr.message)
+        }
         router.refresh()
       }
     } finally {

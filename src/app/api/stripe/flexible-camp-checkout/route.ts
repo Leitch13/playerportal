@@ -270,8 +270,25 @@ export async function POST(request: NextRequest) {
     // Early-bird pricing is a whole-camp concept (single price) and is
     // deliberately NOT applied to flexible bookings. Only the sibling
     // discount ports over.
+    // The tickbox is client-side and was honoured on its own — a parent with
+    // one child got 10% off by ticking it. Same rule as the whole-camp route:
+    // a sibling discount needs a sibling, i.e. a DIFFERENT child of this
+    // parent already pending or paid on this camp. Trimmed comparison —
+    // older rows carry trailing spaces in child_name.
+    let siblingEligible = false
+    if (siblingDiscount) {
+      const thisKid = childName.trim().toLowerCase()
+      const { data: familyRows } = await supabase
+        .from('camp_bookings')
+        .select('child_name')
+        .eq('camp_id', campId)
+        .ilike('parent_email', parentEmail.trim())
+        .in('payment_status', ['pending', 'paid'])
+      siblingEligible = ((familyRows || []) as { child_name: string | null }[])
+        .some((r) => (r.child_name || '').trim().toLowerCase() !== thisKid)
+    }
     let discountAmount = 0
-    if (siblingDiscount && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
+    if (siblingDiscount && siblingEligible && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
       discountAmount = grossTotal * (Number(camp.sibling_discount_percent) / 100)
     }
 

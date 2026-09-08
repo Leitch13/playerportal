@@ -291,7 +291,13 @@ export async function POST(
   }
 
   // ─── Update camp_bookings if linked (camp refunds only — frees the seat) ───
-  if (kind === 'camp') {
+  // Only a FULL refund gives the seat back. A partial refund — a missed day,
+  // a goodwill £20 — leaves the child on the roster; flipping the booking to
+  // 'refunded' on any amount was dropping children off camps they were
+  // still attending.
+  const paidPence = Math.round(Number(payment.amount ?? 0) * 100)
+  const isFullRefund = paidPence > 0 && refundAmount >= paidPence
+  if (kind === 'camp' && isFullRefund) {
     try {
       await service
         .from('camp_bookings')
