@@ -10,6 +10,17 @@ Live production: `www.theplayerportal.net` (also aliased: `theplayerportal.net`,
 
 ---
 
+## 2026-09-08 (evening)
+
+### `261618c` — feat(ascend): live calculator on the front door, gated takeaway, leads carry real numbers
+- **Deployment id**: `dpl_DQQxcwcrNhKPmwn9GEg8gfuGAZXn`
+- **Deployment URL**: https://www.theplayerportal.net/ascend (production alias; CLI log stream dropped with EPIPE mid-build, deployment completed server-side and was verified by route probe)
+- **Purpose**: ASCEND funnel audit found the front door promised "see your number in 2 minutes" and delivered a signup form; the old Netlify calculator page blurred the tool behind an email gate, carried a dead `REPLACE_WITH_BOOKING_LINK` CTA and a stale £50 price. `/ascend` now renders the Coaching Business Calculator live (no gate), adds a sessions-per-week field so the monthly gap the ads quote is on screen, moves the email gate to the takeaway (8-page Pricing Calculator guide + John's reply), and sends the visitor's numbers with the lead — alert subject shows the monthly gap. Lead endpoint accepts `source=offers-bank` (Meta instant form → Zapier) and delivers the hosted Offers Bank PDF. `Lead` pixel event fires on submit (consent-gated), matching `/start`. £50 → "from £100/mo"; header + footer link to the mentorship site.
+- **Files**: `src/app/ascend/{page,AscendForm,AscendCalculator}.tsx`, `src/app/api/ascend/lead/route.ts`, `public/ascend/{pricing-calculator-guide,offers-bank}.pdf`
+- **Protected system touched**: none. `src/lib/email.ts` unchanged; this is John's own marketing capture route (no tenant data, no schema).
+- **Verification**: `/ascend` 200 with the new copy; both PDFs 200; production POST with `source=calculator` + numbers → `{"ok":true}` and the alert arrived at john@theplayerportal.net with the numbers block.
+- **Rollback**: `git revert 261618c && vercel deploy --prod`
+
 ## 2026-09-03
 
 ### `7158e4d` — feat(camps): photo and video consent on camp bookings (migration 111)
