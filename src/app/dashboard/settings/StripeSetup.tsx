@@ -15,6 +15,9 @@ export default function StripeSetup() {
   const [loading, setLoading] = useState(true)
   const [connecting, setConnecting] = useState(false)
   const [connectError, setConnectError] = useState<string | null>(null)
+  // Email the Standard account is registered under — shown after "Open my
+  // Stripe Dashboard" so the owner knows which login Stripe wants.
+  const [stripeLoginEmail, setStripeLoginEmail] = useState<string | null>(null)
 
   useEffect(() => {
     fetchConnectStatus()
@@ -151,13 +154,20 @@ export default function StripeSetup() {
           </p>
           <button
             onClick={async () => {
+              // Standard accounts (every academy) have their own Stripe login —
+              // the route sends us to dashboard.stripe.com and tells us which
+              // email the account is registered under, so the owner isn't left
+              // guessing at a login screen. Previously this silently did nothing.
+              let url = 'https://dashboard.stripe.com'
               try {
                 const res = await fetch('/api/stripe/connect/dashboard', { method: 'POST' })
                 const data = await res.json()
-                if (data.url) window.open(data.url, '_blank')
+                if (data.url) url = data.url
+                if (data.loginEmail) setStripeLoginEmail(data.loginEmail)
               } catch {
-                window.open('https://dashboard.stripe.com', '_blank')
+                /* fall through to the plain dashboard URL */
               }
+              window.open(url, '_blank', 'noopener')
             }}
             className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#635BFF] text-white hover:opacity-90 transition-all inline-flex items-center gap-2"
           >
@@ -166,6 +176,9 @@ export default function StripeSetup() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </button>
+          <p className="text-xs text-[#93a2ba]">
+            Stripe will ask you to log in{stripeLoginEmail ? <> — your account is registered under <span className="font-semibold text-[#0f1a2b]">{stripeLoginEmail}</span></> : ''}. Never set a password? Use <span className="font-semibold">Forgot password</span> on that email.
+          </p>
         </div>
       )}
     </div>
