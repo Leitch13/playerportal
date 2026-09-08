@@ -1,6 +1,7 @@
 // Auth-contamination fix — fully public read surface. Pure-anon client
 // only; see src/lib/supabase/public.ts.
 import { createPublicClient } from '@/lib/supabase/public'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 
 type Camp = {
@@ -80,10 +81,16 @@ export default async function CampsListingPage({
   // Seats taken per camp (pending + paid, matching the camp page and the
   // checkout's capacity check). The card used to show nothing about
   // availability — a full camp looked bookable until you clicked in.
+  // Counted with the service role: camp_bookings is locked to staff and the
+  // booking parent (077b), so the anon client sees zero rows and every camp
+  // read as wide open. Only camp_id leaves the query — no booking data.
   const takenByCamp = new Map<string, number>()
   const campIds = ((camps || []) as Camp[]).map((c) => c.id)
   if (campIds.length > 0) {
-    const { data: taken } = await supabase
+    const svc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+    const { data: taken } = await svc
       .from('camp_bookings')
       .select('camp_id')
       .in('camp_id', campIds)

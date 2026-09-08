@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 // reuse-of-details), and their own children list.
 // See src/lib/supabase/public.ts.
 import { createPublicClient } from '@/lib/supabase/public'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ShareButton from './ShareButton'
@@ -186,8 +187,14 @@ export default async function CampDetailPage({
   const days = getDurationDays(c.start_date, c.end_date)
   const schedule: ScheduleDay[] = Array.isArray(c.schedule) ? c.schedule : []
 
-  // Get booking count for spots left
-  const { count: bookingCount } = await supabase
+  // Get booking count for spots left. Service role on purpose: camp_bookings
+  // is locked to staff and the booking parent (077b), so a logged-out parent
+  // — i.e. every parent on this page — counted zero and saw the full
+  // capacity as available, whatever the real number. Count only; no rows.
+  const seatSvc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const { count: bookingCount } = await seatSvc
     .from('camp_bookings')
     .select('*', { count: 'exact', head: true })
     .eq('camp_id', campId)
