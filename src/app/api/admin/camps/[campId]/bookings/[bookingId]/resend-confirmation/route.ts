@@ -54,12 +54,23 @@ export async function POST(
   // ── Pull the booking + camp + org context ──
   const { data: booking, error: bErr } = await svc
     .from('camp_bookings')
-    .select('id, camp_id, organisation_id, parent_email, parent_name, child_name, amount_paid')
+    .select('id, camp_id, organisation_id, parent_email, parent_name, child_name, amount_paid, payment_status')
     .eq('id', bookingId)
     .maybeSingle()
   if (bErr || !booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   if (booking.organisation_id !== orgId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (booking.camp_id !== campId) return NextResponse.json({ error: 'Booking does not belong to this camp' }, { status: 400 })
+
+  // A confirmation says "your booking is confirmed ✓". Sending that for a
+  // booking nobody has paid for is a lie the parent will act on — one
+  // academy did exactly this and a family turned up expecting a place that
+  // had never been paid. Unpaid bookings get a payment link instead.
+  if (booking.payment_status !== 'paid') {
+    return NextResponse.json(
+      { error: 'This booking hasn’t been paid — use “Send payment link” instead of resending a confirmation.' },
+      { status: 400 },
+    )
+  }
 
   if (!booking.parent_email || (booking.parent_email as string).endsWith('@theplayerportal.net')) {
     // Admin-added bookings without a real parent email — nothing to resend.

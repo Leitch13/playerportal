@@ -95,6 +95,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Camp is full' }, { status: 400 })
     }
 
+    // ── Duplicate guard ──────────────────────────────────────────────────
+    // The same parent booking the same child onto the same camp twice is a
+    // double-click, not a second booking. On 8 Sep 2026 a parent did exactly
+    // that: two identical rows in the same second, both unpaid, both holding
+    // a seat. The flexible-camp route has had this guard since July; this one
+    // did not. If the earlier booking is still unpaid, hand back its live
+    // checkout link rather than minting another.
+    const parentEmailNorm = String(parentEmail).trim().toLowerCase()
+    const childNameNorm = String(childName).trim()
+    const sameKid = (a: string | null | undefined) => (a || '').trim().toLowerCase() === childNameNorm.toLowerCase()
+    // Older rows carry trailing spaces in child_name ("Brody Anderson "), so
+    // compare in code after trimming rather than with a DB equality filter.
+    const { data: parentRows } = await supabase
+      .from('camp_bookings')
+      .select('id, child_name, payment_status, stripe_session_id, created_at')
+      .eq('camp_id', campId)
+      .ilike('parent_email', parentEmailNorm)
+      .in('payment_status', ['pending', 'paid'])
+      .order('created_at', { ascending: false })
+    const rows = (parentRows || []) as { id: string; child_name: string | null; payment_status: string; stripe_session_id: string | null }[]
+    const prior = rows.find((r) => sameKid(r.child_name))
+    if (prior?.payment_status === 'paid') {
+      return NextResponse.json(
+        { error: `${childNameNorm} is already booked onto this camp and paid for. If you want to add another child, enter their name.` },
+        { status: 409 },
+      )
+    }
+    if (prior?.payment_status === 'pending' && prior.stripe_session_id) {
+      try {
+        const existing = await stripe.checkout.sessions.retrieve(prior.stripe_session_id)
+        if (existing.status === 'open' && existing.url) {
+          // Same booking, same link — no second row, no second seat.
+          return NextResponse.json({ url: existing.url, bookingId: prior.id, resumed: true })
+        }
+      } catch {
+        /* stale session id — fall through and create a fresh booking */
+      }
+    }
+
+    // ── Sibling discount is for siblings ────────────────────────────────
+    // The tickbox is client-side; a parent with one child on the camp was
+    // ticking it and getting 10% off. Honour it only when this parent already
+    // has ANOTHER child (a different name) booked or paid on this camp.
+    const siblingEligible = Boolean(siblingDiscount) && rows.some((r) => !sameKid(r.child_name))
+
     // Calculate price
     let price = Number(camp.price) || 0
     const today = new Date().toISOString().split('T')[0]
@@ -104,8 +149,8 @@ export async function POST(request: NextRequest) {
       price = Number(camp.early_bird_price)
     }
 
-    // Apply sibling discount if applicable
-    if (siblingDiscount && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
+    // Apply sibling discount only when a sibling actually exists on this camp
+    if (siblingDiscount && siblingEligible && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
       price = price * (1 - Number(camp.sibling_discount_percent) / 100)
     }
 
@@ -154,10 +199,10 @@ export async function POST(request: NextRequest) {
       .insert({
         camp_id: campId,
         organisation_id: organisationId,
-        parent_name: parentName,
-        parent_email: parentEmail,
+        parent_name: String(parentName).trim(),
+        parent_email: parentEmailNorm,
         parent_phone: parentPhone || null,
-        child_name: childName,
+        child_name: childNameNorm,
         child_age: derivedAge,
         child_dob: childDob || null,
         medical_info: medicalInfo || null,

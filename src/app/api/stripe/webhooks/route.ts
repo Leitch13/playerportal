@@ -398,7 +398,22 @@ async function convertLeadToEnrolled(orgId: string | null, email: string | null 
  */
 async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
   if (session.metadata?.type === 'platform_subscription') return
-  if (session.metadata?.camp_booking_id) return
+  if (session.metadata?.camp_booking_id) {
+    // An abandoned camp checkout used to leave its 'pending' row behind for
+    // ever — on the roster, counted against capacity, chased by nobody. A
+    // camp with one real booking showed 25 of 30 seats left. When Stripe
+    // says the session has expired, the seat is free: mark the booking
+    // cancelled (only if it is still pending — a later paid session on the
+    // same row must never be undone). Nothing is deleted.
+    const { error } = await supabase
+      .from('camp_bookings')
+      .update({ payment_status: 'cancelled' })
+      .eq('id', session.metadata.camp_booking_id)
+      .eq('payment_status', 'pending')
+      .eq('stripe_session_id', session.id)
+    if (error) console.error('[webhook:camp_checkout_expired] could not release seat', session.metadata.camp_booking_id, error.message)
+    return
+  }
 
   let orgId: string | null = session.metadata?.supabase_org_id || null
   let email: string | null = session.customer_email || session.metadata?.parent_email || null

@@ -230,6 +230,39 @@ export default function RosterClient({
     URL.revokeObjectURL(url)
   }
 
+  // ─── Unpaid-booking actions: send a payment link, or remove the row ───
+  const [linkingId, setLinkingId] = useState<string | null>(null)
+  const [linkResult, setLinkResult] = useState<Record<string, 'ok' | 'fail'>>({})
+  const [removingId, setRemovingId] = useState<string | null>(null)
+
+  async function sendPaymentLink(bookingId: string) {
+    setLinkingId(bookingId)
+    try {
+      const res = await fetch(`/api/admin/camps/${campId}/bookings/${bookingId}/payment-link`, { method: 'POST' })
+      const json = await res.json().catch(() => ({}))
+      const ok = res.ok && (json as { ok?: boolean }).ok
+      setLinkResult((m) => ({ ...m, [bookingId]: ok ? 'ok' : 'fail' }))
+      if (!ok && (json as { error?: string }).error) alert((json as { error?: string }).error)
+    } catch {
+      setLinkResult((m) => ({ ...m, [bookingId]: 'fail' }))
+    }
+    setLinkingId(null)
+  }
+
+  async function removeBooking(b: CampRosterBooking) {
+    if (!confirm(`Remove ${b.child_name}'s unpaid booking? The seat is freed and any payment link they were sent stops working. This can't be undone.`)) return
+    setRemovingId(b.id)
+    try {
+      const res = await fetch(`/api/admin/camps/${campId}/bookings/${b.id}`, { method: 'DELETE' })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) { alert((json as { error?: string }).error || 'Could not remove booking'); setRemovingId(null); return }
+      window.location.reload()
+    } catch {
+      alert('Could not remove booking')
+      setRemovingId(null)
+    }
+  }
+
   // ─── Resend per-row ───
   async function resendConfirmation(bookingId: string) {
     setResendingId(bookingId)
@@ -547,6 +580,37 @@ export default function RosterClient({
                               className="px-2 py-1 rounded-md text-[11px] font-semibold bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-colors"
                             >
                               Move
+                            </button>
+                          )}
+
+                          {/* Unpaid bookings: chase it, or clear it. Neither exists for
+                              paid rows — those go through Refund. */}
+                          {b.payment_status === 'pending' && b.parent_email && !b.parent_email.endsWith('@theplayerportal.net') && (
+                            <button
+                              type="button"
+                              disabled={linkingId === b.id}
+                              onClick={() => sendPaymentLink(b.id)}
+                              title={linkResult[b.id] === 'ok' ? 'Payment link emailed' : linkResult[b.id] === 'fail' ? 'Failed — retry' : 'Email the parent a payment link for this booking'}
+                              data-testid="camp-roster-row-paylink"
+                              className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors ${
+                                linkResult[b.id] === 'ok' ? 'bg-emerald-500/15 text-emerald-300'
+                                : linkResult[b.id] === 'fail' ? 'bg-red-500/15 text-red-300 hover:bg-red-500/25'
+                                : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                              } disabled:opacity-50`}
+                            >
+                              {linkingId === b.id ? 'Sending…' : linkResult[b.id] === 'ok' ? 'Link sent ✓' : 'Send payment link'}
+                            </button>
+                          )}
+                          {callerIsAdmin && b.payment_status === 'pending' && (
+                            <button
+                              type="button"
+                              disabled={removingId === b.id}
+                              onClick={() => removeBooking(b)}
+                              title="Remove this unpaid booking and free the seat"
+                              data-testid="camp-roster-row-remove"
+                              className="px-2 py-1 rounded-md text-[11px] font-semibold bg-white/5 text-white/50 hover:bg-red-500/15 hover:text-red-300 transition-colors disabled:opacity-50"
+                            >
+                              {removingId === b.id ? 'Removing…' : 'Remove'}
                             </button>
                           )}
                         </div>
