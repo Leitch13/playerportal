@@ -56,6 +56,7 @@ export default async function SettingsPage() {
         primary_color: org.primary_color || '#4ecde6',
         logo_url: org.logo_url || '',
         hero_image_url: org.hero_image_url || '',
+        hero_image_mobile_url: org.hero_image_mobile_url || '',
         google_review_url: org.google_review_url || '',
         meta_pixel_id: org.meta_pixel_id ?? null,
         sibling_discount_enabled: !!org.sibling_discount_enabled,

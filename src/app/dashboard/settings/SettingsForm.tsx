@@ -22,6 +22,7 @@ interface OrgData {
   primary_color: string
   logo_url: string
   hero_image_url: string
+  hero_image_mobile_url: string
   google_review_url: string
   meta_pixel_id: string | null
   sibling_discount_enabled: boolean
@@ -66,7 +67,7 @@ export default function SettingsForm({
   const [form, setForm] = useState<OrgData>(org || {
     id: '', name: '', slug: '', description: '', contact_email: '',
     contact_phone: '', location: '', primary_color: '#4ecde6',
-    logo_url: '', hero_image_url: '', google_review_url: '', meta_pixel_id: null,
+    logo_url: '', hero_image_url: '', hero_image_mobile_url: '', google_review_url: '', meta_pixel_id: null,
     sibling_discount_enabled: false, sibling_discount_percent: 10,
     quarterly_billing_enabled: true, quarterly_discount_percent: 10,
     retention_offer_enabled: true, retention_offer_percent: 50, retention_offer_months: 1,
@@ -292,8 +293,35 @@ export default function SettingsForm({
                 </details>
                 <p className="text-[11px] text-white/30 mt-1.5">Remember to hit Save Branding.</p>
               </div>
+              {/* Phones crop the hero to a near-square, centred box. A wide
+                  banner with the action at its edges (Rosa Sports) shows only
+                  its empty middle there. An optional portrait crop fixes that
+                  without touching the desktop image; unset, phones keep using
+                  the main hero exactly as before. */}
+              <div>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Hero Image for phones <span className="text-white/35 font-normal">(optional)</span></label>
+                <FileUpload
+                  bucketName="branding"
+                  folder="heroes"
+                  accept="image/png,image/jpeg,image/webp"
+                  currentUrl={form.hero_image_mobile_url}
+                  onUpload={(url) => setForm({ ...form, hero_image_mobile_url: url })}
+                />
+                <p className="text-[11px] text-white/30 mt-1.5">
+                  Phones show a tall, narrow slice of the hero, so a wide banner can lose its subject. Upload a portrait crop (roughly 4:5) with the player in the middle. Leave empty to use the main hero.
+                </p>
+                {form.hero_image_mobile_url && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, hero_image_mobile_url: '' })}
+                    className="text-[11px] text-white/40 hover:text-white/70 mt-1.5 underline"
+                  >
+                    Remove phone image
+                  </button>
+                )}
+              </div>
               <button
-                onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url })}
+                onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url, hero_image_mobile_url: form.hero_image_mobile_url })}
                 disabled={saving}
                 className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all"
               >

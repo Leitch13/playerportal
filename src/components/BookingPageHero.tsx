@@ -18,6 +18,7 @@ export default function BookingPageHero({
   orgDescription,
   orgLogo,
   orgHeroImage,
+  orgHeroImageMobile,
   primaryColor,
   trialHref,
   totalPlayers,
@@ -29,6 +30,8 @@ export default function BookingPageHero({
   orgDescription?: string | null
   orgLogo?: string | null
   orgHeroImage?: string | null
+  /** Optional portrait crop shown under the sm breakpoint instead of orgHeroImage. */
+  orgHeroImageMobile?: string | null
   primaryColor: string
   /** Where "Book Your Trial" goes. The page passes the class list when the
    *  academy prices every trial, so the hero never sends anyone to a page
@@ -96,7 +99,16 @@ export default function BookingPageHero({
           neutral bottom scrim so the title and buttons stay legible on any image. */}
       {orgHeroImage && (
         <>
-          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${orgHeroImage})` }} />
+          {/* Phones get the portrait crop when one is set; the wide image
+              stays on sm+ untouched. Without a crop, one backdrop as before. */}
+          {orgHeroImageMobile ? (
+            <>
+              <div className="absolute inset-0 bg-cover bg-center sm:hidden" style={{ backgroundImage: `url(${orgHeroImageMobile})` }} />
+              <div className="absolute inset-0 bg-cover bg-center hidden sm:block" style={{ backgroundImage: `url(${orgHeroImage})` }} />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${orgHeroImage})` }} />
+          )}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{ background: 'linear-gradient(180deg, rgba(6,6,6,0.35) 0%, rgba(6,6,6,0.45) 40%, rgba(6,6,6,0.94) 100%)' }}
