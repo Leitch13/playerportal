@@ -49,6 +49,11 @@
   </div>
 
   <form id="intakeForm" novalidate>
+    <input type="hidden" name="diagnostic_level" id="dgLevel">
+    <input type="hidden" name="diagnostic_total" id="dgTotal">
+    <input type="hidden" name="diagnostic_weakest" id="dgWeakest">
+    <input type="hidden" name="diagnostic_breakdown" id="dgBreakdown">
+    <div id="dgNote" style="margin:0 0 18px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:13.5px;color:var(--muted)"></div>
 
     <div class="fs">
       <div class="fh"><span class="n">01</span><h2>You and the academy</h2></div>
@@ -131,6 +136,20 @@ var msg = document.getElementById('msg');
 var savedNote = document.getElementById('savedNote');
 var KEY = 'ascend_intake_draft_v1';
 
+/* ---- diagnostic scores travel with the intake ---- */
+var DG = null;
+try{ DG = JSON.parse(localStorage.getItem('ascend_diagnostic_v1')); }catch(e){ DG = null; }
+if(DG && DG.weakest && DG.breakdown){
+  document.getElementById('dgLevel').value = DG.level;
+  document.getElementById('dgTotal').value = DG.total + '/150';
+  document.getElementById('dgWeakest').value = DG.weakest.key + ' - ' + DG.weakest.name + ' (' + DG.weakest.score + '/25)';
+  document.getElementById('dgBreakdown').value = Object.keys(DG.breakdown).map(function(k){ return k + ':' + DG.breakdown[k]; }).join(' ');
+  document.getElementById('dgNote').innerHTML = '<b style="color:var(--ink)">Your diagnostic goes with this.</b> ' + DG.level + ' level, ' + DG.total + '/150, weakest stage ' + DG.weakest.name + ' (' + DG.weakest.score + '/25). <a href="diagnostic.html">Redo it</a> if that\'s out of date.';
+} else {
+  DG = null;
+  document.getElementById('dgNote').innerHTML = '<b style="color:var(--ink)">No diagnostic found on this device.</b> Do the <a href="diagnostic.html">10-minute diagnostic</a> first if you can &mdash; your scores get attached to this form automatically and the call starts further along.';
+}
+
 /* ---- draft autosave ---- */
 function fields(){ return Array.prototype.slice.call(form.querySelectorAll('input,textarea,select')); }
 function saveDraft(){
@@ -154,6 +173,13 @@ fields().forEach(function(f){ f.addEventListener('input', saveDraft); f.addEvent
 /* ---- plain-text version, used for copy and for the email fallback ---- */
 function asText(){
   var out = ['ASCEND member intake', ''];
+  if(DG){
+    out.push('== Diagnostic ==');
+    out.push('Level: ' + DG.level + ' (' + DG.total + '/150)');
+    out.push('Weakest stage: ' + DG.weakest.key + ' - ' + DG.weakest.name + ' (' + DG.weakest.score + '/25)');
+    out.push('Breakdown: ' + Object.keys(DG.breakdown).map(function(k){ return k + ':' + DG.breakdown[k]; }).join(' '));
+    out.push('');
+  }
   Array.prototype.slice.call(form.querySelectorAll('.fs')).forEach(function(sec){
     out.push('== ' + sec.querySelector('h2').textContent + ' ==');
     Array.prototype.slice.call(sec.querySelectorAll('.field, .grid2 .field')).forEach(function(fl){

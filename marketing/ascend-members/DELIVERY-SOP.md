@@ -14,10 +14,17 @@ Nothing here takes long. The whole first-hour block is about 25 minutes of real 
 1. **Send the welcome email** — `WELCOME-EMAILS.md`, email 0. Personalise the first
    line with something specific from the sales call. It takes 90 seconds and it is
    the difference between "I've joined a thing" and "I've joined *John's* thing".
-2. **Send the hub link and their access code** — same email.
+2. **Send the hub link** — same email. The hub does the rest: diagnostic → "Your plan"
+   (level, weakest stage, three things this month) appears on their hub instantly; the
+   intake form carries their scores to your inbox. Reply to the intake with a 2-minute
+   Loom: "saw your scores, here's your plan" — the hub's plan section is your script.
 3. **Add them to the member list** (Resend audience / your CRM), tagged `ascend-member`
    with their join date.
-4. **Create their Drive folder** — `Members/[Academy Name]/` from the template below.
+4. **Add their email to the library folder as Viewer** — Share on
+   `John Leitch - Academy Owners Library`. Every Drive button on the site is dead for
+   them until this is done, and it has to be the Google account they'll actually use.
+   (The private per-member `Members/[Academy Name]/` folder below is optional — no such
+   folder exists in Drive yet.)
 5. **Put a 30-day reminder in your calendar**, titled with their name. This is the one
    people skip, and it's the one that catches a member going quiet.
 

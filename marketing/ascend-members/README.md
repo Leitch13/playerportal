@@ -14,8 +14,9 @@ the mentorship page) — those sell, this delivers. Different audience, differen
 |---|---|
 | `index.html` | The hub. Shows their progress and what to do next. |
 | `start-here.html` | The 30-day path — 9 steps, tickable, saved locally. |
-| `library.html` | Every resource, filed by ASCEND stage, wired to Drive. |
-| `intake.html` | Baseline numbers, so call one starts at the useful bit. |
+| `library.html` | Mirrors the Drive folders one-to-one, plus a weakest-stage lookup box. |
+| `intake.html` | Baseline numbers, so call one starts at the useful bit. Diagnostic scores attach automatically (hidden fields `diagnostic_*`). |
+| `index.html` §02 | "Your plan" — built on-device from the saved diagnostic (`ascend_diagnostic_v1`): level, six scores, three actions for the weakest stage (`PLAN` table in the script). Generic six-stages copy until a diagnostic exists. |
 | `work-with-me.html` | Booking, WhatsApp, what's included, straight answers. |
 | `diagnostic.html` | Carried over from the tools site. |
 | `pricing-calculator.html` `money-map.html` `time-audit.html` `roles-audit.html` | Carried over. |
@@ -27,20 +28,20 @@ Working docs, not part of the site: `DELIVERY-SOP.md`, `WELCOME-EMAILS.md`,
 
 ---
 
-## Before it goes live — 4 things to fill in
+## Before it goes live — 1 thing to fill in
 
-Find and replace across the folder. Nothing else is outstanding.
+Three of the original four placeholders are done. One remains.
 
 | Placeholder | Where | What it needs |
 |---|---|---|
-| `BOOKING_LINK` | ×5 | Your Calendly (or Wix Bookings) URL. Two call types would be ideal — 45-min kickoff, 30-min monthly — but one link works. |
-| `WHATSAPP_NUMBER` | ×1 | Your number in international format, digits only: `447595426746`. It slots into `https://wa.me/...`. |
-| `JOHN_EMAIL` | ×2 | The address you want members using. |
+| `BOOKING_LINK` | DONE 2026-09-09 | Wired to `https://scheduler.zoom.us/playit-loveit/johnleitchmentorship` (the same link as your READ ME FIRST doc). |
+| `WHATSAPP_NUMBER` | DONE | `wa.me/447595426746` |
+| `JOHN_EMAIL` | DONE | `johnleitch970@gmail.com` |
+| `WELCOME_VIDEO` | index.html, top of the script | Optional. Paste a YouTube / Loom / Vimeo / Drive / .mp4 link and the hub swaps the written note for your video. Empty = written note. |
 | `INTAKE_FORM_ENDPOINT` | ×1 | A new Formspree form — call it "ASCEND Member Intake". Keep it separate from the calculator form (`xjybwyqv`) so member intakes don't get lost among cold leads. |
 
 ```bash
 cd marketing/ascend-members
-grep -rl 'BOOKING_LINK' . | xargs sed -i '' 's|BOOKING_LINK|https://calendly.com/your-link|g'
 ```
 
 **The intake form does not dead-end if you skip the endpoint.** With the placeholder

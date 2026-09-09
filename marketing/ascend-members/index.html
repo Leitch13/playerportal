@@ -13,6 +13,26 @@
   .hero{padding:56px 0 40px}
   .hero .greet{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
   .hero .greet b{color:var(--cyan)}
+  .welcome{display:grid;grid-template-columns:200px 1fr;gap:22px;align-items:stretch;
+    border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:18px;margin:6px 0 22px}
+  .welcome .photo{position:relative;border-radius:12px;overflow:hidden;min-height:250px;background:var(--panel3)}
+  .welcome .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block}
+  .welcome .photo .cap{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;
+    background:linear-gradient(180deg,rgba(11,18,20,0),rgba(11,18,20,.92));font-size:12px;line-height:1.35}
+  .welcome .photo .cap b{display:block;font-size:13px}
+  .welcome .photo .cap span{color:var(--muted)}
+  .welcome .msg{display:flex;flex-direction:column;min-width:0}
+  .welcome .lbl{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:9px}
+  .welcome .video{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:16/9;border:1px solid var(--line-lit)}
+  .welcome .video iframe,.welcome .video video{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .welcome .note{font-size:15px;line-height:1.6;color:var(--ink)}
+  .welcome .note p{margin:0 0 10px}
+  .welcome .note .sig{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-top:4px}
+  .welcome .under{margin-top:12px;font-size:13px;color:var(--muted)}
+  @media (max-width:640px){
+    .welcome{grid-template-columns:1fr}
+    .welcome .photo{min-height:0;aspect-ratio:4/3}
+  }
   .nowcard{
     border:1px solid var(--cyan-dim);border-radius:16px;
     background:linear-gradient(180deg,rgba(51,227,227,.06),rgba(51,227,227,.015));
@@ -21,6 +41,21 @@
   .nowcard .lbl{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:9px}
   .nowcard h2{margin-bottom:6px}
   .nowcard p{color:var(--muted);font-size:14.5px;margin-bottom:16px;max-width:56ch}
+  .plangrid{display:grid;grid-template-columns:minmax(220px,1fr) 1.4fr;gap:18px;margin-top:6px}
+  .plangrid>div{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 20px}
+  .plangrid .lbl{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+  .pbar{display:grid;grid-template-columns:96px 1fr 44px;gap:10px;align-items:center;font-size:13px;margin-bottom:8px}
+  .pbar .track{height:8px;border-radius:4px;background:var(--panel3);overflow:hidden}
+  .pbar .fill{display:block;height:100%;background:var(--cyan-dim);border-radius:4px}
+  .pbar.low .fill{background:var(--cyan)}
+  .pbar.low .nm{color:var(--cyan);font-weight:600}
+  .pbar .v{font-family:'Space Mono',monospace;font-size:11.5px;color:var(--muted);text-align:right}
+  .plansteps ol{margin:0;padding:0 0 0 22px;display:grid;gap:12px}
+  .plansteps li{font-size:14.5px;line-height:1.5}
+  .plansteps li b{display:block}
+  .plansteps li span{color:var(--muted);font-size:13.5px}
+  .plansteps li a{font-weight:600}
+  @media (max-width:640px){ .plangrid{grid-template-columns:1fr} }
   .rhythm{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   .rh{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px}
   .rh .when{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:7px}
@@ -49,6 +84,25 @@
     <h1>Everything you need to<br>build the academy properly.</h1>
     <p class="lede">This is your home. The path below is the order things work best in &mdash; know your numbers, fix what's leaking, then build the systems so the place runs without you. Work at your pace. I'll be checking in.</p>
 
+    <div class="welcome" id="welcome">
+      <div class="photo">
+        <img src="assets/john.jpg" alt="John Leitch" loading="eager">
+        <div class="cap"><b>John Leitch</b><span>Built and sold a 350-player academy. Now I help you build yours.</span></div>
+      </div>
+      <div class="msg">
+        <div class="lbl" id="welcomeLbl">A message from John</div>
+        <div class="video" id="welcomeVideo" hidden></div>
+        <div class="note" id="welcomeNote">
+          <p>Welcome in. You've joined because something in the academy isn't working the way it should &mdash; the numbers, the leads, the hours, or all three. Good. That's exactly what this is for.</p>
+          <p>Don't try to read everything. Do the 30-day path below in order, fill in the intake so I know your academy before we speak, and book the kickoff call this week. Everything else waits until you know your numbers.</p>
+          <p>If you get stuck, message me. I'd rather hear from you on day three than day thirty.</p>
+          <p class="sig">&mdash; John</p>
+        </div>
+        <div class="under" id="welcomeUnder" hidden></div>
+      </div>
+    </div>
+
+
     <div class="nowcard">
       <div class="lbl">Start with this</div>
       <h2 id="nowTitle">Your first 30 days</h2>
@@ -71,33 +125,46 @@
       <a class="card" href="library.html">
         <div class="step">Browse</div>
         <h3>The library</h3>
-        <p>Every workbook, template, deck and tool, filed under the ASCEND stage it belongs to.</p>
+        <p>Same folders as your Drive, same names, with a line on what each one is for.</p>
         <span class="go">Open the library &rarr;</span>
       </a>
     </div>
   </section>
 
   <section>
-    <div class="sechead"><span class="num">02</span><h2>The six stages</h2></div>
-    <p class="lede">Every academy problem sits in one of these. The diagnostic tells you which one is holding you back &mdash; work that one, not the one that feels most urgent.</p>
+    <div class="sechead" id="plan"><span class="num">02</span><h2 id="planH">Your plan</h2></div>
 
-    <div class="stagerow"><div class="letter">A</div><div>
-      <div class="nm">Audit</div><div class="q">Do you actually know your numbers?</div></div></div>
-    <div class="stagerow"><div class="letter">S</div><div>
-      <div class="nm">Sell</div><div class="q">Are you filling sessions consistently?</div></div></div>
-    <div class="stagerow"><div class="letter">C</div><div>
-      <div class="nm">Capacity</div><div class="q">Can your operation handle growth?</div></div></div>
-    <div class="stagerow"><div class="letter">E</div><div>
-      <div class="nm">Expand</div><div class="q">Are you growing the business, or just the workload?</div></div></div>
-    <div class="stagerow"><div class="letter">N</div><div>
-      <div class="nm">Normalise</div><div class="q">Does your business run the same way every time?</div></div></div>
-    <div class="stagerow"><div class="letter">D</div><div>
-      <div class="nm">Delegate</div><div class="q">Are you the owner, or still the operator?</div></div></div>
+    <!-- shown when no diagnostic saved on this device -->
+    <div id="planEmpty">
+      <p class="lede">Ten minutes on the diagnostic and this section turns into your plan: your level, your weakest stage, and the three things to do this month. Until then, the six stages every academy problem sits in:</p>
+      <div class="stagerow"><div class="letter">A</div><div><div class="nm">Audit</div><div class="q">Do you actually know your numbers?</div></div></div>
+      <div class="stagerow"><div class="letter">S</div><div><div class="nm">Sell</div><div class="q">Are you filling sessions consistently?</div></div></div>
+      <div class="stagerow"><div class="letter">C</div><div><div class="nm">Capacity</div><div class="q">Can your operation handle growth?</div></div></div>
+      <div class="stagerow"><div class="letter">E</div><div><div class="nm">Expand</div><div class="q">Are you growing the business, or just the workload?</div></div></div>
+      <div class="stagerow"><div class="letter">N</div><div><div class="nm">Normalise</div><div class="q">Does your business run the same way every time?</div></div></div>
+      <div class="stagerow"><div class="letter">D</div><div><div class="nm">Delegate</div><div class="q">Are you the owner, or still the operator?</div></div></div>
+      <div class="callout">
+        <div class="lbl">Don't guess</div>
+        <p>The diagnostic scores you out of 25 on each stage and tells you your weakest one. It is the single most useful thing you can do in week one.</p>
+        <p style="margin-top:14px"><a class="btn" href="diagnostic.html">Take the diagnostic &rarr;</a></p>
+      </div>
+    </div>
 
-    <div class="callout">
-      <div class="lbl">Don't guess</div>
-      <p>The diagnostic scores you out of 25 on each stage and tells you your weakest one. It takes about 10 minutes and it is the single most useful thing you can do in week one.</p>
-      <p style="margin-top:14px"><a class="btn ghost" href="diagnostic.html">Take the diagnostic &rarr;</a></p>
+    <!-- shown when a diagnostic is saved -->
+    <div id="planFull" hidden>
+      <p class="lede" id="planLede"></p>
+      <div class="plangrid">
+        <div class="planscore">
+          <div class="lbl">Your scores</div>
+          <div id="planBars"></div>
+          <p class="small" style="margin:12px 0 0"><span id="planDate"></span> &middot; <a href="diagnostic.html">Redo the diagnostic</a></p>
+        </div>
+        <div class="plansteps">
+          <div class="lbl">This month, in order</div>
+          <ol id="planList"></ol>
+          <p class="small" style="margin:10px 0 0">Then bring the numbers to the kickoff. That's the whole plan &mdash; three things, not thirty.</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -127,7 +194,7 @@
         <span class="go">Open &rarr;</span></a>
       <a class="card" href="library.html">
         <div class="step">All stages</div><h3>The full library</h3>
-        <p>Workbooks, playbooks, templates and session material, filed by stage.</p>
+        <p>Your Drive library, in order, with the live tools slotted where they belong.</p>
         <span class="go">Open &rarr;</span></a>
     </div>
   </section>
@@ -169,11 +236,99 @@
 </div></footer>
 
 <script>
+/* ---- Welcome video ----------------------------------------------------
+   Paste ONE link into WELCOME_VIDEO and the note is replaced by the video:
+     YouTube  : https://youtu.be/XXXX  or  https://www.youtube.com/watch?v=XXXX
+     Loom     : https://www.loom.com/share/XXXX
+     Vimeo    : https://vimeo.com/123456
+     Drive    : https://drive.google.com/file/d/XXXX/view   (members must have library access)
+     Any .mp4 : https://.../welcome.mp4
+   Leave it empty ('') and the written note shows instead.
+------------------------------------------------------------------------ */
+var WELCOME_VIDEO = '';
+
+function welcomeEmbed(url){
+  if(!url) return null;
+  var m;
+  if((m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/))) return {src:'https://www.youtube.com/embed/'+m[1]+'?rel=0&modestbranding=1'};
+  if((m = url.match(/loom\.com\/(?:share|embed)\/([\w-]+)/))) return {src:'https://www.loom.com/embed/'+m[1]};
+  if((m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/))) return {src:'https://player.vimeo.com/video/'+m[1]};
+  if((m = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/))) return {src:'https://drive.google.com/file/d/'+m[1]+'/preview'};
+  if(/\.(mp4|webm|mov)(\?|$)/i.test(url)) return {file:url};
+  return {src:url};
+}
+(function(){
+  var e = welcomeEmbed(WELCOME_VIDEO);
+  if(!e) return;
+  var box = document.getElementById('welcomeVideo');
+  box.innerHTML = e.file
+    ? '<video controls playsinline preload="metadata" src="'+e.file+'"></video>'
+    : '<iframe src="'+e.src+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="A message from John"></iframe>';
+  box.hidden = false;
+  document.getElementById('welcomeNote').hidden = true;
+  var u = document.getElementById('welcomeUnder');
+  u.textContent = 'Two minutes. Then do the 30-day path below in order, fill in the intake, and book the kickoff call this week.';
+  u.hidden = false;
+})();
 /* Mirror of the 9 steps in start-here.html — keep the count and ids in sync. */
+/* ---- Your plan: built from the saved diagnostic ---- */
+var STAGE_ORDER = [['A','Audit'],['S','Sell'],['C','Capacity'],['E','Expand'],['N','Normalise'],['D','Delegate']];
+var LIB = 'library.html';
+var PLAN = {
+  A: { why: 'You can\'t price, hire or market your way out of a business whose numbers you can\'t state from memory. Fix this first even though it feels like a step backwards.',
+       steps: [
+         ['Run the Pricing Calculator and the Money Map','Two live tools, forty minutes. Your real hourly rate and what the twelve-month gap is worth.', 'pricing-calculator.html', 'Pricing Calculator'],
+         ['Work the Financial Management Toolkit','In 02 Traction. The monthly numbers you should be able to say out loud.', LIB+'#st-02', 'Open in the library'],
+         ['Read Profit First for Football Coaches','Also in 02 Traction. Pay yourself first, run the academy on the rest.', LIB+'#st-02', 'Open in the library'] ] },
+  S: { why: 'Word of mouth is not a marketing strategy, it\'s what happens when you haven\'t got one. Get an offer worth selling, then get it in front of parents.',
+       steps: [
+         ['Pick one offer from the Offers Library','Start with the Offers Bank. One offer, running in the next 30 days.', LIB+'#st-04', 'Open the Offers Library'],
+         ['Set up The Lead Machine','Capture, chase, convert. Read the PDF, then the Drip Sequence in 02 Traction.', LIB+'#st-lm', 'Open The Lead Machine'],
+         ['Under 50 players? Do the First 50 Players Playbook','In 01 Foundation. A full session without a budget.', LIB+'#st-01', 'Open Foundation'] ] },
+  C: { why: 'No point filling the funnel if the thing behind it falls over. Admin that runs without firefighting, and a product any coach can deliver.',
+       steps: [
+         ['Basic Operations Setup Guide','In 01 Foundation. The admin skeleton every academy needs before it grows.', LIB+'#st-01', 'Open Foundation'],
+         ['Coach Confidence Presentation','Get your coaches delivering it the way you would.', LIB+'#st-01', 'Open Foundation'],
+         ['Retention Frameworks','In 02 Traction. Keep the players you\'ve already paid to win.', LIB+'#st-02', 'Open Traction'] ] },
+  E: { why: 'Growth that adds hours isn\'t growth, it\'s a second job. This month is about margin: better offers and planned campaigns instead of panic.',
+       steps: [
+         ['Revenue Growth Playbook','In 02 Traction. The routes to more revenue, ranked by margin.', LIB+'#st-02', 'Open Traction'],
+         ['Traction and Scaling Offers','In 04 Offers Library. Memberships, upgrades, 1-2-1s, partnerships.', LIB+'#st-04', 'Open the Offers Library'],
+         ['Seasonal Campaigns','Plan the next two campaigns now, not the week before half term.', LIB+'#st-04', 'Open the Offers Library'] ] },
+  N: { why: 'If the way things get done lives only in your head, you don\'t own an academy, you are the academy. Write it down.',
+       steps: [
+         ['Operations Manual Template','In 03 Scaling. Staff handbook and ops manual in one. Give it a fortnight.', LIB+'#st-03', 'Open Scaling'],
+         ['SOPs Framework','Write three procedures a new coach could follow on day one.', LIB+'#st-03', 'Open Scaling'],
+         ['Business Operations Library','In 02 Traction. Registers, comms, incident forms. Steal the templates.', LIB+'#st-02', 'Open Traction'] ] },
+  D: { why: 'Fewer than six hours a week on the grass, and a fortnight\'s holiday that doesn\'t break anything. Only works if the jobs are written down and owned by name.',
+       steps: [
+         ['Do the Time Audit and Roles & Responsibilities','Two live tools. What only you can do, and how many jobs still run through you.', 'time-audit.html', 'Time Audit'],
+         ['Hiring Framework, 4 Pillars','In 02 Traction. Hire coaches who hold your standard when you\'re not there.', LIB+'#st-02', 'Open Traction'],
+         ['Leadership Communication','In 03 Scaling. Run the team without being in every conversation.', LIB+'#st-03', 'Open Scaling'] ] }
+};
+var DG = null, PLAN_READY = false;
+try{ DG = JSON.parse(localStorage.getItem('ascend_diagnostic_v1')); }catch(e){ DG = null; }
+if(DG && DG.weakest && DG.breakdown && PLAN[DG.weakest.key]){
+  var plan = PLAN[DG.weakest.key];
+  document.getElementById('planEmpty').hidden = true;
+  document.getElementById('planFull').hidden = false;
+  document.getElementById('planH').textContent = 'Your plan: fix ' + DG.weakest.name + ' first';
+  document.getElementById('planLede').textContent = 'You scored ' + DG.total + '/150, which puts you at ' + DG.level + ' level. Your lowest stage is ' + DG.weakest.name + ' (' + DG.weakest.score + '/25). ' + plan.why;
+  document.getElementById('planBars').innerHTML = STAGE_ORDER.map(function(st){
+    var v = DG.breakdown[st[0]] || 0, low = st[0] === DG.weakest.key;
+    return '<div class="pbar' + (low ? ' low' : '') + '"><span class="nm">' + st[0] + ' \u00b7 ' + st[1] + '</span><span class="track"><span class="fill" style="width:' + (v/25*100) + '%"></span></span><span class="v">' + v + '/25</span></div>';
+  }).join('');
+  document.getElementById('planList').innerHTML = plan.steps.map(function(sp){
+    return '<li><b>' + sp[0] + '</b><span>' + sp[1] + '</span> <a href="' + sp[2] + '">' + sp[3] + ' \u2192</a></li>';
+  }).join('');
+  var d = new Date(DG.at); if(!isNaN(d)){ document.getElementById('planDate').textContent = 'Scored ' + d.toLocaleDateString('en-GB', {day:'numeric', month:'short'}); }
+  PLAN_READY = true;
+}
+
 var STEP_TITLES = [
   ['Step 1 · Book your kickoff call','The 45 minutes that sets the direction for everything else.'],
-  ['Step 2 · Fill in your intake','Your baseline numbers, so call one starts at the useful bit.'],
-  ['Step 3 · Take the diagnostic','Find the stage that is actually holding you back.'],
+  ['Step 2 · Take the diagnostic','Ten minutes. Your level, your weakest stage, and your plan on the hub.'],
+  ['Step 3 · Fill in your intake','Your baseline numbers, with your scores attached, so call one starts at the useful bit.'],
   ['Step 4 · Run the pricing calculator','Your real hourly rate, after everything comes out.'],
   ['Step 5 · Map your money','Where you are, where you could be, what the gap is worth.'],
   ['Step 6 · Audit your week','Where your time goes and what to hand off first.'],
@@ -198,6 +353,12 @@ document.getElementById('pctText').textContent = done+' / '+TOTAL;
 
 if(done===0){
   document.getElementById('daycount').textContent = 'Welcome in';
+  if(PLAN_READY){
+    document.getElementById('nowTitle').textContent = 'Your plan is ready';
+    document.getElementById('nowText').textContent = 'Weakest stage: ' + DG.weakest.name + '. Three things this month, listed below. Then the intake and the kickoff call.';
+    document.getElementById('nowBtn').textContent = 'See my plan \u2192';
+    document.getElementById('nowBtn').setAttribute('href', '#plan');
+  }
 }else if(done===TOTAL){
   document.getElementById('daycount').textContent = 'Onboarding complete';
   document.getElementById('nowTitle').textContent = 'You are through the first 30 days';

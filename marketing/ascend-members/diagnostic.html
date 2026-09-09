@@ -154,6 +154,11 @@
     <div class="bars" id="bars"></div>
 
     <div class="callout" id="callout" style="display:none"></div>
+    <div id="planCta" style="display:none;margin-top:16px;padding:16px 18px;border:1px solid var(--cyan-dim);border-radius:12px;background:rgba(51,227,227,.06)">
+      <b style="display:block;margin-bottom:4px">Your plan is ready.</b>
+      <span style="color:var(--muted);font-size:14px">Saved on this device. The hub now shows your level, your weakest stage and the three things to do this month.</span>
+      <p style="margin:12px 0 0"><a class="btn" href="index.html#plan">See my plan &rarr;</a></p>
+    </div>
 
     <div class="capture" id="capture">
       <form id="capture-form" name="diagnostic-results" method="POST" data-netlify="true" netlify-honeypot="bot-field">
@@ -182,7 +187,7 @@
   <div class="next">
     <h2>What to do next</h2>
     <div class="sub">Three steps based on your results</div>
-    <div class="step"><div class="t">1. Go to your weakest stage in the library.</div><div class="d">The library is filed by the six stages. Open the one you scored lowest on &mdash; the tools at the top of each stage come before the reading. <a href="library.html" style="color:#33E3E3">Open the library</a>.</div></div>
+    <div class="step"><div class="t">1. Go to your weakest stage in the library.</div><div class="d">The library page has a \"weakest stage\" box at the top that points you at the right folders. Do the live tools before the reading. <a href="library.html" style="color:#33E3E3">Open the library</a>.</div></div>
     <div class="step"><div class="t">2. Focus on your lowest-scoring stage, not your overall stage.</div><div class="d">Even if you're a Traction owner overall, if your Audit score is the lowest, that's where to start. Use the resources that match your weakest area.</div></div>
     <div class="step"><div class="t">3. Bring this score to your next call.</div><div class="d">Your stage totals are the fastest way for us to agree what to work on. If you have been stuck on the same stage for six months or more, say so &mdash; that is a different conversation. <a href="work-with-me.html" style="color:#33E3E3">Book a call</a>.</div></div>
 
@@ -359,9 +364,23 @@
       bandEl.style.display='none'; focusEl.style.display='none'; callout.style.display='none';
     }
 
-    // email capture - reveal once complete, pre-filled with their results
+    // save the result for the hub ("Your plan") and the intake form
+    var planCta = document.getElementById('planCta');
+    if(complete){
+      try{
+        var bd = {}; STAGES.forEach(function(s,si){ bd[s.key] = stageTotal(si); });
+        localStorage.setItem('ascend_diagnostic_v1', JSON.stringify({
+          total: total, level: bandFor(total).name,
+          weakest: { key: STAGES[lowIdx].key, name: STAGES[lowIdx].name, score: lowVal },
+          breakdown: bd, at: new Date().toISOString()
+        }));
+      }catch(e){}
+      if(planCta){ planCta.style.display='block'; }
+    } else if(planCta){ planCta.style.display='none'; }
+
+    // email capture - members don't need this (results are saved on-device); kept for the public tools site
     var cap = document.getElementById('capture');
-    if(complete && !captureSent){
+    if(false && complete && !captureSent){
       var lowS = STAGES[lowIdx];
       document.getElementById('cap-score').value = total+' / 150';
       document.getElementById('cap-stage').value = bandFor(total).name;

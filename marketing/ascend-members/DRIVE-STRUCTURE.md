@@ -1,130 +1,58 @@
-# ASCEND — Drive Structure & Upload Manifest
+# ASCEND — Drive Structure (as wired into the members site)
 
-Two folders were created in your Drive. Keep them separate — the whole point of the
-split is that you can never accidentally share member data with members.
+**Updated 2026-09-09.** The site points at your existing, populated library rather than
+the empty stage folders created on 30 Aug (those were deleted).
 
-### 1. The library — SHARED with members
-**ASCEND Members Library** — https://drive.google.com/drive/folders/1EJwuN_NDZ_PDX6zFft34n9amUZLaxLbJ
+## The library — shared per member by email
 
-### 2. Member records — NEVER SHARED
-**ASCEND Members (PRIVATE — do not share)** — https://drive.google.com/drive/folders/1KE6HM-NgQV6Ks4ZPwOTlWg-wB2TJ2CX4
+**Ascend / John Leitch - Academy Owners Library**
+https://drive.google.com/drive/folders/1GAL6pqIIUpXDM1YKHfSCjZe5TO3v24aw
 
-Intake forms, call notes, their numbers. One subfolder per member. This exists as a
-separate top-level folder rather than a subfolder of the library specifically so that
-"share the library" can never leak it.
+Sharing model (confirmed 2026-09-09 from the Share dialog): **Restricted**, with each
+member added by email as **Viewer**. Subfolders inherit, so every Drive button on the
+site works for a member signed into the Google account you added. Two consequences:
 
----
+- **New member = add their email to this folder.** That is step 1 of onboarding now;
+  it is in DELIVERY-SOP. Nothing on the site works for them until it's done.
+- A member who opens a button while signed into a different Google account gets
+  "request access". Tell them which account you shared to.
 
-## The library folders (all created, all empty)
+Everyone is Viewer (an Editor entry was corrected 2026-09-09). Keep it that way — an
+Editor can rename, move or delete library content.
 
-Named to match your Coaches' Vault convention. The stage folders are already wired
-into `library.html` — the buttons on the site point at these exact folders, so
-**anything you drop in appears to members immediately, with no HTML editing.**
+`library.html` **mirrors the Drive folders one-to-one**, same names, same order:
+`00 Start Here`, `01 Foundation`, `02 Traction`, `03 Scaling`, `04 Offers Library`,
+`The Lead Machine`, `06 Bonus`, plus a "Recently added" card for files sitting in the
+library root. Every subfolder and loose file is a row with a link. The live tools
+(diagnostic, calculator, money map, year planner, ads training, mindset test, time
+audit, roles audit) are slotted into the level they belong to.
 
-| Folder | Link |
-|---|---|
-| 00 · Start Here | https://drive.google.com/drive/folders/1zDb6T7kWb9cQ9nE8dpExnqOam2aKueu4 |
-| 01 · Audit | https://drive.google.com/drive/folders/1xNFB09sjtbKMJfA2jnN4I_1AqDBSh_kV |
-| 02 · Sell | https://drive.google.com/drive/folders/1Q_2oBEmRrFdi83FQEDQrQOm7ZWkpEd6z |
-| 03 · Capacity | https://drive.google.com/drive/folders/1AyQtROMlimrWvPV_Y3lAnLfumZuHnU7E |
-| 04 · Expand | https://drive.google.com/drive/folders/1JdJHzZj8OBVMEYBi63dXWCaa-h1BxyeN |
-| 05 · Normalise | https://drive.google.com/drive/folders/1jP83ZVlBkh3-dwhoCXDvw65tR0f5rU2X |
-| 06 · Delegate | https://drive.google.com/drive/folders/1EZ4vcXclki-bgC2AXb2pIvakQZiH1B4P |
-| 07 · New This Month | https://drive.google.com/drive/folders/1tG8eI8otz0NtliHEHcYpRhbHFvW1YilU |
+A small box at the top maps the six ASCEND stages to folders ("Sell → Offers Library
+then The Lead Machine") so the diagnostic still has somewhere to send people. That is
+the only place the stage model appears on this page.
 
----
+Top of the page also has **Open the whole library** and **Read me first** (your
+`READ ME FIRST — How To Use This Library` doc in `00 START HERE`).
 
-## Upload manifest
+### Adding new material
+- Drop it in the right level folder and it's reachable via that stage's folder button.
+- If you want it named on the site, add one `<li>` under the matching card in
+  `library.html` — copy any existing row and swap the title, blurb and link.
+- Files dropped in the library ROOT: add them to the "Recently added" card, and move
+  the row when you file the document.
 
-Drag these from `~/Downloads` into the matching folder. The site already describes
-each of these by name, so members will look for them.
+### Things worth tidying in Drive (not blocking)
+- `02 TRACTION` has duplicate empty subfolders: `01 Pricing Calculator`,
+  `03 Meta Ads Funnel System`, `11 Business Operations Library`,
+  `12 Sellable Mindset Programme` each appear twice. The site links the populated one.
+- One PDF in the library root is named with a whole parent FAQ sentence
+  ("Can we switch to a different day or time…"). Rename it.
+- `READ ME FIRST` refers to a `05 WORK WITH ME` folder that doesn't exist. Either
+  create it (just a doc with the Zoom link) or point people at the site's
+  Work With Me page instead.
 
-Where you have duplicates — `(1)`, `(2)` suffixes — check which is newest before
-uploading, and upload one.
+## Member records — NEVER SHARED
 
-### 00 · Start Here
-- `ASCEND-Programme-Overview.docx`
-- `ASCEND-Start-Here-Slides.pdf`
-
-### 01 · Audit
-- `ASCEND-Start-Here-Slides.pdf`
-- `ASCEND-The-Bottleneck.pptx`
-- `The Pricing calculator.pdf` — the 8-page guide with the "Meet Dave" example
-
-### 02 · Sell
-- `ASCEND-Marketing-Playbook.pdf`
-- `ASCEND-Lead-Machine.pdf`
-- `ASCEND-Ads-Engine-Workbook.pdf`
-- `ASCEND-Stage-S-Sell-Slides.pdf`
-- `ASCEND-Foundation-M3-First-Leads-Slides.pdf`
-- `ASCEND-First-50-Customers.pptx`
-- `ASCEND-Lead-Gen-Vault-Slides.pdf`
-- `ASCEND-Build-Your-Funnel.pptx`
-- `ASCEND-Promotional-Copy-Templates.pdf`
-- `ASCEND — Social Media Starter Pack.pdf`
-- `ASCEND-Features-vs-Benefits-PRINT.pdf`
-
-### 03 · Capacity
-- `ASCEND-Curriculum-U5-U16.pdf`
-- The Canva curriculum template — add as a **template link**, not a file copy
-  (design `DAHQ4VU-gLs`; see the curriculum-kit notes)
-- `ASCEND-Name-Build-Launch-the-Class.pdf`
-- `ASCEND-Foundation-M4-Get-Paid-Slides.pdf`
-- `Player-Portal-Academy-User-Manual.pdf`
-
-### 04 · Expand
-- `ASCEND-Strategy-and-Planning.pptx`
-- `Revenue_Growth_Playbook.docx`
-- `ASCEND-Why-Dont-You-Promote.pptx`
-- `ASCEND_Proposal_Massey_Academy.pdf` — **strip the client name before uploading**
-
-### 05 · Normalise
-- `The-Academy-Bible.docx` (and the `.pdf` as a read-only preview)
-- Academy on a Page — the 1-page version
-- `01-We-Are-Academy-Template.pptx`
-- `ASCEND-Operating-Rhythm.pptx`
-- `Operations_Manual_Template.docx`
-
-### 06 · Delegate
-- `01-Role-Profile-Session-Coach.docx`
-- `02-Role-Profile-Lead-Coach.docx`
-- `04-Role-Profile-Academy-Administrator.docx`
-- `05-Role-Profile-Marketing-and-Social.docx`
-- `06-Role-Profile-Head-of-Coaching.docx`
-- `07-Role-Profile-1-2-1-Sessions-Coordinator.docx`
-- `08-Role-Profile-BLANK-Template.docx`
-- `ASCEND-CEO-Table-Academy-Roles.pdf`
-- `ASCEND-Functional-Structure.pptx`
-- `ASCEND-Team-Culture-And-Building-The-Team.pptx`
-- `ASCEND_PartTimeStaff.pptx`
-
-> **Note on role profiles:** there's no `03-` in your set. Either it was never made or
-> it's misnamed — worth a look, because members will notice the gap.
-
----
-
-## Sharing — your call, not something I've done
-
-The folders are currently **private**. Nothing is shared with anyone. To open the
-library up, on **ASCEND Members Library** only:
-
-**Share → General access → Anyone with the link → Viewer**
-
-Set it on the parent folder and every subfolder inherits it. Two things to get right:
-
-- **Viewer, not Editor.** Editor lets a member delete your masters.
-- **Never share the PRIVATE folder.** It's named the way it is for a reason.
-
-Link-sharing means anyone who gets the link can view — a member could forward it. For
-a £50/mo membership that's the normal trade-off, and per-member sharing is a support
-burden you don't want at fifteen members. Worth knowing you're making the trade rather
-than discovering it later.
-
----
-
-## Keeping it alive
-
-`07 · New This Month` is the retention mechanic. When you build something new, drop it
-there as well as in its stage folder, and mention it in the monthly email. It's the
-cheapest possible way to make a membership feel alive rather than static — and it's the
-folder members will check first once they know it exists.
+The 30 Aug private folder was deleted along with the stage folders. Intake forms and
+call notes currently have no Drive home. When you create one, keep it a **separate
+top-level folder** (not inside the library) so "share the library" can never leak it.
