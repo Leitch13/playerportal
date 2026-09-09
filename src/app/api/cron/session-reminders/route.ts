@@ -19,15 +19,29 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Off switch. Set SESSION_REMINDERS_ENABLED=false in Vercel to stop every
+  // next-day reminder without a deploy; unset or anything else keeps them on.
+  if (process.env.SESSION_REMINDERS_ENABLED === 'false') {
+    return NextResponse.json({ skipped: 'disabled by SESSION_REMINDERS_ENABLED' })
+  }
+
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
   const tomorrowDay = DAYS[tomorrow.getDay()]
 
-  // Find all classes scheduled for tomorrow's day of week
+  // Find all classes scheduled for tomorrow's day of week.
+  //
+  // 1-2-1 (and 2-1) slots are excluded. Jamie Allan runs 18 weekly 1-2-1
+  // slots, but the plans behind them are "2 x per month" or "4 sessions per
+  // month" — which weeks a child actually attends is arranged with the coach
+  // and the app has no record of it. A weekly "see you tomorrow" for a
+  // session that may not be happening confused parents (John, 9 Sep 2026).
+  // Group classes, tots, intensity etc. really are weekly, so they keep it.
   const { data: groups, error: groupsError } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, organisation:organisations(name)')
+    .select('id, name, day_of_week, time_slot, location, class_type, organisation:organisations(name)')
     .eq('day_of_week', tomorrowDay)
+    .not('class_type', 'in', '("1-2-1","2-1")')
 
   if (groupsError) {
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })

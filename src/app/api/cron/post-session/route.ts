@@ -24,11 +24,21 @@ export async function GET(request: NextRequest) {
   const todayDay = DAYS[today.getDay()]
   const todayDate = today.toISOString().split('T')[0]
 
-  // Find all classes that happened today
+  // Off switch, mirrors session-reminders. POST_SESSION_EMAILS_ENABLED=false
+  // stops the evening "how was today" and missed-session emails.
+  if (process.env.POST_SESSION_EMAILS_ENABLED === 'false') {
+    return NextResponse.json({ skipped: 'disabled by POST_SESSION_EMAILS_ENABLED' })
+  }
+
+  // Find all classes that happened today. 1-2-1 / 2-1 slots are excluded for
+  // the same reason as session-reminders: the plan is per-session (2 or 4 a
+  // month), the weekly slot is only a placeholder, so "how was today's
+  // session?" lands on parents whose child wasn't in this week.
   const { data: groups, error: groupsError } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, organisation:organisations(name)')
+    .select('id, name, day_of_week, time_slot, location, class_type, organisation:organisations(name)')
     .eq('day_of_week', todayDay)
+    .not('class_type', 'in', '("1-2-1","2-1")')
 
   if (groupsError) {
     return NextResponse.json({ error: 'Failed to fetch groups' }, { status: 500 })
