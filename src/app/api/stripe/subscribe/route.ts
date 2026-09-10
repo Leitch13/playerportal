@@ -1011,9 +1011,43 @@ export async function POST(request: NextRequest) {
       //   - application_fee_percent = platform fee
       const billingAnchor = firstOfNextMonthUnix(activatesOnDate)
 
+      // ═══ Per-session bridge, NOT Stripe calendar-day proration ═══
+      // The business rule (John, raised six times): a mid-month joiner pays
+      // for the SESSIONS left this month, then the full month from the 1st.
+      // The legacy tonight_then_sub path was fixed to do exactly that on
+      // 14 Aug 2026 — and then BILLING_FLOW_STARTDATE_ENABLED="*" (2 Sep)
+      // routed every academy onto THIS branch, which still let Stripe
+      // prorate by calendar days. Macaulay (G&G, 10 Sep): 3 Fridays left,
+      // preview said £24, Stripe charged £22.09. Same helper as the preview
+      // and the legacy path now, so every branch agrees whatever the flags.
+      const { tonightBridge } = await import('@/lib/billing/sessions')
+      const bridgeAnchorIso = new Date(billingAnchor * 1000).toISOString().split('T')[0]
+      const bridge = tonightBridge(Number(plan.amount), activatesOnIso, bridgeAnchorIso, classDayOfWeek)
+      const bridgePence = bridge.pence
+      const bridgeSessionCount = bridge.sessions > 0 ? bridge.sessions : 1
+      const anchorLabel = new Date(billingAnchor * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+
       const monthlySessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: customerId,
-        line_items: [{ price: stripePriceId, quantity: 1 }],
+        line_items: [
+          { price: stripePriceId, quantity: 1 },
+          // One-off line for the sessions left this month. With
+          // proration_behavior 'none' below, the first invoice is ONLY this
+          // line (the recurring price starts billing at the anchor).
+          ...(bridgePence > 0
+            ? [{
+                price_data: {
+                  currency: 'gbp',
+                  unit_amount: bridgePence,
+                  product_data: {
+                    name: `Sessions this month — ${plan.name}`,
+                    description: `${bridgeSessionCount} ${bridgeSessionCount === 1 ? 'session' : 'sessions'} this month. Your £${Number(plan.amount).toFixed(2)}/month membership starts ${anchorLabel}.`,
+                  },
+                },
+                quantity: 1,
+              }]
+            : []),
+        ],
         mode: 'subscription',
         payment_method_types: ['card'],
         success_url: `${origin}/dashboard/payments/success?billing=monthly&model=immediate_prorated`,
@@ -1027,6 +1061,8 @@ export async function POST(request: NextRequest) {
           billing_model: 'immediate_prorated',
           pp_flow: 'immediate_prorated',
           activates_on: activatesOnIso,
+          bridge_pence: String(bridgePence),
+          bridge_sessions_remaining: String(bridge.sessions),
           ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
         },
@@ -1037,14 +1073,16 @@ export async function POST(request: NextRequest) {
             ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
             billing_model: 'immediate_prorated',
             activates_on: activatesOnIso,
+            bridge_pence: String(bridgePence),
+            bridge_sessions_remaining: String(bridge.sessions),
             ...(classId ? { supabase_class_id: classId } : {}),
             ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
           },
-          // The KEY mechanism: future billing_cycle_anchor + create_prorations.
-          // Stripe issues a prorated invoice covering (today → anchor) NOW, and
-          // bills the full monthly amount on each anchor afterward.
+          // Future billing_cycle_anchor with NO Stripe proration: the
+          // recurring price first bills on the 1st; today's invoice carries
+          // only the per-session bridge line above.
           billing_cycle_anchor: billingAnchor,
-          proration_behavior: 'create_prorations',
+          proration_behavior: 'none',
           // No trial_end here. trial_end + billing_cycle_anchor must match
           // (Stripe constraint, root of task #76). With anchor in the future and
           // no trial, Stripe prorates immediately — exactly what we want.
@@ -1060,15 +1098,7 @@ export async function POST(request: NextRequest) {
 
       const session = await stripe.checkout.sessions.create(monthlySessionParams)
 
-      // Estimate the prorated charge for the UI / response. Stripe's actual
-      // amount is calendar-day computed at finalize time; this matches within
-      // pence for the standard plan amounts.
       const anchorDate = new Date(billingAnchor * 1000)
-      const startMs = activatesOnDate.getTime()
-      const endMs = anchorDate.getTime()
-      const monthMs = new Date(Date.UTC(activatesOnDate.getUTCFullYear(), activatesOnDate.getUTCMonth() + 1, 0)).getUTCDate() * 86400000
-      const daysToAnchor = Math.max(0, Math.round((endMs - startMs) / 86400000))
-      const proratedPence = Math.round((Number(plan.amount) * 100 * daysToAnchor * 86400000) / monthMs)
 
       return NextResponse.json({
         url: session.url,
@@ -1077,7 +1107,8 @@ export async function POST(request: NextRequest) {
         firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
         nextBillingDate: anchorDate.toISOString().split('T')[0],
         nextBillingAmount: Number(plan.amount).toFixed(2),
-        tonightAmount: (proratedPence / 100).toFixed(2),
+        tonightAmount: (bridgePence / 100).toFixed(2),
+        bridge: { sessions: bridge.sessions, perSessionPence: bridge.perSessionPence, bridgePence },
         activatesOn: activatesOnIso,
         siblingDiscountApplied: !!siblingCouponId,
         siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,

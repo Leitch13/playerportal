@@ -1675,7 +1675,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           .eq('role', 'admin')
         if (orgAdmins && orgAdmins.length > 0) {
           const billingModelLabel = billingModel === 'immediate_prorated'
-            ? `Today \u2014 \u00a3${amountPaid.toFixed(2)} pro-rata to ${anchorLabel}, then ${monthlyAmount}/mo`
+            ? `Today \u2014 \u00a3${amountPaid.toFixed(2)} for the sessions left before ${anchorLabel}, then ${monthlyAmount}/mo`
             : `${monthlyAmount}/month subscription started`
           const adminTpl = newSignupAdminEmail({
             academyName: ctx.organisationName ?? 'Academy',
