@@ -70,7 +70,14 @@ export default async function BillingPage({
       .order('sort_order'),
   ])
 
-  const plans = (plansResult.data || []) as PlanRow[]
+  const allPlans = (plansResult.data || []) as PlanRow[]
+  // Every active tier has cost £35 with the same features since the Aug
+  // pricing change; until migration 115 retires the extra rows, offer one.
+  const samePrice = new Set(allPlans.map(p => Number(p.monthly_price))).size <= 1
+  const plans = samePrice && allPlans.length > 1
+    ? [allPlans.find(p => p.slug === 'pro') || allPlans[0]]
+    : allPlans
+  const single = plans.length === 1
   const params = await searchParams
   const blockedFeature = params.feature as FeatureKey | undefined
   const blockedTier = blockedFeature ? FEATURE_MIN_TIER[blockedFeature] : null
@@ -123,12 +130,16 @@ export default async function BillingPage({
         )}
       </div>
 
-      {/* Plan comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Plan comparison. One plan since the Aug pricing change: if every
+          active row costs the same, show a single card with everything in
+          it rather than three identical "options" (Talent FA, 10 Sep). */}
+      <div className={single ? 'max-w-md' : 'grid grid-cols-1 md:grid-cols-3 gap-4'}>
         {plans.map((plan, i) => {
           const isCurrent = plan.slug === currentPlanSlug
-          const isFeatured = plan.slug === 'pro'
-          const group = TIER_FEATURE_GROUPS.find(g => g.tier === plan.slug)
+          const isFeatured = single || plan.slug === 'pro'
+          const group = single
+            ? { tier: plan.slug as PlanTier, heading: 'Everything included', features: TIER_FEATURE_GROUPS.flatMap(g => g.features) }
+            : TIER_FEATURE_GROUPS.find(g => g.tier === plan.slug)
           return (
             <div
               key={plan.id}
@@ -138,7 +149,7 @@ export default async function BillingPage({
                   : 'bg-[#0f1a2b] border border-[#1d2c42]'
               }`}
             >
-              {isFeatured && (
+              {isFeatured && !single && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#4ecde6] text-[#0a0a0a] text-[10px] font-bold uppercase tracking-wider rounded-full">
                   Most Popular
                 </div>

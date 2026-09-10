@@ -28,13 +28,14 @@ export default function TrialExpiredLock({
   reason?: 'trial_ended' | 'lapsed'
 }) {
   const [plans, setPlans] = useState<PlatformPlan[]>([])
+  const single = plans.length === 1
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/platform/status')
       .then((r) => r.json())
-      .then((json) => setPlans((json.allPlans || []) as PlatformPlan[]))
+      .then((json) => setPlans(collapseIdenticalPlans((json.allPlans || []) as PlatformPlan[])))
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -77,6 +78,8 @@ export default function TrialExpiredLock({
           <h1 className="text-2xl sm:text-4xl font-extrabold mb-2">
             {reason === 'lapsed'
               ? `Reactivate ${orgName} to unlock your dashboard`
+              : single
+              ? `Keep ${orgName} live`
               : `Choose a plan to keep ${orgName} live`}
           </h1>
           <p className="text-sm sm:text-base text-white/50 max-w-xl mx-auto">
@@ -84,6 +87,8 @@ export default function TrialExpiredLock({
               ? 'Your plan has lapsed. Pick a plan to unlock your dashboard again — '
               // Sprint 14b.1 (QW5) — unified copy "Free Trial — …" across
               // every surface. Was: "Your 14-day free trial has finished."
+              : single
+              ? 'Your Free Trial has ended. One plan, everything included — '
               : 'Your Free Trial has ended. Pick a plan to unlock your dashboard again — '}
             your booking page and parents stay live the whole time.
           </p>
@@ -96,7 +101,7 @@ export default function TrialExpiredLock({
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className={single ? 'max-w-sm mx-auto' : 'grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'}>
             {plans.map((plan) => (
               <div
                 key={plan.id}
@@ -111,8 +116,10 @@ export default function TrialExpiredLock({
                     <span className="text-xs text-white/40">/mo</span>
                   </div>
                 )}
-                {plan.description && (
-                  <p className="text-xs sm:text-sm text-white/50 mb-4 flex-1">{plan.description}</p>
+                {(plan.description || single) && (
+                  <p className="text-xs sm:text-sm text-white/50 mb-4 flex-1">
+                    {plan.description || 'Everything included. 3.5% per transaction, no other fees. Cancel any time.'}
+                  </p>
                 )}
                 <button
                   onClick={() => handleSubscribe(plan.slug)}
@@ -120,7 +127,7 @@ export default function TrialExpiredLock({
                   className="w-full py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100"
                   style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
                 >
-                  {subscribing === plan.slug ? 'Redirecting…' : `Choose ${plan.name}`}
+                  {subscribing === plan.slug ? 'Redirecting…' : single ? `Continue with ${plan.name}` : `Choose ${plan.name}`}
                 </button>
               </div>
             ))}
@@ -155,4 +162,15 @@ export default function TrialExpiredLock({
       </div>
     </div>
   )
+}
+
+// Since the one-plan pricing change every active tier is £35 with the same
+// features. Until migration 115 deactivates the extra rows, three identical
+// cards were offered here — Ryan Turner (Talent FA) asked which one he was
+// meant to pick. If every plan costs the same, show one.
+function collapseIdenticalPlans(plans: PlatformPlan[]): PlatformPlan[] {
+  if (plans.length <= 1) return plans
+  const prices = new Set(plans.map((p) => Number(p.price_monthly ?? 0)))
+  if (prices.size > 1) return plans
+  return [plans.find((p) => p.slug === 'pro') || plans[0]]
 }
