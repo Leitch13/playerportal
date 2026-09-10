@@ -23,6 +23,8 @@ interface OrgData {
   logo_url: string
   hero_image_url: string
   hero_image_mobile_url: string
+  /** null = standard FAQs, [] = hidden, array = the academy's own */
+  booking_faqs: { q: string; a: string }[] | null
   google_review_url: string
   meta_pixel_id: string | null
   sibling_discount_enabled: boolean
@@ -67,7 +69,7 @@ export default function SettingsForm({
   const [form, setForm] = useState<OrgData>(org || {
     id: '', name: '', slug: '', description: '', contact_email: '',
     contact_phone: '', location: '', primary_color: '#4ecde6',
-    logo_url: '', hero_image_url: '', hero_image_mobile_url: '', google_review_url: '', meta_pixel_id: null,
+    logo_url: '', hero_image_url: '', hero_image_mobile_url: '', booking_faqs: null, google_review_url: '', meta_pixel_id: null,
     sibling_discount_enabled: false, sibling_discount_percent: 10,
     quarterly_billing_enabled: true, quarterly_discount_percent: 10,
     retention_offer_enabled: true, retention_offer_percent: 50, retention_offer_months: 1,
@@ -320,8 +322,61 @@ export default function SettingsForm({
                   </button>
                 )}
               </div>
+              {/* Booking-page FAQs. Were five hard-coded questions identical for
+                  every academy; Jay Rosa asked to remove or replace them
+                  (10 Sep 2026). null = the standard five, [] = section hidden,
+                  otherwise the academy's own list in this order. */}
+              <div>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Booking page FAQs</label>
+                {form.booking_faqs === null ? (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                    <p className="text-xs text-white/50 mb-2.5">Your booking page shows the standard five questions (kit, weather, changing sessions, ages, trials).</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => setForm({ ...form, booking_faqs: [...STANDARD_FAQS] })} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15">Edit them</button>
+                      <button type="button" onClick={() => setForm({ ...form, booking_faqs: [{ q: '', a: '' }] })} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15">Write my own</button>
+                      <button type="button" onClick={() => setForm({ ...form, booking_faqs: [] })} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white/60 hover:text-white">Hide FAQs</button>
+                    </div>
+                  </div>
+                ) : form.booking_faqs.length === 0 ? (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 flex items-center justify-between gap-3">
+                    <p className="text-xs text-white/50">FAQs are hidden on your booking page.</p>
+                    <button type="button" onClick={() => setForm({ ...form, booking_faqs: null })} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15 shrink-0">Show standard FAQs</button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {form.booking_faqs.map((faq, i) => (
+                      <div key={i} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 space-y-2">
+                        <input
+                          className={inputClass}
+                          value={faq.q}
+                          placeholder="Question"
+                          onChange={(e) => setForm({ ...form, booking_faqs: form.booking_faqs!.map((f, j) => (j === i ? { ...f, q: e.target.value } : f)) })}
+                        />
+                        <textarea
+                          className={inputClass + ' min-h-[72px]'}
+                          value={faq.a}
+                          placeholder="Answer"
+                          onChange={(e) => setForm({ ...form, booking_faqs: form.booking_faqs!.map((f, j) => (j === i ? { ...f, a: e.target.value } : f)) })}
+                        />
+                        <div className="flex gap-3 text-[11px]">
+                          {i > 0 && (
+                            <button type="button" className="text-white/40 hover:text-white/70" onClick={() => { const a = [...form.booking_faqs!]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; setForm({ ...form, booking_faqs: a }) }}>Move up</button>
+                          )}
+                          <button type="button" className="text-red-300/70 hover:text-red-300" onClick={() => setForm({ ...form, booking_faqs: form.booking_faqs!.filter((_, j) => j !== i) })}>Remove</button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => setForm({ ...form, booking_faqs: [...form.booking_faqs!, { q: '', a: '' }] })} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/15">Add a question</button>
+                      <button type="button" onClick={() => setForm({ ...form, booking_faqs: null })} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white/60 hover:text-white">Back to standard</button>
+                    </div>
+                    <p className="text-[11px] text-white/30">Blank rows are ignored. Remove every row to hide the section.</p>
+                  </div>
+                )}
+                <p className="text-[11px] text-white/30 mt-1.5">Remember to hit Save Branding.</p>
+              </div>
               <button
-                onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url, hero_image_mobile_url: form.hero_image_mobile_url })}
+                onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url, hero_image_mobile_url: form.hero_image_mobile_url, booking_faqs: form.booking_faqs === null ? null : form.booking_faqs.map(f => ({ q: f.q.trim(), a: f.a.trim() })).filter(f => f.q && f.a) })}
                 disabled={saving}
                 className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all"
               >
@@ -771,3 +826,12 @@ export default function SettingsForm({
     </div>
   )
 }
+
+/** Mirrors DEFAULT_BOOKING_FAQS on the booking page — the starting point for "Edit them". */
+const STANDARD_FAQS: { q: string; a: string }[] = [
+  { q: 'What should my child wear?', a: 'Comfortable sportswear, shin pads, and appropriate footwear for the surface (astroturf trainers or football boots). Please bring a water bottle too.' },
+  { q: 'What happens if it rains?', a: 'Sessions run in all weather unless conditions are unsafe. If a session is cancelled due to extreme weather, we will notify you in advance and offer a make-up session.' },
+  { q: 'Can I change sessions?', a: 'Yes! You can switch between available sessions at any time by contacting us or through your parent portal. Subject to availability.' },
+  { q: 'What age groups do you cater for?', a: 'We offer classes for children of all ages, from toddlers through to teens. Check our weekly schedule above to find the right group for your child.' },
+  { q: 'Is there a trial session available?', a: 'Yes — most classes offer a trial session so your child can experience our coaching before committing. The trial price (if any) is shown on the class page when you book. Tap "Book a Trial" to get started.' },
+]

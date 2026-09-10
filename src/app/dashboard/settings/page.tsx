@@ -57,6 +57,7 @@ export default async function SettingsPage() {
         logo_url: org.logo_url || '',
         hero_image_url: org.hero_image_url || '',
         hero_image_mobile_url: org.hero_image_mobile_url || '',
+        booking_faqs: Array.isArray(org.booking_faqs) ? org.booking_faqs : null,
         google_review_url: org.google_review_url || '',
         meta_pixel_id: org.meta_pixel_id ?? null,
         sibling_discount_enabled: !!org.sibling_discount_enabled,
