@@ -1,6 +1,6 @@
 import type Stripe from 'stripe'
 import { firstChargeFor, firstChargeLabel, type FirstCharge } from './sessions'
-import { firstOfNextMonthUnix } from './anchor'
+import { firstOfNextMonthUnix, clampTrialEndForCheckout } from './anchor'
 import { feePercentFromRate } from '@/lib/stripe-fee'
 
 /**
@@ -9,11 +9,15 @@ import { feePercentFromRate } from '@/lib/stripe-fee'
  *   line 1  recurring plan price — first bills on the anchor (1st of next month)
  *   line 2  one-off "Sessions this month — {plan}" for firstChargeFor().pence
  *           (omitted when £0 is due today)
- *   subscription_data.billing_cycle_anchor = anchor
- *   subscription_data.proration_behavior   = 'none'   ← never Stripe day-proration
+ *   subscription_data.trial_end = anchor (the 1st)  ← the plan's first invoice
  *
- * Today's invoice is therefore exactly the bridge; the 1st's invoice is exactly
- * the plan. Preview, charge and receipt all come from the same FirstCharge.
+ * Why trial_end and not billing_cycle_anchor + proration 'none': Checkout
+ * refuses proration_behavior 'none' when a one-time line is present (proved
+ * live, 10 Sep 2026). trial_end + one-time line is the shape Jamie's
+ * future-start branch has run in production since July. Today's invoice is
+ * therefore exactly the bridge; the 1st's invoice is exactly the plan.
+ * Checkout also refuses a trial_end under 48h away, so month-end signups get
+ * a clamped trial_end and the webhook moves it back to the 1st. Preview, charge and receipt all come from the same FirstCharge.
  * Connect routing (on_behalf_of / transfer_data / application_fee_percent) is
  * identical to every other Checkout in the app.
  */
@@ -69,6 +73,7 @@ export function sessionsBridgeCheckout(input: SessionsBridgeInput): SessionsBrid
     bridge_pence: String(fc.pence),
     bridge_sessions_remaining: String(fc.sessions),
     bridge_basis: fc.basis,
+    anchor_unix: String(anchorUnix),
   }
 
   const params: Stripe.Checkout.SessionCreateParams = {
@@ -82,8 +87,7 @@ export function sessionsBridgeCheckout(input: SessionsBridgeInput): SessionsBrid
     metadata,
     subscription_data: {
       metadata,
-      billing_cycle_anchor: anchorUnix,
-      proration_behavior: 'none',
+      trial_end: clampTrialEndForCheckout(anchorUnix),
       ...(input.connectedAccountId
         ? {
             on_behalf_of: input.connectedAccountId,

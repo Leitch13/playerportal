@@ -6,6 +6,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
 import { sessionsBridgeCheckout } from '@/lib/billing/first-charge'
+import { clampTrialEndForCheckout } from '@/lib/billing/anchor'
 import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
@@ -37,10 +38,6 @@ function getFirstOfNextMonth(): number {
  * far better outcome than an error at the payment page.
  * 15-minute buffer covers clock skew and the parent dawdling on Checkout.
  */
-function clampTrialEndForCheckout(ts: number): number {
-  const minAllowed = Math.floor(Date.now() / 1000) + 48 * 3600 + 15 * 60
-  return Math.max(ts, minAllowed)
-}
 
 // Returns Unix timestamp for the 1st of the month AFTER the given date.
 // Used when a parent's first session is in a future month — the next billing anchor

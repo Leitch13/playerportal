@@ -112,3 +112,15 @@ export function isStartTodayOrEarlier(startDate: Date, today: Date = new Date())
   return Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate())
     <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
 }
+
+/**
+ * Stripe CHECKOUT rejects a subscription trial_end less than 48 hours out
+ * ("trial_end must be at least 2 days in the future"). Our anchor is the 1st
+ * of next month, so a signup on the 29th/30th/31st would be refused. Clamp
+ * to just over 48h; the webhook then moves trial_end back to the anchor
+ * (the Subscriptions API has no such minimum) so the cycle stays on the 1st.
+ */
+export function clampTrialEndForCheckout(ts: number): number {
+  const minAllowed = Math.floor(Date.now() / 1000) + 48 * 3600 + 15 * 60
+  return Math.max(ts, minAllowed)
+}

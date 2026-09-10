@@ -1495,11 +1495,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 2. Create / update enrolment for subscription checkouts
   if (session.mode === 'subscription' && session.subscription && ctx.userId && ctx.planId) {
-    const stripeSub = await stripe.subscriptions.retrieve(
+    let stripeSub = await stripe.subscriptions.retrieve(
       typeof session.subscription === 'string'
         ? session.subscription
         : session.subscription.id
     ) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+
+    // Sessions-bridge month-end fix-up. Checkout refuses a trial_end under
+    // 48h away, so a signup on the 29th–31st was created with trial_end
+    // pushed to +48h. Move it back to the 1st now (the Subscriptions API has
+    // no minimum) so the plan bills on the 1st and stays anchored there.
+    if (session.metadata?.billing_model === 'sessions_bridge' && session.metadata?.anchor_unix) {
+      const anchorUnix = Number(session.metadata.anchor_unix)
+      const nowUnix = Math.floor(Date.now() / 1000)
+      if (anchorUnix > nowUnix + 60 && stripeSub.trial_end && stripeSub.trial_end > anchorUnix) {
+        stripeSub = await stripe.subscriptions.update(stripeSub.id, {
+          trial_end: anchorUnix,
+          proration_behavior: 'none',
+        }) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+        console.log('[webhook] sessions_bridge trial_end moved back to the 1st', { sub: stripeSub.id, anchorUnix })
+      }
+    }
 
     // Upsert enrolment via subscriptions table
     const { data: existing } = await supabase
