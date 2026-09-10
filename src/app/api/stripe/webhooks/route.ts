@@ -254,7 +254,7 @@ async function sendSignupEmails(
       academyContactEmail: (org?.contact_email as string | undefined) || undefined,
       billingContext: { kind: 'prorated', anchorLabel, monthlyAmount },
     })
-    billingModelLabel = `Today — ${today} pro-rata to ${anchorLabel}, then ${monthlyAmount}/mo`
+    billingModelLabel = `Today — ${today} for the sessions left before ${anchorLabel}, then ${monthlyAmount}/mo`
   }
 
   if (parentEmailTpl) {

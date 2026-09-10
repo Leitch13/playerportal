@@ -706,6 +706,45 @@ async function canary11ArchivedStillCounted(sb: Supabase): Promise<Omit<CanaryRe
   }
 }
 
+/**
+ * CANARY 12 — Stripe calendar-day proration slipped onto a first invoice.
+ *
+ * The rule is: a mid-month joiner pays for the SESSIONS left this month,
+ * then the full month from the 1st. That rule has been re-broken six times
+ * (last: 10 Sep 2026, BILLING_FLOW_STARTDATE_ENABLED="*" routed everyone
+ * onto a branch that still used Stripe's own proration — picker said £24,
+ * Stripe charged £22.09). Every fix so far lived in one branch; a flag
+ * change walked round it. So this canary watches the SYMPTOM, not the code:
+ * any invoice in the last 2 days carrying a Stripe proration line ("Time on
+ * <plan> from <date> until <date>") on one of our subscriptions.
+ */
+async function canary12StripeDayProration(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const { stripe } = await import('@/lib/stripe')
+  const since = Math.floor(Date.now() / 1000) - 2 * 86400
+  const hits: { org: string; email: string; amount: number; line: string; created: string }[] = []
+  let starting_after: string | undefined
+  for (let page = 0; page < 5; page++) {
+    const res = await stripe.invoices.list({ limit: 100, created: { gte: since }, ...(starting_after ? { starting_after } : {}) })
+    for (const inv of res.data) {
+      for (const l of inv.lines.data) {
+        const d = l.description || ''
+        if (/^Time on .+ from .+ until /i.test(d) || l.proration) {
+          const orgId = (inv.subscription_details?.metadata?.organisation_id as string | undefined) || ''
+          hits.push({ org: orgId, email: inv.customer_email || inv.customer as string, amount: (l.amount || 0) / 100, line: d, created: new Date(inv.created * 1000).toISOString().slice(0, 10) })
+        }
+      }
+    }
+    if (!res.has_more) break
+    starting_after = res.data[res.data.length - 1]?.id
+  }
+  const orgs = await orgNames(sb, hits.map((h) => h.org).filter(Boolean))
+  return {
+    rowCount: hits.length,
+    lines: hits.map((h) => `${orgs.get(h.org) ?? 'unknown academy'}: ${h.email} — £${h.amount.toFixed(2)} "${h.line}" on ${h.created}`),
+    findings: hits.map((h) => ({ org: orgs.get(h.org) ?? 'unknown academy', what: `${h.email} charged £${h.amount.toFixed(2)} by calendar days ("${h.line.slice(0, 60)}")`, since: h.created })),
+  }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -717,6 +756,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 9, name: 'duplicate player records', run: canary9DuplicatePlayers },
   { id: 10, name: 'signed up but never charged', run: canary10ZeroValueSignup },
   { id: 11, name: 'archived players still counted or still live', run: canary11ArchivedStillCounted },
+  { id: 12, name: 'Stripe day-proration on a first invoice', run: canary12StripeDayProration },
 ]
 
 /**
@@ -762,6 +802,7 @@ const CANARY_ACTION: Record<number, string> = {
   7: 'Ask the academy whether these children should be paying, then send payment invites.',
   8: 'Attach the payment to the right child, or the academy cannot see who it is for.',
   9: 'Merge the duplicates and archive the spare, before a family gets billed twice.',
+  12: 'A signup was charged by calendar days, not sessions. Find which code path/flag did it, fix it, and top up or refund the family.',
 }
 
 function bucket(days: number | null): 'new' | 'recent' | 'ongoing' | 'stale' {

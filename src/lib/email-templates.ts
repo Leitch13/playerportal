@@ -526,7 +526,7 @@ export function subscriptionStartedEmail(params: {
         <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
           <tr><td style="color:#888;width:140px">Plan</td><td style="color:#fff;text-align:right;font-weight:600">${params.planName}</td></tr>
           <tr><td style="color:#888">Paid today</td><td style="color:#fff;text-align:right;font-weight:600">${params.amount}</td></tr>
-          <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ pro-rata for today through ${bc.anchorLabel}</td></tr>
+          <tr><td colspan="2" style="color:#aaa;padding-top:0;padding-bottom:8px;font-size:13px">↳ covers the sessions left before ${bc.anchorLabel}</td></tr>
           <tr><td style="color:#888;border-top:1px solid #2a2a2a;padding-top:12px">From ${bc.anchorLabel}</td><td style="color:#fff;text-align:right;font-weight:600;border-top:1px solid #2a2a2a;padding-top:12px">${bc.monthlyAmount}/month</td></tr>
           <tr><td colspan="2" style="color:#aaa;padding-top:0;font-size:13px">↳ then ${bc.monthlyAmount} on the 1st of every month after that</td></tr>
         </table>
