@@ -21,6 +21,8 @@
 
 import { firstOfNextMonthUnix } from './anchor'
 
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 const DOW: readonly string[] = [
   'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
 ] as const
@@ -240,24 +242,78 @@ export function estimateBridgePence(args: {
 }
 
 /**
- * "Tonight bridge" — the amount charged at signup on the legacy
- * `tonight_then_sub` path (used whenever the start-date flow is disabled).
+ * THE ONE RULE for what a parent pays at signup. Every route that takes a
+ * first payment — direct signup, invite/import confirm, future-start
+ * activation — and every preview a parent sees, calls this. Nothing else
+ * decides the number.
  *
- * Unlike estimateBridgePence (which needs plan.sessions_per_month), this uses
- * the platform per-session convention monthly÷4 and only needs the class day,
- * so it works for orgs that never set sessions_per_month (e.g. G&G).
+ *   • Class day known:  sessions left in [start, anchor) × (monthly ÷ 4),
+ *                       capped at one month. 0 sessions left → £0 today.
+ *   • Class day unknown: weeks left until the anchor × (monthly ÷ 4),
+ *                       capped at one month. (A 1-2-1 plan with no fixed
+ *                       day joining on the 2nd pays the month, not £30.)
  *
- * Rule: charge the sessions left this month × per-session, capped at one full
- * month. Single-session fallback when the class has no set day (can't count) —
- * so it never charges LESS than the old flat behaviour.
+ * Then the full monthly amount on the anchor (1st of next month) and every
+ * 1st after that. Stripe's own calendar-day proration is never used.
  *
- * SINGLE SOURCE OF TRUTH: both the server charge (subscribe/route.ts) and the
- * StartDatePicker "pay today" preview call this, so the preview can never show
- * a number different from what Stripe charges.
- *
- * @param monthlyPounds plan.amount in POUNDS
- * @param startISO      YYYY-MM-DD coverage start (inclusive)
- * @param anchorISO     YYYY-MM-DD first-of-next-month billing anchor (exclusive)
+ * Re-broken six times before this existed (last: 10 Sep 2026). If you are
+ * about to add a branch that charges something else, don't.
+ */
+export interface FirstCharge {
+  /** Pence due today. */
+  pence: number
+  /** Class-day sessions counted in [start, anchor). 0 when the day is unknown. */
+  sessions: number
+  /** Weeks counted when the day is unknown; 0 otherwise. */
+  weeks: number
+  perSessionPence: number
+  monthlyPence: number
+  capApplied: boolean
+  basis: 'sessions' | 'weeks' | 'none'
+  anchorIso: string
+}
+
+export function firstChargeFor(
+  monthlyPounds: number,
+  startISO: string,
+  anchorISO: string,
+  classDayOfWeek: string | null,
+): FirstCharge {
+  const perSessionPence = Math.max(0, Math.round((monthlyPounds / 4) * 100))
+  const monthlyPence = Math.max(0, Math.round(monthlyPounds * 100))
+  const start = new Date(startISO + 'T00:00:00Z')
+  const anchor = new Date(anchorISO + 'T00:00:00Z')
+  const daysLeft = Math.max(0, Math.round((anchor.getTime() - start.getTime()) / 86400000))
+  if (monthlyPence === 0 || daysLeft === 0) {
+    return { pence: 0, sessions: 0, weeks: 0, perSessionPence, monthlyPence, capApplied: false, basis: 'none', anchorIso: anchorISO }
+  }
+  const validDay = !!classDayOfWeek && DAY_NAMES.includes(classDayOfWeek)
+  if (validDay) {
+    const sessions = countSessionsBetween(startISO, anchorISO, classDayOfWeek)
+    const uncapped = sessions * perSessionPence
+    return {
+      pence: Math.min(uncapped, monthlyPence), sessions, weeks: 0, perSessionPence, monthlyPence,
+      capApplied: uncapped > monthlyPence, basis: sessions > 0 ? 'sessions' : 'none', anchorIso: anchorISO,
+    }
+  }
+  const weeks = Math.min(4, Math.ceil(daysLeft / 7))
+  const uncapped = weeks * perSessionPence
+  return {
+    pence: Math.min(uncapped, monthlyPence), sessions: 0, weeks, perSessionPence, monthlyPence,
+    capApplied: uncapped > monthlyPence, basis: 'weeks', anchorIso: anchorISO,
+  }
+}
+
+/** Plain-English line for receipts and previews, e.g. "3 sessions this month". */
+export function firstChargeLabel(fc: FirstCharge): string {
+  if (fc.basis === 'sessions') return `${fc.sessions} ${fc.sessions === 1 ? 'session' : 'sessions'} this month`
+  if (fc.basis === 'weeks') return `${fc.weeks} ${fc.weeks === 1 ? 'week' : 'weeks'} this month`
+  return 'Nothing to pay this month'
+}
+
+/**
+ * Kept for the existing call sites and tests. Same rule as firstChargeFor —
+ * this is now a thin wrapper, not a second formula.
  */
 export function tonightBridge(
   monthlyPounds: number,
@@ -265,9 +321,6 @@ export function tonightBridge(
   anchorISO: string,
   classDayOfWeek: string | null,
 ): { pence: number; sessions: number; perSessionPence: number } {
-  const perSessionPence = Math.max(0, Math.round((monthlyPounds / 4) * 100))
-  const monthlyPence = Math.max(0, Math.round(monthlyPounds * 100))
-  const sessions = classDayOfWeek ? countSessionsBetween(startISO, anchorISO, classDayOfWeek) : 0
-  const pence = sessions > 0 ? Math.min(sessions * perSessionPence, monthlyPence) : perSessionPence
-  return { pence, sessions, perSessionPence }
+  const fc = firstChargeFor(monthlyPounds, startISO, anchorISO, classDayOfWeek)
+  return { pence: fc.pence, sessions: fc.sessions, perSessionPence: fc.perSessionPence }
 }

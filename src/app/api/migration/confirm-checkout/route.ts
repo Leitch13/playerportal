@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
 import { QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
+import { sessionsBridgeCheckout } from '@/lib/billing/first-charge'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -11,12 +12,6 @@ import { feePercentFromRate } from '@/lib/stripe-fee'
 export const maxDuration = 60
 
 export const dynamic = 'force-dynamic'
-
-function getFirstOfNextMonth(): number {
-  const now = new Date()
-  const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
-  return Math.floor(nextMonth.getTime() / 1000)
-}
 
 /**
  * Confirm-and-pay endpoint for migration invitations. Called by the parent's
@@ -216,48 +211,70 @@ export async function POST(request: NextRequest) {
     await admin.from('subscription_plans').update({ stripe_price_id: stripePriceId }).eq('id', plan.id)
   }
 
-  const params: Stripe.Checkout.SessionCreateParams = {
-    customer: customerId,
-    line_items: [{ price: stripePriceId, quantity: 1 }],
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    success_url: `${origin}/confirm-subscription/${token}/success`,
-    cancel_url: `${origin}/confirm-subscription/${token}`,
-    metadata: {
-      supabase_subscription_id: sub.id as string,
-      supabase_plan_id: plan.id,
-      supabase_player_id: (sub.player_id as string) || '',
-      supabase_parent_id: sub.parent_id as string,
-      billing_option: 'monthly',
-      migration: 'true',
-    },
-    subscription_data: {
-      metadata: {
-        supabase_subscription_id: sub.id as string,
-        supabase_plan_id: plan.id,
-        supabase_player_id: (sub.player_id as string) || '',
-        supabase_parent_id: sub.parent_id as string,
-        migration: 'true',
-      },
-      // If the admin set a deferred first-charge date (member already prepaid
-      // elsewhere), use trial_end so we DON'T charge on confirm — £0 today,
-      // first charge on that date. trial_end ⊥ billing_cycle_anchor, so it's
-      // one or the other. Otherwise fall back to prorating from the 1st.
-      ...(migrationBillingStart
-        ? { trial_end: migrationBillingStart }
-        : { billing_cycle_anchor: getFirstOfNextMonth() }),
-      // on_behalf_of brands the migration subscription with the academy's
-      // Stripe account name so renewals stay academy-branded too.
-      ...(connectedAccountId
-        ? {
-            on_behalf_of: connectedAccountId,
-            ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: feePercentFromRate(PLATFORM_FEE_RATE) } : {}),
-            transfer_data: { destination: connectedAccountId },
-          }
-        : {}),
-    },
+  const baseMetadata = {
+    supabase_subscription_id: sub.id as string,
+    supabase_plan_id: plan.id,
+    supabase_player_id: (sub.player_id as string) || '',
+    supabase_parent_id: sub.parent_id as string,
+    billing_option: 'monthly',
+    migration: 'true',
   }
 
+  if (migrationBillingStart) {
+    // Admin set a deferred first-charge date (member already prepaid
+    // elsewhere): £0 today, first charge on that date via trial_end.
+    const params: Stripe.Checkout.SessionCreateParams = {
+      customer: customerId,
+      line_items: [{ price: stripePriceId, quantity: 1 }],
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      success_url: `${origin}/confirm-subscription/${token}/success`,
+      cancel_url: `${origin}/confirm-subscription/${token}`,
+      metadata: baseMetadata,
+      subscription_data: {
+        metadata: baseMetadata,
+        trial_end: migrationBillingStart,
+        ...(connectedAccountId
+          ? {
+              on_behalf_of: connectedAccountId,
+              ...(PLATFORM_FEE_RATE > 0 ? { application_fee_percent: feePercentFromRate(PLATFORM_FEE_RATE) } : {}),
+              transfer_data: { destination: connectedAccountId },
+            }
+          : {}),
+      },
+    }
+    const session = await stripe.checkout.sessions.create(params)
+    return NextResponse.json({ url: session.url })
+  }
+
+  // No deferred date: the parent starts now and pays by THE ONE RULE —
+  // sessions left this month, then the plan from the 1st. This route used
+  // Stripe's calendar-day proration until Sep 2026 (9 families at G&G and
+  // Jamie's in the first week of September alone).
+  let classDayOfWeek: string | null = null
+  if (sub.player_id) {
+    const { data: enrol } = await admin
+      .from('enrolments')
+      .select('training_groups(day_of_week)')
+      .eq('player_id', sub.player_id)
+      .in('status', ['active', 'pending'])
+      .limit(1)
+      .maybeSingle()
+    classDayOfWeek = ((enrol?.training_groups as unknown as { day_of_week?: string | null } | null)?.day_of_week) ?? null
+  }
+  const { params } = sessionsBridgeCheckout({
+    customerId,
+    planName: plan.name,
+    monthlyPounds: Number(plan.amount),
+    stripePriceId,
+    startIso: new Date().toISOString().slice(0, 10),
+    classDayOfWeek,
+    connectedAccountId,
+    platformFeeRate: PLATFORM_FEE_RATE,
+    successUrl: `${origin}/confirm-subscription/${token}/success`,
+    cancelUrl: `${origin}/confirm-subscription/${token}`,
+    metadata: baseMetadata,
+  })
   const session = await stripe.checkout.sessions.create(params)
   return NextResponse.json({ url: session.url })
 }

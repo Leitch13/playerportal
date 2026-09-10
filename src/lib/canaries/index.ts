@@ -20,7 +20,6 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Supabase = any
 
-import { isStartDateBillingEnabled, isFutureStartBillingEnabled } from '../billing/flag'
 
 export interface CanaryResult {
   id: number
@@ -291,25 +290,10 @@ async function canary4CrossAcademy(sb: Supabase): Promise<Omit<CanaryResult, 'id
  * mismatch that mischarged three JAF families in June.
  */
 export function canary5FlagCoherence(): CanaryResult {
-  const base = { id: 5, name: 'flag coherence' }
-  try {
-    const futList = (process.env.BILLING_FUTURE_START_ENABLED || '').trim()
-    // '*' means every org sees the picker — a sentinel org id (not in any
-    // allowlist) then correctly requires BILLING_FLOW_STARTDATE_ENABLED='*'.
-    const SENTINEL = '00000000-0000-0000-0000-000000000000'
-    const candidates = futList === '*' ? [SENTINEL] : futList.split(',').map((s) => s.trim()).filter(Boolean)
-    const incoherent = candidates.filter(
-      (org) => isFutureStartBillingEnabled(org) && !isStartDateBillingEnabled(org))
-    return {
-      ...base,
-      status: incoherent.length ? 'fired' : 'ok',
-      rowCount: incoherent.length,
-      lines: incoherent.map((org) =>
-        `INCOHERENT — org ${org === SENTINEL ? '* (all orgs)' : org} sees the future-start picker but the billing route will charge it as start-today`),
-    }
-  } catch (err) {
-    return { ...base, status: 'error', rowCount: 0, lines: [], error: err instanceof Error ? err.message : String(err) }
-  }
+  // Since the single billing path (Sep 2026) the start-date flag no longer
+  // selects how a parent is charged; only the future-start PICKER is gated.
+  // Nothing left to be incoherent. Canary 12 watches the money instead.
+  return { id: 5, name: 'flag coherence', status: 'ok', rowCount: 0, lines: [] }
 }
 
 /**

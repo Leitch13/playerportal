@@ -1479,7 +1479,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       amount_paid: amountPaid,
       status: 'paid',
       stripe_session_id: session.id,
-      description: ctx.plan?.name ? `${ctx.plan.name} — subscription` : 'Subscription payment',
+      // A sessions-bridge checkout's first invoice is the bridge, not a
+      // renewal — label it so refunds/reports classify it as a bridge.
+      description: session.metadata?.billing_model === 'sessions_bridge'
+        ? (ctx.plan?.name ? `Sessions this month — ${ctx.plan.name}` : 'Sessions this month')
+        : ctx.plan?.name ? `${ctx.plan.name} — subscription` : 'Subscription payment',
       due_date: now.split('T')[0],
       paid_date: now.split('T')[0],
       created_at: now,
@@ -1645,7 +1649,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const activatesOnIso = (session.metadata?.activates_on as string | undefined)
         || new Date().toISOString().slice(0, 10)
       const anchorLabel = anchorLabelFor(activatesOnIso)
-      const billingContext = billingModel === 'immediate_prorated'
+      const billingContext = billingModel === 'immediate_prorated' || billingModel === 'sessions_bridge'
         ? { kind: 'prorated' as const, anchorLabel, monthlyAmount }
         : undefined
 
@@ -1674,7 +1678,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           .eq('organisation_id', ctx.orgId)
           .eq('role', 'admin')
         if (orgAdmins && orgAdmins.length > 0) {
-          const billingModelLabel = billingModel === 'immediate_prorated'
+          const billingModelLabel = billingModel === 'immediate_prorated' || billingModel === 'sessions_bridge'
             ? `Today \u2014 \u00a3${amountPaid.toFixed(2)} for the sessions left before ${anchorLabel}, then ${monthlyAmount}/mo`
             : `${monthlyAmount}/month subscription started`
           const adminTpl = newSignupAdminEmail({
@@ -2710,7 +2714,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   // weird description; admin can reconcile).
   const description = (payment.description as string | null) || ''
   const isCamp = description.startsWith('Camp:')
-  const isBridge = description.startsWith('First session ')
+  const isBridge = description.startsWith('First session ') || description.startsWith('Sessions this month')
   const isSubscription = description.includes('— subscription') || description.startsWith('Subscription payment')
   if (!isCamp && !isBridge && !isSubscription) {
     console.log('[webhook:charge.refunded] unclassified payment refund — skipping sync', {

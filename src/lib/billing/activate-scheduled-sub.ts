@@ -71,7 +71,7 @@ export async function activateScheduledSubRow(
     // Resolve the plan + org for Stripe params
     const { data: plan, error: planErr } = await supabase
       .from('subscription_plans')
-      .select('stripe_price_id, organisation_id, amount')
+      .select('stripe_price_id, stripe_product_id, organisation_id, amount')
       .eq('id', row.plan_id)
       .single()
     if (planErr || !plan?.stripe_price_id) {
@@ -114,7 +114,26 @@ export async function activateScheduledSubRow(
     if (!defaultPm) throw new Error(`no payment method on SetupIntent for sub ${row.id}`)
     if (!row.stripe_customer_id) throw new Error(`no stripe_customer_id on sub ${row.id}`)
 
+    // THE ONE RULE (src/lib/billing/sessions.ts firstChargeFor): sessions
+    // left this month × per-session, capped at a month, as a one-off invoice
+    // item; the plan itself first bills on the anchor. Never Stripe
+    // calendar-day proration — that is what re-broke billing six times.
     const anchor = firstOfNextMonthUnix(new Date())
+    const anchorIso = new Date(anchor * 1000).toISOString().slice(0, 10)
+    const startIso = new Date().toISOString().slice(0, 10)
+    let classDayOfWeek: string | null = null
+    if (row.training_group_id) {
+      const { data: grp } = await supabase.from('training_groups').select('day_of_week').eq('id', row.training_group_id).maybeSingle()
+      classDayOfWeek = (grp?.day_of_week as string | null) ?? null
+    }
+    const { firstChargeFor, firstChargeLabel } = await import('./sessions')
+    const fc = firstChargeFor(Number(plan.amount), startIso, anchorIso, classDayOfWeek)
+
+    let productId: string | null = (plan as { stripe_product_id?: string | null }).stripe_product_id ?? null
+    if (fc.pence > 0 && !productId) {
+      const price = await stripe.prices.retrieve(plan.stripe_price_id)
+      productId = typeof price.product === 'string' ? price.product : price.product.id
+    }
 
     const stripeSub = await stripe.subscriptions.create(
       {
@@ -122,7 +141,15 @@ export async function activateScheduledSubRow(
         items: [{ price: plan.stripe_price_id }],
         default_payment_method: defaultPm,
         billing_cycle_anchor: anchor,
-        proration_behavior: 'create_prorations',
+        proration_behavior: 'none',
+        ...(fc.pence > 0 && productId
+          ? {
+              add_invoice_items: [{
+                price_data: { currency: 'gbp', product: productId, unit_amount: fc.pence },
+                quantity: 1,
+              }],
+            }
+          : {}),
         collection_method: 'charge_automatically',
         on_behalf_of: org.stripe_account_id,
         application_fee_percent: feePercent,
@@ -132,9 +159,13 @@ export async function activateScheduledSubRow(
           supabase_user_id: row.parent_id,
           supabase_plan_id: row.plan_id,
           ...(row.player_id ? { supabase_player_id: row.player_id } : {}),
-          billing_model: 'future_prorated',
+          billing_model: 'sessions_bridge',
           activates_on: row.start_date,
-          pp_flow: 'future_prorated_activation',
+          pp_flow: 'future_start_activation',
+          bridge_pence: String(fc.pence),
+          bridge_sessions_remaining: String(fc.sessions),
+          bridge_basis: fc.basis,
+          bridge_label: firstChargeLabel(fc),
         },
       },
       {

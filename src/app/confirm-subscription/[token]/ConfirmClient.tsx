@@ -8,6 +8,10 @@ interface Props {
   childName: string
   planName: string
   planAmount: number
+  /** £ due today by the sessions rule (0 when deferred/nothing left this month). */
+  todayAmount: number
+  todayLabel: string
+  anchorLabel: string
   sessionsPerWeek: number
   academyName: string
   primaryColor: string
@@ -21,6 +25,9 @@ export default function ConfirmClient({
   childName,
   planName,
   planAmount,
+  todayAmount,
+  todayLabel,
+  anchorLabel,
   sessionsPerWeek,
   academyName,
   primaryColor,
@@ -75,9 +82,13 @@ export default function ConfirmClient({
               <p className="text-xs text-white/40">{sessionsPerWeek} session{sessionsPerWeek !== 1 ? 's' : ''}/week</p>
             </div>
             {billing === 'monthly' ? (
-              <div className="flex items-baseline gap-1 mt-2">
-                <span className="text-3xl font-extrabold text-white">£{planAmount.toFixed(2)}</span>
-                <span className="text-sm text-white/50">/month</span>
+              <div className="mt-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-extrabold text-white">£{todayAmount.toFixed(2)}</span>
+                  <span className="text-sm text-white/50">today</span>
+                </div>
+                <p className="text-xs text-white/50 mt-0.5">{todayLabel}</p>
+                <p className="text-sm text-white/70 mt-2">Then <span className="font-semibold text-white">£{planAmount.toFixed(2)}</span>/month from {anchorLabel}</p>
               </div>
             ) : (
               <div className="flex items-baseline gap-2 mt-2">
@@ -87,7 +98,7 @@ export default function ConfirmClient({
             )}
             <p className="text-[11px] text-white/40 mt-1">
               {billing === 'monthly'
-                ? 'Auto-renews monthly. Cancel anytime.'
+                ? 'Renews on the 1st of every month. Cancel anytime.'
                 : `Save £${quarterlySaving.toFixed(2)} · then renews quarterly.`}
             </p>
           </div>
@@ -151,7 +162,7 @@ export default function ConfirmClient({
             className="w-full py-3.5 rounded-full font-bold text-sm transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
             style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
           >
-            {loading ? 'Redirecting to secure checkout...' : `Confirm & pay ${billing === 'monthly' ? `£${planAmount.toFixed(2)}/mo` : `£${quarterlyTotal.toFixed(2)}`}`}
+            {loading ? 'Redirecting to secure checkout...' : `Confirm & pay ${billing === 'monthly' ? `£${todayAmount.toFixed(2)} today` : `£${quarterlyTotal.toFixed(2)}`}`}
           </button>
 
           <p className="text-[11px] text-white/30 text-center mt-4">

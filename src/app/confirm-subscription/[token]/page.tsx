@@ -30,8 +30,8 @@ export default async function ConfirmSubscriptionPage({
   const { data: sub } = await admin
     .from('subscriptions')
     .select(`
-      id, status, invite_token, invite_confirmed_at,
-      player:players(id, first_name, last_name),
+      id, status, invite_token, invite_confirmed_at, migration_billing_starts_at,
+      player:players(id, first_name, last_name, enrolments(status, training_groups(day_of_week))),
       plan:subscription_plans(id, name, amount, sessions_per_week),
       org:organisations(id, name, slug, primary_color, logo_url, quarterly_billing_enabled, quarterly_discount_percent)
     `)
@@ -59,9 +59,26 @@ export default async function ConfirmSubscriptionPage({
     return <ErrorScreen message="This invitation is missing some details. Please contact your academy." />
   }
 
+  // Preview of today's charge from THE ONE RULE (same function the checkout
+  // route uses), so the parent is shown the number they will be charged.
+  const { firstChargeFor, firstChargeLabel } = await import('@/lib/billing/sessions')
+  const { firstOfNextMonthUnix } = await import('@/lib/billing/anchor')
+  const deferredStart = (sub as { migration_billing_starts_at?: string | null }).migration_billing_starts_at
+  const deferred = !!deferredStart && new Date(deferredStart).getTime() > Date.now() + 3600 * 1000
+  const enrolments = ((player as unknown as { enrolments?: { status: string; training_groups: { day_of_week: string | null } | null }[] }).enrolments) || []
+  const classDayOfWeek = enrolments.find((e) => e.status === 'active' || e.status === 'pending')?.training_groups?.day_of_week ?? null
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const anchorUnix = firstOfNextMonthUnix(new Date())
+  const anchorIso = new Date(anchorUnix * 1000).toISOString().slice(0, 10)
+  const fc = firstChargeFor(Number(plan.amount), todayIso, anchorIso, classDayOfWeek)
+  const anchorLabel = new Date(anchorUnix * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+
   return (
     <ConfirmClient
       token={token}
+      todayAmount={deferred ? 0 : fc.pence / 100}
+      todayLabel={deferred ? `Nothing today — first charge ${new Date(deferredStart as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}` : firstChargeLabel(fc)}
+      anchorLabel={anchorLabel}
       childName={`${player.first_name} ${player.last_name || ''}`.trim()}
       planName={plan.name}
       planAmount={Number(plan.amount)}

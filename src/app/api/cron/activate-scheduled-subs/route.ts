@@ -13,7 +13,7 @@ import {
  * Runs once per day at 02:00 UTC (see vercel.json). Queries
  * `subscriptions` for rows with status='scheduled' and start_date <= today,
  * then activates each by creating a real Stripe subscription with
- * billing_cycle_anchor at the 1st of next month + create_prorations
+ * billing_cycle_anchor at the 1st of next month + a one-off 'sessions this month' item (never Stripe proration)
  * (exactly the same Stage 2 primitive — just deferred). On success, the
  * `customer.subscription.created` webhook flips the DB row to 'active'.
  *
