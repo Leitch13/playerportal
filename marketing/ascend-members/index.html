@@ -73,6 +73,7 @@
     <a href="library.html">Library</a>
     <a href="diagnostic.html">Diagnostic</a>
     <a href="pricing-calculator.html">Calculator</a>
+    <a href="monday-call.html">Monday call</a>
     <a href="work-with-me.html">Work with me</a>
   </nav>
 </div></div>
@@ -204,13 +205,14 @@
     <p class="lede">So you know exactly what to expect from me, and what I expect from you.</p>
     <div class="rhythm">
       <div class="rh"><div class="when">Week 1</div><b>Kickoff call</b><span>45 minutes. We go through your intake numbers and agree the one thing you're fixing first.</span></div>
-      <div class="rh"><div class="when">Every month</div><b>Coaching call</b><span>30 minutes, one-to-one. What moved, what didn't, what's next.</span></div>
-      <div class="rh"><div class="when">Any time</div><b>WhatsApp access</b><span>Stuck on something between calls? Message me. I answer within a working day.</span></div>
+      <div class="rh"><div class="when">Every Monday</div><b>The Monday call</b><span>45 minutes, live, the whole room. Numbers round, one lesson, hot seats, your one thing for the week. <a href="monday-call.html">How it runs &rarr;</a></span></div>
+      <div class="rh"><div class="when">Last Monday of the month</div><b>Numbers check-in</b><span>The Monday call becomes a month review. Everyone brings players, revenue and the number they said they'd move.</span></div>
+      <div class="rh"><div class="when">Any time</div><b>The WhatsApp group</b><span>Stuck between Mondays? Post it in the members' group. I'm in it every day, and so is everyone else.</span></div>
       <div class="rh"><div class="when">Ongoing</div><b>The library</b><span>New material lands here as I build it. You'll get an email when something worth your time drops.</span></div>
     </div>
     <div class="callout">
       <div class="lbl">What I ask of you</div>
-      <p>Turn up to the calls with your numbers, and do the one thing we agree on between them. That's it. The members who move fastest are the ones who bring evidence, not intentions.</p>
+      <p>Turn up on Mondays with your numbers, and do the one thing we agree on before the next one. That's it. The members who move fastest are the ones who bring evidence, not intentions.</p>
     </div>
   </section>
 
@@ -219,7 +221,7 @@
     <div class="cards two">
       <a class="card" href="work-with-me.html">
         <div class="step">Calls &amp; contact</div><h3>Work with me</h3>
-        <p>Book your kickoff or monthly call, get my WhatsApp, and see what else is available.</p>
+        <p>Book your kickoff, join the Monday call, get into the WhatsApp group, and see what the Mastermind adds.</p>
         <span class="go">Open &rarr;</span></a>
       <a class="card" href="intake.html">
         <div class="step">Do this first</div><h3>Member intake</h3>
@@ -334,7 +336,7 @@ var STEP_TITLES = [
   ['Step 6 · Audit your week','Where your time goes and what to hand off first.'],
   ['Step 7 · Pick your one thing','One fix for the next 30 days. Not five.'],
   ['Step 8 · Work your stage folder','The library material that matches your weakest stage.'],
-  ['Step 9 · Report back','Bring the numbers to your first monthly call.']
+  ['Step 9 · Report back','Bring the numbers to the Monday call and say what moved.']
 ];
 var TOTAL = STEP_TITLES.length;
 var KEY = 'ascend_onboarding_v1';
@@ -362,7 +364,7 @@ if(done===0){
 }else if(done===TOTAL){
   document.getElementById('daycount').textContent = 'Onboarding complete';
   document.getElementById('nowTitle').textContent = 'You are through the first 30 days';
-  document.getElementById('nowText').textContent = 'Now it is rhythm: monthly call, one fix at a time, keep working your weakest stage in the library.';
+  document.getElementById('nowText').textContent = 'Now it is rhythm: the Monday call every week, one fix at a time, keep working your weakest stage in the library.';
   document.getElementById('nowBtn').textContent = 'Open the library →';
   document.getElementById('nowBtn').setAttribute('href','library.html');
   document.getElementById('nextStepTitle').textContent = 'All nine steps done';

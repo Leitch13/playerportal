@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
   const whatsapp = str(body.whatsapp, 60)
   const academy = str(body.academy, 200)
   const players = str(body.players_per_week, 80)
+  const revenue = str(body.monthly_revenue, 60)
+  const budget = str(body.monthly_budget, 60)
   const problem = str(body.biggest_problem)
   const why = str(body.why_now)
 
@@ -81,6 +83,8 @@ export async function POST(request: NextRequest) {
       ${row('WhatsApp', whatsapp)}
       ${row('Academy / base', academy)}
       ${row('Players per week', players)}
+      ${row('Monthly revenue', revenue)}
+      ${row('Could invest per month', budget)}
       ${row('Biggest problem', problem)}
       ${row('Why now', why)}
     </table>
@@ -90,7 +94,7 @@ export async function POST(request: NextRequest) {
 
   const alert = await sendEmail({
     to,
-    subject: `ASCEND APPLICATION: ${name}${academy ? ` — ${academy}` : ''}`,
+    subject: `ASCEND APPLICATION: ${name}${academy ? ` — ${academy}` : ''}${budget ? ` [${budget}]` : ''}`,
     html: alertHtml,
     replyTo: email,
   })

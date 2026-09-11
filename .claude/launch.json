@@ -33,6 +33,30 @@
         "marketing/academy-leads"
       ],
       "port": 4002
+    },
+    {
+      "name": "ASCEND Members",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4003",
+        "--directory",
+        "marketing/ascend-members"
+      ],
+      "port": 4003
+    },
+    {
+      "name": "ASCEND Mentorship",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4004",
+        "--directory",
+        "/private/tmp/claude-501/-Users-johnleitch-Playerportal/c4bf6b63-e503-42d1-a744-8c4b3ffd9dba/scratchpad/mentorship-site"
+      ],
+      "port": 4004
     }
   ]
 }
