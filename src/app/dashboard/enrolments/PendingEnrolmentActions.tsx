@@ -8,8 +8,6 @@ import { useRouter } from 'next/navigation'
  * Action cluster for a Pending enrolment row (Stage 3 future-start).
  *
  *   • View         — link to player profile
- *   • Activate now — runs the same per-row logic as the daily cron via
- *                    POST /api/admin/enrolments/{id}/activate-now
  *   • Cancel       — flips the scheduled subscription + pending enrolment
  *                    to 'cancelled' via POST /api/admin/enrolments/{id}/cancel-pending
  *                    (DB-only; the SetupIntent will expire on its own)
@@ -59,14 +57,6 @@ export default function PendingEnrolmentActions({
       >
         View
       </Link>
-      <button
-        type="button"
-        onClick={() => call('activate')}
-        disabled={busy !== null}
-        className="text-[12px] font-semibold text-emerald-300 px-2 py-1 rounded border border-emerald-500/30 hover:bg-emerald-500/15 transition-colors disabled:opacity-50"
-      >
-        {busy === 'activate' ? 'Activating…' : 'Activate now'}
-      </button>
       <button
         type="button"
         onClick={() => call('cancel')}

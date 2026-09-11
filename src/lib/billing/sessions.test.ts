@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSessionsBetween, tonightBridge, sessionsPerMonthFor, estimateBridgePence, firstChargeFor } from './sessions'
+import { countSessionsBetween, tonightBridge, firstChargeFor } from './sessions'
 
 // The billing anchor is always the 1st of the next calendar month (exclusive).
 const SEP1 = '2026-09-01'
@@ -63,86 +63,7 @@ describe('tonightBridge — charge the sessions left this month, capped at a mon
   })
 })
 
-describe('sessionsPerMonthFor — counting instead of asking', () => {
-  it('counts the weekday occurrences in the month', () => {
-    // September 2026 has 5 Tuesdays (1, 8, 15, 22, 29)
-    expect(sessionsPerMonthFor('Tuesday', new Date('2026-09-02T00:00:00Z'))).toBe(5)
-    // and 4 Thursdays (3, 10, 17, 24)
-    expect(sessionsPerMonthFor('Thursday', new Date('2026-09-02T00:00:00Z'))).toBe(4)
-  })
 
-  it('is stable wherever in the month you ask from', () => {
-    const first = sessionsPerMonthFor('Saturday', new Date('2026-09-01T00:00:00Z'))
-    const last = sessionsPerMonthFor('Saturday', new Date('2026-09-30T00:00:00Z'))
-    expect(first).toBe(last)
-  })
-
-  it('returns null only when there is no class day to count', () => {
-    expect(sessionsPerMonthFor(null, new Date('2026-09-02T00:00:00Z'))).toBeNull()
-    expect(sessionsPerMonthFor('Funday', new Date('2026-09-02T00:00:00Z'))).toBeNull()
-  })
-})
-
-describe('estimateBridgePence — a blank sessions_per_month no longer disables session billing', () => {
-  // The case that sent Gold & Gray to calendar billing: 27 plans, none with
-  // sessions_per_month, so every mid-month joiner was charged by day.
-  it('derives the per-session price when the plan has not set one', () => {
-    const b = estimateBridgePence({
-      monthlyPence: 9600,             // £96 Intensity Membership
-      sessionsPerMonth: null,         // never filled in
-      classDayOfWeek: 'Saturday',
-      startDate: new Date('2026-09-02T00:00:00Z'),
-    })
-    expect(b).not.toBeNull()
-    // September 2026 has 4 Saturdays → £24 a session
-    expect(b!.perSessionPence).toBe(2400)
-    // 4 remain from 2 Sep → £96, capped at the month
-    expect(b!.sessionsRemaining).toBe(4)
-    expect(b!.bridgePence).toBe(9600)
-  })
-
-  it('charges only the sessions left, not the whole month', () => {
-    const b = estimateBridgePence({
-      monthlyPence: 9600,
-      sessionsPerMonth: null,
-      classDayOfWeek: 'Saturday',
-      startDate: new Date('2026-09-20T00:00:00Z'),   // 2 Saturdays left (26 Sep... and 20th is a Sunday)
-    })
-    expect(b).not.toBeNull()
-    expect(b!.bridgePence).toBeLessThan(9600)
-  })
-
-  it('an explicit sessions_per_month still wins over the derived count', () => {
-    const derived = estimateBridgePence({
-      monthlyPence: 12000, sessionsPerMonth: null,
-      classDayOfWeek: 'Tuesday', startDate: new Date('2026-09-01T00:00:00Z'),
-    })
-    const explicit = estimateBridgePence({
-      monthlyPence: 12000, sessionsPerMonth: 4,
-      classDayOfWeek: 'Tuesday', startDate: new Date('2026-09-01T00:00:00Z'),
-    })
-    // 5 Tuesdays in September → derived is £24, the academy's stated figure is £30
-    expect(derived!.perSessionPence).toBe(2400)
-    expect(explicit!.perSessionPence).toBe(3000)
-  })
-
-  it('still refuses when there is no class day — nothing to count', () => {
-    expect(estimateBridgePence({
-      monthlyPence: 9600, sessionsPerMonth: null,
-      classDayOfWeek: null, startDate: new Date('2026-09-02T00:00:00Z'),
-    })).toBeNull()
-  })
-
-  it('never charges more than a full month', () => {
-    const b = estimateBridgePence({
-      monthlyPence: 4200, sessionsPerMonth: 2,   // £21 a session, but 5 Tuesdays
-      classDayOfWeek: 'Tuesday', startDate: new Date('2026-09-01T00:00:00Z'),
-    })
-    expect(b!.uncappedPence).toBeGreaterThan(4200)
-    expect(b!.bridgePence).toBe(4200)
-    expect(b!.capApplied).toBe(true)
-  })
-})
 
 describe('firstChargeFor — the one rule every route and preview uses', () => {
   const OCT1 = '2026-10-01'
@@ -180,5 +101,18 @@ describe('firstChargeFor — the one rule every route and preview uses', () => {
     const fc = firstChargeFor(32, '2026-08-01', SEP1, 'Saturday')
     expect(fc.pence).toBe(3200)
     expect(fc.capApplied).toBe(true)
+  })
+})
+
+describe('firstChargeFor — a chosen future start date pays now for the sessions from that date', () => {
+  it('picks Fri 25 Sep for a Friday £32 class → 1 session → £8 today, plan on 1 Oct', () => {
+    const fc = firstChargeFor(32, '2026-09-25', '2026-10-01', 'Friday')
+    expect(fc.sessions).toBe(1)
+    expect(fc.pence).toBe(800)
+  })
+  it('picks Fri 2 Oct on 25 Sep → month is October: 5 Fridays → capped £32 today, plan on 1 Nov', () => {
+    const fc = firstChargeFor(32, '2026-10-02', '2026-11-01', 'Friday')
+    expect(fc.sessions).toBe(5)
+    expect(fc.pence).toBe(3200)
   })
 })

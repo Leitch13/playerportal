@@ -2213,7 +2213,7 @@ export function newLeadEmail(params: {
 
 /**
  * Parent-facing email sent at Checkout for FUTURE-START CALENDAR-MODE signups
- * (Stage 3 useFutureProrated branch — setup mode / SetupIntent only).
+ * (legacy — no longer sent; kept only so old references compile).
  *
  * The session-bridge path uses subscriptionStartedEmail (with the bridge
  * billingContext variant) because Stripe has actually charged the bridge.

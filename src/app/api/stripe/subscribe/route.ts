@@ -4,7 +4,6 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
-import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
 import { sessionsBridgeCheckout } from '@/lib/billing/first-charge'
 import { clampTrialEndForCheckout } from '@/lib/billing/anchor'
 import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
@@ -217,34 +216,14 @@ export async function POST(request: NextRequest) {
       .eq('id', plan.organisation_id)
       .single()
 
-    // bridge_billing_mode (Stage 3 session enhancement) read separately
+    // (per-academy bridge mode removed —
     // so this route works whether or not migration 072 has been applied.
     // If the column doesn't exist yet, we fall back to 'calendar'.
     // Session billing is the platform default (migration 107). An academy has
     // to opt OUT to bill by calendar day, rather than opt in — the old default
     // meant 53 of 54 academies billed joiners for days they had not trained.
-    let bridgeBillingMode = 'session'
-    try {
-      const { data: orgBridge } = await serviceDb
-        .from('organisations')
-        .select('bridge_billing_mode')
-        .eq('id', plan.organisation_id)
-        .single()
-      if ((orgBridge as { bridge_billing_mode?: string } | null)?.bridge_billing_mode === 'calendar') {
-        bridgeBillingMode = 'calendar'
-      }
-    } catch { /* migration 072 not applied */ }
-
-    // sessions_per_month (Stage 3 session enhancement) read separately.
-    let planSessionsPerMonth: number | null = null
-    try {
-      const { data: planSpm } = await serviceDb
-        .from('subscription_plans')
-        .select('sessions_per_month')
-        .eq('id', planId)
-        .single()
-      planSessionsPerMonth = (planSpm as { sessions_per_month?: number | null } | null)?.sessions_per_month ?? null
-    } catch { /* migration 072 not applied */ }
+    // (Stage-3 per-org 'bridge mode' and per-plan sessions_per_month reads removed:
+    //  one rule for every academy — see BILLING_RULES.md.)
 
     // ── QUARTERLY ENABLEMENT GATE (server-authoritative). Quarterly is allowed
     // only for an org that passes (global flag OR allow-listed) AND has not opted
@@ -712,45 +691,19 @@ export async function POST(request: NextRequest) {
     // If first session is in NEXT month already (no session this month at all),
     // skip the one-time and let the trial_end carry the subscription cleanly.
 
-    // ─── BILLING FLOW SELECTION ───
-    // ONE path for a membership that starts now: sessionsBridgeCheckout()
-    // (src/lib/billing/first-charge.ts) — the sessions left this month as a
-    // one-off line, the plan from the 1st, Stripe proration 'none'. No flag
-    // can route a join-today signup anywhere else; that is deliberate.
-    // (Before Sep 2026 there were four branches and a flag flip walked
-    // round every fix — six times.)
-    //
-    // Still separate, on purpose:
-    //   • migration (admin-set firstBillingDate: parent prepaid elsewhere) → trial_end, £0 today
-    //   • future-dated start (picker, BILLING_FUTURE_START_ENABLED) → bridge at checkout
-    //     or card-saved + activation cron; both use the same firstChargeFor rule
+    // ─── BILLING FLOW ───
+    // ONE path for every academy (BILLING_RULES.md): the parent picks a start
+    // date (today or an upcoming class date within 28 days), pays NOW for the
+    // sessions from that date to the end of that month, and the plan bills on
+    // the 1st. sessionsBridgeCheckout() is the only way a membership starts.
+    // The single exception is a migration with an admin-set firstBillingDate
+    // (parent already prepaid elsewhere): £0 today, first charge on that date.
     const startsTodayOrEarlier = isStartTodayOrEarlier(activatesOnDate)
-    const futureStartBillingFlag = isFutureStartBillingEnabled(plan.organisation_id as string)
-    const useFutureProratedBase = futureStartBillingFlag && !migrationTrialEnd && !startsTodayOrEarlier
+    const useSessionsBridge = !migrationTrialEnd
 
-    const killSwitchOn = process.env.BILLING_BRIDGE_MODE_KILL === 'true'
-    const useSessionBridge =
-      useFutureProratedBase &&
-      !killSwitchOn &&
-      bridgeBillingMode === 'session' &&
-      classDayOfWeek !== null &&
-      !isQuarterly
-
-    const useFutureProrated = useFutureProratedBase && !useSessionBridge
-    const useSessionsToday = !migrationTrialEnd && !useFutureProratedBase
-
-    // ─── Class-day validation (Stage 3 future-start only) ───
-    // The picker (allowFutureStart=true) only emits class-day dates. Reject
-    // any tampered submission that breaks the rule — applies to BOTH the
-    // session-bridge branch and the calendar-mode future-prorated branch,
-    // so a Wednesday submission for a Monday class is rejected uniformly.
-    //
-    // Scoped to useFutureProratedBase so it doesn't surprise legacy paths
-    // (today-only mode, where today may or may not be a class day and the
-    // picker has no choice anyway).
-    //
-    // Skipped when classDayOfWeek is null (unknown-schedule fallback path).
-    if (useFutureProratedBase && classDayOfWeek) {
+    // A future start must be a real class day when the class has a set day.
+    // The picker only offers class days; reject a tampered submission.
+    if (!startsTodayOrEarlier && classDayOfWeek) {
       const { isClassDay } = await import('@/lib/billing/sessions')
       if (!isClassDay(activatesOnIso, classDayOfWeek)) {
         return NextResponse.json(
@@ -760,205 +713,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (useSessionBridge) {
-      // ═══ Stage 3 session-bridge: charge bridge NOW + sub trials until anchor ═══
-      // Parent is charged the bridge amount immediately at Stripe Checkout.
-      // The subscription is created with trial_end=anchor — the recurring £X
-      // first cycle fires automatically on the 1st. No cron needed.
-      // (Test Clock probe confirmed: Stripe transitions trialing → active on
-      // anchor and the full monthly invoice fires with no proration.)
-      // (Class-day validation already enforced above for all
-      //  useFutureProratedBase branches — no per-branch re-check needed.)
-      const { estimateBridgePence } = await import('@/lib/billing/sessions')
-
-      const estimate = estimateBridgePence({
-        monthlyPence: Math.round(Number(plan.amount) * 100),
-        sessionsPerMonth: planSessionsPerMonth,
-        classDayOfWeek,
-        startDate: activatesOnDate,
-      })
-
-      // Defensive: if math fails (shouldn't happen since useSessionBridge
-      // gate already validated all inputs), fall through to calendar mode.
-      if (!estimate || estimate.bridgePence <= 0) {
-        // No bridge to charge → parent gets pure trial-to-anchor.
-        // Hand off to useFutureProrated (calendar) path below.
-      } else {
-        const anchorUnix = firstOfNextMonthUnix(activatesOnDate)
-        const anchorIso = new Date(anchorUnix * 1000).toISOString().slice(0, 10)
-
-        // a54bd62 graft — explicit "Paid today" wording on the bridge line
-        // item so the parent anchors on what they're actually charged at
-        // checkout, rather than Stripe's automatic "X days free" label on
-        // the recurring line. Bridge math + amount unchanged — display only.
-        const startMonthName = activatesOnDate.toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })
-        const sessionWord = estimate.sessionsRemaining === 1 ? 'session' : 'sessions'
-        const bridgeLineName = `Paid today — covers ${estimate.sessionsRemaining} remaining ${startMonthName} ${sessionWord}`
-
-        // Resolve a Stripe priceId for the monthly recurring leg. Reuse the
-        // existing one set on the plan if present, else create via price_data
-        // (the existing immediate_prorated path already handles either).
-        const stripePriceId = (plan as { stripe_price_id?: string | null }).stripe_price_id ?? null
-
-        const sessionBridgeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
-        if (stripePriceId) {
-          sessionBridgeLineItems.push({ price: stripePriceId, quantity: 1 })
-        } else {
-          sessionBridgeLineItems.push({
-            price_data: {
-              currency: 'gbp',
-              product_data: { name: String(plan.name) },
-              unit_amount: Math.round(Number(plan.amount) * 100),
-              recurring: { interval: 'month' },
-            },
-            quantity: 1,
-          })
-        }
-        // One-time bridge line item — billed at checkout
-        sessionBridgeLineItems.push({
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: bridgeLineName,
-              description: `${estimate.sessionsRemaining} ${sessionWord} × £${(estimate.perSessionPence / 100).toFixed(2)}`,
-            },
-            unit_amount: estimate.bridgePence,
-          },
-          quantity: 1,
-        })
-
-        const sessionBridgeParams: Stripe.Checkout.SessionCreateParams = {
-          customer: customerId,
-          mode: 'subscription',
-          payment_method_types: ['card'],
-          success_url: `${origin}/dashboard/payments/success?billing=monthly&model=future_session_bridge`,
-          cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
-          line_items: sessionBridgeLineItems,
-          subscription_data: {
-            trial_end: clampTrialEndForCheckout(anchorUnix),
-            // NOTE: billing_cycle_anchor intentionally omitted. Stripe forbids
-            // combining it with trial_end. trial_end alone produces the
-            // desired calendar: first cycle billed on trial_end.
-            on_behalf_of: connectedAccountId,
-            application_fee_percent: feePercentFromRate(PLATFORM_FEE_RATE),
-            transfer_data: { destination: connectedAccountId },
-            metadata: {
-              supabase_plan_id: planId,
-              supabase_user_id: user.id,
-              ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
-              ...(classId ? { supabase_class_id: classId } : {}),
-              billing_model: 'future_session_bridge',
-              pp_flow: 'future_session_bridge',
-              activates_on: activatesOnIso,
-              bridge_sessions_remaining: String(estimate.sessionsRemaining),
-              bridge_per_session_pence: String(estimate.perSessionPence),
-              bridge_pence: String(estimate.bridgePence),
-            },
-          },
-          metadata: {
-            supabase_plan_id: planId,
-            supabase_user_id: user.id,
-            ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
-            billing_option: 'monthly',
-            billing_model: 'future_session_bridge',
-            pp_flow: 'future_session_bridge',
-            activates_on: activatesOnIso,
-            bridge_pence: String(estimate.bridgePence),
-            bridge_sessions_remaining: String(estimate.sessionsRemaining),
-            ...(classId ? { supabase_class_id: classId } : {}),
-            ...(siblingCouponId ? { sibling_coupon_id: siblingCouponId } : {}),
-          },
-          ...(siblingCouponId ? { discounts: [{ coupon: siblingCouponId }] } : {}),
-        }
-
-        const session = await stripe.checkout.sessions.create(sessionBridgeParams)
-
-        return NextResponse.json({
-          url: session.url,
-          billing: 'monthly',
-          billingModel: 'future_session_bridge',
-          activatesOn: activatesOnIso,
-          nextBillingDate: anchorIso,
-          nextBillingAmount: Number(plan.amount).toFixed(2),
-          tonightAmount: (estimate.bridgePence / 100).toFixed(2),
-          firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
-          siblingDiscountApplied: !!siblingCouponId,
-          siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
-          bridge: {
-            sessionsRemaining: estimate.sessionsRemaining,
-            perSessionPence: estimate.perSessionPence,
-            bridgePence: estimate.bridgePence,
-            capApplied: estimate.capApplied,
-          },
-        })
-      }
-    }
-
-    if (useFutureProrated) {
-      // ═══ Stage 3: SetupIntent-mode Checkout, charge happens later via cron ═══
-      // Parent saves card now (£0 today). A `subscriptions` row with
-      // status='scheduled' + start_date + stripe_setup_intent_id is written by
-      // the webhook on checkout.session.completed (setup mode). The activation
-      // cron at /api/cron/activate-scheduled-subs runs daily at 02:00 UTC and
-      // creates the real Stripe subscription when start_date <= today.
-      //
-      // BRANDING: `setup_intent_data.on_behalf_of` attributes the SetupIntent
-      // to the academy's Connect account. Without it, Stripe falls back to
-      // rendering the PLATFORM account's business name on the Checkout page
-      // (e.g. parents saw "Gold and Gray Soccer Academy ltd" — the platform
-      // account's legacy `business_profile.name` — instead of the academy
-      // name). Stripe DOES support on_behalf_of on SetupIntents; the prior
-      // comment about "those apply only to charges" was wrong.
-      // application_fee / transfer_data still don't apply here — there's no
-      // charge — those are set when the cron creates the real subscription.
-      const setupParams: Stripe.Checkout.SessionCreateParams = {
-        customer: customerId,
-        mode: 'setup',
-        payment_method_types: ['card'],
-        success_url: `${origin}/dashboard/payments/success?billing=monthly&model=future_prorated`,
-        cancel_url: `${origin}/dashboard/payments?sub_cancelled=1`,
-        setup_intent_data: {
-          ...(connectedAccountId ? { on_behalf_of: connectedAccountId } : {}),
-          metadata: {
-            supabase_plan_id: planId,
-            supabase_user_id: user.id,
-            ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
-            ...(classId ? { supabase_class_id: classId } : {}),
-            billing_model: 'future_prorated',
-            pp_flow: 'future_prorated',
-            activates_on: activatesOnIso,
-          },
-        },
-        metadata: {
-          supabase_plan_id: planId,
-          supabase_user_id: user.id,
-          ...(resolvedPlayerId ? { supabase_player_id: resolvedPlayerId } : {}),
-          billing_option: 'monthly',
-          billing_model: 'future_prorated',
-          pp_flow: 'future_prorated',
-          activates_on: activatesOnIso,
-          ...(classId ? { supabase_class_id: classId } : {}),
-          ...(siblingCouponId ? { sibling_coupon_id: siblingCouponId } : {}),
-        },
-      }
-
-      const session = await stripe.checkout.sessions.create(setupParams)
-
-      return NextResponse.json({
-        url: session.url,
-        billing: 'monthly',
-        billingModel: 'future_prorated',
-        activatesOn: activatesOnIso,
-        nextBillingDate: activatesOnIso,
-        nextBillingAmount: Number(plan.amount).toFixed(2),
-        tonightAmount: '0.00',
-        firstSessionDate: firstSessionDate ? firstSessionDate.toISOString().split('T')[0] : null,
-        siblingDiscountApplied: !!siblingCouponId,
-        siblingDiscountPercent: siblingCouponId ? Number(planOrg?.sibling_discount_percent) : 0,
-      })
-    }
-
-    if (useSessionsToday) {
+    if (useSessionsBridge) {
       const { params, firstCharge, anchorUnix } = sessionsBridgeCheckout({
         customerId: customerId as string,
         planName: String(plan.name),

@@ -9,7 +9,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
  * SetupIntent (no recurring sub created yet), so cancelling the local rows
  * is sufficient. The SetupIntent will expire on its own (~30 days). The
  * existing cron's idempotency means even if it later sees the row, the
- * status check at /api/cron/activate-scheduled-subs prevents re-activation
+ * (the old activation cron is gone; nothing re-activates a cancelled row)
  * (status changed from 'scheduled' → 'cancelled').
  *
  * No emails are sent — this is an internal admin action. If the parent

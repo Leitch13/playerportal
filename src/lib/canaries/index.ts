@@ -278,23 +278,6 @@ async function canary4CrossAcademy(sb: Supabase): Promise<Omit<CanaryResult, 'id
   }
 }
 
-/**
- * CANARY 5 — Billing flag coherence. Not SQL: an assertion over the four env
- * flags, using the REAL production gate functions from billing/flag.ts so the
- * canary can never drift from the code it guards.
- *
- * Invariant: any org that can SEE the future-start picker
- * (isFutureStartBillingEnabled) must be an org whose billing route will
- * HONOUR it (route dispatch requires isStartDateBillingEnabled AND
- * isFutureStartBillingEnabled). Picker-on + route-legacy is exactly the
- * mismatch that mischarged three JAF families in June.
- */
-export function canary5FlagCoherence(): CanaryResult {
-  // Since the single billing path (Sep 2026) the start-date flag no longer
-  // selects how a parent is charged; only the future-start PICKER is gated.
-  // Nothing left to be incoherent. Canary 12 watches the money instead.
-  return { id: 5, name: 'flag coherence', status: 'ok', rowCount: 0, lines: [] }
-}
 
 /**
  * CANARY 6 — Duplicate camp day booking (Jamie's "the duplicates are back").
@@ -761,7 +744,6 @@ export async function runAllCanaries(sb: Supabase): Promise<CanaryResult[]> {
       })
     }
   }
-  results.push(canary5FlagCoherence())
   return results
 }
 
@@ -781,7 +763,6 @@ const CANARY_ACTION: Record<number, string> = {
   2: 'These enrolments never activated — activate them or cancel them.',
   3: 'A family is paying with nothing to attend. Enrol them or refund.',
   4: 'A class is attributed to the wrong academy. Fix before it bills.',
-  5: 'Billing feature flags disagree with each other. Do not deploy until resolved.',
   6: 'A camp day is booked twice for the same child. Refund one.',
   7: 'Ask the academy whether these children should be paying, then send payment invites.',
   8: 'Attach the payment to the right child, or the academy cannot see who it is for.',

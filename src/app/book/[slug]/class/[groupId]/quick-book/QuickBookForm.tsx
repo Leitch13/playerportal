@@ -32,25 +32,8 @@ interface QuickBookFormProps {
   /** Class day/time so the picker can default to the next upcoming session. */
   classDayOfWeek?: string | null
   classTimeSlot?: string | null
-  /**
-   * Stage 3 flag, resolved server-side from BILLING_FUTURE_START_ENABLED.
-   * When true the picker offers today + future dates (up to today+28); when
-   * false it's clamped to today-only (Option B). Default false for safety.
-   */
-  allowFutureStart?: boolean
   metaPixelId?: string | null
-  /**
-   * Per-org bridge billing mode (server-resolved from
-   * organisations.bridge_billing_mode). 'calendar' = current calendar-day
-   * proration (default). 'session' = checkout-time bridge for plans with
-   * sessions_per_month set.
-   */
-  bridgeMode?: 'calendar' | 'session'
-  /**
-   * Global quarterly safety kill-switch (server-resolved from
-   * QUARTERLY_BILLING_ENABLED). When false the monthly/quarterly toggle is
-   * hidden and billing stays monthly-only. Default false for safety.
-   */
+  /** The academy's own Settings toggle (organisations.quarterly_billing_enabled). */
   quarterlyEnabled?: boolean
 }
 
@@ -104,7 +87,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, allowFutureStart = false, metaPixelId = null, bridgeMode = 'calendar', quarterlyEnabled = false }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, metaPixelId = null, quarterlyEnabled = false }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -533,9 +516,6 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
                   classLabel={groupName}
                   monthlyAmount={selectedPlan.amount}
                   primaryColor={primaryColor}
-                  allowFutureStart={allowFutureStart}
-                  bridgeMode={bridgeMode}
-                  sessionsPerMonth={selectedPlan.sessions_per_month ?? null}
                 />
               </div>
             )}

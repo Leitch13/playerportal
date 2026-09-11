@@ -59,34 +59,6 @@ export function daysBetweenUtc(from: Date, to: Date): number {
   return Math.max(0, Math.round((b - a) / 86400000))
 }
 
-/**
- * Estimate the prorated charge for partial-month signup.
- *
- * Stripe's calendar-day proration formula:
- *   amount = monthly * (days_remaining / days_in_billing_period)
- *
- * The "days_in_billing_period" for an annualised monthly plan in Stripe is
- * (daysFromAnchorToNextAnchor) — typically 30/31/28. We use the number of
- * days between today and the next 1st-of-month, divided by the number of
- * days in the current calendar month, to approximate.
- *
- * Returns amount in pence. Returns the full monthly amount in pence if
- * already at/past the 1st of next month (no proration would happen).
- */
-export function estimateProratedPence(
-  monthlyAmountPounds: number,
-  startDate: Date = new Date(),
-): number {
-  const anchorDate = new Date(firstOfNextMonthUnix(startDate) * 1000)
-  const daysToAnchor = daysBetweenUtc(startDate, anchorDate)
-  const daysInMonth = new Date(
-    Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 0)
-  ).getUTCDate()
-  if (daysToAnchor <= 0) return Math.round(monthlyAmountPounds * 100)
-  if (daysToAnchor >= daysInMonth) return Math.round(monthlyAmountPounds * 100)
-  const proratedPence = Math.round((monthlyAmountPounds * daysToAnchor * 100) / daysInMonth)
-  return Math.max(0, proratedPence)
-}
 
 /**
  * True if the chosen start date falls in the current calendar month.

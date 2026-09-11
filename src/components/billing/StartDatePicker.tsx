@@ -1,71 +1,33 @@
 'use client'
 
 /**
- * Start-date picker for the subscribe flow.
+ * Start-date picker for the signup flow — the same for every academy.
  *
- * Two modes, switched by the `allowFutureStart` prop (set server-side from
- * the BILLING_FUTURE_START_ENABLED feature flag):
+ * Lists today (if it is a class day) and the upcoming class dates within the
+ * next 28 days. The parent picks one, pays NOW for the sessions from that
+ * date to the end of that month, and the plan bills on the 1st. If the class
+ * has no set day, a plain date input is offered instead.
  *
- * - `allowFutureStart=false` (default, today-only): renders only the
- *   "Start today" pill + a "coming soon" notice. Cost preview always shows
- *   the immediate-prorated case. This is the Option B state used while
- *   Stage 3 is in build / awaiting activation.
- *
- * - `allowFutureStart=true` (Stage 3 enabled for this org): renders a list
- *   of selectable class-day pills (today + the upcoming class sessions in
- *   the picker window). "Start today" only appears when today actually is
- *   a class day. NO free date input for scheduled classes.
- *
- *   Fallback: if classDayOfWeek is unknown (e.g. plan with no training
- *   group attached), renders the legacy date input with "your coach will
- *   confirm session times" copy.
- *
- * Cost preview switches between three layouts:
- *   - Today (immediate): "You'll pay today £X / Then on 1st £Y"
- *   - Session-bridge: "Pay today £X / Covers N sessions / Then £Y/month"
- *   - Calendar-mode future: "Card saved / On {date} £X / Then £Y"
- *
- * Purely presentational. Lifts state up — the parent form owns the date.
+ * The "pay today" figure comes from firstChargeFor() — the same function the
+ * checkout route charges with — so what is shown is what is charged.
+ * See BILLING_RULES.md.
  */
 
 import { useEffect, useMemo } from 'react'
-import {
-  estimateProratedPence,
-  firstOfNextMonthLabel,
-  firstOfNextMonthUnix,
-  isStartInCurrentMonth,
-} from '@/lib/billing/anchor'
-import { isoDate, latestAllowedStartDate, nextSessionDate } from '@/lib/billing/next-session'
-import { estimateBridgePence, generateSessionDates, tonightBridge } from '@/lib/billing/sessions'
+import { firstOfNextMonthLabel, firstOfNextMonthUnix } from '@/lib/billing/anchor'
+import { isoDate, latestAllowedStartDate } from '@/lib/billing/next-session'
+import { firstChargeFor, firstChargeLabel, generateSessionDates } from '@/lib/billing/sessions'
 
 interface Props {
   /** ISO date "YYYY-MM-DD". Empty string = no selection yet. */
   value: string
   onChange: (iso: string) => void
-  /** From training_groups.day_of_week + time_slot. Used to compute default. */
   classDayOfWeek: string | null
   classTimeSlot: string | null
   classLabel: string
-  /** Monthly plan amount in £ (pounds, not pence). */
+  /** Monthly plan amount in £ (pounds). */
   monthlyAmount: number
-  /** Hex color from the academy's brand for highlight. */
   primaryColor: string
-  /**
-   * Stage 3 feature flag (server-checked, passed in as prop).
-   * Default false → today-only behaviour (Option B clamp).
-   */
-  allowFutureStart?: boolean
-  /**
-   * Per-org bridge billing mode. 'calendar' = current calendar-day proration
-   * (default). 'session' = per-session × remaining sessions formula, with
-   * checkout-time charge. Falls back to calendar when sessionsPerMonth is null.
-   */
-  bridgeMode?: 'calendar' | 'session'
-  /**
-   * Per-plan sessions covered per calendar month. NULL → bridge always uses
-   * calendar-day proration for this plan even when bridgeMode='session'.
-   */
-  sessionsPerMonth?: number | null
 }
 
 function formatLabel(iso: string): string {
@@ -74,255 +36,68 @@ function formatLabel(iso: string): string {
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' })
 }
 
-export function StartDatePicker({
-  value,
-  onChange,
-  classDayOfWeek,
-  classTimeSlot,
-  classLabel,
-  monthlyAmount,
-  primaryColor,
-  allowFutureStart = false,
-  bridgeMode = 'calendar',
-  sessionsPerMonth = null,
-}: Props) {
-  // All hooks must run on every render, regardless of which branch we
-  // render below. React's rules of hooks forbid conditional/early-return
-  // hook calls.
+export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, monthlyAmount, primaryColor }: Props) {
   const today = useMemo(() => new Date(), [])
   const todayIso = useMemo(() => isoDate(today), [today])
   const maxIso = useMemo(() => isoDate(latestAllowedStartDate(today)), [today])
-  const nextClass = useMemo(
-    () => nextSessionDate({ day_of_week: classDayOfWeek, time_slot: classTimeSlot }, today),
-    [classDayOfWeek, classTimeSlot, today],
-  )
-  const nextClassIso = nextClass ? isoDate(nextClass) : null
 
-  const effectiveValue = value || todayIso
-  const selectedDate = useMemo(() => new Date(effectiveValue + 'T00:00:00Z'), [effectiveValue])
-  const todayDate = useMemo(() => new Date(todayIso + 'T00:00:00Z'), [todayIso])
+  // Class dates in [today, today+28]. Empty when the class has no set day.
+  const sessionDateOptions = useMemo(() => {
+    if (!classDayOfWeek) return [] as string[]
+    const end = new Date(todayIso + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() + 29)
+    return generateSessionDates(todayIso, end.toISOString().slice(0, 10), classDayOfWeek)
+  }, [todayIso, classDayOfWeek])
+  const dayKnown = sessionDateOptions.length > 0
 
-  // Single source of truth for the "pay today" amount. Mirrors the server
-  // charge (subscribe route, tonight_then_sub) EXACTLY: the sessions left
-  // this month × per-session (monthly÷4), capped at one full month; a
-  // single-session fallback when the class has no set day. Both preview
-  // layouts below call this, so the picker can never display a number
-  // different from what Stripe actually charges (the mismatch that got the
-  // earlier flow killed).
-  const payTodayPence = (fromIso: string): number => {
-    const anchorL = new Date(firstOfNextMonthUnix(new Date(fromIso + 'T00:00:00Z')) * 1000)
-      .toISOString().slice(0, 10)
-    return tonightBridge(monthlyAmount, fromIso, anchorL, classDayOfWeek).pence
-  }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Today-only mode (Option B clamp / Stage 3 not enabled)
-  // ──────────────────────────────────────────────────────────────────
-  if (!allowFutureStart) {
-    // Suppress unused-prop warning: parent always submits today via
-    // defaultStartIso in this mode.
-    void value
-    void maxIso
-    void nextClassIso
-    void selectedDate
-    void todayDate
-
-    const startDate = new Date(todayIso + 'T00:00:00Z')
-    const todayChargePence = payTodayPence(todayIso)
-    const anchorLabel = firstOfNextMonthLabel(startDate)
-
-    return (
-      <div>
-        <label className="block text-xs text-white/50 mb-2">When does it start?</label>
-
-        <button
-          type="button"
-          onClick={() => onChange(todayIso)}
-          className="w-full text-left rounded-xl border-2 p-4 mb-3 bg-white/[0.04]"
-          style={{ borderColor: `${primaryColor}60`, boxShadow: `0 0 20px ${primaryColor}10` }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-bold text-white text-sm">Start today</div>
-              <div className="text-xs text-white/40 mt-0.5">
-                {classLabel}
-                {nextClass ? ` — first session ${formatLabel(isoDate(nextClass))}` : ''}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-semibold text-white">{formatLabel(todayIso)}</div>
-            </div>
-          </div>
-        </button>
-
-        <div className="rounded-xl p-3 mb-3 border border-white/[0.06] bg-white/[0.02]">
-          <p className="text-[11px] text-white/50 leading-relaxed">
-            Scheduling a future start date is coming soon. For now, your child starts today and can attend their next class session.
-          </p>
-        </div>
-
-        <div
-          className="mt-3 rounded-xl p-3 text-sm"
-          style={{
-            backgroundColor: `${primaryColor}10`,
-            borderColor: `${primaryColor}30`,
-            borderWidth: 1,
-            borderStyle: 'solid',
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-white/70">You&apos;ll pay today</span>
-            <span className="font-bold text-white">&pound;{(todayChargePence / 100).toFixed(2)}</span>
-          </div>
-          <div className="text-[11px] text-white/50 mt-0.5">
-            Covers {formatLabel(todayIso)} &rarr; {anchorLabel}
-          </div>
-          <div className="border-t border-white/[0.08] my-2" />
-          <div className="flex items-center justify-between">
-            <span className="text-white/70">Then on {anchorLabel}</span>
-            <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}</span>
-          </div>
-          <div className="text-[11px] text-white/50 mt-0.5">
-            Full month, and every 1st after that
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ──────────────────────────────────────────────────────────────────
-  // Full picker mode (Stage 3 enabled): today-or-future, up to today+28
-  // (effectiveValue, selectedDate, todayDate are declared above so all
-  // hooks run unconditionally — see rules-of-hooks comment.)
-  // ──────────────────────────────────────────────────────────────────
-
-  // Three start modes:
-  //   1. Immediate prorated: start <= today AND in current month → charge today + 1st of next month
-  //   2. Same-month future: start > today AND in current month → SetupIntent, first charge on start (prorated to 1st)
-  //   3. Next-month future: start in a future calendar month → SetupIntent, first full charge on start_date (which IS the 1st in that month, typically)
-  // The cost preview must reflect the chosen mode.
-  const startsToday = isStartInCurrentMonth(selectedDate, todayDate) && selectedDate <= todayDate
-  const todayChargePence = startsToday ? payTodayPence(effectiveValue) : 0
-  const anchorLabel = firstOfNextMonthLabel(selectedDate)
-
-  // Class-day-constrained dates: every class-day occurrence inside the
-  // picker's selectable window [today, today+29) (today+28 inclusive). This
-  // is the SINGLE source of truth for what pills render — applied uniformly
-  // in both session-mode and calendar-mode. Free date input only renders
-  // when the class has no day_of_week (unknown-schedule fallback).
-  //
-  // `anchorIso` is kept for the session-bridge math/preview logic below
-  // (the cap is still based on the calendar billing anchor).
-  const anchorIso = useMemo(
-    () => new Date(firstOfNextMonthUnix(today) * 1000).toISOString().slice(0, 10),
-    [today],
-  )
-  const pickerWindowEndIso = useMemo(() => {
-    const d = new Date(todayIso + 'T00:00:00Z')
-    d.setUTCDate(d.getUTCDate() + 29) // today+28 inclusive ⇒ [today, today+29)
-    return d.toISOString().slice(0, 10)
-  }, [todayIso])
-  const sessionDateOptions: string[] = classDayOfWeek
-    ? generateSessionDates(todayIso, pickerWindowEndIso, classDayOfWeek)
-    : []
-  // True iff we know the class day AND there's ≥1 class date in window.
-  // (A 28-day window always covers ≥4 of any given weekday, so this is
-  // false only when classDayOfWeek itself is null/invalid.)
-  const dayConstrainedEnabled = sessionDateOptions.length > 0
-  // anchorIso is unused by the day-constrained branch but kept for
-  // future preview-math hooks; nextClassIso is no longer rendered by
-  // either branch (the next-class hint is implicit in the first pill's
-  // "Next session" label). Suppress unused-var noise.
-  void anchorIso
-  void nextClassIso
-
-  // Auto-select the first valid class-day pill when:
-  //   1. We're in the day-constrained branch (pills will render), AND
-  //   2. The parent form's value is currently empty OR not in the valid
-  //      class-day set (e.g. defaulted to today, but today isn't a class day)
-  // This keeps the cost preview accurate from first render — otherwise the
-  // parent sees today's prorated math even though today isn't selectable.
+  // Default to the first class date so the preview is right from first render.
   useEffect(() => {
-    if (!allowFutureStart) return
-    if (sessionDateOptions.length === 0) return
+    if (!dayKnown) return
     if (value && sessionDateOptions.includes(value)) return
     onChange(sessionDateOptions[0])
-    // sessionDateOptions is a derived array, but it's stable per (today, classDay)
-    // and we want this effect to re-run if those change. `value` is read but
-    // not in deps to avoid clobbering a user pick mid-flight; the includes()
-    // guard above handles the "already valid" case.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allowFutureStart, sessionDateOptions.join('|'), classDayOfWeek])
+  }, [dayKnown, sessionDateOptions.join('|')])
+
+  const effectiveValue = value || (dayKnown ? sessionDateOptions[0] : todayIso)
+  const startDate = new Date(effectiveValue + 'T00:00:00Z')
+  const anchorIso = new Date(firstOfNextMonthUnix(startDate) * 1000).toISOString().slice(0, 10)
+  const fc = firstChargeFor(monthlyAmount, effectiveValue, anchorIso, classDayOfWeek)
+  const anchorLabel = firstOfNextMonthLabel(startDate)
+
+  const pill = (iso: string, title: string) => (
+    <button
+      key={iso}
+      type="button"
+      onClick={() => onChange(iso)}
+      className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
+      style={{
+        borderColor: effectiveValue === iso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
+        boxShadow: effectiveValue === iso ? `0 0 16px ${primaryColor}25` : undefined,
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-bold text-white text-sm">{title}</div>
+          <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
+        </div>
+        <div className="text-xs font-semibold text-white">{formatLabel(iso)}</div>
+      </div>
+    </button>
+  )
 
   return (
     <div>
       <label className="block text-xs text-white/50 mb-2">When does it start?</label>
 
-      {dayConstrainedEnabled ? (
-        /* ───────────────────────────────────────────────────────────
-         * BRANCH A — class day known. Render pills only.
-         *
-         * Applies to BOTH session-mode and calendar-mode plans. The
-         * Stripe math (preview + checkout dispatch) still branches
-         * downstream — only the date selection is unified here.
-         *
-         * "Start today" is rendered as the first pill iff today is
-         * itself a class day (sessionDateOptions[0] === todayIso).
-         * Otherwise the first pill is labelled "Next session".
-         * ─────────────────────────────────────────────────────────── */
+      {dayKnown ? (
         <>
           <div className="text-[11px] text-white/50 mb-2">
             {classLabel} meets on {classDayOfWeek}s — pick your first session:
           </div>
-          {sessionDateOptions.map((iso, idx) => (
-            <button
-              key={iso}
-              type="button"
-              onClick={() => onChange(iso)}
-              className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
-              style={{
-                borderColor: effectiveValue === iso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
-                boxShadow: effectiveValue === iso ? `0 0 16px ${primaryColor}25` : undefined,
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-white text-sm">
-                    {iso === todayIso ? 'Start today' : (idx === 0 ? 'Next session' : 'Session')}
-                  </div>
-                  <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
-                </div>
-                <div className="text-xs font-semibold text-white">{formatLabel(iso)}</div>
-              </div>
-            </button>
-          ))}
+          {sessionDateOptions.map((iso, idx) => pill(iso, iso === todayIso ? 'Start today' : idx === 0 ? 'Next session' : 'Session'))}
         </>
       ) : (
-        /* ───────────────────────────────────────────────────────────
-         * BRANCH B — class day unknown (no training_group attached,
-         * or no day_of_week recorded). Fall back to the legacy date
-         * input so the parent can still sign up. Coach-confirmation
-         * copy makes it clear we don't yet have a fixed schedule.
-         * ─────────────────────────────────────────────────────────── */
         <>
-          <button
-            type="button"
-            onClick={() => onChange(todayIso)}
-            className="w-full text-left rounded-xl border-2 p-3 mb-2 bg-white/[0.04] transition-colors"
-            style={{
-              borderColor: effectiveValue === todayIso ? `${primaryColor}` : 'rgba(255,255,255,0.08)',
-              boxShadow: effectiveValue === todayIso ? `0 0 16px ${primaryColor}25` : undefined,
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-bold text-white text-sm">Start today</div>
-                <div className="text-[11px] text-white/40 mt-0.5">{classLabel}</div>
-              </div>
-              <div className="text-xs font-semibold text-white">{formatLabel(todayIso)}</div>
-            </div>
-          </button>
-
+          {pill(todayIso, 'Start today')}
           <div className="rounded-xl border border-white/[0.06] p-3 mb-3 bg-white/[0.02]">
             <label className="block text-[11px] text-white/50 mb-1.5">
               Pick a start date — your coach will confirm session times.
@@ -333,124 +108,32 @@ export function StartDatePicker({
               min={todayIso}
               max={maxIso}
               onChange={(e) => onChange(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
               style={{ colorScheme: 'dark' }}
             />
-            <div className="text-[11px] text-white/40 mt-1.5">
-              Up to {formatLabel(maxIso)}.
-            </div>
+            <div className="text-[11px] text-white/40 mt-1.5">Up to {formatLabel(maxIso)}.</div>
           </div>
         </>
       )}
 
-      {/* Cost preview — branches on (startsToday, bridgeMode) */}
-      {(() => {
-        const monthlyPence = Math.round(monthlyAmount * 100)
-        // Session-mode bridge estimate for the future-date case. Only used
-        // when bridgeMode='session' AND plan has sessionsPerMonth AND class
-        // has a day-of-week. Returns null otherwise → falls back to calendar.
-        const sessionEstimate = !startsToday
-          ? estimateBridgePence({
-              monthlyPence,
-              sessionsPerMonth,
-              classDayOfWeek,
-              startDate: selectedDate,
-            })
-          : null
-        const useSessionPreview =
-          !startsToday &&
-          bridgeMode === 'session' &&
-          sessionEstimate !== null &&
-          sessionEstimate.bridgePence > 0
-        return (
       <div
         className="rounded-xl p-3 text-sm"
-        style={{
-          backgroundColor: `${primaryColor}10`,
-          borderColor: `${primaryColor}30`,
-          borderWidth: 1,
-          borderStyle: 'solid',
-        }}
+        style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}30`, borderWidth: 1, borderStyle: 'solid' }}
       >
-        {startsToday ? (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">You&apos;ll pay today</span>
-              <span className="font-bold text-white">&pound;{(todayChargePence / 100).toFixed(2)}</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Covers {formatLabel(effectiveValue)} &rarr; {anchorLabel}
-            </div>
-            <div className="border-t border-white/[0.08] my-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">Then on {anchorLabel}</span>
-              <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Full month, and every 1st after that
-            </div>
-          </>
-        ) : useSessionPreview ? (
-          // Session-bridge preview — Option 3: pay bridge now at checkout,
-          // then full monthly from the anchor. No "Card saved" / no "First
-          // charge on start_date" language — those belong to calendar mode.
-          <>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">Pay today</span>
-              <span className="font-bold text-white">
-                &pound;{((sessionEstimate!.bridgePence) / 100).toFixed(2)}
-              </span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Covers {sessionEstimate!.sessionsRemaining} remaining session
-              {sessionEstimate!.sessionsRemaining === 1 ? '' : 's'} before {anchorLabel}.
-            </div>
-            <div className="border-t border-white/[0.08] my-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">Then on {anchorLabel}</span>
-              <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}/month</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Monthly membership, every 1st thereafter.
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">You&apos;ll pay today</span>
-              <span className="font-bold text-white">&pound;0.00</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Card saved. No charge until your start date.
-            </div>
-            <div className="border-t border-white/[0.08] my-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">On {formatLabel(effectiveValue)}</span>
-              <span className="font-bold text-white">
-                {/* If start_date is in a future calendar month, first charge is
-                    typically the full monthly amount (the 1st of that month).
-                    If start_date is later in the current month, it's still a
-                    prorated amount aligned to the 1st of next month. */}
-                &pound;
-                {(estimateProratedPence(monthlyAmount, selectedDate) / 100).toFixed(2)}
-              </span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              First charge, aligned to the 1st of the next month
-            </div>
-            <div className="border-t border-white/[0.08] my-2" />
-            <div className="flex items-center justify-between">
-              <span className="text-white/70">Then on {anchorLabel}</span>
-              <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}</span>
-            </div>
-            <div className="text-[11px] text-white/50 mt-0.5">
-              Full month, and every 1st after that
-            </div>
-          </>
-        )}
+        <div className="flex items-center justify-between">
+          <span className="text-white/70">You&apos;ll pay today</span>
+          <span className="font-bold text-white">&pound;{(fc.pence / 100).toFixed(2)}</span>
+        </div>
+        <div className="text-[11px] text-white/50 mt-0.5">
+          {fc.pence > 0 ? `${firstChargeLabel(fc)} — ${formatLabel(effectiveValue)} to ${anchorLabel}` : `Nothing to pay before ${anchorLabel}`}
+        </div>
+        <div className="border-t border-white/[0.08] my-2" />
+        <div className="flex items-center justify-between">
+          <span className="text-white/70">Then on {anchorLabel}</span>
+          <span className="font-bold text-white">&pound;{monthlyAmount.toFixed(2)}</span>
+        </div>
+        <div className="text-[11px] text-white/50 mt-0.5">Full month, and every 1st after that</div>
       </div>
-        )
-      })()}
     </div>
   )
 }

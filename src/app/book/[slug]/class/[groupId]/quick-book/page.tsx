@@ -8,7 +8,6 @@ import { createPublicClient } from '@/lib/supabase/public'
 import Link from 'next/link'
 import { QuickBookForm } from './QuickBookForm'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
-import { isFutureStartBillingEnabled } from '@/lib/billing/flag'
 
 export default async function QuickBookPage({
   params,
@@ -22,7 +21,7 @@ export default async function QuickBookPage({
   const supabase = await createClient()
   const publicSupabase = createPublicClient()
 
-  // Get org. bridge_billing_mode (Stage 3 session enhancement) is fetched
+  // Get org.
   // separately below — it can be null if migration 072 hasn't been applied
   // yet, in which case we fall back to calendar mode safely.
   const { data: org } = await publicSupabase
@@ -168,43 +167,6 @@ export default async function QuickBookPage({
   const primaryColor = org.primary_color || '#4ecde6'
   const coach = group.coach as unknown as { full_name: string } | null
 
-  // Stage 3 flag — server-side check, passed down so the picker can decide
-  // between today-only (Option B clamp) and full today+future modes. Flag
-  // currently OFF for all orgs in production until Stage 3 ships.
-  const allowFutureStart = isFutureStartBillingEnabled(org.id)
-
-  // Separately probe bridge_billing_mode and sessions_per_month so the page
-  // renders correctly whether or not migration 072 has been applied. If
-  // either query errors (column doesn't exist yet), we fall back to
-  // calendar mode and treat all plans as session-mode-ineligible. Once
-  // migration 072 is applied, both columns are read and session mode
-  // becomes possible for orgs that opt in.
-  let bridgeMode: 'calendar' | 'session' = 'calendar'
-  let plansSessionMap = new Map<string, number | null>()
-  try {
-    const { data: orgBridge, error: bridgeErr } = await publicSupabase
-      .from('organisations')
-      .select('bridge_billing_mode')
-      .eq('id', org.id)
-      .single()
-    if (!bridgeErr && orgBridge && (orgBridge as { bridge_billing_mode?: string }).bridge_billing_mode === 'session') {
-      bridgeMode = 'session'
-    }
-  } catch { /* migration 072 not applied — keep calendar default */ }
-  try {
-    const { data: planSessionsData, error: spmErr } = await publicSupabase
-      .from('subscription_plans')
-      .select('id, sessions_per_month')
-      .eq('organisation_id', org.id)
-      .eq('active', true)
-    if (!spmErr && planSessionsData) {
-      plansSessionMap = new Map(
-        (planSessionsData as Array<{ id: string; sessions_per_month: number | null }>)
-          .map((p) => [p.id, p.sessions_per_month ?? null])
-      )
-    }
-  } catch { /* migration 072 not applied — keep all-null fallback */ }
-
   return (
     <div className="min-h-screen bg-[#060606] text-white">
       {/* Nav */}
@@ -274,7 +236,6 @@ export default async function QuickBookPage({
             amount: Number(p.amount),
             sessions_per_week: p.sessions_per_week,
             interval: p.interval,
-            sessions_per_month: plansSessionMap.get(p.id) ?? null,
           }))
         }
         orgSlug={slug}
@@ -285,9 +246,7 @@ export default async function QuickBookPage({
         primaryColor={primaryColor}
         classDayOfWeek={group.day_of_week as string | null}
         classTimeSlot={group.time_slot as string | null}
-        allowFutureStart={allowFutureStart}
         metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}
-        bridgeMode={bridgeMode}
         quarterlyEnabled={isQuarterlyEnabledForOrg(org.id as string, (org as Record<string, unknown>).quarterly_billing_enabled as boolean | null | undefined)}
       />
 

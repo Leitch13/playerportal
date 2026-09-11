@@ -63,10 +63,6 @@
       "schedule": "0 8 * * *"
     },
     {
-      "path": "/api/cron/activate-scheduled-subs",
-      "schedule": "0 2 * * *"
-    },
-    {
       "path": "/api/cron/process-scheduled-moves",
       "schedule": "15 2 * * *"
     },
