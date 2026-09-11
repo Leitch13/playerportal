@@ -239,6 +239,7 @@ export default async function PublicBookingPage({
   )
   const paidTrialPrices = trialPrices.filter((p) => p > 0)
   const minTrialPrice = paidTrialPrices.length ? Math.min(...paidTrialPrices) : null
+  const faqs = resolveBookingFaqs((org as { booking_faqs?: unknown }).booking_faqs)
   const trialHref = offersFreeTrial ? `/book/${slug}/trial/quick` : '#classes'
   const trialSubtitle = offersFreeTrial
     ? 'No account needed. Takes 20 seconds to book.'
@@ -889,18 +890,15 @@ export default async function PublicBookingPage({
           </div>
         </section>
 
-        {/* FAQ Accordion */}
+        {/* FAQ Accordion — the academy's own questions if they've set any
+            (Settings → Branding), hidden if they've cleared them, otherwise
+            the standard five. */}
+        {faqs.length > 0 && (
         <section>
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Frequently Asked Questions</h2>
           <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Everything you need to know</p>
           <div className="space-y-3 max-w-2xl mx-auto">
-            {[
-              { q: 'What should my child wear?', a: 'Comfortable sportswear, shin pads, and appropriate footwear for the surface (astroturf trainers or football boots). Please bring a water bottle too.' },
-              { q: 'What happens if it rains?', a: 'Sessions run in all weather unless conditions are unsafe. If a session is cancelled due to extreme weather, we will notify you in advance and offer a make-up session.' },
-              { q: 'Can I change sessions?', a: 'Yes! You can switch between available sessions at any time by contacting us or through your parent portal. Subject to availability.' },
-              { q: 'What age groups do you cater for?', a: 'We offer classes for children of all ages, from toddlers through to teens. Check our weekly schedule above to find the right group for your child.' },
-              { q: 'Is there a trial session available?', a: 'Yes — most classes offer a trial session so your child can experience our coaching before committing. The trial price (if any) is shown on the class page when you book. Tap "Book a Trial" to get started.' },
-            ].map((faq) => (
+            {faqs.map((faq) => (
               <details key={faq.q} className="group rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden">
                 <summary className="flex cursor-pointer items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-semibold text-white select-none list-none [&::-webkit-details-marker]:hidden">
                   <span>{faq.q}</span>
@@ -911,6 +909,7 @@ export default async function PublicBookingPage({
             ))}
           </div>
         </section>
+        )}
 
         <section className="text-center py-6 sm:py-12 px-4 rounded-2xl border border-[#1e1e1e]" style={{ backgroundColor: `${primaryColor}08` }}>
           <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-white">Ready to get started?</h2>
@@ -938,4 +937,22 @@ export default async function PublicBookingPage({
       <footer className="border-t border-[#1e1e1e] py-6 text-center text-xs text-gray-600">Powered by Player Portal</footer>
     </div>
   )
+}
+
+/** Standard FAQs shown when an academy hasn't written their own. */
+const DEFAULT_BOOKING_FAQS: { q: string; a: string }[] = [
+  { q: 'What should my child wear?', a: 'Comfortable sportswear, shin pads, and appropriate footwear for the surface (astroturf trainers or football boots). Please bring a water bottle too.' },
+  { q: 'What happens if it rains?', a: 'Sessions run in all weather unless conditions are unsafe. If a session is cancelled due to extreme weather, we will notify you in advance and offer a make-up session.' },
+  { q: 'Can I change sessions?', a: 'Yes! You can switch between available sessions at any time by contacting us or through your parent portal. Subject to availability.' },
+  { q: 'What age groups do you cater for?', a: 'We offer classes for children of all ages, from toddlers through to teens. Check our weekly schedule above to find the right group for your child.' },
+  { q: 'Is there a trial session available?', a: 'Yes — most classes offer a trial session so your child can experience our coaching before committing. The trial price (if any) is shown on the class page when you book. Tap "Book a Trial" to get started.' },
+]
+
+/** NULL → standard five; [] → none; array → the academy's own (blank rows dropped). */
+function resolveBookingFaqs(raw: unknown): { q: string; a: string }[] {
+  if (!Array.isArray(raw)) return DEFAULT_BOOKING_FAQS
+  return raw
+    .filter((f): f is { q: string; a: string } => !!f && typeof f === 'object' && typeof (f as { q?: unknown }).q === 'string' && typeof (f as { a?: unknown }).a === 'string')
+    .map((f) => ({ q: f.q.trim(), a: f.a.trim() }))
+    .filter((f) => f.q && f.a)
 }
