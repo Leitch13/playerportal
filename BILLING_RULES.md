@@ -28,3 +28,12 @@ John Leitch, 10 September 2026, after the sixth regression in three months:
 ## The one allowed exception
 A migration with an admin-set first-billing date (the parent already paid the academy elsewhere):
 £0 today, first charge on that date. Same for every academy.
+
+## The 1-2-1 Slots module is a sealed room
+
+Recurring 1-to-1 / 2-to-1 coaching lives in `src/lib/one-to-one`, `src/app/api/one-to-one`, its own pages and its own Stripe webhook route. It is not part of class billing and never will be:
+
+- It may not import anything from `src/lib/billing`; class billing, the subscribe routes, the migration routes and the class webhook may not import anything from it. The build guard refuses either direction.
+- It creates no Stripe subscriptions. Money there is one-off Connect charges (Checkout in payment mode, then off-session payment intents on the 1st). The guard refuses `subscriptions.create` and `mode: 'subscription'` under the module.
+- Its cancellation tiers are fixed in code for every academy. An academy sets prices and session length only.
+- The module is on for every academy. There is no allowlist and no pilot flag.

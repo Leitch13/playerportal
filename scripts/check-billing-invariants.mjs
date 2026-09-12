@@ -33,6 +33,16 @@ for (const f of files) {
   for (const [token, why] of FORBIDDEN) if (src.includes(token)) failures.push(`${rel}: ${why} (${token})`)
   // The quarterly gate reads the academy's own toggle and nothing else.
   if (/quarterly-billing\.ts$/.test(rel) && /process\.env/.test(src)) failures.push(`${rel}: quarterly gate reads an environment switch`)
+  // 3. The 1-2-1 Slots module is a sealed room. It may not touch class billing,
+  //    class billing may not touch it, and it may never create a Stripe subscription.
+  const inModule = /(^|\/)src\/(lib|app\/api|app\/dashboard|app\/coach|app\/book\/\[slug\]\/sessions)\/one-to-one(\/|$)|(^|\/)src\/app\/api\/stripe\/one-to-one-webhooks\//.test(rel)
+  const inClassBilling = /(^|\/)src\/lib\/billing\/|(^|\/)src\/app\/api\/stripe\/(subscribe|webhooks)\/|(^|\/)src\/app\/api\/migration\//.test(rel)
+  if (inModule) {
+    if (/lib\/billing/.test(src)) failures.push(`${rel}: 1-2-1 module imports class billing`)
+    if (/subscriptions\.create|mode:\s*['"]subscription['"]/.test(src)) failures.push(`${rel}: 1-2-1 module must not create a Stripe subscription`)
+    if (/stripe\/webhooks['"]/.test(src)) failures.push(`${rel}: 1-2-1 module must use its own webhook route`)
+  }
+  if (inClassBilling && /one-to-one/.test(src)) failures.push(`${rel}: class billing imports the 1-2-1 module`)
   // 2. Only the one builder may set a future billing_cycle_anchor on a parent subscription.
   if (/billing_cycle_anchor/.test(src) && !/src\/lib\/billing\/(first-charge|anchor|activate-scheduled-sub)\.ts$/.test(rel) && !/\/\/.*billing_cycle_anchor/.test(src.split('billing_cycle_anchor')[0].split('\n').pop() ?? '')) {
     if (!/src\/lib\/billing\//.test(rel)) failures.push(`${rel}: sets billing_cycle_anchor outside src/lib/billing (route must use sessionsBridgeCheckout)`)
