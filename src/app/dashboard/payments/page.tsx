@@ -38,6 +38,8 @@ import MembershipManagement from './MembershipManagement'
 import AvailableUpgrades from './AvailableUpgrades'
 import MembershipTabs from './MembershipTabs'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
+import PayoutsBox from './PayoutsBox'
+import { getPayoutSnapshot } from '@/lib/payouts'
 
 // Phase 1A — Membership & Billing safe reskin. Flag OFF (default) ⇒ the parent
 // page renders byte-identically to today. Flag ON ⇒ a tabbed, subscription-first
@@ -713,10 +715,14 @@ async function AdminPayments({
   // Sprint 6 — fetch academy name for WhatsApp deep-link templates.
   const { data: adminOrgRow } = await supabase
     .from('organisations')
-    .select('name')
+    .select('name, stripe_account_id')
     .eq('id', orgId)
     .single()
   const adminAcademyName = (adminOrgRow?.name as string | undefined) || 'the academy'
+
+  // Payouts box — live, read-only view of the academy's own Stripe account.
+  // Fail-soft: null when there's no connected account or Stripe is slow.
+  const payoutSnapshot = await getPayoutSnapshot(adminOrgRow?.stripe_account_id as string | null | undefined)
 
   // ─── Subscription Plans (org-scoped) ───
   const { data: plans } = await supabase
@@ -1217,6 +1223,9 @@ async function AdminPayments({
               <div className={`text-[11px] mt-1 ${stats.overdueCount > 0 ? 'text-red-400/70' : 'text-white/40'}`}>{stats.overdueCount > 0 ? 'Needs attention' : 'All clear'}</div>
             </div>
           </div>
+
+          {/* Payouts — when the money lands, and what came out of it */}
+          <PayoutsBox snapshot={payoutSnapshot} />
 
           {/* Active Subscriptions Table */}
           {(allSubscriptions || []).length > 0 && (
