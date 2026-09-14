@@ -42,11 +42,17 @@ export async function getPayoutSnapshot(accountId: string | null | undefined): P
     const now = new Date()
     const monthStart = Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) / 1000)
 
-    const [account, balance, payouts, txns] = await Promise.all([
-      stripe.accounts.retrieve(accountId),
-      stripe.balance.retrieve(opts),
-      stripe.payouts.list({ limit: 10 }, opts),
-      stripe.balanceTransactions.list({ created: { gte: monthStart }, limit: 100 }, opts),
+    // Hard cap: the Payments page must not wait on Stripe. Past 5s the box is
+    // simply not shown this load, and everything else renders as normal.
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('stripe timeout')), 5000))
+    const [account, balance, payouts, txns] = await Promise.race([
+      Promise.all([
+        stripe.accounts.retrieve(accountId),
+        stripe.balance.retrieve(opts),
+        stripe.payouts.list({ limit: 10 }, opts),
+        stripe.balanceTransactions.list({ created: { gte: monthStart }, limit: 100 }, opts),
+      ]),
+      timeout,
     ])
 
     const currency = (balance.available[0]?.currency || 'gbp').toLowerCase()
