@@ -67,9 +67,11 @@ CREATE TABLE IF NOT EXISTS public.coaching_venue_closures (
 );
 CREATE INDEX IF NOT EXISTS coaching_venue_closures_org_idx ON public.coaching_venue_closures(organisation_id, closed_on);
 
--- ─── COACH HOURS (set by the academy; roll forward by definition) ───
+-- ─── COACHING HOURS (set by the academy; roll forward by definition) ───
+-- Named coaching_hours: a legacy, empty `coach_hours` table from migration 009
+-- (coach payroll hours) already exists in production and must not be touched.
 -- weekday is ISO: 1 = Monday … 7 = Sunday. Minutes since local midnight.
-CREATE TABLE IF NOT EXISTS public.coach_hours (
+CREATE TABLE IF NOT EXISTS public.coaching_hours (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organisation_id uuid NOT NULL REFERENCES public.organisations(id) ON DELETE CASCADE,
   coach_id        uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -83,7 +85,7 @@ CREATE TABLE IF NOT EXISTS public.coach_hours (
   CHECK (end_minutes > start_minutes),
   CHECK (effective_to IS NULL OR effective_to >= effective_from)
 );
-CREATE INDEX IF NOT EXISTS coach_hours_org_coach_idx ON public.coach_hours(organisation_id, coach_id, weekday);
+CREATE INDEX IF NOT EXISTS coaching_hours_org_coach_idx ON public.coaching_hours(organisation_id, coach_id, weekday);
 
 -- ─── COACH EXCEPTIONS ───
 -- flag  = coach can't make this date/range   → Needs attention (cover problem)
@@ -318,7 +320,7 @@ GRANT EXECUTE ON FUNCTION public.release_expired_session_holds() TO service_role
 ALTER TABLE public.coaching_settings       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_venues         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_venue_closures ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coach_hours             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coaching_hours             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coach_hour_exceptions   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.regular_slots           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coaching_sessions       ENABLE ROW LEVEL SECURITY;
@@ -336,7 +338,7 @@ CREATE POLICY coaching_venues_admin_manage ON public.coaching_venues FOR ALL TO 
 CREATE POLICY coaching_venue_closures_admin_manage ON public.coaching_venue_closures FOR ALL TO authenticated
   USING (organisation_id = public.get_my_org() AND public.get_my_role() = 'admin')
   WITH CHECK (organisation_id = public.get_my_org() AND public.get_my_role() = 'admin');
-CREATE POLICY coach_hours_admin_manage ON public.coach_hours FOR ALL TO authenticated
+CREATE POLICY coaching_hours_admin_manage ON public.coaching_hours FOR ALL TO authenticated
   USING (organisation_id = public.get_my_org() AND public.get_my_role() = 'admin')
   WITH CHECK (organisation_id = public.get_my_org() AND public.get_my_role() = 'admin');
 CREATE POLICY coach_hour_exceptions_admin_manage ON public.coach_hour_exceptions FOR ALL TO authenticated
@@ -366,7 +368,7 @@ CREATE POLICY coaching_venues_coach_read ON public.coaching_venues FOR SELECT TO
   USING (organisation_id = public.get_my_org() AND public.get_my_role() = 'coach');
 CREATE POLICY coaching_venue_closures_coach_read ON public.coaching_venue_closures FOR SELECT TO authenticated
   USING (organisation_id = public.get_my_org() AND public.get_my_role() = 'coach');
-CREATE POLICY coach_hours_coach_read ON public.coach_hours FOR SELECT TO authenticated
+CREATE POLICY coaching_hours_coach_read ON public.coaching_hours FOR SELECT TO authenticated
   USING (organisation_id = public.get_my_org() AND public.get_my_role() = 'coach');
 CREATE POLICY coach_hour_exceptions_coach_read ON public.coach_hour_exceptions FOR SELECT TO authenticated
   USING (organisation_id = public.get_my_org() AND public.get_my_role() = 'coach');
