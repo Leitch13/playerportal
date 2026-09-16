@@ -69,6 +69,14 @@
     {
       "path": "/api/cron/canaries",
       "schedule": "30 5 * * *"
+    },
+    {
+      "path": "/api/cron/one-to-one-holds",
+      "schedule": "5 * * * *"
+    },
+    {
+      "path": "/api/cron/one-to-one-reminders",
+      "schedule": "0 17 * * *"
     }
   ]
 }

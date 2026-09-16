@@ -35,7 +35,7 @@ for (const f of files) {
   if (/quarterly-billing\.ts$/.test(rel) && /process\.env/.test(src)) failures.push(`${rel}: quarterly gate reads an environment switch`)
   // 3. The 1-2-1 Slots module is a sealed room. It may not touch class billing,
   //    class billing may not touch it, and it may never create a Stripe subscription.
-  const inModule = /(^|\/)src\/(lib|app\/api|app\/dashboard|app\/coach|app\/book\/\[slug\]\/sessions)\/one-to-one(\/|$)|(^|\/)src\/app\/api\/stripe\/one-to-one-webhooks\//.test(rel)
+  const inModule = /(^|\/)src\/(lib|app\/api|app\/dashboard|app\/coach)\/one-to-one(\/|$)|(^|\/)src\/app\/api\/stripe\/one-to-one-webhooks\/|(^|\/)src\/app\/book\/\[slug\]\/sessions\//.test(rel)
   const inClassBilling = /(^|\/)src\/lib\/billing\/|(^|\/)src\/app\/api\/stripe\/(subscribe|webhooks)\/|(^|\/)src\/app\/api\/migration\//.test(rel)
   if (inModule) {
     if (/lib\/billing/.test(src)) failures.push(`${rel}: 1-2-1 module imports class billing`)
