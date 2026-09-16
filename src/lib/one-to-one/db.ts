@@ -210,12 +210,23 @@ export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInM
     }
   }
   if (!rows.length) return { created: 0, month: from }
-  // The partial unique index (regular_slot_id, session_date) is the conflict target.
-  // ignoreDuplicates keeps existing rows (declined / moved / attended) exactly as they are.
-  const { error, data } = await admin.from('coaching_sessions')
-    .upsert(rows, { onConflict: 'regular_slot_id,session_date', ignoreDuplicates: true })
-    .select('id')
-  if (error) throw new Error(error.message)
+  // The uniqueness index on (regular_slot_id, session_date) is PARTIAL (live rows
+  // only), which ON CONFLICT cannot target through the client. So: read what is
+  // already there for these slots this month and insert only the missing dates.
+  // Existing rows (declined / moved / attended / cancelled) are never touched.
+  const { data: existing } = await admin.from('coaching_sessions')
+    .select('regular_slot_id, session_date')
+    .eq('organisation_id', orgId).gte('session_date', from).lte('session_date', to)
+    .not('regular_slot_id', 'is', null)
+  const have = new Set((existing ?? []).map((r) => `${r.regular_slot_id}|${r.session_date}`))
+  const missing = rows.filter((r) => !have.has(`${r.regular_slot_id}|${r.session_date}`))
+  if (!missing.length) return { created: 0, month: from }
+  const { error, data } = await admin.from('coaching_sessions').insert(missing).select('id')
+  if (error) {
+    // 23505 = a concurrent roll got there first for one of these dates. That is fine: nothing is lost.
+    if (error.code === '23505') return { created: 0, month: from }
+    throw new Error(error.message)
+  }
   return { created: data?.length ?? 0, month: from }
 }
 
