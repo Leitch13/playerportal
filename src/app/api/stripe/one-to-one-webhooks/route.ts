@@ -33,7 +33,12 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = adminClient()
-  const decision = await shouldProcessEvent(admin, event, HANDLER)
+  // Stripe delivers the same event to BOTH endpoints (the class endpoint also
+  // subscribes to checkout.session.completed and charge.refunded). The ledger is
+  // keyed by event id, so this handler keys its rows as "<event>:one_to_one" —
+  // otherwise whichever endpoint logged first would make the other skip.
+  const ledgerId = `${event.id}:${HANDLER}`
+  const decision = await shouldProcessEvent(admin, { id: ledgerId, type: event.type, livemode: event.livemode }, HANDLER)
   if (!decision.proceed) return NextResponse.json({ received: true, skipped: decision.reason }, { status: decision.retryStripe ? 500 : 200 })
 
   try {
@@ -99,10 +104,10 @@ export async function POST(req: NextRequest) {
       default:
         break
     }
-    await markEventSuccess(admin, event.id)
+    await markEventSuccess(admin, ledgerId)
     return NextResponse.json({ received: true })
   } catch (err) {
-    await markEventError(admin, event.id, err)
+    await markEventError(admin, ledgerId, err)
     return NextResponse.json({ error: 'Handler failed' }, { status: 500 })
   }
 }
