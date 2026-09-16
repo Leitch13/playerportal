@@ -247,6 +247,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/groups', label: 'Classes', icon: 'calendar-days' },
       { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar' },
       { href: '/dashboard/camps', label: 'Camps', icon: 'flag', feature: 'camps' },
+      { href: '/dashboard/one-to-one', label: '1-2-1s', icon: 'calendar' },
       { href: '/dashboard/terms', label: 'Terms', icon: 'calendar' },
       { href: '/dashboard/players', label: 'Players', icon: 'football' },
       { href: '/dashboard/parents', label: 'Parents', icon: 'users' },
