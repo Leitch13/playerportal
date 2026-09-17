@@ -198,14 +198,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create subscription plans — use custom plans if provided, otherwise defaults
-    const customPlans = Array.isArray(plans) && plans.length > 0 ? plans : [
-      { name: '1 Session / Week', amount: 30, sessions_per_week: 1 },
-      { name: '2 Sessions / Week', amount: 50, sessions_per_week: 2 },
-      { name: 'Unlimited', amount: 70, sessions_per_week: 7 },
-    ]
+    // Create subscription plans only if the academy gave us some. No seeded
+    // defaults: placeholder £30/£50/£70 plans went live on real booking pages
+    // and confused parents (John, 17 Sep). An academy with no plans sees
+    // "No plans yet" on its readiness list and adds its own.
+    const customPlans: { name: string; amount: number; sessions_per_week: number }[] = Array.isArray(plans) ? plans : []
 
-    await supabase.from('subscription_plans').insert(
+    if (customPlans.length > 0) await supabase.from('subscription_plans').insert(
       customPlans.map((plan: { name: string; amount: number; sessions_per_week: number }, i: number) => ({
         name: plan.name,
         amount: plan.amount,
