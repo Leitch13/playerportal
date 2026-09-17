@@ -286,12 +286,28 @@ function SignUp() {
   }
 
   async function handleAddChild(e: React.FormEvent) {
-    e.preventDefault(); setLoading(true); setError('')
+    e.preventDefault(); if (loading) return; setLoading(true); setError('')
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setError('Not signed in'); setLoading(false); return }
     const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', user.id).single()
-    const { data: child, error: childError } = await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null, playing_level: childLevel, league_level: childLeague || null }).select('id').single()
+    // Same guard as AddChildForm and QuickBookForm: a second tap, a retry after a
+    // slow network, or the same child typed twice must reuse the record, not
+    // make another. Four duplicates came through this step at Talent FA (16–17 Sep).
+    const { data: priorMatch } = await supabase
+      .from('players')
+      .select('id, date_of_birth')
+      .eq('parent_id', user.id)
+      .ilike('first_name', childFirstName.trim())
+      .ilike('last_name', childLastName.trim())
+      .is('archived_at', null)
+      .limit(5)
+    const reusable = (priorMatch || []).find(
+      (m: { date_of_birth: string | null }) => !childDob || !m.date_of_birth || m.date_of_birth === childDob,
+    )
+    const { data: child, error: childError } = reusable
+      ? { data: { id: (reusable as { id: string }).id }, error: null }
+      : await supabase.from('players').insert({ organisation_id: profile?.organisation_id, parent_id: user.id, first_name: childFirstName, last_name: childLastName, date_of_birth: childDob || null, medical_info: childMedical || null, emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null, playing_level: childLevel, league_level: childLeague || null }).select('id').single()
     if (childError) { setError(childError.message); setLoading(false); return }
     setAddedChildId(child.id)
 
