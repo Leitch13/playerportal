@@ -23,7 +23,7 @@ export default async function NeedsAttentionPage() {
         <Stat n={String(active.length)} label="Regulars" sub={`${slots.filter((s) => s.status === 'paused').length} paused`} />
         <Stat n={String(thisWeek.length)} label="Sessions this week" sub={`${thisWeek.filter((s) => s.source === 'adhoc').length} booked ad hoc`} />
         <Stat n={String(items.filter((i) => i.kind === 'cover' || i.kind === 'closure').length)} label="Cover needed" sub="coach flags and venue closures" />
-        <Stat n={String(items.filter((i) => i.kind === 'request').length)} label="Session requests" sub="from the public page" />
+        <Stat n={String(items.filter((i) => i.kind === 'charge').length)} label="Unpaid months" sub="card failed, needs you" />
       </div>
 
       {empty ? (
@@ -44,7 +44,7 @@ export default async function NeedsAttentionPage() {
                 <li key={it.key} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${it.kind === 'cover' || it.kind === 'closure' ? 'bg-red-400' : it.kind === 'request' ? 'bg-[#4ecde6]' : 'bg-amber-400'}`} />
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${it.kind === 'cover' || it.kind === 'closure' || it.kind === 'charge' ? 'bg-red-400' : it.kind === 'request' ? 'bg-[#4ecde6]' : 'bg-amber-400'}`} />
                       <span className="text-sm font-semibold text-white">{it.title}</span>
                     </div>
                     <p className="mt-0.5 text-xs text-white/55">{it.detail}</p>
@@ -74,7 +74,19 @@ export default async function NeedsAttentionPage() {
                       <Link href="/dashboard/one-to-one/regulars" className="inline-flex items-center rounded-lg border border-white/[0.12] px-3 py-1.5 text-xs font-semibold text-white/80">Pair them</Link>
                     )}
                     {it.kind === 'unpaid' && (
-                      <Link href="/dashboard/one-to-one/regulars" className="inline-flex items-center rounded-lg border border-white/[0.12] px-3 py-1.5 text-xs font-semibold text-white/80">View</Link>
+                      <>
+                        <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: it.ids.slotId }}>Resend set-up link</ActionButton>
+                        <ActionButton tone="quiet" confirm="Release this slot? The time goes back on sale." body={{ action: 'slot.status', id: it.ids.slotId, status: 'released' }}>Release</ActionButton>
+                      </>
+                    )}
+                    {it.kind === 'charge' && (
+                      <>
+                        <ActionButton tone="primary" body={{ action: 'charge.remind', id: it.ids.chargeId }}>Send pay link</ActionButton>
+                        <ActionButton body={{ action: 'charge.cash', id: it.ids.chargeId }} confirm="Mark this month as paid in cash? It records your name and the time.">Cash received</ActionButton>
+                        {(it.ids.slotIds as string[]).map((sid) => (
+                          <ActionButton key={sid} tone="danger" confirm="Release this slot? Future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: sid, status: 'released' }}>Release slot</ActionButton>
+                        ))}
+                      </>
                     )}
                   </div>
                 </li>

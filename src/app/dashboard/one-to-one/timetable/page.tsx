@@ -98,7 +98,7 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
                                     {s.status === 'scheduled' && coaches.filter((c) => c.id !== s.coach_id).slice(0, 2).map((c) => (
                                       <ActionButton key={c.id} body={{ action: 'session.cover', sessionId: s.id, coachId: c.id }}>Cover: {cname(c.id)}</ActionButton>
                                     ))}
-                                    {s.status === 'scheduled' && <ActionButton tone="danger" confirm="Cancel this session? The time goes back on sale." body={{ action: 'session.status', sessionId: s.id, status: 'cancelled', note: 'cancelled by academy' }}>Cancel</ActionButton>}
+                                    {s.status === 'scheduled' && <ActionButton tone="danger" confirm="Cancel this session? If it's been paid the parent is credited in full. The time goes back on sale." body={{ action: 'session.academy_cancel', sessionId: s.id }}>Cancel</ActionButton>}
                                   </div>
                                   {s.status === 'scheduled' && (
                                     <ActionForm action="session.move" extra={{ sessionId: s.id }} submitLabel="Move" className="!space-y-1.5">

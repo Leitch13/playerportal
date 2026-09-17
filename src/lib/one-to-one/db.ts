@@ -234,7 +234,7 @@ export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInM
 
 export interface AttentionItem {
   key: string
-  kind: 'cover' | 'closure' | 'request' | 'unpaid' | 'pair' | 'hold'
+  kind: 'cover' | 'closure' | 'request' | 'unpaid' | 'pair' | 'hold' | 'charge'
   title: string
   detail: string
   date?: string
@@ -293,12 +293,27 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
       ids: { slotIds: waiting.map((s) => s.id) },
     })
   }
+  // Months the saved card couldn't pay, retries exhausted (or none scheduled): the academy decides.
+  const { data: failed } = await admin.from('coaching_charges')
+    .select('id, parent_id, billing_month, amount_pence, attempt_count, failure_message, next_attempt_on, parent:profiles!coaching_charges_parent_id_fkey(full_name, email)')
+    .eq('organisation_id', orgId).eq('status', 'failed')
+  for (const c of failed ?? []) {
+    const parent = c.parent as unknown as { full_name: string | null; email: string | null } | null
+    const kids = slots.filter((s) => s.parent_id === c.parent_id && s.status !== 'released').map((s) => s.player?.first_name).filter(Boolean)
+    const dueAgain = c.next_attempt_on && c.next_attempt_on > today
+    items.push({
+      key: `charge:${c.id}`, kind: 'charge', date: c.billing_month,
+      title: `${kids.join(' & ') || parent?.full_name || 'A parent'} · ${new Date(c.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long' })} unpaid, ${gbp(c.amount_pence)}`,
+      detail: `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. Card declined ${c.attempt_count} time${c.attempt_count === 1 ? '' : 's'}${c.failure_message ? `: ${c.failure_message}` : ''}. ${dueAgain ? `Retrying on the ${c.next_attempt_on!.slice(8)}. ` : 'No more automatic retries. '}Send the pay link, mark cash, or release the slot.`,
+      ids: { chargeId: c.id, parentId: c.parent_id, slotIds: slots.filter((s) => s.parent_id === c.parent_id && s.status !== 'released').map((s) => s.id) },
+    })
+  }
   const pending = slots.filter((s) => s.status === 'pending')
   for (const s of pending) {
     items.push({
       key: `pending:${s.id}`, kind: 'unpaid', date: s.starts_on,
       title: `${s.player?.first_name ?? 'Child'} ${s.player?.last_name ?? ''} · slot set up, parent hasn't confirmed`,
-      detail: `${DAY[s.weekday]} ${hhmm(s.start_minutes)} with ${coachName(s.coach_id)} at ${venueName(s.venue_id)}. Activates when the parent completes set-up (money phase).`,
+      detail: `${DAY[s.weekday]} ${hhmm(s.start_minutes)} with ${coachName(s.coach_id)} at ${venueName(s.venue_id)}. The time is held. Activates when the parent pays the set-up link.`,
       ids: { slotId: s.id },
     })
   }

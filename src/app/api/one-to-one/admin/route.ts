@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { NotAdmin, requireAdmin, rollMonth } from '@/lib/one-to-one/db'
+import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy } from '@/lib/one-to-one/money'
+import { CheckoutBlocked } from '@/lib/one-to-one/checkout'
+import { sendPaymentFailed } from '@/lib/one-to-one/emails'
 import { hhmmToMinutes, todayLondon } from '@/lib/one-to-one/time'
 
 export const dynamic = 'force-dynamic'
@@ -144,13 +147,16 @@ export async function POST(req: NextRequest) {
         const { data, error } = await admin.from('regular_slots').insert({
           organisation_id: orgId, player_id: playerId, parent_id: player.parent_id, coach_id: coachId, venue_id: venueId,
           weekday, start_minutes: start, duration_minutes: dur, session_type: type, frequency: freq, price_pence: price,
-          // Phase 2 has no money, so a slot the academy creates is live straight away.
-          // Phase 4 introduces 'pending' until the parent completes set-up.
-          status: 'active', starts_on: startsOn, note: str(body.note) || null,
+          // Pending until the parent completes set-up (pays the rest of this month and
+          // saves a card). The time is protected on the timetable from now.
+          status: 'pending', starts_on: startsOn, note: str(body.note) || null,
         }).select('id').single()
         if (error) throw error
         await rollMonth(admin, orgId, startsOn)
-        return NextResponse.json({ ok: true, id: data.id })
+        let setup: { url: string; amountPence: number } | null = null
+        let setupError: string | null = null
+        try { setup = await sendSetupCheckout(admin, orgId, data.id) } catch (e) { setupError = e instanceof Error ? e.message : 'set-up link failed' }
+        return NextResponse.json({ ok: true, id: data.id, setup, setupError })
       }
       case 'slot.status': {
         const status = str(body.status); if (!['active', 'paused', 'released'].includes(status)) return bad('Bad status')
@@ -174,6 +180,33 @@ export async function POST(req: NextRequest) {
         const { error: e1 } = await admin.from('regular_slots').update({ partner_slot_id: b, session_type: 'two_to_one' }).eq('id', a).eq('organisation_id', orgId)
         const { error: e2 } = await admin.from('regular_slots').update({ partner_slot_id: a, session_type: 'two_to_one' }).eq('id', b).eq('organisation_id', orgId)
         if (e1 || e2) throw e1 || e2
+        return NextResponse.json({ ok: true })
+      }
+
+      case 'slot.setup_link': {
+        const r = await sendSetupCheckout(admin, orgId, str(body.id))
+        return NextResponse.json({ ok: true, ...r })
+      }
+
+      // ─── the month's money: cash, refund, pay-now, academy cancellation ───
+      case 'charge.cash': {
+        await markCash(admin, orgId, str(body.id), userId)
+        return NextResponse.json({ ok: true })
+      }
+      case 'charge.refund': {
+        await refundCharge(admin, orgId, str(body.id))
+        return NextResponse.json({ ok: true })
+      }
+      case 'charge.remind': {
+        const url = await payNowUrl(admin, orgId, str(body.id))
+        const { data: c } = await admin.from('coaching_charges').select('parent_id, billing_month, amount_pence, attempt_count, parent:profiles!coaching_charges_parent_id_fkey(email, full_name)').eq('id', str(body.id)).single()
+        const { data: o } = await admin.from('organisations').select('name').eq('id', orgId).single()
+        const parent = c?.parent as unknown as { email: string | null; full_name: string | null } | null
+        if (parent?.email) await sendPaymentFailed({ academy: (o?.name as string) || 'Your academy', to: parent.email, parentName: parent.full_name, monthLabel: new Date(c!.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long', year: 'numeric' }), amountPence: c!.amount_pence, attempts: c!.attempt_count, url, lastTry: null })
+        return NextResponse.json({ ok: true, url })
+      }
+      case 'session.academy_cancel': {
+        await cancelByAcademy(admin, orgId, str(body.sessionId), str(body.note) || null)
         return NextResponse.json({ ok: true })
       }
 
@@ -235,6 +268,7 @@ export async function POST(req: NextRequest) {
         return bad('Unknown action')
     }
   } catch (e) {
+    if (e instanceof CheckoutBlocked) return NextResponse.json({ error: e.message }, { status: e.status })
     const msg = e instanceof Error ? e.message : 'Something went wrong'
     return NextResponse.json({ error: msg }, { status: 500 })
   }

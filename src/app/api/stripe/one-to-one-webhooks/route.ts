@@ -5,6 +5,7 @@ import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stri
 import { adminClient, getCoaches, getVenues } from '@/lib/one-to-one/db'
 import { ONE_TO_ONE_MODULE } from '@/lib/one-to-one/checkout'
 import { sendAdhocReceipt } from '@/lib/one-to-one/emails'
+import { completeSetup, completePayNow } from '@/lib/one-to-one/money'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,9 @@ export async function POST(req: NextRequest) {
       case 'checkout.session.completed': {
         const cs = event.data.object as Stripe.Checkout.Session
         if (cs.metadata?.pp_module !== ONE_TO_ONE_MODULE) break
+        // Regulars' money (phase 4): the set-up link and the pay-now link.
+        if (cs.metadata.kind === 'setup') { await completeSetup(admin, cs); break }
+        if (cs.metadata.kind === 'paynow') { await completePayNow(admin, cs); break }
         const sessionId = cs.metadata.coaching_session_id
         const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', sessionId).maybeSingle()
         if (!s) break
@@ -90,6 +94,16 @@ export async function POST(req: NextRequest) {
       case 'charge.refunded': {
         const ch = event.data.object as Stripe.Charge
         if (ch.metadata?.pp_module !== ONE_TO_ONE_MODULE) break
+        // A month's charge refunded from the Stripe dashboard rather than our button.
+        if (ch.metadata.charge_id && ch.amount_refunded >= ch.amount) {
+          const { data: charge } = await admin.from('coaching_charges').select('id, status, breakdown').eq('id', ch.metadata.charge_id).maybeSingle()
+          if (charge && charge.status !== 'refunded') {
+            await admin.from('coaching_charges').update({ status: 'refunded' }).eq('id', charge.id)
+            const ids = ((charge.breakdown as { session_id: string }[]) || []).map((x) => x.session_id)
+            if (ids.length) await admin.from('coaching_sessions').update({ charge_state: 'waived', note: 'refunded' }).in('id', ids)
+          }
+          break
+        }
         const sessionId = ch.metadata.coaching_session_id
         if (!sessionId) break
         // A full refund cancels the session and frees the time. A partial one is a note.

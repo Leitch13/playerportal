@@ -197,6 +197,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'My Family', items: [
       { href: '/dashboard/children', label: 'My Children', icon: 'users' },
       { href: '/dashboard/schedule', label: 'Schedule', icon: 'calendar' },
+      { href: '/dashboard/sessions', label: '1-2-1 Sessions', icon: 'calendar' },
       { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar', feature: 'progress_reviews' },
       { href: '/dashboard/awards', label: 'Awards', icon: 'trophy', feature: 'achievements' },
       { href: '/dashboard/engagement', label: 'My Score', icon: 'chart-bar-square', feature: 'engagement' },

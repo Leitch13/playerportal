@@ -8,6 +8,9 @@ export const dynamic = 'force-dynamic'
 export default async function RegularsPage() {
   const { admin, orgId } = await requireAdmin()
   const [coaches, venues, slots, settings] = await Promise.all([getCoaches(admin, orgId), getVenues(admin, orgId), getSlots(admin, orgId), getSettings(admin, orgId)])
+  const thisMonth = todayLondon().slice(0, 7) + '-01'
+  const { data: chargeRows } = await admin.from('coaching_charges').select('parent_id, status, amount_pence, attempt_count').eq('organisation_id', orgId).eq('billing_month', thisMonth)
+  const chargeFor = (parentId: string) => (chargeRows ?? []).find((c) => c.parent_id === parentId)
   const { data: players } = await admin.from('players_active').select('id, first_name, last_name, parent:profiles!players_parent_id_fkey(full_name)').eq('organisation_id', orgId).order('first_name')
   const cname = (id: string) => coaches.find((c) => c.id === id)?.full_name?.split(' ')[0] || 'Coach'
   const vname = (id: string) => venues.find((v) => v.id === id)?.name || ''
@@ -44,7 +47,7 @@ export default async function RegularsPage() {
               <Field label="Starts"><input name="startsOn" type="date" defaultValue={todayLondon()} className={inputCls} /></Field>
               <Field label="Note"><input name="note" placeholder="optional" className={inputCls} /></Field>
             </div>
-            <p className="text-[11px] text-white/40">This month&apos;s sessions are created straight away. Money is not collected in this phase.</p>
+            <p className="text-[11px] text-white/40">This month&apos;s sessions are created straight away and the parent is emailed a link to pay for them and save a card. From then on they&apos;re charged on the 1st.</p>
           </ActionForm>
         )}
       </div>
@@ -53,11 +56,11 @@ export default async function RegularsPage() {
         <table className="w-full min-w-[720px] text-xs">
           <thead>
             <tr className="text-left text-[11px] uppercase tracking-wide text-white/40">
-              <th className="px-4 py-2">Keeper</th><th className="px-3 py-2">Slot</th><th className="px-3 py-2">Coach · venue</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Price</th><th className="px-3 py-2">Status</th><th className="px-3 py-2"></th>
+              <th className="px-4 py-2">Keeper</th><th className="px-3 py-2">Slot</th><th className="px-3 py-2">Coach · venue</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Price</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">This month</th><th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody>
-            {sorted.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-center text-white/45">No regulars yet.</td></tr>}
+            {sorted.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-white/45">No regulars yet.</td></tr>}
             {sorted.map((s) => (
               <tr key={s.id} className={`border-t border-white/[0.06] ${s.status === 'released' ? 'opacity-50' : ''}`}>
                 <td className="px-4 py-2.5">
@@ -70,9 +73,16 @@ export default async function RegularsPage() {
                 <td className="px-3 py-2.5 text-white/80 tabular-nums">{gbp(s.price_pence)}</td>
                 <td className="px-3 py-2.5"><span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${s.status === 'active' ? 'border-emerald-400/35 text-emerald-300' : s.status === 'paused' ? 'border-amber-400/35 text-amber-300' : s.status === 'pending' ? 'border-[#4ecde6]/35 text-[#4ecde6]' : 'border-white/20 text-white/50'}`}>{s.status}</span></td>
                 <td className="px-3 py-2.5">
+                  {(() => { const c = chargeFor(s.parent_id); if (!c) return <span className="text-[11px] text-white/35">—</span>
+                    const cls = c.status === 'paid_online' || c.status === 'paid_cash' ? 'border-emerald-400/35 text-emerald-300' : c.status === 'failed' ? 'border-red-400/35 text-red-300' : c.status === 'waived' ? 'border-white/20 text-white/50' : 'border-amber-400/35 text-amber-300'
+                    const label = c.status === 'paid_online' ? `Paid ${gbp(c.amount_pence)}` : c.status === 'paid_cash' ? `Cash ${gbp(c.amount_pence)}` : c.status === 'failed' ? `Failed ×${c.attempt_count}` : c.status === 'waived' ? 'Credit' : c.status === 'refunded' ? 'Refunded' : `Due ${gbp(c.amount_pence)}`
+                    return <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{label}</span> })()}
+                </td>
+                <td className="px-3 py-2.5">
                   <div className="flex flex-wrap justify-end gap-1">
+                    {s.status === 'pending' && <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: s.id }}>Resend link</ActionButton>}
                     {s.status === 'active' && <ActionButton body={{ action: 'slot.status', id: s.id, status: 'paused' }}>Pause</ActionButton>}
-                    {(s.status === 'paused' || s.status === 'pending') && <ActionButton tone="primary" body={{ action: 'slot.status', id: s.id, status: 'active' }}>Resume</ActionButton>}
+                    {s.status === 'paused' && <ActionButton tone="primary" body={{ action: 'slot.status', id: s.id, status: 'active' }}>Resume</ActionButton>}
                     {s.status !== 'released' && <ActionButton tone="danger" confirm="Release this slot? Their future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: s.id, status: 'released' }}>Release</ActionButton>}
                   </div>
                 </td>
