@@ -1,24 +1,27 @@
 'use client'
 
 // 1-2-1 Slots · small client pieces shared by the academy pages.
-// Every mutation goes through /api/one-to-one/admin with an `action`.
+// Every mutation goes through /api/one-to-one/admin with an `action`,
+// or /api/one-to-one/coach from a coach's own page.
 // No money anywhere in here.
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
-export async function act(body: Record<string, unknown>): Promise<{ ok: boolean; error?: string; [k: string]: unknown }> {
-  const res = await fetch('/api/one-to-one/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+export async function act(body: Record<string, unknown>, endpoint = '/api/one-to-one/admin'): Promise<{ ok: boolean; error?: string; [k: string]: unknown }> {
+  const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) return { ok: false, error: json.error || `Failed (${res.status})` }
   return { ok: true, ...json }
 }
 
 export function ActionButton({
-  body, children, confirm: confirmText, tone = 'default', className = '', onDone,
+  body, children, confirm: confirmText, tone = 'default', className = '', onDone, endpoint,
 }: {
   body: Record<string, unknown>; children: React.ReactNode; confirm?: string
   tone?: 'default' | 'primary' | 'quiet' | 'danger'; className?: string; onDone?: () => void
+  /** Defaults to the academy route. A coach's page posts to its own. */
+  endpoint?: string
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -38,7 +41,7 @@ export function ActionButton({
           if (confirmText && !window.confirm(confirmText)) return
           setErr(null)
           start(async () => {
-            const r = await act(body)
+            const r = await act(body, endpoint)
             if (!r.ok) { setErr(r.error || 'Failed'); return }
             onDone?.()
             router.refresh()
@@ -55,10 +58,10 @@ export function ActionButton({
 
 /** A small form that posts its fields as one action. Children are the inputs; names become body keys. */
 export function ActionForm({
-  action, children, submitLabel = 'Save', extra = {}, onDone, className = '',
+  action, children, submitLabel = 'Save', extra = {}, onDone, className = '', endpoint,
 }: {
   action: string; children: React.ReactNode; submitLabel?: string
-  extra?: Record<string, unknown>; onDone?: () => void; className?: string
+  extra?: Record<string, unknown>; onDone?: () => void; className?: string; endpoint?: string
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -79,7 +82,7 @@ export function ActionForm({
         const form = e.currentTarget
         setErr(null)
         start(async () => {
-          const r = await act(body)
+          const r = await act(body, endpoint)
           if (!r.ok) { setErr(r.error || 'Failed'); return }
           form.reset()
           onDone?.()

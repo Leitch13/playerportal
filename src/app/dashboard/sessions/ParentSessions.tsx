@@ -3,18 +3,20 @@
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
-type Slot = { id: string; child: string; status: string; label: string; pricePence: number; type: string }
-type Sess = { id: string; date: string; dateLabel: string; time: string; child: string; coach: string; venue: string; status: string; chargeState: string; pricePence: number; declineTier: string | null; canDecline: boolean }
+type Slot = { id: string; child: string; status: string; label: string; address: string | null; pricePence: number; type: string }
+type Sess = { id: string; date: string; dateLabel: string; time: string; child: string; coach: string; venue: string; address: string | null; status: string; chargeState: string; pricePence: number; declineTier: string | null; canDecline: boolean }
 type Month = { month: string; label: string; charge: { id: string; status: string; amountPence: number; creditPence: number; attempts: number } | null; sessions: Sess[] }
 
-export default function ParentSessions({ academy, today, creditPence, notice, slots, months, gbp }: {
-  academy: string; today: string; creditPence: number; notice: string | null; slots: Slot[]; months: Month[]; gbp: (p: number) => string
+export default function ParentSessions({ academy, today, creditPence, calendar, notice, slots, oneOffs, months, gbp }: {
+  academy: string; today: string; creditPence: number; calendar: { https: string; webcal: string }; notice: string | null
+  slots: Slot[]; oneOffs: Sess[]; months: Month[]; gbp: (p: number) => string
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [ask, setAsk] = useState<Sess | null>(null)
   const [msg, setMsg] = useState<string | null>(notice)
   const [err, setErr] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const hoursNotice = (s: Sess) => {
     const start = new Date(`${s.date}T${s.time}:00`)
@@ -38,22 +40,28 @@ export default function ParentSessions({ academy, today, creditPence, notice, sl
     if (!res.ok || !json.url) { setErr(json.error || 'Could not open payment'); return }
     window.location.href = json.url
   })
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(calendar.https); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { /* link is visible anyway */ }
+  }
 
-  if (slots.length === 0) {
+  const nothing = slots.length === 0 && oneOffs.length === 0
+  if (nothing) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-white">1-2-1 sessions</h1>
-        <div className="rounded-2xl border border-dashed border-white/[0.15] p-8 text-center text-sm text-white/55">No regular 1-2-1 slot yet. {academy} sets these up and sends you a link.</div>
+        <div className="rounded-2xl border border-dashed border-white/[0.15] p-8 text-center text-sm text-white/55">No 1-2-1 sessions yet. {academy} sets up regular slots and sends you a link, or you can book a one-off from their booking page.</div>
       </div>
     )
   }
+
+  const statusLine = (s: Sess) => s.status === 'attended' ? ' · coached ✓' : s.status === 'no_show' ? ' · missed' : s.status === 'declined' ? ` · released${s.declineTier === 'full' ? ', credited' : s.declineTier === 'half' ? ', half credited' : ', charged'}` : s.status === 'cancelled' ? ' · cancelled by the academy, credited' : s.status === 'held' ? ' · payment not finished' : ''
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">1-2-1 sessions</h1>
-          <p className="mt-1 text-sm text-white/55">{academy}. Your slot rolls on month to month. Charged on the 1st for the sessions in the month.</p>
+          <p className="mt-1 text-sm text-white/55">{academy}. {slots.length > 0 ? 'Your slot rolls on month to month. Charged on the 1st for the sessions in the month.' : 'One-off sessions, paid when you book.'}</p>
         </div>
         {creditPence !== 0 && (
           <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] px-4 py-2 text-right">
@@ -65,20 +73,38 @@ export default function ParentSessions({ academy, today, creditPence, notice, sl
       {msg && <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-100">{msg}</div>}
       {err && <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-2 text-sm text-red-100">{err}</div>}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {slots.map((s) => (
-          <div key={s.id} className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="font-semibold text-white">{s.child} · {s.type}</div>
-                <div className="text-xs text-white/60">{s.label}</div>
-                <div className="mt-1 text-[11px] text-white/40">{gbp(s.pricePence)} a session</div>
+      {slots.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {slots.map((s) => (
+            <div key={s.id} className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-white">{s.child} · {s.type}</div>
+                  <div className="text-xs text-white/60">{s.label}</div>
+                  {s.address && <div className="text-[11px] text-white/40">{s.address}</div>}
+                  <div className="mt-1 text-[11px] text-white/40">{gbp(s.pricePence)} a session</div>
+                </div>
+                <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${s.status === 'active' ? 'border-emerald-400/35 text-emerald-300' : s.status === 'pending' ? 'border-[#4ecde6]/35 text-[#4ecde6]' : 'border-amber-400/35 text-amber-300'}`}>{s.status === 'pending' ? 'awaiting set-up' : s.status}</span>
               </div>
-              <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${s.status === 'active' ? 'border-emerald-400/35 text-emerald-300' : s.status === 'pending' ? 'border-[#4ecde6]/35 text-[#4ecde6]' : 'border-amber-400/35 text-amber-300'}`}>{s.status === 'pending' ? 'awaiting set-up' : s.status}</span>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {oneOffs.length > 0 && (
+        <section className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.05] p-5">
+          <h2 className="text-sm font-semibold text-white">One-off sessions <span className="ml-1 text-[11px] font-normal text-white/50">booked from the booking page, paid up front</span></h2>
+          <ul className="mt-2 divide-y divide-white/[0.06]">
+            {oneOffs.map((s) => (
+              <li key={s.id} className="py-2.5 text-sm">
+                <div className="font-semibold text-white">{s.dateLabel} · {s.time}</div>
+                <div className="text-[11px] text-white/45">{s.child} · {s.coach} at {s.venue}{s.address ? `, ${s.address}` : ''} · {gbp(s.pricePence)}{statusLine(s)}</div>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[11px] text-white/40">Need to change a one-off? Reply to the booking email and {academy} will sort it.</p>
+        </section>
+      )}
 
       {months.map((m) => (
         <section key={m.month} className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-5">
@@ -98,14 +124,14 @@ export default function ParentSessions({ academy, today, creditPence, notice, sl
             </div>
           </div>
           {m.sessions.length === 0 ? (
-            <p className="mt-3 text-xs text-white/45">{m.month > today ? 'Dates appear on the 20th.' : 'No sessions this month.'}</p>
+            <p className="mt-3 text-xs text-white/45">{slots.length === 0 ? 'No regular slot.' : m.month > today ? 'Dates appear on the 20th.' : 'No sessions this month.'}</p>
           ) : (
             <ul className="mt-2 divide-y divide-white/[0.06]">
               {m.sessions.map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                   <div>
                     <div className={`font-semibold ${s.status === 'declined' || s.status === 'cancelled' ? 'text-white/40 line-through' : 'text-white'}`}>{s.dateLabel} · {s.time}</div>
-                    <div className="text-[11px] text-white/45">{s.child} · {s.coach} at {s.venue}{s.status === 'attended' ? ' · coached ✓' : s.status === 'no_show' ? ' · missed' : s.status === 'declined' ? ` · released${s.declineTier === 'full' ? ', credited' : s.declineTier === 'half' ? ', half credited' : ', charged'}` : s.status === 'cancelled' ? ' · cancelled by the academy' : ''}</div>
+                    <div className="text-[11px] text-white/45">{s.child} · {s.coach} at {s.venue}{statusLine(s)}</div>
                   </div>
                   {s.canDecline && <button onClick={() => setAsk(s)} className="rounded-full border border-white/[0.15] px-3 py-1 text-[11px] text-white/70 hover:border-white/40">Can&apos;t make it</button>}
                 </li>
@@ -114,6 +140,16 @@ export default function ParentSessions({ academy, today, creditPence, notice, sl
           )}
         </section>
       ))}
+
+      <section className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-5">
+        <h2 className="text-sm font-semibold text-white">Put these in your phone calendar</h2>
+        <p className="mt-1 text-xs text-white/55">Subscribe once. New dates, changes and cancellations update on their own.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <a href={calendar.webcal} className="rounded-lg border border-[#4ecde6] bg-[#4ecde6] px-3 py-1.5 text-xs font-semibold text-[#04141a]">Add to my calendar</a>
+          <button type="button" onClick={copy} className="rounded-lg border border-white/[0.12] bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-white">{copied ? 'Copied' : 'Copy link for Google Calendar'}</button>
+        </div>
+        <p className="mt-2 text-[11px] text-white/40">Google Calendar: Other calendars, From URL, paste the link. The link is private to your account.</p>
+      </section>
 
       <p className="text-[11px] text-white/35">To stop your slot, message {academy} and they&apos;ll release it. Cancellations: over 7 days full credit, 7 days to 48 hours half, under 48 hours charged.</p>
 
