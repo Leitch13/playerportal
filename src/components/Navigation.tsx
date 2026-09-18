@@ -186,6 +186,8 @@ type NavItem = {
   icon: string
   /** If set, item is only shown when the org's plan includes this feature. */
   feature?: FeatureKey
+  /** If set, item is only shown when that module is actually in use (see layout). */
+  module?: 'one_to_one'
 }
 type NavGroup = { title: string; items: NavItem[] }
 
@@ -197,7 +199,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'My Family', items: [
       { href: '/dashboard/children', label: 'My Children', icon: 'users' },
       { href: '/dashboard/schedule', label: 'Schedule', icon: 'calendar' },
-      { href: '/dashboard/sessions', label: '1-2-1 Sessions', icon: 'calendar' },
+      { href: '/dashboard/sessions', label: '1-2-1 Sessions', icon: 'calendar', module: 'one_to_one' },
       { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar', feature: 'progress_reviews' },
       { href: '/dashboard/awards', label: 'Awards', icon: 'trophy', feature: 'achievements' },
       { href: '/dashboard/engagement', label: 'My Score', icon: 'chart-bar-square', feature: 'engagement' },
@@ -226,7 +228,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     ]},
     { title: 'Coaching', items: [
       { href: '/dashboard/calendar', label: 'Timetable', icon: 'calendar-days' },
-      { href: '/dashboard/my-sessions', label: 'My 1-2-1s', icon: 'calendar' },
+      { href: '/dashboard/my-sessions', label: 'My 1-2-1s', icon: 'calendar', module: 'one_to_one' },
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document', feature: 'session_plans' },
       { href: '/dashboard/drills', label: 'Drills', icon: 'football', feature: 'session_plans' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
@@ -266,7 +268,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'Coaching', items: [
       { href: '/dashboard/session-plans', label: 'Session Plans', icon: 'clipboard-document', feature: 'session_plans' },
       { href: '/dashboard/drills', label: 'Drill Library', icon: 'football', feature: 'session_plans' },
-      { href: '/dashboard/my-sessions', label: 'My 1-2-1s', icon: 'calendar' },
+      { href: '/dashboard/my-sessions', label: 'My 1-2-1s', icon: 'calendar', module: 'one_to_one' },
       { href: '/dashboard/attendance', label: 'Attendance', icon: 'check-circle' },
       { href: '/dashboard/reviews', label: 'Player Reports', icon: 'pencil-square', feature: 'progress_reviews' },
     ]},
@@ -329,7 +331,7 @@ export default function Navigation({
   nextSessionHref,
   availableFeatures,
   isPilot,
-  planSlug,
+  planSlug, oneToOneInUse = false
 }: {
   role: UserRole
   userName: string
@@ -343,6 +345,8 @@ export default function Navigation({
   availableFeatures?: FeatureKey[]
   isPilot?: boolean
   planSlug?: PlanTier | null
+  /** 1-2-1 Slots: parents see it only when they have a slot or session; coaches/admins when the academy has set it up. */
+  oneToOneInUse?: boolean
 }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -350,6 +354,7 @@ export default function Navigation({
   const featureSet = new Set<FeatureKey>(availableFeatures || [])
   // Filter nav items by feature access. Pilot orgs bypass gating entirely.
   const hasFeature = (item: NavItem): boolean => {
+    if (item.module === 'one_to_one' && !oneToOneInUse) return false
     if (!item.feature) return true // no feature requirement
     if (isPilot) return true // pilot bypass
     return featureSet.has(item.feature)

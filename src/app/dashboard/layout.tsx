@@ -8,6 +8,7 @@ import PushNotificationPrompt from '@/components/PushNotificationPrompt'
 import GlobalSearch from '@/components/GlobalSearch'
 import TrialExpiredLock from '@/components/TrialExpiredLock'
 import { getOrgFeatures, featuresToArray } from '@/lib/features'
+import { adminClient as oneToOneAdmin } from '@/lib/one-to-one/db'
 import type { UserRole } from '@/lib/types'
 
 export default async function DashboardLayout({
@@ -129,6 +130,23 @@ export default async function DashboardLayout({
     }
   }
 
+  // 1-2-1 Slots in the sidebar only when it's real: a parent with a slot or a
+  // session, or an academy that has added a venue. Everyone else never sees it.
+  let oneToOneInUse = false
+  try {
+    const oa = oneToOneAdmin()
+    if (role === 'parent') {
+      const [a, b] = await Promise.all([
+        oa.from('regular_slots').select('id', { count: 'exact', head: true }).eq('parent_id', user.id),
+        oa.from('coaching_sessions').select('id', { count: 'exact', head: true }).eq('parent_id', user.id),
+      ])
+      oneToOneInUse = (a.count || 0) + (b.count || 0) > 0
+    } else if (profile?.organisation_id) {
+      const v = await oa.from('coaching_venues').select('id', { count: 'exact', head: true }).eq('organisation_id', profile.organisation_id)
+      oneToOneInUse = (v.count || 0) > 0
+    }
+  } catch { /* sidebar item stays hidden */ }
+
   // No valid platform access (trial expired or plan lapsed) → lock the admin
   // dashboard behind the plan-chooser screen.
   if (dashboardLocked) {
@@ -165,6 +183,7 @@ export default async function DashboardLayout({
           availableFeatures={availableFeatures}
           isPilot={isPilot}
           planSlug={planSlug}
+          oneToOneInUse={oneToOneInUse}
         />
         <main className="lg:ml-64 min-h-[calc(100vh-3.5rem)]">
           {showGoLive && (
