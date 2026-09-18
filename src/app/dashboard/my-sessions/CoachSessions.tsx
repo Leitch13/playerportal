@@ -75,7 +75,7 @@ export default function CoachSessions({ academy, coachName, today, calendar, ven
           <div className="mt-2 space-y-3">
             {byDate(upcoming).map(([date, list]) => (
               <div key={date}>
-                <div className={`text-[11px] font-semibold uppercase tracking-wide ${date === today ? 'text-[#4ecde6]' : 'text-white/45'}`}>{date === today ? 'Today' : `${list[0].day} ${list[0].dateLabel}`}</div>
+                <div className={`text-[11px] font-semibold uppercase tracking-wide ${date === today ? 'text-[#4ecde6]' : 'text-white/45'}`}>{date === today ? 'Today' : list[0].dateLabel}</div>
                 <ul className="mt-1 divide-y divide-white/[0.06]">
                   {list.map((s) => (
                     <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">

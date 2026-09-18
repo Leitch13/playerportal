@@ -7,9 +7,12 @@ type Slot = { id: string; child: string; status: string; label: string; address:
 type Sess = { id: string; date: string; dateLabel: string; time: string; child: string; coach: string; venue: string; address: string | null; status: string; chargeState: string; pricePence: number; declineTier: string | null; canDecline: boolean }
 type Month = { month: string; label: string; charge: { id: string; status: string; amountPence: number; creditPence: number; attempts: number } | null; sessions: Sess[] }
 
-export default function ParentSessions({ academy, today, creditPence, calendar, notice, slots, oneOffs, months, gbp }: {
+// Formatting lives here: a server page can't hand a function to a client component.
+const gbp = (p: number) => `£${(p / 100).toFixed(2).replace(/\.00$/, '')}`
+
+export default function ParentSessions({ academy, today, creditPence, calendar, notice, slots, oneOffs, months }: {
   academy: string; today: string; creditPence: number; calendar: { https: string; webcal: string }; notice: string | null
-  slots: Slot[]; oneOffs: Sess[]; months: Month[]; gbp: (p: number) => string
+  slots: Slot[]; oneOffs: Sess[]; months: Month[]
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()

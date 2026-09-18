@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { adminClient, getCoaches, getVenues, hhmm, fmtDate, gbp, DAY } from '@/lib/one-to-one/db'
+import { adminClient, getCoaches, getVenues, hhmm, fmtDate, DAY } from '@/lib/one-to-one/db'
 import { creditBalance, monthLabel } from '@/lib/one-to-one/money'
 import { calendarUrl } from '@/lib/one-to-one/calendar'
 import { monthStart, nextMonthStart, todayLondon } from '@/lib/one-to-one/time'
@@ -63,7 +63,6 @@ export default async function ParentSessionsPage({ searchParams }: { searchParam
           sessions: all.filter((s) => s.session_date >= m && s.session_date < (m === thisMonth ? next : nextMonthStart(next)) && s.source !== 'adhoc').map(shape),
         }
       })}
-      gbp={gbp}
     />
   )
 }
