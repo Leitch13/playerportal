@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminClient, getCoaches, getVenues, getSettings, loadAvailability } from '@/lib/one-to-one/db'
 import { freeSessions, isFree } from '@/lib/one-to-one/availability'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
-import { createAdhocCheckout, CheckoutBlocked } from '@/lib/one-to-one/checkout'
+import { createAdhocCheckout, CheckoutBlocked, paymentsReady } from '@/lib/one-to-one/checkout'
+import { CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest) {
         if (!guestName || !EMAIL.test(guestEmail) || !child) return bad('Your name, an email and the child\'s name are needed')
         const input = await loadAvailability(admin, orgId, date, date)
         if (!isFree(input, { date, startMinutes: start, coachId, venueId })) return bad('That session has just gone. Pick another.', 409)
+        // Ask BEFORE holding: an academy that can't take the payment must not have the time blocked for 12 minutes.
+        if (!(await paymentsReady(admin, orgId))) return bad(CONNECT_NOT_READY_MESSAGE, 503)
         const settings = await getSettings(admin, orgId)
         const { data, error } = await admin.rpc('hold_session', {
           p_org: orgId, p_coach: coachId, p_venue: venueId, p_date: date, p_start: start, p_duration: settings.session_minutes,

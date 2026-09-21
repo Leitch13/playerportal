@@ -1,5 +1,6 @@
 import { requireAdmin, getCoaches, getVenues, getSlots, getSettings, DAY, hhmm, gbp, fmtShort, type SlotRowDb } from '@/lib/one-to-one/db'
 import { todayLondon } from '@/lib/one-to-one/time'
+import { academyPaymentsReady } from '@/lib/one-to-one/checkout'
 import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, inputCls } from '../ui'
 
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ const STATUS: Record<SlotRowDb['status'], { label: string; cls: string }> = {
 export default async function RegularsPage() {
   const { admin, orgId } = await requireAdmin()
   const [coaches, venues, slots, settings] = await Promise.all([getCoaches(admin, orgId), getVenues(admin, orgId), getSlots(admin, orgId), getSettings(admin, orgId)])
+  const ready = await academyPaymentsReady(orgId)
   const thisMonth = todayLondon().slice(0, 7) + '-01'
   const { data: chargeRows } = await admin.from('coaching_charges').select('parent_id, status, amount_pence, attempt_count').eq('organisation_id', orgId).eq('billing_month', thisMonth)
   const chargeFor = (parentId: string) => (chargeRows ?? []).find((c) => c.parent_id === parentId)
@@ -34,6 +36,10 @@ export default async function RegularsPage() {
     const label = c.status === 'paid_online' ? `Paid ${gbp(c.amount_pence)}` : c.status === 'paid_cash' ? `Cash ${gbp(c.amount_pence)}` : c.status === 'failed' ? `Card failed ×${c.attempt_count}` : c.status === 'waived' ? 'Covered by credit' : c.status === 'refunded' ? 'Refunded' : `Due ${gbp(c.amount_pence)}`
     return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{label}</span>
   }
+  // A pending slot at an academy with no Stripe has had NO link sent. Say that, not "awaiting payment".
+  const chip = (s: SlotRowDb) => s.status === 'pending' && !ready
+    ? { label: 'pay link not sent', cls: 'bg-[#d8a95a]/15 text-[#ecc98a]' }
+    : STATUS[s.status]
   const type = (s: SlotRowDb) => s.session_type === 'two_to_one' ? `2-to-1${s.partner_slot_id ? ' with ' + (slots.find((x) => x.id === s.partner_slot_id)?.player?.first_name || 'partner') : ' · needs a partner'}` : '1-to-1'
   const buttons = (s: SlotRowDb) => (
     <div className="flex flex-wrap gap-1">
@@ -107,7 +113,7 @@ export default async function RegularsPage() {
                     <td className="px-3 py-3 text-white/75">{cname(s.coach_id)}<div className="text-[11px] text-white/40">{vname(s.venue_id)}</div></td>
                     <td className="px-3 py-3 text-white/75">{type(s)}</td>
                     <td className="px-3 py-3 text-right tabular-nums text-white/85">{gbp(s.price_pence)}</td>
-                    <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[s.status].cls}`}>{STATUS[s.status].label}</span></td>
+                    <td className="px-3 py-3"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${chip(s).cls}`}>{chip(s).label}</span></td>
                     <td className="px-3 py-3">{money(s.parent_id) ?? <span className="text-white/25">—</span>}</td>
                     <td className="px-5 py-3"><div className="flex justify-end">{buttons(s)}</div></td>
                   </tr>
@@ -124,7 +130,7 @@ export default async function RegularsPage() {
                     <div className="truncate text-sm font-semibold text-white">{s.player ? `${s.player.first_name} ${s.player.last_name}` : 'Child'}</div>
                     <div className="truncate text-[11px] text-white/40">{s.parent?.full_name || s.parent?.email || ''}</div>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[s.status].cls}`}>{STATUS[s.status].label}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${chip(s).cls}`}>{chip(s).label}</span>
                 </div>
                 <div className="mt-2 text-sm text-white/85"><b className="tabular-nums text-white">{DAY[s.weekday]} {hhmm(s.start_minutes)}</b> · {cname(s.coach_id)} · {vname(s.venue_id)}</div>
                 <div className="mt-0.5 text-[11px] text-white/45">{type(s)} · {gbp(s.price_pence)} · {s.frequency} · since {fmtShort(s.starts_on)}</div>

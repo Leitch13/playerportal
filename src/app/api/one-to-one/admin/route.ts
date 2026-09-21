@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NotAdmin, requireAdmin, rollMonth } from '@/lib/one-to-one/db'
+import { NotAdmin, requireAdmin, rollMonth, rollAhead } from '@/lib/one-to-one/db'
 import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy } from '@/lib/one-to-one/money'
-import { CheckoutBlocked } from '@/lib/one-to-one/checkout'
+import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed } from '@/lib/one-to-one/emails'
 import { todayLondon } from '@/lib/one-to-one/time'
 
@@ -210,11 +210,13 @@ export async function POST(req: NextRequest) {
           status: 'pending', starts_on: startsOn, note: str(body.note) || null,
         }).select('id').single()
         if (error) throw error
-        await rollMonth(admin, orgId, startsOn)
+        await rollAhead(admin, orgId, startsOn)
         let setup: { url: string; amountPence: number } | null = null
         let setupError: string | null = null
         try { setup = await sendSetupCheckout(admin, orgId, data.id) } catch (e) { setupError = e instanceof Error ? e.message : 'set-up link failed' }
-        return NextResponse.json({ ok: true, id: data.id, setup, setupError })
+        // The slot is saved either way. If the link could not go, the academy is told so on screen, in their words.
+        const warning = setupError ? `Slot saved and the time is held. ${/payment setup/i.test(setupError) ? ACADEMY_NOT_READY_MESSAGE : `No pay link was sent: ${setupError}`}` : null
+        return NextResponse.json({ ok: true, id: data.id, setup, setupError, warning })
       }
       case 'slot.status': {
         const status = str(body.status); if (!['active', 'paused', 'released'].includes(status)) return bad('Bad status')
@@ -228,7 +230,7 @@ export async function POST(req: NextRequest) {
           await admin.from('coaching_sessions').update({ status: 'cancelled', note: `slot ${status}` })
             .eq('regular_slot_id', id).eq('status', 'scheduled').gte('session_date', todayLondon())
         } else {
-          await rollMonth(admin, orgId, todayLondon())
+          await rollAhead(admin, orgId, todayLondon())
         }
         return NextResponse.json({ ok: true })
       }
@@ -242,6 +244,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'slot.setup_link': {
+        if (!(await paymentsReady(admin, orgId))) return bad(ACADEMY_NOT_READY_MESSAGE)
         const r = await sendSetupCheckout(admin, orgId, str(body.id))
         return NextResponse.json({ ok: true, ...r })
       }

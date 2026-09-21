@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminClient } from '@/lib/one-to-one/db'
+import { adminClient, rollMonth } from '@/lib/one-to-one/db'
 import { runMonthlyCharges } from '@/lib/one-to-one/money'
 import { monthStart, todayLondon } from '@/lib/one-to-one/time'
 
@@ -15,6 +15,14 @@ export async function GET(request: NextRequest) {
   }
   const today = todayLondon()
   const month = request.nextUrl.searchParams.get('month') || monthStart(today)
-  const result = await runMonthlyCharges(adminClient(), month, today)
+  const admin = adminClient()
+  // Belt and braces: make sure the month being charged has been rolled for every academy with
+  // regulars, so a slot the 20th job never saw is charged for the sessions it really has.
+  // Idempotent: existing sessions (declined, cancelled, attended) are left exactly as they are.
+  const { data: orgs } = await admin.from('regular_slots').select('organisation_id').in('status', ['active', 'pending'])
+  for (const orgId of new Set((orgs ?? []).map((r) => r.organisation_id as string))) {
+    try { await rollMonth(admin, orgId, month) } catch (e) { console.error('pre-charge roll failed', orgId, e) }
+  }
+  const result = await runMonthlyCharges(admin, month, today)
   return NextResponse.json({ month, today, ...result })
 }

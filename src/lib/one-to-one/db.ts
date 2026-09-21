@@ -11,7 +11,7 @@ import { createClient as createAdminClient, type SupabaseClient } from '@supabas
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { freeSessions, type AvailabilityInput, type FreeSession, type WeeklyHours } from './availability'
 import { occurrences, type SlotRule } from './roll'
-import { addDays, monthEnd, monthStart, todayLondon, type Weekday } from './time'
+import { addDays, monthEnd, monthStart, nextMonthStart, todayLondon, type Weekday } from './time'
 
 // ─── auth ───────────────────────────────────────────────────────────────
 
@@ -191,6 +191,18 @@ export async function freeSessionsFor(admin: SupabaseClient, orgId: string, from
  * Upserts on (regular_slot_id, session_date) so running it twice changes nothing.
  * Never touches money: charge_state stays 'unpaid' for the billing phase to pick up.
  */
+/**
+ * Roll for a slot that has just been created or resumed. The monthly job rolls NEXT
+ * month on the 20th, so a slot that appears on the 20th or later has missed it:
+ * without this its next month would have no sessions, no charge on the 1st, and its
+ * time would go on sale to the public. Idempotent, like every roll.
+ */
+export async function rollAhead(admin: SupabaseClient, orgId: string, fromDate: string): Promise<void> {
+  await rollMonth(admin, orgId, fromDate)
+  const today = todayLondon()
+  if (Number(today.slice(8, 10)) >= 20) await rollMonth(admin, orgId, nextMonthStart(today))
+}
+
 export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInMonth: string): Promise<{ created: number; month: string }> {
   const from = monthStart(anyDateInMonth), to = monthEnd(anyDateInMonth)
   const slots = await getSlots(admin, orgId)

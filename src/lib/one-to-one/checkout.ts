@@ -10,10 +10,11 @@
  * can be charged on the 1st without typing it again (phase 4).
  */
 
+import { cache } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
-import { hhmm, fmtDate } from './db'
+import { hhmm, fmtDate, adminClient } from './db'
 
 export const ONE_TO_ONE_MODULE = 'one_to_one'
 
@@ -21,6 +22,25 @@ export class CheckoutBlocked extends Error {
   status: number
   constructor(message: string, status = 503) { super(message); this.status = status }
 }
+
+/**
+ * Can this academy take a card payment right now? One Stripe read, none at all
+ * when no account is connected. Asked BEFORE anything is held or promised, so an
+ * academy that hasn't finished Stripe never ends up with a blocked time or a
+ * parent waiting on a link that was never sent.
+ */
+export async function paymentsReady(admin: SupabaseClient, orgId: string): Promise<boolean> {
+  const { data: org } = await admin.from('organisations').select('stripe_account_id').eq('id', orgId).single()
+  if (!org?.stripe_account_id) return false
+  return isConnectChargeReady(org.stripe_account_id as string)
+}
+
+/** The same question for the academy's own pages: asked once per page load however many pieces of the page need it. */
+export const academyPaymentsReady = cache((orgId: string) => paymentsReady(adminClient(), orgId))
+
+/** What the academy reads when a pay link could not go out. The parent-facing wording is CONNECT_NOT_READY_MESSAGE. */
+export const ACADEMY_NOT_READY_MESSAGE =
+  'No pay link was sent: your academy is not connected to Stripe yet. Finish Stripe in Settings, then press Resend link.'
 
 /** The academy's platform fee rate, default 3.5%, same lookup camps use. */
 export async function platformFeeRate(admin: SupabaseClient, orgId: string): Promise<{ rate: number; stripeAccountId: string }> {
