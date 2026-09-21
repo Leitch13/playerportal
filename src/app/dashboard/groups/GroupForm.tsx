@@ -152,6 +152,11 @@ export default function GroupForm({
   const [maxCapacity, setMaxCapacity] = useState(editGroup?.max_capacity?.toString() || '20')
   const [pricePerSession, setPricePerSession] = useState(editGroup?.price_per_session?.toString() || '')
   const [trialPrice, setTrialPrice] = useState(editGroup?.trial_price?.toString() || '')
+  // An edit only writes the trial price when the editor was actually given the
+  // saved value, or the admin changed the box. A caller that forgets to pass it
+  // can no longer wipe a priced trial back to free.
+  const [trialTouched, setTrialTouched] = useState(false)
+  const trialKnown = !editGroup || editGroup.trial_price !== undefined
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -207,7 +212,7 @@ export default function GroupForm({
       image_url: imageUrl || null,
       is_featured: isFeatured,
       price_per_session: pricePerSession ? parseFloat(pricePerSession) : null,
-      trial_price: trialPrice ? parseFloat(trialPrice) : null,
+      ...(trialKnown || trialTouched ? { trial_price: trialPrice ? parseFloat(trialPrice) : null } : {}),
       // Phase 1B — link class to a term ("" → null for "No term").
       term_id: termId || null,
     }
@@ -492,7 +497,7 @@ export default function GroupForm({
                     min="0"
                     step="0.50"
                     value={trialPrice}
-                    onChange={(e) => setTrialPrice(e.target.value)}
+                    onChange={(e) => { setTrialPrice(e.target.value); setTrialTouched(true) }}
                     placeholder="Leave blank for free trial"
                     className="w-full pl-7 pr-3 py-2.5 bg-[#142236] border border-[#293b58] rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-white/30"
                   />

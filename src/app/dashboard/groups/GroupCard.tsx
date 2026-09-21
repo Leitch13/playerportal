@@ -35,6 +35,7 @@ interface GroupData {
   age_group: string | null
   description: string | null
   price_per_session: number | null
+  trial_price?: number | null
   class_type?: string | null
   short_description?: string | null
   long_description?: string | null

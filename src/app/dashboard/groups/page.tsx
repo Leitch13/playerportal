@@ -280,6 +280,9 @@ export default async function GroupsPage({
                         age_group: (g as unknown as { age_group: string | null }).age_group,
                         description: (g as unknown as { description: string | null }).description,
                         price_per_session: (g as unknown as { price_per_session: number | null }).price_per_session,
+                        // Without this the editor opened with the trial price blank and every
+                        // save wrote it back as null — a priced trial silently went free.
+                        trial_price: (g as unknown as { trial_price: number | null }).trial_price ?? null,
                         end_time: null,
                         class_type: (g as unknown as { class_type: string | null }).class_type,
                         short_description: (g as unknown as { short_description: string | null }).short_description,
