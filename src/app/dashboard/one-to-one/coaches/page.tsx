@@ -5,8 +5,8 @@ import { ActionButton, ActionForm, Field, VenueForm, inputCls } from '../ui'
 export const dynamic = 'force-dynamic'
 
 // Coaches & venues — the academy sets the hours. They roll forward by definition.
-// A coach can flag or add hours from their own page (phase 5); the academy can do
-// both here on their behalf, and is the only one who can block or remove.
+// A coach can flag a day or add hours from their own My 1-2-1s page; the academy can do
+// both here on their behalf, and is the only one who can block, remove or delete.
 export default async function CoachesPage() {
   const { admin, orgId } = await requireAdmin()
   const today = todayLondon(), horizon = addDays(today, 90)
@@ -15,6 +15,14 @@ export default async function CoachesPage() {
   ])
   const vname = (id: string) => venues.find((v) => v.id === id)?.name || ''
   const liveHours = hours.filter((h) => !h.effective_to || h.effective_to >= today)
+  const KEY = ['', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+  const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0) }
+  // Free time is coach hours ∩ venue opening hours. Hours outside the venue's sell nothing, so flag them.
+  const onSale = (h: { venue_id: string; weekday: number; start_minutes: number; end_minutes: number }) => {
+    const v = venues.find((x) => x.id === h.venue_id); if (!v || !v.is_active) return false
+    const open = ((v.weekly_hours as Record<string, [string, string][]> | null)?.[KEY[h.weekday]] ?? []) as [string, string][]
+    return open.some(([a, b]) => h.start_minutes < toMin(b) && h.end_minutes > toMin(a))
+  }
 
   return (
     <div className="space-y-5">
@@ -33,7 +41,10 @@ export default async function CoachesPage() {
                   })}
                 </div>
               </div>
-              <VenueForm venue={v} />
+              <div className="flex items-center gap-3">
+                <VenueForm venue={v} />
+                <ActionButton tone="danger" confirm={`Delete ${v.name}? Its opening hours and any coach hours there go with it. This can't be undone.`} body={{ action: 'venue.remove', id: v.id }}>Delete</ActionButton>
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {closures.filter((c) => c.venue_id === v.id).map((c) => (
@@ -54,6 +65,7 @@ export default async function CoachesPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-white">Coaches and their hours</h2>
+        <p className="-mt-1 text-[11px] text-white/45">Times are 24-hour (16:30), or type 4:30pm. A coach's hours only go on sale while the venue is open, so set the venue's opening hours first.</p>
         {coaches.length === 0 && <p className="text-xs text-white/55">No coach logins in this academy yet. Add staff under Settings first.</p>}
         {coaches.map((c) => {
           const mine = liveHours.filter((h) => h.coach_id === c.id)
@@ -67,9 +79,9 @@ export default async function CoachesPage() {
                     <dt className="text-white/40">{DAY[d]}</dt>
                     <dd className="flex flex-wrap gap-1.5">
                       {mine.filter((h) => h.weekday === d).map((h) => (
-                        <span key={h.id} className="inline-flex items-center gap-1 rounded-md border border-white/[0.12] bg-white/[0.04] px-2 py-0.5 text-white/85">
-                          {hhmm(h.start_minutes)}–{hhmm(h.end_minutes)} · {vname(h.venue_id)}
-                          <ActionButton tone="quiet" className="!px-1 !py-0 !text-[11px]" confirm="Remove these hours from today? Past sessions are unaffected." body={{ action: 'hours.remove', id: h.id }}>✕</ActionButton>
+                        <span key={h.id} className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 ${onSale(h) ? 'border-white/[0.12] bg-white/[0.04] text-white/85' : 'border-[#e0736d]/45 bg-[#e0736d]/10 text-[#fbd9d6]'}`} title={onSale(h) ? undefined : 'Outside this venue\'s opening hours, so nothing here is on sale'}>
+                          {hhmm(h.start_minutes)}–{hhmm(h.end_minutes)} · {vname(h.venue_id)}{onSale(h) ? '' : ' · not on sale, venue closed then'}
+                          <ActionButton tone="quiet" className="!px-1 !py-0 !text-[11px]" confirm="Remove these hours? Sessions already booked stay as they are." body={{ action: 'hours.remove', id: h.id }}>Remove</ActionButton>
                         </span>
                       ))}
                       {mine.filter((h) => h.weekday === d).length === 0 && <span className="text-white/25">off</span>}

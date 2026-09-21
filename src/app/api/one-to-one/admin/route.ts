@@ -3,7 +3,7 @@ import { NotAdmin, requireAdmin, rollMonth } from '@/lib/one-to-one/db'
 import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy } from '@/lib/one-to-one/money'
 import { CheckoutBlocked } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed } from '@/lib/one-to-one/emails'
-import { hhmmToMinutes, todayLondon } from '@/lib/one-to-one/time'
+import { todayLondon } from '@/lib/one-to-one/time'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,23 @@ export const dynamic = 'force-dynamic'
 type Body = Record<string, unknown>
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 const int = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : typeof v === 'string' && v !== '' ? Math.round(Number(v)) : NaN)
-const mins = (v: unknown) => (typeof v === 'string' && /^\d{1,2}:\d{2}$/.test(v) ? hhmmToMinutes(v) : int(v))
+/** "14:45", "14.45", "1445", "2:45pm", "9am", "16" → minutes since midnight. NaN if it isn't a time. */
+const mins = (v: unknown): number => {
+  if (typeof v === 'number') return Number.isFinite(v) ? Math.round(v) : NaN
+  if (typeof v !== 'string') return NaN
+  const t = v.trim().toLowerCase().replace(/\s+/g, '')
+  const m = /^(\d{1,2})(?:[:.](\d{2}))?(am|pm)?$/.exec(t) ?? /^(\d{2})(\d{2})()$/.exec(t)
+  if (!m) return NaN
+  let h = Number(m[1]); const mi = m[2] ? Number(m[2]) : 0
+  if (m[3] === 'pm' && h < 12) h += 12
+  if (m[3] === 'am' && h === 12) h = 0
+  return h > 24 || mi > 59 ? NaN : h * 60 + mi
+}
+/** Coaching doesn't happen at 3am. Almost always someone typed 2:45 meaning 14:45. */
+const nightTypo = (start: number) => start >= 0 && start < 300
+const nightMsg = (start: number) => `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')} is the middle of the night. Times are 24-hour, so quarter to three in the afternoon is 14:45. You can also type 2:45pm.`
+const DAY_KEY = ['', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+const DAY_NAME = ['', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays']
 const bad = (m: string) => NextResponse.json({ error: m }, { status: 400 })
 
 export async function POST(req: NextRequest) {
@@ -54,13 +70,34 @@ export async function POST(req: NextRequest) {
           if (!Array.isArray(list)) return bad('Bad hours')
           for (const pair of list) {
             if (!Array.isArray(pair) || pair.length !== 2) return bad('Bad hours')
-            const [a, b] = pair.map(mins); if (!(a >= 0 && b > a && b <= 1440)) return bad('Hours must run forwards')
+            const [a, b] = pair.map(mins); if (!(a >= 0 && b > a && b <= 1440)) return bad('Opening hours must run forwards, like 16:00-19:30')
+            if (nightTypo(a)) return bad(nightMsg(a))
           }
         }
         const row = { organisation_id: orgId, name, address: str(body.address) || null, weekly_hours: weekly, is_active: body.isActive !== false }
         const id = str(body.id)
         const q = id ? admin.from('coaching_venues').update(row).eq('id', id).eq('organisation_id', orgId) : admin.from('coaching_venues').insert(row)
         const { error } = await q
+        if (error) throw error
+        return NextResponse.json({ ok: true })
+      }
+      case 'venue.remove': {
+        const id = str(body.id); if (!id) return bad('Which venue?')
+        const { data: v } = await admin.from('coaching_venues').select('id, name').eq('id', id).eq('organisation_id', orgId).maybeSingle()
+        if (!v) return bad('Venue not found')
+        const [{ count: slotCount }, { count: sessCount }] = await Promise.all([
+          admin.from('regular_slots').select('id', { count: 'exact', head: true }).eq('venue_id', id).neq('status', 'released'),
+          admin.from('coaching_sessions').select('id', { count: 'exact', head: true }).eq('venue_id', id),
+        ])
+        if ((slotCount || 0) > 0 || (sessCount || 0) > 0) {
+          return bad(`${v.name} has ${slotCount || 0} regular${slotCount === 1 ? '' : 's'} and ${sessCount || 0} session${sessCount === 1 ? '' : 's'} on it, so it can't be deleted. Move or release those first, or open Edit and untick "In use" to stop selling time there.`)
+        }
+        // Nothing depends on it: take its hours, closures and one-off extras with it.
+        await admin.from('coaching_hours').delete().eq('venue_id', id).eq('organisation_id', orgId)
+        await admin.from('coaching_venue_closures').delete().eq('venue_id', id).eq('organisation_id', orgId)
+        await admin.from('coach_hour_exceptions').delete().eq('venue_id', id).eq('organisation_id', orgId)
+        await admin.from('regular_slots').delete().eq('venue_id', id).eq('organisation_id', orgId).eq('status', 'released')
+        const { error } = await admin.from('coaching_venues').delete().eq('id', id).eq('organisation_id', orgId)
         if (error) throw error
         return NextResponse.json({ ok: true })
       }
@@ -84,7 +121,20 @@ export async function POST(req: NextRequest) {
         const coachId = str(body.coachId), venueId = str(body.venueId), weekday = int(body.weekday)
         const start = mins(body.start), end = mins(body.end)
         if (!coachId || !venueId || !(weekday >= 1 && weekday <= 7)) return bad('Pick a coach, a venue and a day')
-        if (!(start >= 0 && end > start && end <= 1440)) return bad('Hours must run forwards')
+        if (!(start >= 0 && end > start && end <= 1440)) return bad('Hours must run forwards, like 16:00 to 19:30')
+        if (nightTypo(start)) return bad(nightMsg(start))
+        {
+          // Free time is the overlap of the coach's hours and the venue's opening hours.
+          // Hours outside the venue's would sell nothing, silently — so say so.
+          const { data: venue } = await admin.from('coaching_venues').select('name, weekly_hours').eq('id', venueId).eq('organisation_id', orgId).maybeSingle()
+          if (!venue) return bad('Venue not found')
+          const open = ((venue.weekly_hours as Record<string, [string, string][]> | null)?.[DAY_KEY[weekday]] ?? []).map(([a, b]) => [mins(a), mins(b)] as const)
+          const inside = open.some(([a, b]) => start >= a && end <= b)
+          if (!inside) {
+            const when = open.length ? `open ${open.map(([a, b]) => `${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')} to ${String(Math.floor(b / 60)).padStart(2, '0')}:${String(b % 60).padStart(2, '0')}`).join(' and ')} on ${DAY_NAME[weekday]}` : `not open on ${DAY_NAME[weekday]}`
+            return bad(`${venue.name} is ${when}. These hours fall outside that, so nothing would go on sale. Press Edit on the venue and change its opening hours first.`)
+          }
+        }
         const { error } = await admin.from('coaching_hours').insert({
           organisation_id: orgId, coach_id: coachId, venue_id: venueId, weekday,
           start_minutes: start, end_minutes: end, effective_from: str(body.from) || todayLondon(), effective_to: str(body.to) || null,
@@ -93,8 +143,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true })
       }
       case 'hours.remove': {
-        // The academy removing hours ends them from today; history stays intact.
-        const { error } = await admin.from('coaching_hours').update({ effective_to: todayLondon() }).eq('id', str(body.id)).eq('organisation_id', orgId)
+        // If nothing was ever booked inside these hours, they were a mistake: delete them.
+        // Otherwise end them yesterday, so they vanish now and the history stays true.
+        const { data: h } = await admin.from('coaching_hours').select('id, coach_id, venue_id, weekday, start_minutes, end_minutes').eq('id', str(body.id)).eq('organisation_id', orgId).maybeSingle()
+        if (!h) return bad('Hours not found')
+        const { data: used } = await admin.from('coaching_sessions').select('id, session_date, start_minutes').eq('organisation_id', orgId).eq('coach_id', h.coach_id).eq('venue_id', h.venue_id).gte('start_minutes', h.start_minutes).lt('start_minutes', h.end_minutes).limit(200)
+        const everUsed = (used ?? []).some((x) => { const d = new Date(`${x.session_date}T12:00:00Z`).getUTCDay(); return (d === 0 ? 7 : d) === h.weekday })
+        const yesterday = new Date(`${todayLondon()}T12:00:00Z`); yesterday.setUTCDate(yesterday.getUTCDate() - 1)
+        const { error } = everUsed
+          ? await admin.from('coaching_hours').update({ effective_to: yesterday.toISOString().slice(0, 10) }).eq('id', h.id)
+          : await admin.from('coaching_hours').delete().eq('id', h.id)
         if (error) throw error
         return NextResponse.json({ ok: true })
       }
