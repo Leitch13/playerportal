@@ -260,7 +260,7 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
     items.push({
       key: `flag:${e.id}`, kind: 'cover', date: e.exception_date,
       title: `${coachName(e.coach_id)} can't coach ${fmtDate(e.exception_date)}${e.start_minutes != null ? ` ${hhmm(e.start_minutes)}–${hhmm(e.end_minutes!)}` : ''} · ${hit.length} session${hit.length === 1 ? '' : 's'} affected`,
-      detail: e.note ? `Reason given: ${e.note}. ` : '' + (hit.length ? 'Parents have not been told. Offer cover, move the sessions, or credit them.' : 'Nothing booked in that window. Resolve to clear it.'),
+      detail: (e.note ? `Reason given: ${e.note.replace(/\.$/, '')}. ` : '') + (hit.length ? 'Parents have not been told. Offer cover, move the sessions, or credit them.' : 'Nothing booked in that window. Mark it sorted to clear it.'),
       ids: { exceptionId: e.id, coachId: e.coach_id, sessionIds: hit.map((s) => s.id) },
     })
   }
@@ -299,13 +299,14 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
     .eq('organisation_id', orgId).eq('status', 'failed')
   for (const c of failed ?? []) {
     const parent = c.parent as unknown as { full_name: string | null; email: string | null } | null
-    const kids = slots.filter((s) => s.parent_id === c.parent_id && s.status !== 'released').map((s) => s.player?.first_name).filter(Boolean)
+    const theirs = slots.filter((s) => s.parent_id === c.parent_id && s.status !== 'released')
+    const kids = [...new Set(theirs.map((s) => s.player?.first_name).filter(Boolean))]
     const dueAgain = c.next_attempt_on && c.next_attempt_on > today
     items.push({
       key: `charge:${c.id}`, kind: 'charge', date: c.billing_month,
       title: `${kids.join(' & ') || parent?.full_name || 'A parent'} · ${new Date(c.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long' })} unpaid, ${gbp(c.amount_pence)}`,
-      detail: `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. Card declined ${c.attempt_count} time${c.attempt_count === 1 ? '' : 's'}${c.failure_message ? `: ${c.failure_message}` : ''}. ${dueAgain ? `Retrying on the ${c.next_attempt_on!.slice(8)}. ` : 'No more automatic retries. '}Send the pay link, mark cash, or release the slot.`,
-      ids: { chargeId: c.id, parentId: c.parent_id, slotIds: slots.filter((s) => s.parent_id === c.parent_id && s.status !== 'released').map((s) => s.id) },
+      detail: `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. Card declined ${c.attempt_count} time${c.attempt_count === 1 ? '' : 's'}${c.failure_message ? `: ${c.failure_message.replace(/\.$/, '')}` : ''}. ${dueAgain ? `Retrying on the ${c.next_attempt_on!.slice(8)}. ` : 'No more automatic retries. '}Send the pay link, mark cash, or release the slot.`,
+      ids: { chargeId: c.id, parentId: c.parent_id, slotIds: theirs.map((s) => s.id), slotLabels: theirs.map((s) => `${s.player?.first_name ?? 'Child'} ${DAY[s.weekday]} ${hhmm(s.start_minutes)}`) },
     })
   }
   const pending = slots.filter((s) => s.status === 'pending')
@@ -324,4 +325,5 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
 export const DAY: Record<number, string> = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun' }
 export const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
 export const fmtDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+export const fmtShort = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 export const gbp = (pence: number) => `£${(pence / 100).toFixed(2).replace(/\.00$/, '')}`

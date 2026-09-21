@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { requireAdmin, getSettings } from '@/lib/one-to-one/db'
 import { calendarUrl } from '@/lib/one-to-one/calendar'
 import { HOURS_FULL_CREDIT, HOURS_HALF_CREDIT } from '@/lib/one-to-one/policy'
-import { ActionForm, Field, inputCls } from '../ui'
+import { ActionForm, Field, PoundsInput, inputCls } from '../ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,8 +17,8 @@ export default async function OneToOneSettingsPage() {
         <h3 className="text-sm font-semibold text-white">Prices and session length</h3>
         <ActionForm action="settings.save" submitLabel="Save" className="mt-3">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="1-to-1, pence per session"><input name="oneToOnePence" type="number" defaultValue={s.one_to_one_price_pence} className={inputCls} /></Field>
-            <Field label="2-to-1, pence per child"><input name="twoToOnePence" type="number" defaultValue={s.two_to_one_price_pence} className={inputCls} /></Field>
+            <Field label="1-to-1, per session"><PoundsInput name="oneToOnePence" defaultPence={s.one_to_one_price_pence} /></Field>
+            <Field label="2-to-1, per child"><PoundsInput name="twoToOnePence" defaultPence={s.two_to_one_price_pence} /></Field>
             <Field label="Session length, minutes"><input name="sessionMinutes" type="number" defaultValue={s.session_minutes} className={inputCls} /></Field>
             <label className="flex items-end gap-2 pb-2 text-xs text-white/70"><input type="checkbox" name="cashAllowed" defaultChecked={s.cash_allowed} /> Cash allowed for regulars</label>
           </div>

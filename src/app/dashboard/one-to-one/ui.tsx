@@ -185,3 +185,16 @@ export function Disclosure({ label, children }: { label: string; children: React
     </div>
   )
 }
+
+/** Money is typed in pounds and sent in pence: the visible box is £, the hidden input carries the pence the API expects. */
+export function PoundsInput({ name, defaultPence, className = '' }: { name: string; defaultPence: number; className?: string }) {
+  const [v, setV] = useState((defaultPence / 100).toFixed(2).replace(/\.00$/, ''))
+  const pence = Math.max(0, Math.round((parseFloat(v) || 0) * 100))
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">£</span>
+      <input inputMode="decimal" value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.]/g, ''))} className={`${inputCls} !pl-7 tabular-nums ${className}`} />
+      <input type="hidden" name={name} value={pence} />
+    </div>
+  )
+}
