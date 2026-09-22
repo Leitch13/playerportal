@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
+import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
+import { loadCampSeats } from '@/lib/camp-seats'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -93,6 +95,15 @@ export async function POST(request: NextRequest) {
 
     if (camp.max_capacity && bookingCount != null && bookingCount >= camp.max_capacity) {
       return NextResponse.json({ error: 'Camp is full' }, { status: 400 })
+    }
+    // A camp that also sells single days: a week place needs a seat on EVERY day,
+    // so the check is against the busiest day (week bookings + that day's bookings),
+    // not the raw row count above, which would count a Monday-only booking as a week.
+    if (sellsSingleDays(camp) && camp.max_capacity) {
+      const left = wholeCampSeatsLeft(await loadCampSeats(supabase, campId, Number(camp.max_capacity)))
+      if (left !== null && left <= 0) {
+        return NextResponse.json({ error: 'The full week is sold out on at least one day. Single days may still be available.' }, { status: 400 })
+      }
     }
 
     // ── Duplicate guard ──────────────────────────────────────────────────

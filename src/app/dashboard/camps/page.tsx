@@ -348,6 +348,7 @@ export default async function CampsPage() {
                             // through so CampEditForm can lock publishing
                             // for flexible drafts.
                             booking_mode: camp.booking_mode,
+                            flex_price_per_day: camp.flex_price_per_day,
                             // Flexible Camps (Phase 3E pilot gate) — org
                             // id is consulted against the allowlist
                             // inside the CampEditForm.

@@ -42,6 +42,7 @@ type EditableCamp = {
   // Flexible Camps (Phase 1) — forwarded to CampEditForm so it can lock
   // publishing for flexible drafts.
   booking_mode?: string | null
+  flex_price_per_day?: number | null
   // Flexible Camps (Phase 3E pilot gate) — forwarded to CampEditForm
   // so the same allowlist check applies inside the edit modal.
   organisation_id?: string | null

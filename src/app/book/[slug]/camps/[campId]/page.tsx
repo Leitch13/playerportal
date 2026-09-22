@@ -16,7 +16,8 @@ import CampBookingForm from './CampBookingForm'
 // FLEXIBLE_CAMPS_ENABLED is on. Purely view-only: no Stripe, no
 // checkout, no writes.
 import CampFlexibleDayPicker from './CampFlexibleDayPicker'
-import { BOOKING_MODE_FLEXIBLE_DAYS, FLEXIBLE_CAMPS_ENABLED } from '@/lib/flexible-camps'
+import { BOOKING_MODE_FLEXIBLE_DAYS, FLEXIBLE_CAMPS_ENABLED, sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
+import { loadCampSeats } from '@/lib/camp-seats'
 
 type ScheduleDay = {
   day: string
@@ -168,12 +169,14 @@ export default async function CampDetailPage({
   //                CampBookingForm.
   const isFlexibleCamp = c.booking_mode === BOOKING_MODE_FLEXIBLE_DAYS
   if (isFlexibleCamp && !FLEXIBLE_CAMPS_ENABLED) notFound()
+  // A whole-camp camp that also sells single days shows BOTH: the week form and the day picker.
+  const sellsDaysToo = FLEXIBLE_CAMPS_ENABLED && sellsSingleDays(c)
 
   // Fetch camp_days ONLY for flexible camps + only when the flag is on.
   // Whole-camp code path issues zero new queries — byte-identical read
   // pattern to today.
   let campDays: CampDayRow[] = []
-  if (isFlexibleCamp && FLEXIBLE_CAMPS_ENABLED) {
+  if ((isFlexibleCamp && FLEXIBLE_CAMPS_ENABLED) || sellsDaysToo) {
     const { data: cdData } = await publicSupabase
       .from('camp_days')
       .select('id, date, price, is_available, sort_order')
@@ -200,7 +203,15 @@ export default async function CampDetailPage({
     .eq('camp_id', campId)
     .in('payment_status', ['pending', 'paid'])
 
-  const spotsLeft = c.max_capacity ? c.max_capacity - (bookingCount || 0) : null
+  let spotsLeft = c.max_capacity ? c.max_capacity - (bookingCount || 0) : null
+  // Week-and-days camp: a week place needs a seat on the busiest day, and the picker
+  // greys out any day that is full on its own.
+  let fullDayIds = new Set<string>()
+  if (sellsDaysToo && c.max_capacity) {
+    const seats = await loadCampSeats(seatSvc, campId, Number(c.max_capacity))
+    spotsLeft = wholeCampSeatsLeft(seats)
+    fullDayIds = new Set(seats.dayIds.filter((id) => seats.wholeCampBookings + (seats.dayBookingsByDayId[id] ?? 0) >= Number(c.max_capacity)))
+  }
 
   // If a parent is signed in (to THIS academy), let them reuse their details +
   // pick an existing child instead of retyping everything.
@@ -460,6 +471,33 @@ export default async function CampDetailPage({
                     existingChildren={existingChildren}
                     signInUrl={signInUrl}
                   />
+              {sellsDaysToo && (
+                <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <h3 className="text-base font-bold text-white">Just want some days?</h3>
+                  <p className="mt-1 text-xs text-white/55">
+                    Book the full week above for {c.early_bird_price != null && c.early_bird_deadline && new Date().toISOString().slice(0, 10) <= String(c.early_bird_deadline) ? `£${Number(c.early_bird_price).toFixed(0)}` : `£${Number(c.price ?? 0).toFixed(0)}`}, or pick single days at £{Number(c.flex_price_per_day).toFixed(0)} a day.
+                  </p>
+                  <div className="mt-4">
+                    <CampFlexibleDayPicker
+                      campId={c.id}
+                      organisationId={c.organisation_id}
+                      slug={slug}
+                      campName={c.name}
+                      flexPricePerDay={c.flex_price_per_day ?? null}
+                      flexMinDays={null}
+                      days={campDays.map((d) => fullDayIds.has(d.id) ? { ...d, is_available: false } : d)}
+                      wholeCampPrice={c.price != null ? Number(c.price) : null}
+                      primaryColor={primaryColor}
+                      collectMedicalInfo={c.collect_medical_info ?? false}
+                      requireConsent={c.require_consent ?? false}
+                      siblingDiscountEnabled={c.sibling_discount_enabled ?? false}
+                      siblingDiscountPercent={c.sibling_discount_percent ?? null}
+                      bookingId={bookedParam ? bookingIdParam : null}
+                      cancelled={cancelledParam}
+                    />
+                  </div>
+                </div>
+              )}
                 </>
               )}
             </div>

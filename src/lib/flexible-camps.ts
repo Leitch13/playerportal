@@ -203,3 +203,61 @@ export type CampFlexibleFields = {
 export type CampBookingFlexibleFields = {
   booking_mode: BookingMode
 }
+
+// ─── A whole-camp camp that ALSO sells single days ───────────────────
+//
+// Talent FA (22 Sep 2026): a camp sold as a week at £99 should also let a
+// parent book Monday and Tuesday at £25 a day. Nothing is recreated: the
+// camp stays `booking_mode = 'whole_camp'` (so every whole-camp path is
+// untouched) and gains `flex_price_per_day` plus its camp_days rows. That
+// pair is the whole definition. The day picker and the flexible checkout
+// then work on it exactly as they do on a flexible camp, with two extras
+// below: the all-days price cap and seat counting that sees both kinds
+// of booking.
+export function sellsSingleDays(camp: { booking_mode?: string | null; flex_price_per_day?: number | string | null }): boolean {
+  return camp.booking_mode === BOOKING_MODE_WHOLE_CAMP && camp.flex_price_per_day != null && Number(camp.flex_price_per_day) >= 0
+}
+
+// Picking every bookable day must never cost more than the week. Expressed
+// as a discount off the per-day gross so everything downstream (sibling %,
+// promo, Stripe line apportioning, per-day snapshots) is untouched. Pure;
+// the checkout route and the public picker both call it, so what the
+// parent sees is what the server charges.
+export function wholeCampDiscount(args: {
+  perDayGross: number[]        // gross price of each SELECTED day
+  bookableDayCount: number     // days a parent could pick (is_available)
+  wholeCampPrice: number | null
+}): number {
+  const { perDayGross, bookableDayCount, wholeCampPrice } = args
+  if (wholeCampPrice == null || !Number.isFinite(wholeCampPrice) || wholeCampPrice < 0) return 0
+  if (bookableDayCount <= 0 || perDayGross.length !== bookableDayCount) return 0
+  const gross = perDayGross.reduce((s, p) => s + p, 0)
+  const saving = gross - wholeCampPrice
+  return saving > 0 ? Math.round(saving * 100) / 100 : 0
+}
+
+// Seats on a camp that sells both. A week booking takes a seat on EVERY
+// day; a day booking takes a seat on its days only. So the seats taken on
+// a given day = week bookings + day bookings for that day, and the seats a
+// NEW week booking needs = the busiest day. Pure; both checkouts and the
+// public page use it.
+export type DaySeatInput = {
+  maxCapacity: number | null
+  wholeCampBookings: number                  // pending + paid, booking_mode whole_camp
+  dayBookingsByDayId: Record<string, number> // pending + paid camp_booking_days per day
+  dayIds: string[]                           // every day of the camp
+}
+export function seatsTakenOnDay(input: DaySeatInput, dayId: string): number {
+  return input.wholeCampBookings + (input.dayBookingsByDayId[dayId] ?? 0)
+}
+export function busiestDaySeats(input: DaySeatInput): number {
+  return input.dayIds.reduce((m, id) => Math.max(m, seatsTakenOnDay(input, id)), input.wholeCampBookings)
+}
+export function wholeCampSeatsLeft(input: DaySeatInput): number | null {
+  if (input.maxCapacity == null) return null
+  return Math.max(0, input.maxCapacity - busiestDaySeats(input))
+}
+export function daySeatsLeft(input: DaySeatInput, dayId: string): number | null {
+  if (input.maxCapacity == null) return null
+  return Math.max(0, input.maxCapacity - seatsTakenOnDay(input, dayId))
+}

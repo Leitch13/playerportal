@@ -60,6 +60,7 @@ type EditableCamp = {
   // through render exactly as before. When 'flexible_days', publishing is
   // locked (see below).
   booking_mode?: string | null
+  flex_price_per_day?: number | null
   // Flexible Camps (Phase 3E pilot gate). Optional so pre-allowlist
   // callers still fall through to "blocked" for flexible camps.
   organisation_id?: string | null
@@ -120,6 +121,12 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [imageUrl, setImageUrl] = useState(camp.image_url || '')
   const [whatToBring, setWhatToBring] = useState(camp.what_to_bring || '')
   const [maxCapacity, setMaxCapacity] = useState(camp.max_capacity != null ? String(camp.max_capacity) : '30')
+  // Week-and-days: a whole-camp camp can ALSO sell single days. Once on it stays on
+  // (parents may already hold day bookings), but the day price can be changed.
+  const isWholeCamp = (camp.booking_mode ?? 'whole_camp') === 'whole_camp'
+  const daysAlreadyOn = isWholeCamp && camp.flex_price_per_day != null
+  const [sellDays, setSellDays] = useState(daysAlreadyOn)
+  const [dayPrice, setDayPrice] = useState(camp.flex_price_per_day != null ? String(camp.flex_price_per_day) : '')
   const publishBlocked = isFlexiblePublishLocked(camp.booking_mode, flexiblePublishAllowed)
   // When publishing is blocked we force-clamp the checkbox state to false.
   // Defence-in-depth against a starting-value of true (only possible if a
@@ -280,12 +287,34 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     setSaving(true)
     try {
       const supabase = createClient()
-      const payload = buildPayload()
+      const payload: Record<string, unknown> = buildPayload()
+      if (isWholeCamp && sellDays) {
+        const dp = parseFloat(dayPrice)
+        if (!Number.isFinite(dp) || dp < 0) { setError('Enter a price per day, e.g. 25'); setSaving(false); return }
+        if (camp.price != null && dp * campDayCount(startDate, endDate) < Number(camp.price)) {
+          setError(`£${dp} a day for ${campDayCount(startDate, endDate)} days is less than the full-week price of £${Number(camp.price)} — nobody would book the week. Raise the day price.`); setSaving(false); return
+        }
+        payload.flex_price_per_day = dp
+      }
       const { error: updErr } = await supabase.from('camps').update(payload).eq('id', camp.id)
       if (updErr) {
         setError('Error saving changes: ' + updErr.message)
         setSaving(false)
         return
+      }
+      // First time days go on sale: one camp_days row per date, capped at the camp's capacity.
+      // Rows that already exist (from a dates extension or an earlier save) are left alone.
+      if (isWholeCamp && sellDays) {
+        const { data: existingDays } = await supabase.from('camp_days').select('date').eq('camp_id', camp.id)
+        const have = new Set(((existingDays || []) as { date: string }[]).map((d) => d.date))
+        const rows = generateScheduleDays(startDate, endDate)
+          .filter((d) => !have.has(d.date))
+          .map((d, idx) => ({ camp_id: camp.id, date: d.date, is_available: true, sort_order: have.size + idx, max_capacity: capValue || null }))
+        if (rows.length) {
+          const { error: daysErr } = await supabase.from('camp_days').insert(rows)
+          if (daysErr) { setError('Saved, but the single days could not be created: ' + daysErr.message); setSaving(false); return }
+        }
+        if (capValue) await supabase.from('camp_days').update({ max_capacity: capValue }).eq('camp_id', camp.id)
       }
       // Phase 2B — optional manual payment request email. The extension is
       // already saved; this only sends email (no Stripe, no booking write). If
@@ -416,6 +445,24 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                 <div className={lockedCls}>{camp.price != null ? `£${Number(camp.price).toFixed(0)}` : '—'}</div>
               </div>
             </div>
+            {isWholeCamp && !campEnded && (
+              <div className="rounded-lg border border-[#293b58] bg-white/[0.02] p-3 space-y-2">
+                <label className="flex items-center gap-2 text-sm text-white">
+                  <input type="checkbox" checked={sellDays} disabled={daysAlreadyOn} onChange={(e) => setSellDays(e.target.checked)} />
+                  Also sell single days
+                </label>
+                <p className="text-[11px] text-white/45">
+                  Parents can book the full week at £{camp.price != null ? Number(camp.price).toFixed(0) : '—'} <em>or</em> pick single days. Picking every day is never charged more than the week.
+                  A week booking takes a seat on every day; a day booking only on its days. {daysAlreadyOn ? 'Single days are on sale — the day price can still be changed.' : 'Once on, it stays on.'}
+                </p>
+                {sellDays && (
+                  <div className="max-w-[12rem]">
+                    <label className="block text-xs text-white/50 mb-1">Price per day (£)</label>
+                    <input type="number" min="0" step="0.01" value={dayPrice} onChange={(e) => setDayPrice(e.target.value)} placeholder="e.g. 25" className={inputCls} />
+                  </div>
+                )}
+              </div>
+            )}
             {structuralEnabled && campEnded && (
               <p className="text-[11px] text-white/30">This camp has ended — dates &amp; schedule are locked.</p>
             )}

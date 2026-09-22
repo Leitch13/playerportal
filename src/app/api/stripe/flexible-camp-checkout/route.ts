@@ -25,7 +25,8 @@ import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
-import { FLEXIBLE_CAMPS_ENABLED, BOOKING_MODE_FLEXIBLE_DAYS } from '@/lib/flexible-camps'
+import { FLEXIBLE_CAMPS_ENABLED, BOOKING_MODE_FLEXIBLE_DAYS, sellsSingleDays, wholeCampDiscount, daySeatsLeft } from '@/lib/flexible-camps'
+import { loadCampSeats } from '@/lib/camp-seats'
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 
 // Parent-facing money route: give it real headroom instead of the platform
@@ -154,7 +155,9 @@ export async function POST(request: NextRequest) {
     if (camp.is_published === false) {
       return NextResponse.json({ error: 'This camp isn’t open for bookings.' }, { status: 404 })
     }
-    if (camp.booking_mode !== BOOKING_MODE_FLEXIBLE_DAYS) {
+    // A flexible camp, or a whole-camp camp that also sells single days.
+    const sellsDaysToo = sellsSingleDays(camp)
+    if (camp.booking_mode !== BOOKING_MODE_FLEXIBLE_DAYS && !sellsDaysToo) {
       return NextResponse.json({ error: 'This camp is not booked per-day.' }, { status: 400 })
     }
     if (camp.organisation_id !== organisationId) {
@@ -216,13 +219,17 @@ export async function POST(request: NextRequest) {
     // parent legitimately returning to add extra days is unaffected.
     const { data: priorRows, error: priorError } = await supabase
       .from('camp_bookings')
-      .select('id, camp_booking_days(camp_day_id)')
+      .select('id, booking_mode, camp_booking_days(camp_day_id)')
       .eq('camp_id', campId)
       .in('payment_status', ['pending', 'paid'])
       .ilike('child_name', childName.trim())
       .ilike('parent_email', parentEmail.trim())
     if (priorError) {
       return NextResponse.json({ error: 'Could not verify existing bookings.' }, { status: 500 })
+    }
+    // A child booked on the full week already has every day.
+    if ((priorRows || []).some((b) => (b as { booking_mode?: string | null }).booking_mode === 'whole_camp')) {
+      return NextResponse.json({ error: `${childName.trim()} is already booked on the full week of this camp.` }, { status: 409 })
     }
     const heldDayIds = new Set(
       (priorRows || []).flatMap((b) =>
@@ -266,6 +273,21 @@ export async function POST(request: NextRequest) {
     }
     const grossTotal = perDayGross.reduce((s, p) => s + p, 0)
 
+    // ─── 7b. Week-and-days camp: seats and the all-days cap ─────────
+    // Week bookings hold a seat on every day, which the day RPC cannot see
+    // until migration 118 lands, so check here as well. And picking every
+    // bookable day never costs more than the week price.
+    let wholeCampCap = 0
+    if (sellsDaysToo) {
+      const seats = await loadCampSeats(supabase, campId, camp.max_capacity != null ? Number(camp.max_capacity) : null)
+      const fullDays = orderedRows.filter((row) => { const left = daySeatsLeft(seats, row.id); return left !== null && left <= 0 })
+      if (fullDays.length) {
+        return NextResponse.json({ error: 'One or more selected days are now full.', unavailableDayIds: fullDays.map((d) => d.id) }, { status: 409 })
+      }
+      const { count: bookableDayCount } = await supabase.from('camp_days').select('*', { count: 'exact', head: true }).eq('camp_id', campId).eq('is_available', true)
+      wholeCampCap = wholeCampDiscount({ perDayGross, bookableDayCount: bookableDayCount ?? 0, wholeCampPrice: camp.price != null ? Number(camp.price) : null })
+    }
+
     // ─── 8. Sibling discount (whole-camp early-bird deliberately N/A) ─
     // Early-bird pricing is a whole-camp concept (single price) and is
     // deliberately NOT applied to flexible bookings. Only the sibling
@@ -287,9 +309,9 @@ export async function POST(request: NextRequest) {
       siblingEligible = ((familyRows || []) as { child_name: string | null }[])
         .some((r) => (r.child_name || '').trim().toLowerCase() !== thisKid)
     }
-    let discountAmount = 0
+    let discountAmount = wholeCampCap
     if (siblingDiscount && siblingEligible && camp.sibling_discount_enabled && camp.sibling_discount_percent) {
-      discountAmount = grossTotal * (Number(camp.sibling_discount_percent) / 100)
+      discountAmount += (grossTotal - wholeCampCap) * (Number(camp.sibling_discount_percent) / 100)
     }
 
     // Promo code — stacks on top of the sibling discount. Fold it into

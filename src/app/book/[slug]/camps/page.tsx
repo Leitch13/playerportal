@@ -3,6 +3,7 @@
 import { createPublicClient } from '@/lib/supabase/public'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { sellsSingleDays } from '@/lib/flexible-camps'
 
 type Camp = {
   id: string
@@ -230,6 +231,9 @@ export default async function CampsListingPage({
                                   <span className="text-sm text-white/30 line-through">&pound;{Number(camp.price).toFixed(0)}</span>
                                 )}
                                 <span className="text-xs font-normal text-white/40">/ week</span>
+                                {sellsSingleDays(camp as unknown as { booking_mode?: string | null; flex_price_per_day?: number | null }) && (
+                                  <span className="text-xs font-normal text-white/40">· or &pound;{Number((camp as unknown as { flex_price_per_day: number }).flex_price_per_day).toFixed(0)} a day</span>
+                                )}
                               </span>
                             )}
                             {isFull ? (

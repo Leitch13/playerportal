@@ -17,6 +17,7 @@
  * `booking_source` column (Sprint 9 migration 081 may not be applied).
  */
 import { redirect } from 'next/navigation'
+import { sellsSingleDays } from '@/lib/flexible-camps'
 import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import PrintButton from './PrintButton'
@@ -57,11 +58,12 @@ export default async function CampPrintRegisterPage({
   // read of camps.* stays functionally identical (extra column ignored).
   const { data: camp } = await supabase
     .from('camps')
-    .select('id, organisation_id, name, start_date, end_date, location, booking_mode')
+    .select('id, organisation_id, name, start_date, end_date, location, booking_mode, flex_price_per_day')
     .eq('id', campId)
     .maybeSingle()
   if (!camp || camp.organisation_id !== orgId) redirect('/dashboard/camps')
-  const isFlexibleCamp = (camp as { booking_mode?: string | null }).booking_mode === 'flexible_days'
+  const sellsDaysToo = sellsSingleDays(camp as { booking_mode?: string | null; flex_price_per_day?: number | null })
+  const isFlexibleCamp = (camp as { booking_mode?: string | null }).booking_mode === 'flexible_days' || sellsDaysToo
 
   const { data: orgRow } = await supabase
     .from('organisations')
@@ -86,7 +88,7 @@ export default async function CampPrintRegisterPage({
   let bookingsRaw: unknown[] | null = null
   const withPhoto = await supabase
     .from('camp_bookings')
-    .select('id, child_name, child_age, parent_name, parent_phone, medical_info, photo_consent, payment_status')
+    .select('id, child_name, child_age, parent_name, parent_phone, medical_info, photo_consent, payment_status, booking_mode')
     .eq('camp_id', campId)
     .eq('organisation_id', orgId)
     .in('payment_status', ['paid', 'pending'])
@@ -94,7 +96,7 @@ export default async function CampPrintRegisterPage({
   if (withPhoto.error && (withPhoto.error as { code?: string }).code === '42703') {
     const legacy = await supabase
       .from('camp_bookings')
-      .select('id, child_name, child_age, parent_name, parent_phone, medical_info, payment_status')
+      .select('id, child_name, child_age, parent_name, parent_phone, medical_info, payment_status, booking_mode')
       .eq('camp_id', campId)
       .eq('organisation_id', orgId)
       .in('payment_status', ['paid', 'pending'])
@@ -150,7 +152,9 @@ export default async function CampPrintRegisterPage({
       const dayLabel = new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-GB', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
       })
-      const dayChildren = (bookingsByDay.get(d.id) || []).sort((a, b) =>
+      // Week bookings on a week-and-days camp attend every day.
+      const weekRows = sellsDaysToo ? rows.filter((r) => (r as { booking_mode?: string | null }).booking_mode !== 'flexible_days') : []
+      const dayChildren = [...weekRows, ...(bookingsByDay.get(d.id) || [])].sort((a, b) =>
         (a.child_name || '').localeCompare(b.child_name || ''),
       )
       perDayPages.push({ dayId: d.id, label: dayLabel, rows: dayChildren })
@@ -195,7 +199,7 @@ export default async function CampPrintRegisterPage({
           {camp.location ? ` · ${camp.location}` : ''}
           {academyName ? ` · ${academyName}` : ''}
           {' · '}{rows.length} child{rows.length === 1 ? '' : 'ren'}
-          {isFlexibleCamp ? ' · Flexible days' : ''}
+          {sellsDaysToo ? ' · Week and single days' : isFlexibleCamp ? ' · Flexible days' : ''}
         </p>
 
         {/* Flexible Camps (Phase 3E). For flexible camps, render ONE

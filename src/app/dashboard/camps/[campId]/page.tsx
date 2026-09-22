@@ -16,6 +16,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
 import AddPlayerToCamp, { type RosterPlayer } from './AddPlayerToCamp'
+import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
+import { loadCampSeats } from '@/lib/camp-seats'
 import RosterClient, { type CampRosterBooking } from './RosterClient'
 
 function fmtDateRange(start: string, end: string): string {
@@ -63,7 +65,9 @@ export default async function CampDetailPage({
   if (!camp || camp.organisation_id !== orgId) {
     redirect('/dashboard/camps')
   }
-  const isFlexibleCamp = (camp as { booking_mode?: string | null }).booking_mode === 'flexible_days'
+  // Flexible camp, or a whole-camp camp that also sells single days: both get the per-day register.
+  const sellsDaysToo = sellsSingleDays(camp as { booking_mode?: string | null; flex_price_per_day?: number | null })
+  const isFlexibleCamp = (camp as { booking_mode?: string | null }).booking_mode === 'flexible_days' || sellsDaysToo
 
   // Roster — newest first. Sprint 10: also pulls medical_info + child_age
   // for the workspace's safety badge + age column. Forward-compatible with
@@ -85,7 +89,7 @@ export default async function CampDetailPage({
   let bookingsRaw: unknown[] | null = null
   const firstAttempt = await supabase
     .from('camp_bookings')
-    .select('id, child_name, child_age, parent_name, parent_email, parent_phone, medical_info, amount_paid, payment_status, booking_source, photo_consent, created_at')
+    .select('id, child_name, child_age, parent_name, parent_email, parent_phone, medical_info, amount_paid, payment_status, booking_source, photo_consent, created_at, booking_mode')
     .eq('camp_id', campId)
     .eq('organisation_id', orgId)
     .order('created_at', { ascending: false })
@@ -183,13 +187,18 @@ export default async function CampDetailPage({
       arr.push({ bookingId: booking.id, childName: booking.child_name })
       bookingsByDay.set(row.camp_day_id, arr)
     }
+    // On a week-and-days camp a full-week booking is there every day.
+    const weekChildren = sellsDaysToo
+      ? bookings.filter((b) => (b.payment_status === 'pending' || b.payment_status === 'paid') && (b as { booking_mode?: string | null }).booking_mode !== 'flexible_days')
+          .map((b) => ({ bookingId: b.id, childName: b.child_name }))
+      : []
     for (const d of dayRows) {
       perDayGroups.push({
         dayId: d.id,
         date: d.date,
         label: fmtDay(d.date),
         isAvailable: d.is_available,
-        children: bookingsByDay.get(d.id) || [],
+        children: [...weekChildren, ...(bookingsByDay.get(d.id) || [])],
       })
     }
   }
@@ -297,7 +306,11 @@ export default async function CampDetailPage({
   const paid = bookings.filter((b) => b.payment_status === 'paid')
   const revenue = paid.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0)
   const capacity = (camp.max_capacity as number) || 0
-  const remaining = capacity > 0 ? Math.max(0, capacity - booked.length) : null
+  // Week-and-days camp: the spaces left for a FULL WEEK are set by the busiest day
+  // (week bookings plus that day's day bookings), not by the number of rows.
+  const remaining = capacity > 0
+    ? (sellsDaysToo ? wholeCampSeatsLeft(await loadCampSeats(supabase, campId, capacity)) : Math.max(0, capacity - booked.length))
+    : null
 
   // Player picker — every player in the org NOT already booked onto this
   // camp (by child-name match). The picker also stays useful for academies
@@ -348,7 +361,9 @@ export default async function CampDetailPage({
           <div className="flex items-center gap-3 mt-1 text-sm text-white/55 flex-wrap">
             <span>{fmtDateRange(camp.start_date as string, camp.end_date as string)}</span>
             {camp.location && <span>· {camp.location}</span>}
-            {isFlexibleCamp && (camp as { flex_price_per_day?: number | null }).flex_price_per_day != null ? (
+            {sellsDaysToo ? (
+              <span>· £{Number(camp.price).toFixed(0)} full week or £{Number((camp as { flex_price_per_day: number }).flex_price_per_day).toFixed(0)} per day</span>
+            ) : isFlexibleCamp && (camp as { flex_price_per_day?: number | null }).flex_price_per_day != null ? (
               <span>· £{Number((camp as { flex_price_per_day: number }).flex_price_per_day).toFixed(0)} per day</span>
             ) : camp.price != null ? (
               <span>· £{Number(camp.price).toFixed(0)} per place</span>

@@ -30,6 +30,7 @@
 import { useMemo, useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
 import { postJson } from '@/lib/post-json'
+import { wholeCampDiscount } from '@/lib/flexible-camps'
 
 type CampDay = {
   id: string
@@ -54,6 +55,8 @@ type Props = {
   requireConsent: boolean
   siblingDiscountEnabled: boolean
   siblingDiscountPercent: number | null
+  /** Week-and-days camp: picking every bookable day never costs more than this. */
+  wholeCampPrice?: number | null
   // Return-URL state passed by the parent page.tsx after Stripe redirect.
   bookingId?: string | null   // present when ?booked=1&booking=<id>
   cancelled?: boolean         // present when ?cancelled=1
@@ -84,6 +87,7 @@ export default function CampFlexibleDayPicker({
   requireConsent,
   siblingDiscountEnabled,
   siblingDiscountPercent,
+  wholeCampPrice = null,
   bookingId,
   cancelled,
 }: Props) {
@@ -157,9 +161,16 @@ export default function CampFlexibleDayPicker({
     (sum, d) => (selected.has(d.id) ? sum + priceFor(d) : sum),
     0,
   )
-  let displayTotal = grossTotal
+  // Same rule as the server: every bookable day picked ⇒ never more than the week price.
+  const bookableDayCount = orderedDays.filter((d) => d.is_available).length
+  const weekCap = wholeCampDiscount({
+    perDayGross: orderedDays.filter((d) => selected.has(d.id)).map(priceFor),
+    bookableDayCount,
+    wholeCampPrice,
+  })
+  let displayTotal = grossTotal - weekCap
   if (siblingDiscount && siblingDiscountEnabled && siblingDiscountPercent) {
-    displayTotal = grossTotal * (1 - Number(siblingDiscountPercent) / 100)
+    displayTotal = displayTotal * (1 - Number(siblingDiscountPercent) / 100)
   }
   displayTotal = Math.round(displayTotal * 100) / 100
 
@@ -429,6 +440,7 @@ export default function CampFlexibleDayPicker({
         </div>
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-wider text-white/40">Total</div>
+          {weekCap > 0 && <div className="text-[11px] text-emerald-300">Every day picked — full-week price applied, saving {formatGBP(weekCap)}</div>}
           <div className="text-lg font-bold text-white">
             {formatGBP(finalTotal)}
           </div>
