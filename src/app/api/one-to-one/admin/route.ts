@@ -254,6 +254,19 @@ export async function POST(req: NextRequest) {
         await markCash(admin, orgId, str(body.id), userId)
         return NextResponse.json({ ok: true })
       }
+      // ─── credit on account: what a family has already paid the academy (a prepaid block,
+      // a goodwill gesture). Comes off their next set-up link and monthly charges, never below £0.
+      // Same ledger the cancellation credits use. A negative amount records money owed.
+      case 'credit.add': {
+        const parentId = str(body.parentId), pence = Math.round(Number(body.amountPence)), note = str(body.note).slice(0, 200)
+        if (!parentId || !Number.isFinite(pence) || pence === 0 || Math.abs(pence) > 200000) return bad('Enter an amount between £0.01 and £2,000')
+        if (!note) return bad('Say what it is for, e.g. "block of 10 paid in September"')
+        const { data: parent } = await admin.from('profiles').select('id').eq('id', parentId).eq('organisation_id', orgId).eq('role', 'parent').maybeSingle()
+        if (!parent) return bad('That parent is not in your academy')
+        const { error } = await admin.from('coaching_credits').insert({ organisation_id: orgId, parent_id: parentId, amount_pence: pence, reason: 'admin_adjust', note, created_by: userId })
+        if (error) throw error
+        return NextResponse.json({ ok: true })
+      }
       case 'charge.refund': {
         await refundCharge(admin, orgId, str(body.id))
         return NextResponse.json({ ok: true })

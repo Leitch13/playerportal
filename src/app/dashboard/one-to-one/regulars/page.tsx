@@ -1,7 +1,7 @@
 import { requireAdmin, getCoaches, getVenues, getSlots, getSettings, DAY, hhmm, gbp, fmtShort, type SlotRowDb } from '@/lib/one-to-one/db'
 import { todayLondon } from '@/lib/one-to-one/time'
 import { academyPaymentsReady } from '@/lib/one-to-one/checkout'
-import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, inputCls } from '../ui'
+import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, SignedPoundsInput, inputCls } from '../ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +20,9 @@ export default async function RegularsPage() {
   const thisMonth = todayLondon().slice(0, 7) + '-01'
   const { data: chargeRows } = await admin.from('coaching_charges').select('parent_id, status, amount_pence, attempt_count').eq('organisation_id', orgId).eq('billing_month', thisMonth)
   const chargeFor = (parentId: string) => (chargeRows ?? []).find((c) => c.parent_id === parentId)
+  // Credit on account per family: the sum of their ledger. Shown on every row, entered from any row.
+  const { data: creditRows } = await admin.from('coaching_credits').select('parent_id, amount_pence').eq('organisation_id', orgId)
+  const creditOf = (parentId: string) => (creditRows ?? []).filter((c) => c.parent_id === parentId).reduce((a, c) => a + c.amount_pence, 0)
   const { data: players } = await admin.from('players_active').select('id, first_name, last_name, parent:profiles!players_parent_id_fkey(full_name)').eq('organisation_id', orgId).order('first_name')
   const cname = (id: string) => coaches.find((c) => c.id === id)?.full_name?.split(' ')[0] || 'Coach'
   const vname = (id: string) => venues.find((v) => v.id === id)?.name || ''
@@ -41,6 +44,23 @@ export default async function RegularsPage() {
     ? { label: 'pay link not sent', cls: 'bg-[#d8a95a]/15 text-[#ecc98a]' }
     : STATUS[s.status]
   const type = (s: SlotRowDb) => s.session_type === 'two_to_one' ? `2-to-1${s.partner_slot_id ? ' with ' + (slots.find((x) => x.id === s.partner_slot_id)?.player?.first_name || 'partner') : ' · needs a partner'}` : '1-to-1'
+  const creditCell = (s: SlotRowDb) => {
+    const bal = creditOf(s.parent_id)
+    return (
+      <div className="flex flex-col items-start gap-1">
+        {bal !== 0 && <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${bal > 0 ? 'bg-[#67c79a]/15 text-[#8fdcb6]' : 'bg-[#e0736d]/15 text-[#f3a7a2]'}`}>{bal > 0 ? `${gbp(bal)} credit` : `owes ${gbp(-bal)}`}</span>}
+        {s.status !== 'released' && (
+          <Disclosure label={bal === 0 ? 'Add credit' : 'Adjust'}>
+            <ActionForm action="credit.add" submitLabel="Save credit" extra={{ parentId: s.parent_id }} className="mt-2 w-64 rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-3">
+              <p className="text-[11px] leading-relaxed text-white/50">What this family has already paid you. It comes off their pay link and their 1st-of-month charges until it is used up. Enter a minus amount to record money they owe.</p>
+              <Field label="Amount"><SignedPoundsInput name="amountPence" /></Field>
+              <Field label="What for"><input name="note" required placeholder="block of 10 paid in September" className={inputCls} /></Field>
+            </ActionForm>
+          </Disclosure>
+        )}
+      </div>
+    )
+  }
   const buttons = (s: SlotRowDb) => (
     <div className="flex flex-wrap gap-1">
       {s.status === 'pending' && <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: s.id }}>Resend link</ActionButton>}
@@ -99,7 +119,7 @@ export default async function RegularsPage() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-white/[0.06] text-left text-[10px] uppercase tracking-[0.08em] text-white/40">
-                  <th className="px-5 py-3 font-semibold">Keeper</th><th className="px-3 py-3 font-semibold">Slot</th><th className="px-3 py-3 font-semibold">Coach and venue</th><th className="px-3 py-3 font-semibold">Type</th><th className="px-3 py-3 text-right font-semibold">Price</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">This month</th><th className="px-5 py-3" />
+                  <th className="px-5 py-3 font-semibold">Keeper</th><th className="px-3 py-3 font-semibold">Slot</th><th className="px-3 py-3 font-semibold">Coach and venue</th><th className="px-3 py-3 font-semibold">Type</th><th className="px-3 py-3 text-right font-semibold">Price</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">This month</th><th className="px-3 py-3 font-semibold">Credit</th><th className="px-5 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.05]">
@@ -115,6 +135,7 @@ export default async function RegularsPage() {
                     <td className="px-3 py-3 text-right tabular-nums text-white/85">{gbp(s.price_pence)}</td>
                     <td className="px-3 py-3"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${chip(s).cls}`}>{chip(s).label}</span></td>
                     <td className="px-3 py-3">{money(s.parent_id) ?? <span className="text-white/25">—</span>}</td>
+                    <td className="px-3 py-3">{creditCell(s)}</td>
                     <td className="px-5 py-3"><div className="flex justify-end">{buttons(s)}</div></td>
                   </tr>
                 ))}
@@ -135,6 +156,7 @@ export default async function RegularsPage() {
                 <div className="mt-2 text-sm text-white/85"><b className="tabular-nums text-white">{DAY[s.weekday]} {hhmm(s.start_minutes)}</b> · {cname(s.coach_id)} · {vname(s.venue_id)}</div>
                 <div className="mt-0.5 text-[11px] text-white/45">{type(s)} · {gbp(s.price_pence)} · {s.frequency} · since {fmtShort(s.starts_on)}</div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">{money(s.parent_id) ?? <span />}{buttons(s)}</div>
+                <div className="mt-2">{creditCell(s)}</div>
               </div>
             ))}
           </div>

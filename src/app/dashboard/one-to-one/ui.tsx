@@ -202,3 +202,16 @@ export function PoundsInput({ name, defaultPence, className = '' }: { name: stri
     </div>
   )
 }
+
+/** Pounds that may be negative ("-40" = owes £40). Hidden field carries signed pence. */
+export function SignedPoundsInput({ name, className = '' }: { name: string; className?: string }) {
+  const [v, setV] = useState('')
+  const pence = Math.round((parseFloat(v) || 0) * 100)
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">£</span>
+      <input inputMode="decimal" value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.\-]/g, ''))} placeholder="120" className={`${inputCls} !pl-7 tabular-nums ${className}`} />
+      <input type="hidden" name={name} value={pence} />
+    </div>
+  )
+}
