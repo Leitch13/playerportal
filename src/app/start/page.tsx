@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 }
 
 const STATS = [
-  { number: '£23k+', label: 'collected for academies — live Stripe, not projections' },
+  { number: '£37k+', label: 'collected for academies — live Stripe, not projections' },
   { number: '180+', label: 'members migrated for one academy in a single afternoon' },
   { number: '100%', label: 'of subscriptions collected via auto-billing — nobody chases anyone' },
 ]
@@ -152,7 +152,7 @@ export default function StartPage() {
             <p className="mt-4 text-white/70 leading-relaxed">
               Player Portal was built by John Leitch — he ran a grassroots football academy for years, lived the
               WhatsApp-chasing and spreadsheet nights, built this to fix it, and later sold the academy. The platform
-              now runs real academies day-in, day-out: £23k+ collected, hundreds of players, camps, trials and
+              now runs real academies day-in, day-out: £37k+ collected, hundreds of players, camps, trials and
               memberships all running through it.
             </p>
             <p className="mt-4 text-white/70 leading-relaxed">

@@ -4,9 +4,9 @@ import TourVideoButton from './TourVideo'
 
 // Numbers mirror NumbersProof.tsx — keep the two in sync when stats refresh.
 const HERO_PROOF = [
-  { value: '£23k+', label: 'processed · live Stripe' },
-  { value: '100%', label: 'subs on auto-billing' },
-  { value: '£6,431', label: 'best single day' },
+  { value: '£37k+', label: 'processed · live Stripe' },
+  { value: '177', label: 'members on auto-billing' },
+  { value: '£9,211', label: 'best single day' },
 ]
 
 export default function Hero() {

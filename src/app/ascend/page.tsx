@@ -20,7 +20,7 @@ const MENTORSHIP_URL = 'https://ascend-mentorship-site.vercel.app'
 
 const PROOF = [
   { number: 'Built & sold', label: 'a real grassroots academy — 350 players a week, then sold. This isn’t theory.' },
-  { number: '£23k+', label: 'flowing through academies on his software platform every month' },
+  { number: '£37k+', label: 'processed for academies on his software platform' },
   { number: 'From £100/mo', label: 'if you ever want ASCEND itself — the calculator and guide are free' },
 ]
 

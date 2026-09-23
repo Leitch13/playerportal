@@ -3,10 +3,10 @@
 // to look stale — see docs/RELEASE_BACKLOG.md for the review cadence.
 // The hero proof strip (Hero.tsx) mirrors three of these — keep in sync.
 const STATS = [
-  { number: '£23k', suffix: '+', label: 'processed through Player Portal since launch', detail: 'Live Stripe. £9.4k of it in the last 30 days.' },
+  { number: '£37k', suffix: '+', label: 'processed through Player Portal since launch', detail: 'Live Stripe. £14.7k of it in the last 30 days.' },
   { number: '180', suffix: '+', label: 'members migrated for one academy in one afternoon', detail: 'Zero double-charges. Zero downtime.' },
-  { number: '100', suffix: '%', label: 'of subscriptions collected via auto-billing', detail: '110 of 110 active subs — nobody chases anyone.' },
-  { number: '£6,431', suffix: '', label: 'real single-day take on the platform', detail: 'Live Stripe. Verified. Not a projection.' },
+  { number: '177', suffix: '', label: 'memberships billing automatically every month', detail: 'Zero overdue. Nobody chases anyone.' },
+  { number: '£9,211', suffix: '', label: 'real single-day take on the platform', detail: 'Live Stripe, 1 Sept 2026. Not a projection.' },
 ]
 
 export default function NumbersProof() {
