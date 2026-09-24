@@ -398,7 +398,20 @@ export default async function PublicBookingPage({
         is_featured: boolean; price_per_session: number | null; age_group: string | null
         short_description: string | null; term_id: string | null
       }
-      const normName = g.name.trim().replace(/\s+/g, ' ')
+      // A programme sold as many one-slot classes is usually named after its slot
+      // ("1-2-1 - Friday - 3:45 Slot"). Take the day and time out of the name so
+      // they group into one card with the times as chips; the chips carry them.
+      const rawName = g.name.trim().replace(/\s+/g, ' ')
+      const stripped = rawName
+        .replace(/\b(mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)(day|nesday|sday|urday|rsday)?s?\b(?!\s+(night|morning|evening|club))/gi, ' ')
+        .replace(/\b\d{1,2}[:.]\d{2}\s*(am|pm)?\b/gi, ' ')
+        .replace(/\b\d{1,2}\s*(am|pm)\b/gi, ' ')
+        .replace(/\bslots?\b/gi, ' ')
+        .replace(/\s*[-–|·,]\s*(?=[-–|·,]|$)/g, ' ')
+        .replace(/^[\s\-–|·,]+|[\s\-–|·,]+$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      const normName = stripped.length >= 3 ? stripped : rawName
       // Alphanumeric-only key so admin spelling variants group together
       // ("Small Group 9-11yrs" / "9-11 yrs" / "9-11" are one programme).
       // Different digits (ages, B4/B5) still keep programmes apart.
