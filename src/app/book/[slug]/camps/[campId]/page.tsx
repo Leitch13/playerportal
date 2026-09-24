@@ -338,7 +338,10 @@ export default async function CampDetailPage({
               />
               {c.location && <DetailCard label="Location" value={c.location} />}
               {c.age_group && <DetailCard label="Age Group" value={c.age_group} />}
-              {c.price != null && (
+              {c.price != null && isFlexibleCamp && (
+                <DetailCard label="All days" value={`£${Number(c.price).toFixed(0)}`} />
+              )}
+              {c.price != null && !isFlexibleCamp && (
                 <DetailCard
                   label="Price"
                   value={isEarlyBird ? `\u00A3${Number(c.early_bird_price).toFixed(0)}` : `\u00A3${Number(c.price).toFixed(0)}`}
@@ -434,6 +437,7 @@ export default async function CampDetailPage({
                   campName={c.name}
                   flexPricePerDay={c.flex_price_per_day ?? null}
                   flexMinDays={c.flex_min_days ?? null}
+                  wholeCampPrice={c.price != null ? Number(c.price) : null}
                   days={campDays}
                   primaryColor={primaryColor}
                   collectMedicalInfo={c.collect_medical_info ?? false}

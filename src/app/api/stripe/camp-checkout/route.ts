@@ -72,6 +72,11 @@ export async function POST(request: NextRequest) {
     // hide unpublished camps, but the checkout API is a separate surface — a
     // parent with a stale link (e.g. one Jamie shared, then un-published)
     // could otherwise sail past the gate and pay for something not running.
+    // Day-by-day camps are booked through the day checkout only. Their price, if
+    // set, is the "all days" price the day checkout applies — never a week place.
+    if (camp.booking_mode === 'flexible_days') {
+      return NextResponse.json({ error: 'This camp is booked by the day. Pick your days on the camp page.' }, { status: 400 })
+    }
     if (camp.is_published === false) {
       return NextResponse.json({ error: 'This camp isn’t open for bookings.' }, { status: 404 })
     }

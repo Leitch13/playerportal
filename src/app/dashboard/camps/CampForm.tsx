@@ -219,6 +219,13 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
     if (!name.trim() || !startDate || !endDate) return
     // Flexible mode requires a per-day price. Empty ⇒ blocked so we don't
     // create a paid camp that parents can't check out against later.
+    if (useFlexibleMode && price && flexPricePerDay) {
+      const onDays = generateScheduleDays(startDate, endDate).filter((d) => dayAvailability[d.date] !== false).length
+      if (parseFloat(price) >= parseFloat(flexPricePerDay) * onDays) {
+        alert(`The all-days price must be less than £${(parseFloat(flexPricePerDay) * onDays).toFixed(2)} (${onDays} days at £${flexPricePerDay}), or nobody saves by booking them all.`)
+        return
+      }
+    }
     if (useFlexibleMode && !flexPricePerDay) {
       alert('Please enter a price per day for the flexible camp.')
       return
@@ -245,7 +252,8 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
         daily_end_time: dailyEndTime,
         location: location.trim() || null,
         age_group: ageGroup.trim() || null,
-        price: useFlexibleMode ? null : (price ? parseFloat(price) : null),
+        // Day-by-day camps: optional "all days" price (the checkout caps picking every day at it).
+        price: useFlexibleMode ? (price ? parseFloat(price) : null) : (price ? parseFloat(price) : null),
         max_capacity: maxCapacity ? parseInt(maxCapacity) : 30,
         image_url: imageUrl.trim() || null,
         what_to_bring: whatToBring.trim() || null,
@@ -602,6 +610,13 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
                   <input type="number" value={maxCapacity} onChange={(e) => setMaxCapacity(e.target.value)} min="1" className={inputCls} />
                 </div>
               </div>
+              {useFlexibleMode && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-white mb-1">Price for all days (&pound;, optional)</label>
+                  <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 60" min="0" step="0.01" className="w-40 bg-[#142236] border border-[#293b58] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-white/30" />
+                  <p className="text-xs text-[#888] mt-1">A parent who books every day pays this instead of the day price for each. Leave blank to charge per day only.</p>
+                </div>
+              )}
 
               {/* Flexible Camps (Phase 1) — minimum booking days input.
                   Optional; leave blank for no minimum. */}

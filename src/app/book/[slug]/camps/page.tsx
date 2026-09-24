@@ -239,7 +239,7 @@ export default async function CampsListingPage({
                                 {isEarlyBird && camp.price != null && (
                                   <span className="text-sm text-white/30 line-through">&pound;{Number(camp.price).toFixed(0)}</span>
                                 )}
-                                <span className="text-xs font-normal text-white/40">/ week</span>
+                                <span className="text-xs font-normal text-white/40">{(camp as unknown as { booking_mode?: string | null }).booking_mode === 'flexible_days' ? 'all days' : '/ week'}</span>
                                 {sellsSingleDays(camp as unknown as { booking_mode?: string | null; flex_price_per_day?: number | null }) && (
                                   <span className="text-xs font-normal text-white/40">· or &pound;{Number((camp as unknown as { flex_price_per_day: number }).flex_price_per_day).toFixed(0)} a day</span>
                                 )}

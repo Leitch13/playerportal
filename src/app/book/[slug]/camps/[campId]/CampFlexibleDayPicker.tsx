@@ -444,7 +444,7 @@ export default function CampFlexibleDayPicker({
         </div>
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-wider text-white/40">Total</div>
-          {weekCap > 0 && <div className="text-[11px] text-emerald-300">Every day picked — full-week price applied, saving {formatGBP(weekCap)}</div>}
+          {weekCap > 0 && <div className="text-[11px] text-emerald-300">Every day picked, so the all-days price applies: you save {formatGBP(weekCap)}</div>}
           <div className="text-lg font-bold text-white">
             {formatGBP(finalTotal)}
           </div>

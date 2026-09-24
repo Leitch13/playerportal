@@ -286,6 +286,11 @@ export async function POST(request: NextRequest) {
       }
       const { count: bookableDayCount } = await supabase.from('camp_days').select('*', { count: 'exact', head: true }).eq('camp_id', campId).eq('is_available', true)
       wholeCampCap = wholeCampDiscount({ perDayGross, bookableDayCount: bookableDayCount ?? 0, wholeCampPrice: camp.price != null ? Number(camp.price) : null })
+    } else if (camp.price != null) {
+      // Day-by-day camp with an "all days" price: picking every day that's on
+      // costs that price, never more. Same rule as week-and-days camps.
+      const { count: bookableDayCount } = await supabase.from('camp_days').select('*', { count: 'exact', head: true }).eq('camp_id', campId).eq('is_available', true)
+      wholeCampCap = wholeCampDiscount({ perDayGross, bookableDayCount: bookableDayCount ?? 0, wholeCampPrice: Number(camp.price) })
     }
 
     // ─── 8. Sibling discount (whole-camp early-bird deliberately N/A) ─

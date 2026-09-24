@@ -127,6 +127,9 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const daysAlreadyOn = isWholeCamp && camp.flex_price_per_day != null
   const [sellDays, setSellDays] = useState(daysAlreadyOn)
   const [dayPrice, setDayPrice] = useState(camp.flex_price_per_day != null ? String(camp.flex_price_per_day) : '')
+  // Day-by-day camp: optional "all days" price (stored as the camp's price).
+  const isDayByDay = camp.booking_mode === 'flexible_days'
+  const [allDaysPrice, setAllDaysPrice] = useState(isDayByDay && camp.price != null ? String(camp.price) : '')
   const publishBlocked = isFlexiblePublishLocked(camp.booking_mode, flexiblePublishAllowed)
   // When publishing is blocked we force-clamp the checkbox state to false.
   // Defence-in-depth against a starting-value of true (only possible if a
@@ -296,6 +299,18 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
         }
         payload.flex_price_per_day = dp
       }
+      if (isDayByDay) {
+        const v = allDaysPrice.trim()
+        if (!v) payload.price = null
+        else {
+          const all = parseFloat(v)
+          const { count: onDays } = await supabase.from('camp_days').select('*', { count: 'exact', head: true }).eq('camp_id', camp.id).eq('is_available', true)
+          const perDay = Number(camp.flex_price_per_day ?? 0)
+          if (!Number.isFinite(all) || all <= 0) { setError('Enter the all-days price in pounds, e.g. 60, or leave it blank'); setSaving(false); return }
+          if (onDays && perDay && all >= perDay * onDays) { setError(`The all-days price must be less than £${(perDay * onDays).toFixed(2)} (${onDays} days at £${perDay}), or nobody saves by booking them all.`); setSaving(false); return }
+          payload.price = all
+        }
+      }
       const { error: updErr } = await supabase.from('camps').update(payload).eq('id', camp.id)
       if (updErr) {
         setError('Error saving changes: ' + updErr.message)
@@ -445,6 +460,17 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                 <div className={lockedCls}>{camp.price != null ? `£${Number(camp.price).toFixed(0)}` : '—'}</div>
               </div>
             </div>
+            {isDayByDay && !campEnded && (
+              <div className="rounded-lg border border-[#293b58] bg-white/[0.02] p-3 space-y-2">
+                <label className="block text-sm text-white">Price for all days <span className="text-white/40">(optional)</span></label>
+                <p className="text-[11px] text-white/45">
+                  Days are £{Number(camp.flex_price_per_day ?? 0).toFixed(0)} each. A parent who books every day that's on pays this instead. Leave blank to charge per day only.
+                </p>
+                <div className="max-w-[12rem]">
+                  <input type="number" min="0" step="0.01" value={allDaysPrice} onChange={(e) => setAllDaysPrice(e.target.value)} placeholder="e.g. 60" className={inputCls} />
+                </div>
+              </div>
+            )}
             {isWholeCamp && !campEnded && (
               <div className="rounded-lg border border-[#293b58] bg-white/[0.02] p-3 space-y-2">
                 <label className="flex items-center gap-2 text-sm text-white">
