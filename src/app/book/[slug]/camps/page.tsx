@@ -3,7 +3,7 @@
 import { createPublicClient } from '@/lib/supabase/public'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Link from 'next/link'
-import { sellsSingleDays } from '@/lib/flexible-camps'
+import { sellsSingleDays, formatCampDays } from '@/lib/flexible-camps'
 
 type Camp = {
   id: string
@@ -87,6 +87,7 @@ export default async function CampsListingPage({
   // read as wide open. Only camp_id leaves the query — no booking data.
   const takenByCamp = new Map<string, number>()
   const campIds = ((camps || []) as Camp[]).map((c) => c.id)
+  const onDatesByCamp = new Map<string, string[]>()
   if (campIds.length > 0) {
     const svc = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -98,6 +99,12 @@ export default async function CampsListingPage({
       .in('payment_status', ['pending', 'paid'])
     for (const row of (taken || []) as { camp_id: string }[]) {
       takenByCamp.set(row.camp_id, (takenByCamp.get(row.camp_id) || 0) + 1)
+    }
+    // Day-by-day camps can have days switched off: count and show only the days they run.
+    const flexIds = (camps as { id: string; booking_mode?: string | null }[]).filter((c) => c.booking_mode === 'flexible_days').map((c) => c.id)
+    if (flexIds.length) {
+      const { data: onDays } = await svc.from('camp_days').select('camp_id, date').in('camp_id', flexIds).eq('is_available', true)
+      for (const r of (onDays || []) as { camp_id: string; date: string }[]) onDatesByCamp.set(r.camp_id, [...(onDatesByCamp.get(r.camp_id) || []), r.date])
     }
   }
 
@@ -155,7 +162,9 @@ export default async function CampsListingPage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             {(camps as Camp[]).map((camp) => {
-              const days = getDurationDays(camp.start_date, camp.end_date)
+              const onDates = onDatesByCamp.get(camp.id) || []
+              const days = onDates.length ? onDates.length : getDurationDays(camp.start_date, camp.end_date)
+              const datesLabel = onDates.length ? formatCampDays(onDates) : formatDateRange(camp.start_date, camp.end_date)
               const isEarlyBird = camp.early_bird_price != null && camp.early_bird_deadline != null && today <= camp.early_bird_deadline
               const displayPrice = isEarlyBird ? Number(camp.early_bird_price) : (camp.price != null ? Number(camp.price) : null)
               return (
@@ -199,7 +208,7 @@ export default async function CampsListingPage({
                   <div className="p-4 sm:p-5 space-y-2.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-white/80 font-medium">
-                        {formatDateRange(camp.start_date, camp.end_date)}
+                        {datesLabel}
                       </span>
                       <span className="text-xs text-white/40">
                         {days} day{days !== 1 ? 's' : ''}

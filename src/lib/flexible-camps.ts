@@ -261,3 +261,28 @@ export function daySeatsLeft(input: DaySeatInput, dayId: string): number | null 
   if (input.maxCapacity == null) return null
   return Math.max(0, input.maxCapacity - seatsTakenOnDay(input, dayId))
 }
+
+// ─── Which days a day-by-day camp actually runs ──────────────────────
+//
+// An academy can switch days off (Cammy: Tue and Thu, not Wed). The camp's
+// start and end dates then over-state it: "13-15 October · 3 days". These
+// describe only the days that are on. Pure; the camp page and the camps list
+// both use them.
+export function formatCampDays(dates: string[]): string {
+  const ds = [...new Set(dates)].sort()
+  if (ds.length === 0) return ''
+  const d = (iso: string) => new Date(iso + 'T12:00:00Z')
+  const month = (iso: string) => d(iso).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' })
+  const year = d(ds[ds.length - 1]).getUTCFullYear()
+  const consecutive = ds.every((x, i) => i === 0 || (d(x).getTime() - d(ds[i - 1]).getTime()) === 86_400_000)
+  if (consecutive) {
+    const a = d(ds[0]).getUTCDate(), b = d(ds[ds.length - 1]).getUTCDate()
+    if (ds.length === 1) return `${d(ds[0]).toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })} ${a} ${month(ds[0])} ${year}`
+    return month(ds[0]) === month(ds[ds.length - 1]) ? `${a}-${b} ${month(ds[0])} ${year}` : `${a} ${month(ds[0])} - ${b} ${month(ds[ds.length - 1])} ${year}`
+  }
+  const sameMonth = ds.every((x) => month(x) === month(ds[0]))
+  const label = (x: string) => `${d(x).toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })} ${d(x).getUTCDate()}${sameMonth ? '' : ' ' + d(x).toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })}`
+  const parts = ds.map(label)
+  const list = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} & ${parts[parts.length - 1]}`
+  return sameMonth ? `${list} ${month(ds[0])} ${year}` : `${list} ${year}`
+}

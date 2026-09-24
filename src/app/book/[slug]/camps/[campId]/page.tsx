@@ -16,7 +16,7 @@ import CampBookingForm from './CampBookingForm'
 // FLEXIBLE_CAMPS_ENABLED is on. Purely view-only: no Stripe, no
 // checkout, no writes.
 import CampFlexibleDayPicker from './CampFlexibleDayPicker'
-import { BOOKING_MODE_FLEXIBLE_DAYS, FLEXIBLE_CAMPS_ENABLED, sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
+import { BOOKING_MODE_FLEXIBLE_DAYS, FLEXIBLE_CAMPS_ENABLED, sellsSingleDays, wholeCampSeatsLeft, formatCampDays } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
 
 type ScheduleDay = {
@@ -187,7 +187,10 @@ export default async function CampDetailPage({
   }
 
   const primaryColor = org.primary_color || '#4ecde6'
-  const days = getDurationDays(c.start_date, c.end_date)
+  // A day-by-day camp may have days switched off: describe only the days it runs.
+  const onDates = isFlexibleCamp ? campDays.filter((d) => d.is_available).map((d) => d.date) : []
+  const days = onDates.length ? onDates.length : getDurationDays(c.start_date, c.end_date)
+  const datesLabel = onDates.length ? formatCampDays(onDates) : formatDateRange(c.start_date, c.end_date)
   const schedule: ScheduleDay[] = Array.isArray(c.schedule) ? c.schedule : []
 
   // Get booking count for spots left. Service role on purpose: camp_bookings
@@ -305,7 +308,7 @@ export default async function CampDetailPage({
           </h1>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-            <span className={metaPill}>📅 {formatDateRange(c.start_date, c.end_date)}</span>
+            <span className={metaPill}>📅 {datesLabel}</span>
             <span className={metaPill}>{days} day{days !== 1 ? 's' : ''}</span>
             {c.daily_start_time && <span className={metaPill}>⏰ {c.daily_start_time}{c.daily_end_time ? `–${c.daily_end_time}` : ''}</span>}
             {c.age_group && <span className={metaPill}>Ages {c.age_group}</span>}
@@ -328,7 +331,7 @@ export default async function CampDetailPage({
           <div className="lg:col-span-3 space-y-10">
             {/* Key Details Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              <DetailCard label="Dates" value={formatDateRange(c.start_date, c.end_date)} />
+              <DetailCard label="Dates" value={datesLabel} />
               <DetailCard
                 label="Times"
                 value={`${c.daily_start_time || '09:00'} - ${c.daily_end_time || '15:00'}`}
@@ -485,7 +488,8 @@ export default async function CampDetailPage({
                       campName={c.name}
                       flexPricePerDay={c.flex_price_per_day ?? null}
                       flexMinDays={null}
-                      days={campDays.map((d) => fullDayIds.has(d.id) ? { ...d, is_available: false } : d)}
+                      days={campDays}
+                      fullDayIds={[...fullDayIds]}
                       wholeCampPrice={c.price != null ? Number(c.price) : null}
                       primaryColor={primaryColor}
                       collectMedicalInfo={c.collect_medical_info ?? false}

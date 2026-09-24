@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sellsSingleDays, wholeCampDiscount, wholeCampSeatsLeft, daySeatsLeft, busiestDaySeats } from './flexible-camps'
+import { sellsSingleDays, wholeCampDiscount, wholeCampSeatsLeft, daySeatsLeft, busiestDaySeats, formatCampDays } from './flexible-camps'
 
 describe('sellsSingleDays', () => {
   it('a whole-camp camp with a day price sells days too', () => {
@@ -48,5 +48,23 @@ describe('seats on a camp that sells weeks and days', () => {
   })
   it('uncapped camp → null', () => {
     expect(wholeCampSeatsLeft({ ...ryan, maxCapacity: null })).toBeNull()
+  })
+})
+
+describe('formatCampDays', () => {
+  it('Cammy: Tue and Thu with Wednesday off', () => {
+    expect(formatCampDays(['2026-10-13', '2026-10-15'])).toBe('Tue 13 & Thu 15 October 2026')
+  })
+  it('a run of days stays a range', () => {
+    expect(formatCampDays(['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16'])).toBe('12-16 October 2026')
+  })
+  it('three split days', () => {
+    expect(formatCampDays(['2026-10-12', '2026-10-14', '2026-10-16'])).toBe('Mon 12, Wed 14 & Fri 16 October 2026')
+  })
+  it('across two months', () => {
+    expect(formatCampDays(['2026-10-29', '2026-11-03'])).toBe('Thu 29 Oct & Tue 3 Nov 2026')
+  })
+  it('one day', () => {
+    expect(formatCampDays(['2026-10-13'])).toBe('Tue 13 October 2026')
   })
 })

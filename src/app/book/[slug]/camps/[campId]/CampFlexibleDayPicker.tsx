@@ -57,6 +57,8 @@ type Props = {
   siblingDiscountPercent: number | null
   /** Week-and-days camp: picking every bookable day never costs more than this. */
   wholeCampPrice?: number | null
+  /** Days that are on but already full (shown as full, not hidden). */
+  fullDayIds?: string[]
   // Return-URL state passed by the parent page.tsx after Stripe redirect.
   bookingId?: string | null   // present when ?booked=1&booking=<id>
   cancelled?: boolean         // present when ?cancelled=1
@@ -88,6 +90,7 @@ export default function CampFlexibleDayPicker({
   siblingDiscountEnabled,
   siblingDiscountPercent,
   wholeCampPrice = null,
+  fullDayIds = [],
   bookingId,
   cancelled,
 }: Props) {
@@ -132,7 +135,7 @@ export default function CampFlexibleDayPicker({
   const isPastDay = (day: CampDay): boolean => String(day.date) < ukToday
 
   const isEffectivelyUnavailable = (day: CampDay): boolean =>
-    !day.is_available || locallyFullDayIds.has(day.id) || isPastDay(day)
+    !day.is_available || locallyFullDayIds.has(day.id) || fullDayIds.includes(day.id) || isPastDay(day)
 
   const toggle = (day: CampDay) => {
     if (isEffectivelyUnavailable(day)) return
@@ -371,12 +374,13 @@ export default function CampFlexibleDayPicker({
         </div>
       ) : (
         <ul className="space-y-2" role="list">
-          {orderedDays.map((day) => {
+          {/* Days the academy switched off aren't part of the camp: leave them out. */}
+          {orderedDays.filter((day) => day.is_available).map((day) => {
             const { weekday, date } = formatDayLabel(day.date)
             const price = priceFor(day)
             const checked = selected.has(day.id)
             const disabled = isEffectivelyUnavailable(day)
-            const wasLocallyBumped = locallyFullDayIds.has(day.id)
+            const wasLocallyBumped = locallyFullDayIds.has(day.id) || fullDayIds.includes(day.id)
 
             return (
               <li key={day.id} role="listitem">
@@ -414,7 +418,7 @@ export default function CampFlexibleDayPicker({
                     </div>
                     {disabled && (
                       <div className="text-[10px] text-white/40 uppercase tracking-wider mt-0.5">
-                        {wasLocallyBumped ? 'Just filled' : 'Not available'}
+                        {fullDayIds.includes(day.id) ? 'Full' : wasLocallyBumped ? 'Just filled' : 'Not available'}
                       </div>
                     )}
                   </div>
