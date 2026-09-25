@@ -1,5 +1,9 @@
 import Link from 'next/link'
 
+// John's mentoring (ASCEND). Points at the live /ascend page until
+// johnleitchmentor.com is up; swap this one line then.
+const ASCEND_URL = '/ascend'
+
 export default function FounderStory() {
   return (
     <section id="why" className="relative border-y border-[#e3ebf0] bg-[#eef4f7] scroll-mt-16">
@@ -36,6 +40,16 @@ export default function FounderStory() {
             <div className="mt-8">
               <Link href="/how-it-works" className="inline-flex items-center gap-2 text-[#0a97b6] font-semibold text-sm hover:gap-3 transition-all">
                 Read the full story
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
+            </div>
+            <div className="mt-10 max-w-2xl rounded-2xl border border-[#d5e2e8] bg-white p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div>
+                <p className="text-[#0d1b2b] font-bold">Want help growing, not just software?</p>
+                <p className="text-sm text-[#5a6b7c] mt-1">ASCEND is John&apos;s mentoring for academy owners: group calls, the playbook, or everything done for you.</p>
+              </div>
+              <Link href={ASCEND_URL} className="shrink-0 inline-flex items-center justify-center gap-2 rounded-full bg-[#0d1b2b] text-white px-5 py-2.5 text-sm font-semibold hover:bg-[#0a97b6] transition-colors">
+                Work with John
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </Link>
             </div>
