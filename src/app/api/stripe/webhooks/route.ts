@@ -1481,6 +1481,27 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 
   if (!subscriptionId) return
 
+  // ─── PLATFORM SUB (an academy's own £35 Player Portal plan) ───
+  // Nothing below applies to platform subs (it all keys off parent
+  // subscriptions). Send the academy its branded invoice and stop.
+  // Emailing only — no state or money changes here.
+  const { data: platformOrg } = await supabase
+    .from('organisations')
+    .select('id')
+    .eq('platform_stripe_subscription_id', subscriptionId)
+    .maybeSingle()
+  if (platformOrg) {
+    if ((invoice.amount_paid ?? 0) > 0) {
+      try {
+        const { sendPlatformInvoiceEmail } = await import('@/lib/platform-invoice')
+        await sendPlatformInvoiceEmail(stripe, supabase, platformOrg.id, invoice)
+      } catch (invErr) {
+        console.error('platform invoice email failed:', invErr)
+      }
+    }
+    return
+  }
+
   const amountPaid = (invoice.amount_paid ?? 0) / 100
   const now = new Date().toISOString()
 

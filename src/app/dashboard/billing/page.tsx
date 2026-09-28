@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import Invoices from './Invoices'
 import { getOrgFeatures, FEATURE_LABELS, FEATURE_MIN_TIER, tierLabel, type FeatureKey, type PlanTier } from '@/lib/features'
 
 export const metadata = { title: 'Billing & Plan | Player Portal' }
@@ -243,6 +244,9 @@ export default async function BillingPage({
           </div>
         </div>
       )}
+
+      {/* Invoices (Player Portal's own £35 invoices, with PDFs) */}
+      <Invoices orgId={profile.organisation_id} />
 
       {/* Settings shortcut */}
       <div className="text-center text-sm text-white/40">

@@ -2819,3 +2819,69 @@ export function playerMoveConfirmationEmail(params: {
     `, accent, params.academyName),
   }
 }
+
+/**
+ * Player Portal's invoice to an academy for its monthly plan (28 Sep 2026).
+ * Sent when the platform payment succeeds; the PDF is Stripe's official
+ * invoice with the same number. Dark Player Portal shell, white invoice card.
+ */
+export function platformInvoiceEmail(p: {
+  academyName: string
+  number: string
+  issuedOn: string
+  paidOn: string | null
+  card: string | null
+  periodStart: string | null
+  periodEnd: string | null
+  amountPence: number
+  billedToEmail: string | null
+  seller: { name: string; company: string; email: string }
+  pdfUrl: string | null
+  nextPaymentOn: string | null
+  billingUrl: string
+}): { subject: string; html: string } {
+  const gbp = (pence: number) => `£${(pence / 100).toFixed(2)}`
+  const long = (d: string | null) => d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : ''
+  const short = (d: string | null) => d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : ''
+  // Stripe's period end is the first moment of the next period: show the day before.
+  const endShown = p.periodEnd ? new Date(new Date(`${p.periodEnd}T12:00:00Z`).getTime() - 86400000).toISOString().slice(0, 10) : null
+  const period = p.periodStart && endShown ? `${short(p.periodStart)} – ${long(endShown)}` : ''
+  const label = 'font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#6b7888;font-weight:700'
+  const monthName = p.periodStart ? new Date(`${p.periodStart}T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'this month'
+  const content = `
+<p style="margin:0 0 6px;font-size:15px;color:#c9d3de">Hi ${escapeHtml(p.academyName)},</p>
+<p style="margin:0 0 24px;font-size:15px;color:#c9d3de">Thanks for your payment. Here's your Player Portal invoice for ${escapeHtml(monthName)}.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;color:#0b1214">
+<tr><td style="padding:24px 24px 8px">
+ <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+  <td style="vertical-align:top"><div style="${label}">Invoice</div><div style="font-size:18px;font-weight:800;margin-top:2px;color:#0b1214">${escapeHtml(p.number)}</div></td>
+  <td style="text-align:right;vertical-align:top"><span style="display:inline-block;background:#e3f7ec;color:#1f7a4a;font-weight:800;font-size:12px;letter-spacing:1px;padding:6px 12px;border-radius:999px">PAID</span></td>
+ </tr></table></td></tr>
+<tr><td style="padding:8px 24px 16px">
+ <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;line-height:1.5"><tr>
+  <td style="vertical-align:top;width:50%;padding-right:10px"><div style="${label}">From</div>
+   <div style="font-weight:700;color:#0b1214">${escapeHtml(p.seller.name)}</div><div style="color:#3b4a52">${escapeHtml(p.seller.company)}<br>${escapeHtml(p.seller.email)}</div></td>
+  <td style="vertical-align:top;width:50%"><div style="${label}">Billed to</div>
+   <div style="font-weight:700;color:#0b1214">${escapeHtml(p.academyName)}</div>${p.billedToEmail ? `<div style="color:#3b4a52">${escapeHtml(p.billedToEmail)}</div>` : ''}</td>
+ </tr></table>
+ <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-top:14px;color:#0b1214"><tr>
+  <td style="vertical-align:top"><span style="color:#6b7888">Date issued</span><br><b>${long(p.issuedOn)}</b></td>
+  <td style="vertical-align:top"><span style="color:#6b7888">Paid on</span><br><b>${long(p.paidOn || p.issuedOn)}</b></td>
+  ${p.card ? `<td style="vertical-align:top"><span style="color:#6b7888">Paid by</span><br><b>${escapeHtml(p.card)}</b></td>` : ''}
+ </tr></table>
+</td></tr>
+<tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border-top:1px solid #e3e9ee;color:#0b1214">
+ <tr><td style="padding:14px 0 4px;${label}">Description</td><td style="padding:14px 0 4px;text-align:right;${label}">Amount</td></tr>
+ <tr><td style="padding:8px 0 14px"><b>Player Portal, monthly plan</b>${period ? `<br><span style="color:#6b7888;font-size:13px">${period} · all features included</span>` : ''}</td><td style="padding:8px 0 14px;text-align:right;font-weight:700">${gbp(p.amountPence)}</td></tr>
+ <tr><td style="padding:12px 0;border-top:1px solid #e3e9ee;font-weight:800;font-size:15px">Total paid</td><td style="padding:12px 0;border-top:1px solid #e3e9ee;text-align:right;font-weight:800;font-size:18px">${gbp(p.amountPence)}</td></tr>
+</table></td></tr>
+<tr><td style="padding:6px 24px 24px;text-align:center">
+ ${p.pdfUrl ? `<a href="${p.pdfUrl}" style="display:inline-block;background:#4ecde6;color:#04141a;font-weight:800;text-decoration:none;padding:13px 26px;border-radius:999px;font-size:14px">Download PDF invoice</a>` : ''}
+ <div style="margin-top:10px;font-size:12px;color:#6b7888">Every past invoice is in your dashboard under <a href="${p.billingUrl}" style="color:#0b1214;font-weight:700;text-decoration:none">Billing → Invoices</a>.</div>
+</td></tr></table>
+<p style="margin:24px 0 0;font-size:13px;color:#8a98a8">${p.nextPaymentOn ? `Your next payment of ${gbp(p.amountPence)} is on ${long(p.nextPaymentOn)}. ` : ''}Questions about your bill? Just reply to this email.</p>`
+  return {
+    subject: `Your Player Portal invoice ${p.number} · ${gbp(p.amountPence)} paid`,
+    html: baseLayout(content),
+  }
+}
