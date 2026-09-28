@@ -20,9 +20,13 @@ function resultText(kind: 'roll' | undefined, r: Record<string, unknown>): strin
   if (kind !== 'roll') return null
   const created = Number(r.created) || 0
   const m = typeof r.month === 'string' ? new Date(`${r.month.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' }) : 'that month'
-  return created > 0
+  const failed = Array.isArray(r.failed) ? (r.failed as { keeper: string; date: string; reason: string }[]) : []
+  const head = created > 0
     ? `Added ${created} session${created === 1 ? '' : 's'} for ${m}.`
-    : `All ${m} sessions are already on the timetable. Nothing new to add.`
+    : failed.length ? `Nothing new added for ${m}.` : `All ${m} sessions are already on the timetable. Nothing new to add.`
+  if (!failed.length) return head
+  const list = failed.slice(0, 5).map((f) => `${f.keeper} on ${f.date} (${f.reason})`).join('; ')
+  return `${head} ${failed.length} date${failed.length === 1 ? '' : 's'} couldn't be added: ${list}${failed.length > 5 ? '…' : ''}.`
 }
 
 export function ActionButton({

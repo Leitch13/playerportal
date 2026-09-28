@@ -78,6 +78,8 @@ export interface SlotRowDb {
   session_type: 'one_to_one' | 'two_to_one'; frequency: 'weekly' | 'fortnightly' | 'monthly'
   price_pence: number; status: 'pending' | 'active' | 'paused' | 'released'
   partner_slot_id: string | null; starts_on: string; ends_on: string | null; note: string | null
+  /** 0 for a 1-to-1; 1 or 2 for a 2-to-1 keeper (migration 119). */
+  pair_seat?: number
   player?: { first_name: string; last_name: string } | null
   parent?: { full_name: string | null; email: string | null } | null
 }
@@ -203,7 +205,10 @@ export async function rollAhead(admin: SupabaseClient, orgId: string, fromDate: 
   if (Number(today.slice(8, 10)) >= 20) await rollMonth(admin, orgId, nextMonthStart(today))
 }
 
-export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInMonth: string): Promise<{ created: number; month: string }> {
+/** One date the roll could not create, and why, in words an academy can act on. */
+export interface RollFailure { slotId: string; keeper: string; date: string; reason: string }
+
+export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInMonth: string): Promise<{ created: number; month: string; failed: RollFailure[] }> {
   const from = monthStart(anyDateInMonth), to = monthEnd(anyDateInMonth)
   const slots = await getSlots(admin, orgId)
   const rows: Record<string, unknown>[] = []
@@ -218,10 +223,11 @@ export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInM
         player_id: s.player_id, parent_id: s.parent_id, session_date: date,
         start_minutes: s.start_minutes, duration_minutes: s.duration_minutes, session_type: s.session_type,
         source: 'regular', status: 'scheduled', charge_state: 'unpaid', price_pence: s.price_pence,
+        pair_seat: s.pair_seat ?? (s.session_type === 'two_to_one' ? 1 : 0),
       })
     }
   }
-  if (!rows.length) return { created: 0, month: from }
+  if (!rows.length) return { created: 0, month: from, failed: [] }
   // The uniqueness index on (regular_slot_id, session_date) is PARTIAL (live rows
   // only), which ON CONFLICT cannot target through the client. So: read what is
   // already there for these slots this month and insert only the missing dates.
@@ -232,14 +238,40 @@ export async function rollMonth(admin: SupabaseClient, orgId: string, anyDateInM
     .not('regular_slot_id', 'is', null)
   const have = new Set((existing ?? []).map((r) => `${r.regular_slot_id}|${r.session_date}`))
   const missing = rows.filter((r) => !have.has(`${r.regular_slot_id}|${r.session_date}`))
-  if (!missing.length) return { created: 0, month: from }
-  const { error, data } = await admin.from('coaching_sessions').insert(missing).select('id')
-  if (error) {
-    // 23505 = a concurrent roll got there first for one of these dates. That is fine: nothing is lost.
-    if (error.code === '23505') return { created: 0, month: from }
-    throw new Error(error.message)
+  if (!missing.length) return { created: 0, month: from, failed: [] }
+  return insertRollRows(admin, missing, slots, from)
+}
+
+/**
+ * Insert the month's missing sessions. Tries them all at once; if the database
+ * refuses the batch, falls back to one row at a time so ONE clash (a double-booked
+ * coach, a stray one-off) costs that one date, never the whole academy's month.
+ * Until 28 Sep 2026 a single refused row returned "created: 0" for everyone,
+ * silently. scripts/check-one-to-one-invariants.mjs keeps it from coming back.
+ */
+export async function insertRollRows(
+  admin: SupabaseClient, rows: Record<string, unknown>[], slots: SlotRowDb[], month: string,
+): Promise<{ created: number; month: string; failed: RollFailure[] }> {
+  const { error, data } = await admin.from('coaching_sessions').insert(rows).select('id')
+  if (!error) return { created: data?.length ?? 0, month, failed: [] }
+  let created = 0
+  const failed: RollFailure[] = []
+  for (const row of rows) {
+    const { error: e } = await admin.from('coaching_sessions').insert(row)
+    if (!e) { created++; continue }
+    // Already there (a second roll racing this one): nothing is lost.
+    const { data: dup } = await admin.from('coaching_sessions').select('id')
+      .eq('regular_slot_id', row.regular_slot_id as string).eq('session_date', row.session_date as string)
+      .neq('status', 'cancelled').limit(1)
+    if (dup && dup.length) continue
+    const slot = slots.find((x) => x.id === row.regular_slot_id)
+    const keeper = slot?.player ? `${slot.player.first_name} ${slot.player.last_name ?? ''}`.trim() : 'a keeper'
+    failed.push({
+      slotId: row.regular_slot_id as string, keeper, date: row.session_date as string,
+      reason: e.code === '23505' || e.code === '23P01' ? 'the coach is already booked at that time' : e.message,
+    })
   }
-  return { created: data?.length ?? 0, month: from }
+  return { created, month, failed }
 }
 
 // ─── Needs attention (a query, not a table) ─────────────────────────────

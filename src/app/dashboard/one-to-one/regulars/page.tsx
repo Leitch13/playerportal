@@ -175,7 +175,7 @@ export default async function RegularsPage() {
                   </Field>
                 ))}
               </div>
-              <p className="text-[11px] text-white/40">Pairing marks both as one 2-to-1. Move one of them onto the other&apos;s time first if they differ.</p>
+              <p className="text-[11px] text-white/40">Easiest: give the second keeper a 2-to-1 slot with the same coach, day and time. They pair automatically. Use this only for two 2-to-1 keepers already on the same time.</p>
             </ActionForm>
           </Disclosure>
         </section>

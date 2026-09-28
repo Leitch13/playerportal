@@ -4,6 +4,7 @@ import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy }
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed } from '@/lib/one-to-one/emails'
 import { todayLondon } from '@/lib/one-to-one/time'
+import { seatForNewSlot, seatForSession, type SessionType } from '@/lib/one-to-one/seats'
 
 export const dynamic = 'force-dynamic'
 
@@ -198,22 +199,25 @@ export async function POST(req: NextRequest) {
         if (!playerId || !coachId || !venueId || !(weekday >= 1 && weekday <= 7) || !(start >= 0) || !(price >= 0) || !(dur >= 15)) return bad('Fill in the slot')
         const { data: player } = await admin.from('players').select('id, parent_id, organisation_id').eq('id', playerId).single()
         if (!player || player.organisation_id !== orgId) return bad('That child is not in your academy')
-        // The coach must actually be free at that time on that day: no double-booking a regular.
-        // NOTE (28 Sep 2026): a 2-to-1 cannot yet be two slots on one time. coaching_sessions
-        // allows one live session per coach per time (coaching_sessions_coach_time_uidx), so the
-        // second keeper's dates collide and the month roll creates nothing. Allowing it here was
-        // tried and reverted the same day. Needs a schema change first — do not reopen this alone.
-        const { data: clash } = await admin.from('regular_slots').select('id').eq('coach_id', coachId).eq('weekday', weekday)
-          .eq('start_minutes', start).in('status', ['pending', 'active', 'paused']).limit(1)
-        if (clash && clash.length) return bad('That coach already has a regular at that time')
+        // The coach must be free at that time on that day. A 2-to-1 is the exception: a second
+        // 2-to-1 keeper joins the first in the other seat and the two are paired (migration 119).
+        const { data: taken } = await admin.from('regular_slots').select('id, session_type, pair_seat').eq('coach_id', coachId).eq('weekday', weekday)
+          .eq('start_minutes', start).in('status', ['pending', 'active', 'paused'])
+        const seat = seatForNewSlot((taken ?? []) as { id: string; session_type: SessionType; pair_seat: number }[], type)
+        if (!seat.ok) return bad(seat.reason)
         const { data, error } = await admin.from('regular_slots').insert({
           organisation_id: orgId, player_id: playerId, parent_id: player.parent_id, coach_id: coachId, venue_id: venueId,
           weekday, start_minutes: start, duration_minutes: dur, session_type: type, frequency: freq, price_pence: price,
           // Pending until the parent completes set-up (pays the rest of this month and
           // saves a card). The time is protected on the timetable from now.
           status: 'pending', starts_on: startsOn, note: str(body.note) || null,
+          pair_seat: seat.seat, partner_slot_id: seat.pairWith,
         }).select('id').single()
         if (error) throw error
+        if (seat.pairWith) {
+          const { error: pe } = await admin.from('regular_slots').update({ partner_slot_id: data.id }).eq('id', seat.pairWith).eq('organisation_id', orgId)
+          if (pe) throw pe
+        }
         await rollAhead(admin, orgId, startsOn)
         let setup: { url: string; amountPence: number } | null = null
         let setupError: string | null = null
@@ -226,9 +230,20 @@ export async function POST(req: NextRequest) {
         const status = str(body.status); if (!['active', 'paused', 'released'].includes(status)) return bad('Bad status')
         const id = str(body.id)
         const patch: Record<string, unknown> = { status }
-        if (status === 'released') patch.ends_on = todayLondon()
+        const { data: cur } = await admin.from('regular_slots').select('starts_on, partner_slot_id').eq('id', id).eq('organisation_id', orgId).maybeSingle()
+        if (!cur) return bad('Slot not found')
+        if (status === 'released') {
+          // A slot that hasn't started yet ends on its start date (the end can't be before the start).
+          const today = todayLondon()
+          patch.ends_on = cur.starts_on > today ? cur.starts_on : today
+          patch.partner_slot_id = null
+        }
         const { error } = await admin.from('regular_slots').update(patch).eq('id', id).eq('organisation_id', orgId)
         if (error) throw error
+        // The partner keeps their seat and is ready for a new keeper to join them.
+        if (status === 'released' && cur.partner_slot_id) {
+          await admin.from('regular_slots').update({ partner_slot_id: null }).eq('id', cur.partner_slot_id).eq('organisation_id', orgId)
+        }
         if (status !== 'active') {
           // Future dated sessions from this slot come off the timetable and go back on sale.
           await admin.from('coaching_sessions').update({ status: 'cancelled', note: `slot ${status}` })
@@ -241,8 +256,18 @@ export async function POST(req: NextRequest) {
       case 'slot.pair': {
         const a = str(body.slotId), b = str(body.partnerSlotId)
         if (!a || !b || a === b) return bad('Pick two different keepers')
-        const { error: e1 } = await admin.from('regular_slots').update({ partner_slot_id: b, session_type: 'two_to_one' }).eq('id', a).eq('organisation_id', orgId)
-        const { error: e2 } = await admin.from('regular_slots').update({ partner_slot_id: a, session_type: 'two_to_one' }).eq('id', b).eq('organisation_id', orgId)
+        const { data: pair } = await admin.from('regular_slots').select('id, coach_id, weekday, start_minutes, session_type, pair_seat')
+          .in('id', [a, b]).eq('organisation_id', orgId)
+        const [x, y] = [pair?.find((r) => r.id === a), pair?.find((r) => r.id === b)]
+        if (!x || !y) return bad('Slot not found')
+        if (x.coach_id !== y.coach_id || x.weekday !== y.weekday || x.start_minutes !== y.start_minutes) {
+          return bad('A pair shares one coach, day and time. Give the second keeper a 2-to-1 slot on the first keeper\'s time instead: they pair automatically.')
+        }
+        if (x.session_type !== 'two_to_one' || y.session_type !== 'two_to_one' || x.pair_seat === y.pair_seat) {
+          return bad('Those two can\'t be paired as they are. Give the second keeper a 2-to-1 slot on the first keeper\'s time instead.')
+        }
+        const { error: e1 } = await admin.from('regular_slots').update({ partner_slot_id: b }).eq('id', a).eq('organisation_id', orgId)
+        const { error: e2 } = await admin.from('regular_slots').update({ partner_slot_id: a }).eq('id', b).eq('organisation_id', orgId)
         if (e1 || e2) throw e1 || e2
         return NextResponse.json({ ok: true })
       }
@@ -304,15 +329,20 @@ export async function POST(req: NextRequest) {
         const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', id).eq('organisation_id', orgId).single()
         if (!s) return bad('Session not found')
         const coachId = str(body.coachId) || s.coach_id, venueId = str(body.venueId) || s.venue_id
-        // New row first (the unique index refuses a clash), then retire the old one.
+        const { data: there } = await admin.from('coaching_sessions').select('session_type, pair_seat')
+          .eq('coach_id', coachId).eq('session_date', date).eq('start_minutes', start)
+          .in('status', ['held', 'scheduled', 'attended', 'no_show']).neq('id', id)
+        const moveSeat = seatForSession((there ?? []) as { session_type: SessionType; pair_seat: number }[], s.session_type as SessionType)
+        if (moveSeat === null) return bad('That coach is already booked then')
+        // New row first (the database refuses a clash), then retire the old one.
         const { error: e1 } = await admin.from('coaching_sessions').insert({
           organisation_id: orgId, regular_slot_id: null, coach_id: coachId, venue_id: venueId,
           player_id: s.player_id, parent_id: s.parent_id, session_date: date, start_minutes: start,
-          duration_minutes: s.duration_minutes, session_type: s.session_type, source: 'admin', status: 'scheduled',
+          duration_minutes: s.duration_minutes, session_type: s.session_type, pair_seat: moveSeat, source: 'admin', status: 'scheduled',
           charge_state: s.charge_state, price_pence: s.price_pence, cover_of_session_id: s.id,
           guest_name: s.guest_name, guest_email: s.guest_email, guest_phone: s.guest_phone, guest_child_name: s.guest_child_name,
         })
-        if (e1) return bad(e1.code === '23505' ? 'That coach is already booked then' : e1.message)
+        if (e1) return bad(e1.code === '23505' || e1.code === '23P01' ? 'That coach is already booked then' : e1.message)
         const { error: e2 } = await admin.from('coaching_sessions').update({ status: 'cancelled', note: `moved to ${date} ${hhmm(start)}` }).eq('id', id)
         if (e2) throw e2
         return NextResponse.json({ ok: true })

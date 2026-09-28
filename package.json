@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/check-billing-invariants.mjs && node scripts/check-auth-invariants.mjs",
+    "prebuild": "node scripts/check-billing-invariants.mjs && node scripts/check-auth-invariants.mjs && node scripts/check-one-to-one-invariants.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
