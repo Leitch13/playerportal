@@ -15,17 +15,30 @@ export async function act(body: Record<string, unknown>, endpoint = '/api/one-to
   return { ok: true, ...json }
 }
 
+/** Plain-English result for actions whose success is otherwise invisible. */
+function resultText(kind: 'roll' | undefined, r: Record<string, unknown>): string | null {
+  if (kind !== 'roll') return null
+  const created = Number(r.created) || 0
+  const m = typeof r.month === 'string' ? new Date(`${r.month.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' }) : 'that month'
+  return created > 0
+    ? `Added ${created} session${created === 1 ? '' : 's'} for ${m}.`
+    : `All ${m} sessions are already on the timetable. Nothing new to add.`
+}
+
 export function ActionButton({
-  body, children, confirm: confirmText, tone = 'default', className = '', onDone, endpoint,
+  body, children, confirm: confirmText, tone = 'default', className = '', onDone, endpoint, result,
 }: {
   body: Record<string, unknown>; children: React.ReactNode; confirm?: string
   tone?: 'default' | 'primary' | 'quiet' | 'danger'; className?: string; onDone?: () => void
   /** Defaults to the academy route. A coach's page posts to its own. */
   endpoint?: string
+  /** Show what the action did, for buttons that otherwise look like they did nothing. */
+  result?: 'roll'
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [err, setErr] = useState<string | null>(null)
+  const [done, setDone] = useState<string | null>(null)
   const tones = {
     default: 'border-white/[0.12] bg-white/[0.06] text-white hover:bg-white/[0.1]',
     primary: 'border-[#4ecde6] bg-[#4ecde6] text-[#04141a] hover:brightness-110',
@@ -40,9 +53,11 @@ export function ActionButton({
         onClick={() => {
           if (confirmText && !window.confirm(confirmText)) return
           setErr(null)
+          setDone(null)
           start(async () => {
             const r = await act(body, endpoint)
             if (!r.ok) { setErr(r.error || 'Failed'); return }
+            setDone(resultText(result, r))
             onDone?.()
             router.refresh()
           })
@@ -52,6 +67,7 @@ export function ActionButton({
         {pending ? 'Working…' : children}
       </button>
       {err && <span className="text-[11px] text-red-300">{err}</span>}
+      {done && <span className="text-[11px] text-[#4ecde6]" role="status">{done}</span>}
     </span>
   )
 }

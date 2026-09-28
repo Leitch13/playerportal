@@ -214,8 +214,8 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
           <h3 className="text-sm font-semibold text-white">Create a month&apos;s sessions</h3>
           <p className="mt-0.5 text-[11px] text-white/45">This runs by itself on the 20th. Press it if you&apos;ve added a regular mid-month and want their dates now. Safe to press twice.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton tone="primary" body={{ action: 'roll', month: today }}>This month</ActionButton>
-            <ActionButton body={{ action: 'roll', month: addDays(today.slice(0, 8) + '01', 32) }}>Next month</ActionButton>
+            <ActionButton tone="primary" result="roll" body={{ action: 'roll', month: today }}>This month</ActionButton>
+            <ActionButton result="roll" body={{ action: 'roll', month: addDays(today.slice(0, 8) + '01', 32) }}>Next month</ActionButton>
           </div>
         </div>
       </div>

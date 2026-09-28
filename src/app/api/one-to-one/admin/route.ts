@@ -199,9 +199,18 @@ export async function POST(req: NextRequest) {
         const { data: player } = await admin.from('players').select('id, parent_id, organisation_id').eq('id', playerId).single()
         if (!player || player.organisation_id !== orgId) return bad('That child is not in your academy')
         // The coach must actually be free at that time on that day: no double-booking a regular.
-        const { data: clash } = await admin.from('regular_slots').select('id').eq('coach_id', coachId).eq('weekday', weekday)
-          .eq('start_minutes', start).in('status', ['pending', 'active', 'paused']).limit(1)
-        if (clash && clash.length) return bad('That coach already has a regular at that time')
+        // The one exception is a 2-to-1: the second keeper goes on the SAME coach, day and time
+        // as a 2-to-1 keeper who has no partner yet, and the two are paired automatically.
+        // (Until 28 Sep 2026 this blocked the second keeper too, so no pair could ever be made.)
+        const { data: clash } = await admin.from('regular_slots').select('id, session_type, partner_slot_id').eq('coach_id', coachId).eq('weekday', weekday)
+          .eq('start_minutes', start).in('status', ['pending', 'active', 'paused'])
+        let pairWith: string | null = null
+        if (clash && clash.length) {
+          const open = clash.length === 1 && clash[0].session_type === 'two_to_one' && !clash[0].partner_slot_id ? clash[0].id : null
+          if (type === 'two_to_one' && open) pairWith = open
+          else if (type === 'two_to_one') return bad('That coach already has a 1-to-1, or a full 2-to-1, at that time')
+          else return bad('That coach already has a regular at that time. For a 2-to-1, choose 2-to-1 as the type and it pairs with the keeper already there.')
+        }
         const { data, error } = await admin.from('regular_slots').insert({
           organisation_id: orgId, player_id: playerId, parent_id: player.parent_id, coach_id: coachId, venue_id: venueId,
           weekday, start_minutes: start, duration_minutes: dur, session_type: type, frequency: freq, price_pence: price,
@@ -210,6 +219,11 @@ export async function POST(req: NextRequest) {
           status: 'pending', starts_on: startsOn, note: str(body.note) || null,
         }).select('id').single()
         if (error) throw error
+        if (pairWith) {
+          const { error: pe } = await admin.from('regular_slots').update({ partner_slot_id: data.id }).eq('id', pairWith).eq('organisation_id', orgId)
+          const { error: pe2 } = await admin.from('regular_slots').update({ partner_slot_id: pairWith }).eq('id', data.id).eq('organisation_id', orgId)
+          if (pe || pe2) throw pe || pe2
+        }
         await rollAhead(admin, orgId, startsOn)
         let setup: { url: string; amountPence: number } | null = null
         let setupError: string | null = null
