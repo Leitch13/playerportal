@@ -27,7 +27,14 @@ export async function POST(req: NextRequest) {
       const invs = await listPlatformInvoices(stripe, o.platform_stripe_subscription_id as string)
       const paid = invs.find((i) => i.status === 'paid' && (i.amount_paid ?? 0) > 0)
       if (!paid) { results.push({ academy: o.name as string, error: 'no paid invoice' }); continue }
-      if (body.dryRun) { results.push({ academy: o.name as string, invoice: paid.number || paid.id, sentTo: [paid.customer_email || '(admins)'] }); continue }
+      if (body.dryRun) {
+        let email = paid.customer_email || '(admins)'
+        if (typeof paid.customer === 'string') {
+          const c = await stripe.customers.retrieve(paid.customer).catch(() => null)
+          if (c && !('deleted' in c && c.deleted) && (c as Stripe.Customer).email) email = (c as Stripe.Customer).email as string
+        }
+        results.push({ academy: o.name as string, invoice: paid.number || paid.id, sentTo: [email] }); continue
+      }
       const sentTo = await sendPlatformInvoiceEmail(stripe, supabase, o.id as string, paid)
       results.push({ academy: o.name as string, invoice: paid.number || paid.id, sentTo })
     } catch (e) {

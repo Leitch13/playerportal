@@ -116,6 +116,14 @@ export async function sendPlatformInvoiceEmail(
       if (sub.status === 'active' && end) nextPaymentOn = new Date(end * 1000).toISOString().slice(0, 10)
     } catch { /* optional line */ }
   }
+  // The invoice keeps the email from the day it was raised; send to the academy's
+  // CURRENT billing email (Rosa's changed after September's invoice).
+  if (typeof invoice.customer === 'string') {
+    try {
+      const c = await stripe.customers.retrieve(invoice.customer)
+      if (!('deleted' in c && c.deleted) && (c as Stripe.Customer).email) d.billedToEmail = (c as Stripe.Customer).email
+    } catch { /* keep the invoice's own email */ }
+  }
   let to = d.billedToEmail ? [d.billedToEmail] : []
   if (!to.length) {
     const { data: admins } = await supabase.from('profiles').select('email').eq('organisation_id', orgId).eq('role', 'admin')
