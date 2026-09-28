@@ -97,8 +97,15 @@ export async function updateSession(request: NextRequest) {
     const isSignout = request.nextUrl.pathname === '/auth/signout'
     const isSigninWithParams = request.nextUrl.pathname === '/auth/signin' && request.nextUrl.searchParams.has('email')
     const isSignupWithOrg = request.nextUrl.pathname === '/auth/signup' && request.nextUrl.searchParams.has('org')
+    // Every emailed link (forgot password, a new coach's "set your password",
+    // camp parents) goes /auth/confirm → /auth/reset-password. By then the
+    // link has signed them in, so bouncing signed-in users to the dashboard
+    // here meant nobody could ever set a password (Jay, 28 Sep 2026).
+    const isPasswordLink =
+      request.nextUrl.pathname === '/auth/reset-password' ||
+      request.nextUrl.pathname === '/auth/confirm'
 
-    if (user && isAuthRoute && !isSignout && !isSigninWithParams && !isSignupWithOrg) {
+    if (user && isAuthRoute && !isSignout && !isSigninWithParams && !isSignupWithOrg && !isPasswordLink) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)
