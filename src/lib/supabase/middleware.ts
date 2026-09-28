@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { signedInMayStayOnAuthRoute } from '@/lib/auth-routes'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -87,25 +88,11 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // If signed in and on auth routes, redirect to dashboard
-    // BUT allow:
-    //  - signout route
-    //  - signin with email param (switching accounts)
-    //  - signup with org param (subscribing to a new class from a logged-in
-    //    parent session — the signup page handles this case by skipping the
-    //    account-creation step and jumping straight to child/plan selection)
-    const isSignout = request.nextUrl.pathname === '/auth/signout'
-    const isSigninWithParams = request.nextUrl.pathname === '/auth/signin' && request.nextUrl.searchParams.has('email')
-    const isSignupWithOrg = request.nextUrl.pathname === '/auth/signup' && request.nextUrl.searchParams.has('org')
-    // Every emailed link (forgot password, a new coach's "set your password",
-    // camp parents) goes /auth/confirm → /auth/reset-password. By then the
-    // link has signed them in, so bouncing signed-in users to the dashboard
-    // here meant nobody could ever set a password (Jay, 28 Sep 2026).
-    const isPasswordLink =
-      request.nextUrl.pathname === '/auth/reset-password' ||
-      request.nextUrl.pathname === '/auth/confirm'
-
-    if (user && isAuthRoute && !isSignout && !isSigninWithParams && !isSignupWithOrg && !isPasswordLink) {
+    // If signed in and on an /auth page, go to the dashboard — except the pages
+    // a signed-in user must reach (password links, signout, switching account,
+    // parent adding a class). The list lives in src/lib/auth-routes.ts, which
+    // the build guard and canary 13 protect. Do not inline it back here.
+    if (user && isAuthRoute && !signedInMayStayOnAuthRoute(request.nextUrl.pathname, request.nextUrl.searchParams)) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
       return NextResponse.redirect(url)

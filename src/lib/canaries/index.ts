@@ -712,6 +712,48 @@ async function canary12StripeDayProration(sb: Supabase): Promise<Omit<CanaryResu
   }
 }
 
+/**
+ * Canary 13 — a real password link, against the live site, every morning.
+ *
+ * Makes a recovery link for a test parent John owns (no email is sent), follows
+ * it the way a browser would (/auth/confirm signs them in), then asks for
+ * /auth/reset-password with that session. It must show the set-password page,
+ * not bounce to the dashboard or sign-in. That bounce locked Jay Rosa out on
+ * 28 Sep 2026 and had happened before; this catches it the morning after any
+ * change brings it back. See src/lib/auth-routes.ts.
+ */
+async function canary13PasswordLinks(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const email = process.env.CANARY_AUTH_TEST_EMAIL || 'john+graniteparent@theplayerportal.net'
+  const app = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.theplayerportal.net').replace(/\/$/, '')
+  const broken = (what: string) => ({
+    rowCount: 1,
+    lines: [`Password links: ${what}`],
+    findings: [{ org: 'Player Portal (every academy)', what: `Password reset / set-password links are broken: ${what}` }],
+  })
+
+  const { data, error } = await sb.auth.admin.generateLink({ type: 'recovery', email })
+  const hashed = data?.properties?.hashed_token as string | undefined
+  if (error || !hashed) throw new Error(`could not make a test link for ${email}: ${error?.message ?? 'no token'}`)
+
+  const confirm = await fetch(
+    `${app}/auth/confirm?token_hash=${encodeURIComponent(hashed)}&type=recovery&next=${encodeURIComponent('/auth/reset-password')}`,
+    { redirect: 'manual' },
+  )
+  const toReset = confirm.headers.get('location') || ''
+  if (!/\/auth\/reset-password/.test(toReset)) {
+    return broken(`the link sent the user to "${toReset || `HTTP ${confirm.status}`}" instead of the set-password page`)
+  }
+  const cookies = (confirm.headers.getSetCookie?.() ?? []).map((c) => c.split(';')[0]).join('; ')
+  if (!cookies) return broken('the link did not sign the user in (no session cookie)')
+
+  const reset = await fetch(`${app}/auth/reset-password`, { redirect: 'manual', headers: { cookie: cookies } })
+  if (reset.status >= 300 && reset.status < 400) {
+    return broken(`a signed-in user asking for the set-password page was redirected to "${reset.headers.get('location')}"`)
+  }
+  if (reset.status !== 200) return broken(`the set-password page returned HTTP ${reset.status}`)
+  return { rowCount: 0, lines: [] }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -724,6 +766,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 10, name: 'signed up but never charged', run: canary10ZeroValueSignup },
   { id: 11, name: 'archived players still counted or still live', run: canary11ArchivedStillCounted },
   { id: 12, name: 'Stripe day-proration on a first invoice', run: canary12StripeDayProration },
+  { id: 13, name: 'password links reach the set-password page', run: canary13PasswordLinks },
 ]
 
 /**
