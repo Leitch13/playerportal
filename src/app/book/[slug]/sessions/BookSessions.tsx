@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import PolicyAccept from './PolicyAccept'
 
 type Free = { date: string; startMinutes: number; coachId: string; coach: string; venueId: string; venue: string }
 type Venue = { id: string; name: string; address: string | null }
@@ -44,6 +45,7 @@ export default function BookSessions({ slug, academy, primary, durationMinutes, 
   const [err, setErr] = useState<string | null>(null)
   const [mode, setMode] = useState<'list' | 'details' | 'request' | 'requested'>('list')
   const [form, setForm] = useState({ guestName: '', guestEmail: '', guestPhone: '', childName: '' })
+  const [agreed, setAgreed] = useState(false)
 
   const matches = useMemo(() => initial.filter((f) => (venueIds.length === 0 || venueIds.includes(f.venueId)) && f.startMinutes >= after), [initial, venueIds, after])
   const weekStart = weeks[week], weekEnd = addDays(weekStart, 6)
@@ -77,9 +79,9 @@ export default function BookSessions({ slug, academy, primary, durationMinutes, 
   const pay = async () => {
     if (!pick) return
     setBusy(true); setErr(null)
-    const hold = await call({ action: 'hold', slug, date: pick.date, startMinutes: pick.startMinutes, coachId: pick.coachId, venueId: pick.venueId, ...form })
+    const hold = await call({ action: 'hold', slug, date: pick.date, startMinutes: pick.startMinutes, coachId: pick.coachId, venueId: pick.venueId, ...form, policyAccepted: agreed })
     if (!hold.ok) { setBusy(false); setErr(hold.error || 'Could not hold that session'); if (hold.status === 409) { setMode('list'); setPick(null) } return }
-    const co = await call({ action: 'checkout', slug, sessionId: hold.sessionId, holdToken: hold.holdToken })
+    const co = await call({ action: 'checkout', slug, sessionId: hold.sessionId, holdToken: hold.holdToken, policyAccepted: agreed })
     if (!co.ok || !co.url) { setBusy(false); setErr(co.error || 'Could not start payment'); return }
     window.location.href = co.url as string
   }
@@ -147,9 +149,10 @@ export default function BookSessions({ slug, academy, primary, durationMinutes, 
               <input value={form.guestEmail} onChange={(e) => setForm({ ...form, guestEmail: e.target.value })} type="email" placeholder="Email for the receipt" className={inp} />
               <input value={form.guestPhone} onChange={(e) => setForm({ ...form, guestPhone: e.target.value })} placeholder="Phone (optional)" className={inp} />
             </div>
-            <p className="text-[11px] leading-relaxed text-white/45">Changing your mind: more than 7 days&apos; notice is a full credit, 7 days to 48 hours is half, under 48 hours is charged. We hold this time for 12 minutes while you pay.</p>
+            <PolicyAccept checked={agreed} onChange={setAgreed} academy={academy} accent={primary} />
+            <p className="text-[11px] leading-relaxed text-white/45">We hold this time for 12 minutes while you pay.</p>
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button onClick={pay} disabled={busy || !form.childName || !form.guestName || !form.guestEmail} className="rounded-xl px-5 py-3 text-sm font-semibold disabled:opacity-40" style={{ background: primary, color: ink }}>{busy ? 'One moment…' : `Pay ${priceLabel} and book`}</button>
+              <button onClick={pay} disabled={busy || !agreed || !form.childName || !form.guestName || !form.guestEmail} className="rounded-xl px-5 py-3 text-sm font-semibold disabled:opacity-40" style={{ background: primary, color: ink }}>{busy ? 'One moment…' : `Pay ${priceLabel} and book`}</button>
               <button type="button" onClick={() => { setMode('list'); setPick(null) }} className="text-sm text-white/60">Pick another time</button>
               {err && <span className="text-xs text-[#f3a7a2]">{err}</span>}
             </div>

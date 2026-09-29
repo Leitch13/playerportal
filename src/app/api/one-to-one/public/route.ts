@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
         const guestName = str(body.guestName), guestEmail = str(body.guestEmail).toLowerCase(), guestPhone = str(body.guestPhone), child = str(body.childName)
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !coachId || !venueId || !Number.isFinite(start)) return bad('Pick a session')
         if (!guestName || !EMAIL.test(guestEmail) || !child) return bad('Your name, an email and the child\'s name are needed')
+        if (body.policyAccepted !== true) return bad('Tick to accept the cancellation policy first')
         const input = await loadAvailability(admin, orgId, date, date)
         if (!isFree(input, { date, startMinutes: start, coachId, venueId })) return bad('That session has just gone. Pick another.', 409)
         // Ask BEFORE holding: an academy that can't take the payment must not have the time blocked for 12 minutes.
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
 
       case 'checkout': {
         const sessionId = str(body.sessionId), token = str(body.holdToken)
+        if (body.policyAccepted !== true) return bad('Tick to accept the cancellation policy first')
         const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', sessionId).eq('organisation_id', orgId).maybeSingle()
         if (!s || s.hold_token !== token) return bad('Hold not found', 404)
         if (s.status !== 'held') return bad(s.status === 'scheduled' ? 'Already paid' : 'That hold has ended. Pick the session again.', 409)
@@ -91,7 +93,7 @@ export async function POST(req: NextRequest) {
         const [coaches, venues] = await Promise.all([getCoaches(admin, orgId), getVenues(admin, orgId)])
         const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://www.theplayerportal.net'
         const { url, checkoutId } = await createAdhocCheckout({
-          admin, orgId, orgName: org.name as string, slug, origin, session: s,
+          admin, orgId, orgName: org.name as string, slug, origin, session: s, policyAcceptedAt: new Date().toISOString(),
           coachName: coaches.find((c) => c.id === s.coach_id)?.full_name?.split(' ')[0] || 'your coach',
           venueName: venues.find((v) => v.id === s.venue_id)?.name || 'the venue',
         })

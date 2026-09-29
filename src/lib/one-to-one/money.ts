@@ -107,13 +107,16 @@ export async function sendSetupCheckout(admin: SupabaseClient, orgId: string, sl
     })
   }
   await admin.from('coaching_charges').update({ stripe_checkout_session_id: cs.id }).eq('id', charge.id)
+  // The emailed link opens the cancellation-policy step first, then Stripe (see agree.ts).
+  const { data: orgRow } = await admin.from('organisations').select('slug').eq('id', orgId).single()
+  const payUrl = orgRow?.slug ? `${appUrl()}/book/${orgRow.slug}/sessions/agree?cs=${cs.id}` : cs.url!
 
   await sendSetupLink({
     academy: bits.name, to: parent.email, parentName: parent.name, childName: child,
     slotLabel: `${DAY[slot.weekday]}s ${hhmm(slot.start_minutes)} at ${bits.venue(slot.venue_id)} with ${bits.coach(slot.coach_id)}`,
-    pricePence: slot.price_pence, sessionsThisMonth: b.sessionIds.length, amountPence: b.amountPence, creditPence: Math.max(0, b.creditAppliedPence), url: cs.url!,
+    pricePence: slot.price_pence, sessionsThisMonth: b.sessionIds.length, amountPence: b.amountPence, creditPence: Math.max(0, b.creditAppliedPence), url: payUrl,
   }).catch((e) => console.error('setup email failed', e))
-  return { url: cs.url!, amountPence: b.amountPence }
+  return { url: payUrl, amountPence: b.amountPence }
 }
 
 /** Webhook: the set-up Checkout completed. Slot goes active, card is remembered, month is paid. */
@@ -389,3 +392,47 @@ export function monthLabel(billingMonth: string): string {
   return new Date(`${billingMonth.slice(0, 7)}-01T12:00:00Z`).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'Europe/London' })
 }
 
+
+/**
+ * Delete a slot added by mistake (wrong keeper, wrong time, wrong price before it was paid).
+ * Refused once anything has been paid or coached: that history stays, and Release ends the slot.
+ * Any set-up link still open for this slot is expired first, so nobody can pay for a slot that no longer exists.
+ */
+export async function deleteMistakenSlot(admin: SupabaseClient, orgId: string, slotId: string) {
+  const { data: slot } = await admin.from('regular_slots').select('id, parent_id, partner_slot_id')
+    .eq('id', slotId).eq('organisation_id', orgId).maybeSingle()
+  if (!slot) throw new CheckoutBlocked('Slot not found', 404)
+  const { data: rows } = await admin.from('coaching_sessions').select('id, status, charge_state')
+    .eq('regular_slot_id', slotId).eq('organisation_id', orgId)
+  const ids = (rows ?? []).map((r) => r.id)
+  // A session moved by hand is a new row pointing back at the original: it belongs to this slot too.
+  const { data: movedRows } = ids.length
+    ? await admin.from('coaching_sessions').select('id, status, charge_state').in('cover_of_session_id', ids).eq('organisation_id', orgId)
+    : { data: [] as { id: string; status: string; charge_state: string }[] }
+  const all = [...(rows ?? []), ...(movedRows ?? [])]
+  if (all.some((r) => r.charge_state !== 'unpaid' || r.status === 'attended' || r.status === 'no_show')) {
+    throw new CheckoutBlocked('This keeper has sessions that were paid for or coached, so their history stays. Use Release instead: it ends the slot and puts the time back on sale.', 409)
+  }
+
+  const { data: charges } = await admin.from('coaching_charges').select('id, status, stripe_checkout_session_id')
+    .eq('organisation_id', orgId).eq('parent_id', slot.parent_id).not('stripe_checkout_session_id', 'is', null)
+  const { count: otherPending } = await admin.from('regular_slots').select('id', { count: 'exact', head: true })
+    .eq('organisation_id', orgId).eq('parent_id', slot.parent_id).eq('status', 'pending').neq('id', slotId)
+  for (const c of charges ?? []) {
+    const cs = await stripe.checkout.sessions.retrieve(c.stripe_checkout_session_id as string)
+    if (cs.metadata?.regular_slot_id !== slotId) continue
+    if (cs.status === 'complete') throw new CheckoutBlocked('The parent has just paid this set-up link, so the slot is live. Refresh the page and use Release instead.', 409)
+    if (cs.status === 'open') await stripe.checkout.sessions.expire(cs.id)
+    // The month's pending charge row is shared per family: keep it if a brother or sister still has a link out.
+    if (c.status === 'pending' && !otherPending) await admin.from('coaching_charges').delete().eq('id', c.id).eq('status', 'pending')
+  }
+
+  if (slot.partner_slot_id) await admin.from('regular_slots').update({ partner_slot_id: null }).eq('id', slot.partner_slot_id).eq('organisation_id', orgId)
+  const allIds = all.map((r) => r.id)
+  if (allIds.length) {
+    const { error } = await admin.from('coaching_sessions').delete().in('id', allIds).eq('organisation_id', orgId)
+    if (error) throw new Error(error.message)
+  }
+  const { error } = await admin.from('regular_slots').delete().eq('id', slotId).eq('organisation_id', orgId)
+  if (error) throw new Error(error.message)
+}

@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { requireAdmin, getSettings } from '@/lib/one-to-one/db'
 import { calendarUrl } from '@/lib/one-to-one/calendar'
 import { HOURS_FULL_CREDIT, HOURS_HALF_CREDIT } from '@/lib/one-to-one/policy'
-import { ActionForm, Field, PoundsInput, inputCls } from '../ui'
+import { ActionForm, Field, PoundsInput } from '../ui'
+import { inputCls } from '../styles'
 
 export const dynamic = 'force-dynamic'
 

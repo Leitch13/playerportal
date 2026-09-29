@@ -1,7 +1,8 @@
 import { requireAdmin, getCoaches, getVenues, getSlots, getSettings, DAY, hhmm, gbp, fmtShort, type SlotRowDb } from '@/lib/one-to-one/db'
 import { todayLondon } from '@/lib/one-to-one/time'
 import { academyPaymentsReady } from '@/lib/one-to-one/checkout'
-import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, SignedPoundsInput, inputCls } from '../ui'
+import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, SignedPoundsInput } from '../ui'
+import { inputCls } from '../styles'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,7 +68,26 @@ export default async function RegularsPage() {
       {s.status === 'active' && <ActionButton body={{ action: 'slot.status', id: s.id, status: 'paused' }}>Pause</ActionButton>}
       {s.status === 'paused' && <ActionButton tone="primary" body={{ action: 'slot.status', id: s.id, status: 'active' }}>Resume</ActionButton>}
       {s.status !== 'released' && <ActionButton tone="quiet" confirm="Release this slot? Their future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: s.id, status: 'released' }}>Release</ActionButton>}
+      {s.status !== 'released' && <ActionButton tone="danger" confirm="Delete this slot completely? Only for one added by mistake: it works while nothing has been paid or coached, and any pay link sent stops working." body={{ action: 'slot.delete', id: s.id }}>Delete</ActionButton>}
     </div>
+  )
+  // Change a regular without ending it. Sessions from today move with it; a new price reaches only unpaid sessions.
+  const editForm = (s: SlotRowDb) => s.status === 'released' ? null : (
+    <Disclosure label="Edit">
+      <ActionForm action="slot.update" extra={{ id: s.id }} submitLabel="Save changes" className="w-full max-w-md rounded-xl border border-white/[0.08] bg-[#0b1422] p-3 text-left">
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Coach"><select name="coachId" defaultValue={s.coach_id} className={inputCls}>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
+          <Field label="Venue"><select name="venueId" defaultValue={s.venue_id} className={inputCls}>{venues.filter((v) => v.is_active || v.id === s.venue_id).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>
+          <Field label="Day"><select name="weekday" defaultValue={s.weekday} className={inputCls}>{[1, 2, 3, 4, 5, 6, 7].map((d) => <option key={d} value={d}>{DAY[d]}</option>)}</select></Field>
+          <Field label="Start time"><input name="start" defaultValue={hhmm(s.start_minutes)} required className={inputCls + ' tabular-nums'} /></Field>
+          <Field label="Length, minutes"><input name="durationMinutes" type="number" defaultValue={s.duration_minutes} className={inputCls + ' tabular-nums'} /></Field>
+          {s.status === 'pending'
+            ? <input type="hidden" name="pricePence" value={s.price_pence} />
+            : <Field label="Price per session"><PoundsInput name="pricePence" defaultPence={s.price_pence} /></Field>}
+        </div>
+        <p className="text-[11px] leading-relaxed text-white/45">Their sessions from today move with the slot. Anything already paid stays paid; a new price applies to sessions not yet paid for.{s.status === 'pending' ? ' The price can\'t change until the set-up link is paid: Delete and add again instead.' : ''}{s.partner_slot_id ? ' In a 2-to-1 pair the coach, day and time stay with the partner.' : ''}</p>
+      </ActionForm>
+    </Disclosure>
   )
 
   const form = (
@@ -136,7 +156,7 @@ export default async function RegularsPage() {
                     <td className="px-3 py-3"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${chip(s).cls}`}>{chip(s).label}</span></td>
                     <td className="px-3 py-3">{money(s.parent_id) ?? <span className="text-white/25">—</span>}</td>
                     <td className="px-3 py-3">{creditCell(s)}</td>
-                    <td className="px-5 py-3"><div className="flex justify-end">{buttons(s)}</div></td>
+                    <td className="px-5 py-3"><div className="flex flex-col items-end gap-1.5">{buttons(s)}{editForm(s)}</div></td>
                   </tr>
                 ))}
               </tbody>
@@ -156,7 +176,7 @@ export default async function RegularsPage() {
                 <div className="mt-2 text-sm text-white/85"><b className="tabular-nums text-white">{DAY[s.weekday]} {hhmm(s.start_minutes)}</b> · {cname(s.coach_id)} · {vname(s.venue_id)}</div>
                 <div className="mt-0.5 text-[11px] text-white/45">{type(s)} · {gbp(s.price_pence)} · {s.frequency} · since {fmtShort(s.starts_on)}</div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">{money(s.parent_id) ?? <span />}{buttons(s)}</div>
-                <div className="mt-2">{creditCell(s)}</div>
+                <div className="mt-2 flex flex-wrap items-start gap-4">{creditCell(s)}{editForm(s)}</div>
               </div>
             ))}
           </div>

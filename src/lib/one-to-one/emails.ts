@@ -66,7 +66,7 @@ export async function sendSetupLink(f: { academy: string; to: string; parentName
       <table style="border-collapse:collapse;width:100%;font-size:15px">
         <tr><td style="padding:6px 0;color:#5b6674">This month</td><td style="padding:6px 0;font-weight:600">${f.sessionsThisMonth} session${f.sessionsThisMonth === 1 ? '' : 's'}${f.creditPence > 0 ? `, ${gbp(f.creditPence)} credit applied` : ''} · ${gbp(f.amountPence)}</td></tr>
         <tr><td style="padding:6px 0;color:#5b6674">After that</td><td style="padding:6px 0;font-weight:600">Charged on the 1st for the sessions in the month</td></tr>
-        <tr><td style="padding:6px 0;color:#5b6674">Can't make one?</td><td style="padding:6px 0;font-weight:600">7+ days' notice is a full credit</td></tr>
+        <tr><td style="padding:6px 0;color:#5b6674">Can't make one?</td><td style="padding:6px 0;font-weight:600">7+ days' notice is a full credit. You'll see the full cancellation policy and accept it before you pay.</td></tr>
       </table>
       <p style="margin:18px 0 6px"><a href="${f.url}" style="display:inline-block;background:#0b8299;color:#fff;font-weight:600;padding:11px 16px;border-radius:8px;text-decoration:none">${f.amountPence > 0 ? `Pay ${gbp(f.amountPence)} and save my card` : 'Save my card for the 1st'}</a></p>
       <p style="font-size:13px;color:#5b6674">Your card is kept by Stripe for the monthly charge. Nothing else is set up in the background. This link works for 24 hours; ask the academy for a fresh one if it's expired.</p>

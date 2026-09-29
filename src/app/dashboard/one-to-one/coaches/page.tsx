@@ -1,6 +1,7 @@
 import { requireAdmin, getCoaches, getVenues, getHours, getClosures, getExceptions, DAY, hhmm, fmtDate } from '@/lib/one-to-one/db'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
-import { ActionButton, ActionForm, Field, VenueForm, inputCls } from '../ui'
+import { ActionButton, ActionForm, Field, VenueForm } from '../ui'
+import { inputCls } from '../styles'
 
 export const dynamic = 'force-dynamic'
 

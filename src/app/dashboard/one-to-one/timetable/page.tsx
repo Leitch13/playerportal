@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { requireAdmin, getCoaches, getVenues, getSessions, loadAvailability, DAY, hhmm, fmtDate, gbp, getSettings, type SessionRowDb } from '@/lib/one-to-one/db'
 import { freeSessions } from '@/lib/one-to-one/availability'
 import { addDays, isoWeekday, todayLondon } from '@/lib/one-to-one/time'
-import { ActionButton, ActionForm, Field, inputCls } from '../ui'
+import { ActionButton, ActionForm, Field } from '../ui'
+import { inputCls } from '../styles'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,11 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
         {s.status === 'scheduled' && coaches.filter((c) => c.id !== s.coach_id).slice(0, 2).map((c) => (
           <ActionButton key={c.id} body={{ action: 'session.cover', sessionId: s.id, coachId: c.id }}>Cover: {cname(c.id)}</ActionButton>
         ))}
+        {(s.status === 'attended' || s.status === 'no_show') && <>
+          <span className="self-center text-[11px] text-white/55">Marked {s.status === 'attended' ? 'coached' : 'no show'}.</span>
+          <ActionButton tone="quiet" body={{ action: 'session.status', sessionId: s.id, status: 'scheduled' }}>Undo</ActionButton>
+        </>}
+        {s.status === 'held' && <span className="self-center text-[11px] text-white/55">Being paid for right now. Nothing to change yet.</span>}
         {s.status === 'scheduled' && <ActionButton tone="danger" confirm="Cancel this session? If it's been paid the parent is credited in full. The time goes back on sale." body={{ action: 'session.academy_cancel', sessionId: s.id }}>Cancel</ActionButton>}
       </div>
       {s.status === 'scheduled' && (

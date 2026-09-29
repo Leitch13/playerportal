@@ -19,6 +19,15 @@ export type DeclineTier = 'full' | 'half' | 'none'
 export const HOURS_FULL_CREDIT = 7 * 24
 export const HOURS_HALF_CREDIT = 48
 
+/** The policy in the words a parent reads, and ticks, before paying. Built from the numbers above so the two can't drift. */
+export const POLICY_LINES = [
+  `Can't make a session? Tell the academy more than ${HOURS_FULL_CREDIT / 24} days before and you get a full credit.`,
+  `Between ${HOURS_FULL_CREDIT / 24} days and ${HOURS_HALF_CREDIT} hours before: half credit.`,
+  `Less than ${HOURS_HALF_CREDIT} hours before, or not turning up: the session is charged.`,
+  'If the academy cancels a session, you get a full credit.',
+  'Credit stays on your account and comes off what you pay next.',
+] as const
+
 export interface DeclineOutcome {
   tier: DeclineTier
   hoursNotice: number

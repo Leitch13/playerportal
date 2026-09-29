@@ -7,6 +7,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { inputCls } from './styles'
 
 export async function act(body: Record<string, unknown>, endpoint = '/api/one-to-one/admin'): Promise<{ ok: boolean; error?: string; [k: string]: unknown }> {
   const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -43,30 +44,46 @@ export function ActionButton({
   const [pending, start] = useTransition()
   const [err, setErr] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  // Asked on the page, not with window.confirm: some phone in-app browsers
+  // (mail apps, the home-screen app) silently block the pop-up, so the tap did nothing.
+  const [asking, setAsking] = useState(false)
   const tones = {
     default: 'border-white/[0.12] bg-white/[0.06] text-white hover:bg-white/[0.1]',
     primary: 'border-[#4ecde6] bg-[#4ecde6] text-[#04141a] hover:brightness-110',
     quiet: 'border-transparent bg-transparent text-white/60 hover:text-white',
     danger: 'border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/15',
   }
+  const run = () => {
+    setAsking(false)
+    setErr(null)
+    setDone(null)
+    start(async () => {
+      const r = await act(body, endpoint)
+      if (!r.ok) { setErr(r.error || 'Failed'); return }
+      setDone(resultText(result, r))
+      onDone?.()
+      router.refresh()
+    })
+  }
+  const cls = `inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50`
+  if (asking) {
+    return (
+      <span className="inline-flex max-w-xs flex-col items-start gap-1.5 rounded-lg border border-white/[0.12] bg-black/20 p-2" role="alertdialog">
+        <span className="text-[11px] leading-snug text-white/80">{confirmText}</span>
+        <span className="flex gap-1.5">
+          <button type="button" onClick={run} className={`${cls} ${tones[tone === 'quiet' ? 'default' : tone]}`}>Yes, {typeof children === 'string' ? children.toLowerCase() : 'do it'}</button>
+          <button type="button" onClick={() => setAsking(false)} className={`${cls} ${tones.quiet}`}>No</button>
+        </span>
+      </span>
+    )
+  }
   return (
     <span className="inline-flex flex-col items-start gap-1">
       <button
         type="button"
         disabled={pending}
-        onClick={() => {
-          if (confirmText && !window.confirm(confirmText)) return
-          setErr(null)
-          setDone(null)
-          start(async () => {
-            const r = await act(body, endpoint)
-            if (!r.ok) { setErr(r.error || 'Failed'); return }
-            setDone(resultText(result, r))
-            onDone?.()
-            router.refresh()
-          })
-        }}
-        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${tones[tone]} ${className}`}
+        onClick={() => { if (confirmText) setAsking(true); else run() }}
+        className={`${cls} ${tones[tone]} ${className}`}
       >
         {pending ? 'Working…' : children}
       </button>
@@ -125,7 +142,7 @@ export function ActionForm({
   )
 }
 
-export const inputCls = 'w-full rounded-lg border border-white/[0.12] bg-[#080e18] px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-[#4ecde6] focus:outline-none'
+export { inputCls }
 export const labelCls = 'block text-[11px] font-semibold uppercase tracking-wide text-white/45 mb-1'
 
 export function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {

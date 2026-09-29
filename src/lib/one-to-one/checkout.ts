@@ -68,6 +68,8 @@ export interface AdhocCheckoutInput {
   }
   coachName: string
   venueName: string
+  /** When the parent ticked the cancellation policy. Kept on the Stripe payment as the record. */
+  policyAcceptedAt: string
 }
 
 export async function createAdhocCheckout(input: AdhocCheckoutInput): Promise<{ url: string; checkoutId: string }> {
@@ -100,7 +102,7 @@ export async function createAdhocCheckout(input: AdhocCheckoutInput): Promise<{ 
       ...(feeAmount > 0 ? { application_fee_amount: feeAmount } : {}),
       setup_future_usage: 'off_session',
       description: `${orgName} · ${label}`,
-      metadata: { pp_module: ONE_TO_ONE_MODULE, coaching_session_id: s.id, organisation_id: orgId },
+      metadata: { pp_module: ONE_TO_ONE_MODULE, coaching_session_id: s.id, organisation_id: orgId, policy_accepted_at: input.policyAcceptedAt },
     },
     // A hold lasts 12 minutes; the Checkout expires with it (Stripe minimum is 30 min, so
     // the hold-expiry cron is the real guard, and the webhook re-checks the row).
@@ -113,6 +115,7 @@ export async function createAdhocCheckout(input: AdhocCheckoutInput): Promise<{ 
       hold_token: s.hold_token || '',
       organisation_id: orgId,
       guest_child_name: s.guest_child_name || '',
+      policy_accepted_at: input.policyAcceptedAt,
     },
   })
   if (!checkout.url) throw new CheckoutBlocked('Stripe did not return a payment page', 502)

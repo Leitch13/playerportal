@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NotAdmin, requireAdmin, rollMonth, rollAhead } from '@/lib/one-to-one/db'
-import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy } from '@/lib/one-to-one/money'
+import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort } from '@/lib/one-to-one/db'
+import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed } from '@/lib/one-to-one/emails'
-import { todayLondon } from '@/lib/one-to-one/time'
+import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { seatForNewSlot, seatForSession, type SessionType } from '@/lib/one-to-one/seats'
 
 export const dynamic = 'force-dynamic'
@@ -253,6 +253,76 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ ok: true })
       }
+      // Change a regular's coach, venue, day, time, length or price without ending the slot.
+      // Their dated sessions from today move with it and keep whatever they have already paid;
+      // a new price reaches only sessions not yet paid for.
+      case 'slot.update': {
+        const id = str(body.id)
+        const { data: cur } = await admin.from('regular_slots').select('*').eq('id', id).eq('organisation_id', orgId).maybeSingle()
+        if (!cur) return bad('Slot not found')
+        if (cur.status === 'released') return bad('This slot has been released. Give the keeper a new slot instead.')
+        const coachId = str(body.coachId) || cur.coach_id, venueId = str(body.venueId) || cur.venue_id
+        const weekday = str(String(body.weekday ?? '')) ? int(body.weekday) : cur.weekday
+        const start = str(String(body.start ?? '')) ? mins(body.start) : cur.start_minutes
+        const dur = str(String(body.durationMinutes ?? '')) ? int(body.durationMinutes) : cur.duration_minutes
+        const price = str(String(body.pricePence ?? '')) ? int(body.pricePence) : cur.price_pence
+        if (!(weekday >= 1 && weekday <= 7) || !(start >= 0) || !(dur >= 15) || !(price >= 0)) return bad('Check the day, time, length and price')
+        if (nightTypo(start)) return bad(nightMsg(start))
+        const { data: okCoach } = await admin.from('profiles').select('id').eq('id', coachId).eq('organisation_id', orgId).maybeSingle()
+        const { data: okVenue } = await admin.from('coaching_venues').select('id').eq('id', venueId).eq('organisation_id', orgId).maybeSingle()
+        if (!okCoach || !okVenue) return bad('Pick a coach and venue from your academy')
+        const moved = coachId !== cur.coach_id || weekday !== cur.weekday || start !== cur.start_minutes
+        if (price !== cur.price_pence && cur.status === 'pending') {
+          return bad('This keeper hasn\'t paid their set-up link yet, so the price can\'t change now: the link already sent is for the old amount. Delete the slot and add it again at the new price.')
+        }
+        if (moved && cur.partner_slot_id) {
+          return bad('This keeper is in a 2-to-1 pair, so their coach, day and time go with their partner\'s. You can change the venue, length or price here. To move them, Release this slot and give them a new one on the new time.')
+        }
+        let seat: { seat: number; pairWith: string | null } = { seat: cur.pair_seat ?? 0, pairWith: null }
+        if (moved) {
+          const { data: taken } = await admin.from('regular_slots').select('id, session_type, pair_seat').eq('coach_id', coachId).eq('weekday', weekday)
+            .eq('start_minutes', start).in('status', ['pending', 'active', 'paused']).neq('id', id)
+          const r = seatForNewSlot((taken ?? []) as { id: string; session_type: SessionType; pair_seat: number }[], cur.session_type as SessionType)
+          if (!r.ok) return bad(r.reason)
+          seat = { seat: r.seat, pairWith: r.pairWith }
+        }
+        const { error: ue } = await admin.from('regular_slots').update({
+          coach_id: coachId, venue_id: venueId, weekday, start_minutes: start, duration_minutes: dur, price_pence: price,
+          pair_seat: seat.seat, ...(seat.pairWith ? { partner_slot_id: seat.pairWith } : {}),
+          ...(typeof body.note === 'string' ? { note: str(body.note) || null } : {}),
+        }).eq('id', id).eq('organisation_id', orgId)
+        if (ue) throw ue
+        if (seat.pairWith) await admin.from('regular_slots').update({ partner_slot_id: id }).eq('id', seat.pairWith).eq('organisation_id', orgId)
+
+        // The dated sessions from today follow the slot. A day change shifts each one within its own week.
+        // Declined and cancelled dates shift too, so the month roll never re-creates a date the family already gave up.
+        const today = todayLondon(), shift = weekday - cur.weekday
+        const { data: future } = await admin.from('coaching_sessions').select('id, session_date, status, charge_state')
+          .eq('regular_slot_id', id).eq('organisation_id', orgId).gte('session_date', today)
+          .in('status', ['scheduled', 'declined', 'cancelled']).order('session_date')
+        const stayed: string[] = []
+        for (const f of future ?? []) {
+          const date = shift ? addDays(f.session_date, shift) : f.session_date
+          const live = f.status === 'scheduled'
+          if (date < today) { if (live) stayed.push(`${fmtShort(f.session_date)} (the new day that week has already gone)`); continue }
+          const { error } = await admin.from('coaching_sessions').update({
+            coach_id: coachId, venue_id: venueId, session_date: date, start_minutes: start, duration_minutes: dur, pair_seat: seat.seat,
+            ...(live && f.charge_state === 'unpaid' ? { price_pence: price } : {}),
+          }).eq('id', f.id)
+          if (error && live) stayed.push(`${fmtShort(f.session_date)} (${error.code === '23505' || error.code === '23P01' ? 'the coach is booked then' : error.message})`)
+        }
+        await rollAhead(admin, orgId, today)
+        const warning = stayed.length
+          ? `Saved. ${stayed.length} date${stayed.length === 1 ? '' : 's'} stayed as ${stayed.length === 1 ? 'it was' : 'they were'}: ${stayed.join('; ')}. Move ${stayed.length === 1 ? 'it' : 'them'} by hand on the timetable if needed.`
+          : null
+        return NextResponse.json({ ok: true, warning })
+      }
+      // A slot added by mistake: gone completely, as if it never existed. Only while nothing
+      // has been paid or coached; after that the history stays and Release is the way out.
+      case 'slot.delete': {
+        await deleteMistakenSlot(admin, orgId, str(body.id))
+        return NextResponse.json({ ok: true })
+      }
       case 'slot.pair': {
         const a = str(body.slotId), b = str(body.partnerSlotId)
         if (!a || !b || a === b) return bad('Pick two different keepers')
@@ -349,8 +419,11 @@ export async function POST(req: NextRequest) {
       }
       case 'session.status': {
         const status = str(body.status); if (!['attended', 'no_show', 'cancelled', 'scheduled'].includes(status)) return bad('Bad status')
+        // Back to 'scheduled' is the Undo for a Coached / No show mark, nothing else.
+        // A cancelled session can't come back this way: its credit and its time on sale would be left behind.
         const { error } = await admin.from('coaching_sessions').update({ status, note: str(body.note) || null })
           .eq('id', str(body.sessionId)).eq('organisation_id', orgId)
+          .in('status', status === 'scheduled' ? ['attended', 'no_show'] : ['scheduled', 'attended', 'no_show'])
         if (error) throw error
         return NextResponse.json({ ok: true })
       }
