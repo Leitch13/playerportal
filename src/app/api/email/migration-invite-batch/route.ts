@@ -136,6 +136,9 @@ export async function POST(request: NextRequest) {
       <p style="text-align:center;margin:28px 0;">
         <a href="${confirmUrl}" style="background:${primary};color:#0a0a0a;padding:14px 32px;text-decoration:none;border-radius:999px;font-weight:700;display:inline-block;font-size:15px;">Confirm ${escapeHtml(inv.childName.split(' ')[0])}'s subscription</a>
       </p>
+      <p style="font-size:13px;color:#666;margin:0 0 8px;text-align:center;">
+        Not sure what to do? <a href="${origin}/help/parents#confirm" style="color:#0b8299;">Watch a 30-second video</a>
+      </p>
       <p style="font-size:13px;color:#666;margin:24px 0 0;line-height:1.6;">
         What stays the same:
       </p>

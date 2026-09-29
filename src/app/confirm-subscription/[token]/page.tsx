@@ -71,13 +71,16 @@ export default async function ConfirmSubscriptionPage({
   const anchorUnix = firstOfNextMonthUnix(new Date())
   const anchorIso = new Date(anchorUnix * 1000).toISOString().slice(0, 10)
   const fc = firstChargeFor(Number(plan.amount), todayIso, anchorIso, classDayOfWeek)
-  const anchorLabel = new Date(anchorUnix * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+  // A deferred first charge IS the first monthly charge, so the monthly price runs from that
+  // date, not from next month. UK time: a 23:00 UTC charge on 30 Sep lands on 1 October here.
+  const deferredLabel = deferred ? new Date(deferredStart as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/London' }) : null
+  const anchorLabel = deferredLabel ?? new Date(anchorUnix * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' })
 
   return (
     <ConfirmClient
       token={token}
       todayAmount={deferred ? 0 : fc.pence / 100}
-      todayLabel={deferred ? `Nothing today — first charge ${new Date(deferredStart as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}` : firstChargeLabel(fc)}
+      todayLabel={deferred ? `Nothing today — first charge ${deferredLabel}` : firstChargeLabel(fc)}
       anchorLabel={anchorLabel}
       childName={`${player.first_name} ${player.last_name || ''}`.trim()}
       planName={plan.name}

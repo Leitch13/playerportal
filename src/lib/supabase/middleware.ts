@@ -69,6 +69,8 @@ export async function updateSession(request: NextRequest) {
       path.startsWith('/cookies') ||
       path.startsWith('/demo') ||
       path.startsWith('/confirm-subscription') ||
+      // Parent how-to videos: linked from confirm emails, read before anyone has a password.
+      path.startsWith('/help') ||
       // One-off invoice payment link emailed to a parent. Public by design,
       // exactly like /confirm-subscription: parents frequently have no
       // password set, and bouncing them to a signin screen is the difference

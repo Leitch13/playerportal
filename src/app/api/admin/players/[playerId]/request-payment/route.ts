@@ -214,6 +214,7 @@ export async function POST(
       <p style="margin:0 0 14px;font-size:15px;">Hi ${escapeHtml((parent.full_name || '').split(' ')[0] || 'there')},</p>
       <p style="margin:0 0 20px;font-size:15px;">${escapeHtml(academyName)} would like to set up ${childFirst}'s membership (${escapeHtml(plan.name)} — &pound;${amount}/month). Tap below to add your payment details — it takes about 30 seconds, no account to create.</p>
       <p style="text-align:center;margin:24px 0;"><a href="${confirmUrl}" style="background:${primary};color:#0a0a0a;padding:14px 34px;text-decoration:none;border-radius:999px;font-weight:700;display:inline-block;font-size:15px;">Confirm ${childFirst}'s membership</a></p>
+      <p style="font-size:13px;color:#666;margin:0 0 8px;text-align:center;">Not sure what to do? <a href="${appUrl}/help/parents#confirm" style="color:#0b8299;">Watch a 30-second video</a></p>
       <p style="margin:16px 0 0;font-size:12px;color:#888;">If you didn't expect this, you can ignore it. Questions? Reply to this email.</p>
     </div>
   </div>

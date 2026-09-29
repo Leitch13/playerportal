@@ -218,6 +218,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/payments', label: 'Membership', icon: 'credit-card' },
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble', feature: 'messaging' },
       { href: '/dashboard/referrals', label: 'Refer a Friend', icon: 'gift', feature: 'referrals' },
+      { href: '/help/parents', label: 'How-to videos', icon: 'play-circle' },
       { href: '/dashboard/account', label: 'Settings', icon: 'cog' },
     ]},
   ],
