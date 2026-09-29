@@ -61,6 +61,19 @@ for (const f of files) {
     failures.push('src/app/api/stripe/webhooks/route.ts: no longer takes covered refunds back from draft invoices / settles them')
   }
 }
+// 5. Pausing a membership must reach Stripe, and a Stripe update must never undo it
+//    (Gold & Gray, 29 Sep 2026: Pause only wrote our row, Stripe kept charging).
+{
+  const hook = readFileSync(join(ROOT, 'src/app/api/stripe/webhooks/route.ts'), 'utf8')
+  if (!/status:\s*effectiveStatus\(sub\)/.test(hook)) failures.push('src/app/api/stripe/webhooks/route.ts: subscription updates no longer keep a paused membership paused (effectiveStatus)')
+  if (!/\.neq\('status',\s*'paused'\)/.test(hook)) failures.push("src/app/api/stripe/webhooks/route.ts: a paid invoice can flip a paused membership back to active (.neq('status', 'paused'))")
+  for (const f of files) {
+    const src = readFileSync(f, 'utf8')
+    if (/^['"]use client['"]/.test(src) && /from\(['"]subscriptions['"]\)/.test(src) && /status:\s*['"]paused['"]|LocalStatus\(\s*['"]paused['"]/.test(src)) {
+      failures.push(`${f.slice(ROOT.length)}: pauses a membership from the browser (use /api/admin/subscriptions/[id]/pause, which tells Stripe)`)
+    }
+  }
+}
 if (failures.length) {
   console.error('\n✖ billing invariants violated — build refused:\n' + failures.map((x) => '   ' + x).join('\n') + '\n')
   process.exit(1)

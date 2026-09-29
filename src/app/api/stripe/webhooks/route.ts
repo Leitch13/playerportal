@@ -3,6 +3,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stripe-events'
 import { settleRepayments, takeRepaymentFromDraftInvoice } from '@/lib/refund-recovery'
+import { effectiveStatus } from '@/lib/membership-pause'
 
 export const dynamic = 'force-dynamic'
 
@@ -1526,12 +1527,14 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     .eq('stripe_subscription_id', subscriptionId)
     .maybeSingle()
 
-  // Update subscription status to active
+  // Update subscription status to active (a paused membership stays paused;
+  // customer.subscription.updated sets it back when the pause is lifted)
   if (localSub) {
     const { error: renewalSubErr } = await supabase
       .from('subscriptions')
       .update({ status: 'active', updated_at: now })
       .eq('id', localSub.id)
+      .neq('status', 'paused')
     if (renewalSubErr) throw new Error(`renewal subscriptions.update failed: ${renewalSubErr.message}`)
   }
 
@@ -2075,7 +2078,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const { error: updSubErr } = await supabase
     .from('subscriptions')
     .update({
-      status: sub.status,
+      // 'paused' while Stripe has a pause on: never flip a paused membership back to active.
+      status: effectiveStatus(sub),
       current_period_start: sub.current_period_start
         ? new Date(sub.current_period_start * 1000).toISOString()
         : undefined,

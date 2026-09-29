@@ -54,10 +54,32 @@ export default function SubscriptionActions({
     }
   }
 
-  async function setLocalStatus(newStatus: 'paused' | 'active') {
-    // Pause / Activate stay local-only — Stripe has no native "pause" concept
-    // matching ours and "active" here just clears local-side flags. Cancel is
-    // the only destructive transition that needs to call Stripe.
+  // Pause / Resume go through Stripe (pause_collection), then our row: see
+  // /api/admin/subscriptions/[id]/pause and src/lib/membership-pause.ts. Until
+  // 29 Sep 2026 Pause only wrote 'paused' here: Stripe kept charging and the
+  // next Stripe update flipped it back to active.
+  async function pauseOrResume(action: 'pause' | 'resume') {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/subscriptions/${subscriptionId}/pause`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(`Could not ${action}: ` + (data.error || res.statusText))
+      }
+    } catch (err) {
+      alert(`Network error trying to ${action}: ` + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      router.refresh()
+      setLoading(false)
+    }
+  }
+
+  // "Activate" / "Mark Active" only clear a local flag; they never touched Stripe and still don't.
+  async function setLocalStatus(newStatus: 'active') {
     setLoading(true)
     const supabase = createClient()
     await supabase
@@ -111,10 +133,10 @@ export default function SubscriptionActions({
       </span>
 
       {/* Quick action buttons */}
-      {currentStatus === 'active' && (
+      {(currentStatus === 'active' || currentStatus === 'trialing') && (
         <>
           <button
-            onClick={() => setLocalStatus('paused')}
+            onClick={() => pauseOrResume('pause')}
             disabled={loading}
             className="px-2 py-1 text-xs border border-yellow-300 text-yellow-700 rounded hover:bg-yellow-50 transition-colors"
           >
@@ -132,7 +154,7 @@ export default function SubscriptionActions({
       {currentStatus === 'paused' && (
         <>
           <button
-            onClick={() => setLocalStatus('active')}
+            onClick={() => pauseOrResume('resume')}
             disabled={loading}
             className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
           >

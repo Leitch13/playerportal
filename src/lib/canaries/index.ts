@@ -786,6 +786,33 @@ async function canary14RefundsNotRepaid(sb: Supabase): Promise<Omit<CanaryResult
   return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what} since ${f.since?.slice(0, 10)}`), findings }
 }
 
+/**
+ * Canary 15 — a membership shown as paused that Stripe is still set to charge.
+ *
+ * Pause must go through /api/admin/subscriptions/[id]/pause, which puts a
+ * pause_collection on the Stripe subscription. Until 29 Sep 2026 Pause only
+ * changed our row (Gold & Gray) and the family kept being charged. Any row
+ * marked paused whose Stripe subscription has no pause is named here the
+ * morning after, before a 1st-of-month charge can go through.
+ */
+async function canary15PausedButCharging(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const { data } = await sb.from('subscriptions').select('id, organisation_id, stripe_subscription_id, updated_at, player:players(first_name, last_name), plan:subscription_plans(amount)')
+    .eq('status', 'paused').not('stripe_subscription_id', 'is', null)
+  const rows = (data ?? []) as unknown as { id: string; organisation_id: string; stripe_subscription_id: string; updated_at: string; player: { first_name: string; last_name: string | null } | null; plan: { amount: number | string } | null }[]
+  if (!rows.length) return { rowCount: 0, lines: [] }
+  const Stripe = (await import('stripe')).default
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const names = await orgNames(sb, [...new Set(rows.map((r) => r.organisation_id))])
+  const findings: CanaryFinding[] = []
+  for (const r of rows) {
+    const sub = await stripe.subscriptions.retrieve(r.stripe_subscription_id).catch(() => null)
+    if (!sub || sub.status === 'canceled' || sub.pause_collection) continue
+    const child = r.player ? `${r.player.first_name} ${r.player.last_name ?? ''}`.trim() : 'a child'
+    findings.push({ org: names.get(r.organisation_id) || r.organisation_id, what: `${child} is shown as paused but Stripe will still charge (no pause in Stripe)`, since: r.updated_at, estPerMonth: Number(r.plan?.amount) || undefined })
+  }
+  return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -800,6 +827,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 12, name: 'Stripe day-proration on a first invoice', run: canary12StripeDayProration },
   { id: 13, name: 'password links reach the set-password page', run: canary13PasswordLinks },
   { id: 14, name: 'refunds Player Portal paid, not repaid in 30 days', run: canary14RefundsNotRepaid },
+  { id: 15, name: 'paused membership Stripe will still charge', run: canary15PausedButCharging },
 ]
 
 /**
