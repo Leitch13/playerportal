@@ -73,6 +73,7 @@ export default function RefundButton({
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [done, setDone] = useState(false)
 
   const isSubKind = kind === 'subscription'
@@ -105,6 +106,7 @@ export default function RefundButton({
       if (!res.ok) {
         throw new Error(data.error || `Refund failed (HTTP ${res.status})`)
       }
+      if (data.covered_message) setNotice(data.covered_message)
       if (data.cancel_warning) {
         // Refund landed but cancel failed. Show the warning prominently
         // but still flip to done state — money has been returned.
@@ -126,6 +128,7 @@ export default function RefundButton({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
         Refunded
+        {notice && <span className="ml-2 text-xs font-normal text-emerald-800">{notice}</span>}
         {error && <span className="ml-2 text-xs text-amber-700">{error}</span>}
       </span>
     )

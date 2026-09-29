@@ -59,6 +59,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
 import { resolveChargeAndSubscription } from '@/lib/stripe-refund-resolver'
+import { isEmptyBalanceError, refundCoveredByPlatform } from '@/lib/refund-recovery'
 
 const ALLOWED_REASONS = [
   'customer_request',
@@ -225,6 +226,10 @@ export async function POST(
   // ─── Issue the Stripe refund ───
   let refundId: string
   let refundAmount: number
+  // Set when the academy's Stripe balance was empty and Player Portal paid the
+  // parent instead: what the academy received for this payment, now owed back
+  // and taken from their next membership invoices (migration 121).
+  let coveredOwedPence: number | null = null
   try {
     const refund = await stripe.refunds.create({
       charge: chargeId,
@@ -236,11 +241,32 @@ export async function POST(
     refundAmount = refund.amount
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Stripe error'
-    console.error('[refund] Stripe API failure', { paymentId, chargeId, kind, message })
-    return NextResponse.json(
-      { ok: false, error: `Refund failed at Stripe: ${message}` },
-      { status: 502 }
-    )
+    if (!isEmptyBalanceError(err)) {
+      console.error('[refund] Stripe API failure', { paymentId, chargeId, kind, message })
+      return NextResponse.json(
+        { ok: false, error: `Refund failed at Stripe: ${message}` },
+        { status: 502 }
+      )
+    }
+    // Every academy's balance is paid out to their bank, so this is the usual case.
+    try {
+      const covered = await refundCoveredByPlatform(chargeId)
+      refundId = covered.refund.id
+      refundAmount = covered.refund.amount
+      coveredOwedPence = covered.owedPence
+    } catch (err2) {
+      const m2 = err2 instanceof Error ? err2.message : 'Stripe error'
+      console.error('[refund] platform-covered refund failed', { paymentId, chargeId, kind, m2 })
+      return NextResponse.json({ ok: false, error: `Refund failed at Stripe: ${m2}` }, { status: 502 })
+    }
+    if (coveredOwedPence > 0) {
+      const { error: recErr } = await service.from('refund_recoveries').insert({
+        organisation_id: myOrgId, payment_id: paymentId, stripe_refund_id: refundId, stripe_charge_id: chargeId,
+        amount_pence: coveredOwedPence, description: (payment.description as string | null) ?? null,
+      })
+      // The parent has their money either way; a missing row only means Player Portal isn't repaid automatically.
+      if (recErr) console.error('[refund] could not record what the academy owes', { paymentId, refundId, owed: coveredOwedPence, error: recErr.message })
+    }
   }
 
   // ─── Cancel the subscription (best-effort — refund already landed) ───
@@ -329,6 +355,7 @@ export async function POST(
         stripe_charge_id: chargeId,
         stripe_subscription_id: subscriptionId,
         cancelled_subscription: shouldAttemptCancel && !cancelWarning,
+        covered_by_player_portal_owed_pence: coveredOwedPence,
       },
     })
   } catch {
@@ -343,5 +370,10 @@ export async function POST(
     kind,
     cancelled_subscription: shouldAttemptCancel && !cancelWarning,
     ...(cancelWarning ? { cancel_warning: cancelWarning } : {}),
+    ...(coveredOwedPence !== null ? {
+      covered_by_player_portal: true,
+      owed_pence: coveredOwedPence,
+      covered_message: `Refunded. Your Stripe balance was empty, so Player Portal paid the parent. £${(coveredOwedPence / 100).toFixed(2)} will come off your next membership payments.`,
+    } : {}),
   })
 }

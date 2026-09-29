@@ -754,6 +754,38 @@ async function canary13PasswordLinks(sb: Supabase): Promise<Omit<CanaryResult, '
   return { rowCount: 0, lines: [] }
 }
 
+/**
+ * Canary 14 — refunds Player Portal paid that the academy hasn't repaid within 30 days.
+ *
+ * When an academy's Stripe balance is empty, Player Portal refunds the parent and
+ * takes the amount back from the academy's next membership invoices (migration 121,
+ * src/lib/refund-recovery.ts). An academy with no memberships renewing, or one that
+ * leaves, never repays on its own. This names it so John can chase it.
+ */
+async function canary14RefundsNotRepaid(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const cutoff = new Date(Date.now() - 30 * 86400_000).toISOString()
+  type Rec = { id: string; organisation_id: string; amount_pence: number; created_at: string; description: string | null }
+  const { data: recRows, error } = await sb.from('refund_recoveries').select('id, organisation_id, amount_pence, created_at, description')
+    .eq('status', 'open').lt('created_at', cutoff)
+  const recs = (recRows ?? []) as Rec[]
+  if (error) {
+    // Before migration 121 is run the table doesn't exist: nothing can be owed yet.
+    if (/does not exist|schema cache/i.test(error.message)) return { rowCount: 0, lines: [] }
+    throw new Error(error.message)
+  }
+  if (!recs.length) return { rowCount: 0, lines: [] }
+  const { data: gotRows } = await sb.from('refund_recovery_deductions').select('recovery_id, amount_pence').in('recovery_id', recs.map((r) => r.id)).eq('status', 'collected')
+  const names = await orgNames(sb, [...new Set(recs.map((r) => r.organisation_id))])
+  const findings: CanaryFinding[] = []
+  for (const r of recs) {
+    const repaid = ((gotRows ?? []) as { recovery_id: string; amount_pence: number }[]).filter((d) => d.recovery_id === r.id).reduce((a, d) => a + d.amount_pence, 0)
+    const left = r.amount_pence - repaid
+    if (left <= 0) continue
+    findings.push({ org: names.get(r.organisation_id) || r.organisation_id, what: `owes £${(left / 100).toFixed(2)} for a refund Player Portal paid (${r.description || 'payment'})`, since: r.created_at })
+  }
+  return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what} since ${f.since?.slice(0, 10)}`), findings }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -767,6 +799,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 11, name: 'archived players still counted or still live', run: canary11ArchivedStillCounted },
   { id: 12, name: 'Stripe day-proration on a first invoice', run: canary12StripeDayProration },
   { id: 13, name: 'password links reach the set-password page', run: canary13PasswordLinks },
+  { id: 14, name: 'refunds Player Portal paid, not repaid in 30 days', run: canary14RefundsNotRepaid },
 ]
 
 /**

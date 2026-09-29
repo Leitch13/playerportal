@@ -48,6 +48,19 @@ for (const f of files) {
     if (!/src\/lib\/billing\//.test(rel)) failures.push(`${rel}: sets billing_cycle_anchor outside src/lib/billing (route must use sessionsBridgeCheckout)`)
   }
 }
+// 4. A refund must not fail because the academy's Stripe balance is empty (it always is:
+//    payouts sweep it). The refund route falls back to Player Portal paying the parent and
+//    the academy repaying from its next membership invoices. See src/lib/refund-recovery.ts.
+{
+  const refund = readFileSync(join(ROOT, 'src/app/api/admin/payments/[id]/refund/route.ts'), 'utf8')
+  if (!/isEmptyBalanceError/.test(refund) || !/refundCoveredByPlatform/.test(refund) || !/refund_recoveries/.test(refund)) {
+    failures.push('src/app/api/admin/payments/[id]/refund/route.ts: lost the empty-balance fallback (refundCoveredByPlatform + refund_recoveries)')
+  }
+  const hook = readFileSync(join(ROOT, 'src/app/api/stripe/webhooks/route.ts'), 'utf8')
+  if (!/takeRepaymentFromDraftInvoice/.test(hook) || !/settleRepayments/.test(hook)) {
+    failures.push('src/app/api/stripe/webhooks/route.ts: no longer takes covered refunds back from draft invoices / settles them')
+  }
+}
 if (failures.length) {
   console.error('\n✖ billing invariants violated — build refused:\n' + failures.map((x) => '   ' + x).join('\n') + '\n')
   process.exit(1)

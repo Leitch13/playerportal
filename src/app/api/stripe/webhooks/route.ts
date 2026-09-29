@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stripe-events'
+import { settleRepayments, takeRepaymentFromDraftInvoice } from '@/lib/refund-recovery'
 
 export const dynamic = 'force-dynamic'
 
@@ -1476,7 +1477,20 @@ function invoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
   )
 }
 
+/**
+ * A membership renewal was created as a draft. If its academy owes Player Portal
+ * for a refund it covered (their Stripe balance was empty), take up to that much
+ * back as Player Portal's fee on this invoice. The parent pays the same.
+ * See src/lib/refund-recovery.ts. Nothing else happens on this event.
+ */
+async function handleInvoiceCreated(invoice: Stripe.Invoice) {
+  const taken = await takeRepaymentFromDraftInvoice(supabase, invoice)
+  if (taken) console.log('[refund-recovery] repayment taken from draft invoice', { invoice: invoice.id, ...taken })
+}
+
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  // A repayment reserved on this invoice (see handleInvoiceCreated) is now collected.
+  await settleRepayments(supabase, invoice.id as string)
   const subscriptionId = invoiceSubscriptionId(invoice)
 
   if (!subscriptionId) return
@@ -2237,6 +2251,7 @@ function handlerFor(eventType: string): string {
   return ({
     'checkout.session.completed': 'handleCheckoutCompleted',
     'checkout.session.expired': 'handleCheckoutExpired',
+    'invoice.created': 'handleInvoiceCreated',
     'invoice.payment_succeeded': 'handleInvoicePaymentSucceeded',
     'invoice.payment_failed': 'handleInvoicePaymentFailed',
     'customer.subscription.deleted': 'handleSubscriptionDeleted',
@@ -2467,6 +2482,10 @@ export async function POST(request: NextRequest) {
 
       case 'checkout.session.expired':
         await handleCheckoutExpired(event.data.object as Stripe.Checkout.Session)
+        break
+
+      case 'invoice.created':
+        await handleInvoiceCreated(event.data.object as Stripe.Invoice)
         break
 
       case 'invoice.payment_succeeded':

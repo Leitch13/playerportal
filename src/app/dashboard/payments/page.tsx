@@ -40,6 +40,7 @@ import MembershipTabs from './MembershipTabs'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import PayoutsBox from './PayoutsBox'
 import { getPayoutSnapshot } from '@/lib/payouts'
+import { recoverySummary } from '@/lib/refund-recovery'
 
 // Phase 1A — Membership & Billing safe reskin. Flag OFF (default) ⇒ the parent
 // page renders byte-identically to today. Flag ON ⇒ a tabbed, subscription-first
@@ -723,6 +724,8 @@ async function AdminPayments({
   // Payouts box — live, read-only view of the academy's own Stripe account.
   // Fail-soft: null when there's no connected account or Stripe is slow.
   const payoutSnapshot = await getPayoutSnapshot(adminOrgRow?.stripe_account_id as string | null | undefined)
+  // Refunds Player Portal paid because this academy's Stripe balance was empty (migration 121).
+  const refundCover = await recoverySummary(supabase, orgId).catch(() => ({ owedPence: 0, repaidPence: 0, open: [] }))
 
   // ─── Subscription Plans (org-scoped) ───
   const { data: plans } = await supabase
@@ -1226,6 +1229,25 @@ async function AdminPayments({
 
           {/* Payouts — when the money lands, and what came out of it */}
           <PayoutsBox snapshot={payoutSnapshot} />
+
+          {/* Refunds Player Portal covered, and what is being taken back from membership payments */}
+          {(refundCover.owedPence > 0 || refundCover.repaidPence > 0) && (
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.05] p-5" data-testid="refund-cover">
+              <h2 className="text-sm font-semibold text-white">Refunds Player Portal paid for you</h2>
+              <p className="mt-1 text-xs leading-relaxed text-white/60">When your Stripe balance is empty, Player Portal pays the parent straight away and takes the amount back from your next membership payments. Parents pay exactly the same.</p>
+              <div className="mt-3 flex flex-wrap gap-6 text-sm">
+                <div><div className="text-lg font-bold tabular-nums text-white">£{(refundCover.owedPence / 100).toFixed(2)}</div><div className="text-[11px] text-white/50">still to come off your payments</div></div>
+                <div><div className="text-lg font-bold tabular-nums text-white">£{(refundCover.repaidPence / 100).toFixed(2)}</div><div className="text-[11px] text-white/50">already taken back</div></div>
+              </div>
+              {refundCover.open.length > 0 && (
+                <ul className="mt-3 space-y-1 text-xs text-white/60">
+                  {refundCover.open.map((r) => (
+                    <li key={r.id}>{new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {r.description || 'Refund'} · £{(r.remainingPence / 100).toFixed(2)} to go</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Active Subscriptions Table */}
           {(allSubscriptions || []).length > 0 && (
