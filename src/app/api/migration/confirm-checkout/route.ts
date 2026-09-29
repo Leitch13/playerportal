@@ -5,6 +5,7 @@ import type Stripe from 'stripe'
 import { QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
 import { sessionsBridgeCheckout } from '@/lib/billing/first-charge'
+import { clampTrialEndForCheckout } from '@/lib/billing/anchor'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -230,10 +231,14 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       success_url: `${origin}/confirm-subscription/${token}/success`,
       cancel_url: `${origin}/confirm-subscription/${token}`,
-      metadata: baseMetadata,
+      // Checkout refuses a trial_end under 48h away ("has to be at least 2 days in
+      // the future"), which failed every confirm in the last two days before the
+      // first-charge date (Pro Football Coaching, 29 Sep 2026). Ask for 48h, and the
+      // webhook moves it back to first_charge_unix the moment the parent confirms.
+      metadata: { ...baseMetadata, first_charge_unix: String(migrationBillingStart) },
       subscription_data: {
-        metadata: baseMetadata,
-        trial_end: migrationBillingStart,
+        metadata: { ...baseMetadata, first_charge_unix: String(migrationBillingStart) },
+        trial_end: clampTrialEndForCheckout(migrationBillingStart),
         ...(connectedAccountId
           ? {
               on_behalf_of: connectedAccountId,

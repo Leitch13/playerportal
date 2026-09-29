@@ -965,6 +965,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
     }
 
+    // Checkout was given a trial_end at least 48h out (its minimum). Move the first
+    // charge back to the academy's real date now; the Subscriptions API has no minimum.
+    const firstChargeUnix = Number(session.metadata?.first_charge_unix || 0)
+    if (stripeSub && firstChargeUnix > Math.floor(Date.now() / 1000) + 60 && stripeSub.trial_end && stripeSub.trial_end > firstChargeUnix) {
+      stripeSub = await stripe.subscriptions.update(stripeSub.id, {
+        trial_end: firstChargeUnix,
+        proration_behavior: 'none',
+      }) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+      console.log('[webhook] migration trial_end moved back to the first-charge date', { sub: stripeSub.id, firstChargeUnix })
+    }
+
     const { error: migSubErr } = await supabase
       .from('subscriptions')
       .update({
