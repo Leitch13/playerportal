@@ -94,43 +94,53 @@ export default function SubscriptionActions({
     setLoading(false)
   }
 
-  // DISABLED 2026-09-02.
-  //
-  // This wrote plan_id straight to the database and never told Stripe. The
-  // app then showed the family on the new plan — on every screen, in every
-  // report — while Stripe carried on charging the old amount indefinitely.
-  // Nothing errored and nothing anywhere recorded the disagreement.
-  //
-  // Four live subscriptions were found out of step this way. One family had
-  // paid £34/month less than their academy believed for two months; another
-  // £20/month more than their academy's records showed, for three.
-  //
-  // The dropdown stays visible and still shows which plan someone is on,
-  // because that is useful and true. It just cannot be used to change one
-  // until there is a route behind it that swaps the Stripe subscription item,
-  // defers to the family's next renewal, and emails them what changed.
-  //
-  // Removing the control instead would have hidden the current plan from the
-  // academy, which is a real loss for no gain.
+  // Plan change (John's written yes, 30 Sep 2026). Until 2 Sep this wrote plan_id straight to the
+  // database and never told Stripe: 4 families were charged the wrong amount for months. Now the
+  // drop-down asks /api/admin/subscriptions/[id]/plan for a preview (the family's next bill), and
+  // only on Confirm does it change Stripe (from the next bill, nothing charged today) and then our
+  // row. Billing guard rule 9 keeps this from ever writing plan_id from the browser again.
+  const [pick, setPick] = useState(currentPlanId)
+  const [preview, setPreview] = useState<{ from: string; to: string; nextAmount: string; nextDate: string; paused: boolean } | null>(null)
+  const [planMsg, setPlanMsg] = useState<string | null>(null)
+  async function askPlan(planId: string, confirm: boolean) {
+    setLoading(true); setPlanMsg(null)
+    try {
+      const res = await fetch(`/api/admin/subscriptions/${subscriptionId}/plan`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId, confirm }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setPlanMsg(data.error || 'Could not change the plan'); setPick(currentPlanId); setPreview(null); return }
+      if (!confirm) { setPreview(data.preview); return }
+      setPreview(null)
+      setPlanMsg(`Changed. Next payment ${data.changed.nextAmount} on ${data.changed.nextDate}. The family has been emailed.`)
+      router.refresh()
+    } finally { setLoading(false) }
+  }
+  const canChangePlan = ['active', 'trialing', 'paused'].includes(currentStatus)
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {/* Plan switcher */}
+      {/* Plan switcher: preview, then confirm. Nothing changes until Confirm. */}
       <select
-        value={currentPlanId}
-        disabled
-        title="Plan changes are temporarily unavailable — changing a plan here would not update what the family is actually charged."
-        aria-label="Current plan (changes temporarily unavailable)"
+        value={pick}
+        disabled={!canChangePlan || loading}
+        onChange={(e) => { setPick(e.target.value); if (e.target.value !== currentPlanId) askPlan(e.target.value, false); else setPreview(null) }}
+        aria-label="Plan"
         data-testid="plan-switcher"
-        className="px-2 py-1 border border-[#1d2c42] rounded text-xs opacity-60 cursor-not-allowed focus:outline-none"
+        className="px-2 py-1 border border-[#1d2c42] rounded text-xs focus:outline-none disabled:opacity-60"
       >
         {plans.map((p) => (
           <option key={p.id} value={p.id}>{p.name}</option>
         ))}
       </select>
-      <span className="text-[10px] text-white/40" data-testid="plan-switcher-note">
-        Plan changes temporarily unavailable
-      </span>
+      {preview && (
+        <span className="inline-flex flex-wrap items-center gap-2 rounded border border-cyan-300/40 bg-cyan-500/10 px-2 py-1 text-xs" data-testid="plan-change-preview">
+          <span>Move to {preview.to}. Nothing charged today. {preview.paused ? 'Membership is paused.' : `Next payment ${preview.nextAmount} on ${preview.nextDate}.`}</span>
+          <button type="button" disabled={loading} onClick={() => askPlan(pick, true)} className="px-2 py-0.5 rounded bg-cyan-400 text-[#04141a] font-semibold disabled:opacity-50">Confirm change</button>
+          <button type="button" disabled={loading} onClick={() => { setPick(currentPlanId); setPreview(null) }} className="px-2 py-0.5 rounded text-white/70">Keep current</button>
+        </span>
+      )}
+      {planMsg && <span className="text-[11px] text-white/70" role="status">{planMsg}</span>}
 
       {/* Quick action buttons */}
       {(currentStatus === 'active' || currentStatus === 'trialing') && (

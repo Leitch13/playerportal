@@ -95,6 +95,21 @@ for (const f of files) {
     failures.push('src/app/api/stripe/webhooks/route.ts: the first bill of a checkout-paid membership is recorded twice again (firstBillPaidAtCheckout guard missing)')
   }
 }
+// 9. Changing a family's plan: Stripe first, from the NEXT bill only, one membership at a time
+//    (John's written yes 30 Sep 2026, "safe as humanly possible"). Never part-month charges,
+//    never the plan written from the browser (2 Sep: screen said one price, Stripe charged
+//    another), never touching session pricing or the 1-2-1 module.
+{
+  const rel = 'src/app/api/admin/subscriptions/[id]/plan/route.ts'
+  const route = readFileSync(join(ROOT, rel), 'utf8')
+  const updates = route.match(/subscriptions\.update\([^)]*\{[^}]*items[\s\S]*?\}\)/g) || []
+  if (!updates.length || updates.some((u) => !/proration_behavior:\s*'none'/.test(u))) failures.push(`${rel}: every plan change must use proration_behavior 'none' (next bill only, nothing charged today)`)
+  if (/always_invoice|create_prorations/.test(route)) failures.push(`${rel}: part-month charging is forbidden`)
+  if (/billing\/sessions|one-to-one/.test(route)) failures.push(`${rel}: must not touch session pricing or the 1-2-1 module`)
+  if (!/confirm/.test(route) || !/createPreview/.test(route)) failures.push(`${rel}: must preview the next bill before any change`)
+  const actions = readFileSync(join(ROOT, 'src/app/dashboard/payments/SubscriptionActions.tsx'), 'utf8')
+  if (/plan_id/.test(actions.replace(/\/\/.*$/gm, ''))) failures.push('SubscriptionActions.tsx: must not write plan_id from the browser; use /api/admin/subscriptions/[id]/plan')
+}
 if (failures.length) {
   console.error('\n✖ billing invariants violated — build refused:\n' + failures.map((x) => '   ' + x).join('\n') + '\n')
   process.exit(1)
