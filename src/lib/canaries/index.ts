@@ -813,6 +813,54 @@ async function canary15PausedButCharging(sb: Supabase): Promise<Omit<CanaryResul
   return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
 }
 
+/**
+ * Canary 16 — the same Stripe charge recorded as two payments.
+ *
+ * Every paid payment from the last 3 days is traced back to the Stripe charge behind it
+ * (checkout session → payment intent → charge; invoice → charge). Two records pointing at one
+ * charge means an academy's totals are overstated. Sep 2026: a new membership's first bill was
+ * written once at checkout and again when the invoice was paid (Caolan saw £170 for £90).
+ */
+async function canary16DoubleRecordedPayments(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const since = new Date(Date.now() - 3 * 86400_000).toISOString()
+  const { data } = await sb.from('payments').select('id, organisation_id, amount, created_at, stripe_session_id')
+    .eq('status', 'paid').gt('amount', 0).gte('created_at', since).not('stripe_session_id', 'is', null)
+  const rows = (data ?? []) as { id: string; organisation_id: string; amount: number; created_at: string; stripe_session_id: string }[]
+  if (!rows.length) return { rowCount: 0, lines: [] }
+  const Stripe = (await import('stripe')).default
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const chargeOf = async (ref: string): Promise<string | null> => {
+    try {
+      if (ref.startsWith('cs_')) {
+        const cs = await stripe.checkout.sessions.retrieve(ref, { expand: ['payment_intent', 'invoice'] })
+        const pi = cs.payment_intent as { latest_charge?: string } | null
+        if (pi?.latest_charge) return pi.latest_charge
+        const inv = cs.invoice as { id?: string } | null
+        return inv?.id ? chargeOf(inv.id) : null
+      }
+      if (ref.startsWith('in_')) {
+        const inv = await stripe.invoices.retrieve(ref, { expand: ['payments'] }) as unknown as { charge?: string | null; payments?: { data?: { payment?: { charge?: string; payment_intent?: string } }[] } }
+        if (inv.charge) return inv.charge
+        const pay = inv.payments?.data?.[0]?.payment
+        if (pay?.charge) return pay.charge
+        if (pay?.payment_intent) return ((await stripe.paymentIntents.retrieve(pay.payment_intent)).latest_charge as string) ?? null
+      }
+    } catch { /* unreadable ref: not evidence of a double */ }
+    return null
+  }
+  const byCharge = new Map<string, typeof rows>()
+  for (const r of rows) {
+    const ch = await chargeOf(r.stripe_session_id)
+    if (!ch) continue
+    byCharge.set(ch, [...(byCharge.get(ch) ?? []), r])
+  }
+  const doubles = [...byCharge.values()].filter((v) => v.length > 1)
+  if (!doubles.length) return { rowCount: 0, lines: [] }
+  const names = await orgNames(sb, [...new Set(doubles.flat().map((r) => r.organisation_id))])
+  const findings: CanaryFinding[] = doubles.map((v) => ({ org: names.get(v[0].organisation_id) || v[0].organisation_id, what: `one £${Number(v[0].amount).toFixed(2)} Stripe payment is recorded ${v.length} times (totals overstated)`, since: v[0].created_at }))
+  return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -828,6 +876,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 13, name: 'password links reach the set-password page', run: canary13PasswordLinks },
   { id: 14, name: 'refunds Player Portal paid, not repaid in 30 days', run: canary14RefundsNotRepaid },
   { id: 15, name: 'paused membership Stripe will still charge', run: canary15PausedButCharging },
+  { id: 16, name: 'one Stripe payment recorded twice', run: canary16DoubleRecordedPayments },
 ]
 
 /**

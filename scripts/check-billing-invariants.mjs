@@ -86,6 +86,15 @@ for (const f of files) {
   if (!/bookHref=[\s\S]{0,200}quick-book\?child=/.test(sched)) failures.push('src/app/dashboard/schedule/page.tsx: Book is no longer given the class booking form link (bookHref …/quick-book?child=)')
   if (!/initialChildId/.test(form)) failures.push('QuickBookForm.tsx: the booking form no longer pre-selects the child from Schedule (initialChildId)')
 }
+// 7. A payment is recorded once. A new membership's first bill paid through Checkout is
+//    recorded by checkout.session.completed; the invoice handler must not record it again
+//    (5 doubled first payments, Sep 2026). Canary 16 checks records against Stripe daily.
+{
+  const hook = readFileSync(join(ROOT, 'src/app/api/stripe/webhooks/route.ts'), 'utf8')
+  if (!/firstBillPaidAtCheckout/.test(hook) || !/billing_reason === 'subscription_create'/.test(hook) || !/!firstBillPaidAtCheckout/.test(hook)) {
+    failures.push('src/app/api/stripe/webhooks/route.ts: the first bill of a checkout-paid membership is recorded twice again (firstBillPaidAtCheckout guard missing)')
+  }
+}
 if (failures.length) {
   console.error('\n✖ billing invariants violated — build refused:\n' + failures.map((x) => '   ' + x).join('\n') + '\n')
   process.exit(1)

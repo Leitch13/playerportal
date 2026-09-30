@@ -1549,9 +1549,17 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     if (renewalSubErr) throw new Error(`renewal subscriptions.update failed: ${renewalSubErr.message}`)
   }
 
+  // A new membership's FIRST bill, paid through Checkout, is already recorded by
+  // checkout.session.completed (the 'Sessions this month' line). Recording it here too
+  // wrote the same money twice: 5 families across PFC, G&G and CF Coaching, Sep 2026,
+  // Caolan's totals showing £170 for £90 taken. Only renewals are recorded here then.
+  // Canary 16 compares payment records with Stripe's charges every morning.
+  const firstBillPaidAtCheckout = invoice.billing_reason === 'subscription_create'
+    && (await stripe.checkout.sessions.list({ subscription: subscriptionId, limit: 1 })).data.length > 0
+
   // Record payment — itemised line on the parent's billing page.
   // (payments uses parent_id, NOT profile_id, and has no subscription_plan_id.)
-  if (localSub?.parent_id) {
+  if (localSub?.parent_id && !firstBillPaidAtCheckout) {
     const renewalPlanName = (localSub.plan as unknown as { name?: string } | null)?.name
     const { error: renewalPayErr } = await supabase.from('payments').insert({
       parent_id: localSub.parent_id,
