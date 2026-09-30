@@ -45,6 +45,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ? { pause_collection: { behavior: 'void' } }
       : { pause_collection: '' as unknown as null })
     status = effectiveStatus(sub)
+    // A renewal bill Stripe has already drafted (it drafts at the renewal time and takes the
+    // money about an hour later) isn't covered by the pause. Stripe won't delete a subscription's
+    // draft, so switch off its automatic collection: it stays a draft and is never finalised or
+    // charged. Drafts only; a bill already taken or attempted is left alone.
+    if (action === 'pause') {
+      const drafts = await stripe.invoices.list({ subscription: row.stripe_subscription_id, status: 'draft', limit: 10 })
+      for (const inv of drafts.data) if (inv.auto_advance) await stripe.invoices.update(inv.id!, { auto_advance: false })
+    }
   } catch (e) {
     return NextResponse.json({ error: `Stripe didn't accept that: ${e instanceof Error ? e.message : 'unknown error'}` }, { status: 502 })
   }
