@@ -74,6 +74,18 @@ for (const f of files) {
     }
   }
 }
+// 6. A parent who isn't paying must be able to book from their dashboard. Schedule → Book
+//    used to insert the enrolment directly; the paywall refuses it, so every new parent got
+//    'Failed — try again' and no way to pay (Pro Football Coaching, 30 Sep 2026). Book must
+//    fall back to the class's paid booking form, with the child pre-selected.
+{
+  const btn = readFileSync(join(ROOT, 'src/app/dashboard/schedule/BookClassButton.tsx'), 'utf8')
+  const sched = readFileSync(join(ROOT, 'src/app/dashboard/schedule/page.tsx'), 'utf8')
+  const form = readFileSync(join(ROOT, 'src/app/book/[slug]/class/[groupId]/quick-book/QuickBookForm.tsx'), 'utf8')
+  if (!/router\.push\(bookHref\)/.test(btn)) failures.push('src/app/dashboard/schedule/BookClassButton.tsx: Book no longer sends a non-paying parent to the booking form (router.push(bookHref))')
+  if (!/bookHref=[\s\S]{0,200}quick-book\?child=/.test(sched)) failures.push('src/app/dashboard/schedule/page.tsx: Book is no longer given the class booking form link (bookHref …/quick-book?child=)')
+  if (!/initialChildId/.test(form)) failures.push('QuickBookForm.tsx: the booking form no longer pre-selects the child from Schedule (initialChildId)')
+}
 if (failures.length) {
   console.error('\n✖ billing invariants violated — build refused:\n' + failures.map((x) => '   ' + x).join('\n') + '\n')
   process.exit(1)
