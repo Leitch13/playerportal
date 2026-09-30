@@ -12,6 +12,7 @@ export default function BookClassButton({
   className,
   isFull,
   spotsLeft,
+  bookHref,
 }: {
   playerId: string
   groupId: string
@@ -20,6 +21,8 @@ export default function BookClassButton({
   className?: string
   isFull?: boolean
   spotsLeft?: number
+  /** The class's paid booking form for this child. Used when enrolling needs a payment first. */
+  bookHref?: string
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -78,6 +81,12 @@ export default function BookClassButton({
     if (error) {
       if (error.code === '23505') {
         alert(`${playerName} is already enrolled in this class`)
+      } else if (bookHref) {
+        // Enrolling needs a paid membership (the enrolment paywall refuses otherwise). Until
+        // 30 Sep 2026 this showed "Failed — try again" to every new parent, every time.
+        // Send them to the class's booking form, child already chosen, to pick a plan and pay.
+        router.push(bookHref)
+        return
       } else {
         setResult('error')
       }

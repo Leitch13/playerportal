@@ -11,10 +11,13 @@ import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 
 export default async function QuickBookPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; groupId: string }>
+  searchParams: Promise<{ child?: string }>
 }) {
   const { slug, groupId } = await params
+  const { child: childParam } = await searchParams
   // Cookie-aware client — used ONLY for the parent auth session and
   // the parent's own `players` rows. All public-data reads go via
   // publicSupabase below.
@@ -228,6 +231,7 @@ export default async function QuickBookPage({
       <QuickBookForm
         isLoggedIn={!!user}
         existingChildren={existingChildren}
+        initialChildId={childParam}
         plans={
           (plans || []).map((p) => ({
             id: p.id,

@@ -928,6 +928,7 @@ async function ParentSchedule({
                                       className={group.name}
                                       isFull={isFull}
                                       spotsLeft={spots}
+                                      bookHref={academySlug ? `/book/${academySlug}/class/${group.id}/quick-book?child=${player.id}` : undefined}
                                     />
                                   )}
                                 </div>

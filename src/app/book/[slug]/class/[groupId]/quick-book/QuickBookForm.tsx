@@ -22,6 +22,8 @@ interface Plan {
 interface QuickBookFormProps {
   isLoggedIn: boolean
   existingChildren: { id: string; first_name: string; last_name: string }[]
+  /** Pre-select this child (from the parent's Schedule → Book). Ignored unless it's one of theirs. */
+  initialChildId?: string
   plans: Plan[]
   orgSlug: string
   orgId: string
@@ -87,7 +89,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, metaPixelId = null, quarterlyEnabled = false }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, metaPixelId = null, quarterlyEnabled = false }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -104,7 +106,8 @@ export function QuickBookForm({ isLoggedIn, existingChildren, plans, orgSlug, or
   // duplicate. 28 duplicate records were cleaned up on 1 Sep 2026 that had been
   // created this exact way — original at migration, copy weeks later.
   const [selectedChildId, setSelectedChildId] = useState<string | ''>(
-    existingChildren.length === 1 ? existingChildren[0].id : '',
+    initialChildId && existingChildren.some((c) => c.id === initialChildId) ? initialChildId
+      : existingChildren.length === 1 ? existingChildren[0].id : '',
   )
   const [childFirstName, setChildFirstName] = useState('')
   const [childLastName, setChildLastName] = useState('')
