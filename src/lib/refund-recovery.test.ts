@@ -24,6 +24,8 @@ describe('isEmptyBalanceError', () => {
     expect(isEmptyBalanceError({ code: 'balance_insufficient' })).toBe(true)
     expect(isEmptyBalanceError({ raw: { code: 'insufficient_funds' } })).toBe(true)
     expect(isEmptyBalanceError({ message: 'Insufficient funds in Stripe account. In test mode, you can add funds...' })).toBe(true)
+    // Exactly what Stripe returned for WLFA's camp refund, 29 Sep 2026 (the fallback missed it).
+    expect(isEmptyBalanceError({ message: "The recipient of this transfer does not have sufficient funds in their Stripe balance to reverse this amount. Optionally, you can set 'reverse_transfer' to false to reverse the payment. You can subsequently run '/v1/transfers/:id/reversal' separately later to reverse the transfer amount once the connected account has enough balance." })).toBe(true)
   })
   it('leaves every other failure alone', () => {
     expect(isEmptyBalanceError({ code: 'charge_already_refunded', message: 'Charge ch_1 has already been refunded.' })).toBe(false)

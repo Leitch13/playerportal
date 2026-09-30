@@ -32,19 +32,32 @@ const RESERVED_STALE_DAYS = 35
 export function isEmptyBalanceError(err: unknown): boolean {
   const e = err as { code?: string; raw?: { code?: string }; message?: string } | null
   const code = e?.code || e?.raw?.code
-  return code === 'balance_insufficient' || code === 'insufficient_funds' || /insufficient (funds|balance)/i.test(e?.message || '')
+  // Stripe's real wording on a destination-charge refund (seen live 29 Sep 2026, WLFA):
+  // "The recipient of this transfer does not have sufficient funds in their Stripe balance
+  // to reverse this amount. Optionally, you can set 'reverse_transfer' to false ..."
+  const msg = e?.message || ''
+  return code === 'balance_insufficient' || code === 'insufficient_funds'
+    || /insufficient (funds|balance)/i.test(msg)
+    || /(not|n't) have (sufficient|enough) funds/i.test(msg)
+    || /set 'reverse_transfer' to false/i.test(msg)
 }
 
 /**
  * Refund the whole charge from Player Portal's balance, without reversing the
  * academy's transfer. Player Portal keeps its fee on this charge, so what the
- * academy owes back is exactly what was transferred to them: once repaid,
- * everyone is where a normal refund would have left them.
+ * academy owes back is what it kept (transfer less fee): once repaid, everyone
+ * is where a normal refund would have left them.
  */
 export async function refundCoveredByPlatform(chargeId: string, reason: Stripe.RefundCreateParams.Reason = 'requested_by_customer'): Promise<{ refund: Stripe.Refund; owedPence: number }> {
   const charge = await stripe.charges.retrieve(chargeId, { expand: ['transfer'] })
   const transfer = charge.transfer && typeof charge.transfer === 'object' ? (charge.transfer as Stripe.Transfer) : null
-  const owedPence = transfer ? Math.max(0, transfer.amount - (transfer.amount_reversed || 0)) : 0
+  // What the academy actually kept: the transfer, less Player Portal's fee on this charge.
+  // (With on_behalf_of the full amount is transferred and the fee is taken back from the
+  // academy separately: WLFA, 29 Sep 2026, £80 transferred, £2.80 fee, kept £77.20.)
+  // Player Portal keeps that fee here, so the academy repays £77.20 and ends up exactly where
+  // a normal refund (which returns the fee) would have left it.
+  const fee = charge.application_fee_amount ?? 0
+  const owedPence = transfer ? Math.max(0, transfer.amount - (transfer.amount_reversed || 0) - fee) : 0
   const refund = await stripe.refunds.create({
     charge: chargeId,
     reverse_transfer: false,
