@@ -23,6 +23,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LastContactSignal } from '@/lib/contact-derive'
+import { selectAllIn } from '@/lib/supabase/select-all'
 
 /**
  * Returns a Map<parentId, LastContactSignal>. Parents with no record in
@@ -85,13 +86,18 @@ async function loadLegacyMessageMap(
   if (parentIds.length === 0) return new Map()
   // Postgrest's .in() builder is efficient; .or() needs comma-separated
   // bracket syntax for IN within OR. We construct the filter explicitly.
-  const ids = parentIds.join(',')
-  const { data, error } = await supabase
-    .from('messages')
-    .select('sender_id, recipient_id, created_at')
-    .or(`sender_id.in.(${ids}),recipient_id.in.(${ids})`)
-    .order('created_at', { ascending: false })
-  if (error || !data) return new Map()
+  // Chunked + paged so a large academy neither overflows the URL nor
+  // loses rows past PostgREST's 1000-row page.
+  const data = await selectAllIn(parentIds, (chunk, from, to) => {
+    const ids = chunk.join(',')
+    return supabase
+      .from('messages')
+      .select('sender_id, recipient_id, created_at')
+      .or(`sender_id.in.(${ids}),recipient_id.in.(${ids})`)
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, to)
+  })
 
   const out = new Map<string, string>()
   const parentSet = new Set(parentIds)
@@ -100,11 +106,12 @@ async function loadLegacyMessageMap(
     // A message may match because the parent is the sender OR the recipient.
     // We attribute the timestamp to BOTH sides if both happen to be parents,
     // but in practice one side is the academy admin so only one ID is set.
-    if (parentSet.has(row.sender_id) && !out.has(row.sender_id)) {
-      out.set(row.sender_id, row.created_at)
-    }
-    if (parentSet.has(row.recipient_id) && !out.has(row.recipient_id)) {
-      out.set(row.recipient_id, row.created_at)
+    // Keep the newest per parent: rows arrive sorted within each id chunk,
+    // not across chunks.
+    for (const id of [row.sender_id, row.recipient_id]) {
+      if (!parentSet.has(id)) continue
+      const prev = out.get(id)
+      if (!prev || prev < row.created_at) out.set(id, row.created_at)
     }
   }
   return out
@@ -129,11 +136,12 @@ async function loadConversationMap(
   const empty = { latest: new Map<string, string>(), counts: new Map<string, number>() }
   if (parentIds.length === 0) return empty
 
-  const { data: parts, error: pErr } = await supabase
+  const parts = await selectAllIn(parentIds, (ids, from, to) => supabase
     .from('conversation_participants')
     .select('conversation_id, user_id')
-    .in('user_id', parentIds)
-  if (pErr || !parts) return empty
+    .in('user_id', ids)
+    .order('id')
+    .range(from, to))
   if (parts.length === 0) return empty
 
   // conversation_id → list of participant user_ids (limited to our parent set)
@@ -147,14 +155,13 @@ async function loadConversationMap(
   }
 
   const convIds = [...partsByConv.keys()]
-  const { data: msgs, error: mErr } = await supabase
+  const msgs = await selectAllIn(convIds, (ids, from, to) => supabase
     .from('conversation_messages')
     .select('conversation_id, created_at')
-    .in('conversation_id', convIds)
+    .in('conversation_id', ids)
     .order('created_at', { ascending: false })
-  if (mErr || !msgs) {
-    return { latest: new Map(), counts: countsByParent }
-  }
+    .order('id')
+    .range(from, to))
 
   // Newest message per conversation (first-hit reduction over the sorted list).
   const latestByConv = new Map<string, string>()

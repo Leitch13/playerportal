@@ -45,6 +45,7 @@ import { pickMoreUrgentStage, type TrialStage } from '@/lib/trial-derive'
 // not per child.
 import { loadLastContactedMap } from '@/lib/contact-loader'
 import { contactBucket } from '@/lib/contact-derive'
+import { selectAll, selectAllIn } from '@/lib/supabase/select-all'
 // Phase 2.8 — Attendance Risk derive. Pure helpers consume the same
 // attendance rows the existing summariseAttendance already reads —
 // this is purely additive on the read side.
@@ -52,10 +53,6 @@ import {
   deriveAttendanceRisk,
   type AttendanceRiskAssessment,
 } from '@/lib/attendance-risk-derive'
-
-// Cap defensively at 500 rows per render. Jamie has ~30; the largest org
-// we serve has well under 500. Above this, we'd paginate (Phase 2.2).
-const ROW_CAP = 500
 
 export default async function PlayersPage({
   searchParams,
@@ -82,7 +79,9 @@ export default async function PlayersPage({
   // the [ARCHIVED] badge and the 'archived' filter chip can include them.
   // Default view excludes archived; switching to the Archived filter shows
   // them.
-  const { data: playersRaw } = await supabase
+  // Every player in the org: paged, not capped (a 500 cap hid half of a
+  // 1,000-player academy, archived rows included in the 500).
+  const playersRaw = await selectAll((from, to) => supabase
     .from('players')
     .select(`
       id, first_name, last_name, photo_url, playing_level, parent_id,
@@ -93,7 +92,8 @@ export default async function PlayersPage({
     `)
     .eq('organisation_id', orgId)
     .order('first_name')
-    .limit(ROW_CAP)
+    .order('id')
+    .range(from, to))
 
   const players = (playersRaw || []) as unknown as Array<{
     id: string
@@ -115,12 +115,14 @@ export default async function PlayersPage({
   // ── 2. Read-only subscription status per player (read-only — no Stripe) ──
   let subsByPlayer = new Map<string, Array<{ status: string }>>()
   if (playerIds.length > 0) {
-    const { data: subsRows } = await supabase
+    const subsRows = await selectAllIn(playerIds, (ids, from, to) => supabase
       .from('subscriptions')
       .select('player_id, status')
       .eq('organisation_id', orgId)
-      .in('player_id', playerIds)
-    for (const row of (subsRows || []) as Array<{ player_id: string | null; status: string | null }>) {
+      .in('player_id', ids)
+      .order('id')
+      .range(from, to))
+    for (const row of subsRows as Array<{ player_id: string | null; status: string | null }>) {
       if (!row.player_id) continue
       const list = subsByPlayer.get(row.player_id) || []
       list.push({ status: row.status || '' })
@@ -141,12 +143,14 @@ export default async function PlayersPage({
   // Phase 2.8 — per-player attendance history for the derive layer.
   const attendanceByPlayer = new Map<string, Array<{ session_date: string; present: boolean }>>()
   if (playerIds.length > 0) {
-    const { data: attRows } = await supabase
+    const attRows = await selectAllIn(playerIds, (ids, from, to) => supabase
       .from('attendance')
       .select('player_id, session_date, present')
-      .in('player_id', playerIds)
+      .in('player_id', ids)
       .gte('session_date', yearAgoIso)
-    const all = (attRows || []) as Array<AttendanceRow & { present: boolean }>
+      .order('id')
+      .range(from, to))
+    const all = attRows as Array<AttendanceRow & { present: boolean }>
     for (const r of all) {
       const arr = attendanceByPlayer.get(r.player_id) || []
       arr.push({ session_date: r.session_date, present: r.present })
@@ -162,12 +166,14 @@ export default async function PlayersPage({
   // ── 4. Latest progress_review per player ──
   const latestReviewByPlayer = new Map<string, string>()
   if (playerIds.length > 0) {
-    const { data: reviewRows } = await supabase
+    const reviewRows = await selectAllIn(playerIds, (ids, from, to) => supabase
       .from('progress_reviews')
       .select('player_id, review_date')
-      .in('player_id', playerIds)
+      .in('player_id', ids)
       .order('review_date', { ascending: false })
-    for (const r of (reviewRows || []) as Array<{ player_id: string; review_date: string }>) {
+      .order('id')
+      .range(from, to))
+    for (const r of reviewRows as Array<{ player_id: string; review_date: string }>) {
       if (!latestReviewByPlayer.has(r.player_id)) {
         latestReviewByPlayer.set(r.player_id, r.review_date)
       }

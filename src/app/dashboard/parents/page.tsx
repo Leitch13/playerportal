@@ -45,9 +45,8 @@ import { loadLastContactedMap } from '@/lib/contact-loader'
 // Phase 2.6 — At-Risk family rollup. Pure derive layer that consumes the
 // existing trial / contact / family-badge derive modules' outputs.
 import { deriveRisk } from '@/lib/at-risk-derive'
+import { selectAll, selectAllIn } from '@/lib/supabase/select-all'
 
-// Cap defensively at 500 families per render. Above this → Phase 2.3b paginates.
-const ROW_CAP = 500
 
 export default async function ParentsPage({
   searchParams,
@@ -76,7 +75,8 @@ export default async function ParentsPage({
   } catch { /* defaults to false */ }
 
   // ─── 1. Parents (profiles with role='parent') ────────────────────────
-  const { data: parents } = await supabase
+  // Every parent in the org: paged, not capped at 500.
+  const parents = await selectAll((from, to) => supabase
     .from('profiles')
     .select(`
       id, full_name, email, phone, address,
@@ -85,7 +85,8 @@ export default async function ParentsPage({
     .eq('organisation_id', orgId)
     .eq('role', 'parent')
     .order('full_name')
-    .limit(ROW_CAP)
+    .order('id')
+    .range(from, to))
 
   type ParentProfile = {
     id: string
@@ -98,22 +99,22 @@ export default async function ParentsPage({
     notes: string | null
     created_at: string
   }
-  const parentList = (parents || []) as ParentProfile[]
+  const parentList = parents as ParentProfile[]
   const parentIds = parentList.map(p => p.id)
 
   // ─── 2. Players for these parents (with enrolments+group joined) ─────
-  const { data: childrenRaw } = parentIds.length > 0
-    ? await supabase
-        .from('players')
-        .select(`
-          id, first_name, last_name, parent_id,
-          enrolments(status, is_trial, trial_expires_at, activates_on, group:training_groups(name))
-        `)
-        .eq('organisation_id', orgId)
-        .in('parent_id', parentIds)
-    : { data: [] }
+  const childrenRaw = await selectAllIn(parentIds, (ids, from, to) => supabase
+    .from('players')
+    .select(`
+      id, first_name, last_name, parent_id,
+      enrolments(status, is_trial, trial_expires_at, activates_on, group:training_groups(name))
+    `)
+    .eq('organisation_id', orgId)
+    .in('parent_id', ids)
+    .order('id')
+    .range(from, to))
 
-  const children = (childrenRaw || []) as unknown as Array<{
+  const children = childrenRaw as unknown as Array<{
     id: string
     first_name: string
     last_name: string
@@ -128,18 +129,18 @@ export default async function ParentsPage({
   }
 
   // ─── 3. Subscriptions per parent (READ ONLY — status + plan amount) ──
-  const { data: subsRows } = parentIds.length > 0
-    ? await supabase
-        .from('subscriptions')
-        .select('parent_id, player_id, status, plan:subscription_plans(name, amount)')
-        .eq('organisation_id', orgId)
-        .in('parent_id', parentIds)
-    : { data: [] }
+  const subsRows = await selectAllIn(parentIds, (ids, from, to) => supabase
+    .from('subscriptions')
+    .select('parent_id, player_id, status, plan:subscription_plans(name, amount)')
+    .eq('organisation_id', orgId)
+    .in('parent_id', ids)
+    .order('id')
+    .range(from, to))
 
   type SubRow = { parent_id: string | null; player_id: string | null; status: string | null; plan: { name?: string | null; amount?: number | null } | null }
   const subsByParent = new Map<string, SubRow[]>()
   const subsByChild  = new Map<string, Array<{ status: string | null }>>()
-  for (const s of (subsRows || []) as SubRow[]) {
+  for (const s of subsRows as unknown as SubRow[]) {
     if (s.parent_id) {
       const a = subsByParent.get(s.parent_id) || []
       a.push(s)
@@ -157,23 +158,27 @@ export default async function ParentsPage({
   let attendanceSummary = new Map<string, ReturnType<typeof summariseAttendance> extends Map<string, infer V> ? V : never>()
   if (childIds.length > 0) {
     const thirtyDaysAgoIso = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
-    const { data: attRows } = await supabase
+    const attRows = await selectAllIn(childIds, (ids, from, to) => supabase
       .from('attendance')
       .select('player_id, session_date, present')
-      .in('player_id', childIds)
+      .in('player_id', ids)
       .gte('session_date', thirtyDaysAgoIso)
-    attendanceSummary = summariseAttendance((attRows || []) as AttendanceRow[])
+      .order('id')
+      .range(from, to))
+    attendanceSummary = summariseAttendance(attRows as AttendanceRow[])
   }
 
   // ─── 5. Latest review per child ──────────────────────────────────────
   const latestReviewByChild = new Map<string, string>()
   if (childIds.length > 0) {
-    const { data: reviewRows } = await supabase
+    const reviewRows = await selectAllIn(childIds, (ids, from, to) => supabase
       .from('progress_reviews')
       .select('player_id, review_date')
-      .in('player_id', childIds)
+      .in('player_id', ids)
       .order('review_date', { ascending: false })
-    for (const r of (reviewRows || []) as Array<{ player_id: string; review_date: string }>) {
+      .order('id')
+      .range(from, to))
+    for (const r of reviewRows as Array<{ player_id: string; review_date: string }>) {
       if (!latestReviewByChild.has(r.player_id)) latestReviewByChild.set(r.player_id, r.review_date)
     }
   }
