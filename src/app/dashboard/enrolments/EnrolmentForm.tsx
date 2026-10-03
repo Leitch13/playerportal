@@ -59,7 +59,7 @@ export default function EnrolmentForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+        className="px-4 py-2 bg-[#4ecde6] text-[#04141a] rounded-[10px] text-sm font-semibold hover:bg-[#4ecde6]/90 transition-colors"
       >
         + Enrol Player
       </button>
@@ -67,7 +67,7 @@ export default function EnrolmentForm({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#1d2c42] p-6">
+    <div className="bg-[#0f1a2b] text-white rounded-[15px] border border-[#1d2c42] p-6">
       <h2 className="text-lg font-semibold mb-4">Enrol Player</h2>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -76,7 +76,7 @@ export default function EnrolmentForm({
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 bg-[#080e18] text-white border border-[#1d2c42] rounded-lg focus:outline-none focus:border-[#4ecde6]/60"
           >
             <option value="">Select player...</option>
             {players.map((p) => (
@@ -94,7 +94,7 @@ export default function EnrolmentForm({
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="w-full px-3 py-2 bg-[#080e18] text-white border border-[#1d2c42] rounded-lg focus:outline-none focus:border-[#4ecde6]/60"
           >
             <option value="">Select group...</option>
             {groups.map((g) => (
@@ -109,14 +109,14 @@ export default function EnrolmentForm({
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-[#4ecde6] text-[#04141a] rounded-[10px] text-sm font-semibold hover:bg-[#4ecde6]/90 disabled:opacity-50 transition-colors"
           >
             {loading ? 'Enrolling...' : 'Enrol'}
           </button>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="px-4 py-2 border border-[#1d2c42] rounded-lg text-sm font-medium hover:bg-[#142236] transition-colors"
+            className="px-4 py-2 border border-[#1d2c42] rounded-[10px] text-sm font-medium text-[#93a2ba] hover:bg-[#142236] hover:text-white transition-colors"
           >
             Cancel
           </button>

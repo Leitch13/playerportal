@@ -38,7 +38,14 @@ type EnrolmentRow = {
   group: { name: string; day_of_week?: string; time_slot?: string } | null
 }
 
-export default async function EnrolmentsPage() {
+export default async function EnrolmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>
+}) {
+  // Oct 2026 — the calm page. ?view=notpaying narrows "Active by class" to the
+  // children in a class with no live membership. Display only.
+  const onlyNotPaying = (await searchParams).view === 'notpaying'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
@@ -145,18 +152,28 @@ export default async function EnrolmentsPage() {
         arr.push({ session_date: a.session_date, present: a.present })
         byPlayer.set(a.player_id, arr)
       }
-      bandConcerns = buildAttendanceConcerns(active, byPlayer, nowMs)
+      // An academy that doesn't take its registers in the app has no attendance
+      // rows at all, which reads as "every child is at risk". Only flag drift
+      // when there is a register to drift from.
+      bandConcerns = byPlayer.size > 0 ? buildAttendanceConcerns(active, byPlayer, nowMs) : []
     }
   }
 
-  // Group active enrolments by class for the existing display
+  // Group active enrolments by class for the existing display. The class's
+  // head-count always comes from everyone in it, even when the view is
+  // narrowed to the children who aren't paying.
   const byGroup: Record<string, EnrolmentRow[]> = {}
+  const classSize: Record<string, number> = {}
+  const notPayingIds = new Set(notPayingActive.map(e => e.id))
   for (const e of active) {
     const k = e.group?.name || 'Unassigned'
+    classSize[k] = (classSize[k] || 0) + 1
+    if (onlyNotPaying && !notPayingIds.has(e.id)) continue
     if (!byGroup[k]) byGroup[k] = []
     byGroup[k].push(e)
   }
-  const groupedActive = Object.entries(byGroup).sort((a, b) => b[1].length - a[1].length)
+  const groupedActive = Object.entries(byGroup).sort((a, b) => (classSize[b[0]] || 0) - (classSize[a[0]] || 0))
+  const classCount = Object.keys(classSize).length
 
   // Helpers used by Pending + Trial rows
   const todayMs = Date.now()
@@ -193,44 +210,25 @@ export default async function EnrolmentsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Enrolments</h1>
-        <p className="mt-1 text-[13px] text-white/40">Who&rsquo;s in, who&rsquo;s trialling, and who isn&rsquo;t paying yet</p>
-        {/* ─── Phase 1: five-state chip row + Phase 2.4 follow-up chip ─── */}
-        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-          <Chip href="#active"          label="Active"           value={active.length}          tone="emerald"
-                detail={active.length > 0 ? `${payingCount} paying` : undefined} />
-          <Chip href="#pending"         label="Pending"          value={pending.length}         tone="amber"
-                detail={nextPendingStart ? `next start ${countdownLabel(nextPendingStart)}` : undefined} />
-          <Chip href="#trial"           label="On trial"         value={trials.length}          tone="sky"
+        <p className="mt-1 text-sm text-[#93a2ba] tabular-nums">
+          {active.length} {active.length === 1 ? 'child' : 'children'} in {classCount} {classCount === 1 ? 'class' : 'classes'}
+          {active.length > 0 ? ` · ${payingCount} paying` : ''}
+        </p>
+        {/* One quiet row of jump links; only the sections that have someone in them. */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <Chip href="#active"         label="Active"        value={active.length} />
+          <Chip href="#pending"        label="Starting soon" value={pending.length}
+                detail={nextPendingStart ? `next ${countdownLabel(nextPendingStart)}` : undefined} />
+          <Chip href="#trial"          label="On trial"      value={trials.length}
                 detail={trialsEndingThisWeek > 0 ? `${trialsEndingThisWeek} end${trialsEndingThisWeek === 1 ? 's' : ''} this week` : undefined} />
-          <Chip href="#trial-followup"  label="Follow-up due"    value={trialFollowUps.length}  tone="rose" />
-          <Chip href="#paused"          label="Paused"           value={paused.length}          tone="violet" />
-          <Chip href="#cancelled"       label="Cancelled"        value={cancelled.length}       tone="muted" />
+          <Chip href="#trial-followup" label="Trial follow-up due" value={trialFollowUps.length} />
+          <Chip href="#paused"         label="Paused"        value={paused.length} />
+          <Chip href="#cancelled"      label="Cancelled"     value={cancelled.length} />
         </div>
       </div>
 
-      {/* ─── "Enrolled, not paying" — the leak this page used to hide. ───
-          Only renders when someone on the active roster has no live
-          membership behind them (or an 'active' sub with no Stripe billing
-          on a Stripe-connected org — the phantom-active pattern). ─── */}
-      {notPayingActive.length > 0 && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.05] p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-bold text-amber-300">
-                {notPayingActive.length} enrolled, not paying
-              </div>
-              <div className="mt-0.5 text-xs text-white/50">
-                {notPayingActive.slice(0, 4).map(e => `${e.player?.first_name ?? ''} ${e.player?.last_name ?? ''}`.trim()).join(' · ')}
-                {notPayingActive.length > 4 ? ` · +${notPayingActive.length - 4} more` : ''}
-                {' '}— on the roster with no membership behind them.
-              </div>
-            </div>
-            <Link href="/dashboard/payments" className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-300 transition-colors hover:bg-amber-500/20">
-              Set up payment →
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* The old amber "N enrolled, not paying" banner lived here. Its job is now the
+          "In a class, not paying" filter on Active by class, further down. */}
 
       {ENROLMENTS_REVOPS_ENABLED && (
         <EnrolmentsActionBand
@@ -256,17 +254,17 @@ export default async function EnrolmentsPage() {
           {/* ─── PENDING (Stage 3 future-start) ─── */}
           {pending.length > 0 && (
             <section id="pending">
-              <SectionHeading title="Pending future starts" count={pending.length} tone="amber" />
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-x-auto">
+              <SectionHeading title="Starting soon" count={pending.length} />
+              <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] overflow-x-auto">
                 <Table headers={['Player', 'Class', 'Start date', 'Days until', 'Actions']}>
                   {pending.map(e => {
                     const start = e.activates_on || ''
                     return (
-                      <tr key={e.id} className="border-t border-white/[0.04]">
+                      <tr key={e.id} className="border-t border-[#1d2c42]">
                         <Td>{e.player?.first_name} {e.player?.last_name}</Td>
                         <Td className="text-white/70">{e.group?.name}{e.group?.day_of_week ? ` · ${e.group.day_of_week}` : ''}</Td>
                         <Td className="text-white/70">{start ? fmtDate(start) : '—'}</Td>
-                        <Td className="text-amber-300">{start ? countdownLabel(start) : '—'}</Td>
+                        <Td className="text-[#93a2ba]">{start ? countdownLabel(start) : '—'}</Td>
                         <Td>
                           <PendingEnrolmentActions
                             enrolmentId={e.id}
@@ -284,7 +282,7 @@ export default async function EnrolmentsPage() {
           {/* ─── TRIAL — decision cards, urgent ones flagged ─── */}
           {trials.length > 0 && (
             <section id="trial">
-              <SectionHeading title="On trial" count={trials.length} tone="sky" />
+              <SectionHeading title="On trial" count={trials.length} />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {trials.map(e => {
                   const exp = e.trial_expires_at || ''
@@ -292,18 +290,18 @@ export default async function EnrolmentsPage() {
                   const urgent = n != null && n <= 1
                   return (
                     <div key={e.id}
-                      className={`rounded-2xl border bg-white/[0.02] p-4 ${urgent ? 'border-rose-500/35' : 'border-white/[0.07]'}`}>
-                      <div className="text-[15px] font-bold text-white">{e.player?.first_name} {e.player?.last_name}</div>
+                      className={`rounded-[15px] border bg-[#0f1a2b] p-4 ${urgent ? 'border-[#d8a95a]/40' : 'border-[#1d2c42]'}`}>
+                      <div className="text-[15px] font-semibold text-white">{e.player?.first_name} {e.player?.last_name}</div>
                       <div className="mt-0.5 text-xs text-white/40">
                         {e.group?.name}{e.group?.day_of_week ? ` · ${e.group.day_of_week}` : ''}{e.group?.time_slot ? ` ${e.group.time_slot}` : ''}
                       </div>
                       {exp && (
-                        <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${
-                          n != null && n < 0 ? 'border-rose-500/35 bg-rose-500/10 text-rose-300'
-                          : urgent ? 'border-rose-500/35 bg-rose-500/10 text-rose-300'
-                          : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                        <span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          n != null && n < 0 ? 'bg-[#e0736d]/[0.13] text-[#e0736d]'
+                          : urgent ? 'bg-[#d8a95a]/[0.13] text-[#d8a95a]'
+                          : 'bg-[#93a2ba]/[0.10] text-[#93a2ba]'
                         }`}>
-                          ⏳ {n != null && n < 0 ? countdownLabel(exp) : n === 0 ? 'Ends today' : n === 1 ? 'Ends tomorrow' : `${n} days left`}
+                          {n != null && n < 0 ? countdownLabel(exp) : n === 0 ? 'Ends today' : n === 1 ? 'Ends tomorrow' : `${n} days left`}
                         </span>
                       )}
                       <div className="mt-3">
@@ -317,72 +315,102 @@ export default async function EnrolmentsPage() {
           )}
 
           {/* ─── ACTIVE BY CLASS — capacity + who's actually paying ─── */}
-          {groupedActive.length > 0 && (
+          {active.length > 0 && (
             <section id="active">
-              <SectionHeading title="Active by class" count={active.length} tone="emerald" />
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {groupedActive.map(([className, list]) => {
-                  const cap = (groups || []).find(g => g.id === list[0]?.group_id) as
-                    | { max_capacity?: number | null } | undefined
-                  const capacity = Number(cap?.max_capacity) || null
-                  const fillPct = capacity ? Math.min(100, Math.round((list.length / capacity) * 100)) : null
-                  return (
-                    <div key={className} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-[15px] font-bold text-white">{className}</h3>
-                          {list[0]?.group && (list[0].group.day_of_week || list[0].group.time_slot) && (
-                            <div className="mt-0.5 text-xs text-white/40">{list[0].group.day_of_week}{list[0].group.time_slot ? ` · ${list[0].group.time_slot}` : ''}</div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[13px] font-bold text-white">{list.length}{capacity ? `/${capacity}` : ''}</div>
-                          {fillPct != null && (
-                            <div className="mt-1.5 h-1.5 w-[110px] overflow-hidden rounded-full bg-white/[0.07]">
-                              <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-[#4ecde6]" style={{ width: `${fillPct}%` }} />
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <SectionHeading title="Active by class" count={active.length} />
+                {/* The one filter that matters: in a class, money not coming in. */}
+                <div className="inline-flex gap-0.5 rounded-[10px] border border-[#1d2c42] bg-[#0f1a2b] p-[3px]" role="group" aria-label="Who to show">
+                  <SegLink href="/dashboard/enrolments#active" active={!onlyNotPaying}>
+                    Everyone <Count>{active.length}</Count>
+                  </SegLink>
+                  <SegLink href="/dashboard/enrolments?view=notpaying#active" active={onlyNotPaying}>
+                    In a class, not paying <Count warn={notPayingActive.length > 0}>{notPayingActive.length}</Count>
+                  </SegLink>
+                </div>
+              </div>
+              {onlyNotPaying && notPayingActive.length > 0 && (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3">
+                  <p className="text-[13px] text-[#93a2ba]">
+                    These children are in a class with no membership behind them. Ask their parent to set up payment, or send a payment request from Payments.
+                  </p>
+                  <Link href="/dashboard/payments" className="rounded-[10px] border border-[#293b58] bg-[#142236] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:border-[#4ecde6]/50">
+                    Go to Payments
+                  </Link>
+                </div>
+              )}
+              {groupedActive.length === 0 ? (
+                <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-10 text-center text-sm text-[#93a2ba]">
+                  Everyone in a class is paying.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {groupedActive.map(([className, list]) => {
+                    const cap = (groups || []).find(g => g.id === list[0]?.group_id) as
+                      | { max_capacity?: number | null } | undefined
+                    const capacity = Number(cap?.max_capacity) || null
+                    const size = classSize[className] || list.length
+                    const fillPct = capacity ? Math.min(100, Math.round((size / capacity) * 100)) : null
+                    return (
+                      <div key={className} className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4">
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-[15px] font-semibold text-white">{className}</h3>
+                            {list[0]?.group && (list[0].group.day_of_week || list[0].group.time_slot) && (
+                              <div className="mt-0.5 text-xs text-[#93a2ba]">{list[0].group.day_of_week}{list[0].group.time_slot ? ` · ${list[0].group.time_slot}` : ''}</div>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className="text-[13px] font-semibold tabular-nums text-white">
+                              {size}{capacity ? <span className="font-normal text-[#93a2ba]"> of {capacity} places</span> : <span className="font-normal text-[#93a2ba]"> {size === 1 ? 'child' : 'children'}</span>}
                             </div>
-                          )}
+                            {fillPct != null && (
+                              <div className="mt-1.5 ml-auto h-1 w-[110px] overflow-hidden rounded-full bg-[#1d2c42]">
+                                <div className="h-full rounded-full bg-[#4ecde6]" style={{ width: `${fillPct}%` }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {list.map(e => {
+                            const fullName = `${e.player?.first_name || ''} ${e.player?.last_name || ''}`.trim()
+                            const verdict: PaymentVerdict = payMap.get(e.player_id) ?? 'no_sub'
+                            const paying = verdict === 'paying'
+                            return (
+                              <Link key={e.id} href={`/dashboard/players?search=${encodeURIComponent(fullName)}`}
+                                title={paying ? 'Paying member' : verdict === 'not_billing' ? 'Has a membership, but it is not billing through Stripe' : 'In this class with no membership set up'}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1d2c42] bg-[#080e18] px-2.5 py-1.5 text-[12px] font-medium text-white/90 transition-colors hover:border-[#293b58]">
+                                {!paying && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#d8a95a]" />}
+                                {fullName}
+                                {!paying && onlyNotPaying && (
+                                  <span className="text-[11px] font-semibold text-[#d8a95a]">
+                                    {verdict === 'not_billing' ? 'Not billing' : 'Not paying'}
+                                  </span>
+                                )}
+                                {!paying && !onlyNotPaying && <span className="sr-only">(not paying)</span>}
+                              </Link>
+                            )
+                          })}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {list.map(e => {
-                          const fullName = `${e.player?.first_name || ''} ${e.player?.last_name || ''}`.trim()
-                          const verdict = payMap.get(e.player_id) ?? 'no_sub'
-                          const paying = verdict === 'paying'
-                          return (
-                            <Link key={e.id} href={`/dashboard/players?search=${encodeURIComponent(fullName)}`}
-                              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
-                                paying
-                                  ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-200 hover:bg-emerald-500/15'
-                                  : 'border-amber-500/35 bg-amber-500/[0.08] text-amber-100 hover:bg-amber-500/15'
-                              }`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${paying ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                              {fullName}
-                              {!paying && (
-                                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-extrabold tracking-wide text-amber-300">
-                                  {verdict === 'not_billing' ? '£ NOT BILLING' : '£ NOT SET UP'}
-                                </span>
-                              )}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-medium text-white/40">
-                <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-emerald-400" />Paying member</span>
-                <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-amber-400" />Enrolled with no live membership — money never set up</span>
-              </div>
+                    )
+                  })}
+                </div>
+              )}
+              {!onlyNotPaying && notPayingActive.length > 0 && (
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-[#5b6c86]">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#d8a95a]" />
+                  In a class with no membership being paid.
+                </p>
+              )}
             </section>
           )}
 
           {/* ─── PAUSED ─── */}
           {paused.length > 0 && (
             <section id="paused">
-              <SectionHeading title="Paused" count={paused.length} tone="violet" />
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.05]">
+              <SectionHeading title="Paused" count={paused.length} />
+              <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] divide-y divide-[#1d2c42]">
                 {paused.map(e => <CompactRow key={e.id} e={e} />)}
               </div>
             </section>
@@ -391,11 +419,11 @@ export default async function EnrolmentsPage() {
           {/* ─── CANCELLED ─── */}
           {cancelled.length > 0 && (
             <section id="cancelled">
-              <SectionHeading title="Cancelled / inactive" count={cancelled.length} tone="muted" />
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] divide-y divide-white/[0.05]">
+              <SectionHeading title="Cancelled" count={cancelled.length} />
+              <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] divide-y divide-[#1d2c42]">
                 {cancelled.slice(0, 20).map(e => <CompactRow key={e.id} e={e} />)}
                 {cancelled.length > 20 && (
-                  <div className="px-4 py-2 text-[11px] text-white/40 italic">+ {cancelled.length - 20} more older cancellations</div>
+                  <div className="px-4 py-2.5 text-xs text-[#5b6c86]">+ {cancelled.length - 20} older cancellations</div>
                 )}
               </div>
             </section>
@@ -410,36 +438,47 @@ export default async function EnrolmentsPage() {
 // Sub-components — kept inline so the page is one self-contained file.
 // ─────────────────────────────────────────────────────────────────────────
 
-const TONE_CLASS: Record<string, { value: string; chip: string; section: string }> = {
-  emerald: { value: 'text-emerald-400', chip: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',     section: 'text-emerald-300' },
-  amber:   { value: 'text-amber-400',   chip: 'bg-amber-500/10 text-amber-300 border-amber-500/30',           section: 'text-amber-300' },
-  sky:     { value: 'text-sky-400',     chip: 'bg-sky-500/10 text-sky-300 border-sky-500/30',                  section: 'text-sky-300' },
-  violet:  { value: 'text-violet-400',  chip: 'bg-violet-500/10 text-violet-300 border-violet-500/30',         section: 'text-violet-300' },
-  rose:    { value: 'text-rose-400',    chip: 'bg-rose-500/10 text-rose-300 border-rose-500/30',               section: 'text-rose-300' },
-  muted:   { value: 'text-white/40',    chip: 'bg-white/[0.04] text-white/60 border-white/[0.08]',             section: 'text-white/60' },
-}
-
-function Chip({ href, label, value, tone, detail }: { href: string; label: string; value: number; tone: keyof typeof TONE_CLASS; detail?: string }) {
-  const meta = TONE_CLASS[tone]
+/** A quiet jump link to a section. Sections with nobody in them aren't shown. */
+function Chip({ href, label, value, detail }: { href: string; label: string; value: number; detail?: string }) {
+  if (value === 0) return null
   return (
     <Link
-      href={value > 0 ? href : '#'}
-      className={`rounded-xl border p-3 transition-colors ${meta.chip} ${value > 0 ? 'hover:opacity-90' : 'opacity-60 cursor-default'}`}
+      href={href}
+      className="inline-flex items-center gap-2 rounded-full border border-[#1d2c42] bg-[#0f1a2b] px-3 py-1.5 text-[13px] font-medium text-[#93a2ba] transition-colors hover:border-[#293b58] hover:text-white"
     >
-      <div className={`text-2xl sm:text-3xl font-extrabold leading-none ${meta.value}`}>{value}</div>
-      <div className="text-[10px] uppercase tracking-wider mt-1">{label}</div>
-      {detail && <div className="mt-0.5 text-[10px] font-semibold opacity-60">{detail}</div>}
+      {label}
+      <span className="rounded-full bg-[#1d2c42] px-1.5 py-px text-[11px] font-semibold tabular-nums text-white">{value}</span>
+      {detail && <span className="text-[11px] text-[#5b6c86]">{detail}</span>}
     </Link>
   )
 }
 
-function SectionHeading({ title, count, tone }: { title: string; count: number; tone: keyof typeof TONE_CLASS }) {
-  const meta = TONE_CLASS[tone]
+function SectionHeading({ title, count }: { title: string; count: number }) {
   return (
-    <div className="flex items-baseline gap-2 mb-2">
-      <h2 className={`text-xs font-bold uppercase tracking-wider ${meta.section}`}>{title}</h2>
-      <span className="text-xs text-white/30">{count}</span>
+    <div className="mb-2 flex items-baseline gap-2">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">{title}</h2>
+      <span className="text-xs tabular-nums text-[#5b6c86]">{count}</span>
     </div>
+  )
+}
+
+function SegLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'true' : undefined}
+      className={`inline-flex items-center gap-2 rounded-[7px] px-3 py-1.5 text-[13px] font-semibold transition-colors ${active ? 'bg-[#142236] text-white' : 'text-[#93a2ba] hover:text-white'}`}
+    >
+      {children}
+    </Link>
+  )
+}
+
+function Count({ children, warn }: { children: React.ReactNode; warn?: boolean }) {
+  return (
+    <span className={`rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums ${warn ? 'bg-[#d8a95a]/[0.16] text-[#d8a95a]' : 'bg-[#1d2c42] text-[#93a2ba]'}`}>
+      {children}
+    </span>
   )
 }
 
@@ -447,9 +486,9 @@ function Table({ headers, children }: { headers: string[]; children: React.React
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="bg-white/[0.02]">
+        <tr className="bg-white/[0.015]">
           {headers.map(h => (
-            <th key={h} className="text-left px-3 py-2 text-[10px] uppercase tracking-wider text-white/40 font-bold">{h}</th>
+            <th key={h} className="text-left px-4 py-2.5 text-[11px] uppercase tracking-[0.07em] text-[#5b6c86] font-semibold">{h}</th>
           ))}
         </tr>
       </thead>
@@ -459,15 +498,15 @@ function Table({ headers, children }: { headers: string[]; children: React.React
 }
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-3 py-2.5 align-middle ${className || 'text-white'}`}>{children}</td>
+  return <td className={`px-4 py-3 align-middle ${className || 'text-white'}`}>{children}</td>
 }
 
 function CompactRow({ e }: { e: EnrolmentRow }) {
   return (
-    <div className="px-4 py-2.5 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
+    <div className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-[#142236] transition-colors">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-white truncate">{e.player?.first_name} {e.player?.last_name}</div>
-        <div className="text-[11px] text-white/40 truncate">{e.group?.name}{e.group?.day_of_week ? ` · ${e.group.day_of_week}` : ''}</div>
+        <div className="text-sm font-semibold text-white truncate">{e.player?.first_name} {e.player?.last_name}</div>
+        <div className="text-xs text-[#93a2ba] truncate">{e.group?.name}{e.group?.day_of_week ? ` · ${e.group.day_of_week}` : ''}</div>
       </div>
       <EnrolmentStatusToggle enrolmentId={e.id} currentStatus={e.status} />
     </div>

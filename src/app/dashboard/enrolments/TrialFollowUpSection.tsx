@@ -34,7 +34,7 @@ export default function TrialFollowUpSection({ rows }: Props) {
     <section id="trial-followup">
       {/* Heading — visible cue that this is the action queue surface */}
       <div className="flex items-baseline gap-2 mb-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-amber-300">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">
           Trial follow-up due
         </h2>
         <span className="text-xs text-white/30">
@@ -43,9 +43,9 @@ export default function TrialFollowUpSection({ rows }: Props) {
         </span>
       </div>
 
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] overflow-hidden">
+      <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] overflow-x-auto">
         {/* Mini context line — tells the academy owner WHY these are surfaced. */}
-        <div className="px-4 py-2 text-[11px] text-amber-200/80 bg-amber-500/[0.04] border-b border-amber-500/15">
+        <div className="px-4 py-2.5 text-xs text-[#93a2ba] border-b border-[#1d2c42]">
           {awaitingCount > 0 && (
             <>
               <strong className="font-semibold">{awaitingCount}</strong> trial
@@ -55,7 +55,7 @@ export default function TrialFollowUpSection({ rows }: Props) {
           {staleCount > 0 && (
             <>
               {awaitingCount > 0 ? ' ' : ''}
-              <strong className="font-semibold text-amber-100">{staleCount}</strong> still open after 7 days — escalate.
+              <strong className="font-semibold text-[#d8a95a]">{staleCount}</strong> still open after 7 days. Worth a call.
             </>
           )}
         </div>
@@ -74,7 +74,7 @@ export default function TrialFollowUpSection({ rows }: Props) {
           </thead>
           <tbody>
             {rows.map(r => (
-              <tr key={`${r.source}:${r.id}`} className="border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+              <tr key={`${r.source}:${r.id}`} className="border-t border-[#1d2c42] hover:bg-[#142236] transition-colors">
                 <Td>
                   <div className="font-medium text-white">{r.childName}</div>
                   <div className="text-[10px] uppercase tracking-wider text-white/30 mt-0.5">
@@ -110,7 +110,7 @@ export default function TrialFollowUpSection({ rows }: Props) {
                       {r.messageHref ? (
                         <a
                           href={r.messageHref}
-                          className="px-2 py-1 rounded-md text-[11px] bg-amber-500/10 text-amber-200 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
+                          className="px-2 py-1 rounded-md text-[11px] bg-[#4ecde6]/10 text-[#4ecde6] border border-[#4ecde6]/30 hover:bg-[#4ecde6]/20 transition-colors"
                           title="Email parent (opens in your mail client)"
                         >
                            Message
