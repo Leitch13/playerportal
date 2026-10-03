@@ -24,6 +24,8 @@ import {
 import { loadTrialConversionData } from '@/lib/trial-conversion-loader'
 import { loadPaymentStatusByPlayer, type PaymentVerdict } from '@/lib/enrolment-payment-status'
 import EnrolmentsActionBand from '@/components/enrolments/EnrolmentsActionBand'
+// The same Request payment button the player page has, in its compact form.
+import RequestPaymentButton from '../players/[id]/RequestPaymentButton'
 
 type EnrolmentRow = {
   id: string
@@ -117,6 +119,38 @@ export default async function EnrolmentsPage({
   )
   const notPayingActive = active.filter(e => (payMap.get(e.player_id) ?? 'no_sub') !== 'paying')
   const payingCount = active.length - notPayingActive.length
+
+  // ── "In a class, not paying" → chase it from here. Loaded only for that
+  // view, and only for admins (the route refuses anyone else): the academy's
+  // active plans, and which of these children already have a payment request
+  // waiting. READ-ONLY. ──
+  let chasePlans: Array<{ id: string; name: string; amount: number | null }> = []
+  const pendingSentByPlayer = new Map<string, string>()
+  const blockedByPlayer = new Set<string>()
+  let canChase = false
+  if (onlyNotPaying && notPayingActive.length > 0) {
+    const { data: role } = await supabase.rpc('get_my_role')
+    canChase = role === 'admin'
+    if (canChase) {
+      const ids = [...new Set(notPayingActive.map(e => e.player_id))]
+      const [{ data: planRows }, { data: subRows }] = await Promise.all([
+        supabase.from('subscription_plans').select('id, name, amount')
+          .eq('organisation_id', orgId).eq('active', true).order('sort_order', { ascending: true }),
+        supabase.from('subscriptions').select('player_id, status, invite_sent_at, created_at')
+          .eq('organisation_id', orgId).in('player_id', ids)
+          .in('status', ['active', 'trialing', 'past_due', 'pending_migration']),
+      ])
+      chasePlans = (planRows || []) as typeof chasePlans
+      for (const r of (subRows || []) as Array<{ player_id: string | null; status: string; invite_sent_at: string | null; created_at: string }>) {
+        if (!r.player_id) continue
+        if (r.status === 'pending_migration') pendingSentByPlayer.set(r.player_id, r.invite_sent_at || r.created_at)
+        // A live membership row that isn't billing: the route would refuse a new
+        // request ("already has a subscription"), so no button; it needs Payments.
+        else blockedByPlayer.add(r.player_id)
+      }
+    }
+  }
+  const fmtShort = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' })
 
   // ── Enrolments Revenue Ops Phase 1A — read-only Daily Actions band. ──
   // Built only when the flag is ON: trials-ending-soon from already-loaded
@@ -332,7 +366,9 @@ export default async function EnrolmentsPage({
               {onlyNotPaying && notPayingActive.length > 0 && (
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3">
                   <p className="text-[13px] text-[#93a2ba]">
-                    These children are in a class with no membership behind them. Ask their parent to set up payment, or send a payment request from Payments.
+                    {canChase
+                      ? 'These children are in a class with no membership being paid. Press Request payment and their parent is emailed a link to add their card.'
+                      : 'These children are in a class with no membership being paid. An academy admin can send their parent a payment request.'}
                   </p>
                   <Link href="/dashboard/payments" className="rounded-[10px] border border-[#293b58] bg-[#142236] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:border-[#4ecde6]/50">
                     Go to Payments
@@ -371,27 +407,66 @@ export default async function EnrolmentsPage({
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {list.map(e => {
-                            const fullName = `${e.player?.first_name || ''} ${e.player?.last_name || ''}`.trim()
-                            const verdict: PaymentVerdict = payMap.get(e.player_id) ?? 'no_sub'
-                            const paying = verdict === 'paying'
-                            return (
-                              <Link key={e.id} href={`/dashboard/players?search=${encodeURIComponent(fullName)}`}
-                                title={paying ? 'Paying member' : verdict === 'not_billing' ? 'Has a membership, but it is not billing through Stripe' : 'In this class with no membership set up'}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1d2c42] bg-[#080e18] px-2.5 py-1.5 text-[12px] font-medium text-white/90 transition-colors hover:border-[#293b58]">
-                                {!paying && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#d8a95a]" />}
-                                {fullName}
-                                {!paying && onlyNotPaying && (
-                                  <span className="text-[11px] font-semibold text-[#d8a95a]">
-                                    {verdict === 'not_billing' ? 'Not billing' : 'Not paying'}
-                                  </span>
-                                )}
-                                {!paying && !onlyNotPaying && <span className="sr-only">(not paying)</span>}
-                              </Link>
-                            )
-                          })}
-                        </div>
+                        {onlyNotPaying ? (
+                          // The chase list: one row per child, with what to do about it.
+                          <ul className="divide-y divide-[#1d2c42] rounded-[12px] border border-[#1d2c42] bg-[#080e18]">
+                            {list.map(e => {
+                              const fullName = `${e.player?.first_name || ''} ${e.player?.last_name || ''}`.trim()
+                              const verdict: PaymentVerdict = payMap.get(e.player_id) ?? 'no_sub'
+                              const pendingSent = pendingSentByPlayer.get(e.player_id) || null
+                              const blocked = blockedByPlayer.has(e.player_id) || verdict === 'not_billing'
+                              return (
+                                <li key={e.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5">
+                                  <div className="min-w-0">
+                                    <Link href={`/dashboard/players?search=${encodeURIComponent(fullName)}`} className="block truncate text-sm font-semibold text-white hover:text-[#4ecde6]">
+                                      {fullName}
+                                    </Link>
+                                    <div className="text-xs text-[#93a2ba]">
+                                      {pendingSent
+                                        ? `Payment link sent ${fmtShort(pendingSent)}, not paid yet`
+                                        : blocked
+                                          ? 'Has a membership that isn\'t billing'
+                                          : 'No membership set up'}
+                                    </div>
+                                  </div>
+                                  {canChase && (
+                                    pendingSent ? (
+                                      <RequestPaymentButton playerId={e.player_id} playerFirstName={e.player?.first_name || 'this player'} plans={chasePlans} compact pendingSentAt={pendingSent} />
+                                    ) : blocked ? (
+                                      <Link href="/dashboard/payments" className="text-xs font-semibold text-[#93a2ba] hover:text-white">Sort in Payments</Link>
+                                    ) : chasePlans.length > 0 ? (
+                                      <RequestPaymentButton playerId={e.player_id} playerFirstName={e.player?.first_name || 'this player'} plans={chasePlans} compact />
+                                    ) : (
+                                      <Link href="/dashboard/payments?tab=manage" className="text-xs font-semibold text-[#93a2ba] hover:text-white">Add a plan first</Link>
+                                    )
+                                  )}
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {list.map(e => {
+                              const fullName = `${e.player?.first_name || ''} ${e.player?.last_name || ''}`.trim()
+                              const verdict: PaymentVerdict = payMap.get(e.player_id) ?? 'no_sub'
+                              const paying = verdict === 'paying'
+                              return (
+                                <Link key={e.id} href={`/dashboard/players?search=${encodeURIComponent(fullName)}`}
+                                  title={paying ? 'Paying member' : verdict === 'not_billing' ? 'Has a membership, but it is not billing through Stripe' : 'In this class with no membership set up'}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#1d2c42] bg-[#080e18] px-2.5 py-1.5 text-[12px] font-medium text-white/90 transition-colors hover:border-[#293b58]">
+                                  {!paying && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#d8a95a]" />}
+                                  {fullName}
+                                  {!paying && onlyNotPaying && (
+                                    <span className="text-[11px] font-semibold text-[#d8a95a]">
+                                      {verdict === 'not_billing' ? 'Not billing' : 'Not paying'}
+                                    </span>
+                                  )}
+                                  {!paying && !onlyNotPaying && <span className="sr-only">(not paying)</span>}
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     )
                   })}

@@ -23,6 +23,15 @@ export const dynamic = 'force-dynamic'
 // creating a request for a player who already pays or has a pending request,
 // AND for a parent holding a live payment with no child attached to it —
 // the anti-double-billing invariant.
+//
+// Oct 2026 — two gaps closed, neither touches what a parent is charged:
+//   • { resend: true } re-sends the email for the player's EXISTING pending
+//     request (same token, same plan, same first-charge date). It creates
+//     nothing. Before this, a request whose email never arrived could not be
+//     sent again: the dedup guard refused a second one.
+//   • The response now says whether the email actually went (`emailed`).
+//     sendEmail reports failure by return value, not by throwing, so this
+//     route used to answer "sent" whatever happened.
 // ─────────────────────────────────────────────────────────────────────────
 
 function adminDb() {
@@ -53,9 +62,10 @@ export async function POST(
   if (!orgId) return NextResponse.json({ error: 'Your account is not linked to an academy.' }, { status: 400 })
 
   const body = await request.json().catch(() => ({}))
+  const resend = body.resend === true
   const planId = String(body.planId || '')
   const firstBilling = body.firstBilling === 'next_month' ? 'next_month' : 'today'
-  if (!planId) return NextResponse.json({ error: 'Choose a membership plan.' }, { status: 400 })
+  if (!resend && !planId) return NextResponse.json({ error: 'Choose a membership plan.' }, { status: 400 })
 
   const db = adminDb()
 
@@ -70,6 +80,40 @@ export async function POST(
   }
   if (!player.parent_id) {
     return NextResponse.json({ error: 'This player has no parent account on file.' }, { status: 400 })
+  }
+
+  // ── RESEND — the player's existing pending request, emailed again. Reads one
+  //    row, writes only its invite_sent_at. No new request, no Stripe. ──
+  if (resend) {
+    const { data: pendingRows } = await db
+      .from('subscriptions')
+      .select('id, plan_id, invite_token, status')
+      .eq('player_id', playerId)
+      .eq('organisation_id', orgId)
+      .eq('status', 'pending_migration')
+      .not('invite_token', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+    const pending = (pendingRows || [])[0]
+    if (!pending) {
+      return NextResponse.json({ error: `${player.first_name} has no payment request waiting. Send a new one instead.` }, { status: 404 })
+    }
+    const { data: pendingPlan } = await db
+      .from('subscription_plans')
+      .select('id, name, amount, organisation_id')
+      .eq('id', pending.plan_id)
+      .maybeSingle()
+    if (!pendingPlan || pendingPlan.organisation_id !== orgId) {
+      return NextResponse.json({ error: 'The plan on that request no longer exists. Cancel it and send a new one.' }, { status: 409 })
+    }
+    const { data: resendParent } = await db.from('profiles').select('email, full_name').eq('id', player.parent_id).single()
+    if (!resendParent?.email) return NextResponse.json({ error: 'No email on file for this parent.' }, { status: 400 })
+    const emailed = await emailConfirmLink(db, orgId, pending.invite_token as string, player.first_name, pendingPlan, resendParent)
+    if (!emailed) {
+      return NextResponse.json({ error: `The email to ${resendParent.email} didn't send. Check the address is right, then try again.` }, { status: 502 })
+    }
+    await db.from('subscriptions').update({ invite_sent_at: new Date().toISOString() }).eq('id', pending.id)
+    return NextResponse.json({ status: 'sent', emailed: true, resent: true })
   }
 
   // ── Plan must belong to the same academy ──
@@ -192,8 +236,28 @@ export async function POST(
     return NextResponse.json({ error: 'Could not create the payment request. Please try again.' }, { status: 500 })
   }
 
-  // ── Email the parent the confirm link (best-effort — the row is already
-  //    created; if the email fails the admin can resend). ──
+  // ── Email the parent the confirm link. The request is saved either way; if
+  //    the email didn't go, say so, so the admin can press Resend. ──
+  const emailed = await emailConfirmLink(db, orgId, token, player.first_name, plan, parent)
+  if (!emailed) {
+    return NextResponse.json({
+      status: 'created',
+      emailed: false,
+      warning: `The request is saved, but the email to ${parent.email} didn't send. Check the address is right, then press Resend.`,
+    })
+  }
+  return NextResponse.json({ status: 'sent', emailed: true })
+}
+
+/** Send the one-tap confirm link. True only when the email service accepted it. */
+async function emailConfirmLink(
+  db: ReturnType<typeof adminDb>,
+  orgId: string,
+  token: string,
+  playerFirstName: string | null,
+  plan: { name: string; amount: number | string | null },
+  parent: { email: string; full_name: string | null },
+): Promise<boolean> {
   try {
     const { data: org } = await db
       .from('organisations')
@@ -204,7 +268,7 @@ export async function POST(
     const confirmUrl = `${appUrl}/confirm-subscription/${token}`
     const primary = org?.primary_color || '#4ecde6'
     const academyName = org?.name || 'your academy'
-    const childFirst = escapeHtml(player.first_name || 'your child')
+    const childFirst = escapeHtml(playerFirstName || 'your child')
     const amount = Number(plan.amount || 0).toFixed(0)
     const html = `
 <!DOCTYPE html><html><body style="margin:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
@@ -220,16 +284,15 @@ export async function POST(
   </div>
 </body></html>`
     const { sendEmail } = await import('@/lib/email')
-    await sendEmail({
+    const result = await sendEmail({
       to: parent.email,
-      subject: `${academyName}: Confirm ${player.first_name || 'your child'}'s membership (takes 30 seconds)`,
+      subject: `${academyName}: Confirm ${playerFirstName || 'your child'}'s membership (takes 30 seconds)`,
       html,
       fromName: academyName,
       replyTo: org?.contact_email || undefined,
     })
+    return !!result?.success
   } catch {
-    // Email is best-effort — the pending request already exists.
+    return false
   }
-
-  return NextResponse.json({ status: 'sent' })
 }
