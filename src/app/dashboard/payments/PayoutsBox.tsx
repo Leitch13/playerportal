@@ -19,9 +19,8 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
   return (
     <section
       aria-label="Payouts"
-      className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.05] p-5 backdrop-blur-xl"
+      className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5"
     >
-      <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" aria-hidden />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-white">Payouts to your bank</h3>
@@ -41,11 +40,11 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Next payout */}
-        <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-4">
+        <div className="rounded-[12px] border border-[#1d2c42] bg-[#080e18] p-4">
           <div className="text-[11px] uppercase tracking-wide text-white/45">Next payout</div>
           {manual ? (
             <>
-              <div className="mt-1 text-2xl font-bold text-emerald-300">{gbp(snapshot.availablePence)}</div>
+              <div className="mt-1 text-2xl font-bold text-[#eef2f9]">{gbp(snapshot.availablePence)}</div>
               <div className="mt-0.5 text-xs text-white/60">Ready to send to your bank from Stripe</div>
               {snapshot.pendingPence > 0 && (
                 <div className="mt-2 text-[11px] text-white/40">Plus {gbp(snapshot.pendingPence)} still settling</div>
@@ -53,7 +52,7 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
             </>
           ) : next ? (
             <>
-              <div className="mt-1 text-2xl font-bold text-emerald-300">{gbp(next.amountPence)}</div>
+              <div className="mt-1 text-2xl font-bold text-[#eef2f9]">{gbp(next.amountPence)}</div>
               <div className="mt-0.5 text-xs text-white/60">
                 {next.status === 'in_transit' ? 'On its way, arrives ' : 'Expected '}
                 {day(next.arrivalDate)}
@@ -61,7 +60,7 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
             </>
           ) : onItsWay > 0 ? (
             <>
-              <div className="mt-1 text-2xl font-bold text-emerald-300">{gbp(onItsWay)}</div>
+              <div className="mt-1 text-2xl font-bold text-[#eef2f9]">{gbp(onItsWay)}</div>
               <div className="mt-0.5 text-xs text-white/60">
                 In the {schedule.delayDays || 0}-day settlement wait, then it goes out
               </div>
@@ -78,7 +77,7 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
         </div>
 
         {/* Recent */}
-        <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-4">
+        <div className="rounded-[12px] border border-[#1d2c42] bg-[#080e18] p-4">
           <div className="text-[11px] uppercase tracking-wide text-white/45">Landed recently</div>
           {recent.length === 0 ? (
             <div className="mt-2 text-xs text-white/50">No payouts yet</div>
@@ -95,7 +94,7 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
         </div>
 
         {/* This month */}
-        <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-4">
+        <div className="rounded-[12px] border border-[#1d2c42] bg-[#080e18] p-4">
           <div className="text-[11px] uppercase tracking-wide text-white/45">{month.label} so far</div>
           <dl className="mt-2 space-y-1.5 text-xs">
             <div className="flex justify-between">
@@ -120,7 +119,7 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
             )}
             <div className="flex justify-between border-t border-white/[0.08] pt-1.5">
               <dt className="text-white/80">To your bank</dt>
-              <dd className="font-semibold text-emerald-300 tabular-nums">{gbp(month.netPence)}</dd>
+              <dd className="font-semibold text-[#67c79a] tabular-nums">{gbp(month.netPence)}</dd>
             </div>
           </dl>
         </div>

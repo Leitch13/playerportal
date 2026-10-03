@@ -118,97 +118,77 @@ export default function SubscriptionActions({
   }
   const canChangePlan = ['active', 'trialing', 'paused'].includes(currentStatus)
 
-  return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {/* Plan switcher: preview, then confirm. Nothing changes until Confirm. */}
-      <select
-        value={pick}
-        disabled={!canChangePlan || loading}
-        onChange={(e) => { setPick(e.target.value); if (e.target.value !== currentPlanId) askPlan(e.target.value, false); else setPreview(null) }}
-        aria-label="Plan"
-        data-testid="plan-switcher"
-        className="px-2 py-1 border border-[#1d2c42] rounded text-xs focus:outline-none disabled:opacity-60"
-      >
-        {plans.map((p) => (
-          <option key={p.id} value={p.id}>{p.name}</option>
-        ))}
-      </select>
-      {preview && (
-        <span className="inline-flex flex-wrap items-center gap-2 rounded border border-cyan-300/40 bg-cyan-500/10 px-2 py-1 text-xs" data-testid="plan-change-preview">
-          <span>Move to {preview.to}. Nothing charged today. {preview.paused ? 'Membership is paused.' : `Next payment ${preview.nextAmount} on ${preview.nextDate}.`}</span>
-          <button type="button" disabled={loading} onClick={() => askPlan(pick, true)} className="px-2 py-0.5 rounded bg-cyan-400 text-[#04141a] font-semibold disabled:opacity-50">Confirm change</button>
-          <button type="button" disabled={loading} onClick={() => { setPick(currentPlanId); setPreview(null) }} className="px-2 py-0.5 rounded text-white/70">Keep current</button>
-        </span>
-      )}
-      {planMsg && <span className="text-[11px] text-white/70" role="status">{planMsg}</span>}
+  const [changing, setChanging] = useState(false)
+  const quiet = 'rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9] disabled:opacity-50'
+  const stop = 'rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#e0736d] hover:text-[#e0736d] disabled:opacity-50'
 
-      {/* Quick action buttons */}
-      {(currentStatus === 'active' || currentStatus === 'trialing') && (
-        <>
-          <button
-            onClick={() => pauseOrResume('pause')}
-            disabled={loading}
-            className="px-2 py-1 text-xs border border-yellow-300 text-yellow-700 rounded hover:bg-yellow-50 transition-colors"
-          >
-            Pause
+  return (
+    <div className="flex flex-col gap-2 lg:items-end">
+      <div className="flex flex-wrap items-center gap-2">
+        {canChangePlan && !changing && (
+          <button type="button" disabled={loading} onClick={() => setChanging(true)} className={quiet} data-testid="plan-change-open">
+            Change plan
           </button>
-          <button
-            onClick={cancelInStripe}
-            disabled={loading}
-            className="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors"
-          >
-            Cancel
-          </button>
-        </>
+        )}
+        {(currentStatus === 'active' || currentStatus === 'trialing') && (
+          <>
+            <button onClick={() => pauseOrResume('pause')} disabled={loading} className={quiet}>Pause</button>
+            <button onClick={cancelInStripe} disabled={loading} className={stop}>Cancel</button>
+          </>
+        )}
+        {currentStatus === 'paused' && (
+          <>
+            <button onClick={() => pauseOrResume('resume')} disabled={loading} className={quiet}>Resume</button>
+            <button onClick={cancelInStripe} disabled={loading} className={stop}>Cancel</button>
+          </>
+        )}
+        {currentStatus === 'incomplete' && (
+          <>
+            <button onClick={() => setLocalStatus('active')} disabled={loading} className={quiet}>Activate</button>
+            <button onClick={cancelInStripe} disabled={loading} className={stop}>Remove</button>
+          </>
+        )}
+        {currentStatus === 'past_due' && (
+          <button onClick={() => setLocalStatus('active')} disabled={loading} className={quiet}>Mark Active</button>
+        )}
+      </div>
+
+      {/* Plan switcher: opens on "Change plan". Preview, then confirm. Nothing changes until Confirm. */}
+      {canChangePlan && changing && (
+        <div className="w-full rounded-[12px] border border-[#293b58] bg-[#080e18] p-3 text-left" data-testid="plan-change-panel">
+          <label className="block text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">
+            Move to
+            <select
+              value={pick}
+              disabled={loading}
+              onChange={(e) => { setPick(e.target.value); if (e.target.value !== currentPlanId) askPlan(e.target.value, false); else setPreview(null) }}
+              aria-label="Plan"
+              data-testid="plan-switcher"
+              className="mt-1.5 block w-full rounded-[9px] border border-[#293b58] bg-[#0f1a2b] px-2.5 py-2 text-sm font-normal normal-case tracking-normal text-[#eef2f9] focus:border-[#4ecde6] focus:outline-none disabled:opacity-60"
+            >
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>{p.name} · £{Number(p.amount).toFixed(Number(p.amount) % 1 ? 2 : 0)}{p.id === currentPlanId ? ' (now)' : ''}</option>
+              ))}
+            </select>
+          </label>
+          {preview ? (
+            <div className="mt-3 text-xs text-[#93a2ba]" data-testid="plan-change-preview">
+              <p className="text-[#eef2f9]">Move to {preview.to}. Nothing charged today.</p>
+              <p className="mt-0.5">{preview.paused ? 'Membership is paused.' : `Next payment ${preview.nextAmount} on ${preview.nextDate}.`} The family gets an email.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" disabled={loading} onClick={() => askPlan(pick, true)} className="rounded-[9px] bg-[#4ecde6] px-3 py-1.5 text-xs font-semibold text-[#04141a] disabled:opacity-50">Confirm change</button>
+                <button type="button" disabled={loading} onClick={() => { setPick(currentPlanId); setPreview(null); setChanging(false) }} className={quiet}>Keep current</button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className="text-xs text-[#5b6c86]">{loading ? 'Working out the next bill…' : 'Pick a plan to see the next bill first.'}</span>
+              <button type="button" disabled={loading} onClick={() => { setPick(currentPlanId); setChanging(false) }} className={quiet}>Close</button>
+            </div>
+          )}
+        </div>
       )}
-      {currentStatus === 'paused' && (
-        <>
-          <button
-            onClick={() => pauseOrResume('resume')}
-            disabled={loading}
-            className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
-          >
-            Resume
-          </button>
-          <button
-            onClick={cancelInStripe}
-            disabled={loading}
-            className="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors"
-          >
-            Cancel
-          </button>
-        </>
-      )}
-      {currentStatus === 'incomplete' && (
-        <>
-          <button
-            onClick={() => setLocalStatus('active')}
-            disabled={loading}
-            className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
-          >
-            Activate
-          </button>
-          <button
-            onClick={cancelInStripe}
-            disabled={loading}
-            className="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors"
-          >
-            Remove
-          </button>
-        </>
-      )}
-      {currentStatus === 'past_due' && (
-        <button
-          onClick={() => setLocalStatus('active')}
-          disabled={loading}
-          className="px-2 py-1 text-xs border border-cyan-300 text-cyan-700 rounded hover:bg-cyan-50 transition-colors"
-        >
-          Mark Active
-        </button>
-      )}
-      {currentStatus === 'canceled' && (
-        <span className="text-xs text-white/60 italic">Canceled</span>
-      )}
+      {planMsg && <span className="text-xs text-[#93a2ba]" role="status">{planMsg}</span>}
     </div>
   )
 }

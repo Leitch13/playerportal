@@ -39,6 +39,7 @@ import AvailableUpgrades from './AvailableUpgrades'
 import MembershipTabs from './MembershipTabs'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import PayoutsBox from './PayoutsBox'
+import MembershipsList, { type MembershipRow } from './MembershipsList'
 import { getPayoutSnapshot } from '@/lib/payouts'
 import { recoverySummary } from '@/lib/refund-recovery'
 
@@ -652,35 +653,6 @@ async function ParentPayments({
 // Deliberately NOT the shared StatusBadge (that one is also used by
 // ParentPayments / other pages and must stay byte-identical). These render
 // display chrome only — no status logic, no data, no behaviour.
-function adminSubStatusPill(status: string) {
-  const map: Record<string, { label: string; cls: string; dot: string }> = {
-    active: { label: 'Active', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot: 'bg-emerald-400' },
-    trialing: { label: 'Trialing', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/30', dot: 'bg-blue-400' },
-    scheduled: { label: 'Scheduled', cls: 'bg-[#4ecde6]/12 text-[#4ecde6] border-[#4ecde6]/30', dot: 'bg-[#4ecde6]' },
-    paused: { label: 'Paused', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30', dot: 'bg-amber-400' },
-    past_due: { label: 'Past due', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30', dot: 'bg-orange-400' },
-    canceled: { label: 'Canceled', cls: 'bg-white/[0.06] text-white/50 border-white/[0.12]', dot: 'bg-white/40' },
-    cancelled: { label: 'Canceled', cls: 'bg-white/[0.06] text-white/50 border-white/[0.12]', dot: 'bg-white/40' },
-    incomplete: { label: 'Incomplete', cls: 'bg-white/[0.06] text-white/50 border-white/[0.12]', dot: 'bg-white/40' },
-  }
-  const m = map[status] || { label: status, cls: 'bg-white/[0.06] text-white/60 border-white/[0.12]', dot: 'bg-white/40' }
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border ${m.cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} aria-hidden />
-      {m.label}
-    </span>
-  )
-}
-
-function adminInitialsChip(name: string) {
-  const initials = (name || '').split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase() || '').join('') || '—'
-  return (
-    <span className="w-9 h-9 shrink-0 rounded-xl bg-[#4ecde6]/12 border border-[#4ecde6]/25 flex items-center justify-center text-xs font-bold text-[#4ecde6]">
-      {initials}
-    </span>
-  )
-}
-
 async function AdminPayments({
   autoOpen,
   filter,
@@ -1130,25 +1102,31 @@ async function AdminPayments({
 
   const tabs = [
     { key: 'overview', label: 'Overview' },
-    { key: 'analytics', label: 'Financial Analytics' },
-    { key: 'manage', label: 'Manage' },
+    { key: 'analytics', label: 'Reports' },
+    { key: 'manage', label: 'Plans & invoices' },
   ]
 
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Payments & Subscriptions</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-[#eef2f9]">Payments</h1>
+        <p className="mt-1 text-sm text-[#93a2ba]">
+          <span className="tabular-nums text-[#eef2f9]">&pound;{stats.monthlyRevenue.toFixed(0)}</span> a month from {stats.activeSubs} membership{stats.activeSubs === 1 ? '' : 's'}
+          {monthLabel && <> · <span className="tabular-nums text-[#eef2f9]">&pound;{monthCollected.toFixed(0)}</span> taken in {monthLabel}</>}
+        </p>
+      </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-white/[0.05] rounded-lg p-1">
+      <div className="flex gap-1 overflow-x-auto border-b border-[#1d2c42]">
         {tabs.map((tab) => (
           <a
             key={tab.key}
             href={`/dashboard/payments?tab=${tab.key}`}
-            className={`flex-1 text-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`-mb-px whitespace-nowrap border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-[#4ecde6] text-[#0a0a0a] shadow-sm'
-                : 'text-white/60 hover:text-white'
+                ? 'border-[#4ecde6] text-[#eef2f9]'
+                : 'border-transparent text-[#93a2ba] hover:text-[#eef2f9]'
             }`}
           >
             {tab.label}
@@ -1156,26 +1134,18 @@ async function AdminPayments({
         ))}
       </div>
 
-      {/* Overdue summary banner */}
+      {/* Overdue: one quiet line, only when there is something overdue */}
       {stats.overdueCount > 0 && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <span className="text-sm text-red-400 font-medium">
-              {stats.overdueCount} overdue payment{stats.overdueCount !== 1 ? 's' : ''} totalling&nbsp;
-              &pound;{(allPayments || [])
-                .filter((p) => p.status === 'overdue')
-                .reduce((sum, p) => sum + (Number(p.amount) - Number(p.amount_paid || 0)), 0)
-                .toFixed(2)}
-            </span>
-          </div>
-          <a
-            href="/dashboard/payments?tab=overview&filter=overdue"
-            className="text-xs text-red-400 hover:text-red-300 font-medium whitespace-nowrap ml-3"
-          >
-            View All &rarr;
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3">
+          <span className="flex items-center gap-2.5 text-sm text-[#eef2f9]">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#d8a95a]" aria-hidden />
+            {stats.overdueCount} overdue payment{stats.overdueCount !== 1 ? 's' : ''}, &pound;{(allPayments || [])
+              .filter((p) => p.status === 'overdue')
+              .reduce((sum, p) => sum + (Number(p.amount) - Number(p.amount_paid || 0)), 0)
+              .toFixed(2)} to collect
+          </span>
+          <a href="/dashboard/payments?tab=overview&filter=overdue" className="whitespace-nowrap text-xs font-semibold text-[#4ecde6] hover:text-[#eef2f9]">
+            See them &rarr;
           </a>
         </div>
       )}
@@ -1183,50 +1153,6 @@ async function AdminPayments({
       {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
       {activeTab === 'overview' && (
         <>
-          {/* Summary stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Monthly Recurring */}
-            <div className="relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="absolute -top-6 -right-6 w-20 h-20 bg-[#4ecde6]/10 blur-2xl rounded-full pointer-events-none" aria-hidden />
-              <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/25 flex items-center justify-center text-[#4ecde6] mb-2.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </span>
-              <div className="text-2xl font-bold text-white">&pound;{stats.monthlyRevenue.toFixed(0)}</div>
-              <div className="text-xs text-white/60 mt-0.5">Monthly Recurring</div>
-              <div className="text-[11px] text-white/40 mt-1">&pound;{projectedAnnual.toFixed(0)}/yr projected</div>
-            </div>
-            {/* Active Subs */}
-            <div className="relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="absolute -top-6 -right-6 w-20 h-20 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none" aria-hidden />
-              <span className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-300 mb-2.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
-              </span>
-              <div className="text-2xl font-bold text-emerald-300">{stats.activeSubs}</div>
-              <div className="text-xs text-white/60 mt-0.5">Active Subs</div>
-              <div className="text-[11px] text-white/40 mt-1">of {(allSubscriptions || []).length} total</div>
-            </div>
-            {/* Collected */}
-            <div className="relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
-              <div className="absolute -top-6 -right-6 w-20 h-20 bg-[#4ecde6]/10 blur-2xl rounded-full pointer-events-none" aria-hidden />
-              <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/25 flex items-center justify-center text-[#4ecde6] mb-2.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </span>
-              <div className="text-2xl font-bold text-white">&pound;{stats.totalCollected.toFixed(0)}</div>
-              <div className="text-xs text-white/60 mt-0.5">Collected</div>
-              <div className="text-[11px] text-white/40 mt-1">{collectionRate}% collection rate</div>
-            </div>
-            {/* Overdue */}
-            <div className={`relative overflow-hidden bg-white/[0.05] backdrop-blur-xl border rounded-2xl p-5 ${stats.overdueCount > 0 ? 'border-red-500/30' : 'border-white/[0.08]'}`}>
-              <div className={`absolute -top-6 -right-6 w-20 h-20 ${stats.overdueCount > 0 ? 'bg-red-500/15' : 'bg-white/[0.04]'} blur-2xl rounded-full pointer-events-none`} aria-hidden />
-              <span className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 border ${stats.overdueCount > 0 ? 'bg-red-500/15 border-red-500/25 text-red-300' : 'bg-white/[0.06] border-white/[0.12] text-white/50'}`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-              </span>
-              <div className={`text-2xl font-bold ${stats.overdueCount > 0 ? 'text-red-400' : 'text-white'}`}>{stats.overdueCount}</div>
-              <div className="text-xs text-white/60 mt-0.5">Overdue</div>
-              <div className={`text-[11px] mt-1 ${stats.overdueCount > 0 ? 'text-red-400/70' : 'text-white/40'}`}>{stats.overdueCount > 0 ? 'Needs attention' : 'All clear'}</div>
-            </div>
-          </div>
-
           {/* Payouts — when the money lands, and what came out of it */}
           <PayoutsBox snapshot={payoutSnapshot} />
 
@@ -1249,63 +1175,41 @@ async function AdminPayments({
             </div>
           )}
 
-          {/* Active Subscriptions Table */}
+          {/* Memberships: search, tabs, one calm row each */}
           {(allSubscriptions || []).length > 0 && (
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5"><h2 className="text-lg font-semibold text-white mb-4">Subscriptions</h2>
-              <div className="space-y-2">
-                {(allSubscriptions || []).map((sub) => {
-                  const plan = sub.plan as unknown as SubscriptionPlan
-                  const player = sub.player as unknown as { first_name: string; last_name: string } | null
-                  const parent = sub.parent as unknown as { full_name: string } | null
-                  const periodEnd = sub.current_period_end
-                    ? new Date(sub.current_period_end).toLocaleDateString()
-                    : '—'
-
-                  return (
-                    <div
-                      key={sub.id}
-                      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 rounded-xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.12] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {adminInitialsChip(parent?.full_name || '')}
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm truncate text-white">
-                            {parent?.full_name || '—'}
-                            {player && (
-                              <span className="text-white/55 font-normal">
-                                {' '}&middot; {player.first_name} {player.last_name}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-white/55 mt-0.5">
-                            <span className="text-white/75 font-medium">&pound;{plan ? Number(plan.amount).toFixed(0) : '—'}</span>/mo &middot; Next: {periodEnd}
-                          </div>
-                        </div>
-                      </div>
-                      {adminSubStatusPill(sub.status)}
-                      <SubscriptionActions
-                        subscriptionId={sub.id}
-                        currentStatus={sub.status}
-                        currentPlanId={sub.plan_id}
-                        plans={activePlans}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            <MembershipsList
+              plans={activePlans}
+              rows={(allSubscriptions || []).map((sub): MembershipRow => {
+                const plan = sub.plan as unknown as SubscriptionPlan | null
+                const player = sub.player as unknown as { first_name: string; last_name: string } | null
+                const parent = sub.parent as unknown as { full_name: string } | null
+                const end = sub.current_period_end
+                  ? new Date(sub.current_period_end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' })
+                  : null
+                const live = ['active', 'trialing', 'scheduled', 'past_due'].includes(sub.status)
+                return {
+                  id: sub.id,
+                  status: sub.status,
+                  planId: sub.plan_id,
+                  parentName: parent?.full_name || '',
+                  playerName: player ? `${player.first_name} ${player.last_name}` : null,
+                  planName: plan?.name || 'No plan',
+                  amount: plan ? Number(plan.amount) : null,
+                  nextLabel: live && !sub.cancel_at_period_end ? end : null,
+                  endsLabel: live && sub.cancel_at_period_end ? end : null,
+                }
+              })}
+            />
           )}
 
-          <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
-
           {/* One-off Payments */}
-          <div className="border-t border-white/[0.08] pt-6 space-y-4">
+          <div className="pt-2 space-y-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold">Payments</h2>
+                <h2 className="text-[15px] font-semibold text-[#eef2f9]">Payments and invoices</h2>
                 {monthLabel && (
                   <p className="mt-0.5 text-[13px] text-white/45">
-                    {monthLabel} · <span className="font-semibold text-emerald-300 tabular-nums">£{monthCollected.toFixed(2)}</span> collected across {monthCount} payment{monthCount === 1 ? '' : 's'}
+                    {monthLabel} · <span className="font-semibold text-[#eef2f9] tabular-nums">£{monthCollected.toFixed(2)}</span> collected across {monthCount} payment{monthCount === 1 ? '' : 's'}
                   </p>
                 )}
               </div>
@@ -1350,7 +1254,7 @@ async function AdminPayments({
             {(payments || []).length === 0 ? (
               <EmptyState message={filter === 'all' ? 'No payments recorded yet.' : `No ${filter} payments.`} />
             ) : (
-              <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+              <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -1401,7 +1305,7 @@ async function AdminPayments({
                             </span>
                           </td>
                           <td className="py-2.5 hidden md:table-cell text-white/60">
-                            {p.due_date ? new Date(p.due_date as string).toLocaleDateString() : '—'}
+                            {p.due_date ? new Date(p.due_date as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                           </td>
                           <td className="py-2.5">
                             <PaymentStatusToggleClient
