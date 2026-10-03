@@ -156,27 +156,40 @@ export default function SubscriptionActions({
       {/* Plan switcher: opens on "Change plan". Preview, then confirm. Nothing changes until Confirm. */}
       {canChangePlan && changing && (
         <div className="w-full rounded-[12px] border border-[#293b58] bg-[#080e18] p-3 text-left" data-testid="plan-change-panel">
-          <label className="block text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">
-            Move to
-            <select
-              value={pick}
-              disabled={loading}
-              onChange={(e) => { setPick(e.target.value); if (e.target.value !== currentPlanId) askPlan(e.target.value, false); else setPreview(null) }}
-              aria-label="Plan"
-              data-testid="plan-switcher"
-              className="mt-1.5 block w-full rounded-[9px] border border-[#293b58] bg-[#0f1a2b] px-2.5 py-2 text-sm font-normal normal-case tracking-normal text-[#eef2f9] focus:border-[#4ecde6] focus:outline-none disabled:opacity-60"
-            >
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} · £{Number(p.amount).toFixed(Number(p.amount) % 1 ? 2 : 0)}{p.id === currentPlanId ? ' (now)' : ''}</option>
-              ))}
-            </select>
-          </label>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">Move to</p>
+          <div role="radiogroup" aria-label="Plan" data-testid="plan-switcher" className="mt-2 max-h-60 space-y-1 overflow-y-auto pr-1">
+            {[...plans].sort((x, y) => Number(x.amount) - Number(y.amount)).filter((p) => !preview || p.id === pick).map((p) => {
+              const isNow = p.id === currentPlanId
+              const chosen = !isNow && p.id === pick
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={chosen}
+                  disabled={loading || isNow}
+                  onClick={() => { setPick(p.id); askPlan(p.id, false) }}
+                  className={`flex w-full items-center justify-between gap-3 rounded-[9px] border px-3 py-2 text-left text-sm transition-colors ${
+                    chosen
+                      ? 'border-[#4ecde6] bg-[#4ecde6]/10 text-[#eef2f9]'
+                      : isNow
+                        ? 'border-transparent text-[#5b6c86]'
+                        : 'border-transparent text-[#eef2f9] hover:border-[#293b58] hover:bg-[#0f1a2b] disabled:opacity-60'
+                  }`}
+                >
+                  <span className="min-w-0 truncate">{p.name}</span>
+                  <span className={`shrink-0 tabular-nums ${isNow ? '' : 'text-[#93a2ba]'}`}>{isNow && 'now · '}&pound;{Number(p.amount).toFixed(Number(p.amount) % 1 ? 2 : 0)}</span>
+                </button>
+              )
+            })}
+          </div>
           {preview ? (
-            <div className="mt-3 text-xs text-[#93a2ba]" data-testid="plan-change-preview">
+            <div className="mt-3 border-t border-[#1d2c42] pt-3 text-xs text-[#93a2ba]" data-testid="plan-change-preview">
               <p className="text-[#eef2f9]">Move to {preview.to}. Nothing charged today.</p>
               <p className="mt-0.5">{preview.paused ? 'Membership is paused.' : `Next payment ${preview.nextAmount} on ${preview.nextDate}.`} The family gets an email.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" disabled={loading} onClick={() => askPlan(pick, true)} className="rounded-[9px] bg-[#4ecde6] px-3 py-1.5 text-xs font-semibold text-[#04141a] disabled:opacity-50">Confirm change</button>
+                <button type="button" disabled={loading} onClick={() => { setPick(currentPlanId); setPreview(null) }} className={quiet}>Pick another</button>
                 <button type="button" disabled={loading} onClick={() => { setPick(currentPlanId); setPreview(null); setChanging(false) }} className={quiet}>Keep current</button>
               </div>
             </div>

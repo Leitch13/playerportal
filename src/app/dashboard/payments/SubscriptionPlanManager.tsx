@@ -119,65 +119,63 @@ export default function SubscriptionPlanManager({
           {notice}
         </div>
       )}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Subscription Plans</h2>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-[15px] font-semibold text-[#eef2f9]">Plans</h2>
+          <p className="mt-0.5 text-xs text-[#93a2ba]">
+            {plans.filter((p) => p.active).length} on sale{plans.some((p) => !p.active) ? ` · ${plans.filter((p) => !p.active).length} switched off` : ''}
+          </p>
+        </div>
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+            className="rounded-[10px] bg-[#4ecde6] px-3.5 py-2 text-xs font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee]"
           >
-            + Add Plan
+            + Add plan
           </button>
         )}
       </div>
 
-      {/* Existing plans */}
+      {/* Existing plans: one row each, on sale first, cheapest first */}
       {plans.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`rounded-xl border p-4 ${
-                plan.active ? 'border-[#1d2c42] bg-[#0f1a2b]' : 'border-[#1d2c42]/50 bg-[#080e18]/50 opacity-60'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="font-semibold text-sm">{plan.name}</div>
-                  {plan.description && (
-                    <div className="text-xs text-white/60 mt-0.5">{plan.description}</div>
-                  )}
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  plan.active ? 'bg-cyan-100 text-cyan-800' : 'bg-[#080e18] text-gray-500'
+        <ul className="divide-y divide-[#1d2c42] rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]">
+          {[...plans].sort((x, y) => Number(y.active) - Number(x.active) || Number(x.amount) - Number(y.amount)).map((plan) => (
+            <li key={plan.id} className={`flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-5 ${plan.active ? '' : 'opacity-60'}`}>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-[#eef2f9]">{plan.name}</p>
+                <p className="mt-0.5 truncate text-xs text-[#93a2ba]">
+                  {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''} a week
+                  {plan.description ? ` · ${plan.description}` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <p className="text-sm tabular-nums text-[#eef2f9] sm:w-28 sm:text-right">
+                  <span className="text-base font-semibold">&pound;{Number(plan.amount).toFixed(Number(plan.amount) % 1 ? 2 : 0)}</span>
+                  <span className="text-xs text-[#93a2ba]"> a {plan.interval}</span>
+                </p>
+                <span className={`inline-flex w-[84px] justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                  plan.active ? 'border-[#67c79a]/40 text-[#67c79a]' : 'border-[#293b58] text-[#93a2ba]'
                 }`}>
-                  {plan.active ? 'Active' : 'Inactive'}
+                  {plan.active ? 'On sale' : 'Switched off'}
                 </span>
+                <div className="ml-auto flex gap-2 sm:ml-0">
+                  <button
+                    onClick={() => startEdit(plan)}
+                    className="rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9]"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => toggleActive(plan.id, plan.active)}
+                    className="w-[84px] rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9]"
+                  >
+                    {plan.active ? 'Switch off' : 'Switch on'}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-2xl font-bold">&pound;{Number(plan.amount).toFixed(0)}</span>
-                <span className="text-sm text-white/60">/{plan.interval}</span>
-              </div>
-              <div className="text-xs text-white/60 mb-3">
-                {plan.sessions_per_week} session{plan.sessions_per_week !== 1 ? 's' : ''}/week
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => startEdit(plan)}
-                  className="text-xs px-2.5 py-1 border border-[#1d2c42] rounded-lg hover:bg-white/5 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => toggleActive(plan.id, plan.active)}
-                  className="text-xs px-2.5 py-1 border border-[#1d2c42] rounded-lg hover:bg-white/5 transition-colors"
-                >
-                  {plan.active ? 'Deactivate' : 'Activate'}
-                </button>
-              </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
 
       {/* Add/Edit form */}
@@ -265,7 +263,7 @@ export default function SubscriptionPlanManager({
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="rounded-[10px] bg-[#4ecde6] px-5 py-2 text-sm font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee] disabled:opacity-50"
               >
                 {loading ? 'Saving...' : editing ? 'Update Plan' : 'Create Plan'}
               </button>

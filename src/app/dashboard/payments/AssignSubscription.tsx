@@ -75,9 +75,9 @@ export default function AssignSubscription({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors"
+        className="rounded-[10px] border border-[#293b58] px-3.5 py-2 text-xs font-semibold text-[#eef2f9] transition-colors hover:border-[#4ecde6]"
       >
-        + Assign Subscription
+        Give a player a membership
       </button>
     )
   }
@@ -124,12 +124,12 @@ export default function AssignSubscription({
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50 transition-colors"
+          className="rounded-[10px] bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee] disabled:opacity-50"
         >
           {loading ? 'Assigning...' : 'Assign'}
         </button>
       </form>
-      {success && <p className="text-xs text-accent font-medium mt-2">{success}</p>}
+      {success && <p className="text-xs text-[#67c79a] font-medium mt-2">{success}</p>}
     </div>
   )
 }

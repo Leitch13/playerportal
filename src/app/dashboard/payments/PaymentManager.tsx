@@ -98,9 +98,9 @@ export default function PaymentManager({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-warning text-white rounded-lg text-sm font-medium hover:bg-warning/90 transition-colors"
+        className="rounded-[10px] border border-[#293b58] px-3.5 py-2 text-xs font-semibold text-[#eef2f9] transition-colors hover:border-[#4ecde6]"
       >
-        + Add Payment
+        Add a one-off payment
       </button>
     )
   }
@@ -212,7 +212,7 @@ export default function PaymentManager({
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2 bg-warning text-white rounded-lg text-sm font-medium hover:bg-warning/90 disabled:opacity-50 transition-colors"
+            className="rounded-[10px] bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee] disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Add Payment'}
           </button>

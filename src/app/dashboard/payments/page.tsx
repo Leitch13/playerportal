@@ -1398,6 +1398,10 @@ async function AdminPayments({
         <>
           <SubscriptionPlanManager plans={plans || []} orgId={orgId} />
 
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#eef2f9]">Do it by hand</h2>
+            <p className="mt-0.5 text-xs text-[#93a2ba]">For the odd case where a parent can&rsquo;t sign up or pay online themselves.</p>
+          </div>
           {activePlans.length > 0 && (
             <AssignSubscription plans={activePlans} players={playersForAssign} orgId={orgId} />
           )}

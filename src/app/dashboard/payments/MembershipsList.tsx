@@ -118,7 +118,7 @@ export default function MembershipsList({ rows, plans }: { rows: MembershipRow[]
           {shown.map((r) => {
             const p = pill(r.status)
             return (
-              <li key={r.id} className="flex flex-col gap-3 px-4 py-3.5 sm:px-5 lg:flex-row lg:items-center lg:gap-4">
+              <li key={r.id} className="flex flex-col gap-3 px-4 py-3.5 sm:px-5 lg:flex-row lg:items-start lg:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#293b58] bg-[#142236] text-xs font-semibold text-[#93a2ba]" aria-hidden>
                     {initials(r.parentName)}
@@ -135,7 +135,7 @@ export default function MembershipsList({ rows, plans }: { rows: MembershipRow[]
                     </p>
                   </div>
                 </div>
-                <span className={`inline-flex w-fit shrink-0 items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${p.cls}`}>{p.label}</span>
+                <span className={`inline-flex w-fit shrink-0 items-center rounded-full border px-2.5 py-0.5 lg:mt-1.5 text-xs font-medium ${p.cls}`}>{p.label}</span>
                 <div className="lg:w-[340px] lg:shrink-0">
                   <SubscriptionActions subscriptionId={r.id} currentStatus={r.status} currentPlanId={r.planId} plans={plans} />
                 </div>
