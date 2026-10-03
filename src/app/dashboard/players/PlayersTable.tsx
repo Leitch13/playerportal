@@ -13,6 +13,13 @@
  * Quick actions per row are LINKS ONLY — every secondary action navigates
  * to an existing page. There are no inline DB writes, no API endpoints
  * called from this component.
+ *
+ * Oct 2026 — the calm list. By default an owner sees search, a class
+ * picker and three tabs (Active / Paused / Archived), with four columns:
+ * player, class, parent, membership. Everything the old list had is still
+ * here under "More filters": every filter chip, the sort, and the
+ * Attendance + Last attended columns and risk labels. Deep links such as
+ * ?filter=attendance_risk or ?filter=archived open with it showing.
  */
 
 import Link from 'next/link'
@@ -31,6 +38,7 @@ import {
   type AttendanceRiskAssessment,
   type AttendanceFilterKey,
 } from '@/lib/attendance-risk-derive'
+import { membershipPill, type PillTone } from '@/lib/needs-a-look'
 
 // ─── Row contract ──────────────────────────────────────────────────────
 // The page-level loader computes these per player and hands the list to
@@ -50,6 +58,10 @@ export interface PlayersTableRow {
   attendancePct: number | null
   lastAttendanceDays: number | null  // null = no attendance recorded
   subStatus: DerivedSubStatus
+  /** Raw membership statuses for this player. Feeds the one membership pill. */
+  subStatuses?: Array<string | null>
+  /** A 1-2-1 slot or camp booking, for a player with no class. Display only. */
+  otherPlace?: '1-2-1s' | 'Camp' | null
   rowStatus: DerivedRowStatus
   reviewDue: boolean
   joinedAt: string  // ISO — for sort
@@ -84,9 +96,10 @@ type FilterKey =
 
 type SortKey = 'name' | 'age' | 'last_attended' | 'attendance_pct' | 'joined'
 
+// The Active / Paused / Archived tabs sit above these; the chips below are the
+// finer filters, kept under "More filters".
 const FILTER_CHIPS: Array<{ key: FilterKey; label: string }> = [
-  { key: 'all', label: 'All' },
-  { key: 'active', label: 'Active' },
+  { key: 'active', label: 'In a class' },
   { key: 'pending', label: 'Pending start' },
   { key: 'trial', label: 'Trial' },
   // Phase 2.4 — matches players in awaiting_followup OR stale_followup
@@ -94,7 +107,6 @@ const FILTER_CHIPS: Array<{ key: FilterKey; label: string }> = [
   // are not in this filter; they remain visible on /dashboard/enrolments
   // and /dashboard/trials.
   { key: 'trial_followup', label: 'Trial follow-up due' },
-  { key: 'paused', label: 'Paused' },
   { key: 'payment_issue', label: 'Payment issue' },
   { key: 'review_due', label: 'Review due' },
   // Phase 2.8 — Attendance Risk filters. Routed through
@@ -106,9 +118,8 @@ const FILTER_CHIPS: Array<{ key: FilterKey; label: string }> = [
   { key: 'attendance_risk', label: 'Attendance risk' },
   { key: 'no_attendance_14d', label: 'No attendance (14d)' },
   { key: 'no_attendance_30d', label: 'No attendance (30d)' },
-  // Sprint 7 — visible-only-when-needed chip. Defaults to active view.
-  { key: 'archived', label: 'Archived' },
 ]
+const TAB_KEYS: FilterKey[] = ['all', 'paused', 'archived']
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
   { key: 'name', label: 'Name (A→Z)' },
@@ -118,20 +129,11 @@ const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
   { key: 'joined', label: 'Date joined' },
 ]
 
-// Static chip palettes — kept JIT-safe.
-const SUB_CHIP: Record<DerivedSubStatus, { label: string; emoji: string; cls: string }> = {
-  active:    { label: 'Active',    emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  past_due:  { label: 'Past due',  emoji: '', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
-  pending:   { label: 'Pending',   emoji: '⏳', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  cancelled: { label: 'Cancelled', emoji: '', cls: 'bg-white/[0.05] text-white/50 border-white/[0.10]' },
-  none:      { label: 'No sub',    emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.08]' },
-}
-const STATUS_CHIP: Record<DerivedRowStatus, { label: string; emoji: string; cls: string }> = {
-  active:   { label: 'Active',   emoji: '', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-  pending:  { label: 'Pending',  emoji: '', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-  trial:    { label: 'Trial',    emoji: '', cls: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
-  paused:   { label: 'Paused',   emoji: '', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
-  inactive: { label: 'Inactive', emoji: '·',  cls: 'bg-white/[0.04] text-white/40 border-white/[0.08]' },
+const PILL_TONE: Record<PillTone, string> = {
+  ok:   'text-[#67c79a] bg-[#67c79a]/[0.12]',
+  warn: 'text-[#d8a95a] bg-[#d8a95a]/[0.13]',
+  bad:  'text-[#e0736d] bg-[#e0736d]/[0.13]',
+  off:  'text-[#93a2ba] bg-[#93a2ba]/[0.10]',
 }
 const LEVEL_CHIP: Record<string, string> = {
   beginner:     'bg-green-500/15 text-green-400',
@@ -151,8 +153,26 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
   // setSearch).
   const filterParam = (searchParams.get('filter') as FilterKey | null) || 'all'
   const sortParam = (searchParams.get('sort') as SortKey | null) || 'name'
-  const searchParam = searchParams.get('q') || ''
+  // `search` is what the Attendance and Enrolments pages link with; `q` is this list's own.
+  const searchParam = searchParams.get('q') || searchParams.get('search') || ''
   const [search, setSearch] = useState(searchParam)
+  const [classPick, setClassPick] = useState('')
+
+  // "More filters" holds the finer chips, the sort and the attendance columns.
+  // It opens by itself when a deep link (or the owner) is using one of them.
+  const usingChip = !TAB_KEYS.includes(filterParam)
+  const [moreOpen, setMoreOpen] = useState(usingChip || sortParam !== 'name')
+  const showMore = moreOpen || usingChip
+  const tab: 'active' | 'paused' | 'archived' = filterParam === 'archived' ? 'archived' : filterParam === 'paused' ? 'paused' : 'active'
+
+  const tabCounts = useMemo(() => ({
+    active: rows.filter(r => !r.archivedAt && r.rowStatus !== 'paused').length,
+    paused: rows.filter(r => !r.archivedAt && r.rowStatus === 'paused').length,
+    archived: rows.filter(r => !!r.archivedAt).length,
+  }), [rows])
+  const classOptions = useMemo(() => [...new Set(
+    rows.filter(r => !r.archivedAt).flatMap(r => r.className.split(', ').filter(Boolean)),
+  )].sort((a, b) => a.localeCompare(b)), [rows])
 
   // Push a single URL update for any (search, filter, sort) change. We
   // don't router.refresh() — the data is already on the client.
@@ -190,6 +210,11 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
       } else {
         if (isArchived) return false
       }
+
+      // The plain view is the Active tab: everyone who isn't archived or paused.
+      // Paused children have their own tab.
+      if (filterParam === 'all'           && r.rowStatus === 'paused')         return false
+      if (classPick && !r.className.split(', ').includes(classPick))           return false
 
       // Filter chip
       if (filterParam === 'active'        && r.rowStatus !== 'active')         return false
@@ -253,87 +278,121 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
     }
     out = [...out].sort(cmp)
     return out
-  }, [rows, search, filterParam, sortParam])
+  }, [rows, search, filterParam, sortParam, classPick])
 
   return (
     <div className="space-y-4">
-      {/* ── Toolbar: search + sort ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1 relative">
+      {/* ── Toolbar: search + class + the three tabs + More filters ── */}
+      <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+        <div className="relative flex-1 min-w-0">
+          <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5b6c86]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
           <input
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
             onBlur={() => updateUrl({ q: search })}
             onKeyDown={e => { if (e.key === 'Enter') updateUrl({ q: search }) }}
-            placeholder="Search by player or parent name…"
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-white/30"
+            placeholder="Search a player or parent"
+            aria-label="Search players"
+            className="w-full bg-[#0f1a2b] border border-[#1d2c42] rounded-[10px] pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-[#5b6c86] focus:outline-none focus:border-[#4ecde6]/60"
           />
         </div>
-        <select
-          value={sortParam}
-          onChange={e => updateUrl({ sort: e.target.value as SortKey })}
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/30"
-        >
-          {SORT_OPTIONS.map(o => (
-            <option key={o.key} value={o.key}>{o.label}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* ── Filter chip row ── */}
-      <div className="flex flex-wrap gap-1.5">
-        {FILTER_CHIPS.map(f => {
-          const active = filterParam === f.key
-          return (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => updateUrl({ filter: f.key })}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                active
-                  ? 'bg-[#4ecde6]/15 text-[#4ecde6] border-[#4ecde6]/40'
-                  : 'bg-white/[0.03] text-white/60 border-white/[0.08] hover:bg-white/[0.06]'
-              }`}
+        <div className="flex items-center gap-2 flex-wrap">
+          {classOptions.length > 1 && (
+            <select
+              value={classPick}
+              onChange={e => setClassPick(e.target.value)}
+              aria-label="Class"
+              className="max-w-[220px] bg-[#0f1a2b] border border-[#1d2c42] rounded-[10px] px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#4ecde6]/60"
             >
-              {f.label}
-            </button>
-          )
-        })}
+              <option value="">All classes</option>
+              {classOptions.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
+          <div className="inline-flex gap-0.5 rounded-[10px] border border-[#1d2c42] bg-[#0f1a2b] p-[3px]" role="group" aria-label="Which players to show">
+            <SegButton active={tab === 'active'} onClick={() => updateUrl({ filter: 'all' })}>Active <Count>{tabCounts.active}</Count></SegButton>
+            <SegButton active={tab === 'paused'} onClick={() => updateUrl({ filter: 'paused' })}>Paused <Count>{tabCounts.paused}</Count></SegButton>
+            <SegButton active={tab === 'archived'} onClick={() => updateUrl({ filter: 'archived' })}>Archived <Count>{tabCounts.archived}</Count></SegButton>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMoreOpen(o => !o)}
+            aria-expanded={showMore}
+            className={`rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors ${showMore ? 'bg-[#142236] text-white' : 'text-[#93a2ba] hover:text-white'}`}
+          >
+            More filters
+          </button>
+        </div>
       </div>
 
-      {/* ── Result summary ── */}
-      <div className="text-[11px] text-white/40">
-        Showing {visibleRows.length} of {rows.length} player{rows.length === 1 ? '' : 's'}
-      </div>
+      {/* ── More filters: every finer filter and sort the list had before ── */}
+      {showMore && (
+        <div className="rounded-[12px] border border-[#1d2c42] bg-[#0f1a2b] p-3 space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {FILTER_CHIPS.map(f => {
+              const active = filterParam === f.key
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => updateUrl({ filter: active ? 'all' : f.key })}
+                  aria-pressed={active}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    active
+                      ? 'bg-[#4ecde6]/15 text-[#4ecde6] border-[#4ecde6]/40'
+                      : 'bg-white/[0.03] text-white/60 border-white/[0.08] hover:bg-white/[0.06]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              )
+            })}
+          </div>
+          <label className="flex items-center gap-2 text-xs text-[#93a2ba]">
+            Sort by
+            <select
+              value={sortParam}
+              onChange={e => updateUrl({ sort: e.target.value as SortKey })}
+              className="bg-[#080e18] border border-[#1d2c42] rounded-lg px-2.5 py-1.5 text-[13px] text-white focus:outline-none focus:border-[#4ecde6]/60"
+            >
+              {SORT_OPTIONS.map(o => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
-      {/* ── Table ── */}
-      <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden">
+      {/* ── Result summary, only when something is narrowing the list ── */}
+      {(usingChip || classPick || search.trim()) && (
+        <div className="text-xs text-[#5b6c86] tabular-nums">
+          Showing {visibleRows.length} of {rows.length} player{rows.length === 1 ? '' : 's'}
+        </div>
+      )}
+
+      {/* ── List ── */}
+      <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.08] bg-white/[0.02]">
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Player</th>
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden sm:table-cell">Age</th>
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden md:table-cell">Class</th>
-                {/* Sprint M1 (MF-4) — Attendance % surfaces from sm: instead of md:
-                    so phones get the headline retention signal alongside Age. */}
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden sm:table-cell">Attendance</th>
-                {/* Phase 2.8 — "Last attended" column. Hidden below lg
-                    to preserve mobile layout. The badge cell inside
-                    Player still shows the inline risk label so mobile
-                    users see something. */}
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider hidden lg:table-cell">Last attended</th>
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Sub</th>
-                <th className="text-left py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Status</th>
-                <th className="text-right py-2 px-3 font-medium text-white/60 text-[11px] uppercase tracking-wider">Actions</th>
+              <tr className="border-b border-[#1d2c42] bg-white/[0.015]">
+                <Th>Player</Th>
+                <Th className="hidden md:table-cell">Class</Th>
+                <Th className="hidden lg:table-cell">Parent</Th>
+                {/* Sprint M1 (MF-4) / Phase 2.8 — attendance columns, now under "More filters". */}
+                {showMore && <Th className="hidden sm:table-cell">Attendance</Th>}
+                {showMore && <Th className="hidden lg:table-cell">Last attended</Th>}
+                <Th className="hidden sm:table-cell">Membership</Th>
+                <Th className="hidden sm:table-cell text-right"><span className="sr-only">Actions</span></Th>
               </tr>
             </thead>
             <tbody>
               {visibleRows.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-8 text-white/40 text-sm">No players match this filter.</td></tr>
+                <tr><td colSpan={showMore ? 7 : 5} className="text-center py-10 px-4 text-[#93a2ba] text-sm">
+                  {tab === 'paused' && !search.trim() ? 'Nobody is paused.' : tab === 'archived' && !search.trim() ? 'No archived players.' : 'No players match this.'}
+                </td></tr>
               ) : visibleRows.map(r => (
-                <PlayerRow key={r.id} r={r} />
+                <PlayerRow key={r.id} r={r} showMore={showMore} />
               ))}
             </tbody>
           </table>
@@ -343,147 +402,175 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
   )
 }
 
-function PlayerRow({ r }: { r: PlayersTableRow }) {
-  const sub = SUB_CHIP[r.subStatus]
-  const status = STATUS_CHIP[r.rowStatus]
-  const isArchived = !!r.archivedAt
+function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <th className={`text-left py-2.5 px-4 font-semibold text-[#5b6c86] text-[11px] uppercase tracking-[0.07em] ${className}`}>{children}</th>
+}
+
+function SegButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <tr className={`border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] ${isArchived ? 'opacity-60' : ''}`}>
-      <td className="py-2.5 px-3">
-        <Link href={`/dashboard/players/${r.id}`} className="flex items-center gap-2 text-[#4ecde6] hover:underline">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-2 rounded-[7px] px-3 py-1.5 text-[13px] font-semibold transition-colors ${active ? 'bg-[#142236] text-white' : 'text-[#93a2ba] hover:text-white'}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Count({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-full bg-[#1d2c42] px-1.5 py-px text-[11px] font-semibold tabular-nums text-[#93a2ba]">{children}</span>
+}
+
+function Pill({ tone, children }: { tone: PillTone; children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${PILL_TONE[tone]}`}>
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
+      {children}
+    </span>
+  )
+}
+
+function PlayerRow({ r, showMore }: { r: PlayersTableRow; showMore: boolean }) {
+  const isArchived = !!r.archivedAt
+  // One pill: archived, then paused class, then the membership's own state, then trial.
+  const pill: { label: string; tone: PillTone } =
+    isArchived ? { label: 'Archived', tone: 'off' }
+    : r.rowStatus === 'paused' ? { label: 'Paused', tone: 'off' }
+    : (() => {
+        const m = membershipPill(r.subStatuses ?? [])
+        if (m.label === 'No membership' && r.rowStatus === 'trial') return { label: 'On a trial', tone: 'off' as PillTone }
+        return m
+      })()
+  const paying = pill.tone === 'ok' || pill.tone === 'bad'
+  const actions = (
+    <div className="inline-flex items-center gap-1">
+      <RowActionLink href={`/dashboard/players/${r.id}`} title="View profile"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['eye']}</svg></RowActionLink>
+      {r.parent_id && <RowActionLink href={`/dashboard/parents/${r.parent_id}`} title="View parent"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['parents']}</svg></RowActionLink>}
+      {r.parent_id && <RowActionLink href={`/dashboard/messages?to=${r.parent_id}`} title="Message parent"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionLink>}
+      <RowActionLink href={`/dashboard/attendance?player=${r.id}`} title="Mark attendance"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['check']}</svg></RowActionLink>
+      <RowActionLink href="/dashboard/enrolments" title="Move class"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['move']}</svg></RowActionLink>
+    </div>
+  )
+  return (
+    <tr className={`border-b border-[#1d2c42] last:border-0 hover:bg-[#142236] transition-colors ${isArchived ? 'opacity-60' : ''}`}>
+      {/* On phones this is the only column: membership and actions sit under the name. */}
+      <td className="py-3 px-4 max-sm:w-full max-sm:max-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <PlayerAvatar photoUrl={r.photo_url} firstName={r.first_name} lastName={r.last_name} size="sm" />
-          <span className="font-medium">{r.first_name} {r.last_name}</span>
-          {/* Sprint 7 — ARCHIVED badge. Always rendered when archived,
-              regardless of which filter the admin is on (defensive — the
-              filter logic already excludes archived from non-'archived'
-              filters, but the badge is the source of truth). */}
-          {isArchived && (
-            <span
-              title={`Archived${r.archiveReason ? ` — ${r.archiveReason.replace(/_/g, ' ')}` : ''}${r.archivedAt ? ` on ${new Date(r.archivedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`}
-              className="px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-300 border border-amber-500/30"
+          <div className="min-w-0">
+            <Link
+              href={`/dashboard/players/${r.id}`}
+              className="block truncate font-semibold text-white hover:text-[#4ecde6]"
+              title={isArchived ? `Archived${r.archiveReason ? ` — ${r.archiveReason.replace(/_/g, ' ')}` : ''}${r.archivedAt ? ` on ${new Date(r.archivedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}` : undefined}
             >
-              Archived
-            </span>
-          )}
-          {r.playing_level && LEVEL_CHIP[r.playing_level] && (
-            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${LEVEL_CHIP[r.playing_level]}`}>
-              {r.playing_level.charAt(0).toUpperCase() + r.playing_level.slice(1)}
-            </span>
-          )}
-          {r.reviewDue && (
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Review due"></span>
-          )}
-          {/* Phase 2.4 — Trial follow-up badge. Tone shifts to rose when stale.
-              Title text spells out the stage for the hover tooltip. */}
-          {r.trialFollowUpStage && (() => {
-            const badge = deriveTrialFollowUpBadge(r.trialFollowUpStage)
-            if (!badge) return null
-            const cls = badge.tone === 'rose'
-              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
-              : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-            return (
-              <span
-                title={badge.label}
-                className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium border ${cls}`}
-              >
-                {badge.emoji}
-              </span>
-            )
-          })()}
-          {/* Phase 2.5 — Optional "No contact 30+ days" badge. Rose tone so
-              it lines up visually with the existing trial stale follow-up
-              cue. No filter chip, no action — purely informational. */}
-          {r.noContact30dPlus && (
-            <span
-              title="Parent has not been contacted in 30+ days"
-              className="px-1.5 py-0.5 rounded-full text-[9px] font-medium border bg-rose-500/15 text-rose-300 border-rose-500/30"
-            >
-              
-            </span>
-          )}
-        </Link>
-        {/* Phase 2.8 — Attendance risk label. Reason-first wording per spec
-            ("Never attended (Nd enrolled)" / "Drifted away (Nd since
-            attendance)") — NO generic "High"/"Medium" labels. Tone follows
-            the derive layer's level. Renders nothing for healthy /
-            new_player / not_applicable. */}
-        {r.attendanceRisk && (r.attendanceRisk.riskLevel === 'high' || r.attendanceRisk.riskLevel === 'medium') && (
-          <div className="text-[11px] mt-1">
-            <span
-              className={
-                r.attendanceRisk.riskLevel === 'high'
-                  ? 'text-rose-300'
-                  : 'text-amber-300'
-              }
-            >
-               {r.attendanceRisk.riskReason.label}
-            </span>
-          </div>
-        )}
-        {r.parent_name && (
-          <div className="text-[11px] text-white/40 mt-0.5 truncate max-w-[260px]">↳ {r.parent_name}</div>
-        )}
-      </td>
-      <td className="py-2.5 px-3 hidden sm:table-cell text-white/70 tabular-nums">{r.age ?? '—'}</td>
-      <td className="py-2.5 px-3 hidden md:table-cell text-white/60 max-w-[200px] truncate" title={r.className}>{r.className || '—'}</td>
-      <td className="py-2.5 px-3 hidden sm:table-cell">
-        {r.attendancePct === null ? (
-          <span className="text-white/40">—</span>
-        ) : (
-          <div className="flex flex-col">
-            <span className="font-medium tabular-nums">{r.attendancePct}%</span>
-            {r.lastAttendanceDays !== null && (
-              <span className="text-[10px] text-white/40 tabular-nums">{r.lastAttendanceDays === 0 ? 'today' : `${r.lastAttendanceDays}d ago`}</span>
+              {r.first_name} {r.last_name}
+            </Link>
+            <div className="text-xs text-[#93a2ba] truncate">
+              {r.age !== null ? `Age ${r.age}` : 'Age not set'}
+              {/* Narrow screens hide the Class and Parent columns, so they sit here instead. */}
+              <span className="md:hidden">{r.className || r.otherPlace ? ` · ${r.className || r.otherPlace}` : ''}</span>
+              <span className="lg:hidden">{r.parent_name ? ` · ${r.parent_name}` : ''}</span>
+            </div>
+            {showMore && (
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                {r.playing_level && LEVEL_CHIP[r.playing_level] && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${LEVEL_CHIP[r.playing_level]}`}>
+                    {r.playing_level.charAt(0).toUpperCase() + r.playing_level.slice(1)}
+                  </span>
+                )}
+                {r.reviewDue && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">Review due</span>
+                )}
+                {/* Phase 2.4 — Trial follow-up badge. Tone shifts to rose when stale. */}
+                {r.trialFollowUpStage && (() => {
+                  const badge = deriveTrialFollowUpBadge(r.trialFollowUpStage)
+                  if (!badge) return null
+                  const cls = badge.tone === 'rose'
+                    ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                    : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                  return <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium border ${cls}`}>{badge.label}</span>
+                })()}
+                {/* Phase 2.5 — "No contact 30+ days". Informational only. */}
+                {r.noContact30dPlus && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium border bg-rose-500/15 text-rose-300 border-rose-500/30">No contact 30+ days</span>
+                )}
+                {/* Phase 2.8 — Attendance risk label, reason-first wording. */}
+                {r.attendanceRisk && (r.attendanceRisk.riskLevel === 'high' || r.attendanceRisk.riskLevel === 'medium') && (
+                  <span className={`text-[11px] ${r.attendanceRisk.riskLevel === 'high' ? 'text-rose-300' : 'text-amber-300'}`}>
+                    {r.attendanceRisk.riskReason.label}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </td>
-      {/* Phase 2.8 — Last attended column. Pure render from the derive
-          layer; formatter handles 'Today' / 'Yesterday' / 'N days ago'
-          / 'Never'. Tone shifts to rose when high-risk, amber when
-          medium, muted otherwise — same palette as the inline label. */}
-      <td className="py-2.5 px-3 hidden lg:table-cell">
-        {r.attendanceRisk ? (() => {
-          const label = formatLastAttended(r.attendanceRisk)
-          const level = r.attendanceRisk.riskLevel
-          const cls =
-            level === 'high'   ? 'text-rose-300 font-medium'
-            : level === 'medium' ? 'text-amber-300 font-medium'
-            : level === 'not_applicable' ? 'text-white/40'
-            : 'text-white/70'
-          return <span className={`text-xs tabular-nums ${cls}`}>{label}</span>
-        })() : <span className="text-white/40">—</span>}
-      </td>
-      <td className="py-2.5 px-3">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${sub.cls}`}>
-          <span aria-hidden>{sub.emoji}</span>{sub.label}
-        </span>
-      </td>
-      <td className="py-2.5 px-3">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${status.cls}`}>
-          <span aria-hidden>{status.emoji}</span>{status.label}
-        </span>
-      </td>
-      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-        <div className="inline-flex items-center gap-1">
-          <RowActionLink href={`/dashboard/players/${r.id}`} title="View profile"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['eye']}</svg></RowActionLink>
-          {r.parent_id && <RowActionLink href={`/dashboard/parents/${r.parent_id}`} title="View parent"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['parents']}</svg></RowActionLink>}
-          {r.parent_id && <RowActionLink href={`/dashboard/messages?to=${r.parent_id}`} title="Message parent"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionLink>}
-          <RowActionLink href={`/dashboard/attendance?player=${r.id}`} title="Mark attendance"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['check']}</svg></RowActionLink>
-          <RowActionLink href="/dashboard/enrolments" title="Move class"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['move']}</svg></RowActionLink>
+        </div>
+        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 sm:hidden">
+          <Pill tone={pill.tone}>{pill.label}</Pill>
+          {actions}
         </div>
       </td>
+      <td className="py-3 px-4 hidden md:table-cell max-w-[240px] truncate" title={r.className}>
+        {r.className
+          ? <span className="text-white/90">{r.className}</span>
+          : r.otherPlace
+            ? <span className="text-white/90">{r.otherPlace}</span>
+            // A paused, pending or trial place isn't "no class": only say that when there is none at all.
+            : isArchived || r.rowStatus === 'paused' ? <span className="text-[#5b6c86]">—</span>
+            : r.rowStatus === 'pending' ? <span className="text-[#93a2ba]">Starts soon</span>
+            : r.rowStatus === 'trial' ? <span className="text-[#93a2ba]">On a trial</span>
+            : <span className={paying ? 'text-[#d8a95a]' : 'text-[#5b6c86]'}>No class yet</span>}
+      </td>
+      <td className="py-3 px-4 hidden lg:table-cell max-w-[200px] truncate">
+        {r.parent_id && r.parent_name
+          ? <Link href={`/dashboard/parents/${r.parent_id}`} className="text-[#93a2ba] hover:text-white">{r.parent_name}</Link>
+          : <span className="text-[#5b6c86]">—</span>}
+      </td>
+      {showMore && (
+        <td className="py-3 px-4 hidden sm:table-cell">
+          {r.attendancePct === null ? (
+            <span className="text-white/40">—</span>
+          ) : (
+            <div className="flex flex-col">
+              <span className="font-medium tabular-nums">{r.attendancePct}%</span>
+              {r.lastAttendanceDays !== null && (
+                <span className="text-[10px] text-white/40 tabular-nums">{r.lastAttendanceDays === 0 ? 'today' : `${r.lastAttendanceDays}d ago`}</span>
+              )}
+            </div>
+          )}
+        </td>
+      )}
+      {/* Phase 2.8 — Last attended column. Pure render from the derive layer. */}
+      {showMore && (
+        <td className="py-3 px-4 hidden lg:table-cell">
+          {r.attendanceRisk ? (() => {
+            const label = formatLastAttended(r.attendanceRisk)
+            const level = r.attendanceRisk.riskLevel
+            const cls =
+              level === 'high'   ? 'text-rose-300 font-medium'
+              : level === 'medium' ? 'text-amber-300 font-medium'
+              : level === 'not_applicable' ? 'text-white/40'
+              : 'text-white/70'
+            return <span className={`text-xs tabular-nums ${cls}`}>{label}</span>
+          })() : <span className="text-white/40">—</span>}
+        </td>
+      )}
+      <td className="py-3 px-4 hidden sm:table-cell">
+        <Pill tone={pill.tone}>{pill.label}</Pill>
+      </td>
+      <td className="py-3 px-4 hidden sm:table-cell text-right whitespace-nowrap">{actions}</td>
     </tr>
   )
 }
 
-function RowActionLink({ href, title, children }: { href: string; title: string; children: React.ReactNode }) {
+function RowActionLink({ href, title, children, className = 'inline-flex' }: { href: string; title: string; children: React.ReactNode; className?: string }) {
   return (
     <Link
       href={href}
       title={title}
       aria-label={title}
-      className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[12px] bg-white/[0.04] hover:bg-white/[0.08] text-white/70 hover:text-white transition-colors"
+      className={`${className} items-center justify-center w-7 h-7 rounded-md text-[12px] text-[#5b6c86] hover:bg-white/[0.08] hover:text-white transition-colors`}
     >
       {children}
     </Link>

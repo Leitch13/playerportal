@@ -23,7 +23,6 @@ import QuickAddPlayer from './QuickAddPlayer'
 import ExportCSV from './ExportCSV'
 import ImportPlayersModal from './ImportPlayersModal'
 import PlayersTable, { type PlayersTableRow } from './PlayersTable'
-import PlayersInsightsBar from './PlayersInsightsBar'
 import {
   deriveAge,
   deriveActiveClassNames,
@@ -126,6 +125,21 @@ export default async function PlayersPage({
       list.push({ status: row.status || '' })
       subsByPlayer.set(row.player_id, list)
     }
+  }
+
+  // ── 2a. Other places a player can have: a 1-2-1 slot or a camp booking ──
+  // READ-ONLY, display only: stops the list saying "No class yet" for a keeper
+  // who only does 1-2-1s or a child only booked on a camp.
+  const otherPlaceByPlayer = new Map<string, '1-2-1s' | 'Camp'>()
+  if (playerIds.length > 0) {
+    const [slotsRes, campsRes] = await Promise.all([
+      supabase.from('regular_slots').select('player_id')
+        .eq('organisation_id', orgId).in('player_id', playerIds).in('status', ['pending', 'active', 'paused']),
+      supabase.from('camp_bookings').select('player_id')
+        .eq('organisation_id', orgId).in('player_id', playerIds).in('payment_status', ['paid', 'pending']),
+    ])
+    for (const r of ((campsRes.data || []) as Array<{ player_id: string | null }>)) if (r.player_id) otherPlaceByPlayer.set(r.player_id, 'Camp')
+    for (const r of ((slotsRes.data || []) as Array<{ player_id: string | null }>)) if (r.player_id) otherPlaceByPlayer.set(r.player_id, '1-2-1s')
   }
 
   // ── 3. Attendance — 365-day window aggregated per player.
@@ -245,6 +259,10 @@ export default async function PlayersPage({
       attendancePct: att?.pct ?? null,
       lastAttendanceDays: att ? daysSinceIso(att.lastDateIso) : null,
       subStatus: deriveSubStatus(subs),
+      // Oct 2026 — the raw membership statuses, for the calm list's one pill
+      // (so a paused or invited child isn't shown as "Cancelled"). Display only.
+      subStatuses: (subs || []).map(s => s.status),
+      otherPlace: otherPlaceByPlayer.get(p.id) ?? null,
       rowStatus: deriveRowStatus(p.enrolments),
       reviewDue: deriveReviewDue(latestReviewByPlayer.get(p.id) || null),
       joinedAt: p.created_at,
@@ -263,13 +281,12 @@ export default async function PlayersPage({
     }
   })
 
-  // ── 6. Insights bar totals (org-wide, NOT filtered by current view) ──
-  const counts = {
-    active:         tableRows.filter(r => r.rowStatus === 'active').length,
-    pendingStarts:  tableRows.filter(r => r.rowStatus === 'pending').length,
-    trials:         tableRows.filter(r => r.rowStatus === 'trial').length,
-    paymentIssues:  tableRows.filter(r => r.subStatus === 'past_due').length,
-  }
+  // ── 6. Header summary (org-wide, NOT filtered by current view) ──
+  // "Active" here matches the list's Active tab: not archived, not paused.
+  const activeRows = tableRows.filter(r => !r.archivedAt && r.rowStatus !== 'paused')
+  const classCount = new Set(
+    activeRows.flatMap(r => r.className.split(', ').filter(Boolean)),
+  ).size
 
   // ── 7. QuickAdd reference data — parents + groups + plans, org-scoped ──
   // (Same shape the existing QuickAddPlayer component expects. Plans feed the
@@ -296,23 +313,28 @@ export default async function PlayersPage({
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Players</h1>
-
-        <div className="flex items-center gap-3">
-          <QuickAddPlayer
-            parents={parents || []}
-            groups={groups || []}
-            plans={qaPlans || []}
-            autoOpen={params.add === '1'}
-            orgId={orgId}
-          />
-          <ImportPlayersModal />
-          <ExportCSV />
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Players</h1>
+            {tableRows.length > 0 && (
+              <p className="mt-1 text-sm text-[#93a2ba] tabular-nums">
+                {activeRows.length} active {activeRows.length === 1 ? 'player' : 'players'}
+                {classCount > 0 ? ` in ${classCount} ${classCount === 1 ? 'class' : 'classes'}` : ''}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <QuickAddPlayer
+              parents={parents || []}
+              groups={groups || []}
+              plans={qaPlans || []}
+              autoOpen={params.add === '1'}
+              orgId={orgId}
+            />
+            <ImportPlayersModal />
+            <ExportCSV />
+          </div>
         </div>
-
-        <PlayersInsightsBar counts={counts} />
-
-        <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />
 
         {tableRows.length === 0 ? (
           <EmptyState message="No players registered yet. Add one above." />

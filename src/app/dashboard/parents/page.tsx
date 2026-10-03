@@ -18,11 +18,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import EmptyState from '@/components/EmptyState'
-import ParentsInsightsBar from './ParentsInsightsBar'
 import ParentsTable, { type ParentsTableRow } from './ParentsTable'
-// Phase 2.6 — Families Requiring Attention (grouped High/Medium). Replaces
-// the prior single-tone AtRiskSection.
-import FamiliesRequiringAttention from './FamiliesRequiringAttention'
+// Oct 2026 — the calm list. The four insight tiles and the "Families requiring
+// attention" box (which flagged every family) are no longer rendered here; one
+// "Needs a look" filter in the table carries the real problems instead.
+import { familyLookReasons, membershipPill } from '@/lib/needs-a-look'
 import {
   deriveFamilyValue,
   deriveFamilyBillingStatus,
@@ -34,7 +34,6 @@ import {
   daysSinceIso,
   type AttendanceRow,
 } from '@/lib/players-derive'
-import { needsAttention } from '@/lib/parents-derive'
 // Phase 2.4: trial follow-up loader (same contract as the Enrolments page).
 // Reused verbatim — derivation logic lives in trial-derive.ts.
 import { loadTrialFollowUpRows } from '@/lib/trial-followups-loader'
@@ -54,7 +53,7 @@ export default async function ParentsPage({
 }: {
   searchParams: Promise<{ filter?: string; q?: string; sort?: string }>
 }) {
-  const params = await searchParams
+  await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/signin')
@@ -106,7 +105,7 @@ export default async function ParentsPage({
     ? await supabase
         .from('players')
         .select(`
-          id, first_name, last_name, parent_id,
+          id, first_name, last_name, parent_id, archived_at,
           enrolments(status, is_trial, trial_expires_at, activates_on, group:training_groups(name))
         `)
         .eq('organisation_id', orgId)
@@ -118,6 +117,7 @@ export default async function ParentsPage({
     first_name: string
     last_name: string
     parent_id: string
+    archived_at: string | null
     enrolments: Array<{ status: string | null; is_trial: boolean | null; trial_expires_at: string | null; activates_on: string | null; group: { name: string } | null }> | null
   }>
   const childrenByParent = new Map<string, typeof children>()
@@ -127,16 +127,33 @@ export default async function ParentsPage({
     childrenByParent.set(c.parent_id, list)
   }
 
+  // ─── 2a. Other places a child can have: a 1-2-1 slot or a camp booking ──
+  // READ-ONLY. A keeper who only does 1-2-1s, or a child only booked on a
+  // camp, has a place with the academy, so the list must not flag them as
+  // "Not in a class". A failed read just means no extra places are known.
+  const kidIds = children.map(c => c.id)
+  const hasOtherPlace = new Set<string>()
+  if (kidIds.length > 0) {
+    const [slotsRes, campsRes] = await Promise.all([
+      supabase.from('regular_slots').select('player_id')
+        .eq('organisation_id', orgId).in('player_id', kidIds).in('status', ['pending', 'active', 'paused']),
+      supabase.from('camp_bookings').select('player_id')
+        .eq('organisation_id', orgId).in('player_id', kidIds).in('payment_status', ['paid', 'pending']),
+    ])
+    for (const r of ((slotsRes.data || []) as Array<{ player_id: string | null }>)) if (r.player_id) hasOtherPlace.add(r.player_id)
+    for (const r of ((campsRes.data || []) as Array<{ player_id: string | null }>)) if (r.player_id) hasOtherPlace.add(r.player_id)
+  }
+
   // ─── 3. Subscriptions per parent (READ ONLY — status + plan amount) ──
   const { data: subsRows } = parentIds.length > 0
     ? await supabase
         .from('subscriptions')
-        .select('parent_id, player_id, status, plan:subscription_plans(name, amount)')
+        .select('parent_id, player_id, status, invite_sent_at, created_at, plan:subscription_plans(name, amount)')
         .eq('organisation_id', orgId)
         .in('parent_id', parentIds)
     : { data: [] }
 
-  type SubRow = { parent_id: string | null; player_id: string | null; status: string | null; plan: { name?: string | null; amount?: number | null } | null }
+  type SubRow = { parent_id: string | null; player_id: string | null; status: string | null; invite_sent_at?: string | null; created_at?: string | null; plan: { name?: string | null; amount?: number | null } | null }
   const subsByParent = new Map<string, SubRow[]>()
   const subsByChild  = new Map<string, Array<{ status: string | null }>>()
   for (const s of (subsRows || []) as SubRow[]) {
@@ -281,8 +298,26 @@ export default async function ParentsPage({
       contactSignal,
     })
 
+    // ── Oct 2026 — the calm list: one membership pill + real problems only ──
+    // Display-only. A child counts as "in a class" with any live class
+    // (active, pending, trial or paused), a 1-2-1 slot or a camp booking;
+    // archived children are ignored.
+    const liveKids = kids.filter(c => !c.archived_at)
+    const look = familyLookReasons({
+      subs: parentSubs.map(s => ({ status: s.status, inviteSentAtIso: s.invite_sent_at ?? null, createdAtIso: s.created_at ?? null })),
+      children: liveKids.map(c => ({
+        firstName: c.first_name,
+        hasClass: hasOtherPlace.has(c.id)
+          || (c.enrolments || []).some(e => ['active', 'pending', 'paused'].includes(e.status || '')),
+      })),
+      parentJoinedAtIso: p.created_at,
+    })
+    const pill = membershipPill(parentSubs.map(s => s.status))
+
     return {
       id: p.id,
+      look,
+      pill,
       parentName: p.full_name || '(unnamed)',
       parentEmail: p.email,
       parentPhone: p.phone,
@@ -314,39 +349,26 @@ export default async function ParentsPage({
     }
   })
 
-  // ─── 7. Insights counts (org-wide totals, NOT filtered view-bound) ───
-  const counts = {
-    total:          tableRows.length,
-    healthy:        tableRows.filter(r => r.billingStatus === 'healthy').length,
-    paymentIssues:  tableRows.filter(r => r.billingStatus === 'payment_issue').length,
-    needsAttention: tableRows.filter(r => needsAttention(r)).length,
-  }
-
-  // ─── 8. At-risk subset for the inline section ─────────────────────────
-  // Renders only when the current filter is "all" AND there's at least one
-  // High or Medium risk family to surface. Phase 2.6 grouped by tier.
-  const atRiskAll = tableRows.filter(r =>
-    r.riskAssessment && r.riskAssessment.riskLevel !== 'healthy',
-  )
-  const filterIsAll = !params.filter || params.filter === 'all'
-  const showAtRiskSection = filterIsAll && atRiskAll.length > 0
+  // ─── 7. Header summary: families and what they pay each month ────────
+  const monthlyTotal = tableRows.reduce((sum, r) => sum + r.familyValue, 0)
 
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Parents</h1>
-
-        <ParentsInsightsBar counts={counts} />
+        <div>
+          <h1 className="text-2xl font-bold text-white">Parents</h1>
+          {tableRows.length > 0 && (
+            <p className="mt-1 text-sm text-[#93a2ba] tabular-nums">
+              {tableRows.length} {tableRows.length === 1 ? 'family' : 'families'}
+              {monthlyTotal > 0 ? ` · £${monthlyTotal.toLocaleString('en-GB', { maximumFractionDigits: 0 })} a month` : ''}
+            </p>
+          )}
+        </div>
 
         {tableRows.length === 0 ? (
           <EmptyState message="No parents registered yet." />
         ) : (
-          <>
-            {showAtRiskSection && (
-              <FamiliesRequiringAttention families={atRiskAll} />
-            )}
-            <ParentsTable rows={tableRows} />
-          </>
+          <ParentsTable rows={tableRows} />
         )}
       </div>
     </div>

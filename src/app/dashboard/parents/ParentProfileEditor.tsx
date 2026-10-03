@@ -51,16 +51,16 @@ export default function ParentProfileEditor({ parent }: { parent: ParentData }) 
 
   if (!editing) {
     return (
-      <button onClick={() => setEditing(true)} className="text-xs text-primary hover:underline">
-        Edit Details
+      <button onClick={() => setEditing(true)} className="ml-1 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium text-[#93a2ba] hover:bg-white/[0.08] hover:text-white transition-colors">
+        Edit
       </button>
     )
   }
 
-  const inputClass = 'w-full px-3 py-1.5 text-sm border border-[#1d2c42] rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/20 focus:border-primary'
+  const inputClass = 'w-full px-3 py-1.5 text-sm text-white bg-[#080e18] border border-[#1d2c42] rounded-lg focus:outline-none focus:border-[#4ecde6]/60'
 
   return (
-    <div className="border-t border-[#1d2c42] pt-3 space-y-3">
+    <div className="mt-2 w-[min(420px,80vw)] whitespace-normal rounded-xl border border-[#1d2c42] bg-[#0f1a2b] p-3 space-y-3 text-left">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs text-[#93a2ba] mb-0.5">Phone</label>
@@ -84,10 +84,10 @@ export default function ParentProfileEditor({ parent }: { parent: ParentData }) 
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} />
       </div>
       <div className="flex gap-2">
-        <button onClick={handleSave} disabled={saving} className="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark disabled:opacity-50">
+        <button onClick={handleSave} disabled={saving} className="px-4 py-1.5 bg-[#4ecde6] text-[#04141a] rounded-lg text-xs font-semibold hover:bg-[#4ecde6]/90 disabled:opacity-50">
           {saving ? 'Saving...' : 'Save'}
         </button>
-        <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-[#1d2c42] rounded-lg text-xs font-medium hover:bg-[#142236]">
+        <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-[#1d2c42] rounded-lg text-xs font-medium text-[#93a2ba] hover:bg-[#142236] hover:text-white">
           Cancel
         </button>
       </div>
