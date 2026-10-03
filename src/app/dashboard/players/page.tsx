@@ -300,7 +300,7 @@ export default async function PlayersPage({
       .order('full_name'),
     supabase
       .from('training_groups')
-      .select('id, name')
+      .select('id, name, day_of_week, time_slot, location, max_capacity')
       .eq('organisation_id', orgId)
       .order('name'),
     supabase
@@ -339,7 +339,14 @@ export default async function PlayersPage({
         {tableRows.length === 0 ? (
           <EmptyState message="No players registered yet. Add one above." />
         ) : (
-          <PlayersTable rows={tableRows} />
+          <PlayersTable
+            rows={tableRows}
+            classes={((groups || []) as Array<{ name: string; day_of_week?: string | null; time_slot?: string | null; location?: string | null; max_capacity?: number | null }>).map(g => ({
+              name: g.name,
+              when: [g.day_of_week, g.time_slot, g.location].filter(Boolean).join(' · '),
+              capacity: g.max_capacity ?? null,
+            }))}
+          />
         )}
       </div>
     </div>

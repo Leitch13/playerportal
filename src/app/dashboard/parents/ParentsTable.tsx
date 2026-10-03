@@ -37,6 +37,7 @@ import {
 // Phase 2.5 — Last Contacted column. Pure helpers, no I/O.
 import { formatContactAge, contactBucket } from '@/lib/contact-derive'
 import { initialsOf, type LookReason, type MembershipPill, type PillTone } from '@/lib/needs-a-look'
+import { classTint, type ClassTints } from '@/lib/class-tint'
 
 // 'look' is this list's own filter: families with a real problem. It is not a
 // ParentFilterKey, so it never reaches parentMatchesFilter.
@@ -106,9 +107,11 @@ export interface ParentsTableRow extends ParentRowFacts {
   look: LookReason[]
   /** One membership pill for the family. */
   pill: MembershipPill
+  /** Live children and where they train, for the family cards. */
+  kids: Array<{ id: string; firstName: string; className: string | null; place: string }>
 }
 
-export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
+export default function ParentsTable({ rows, tints = {} }: { rows: ParentsTableRow[]; tints?: ClassTints }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -122,6 +125,10 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
   const usingOldFilter = filterParam !== 'all' && filterParam !== 'look'
   const [moreOpen, setMoreOpen] = useState(usingOldFilter || sortParam !== 'name')
   const showMore = moreOpen || usingOldFilter
+  // Cards are the everyday view. The list is one click away, and opens by itself
+  // with "More filters" because that is where its extra columns live.
+  const [asList, setAsList] = useState(false)
+  const listView = asList || showMore
 
   const updateUrl = (next: { q?: string; filter?: ListFilter; sort?: ParentSortKey }) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -183,6 +190,10 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
             <SegButton active={filterParam === 'look'} onClick={() => updateUrl({ filter: 'look' })}>
               Needs a look <Count warn={lookCount > 0}>{lookCount}</Count>
             </SegButton>
+          </div>
+          <div className="inline-flex gap-0.5 rounded-[10px] border border-[#1d2c42] bg-[#0f1a2b] p-[3px]" role="group" aria-label="Layout">
+            <SegButton active={!listView} onClick={() => { setAsList(false); setMoreOpen(false); if (usingOldFilter) updateUrl({ filter: 'all' }) }}>Cards</SegButton>
+            <SegButton active={listView} onClick={() => setAsList(true)}>List</SegButton>
           </div>
           <button
             type="button"
@@ -251,7 +262,46 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
         </div>
       )}
 
+      {/* ── Needs a look: a short strip above the cards, only when something does ── */}
+      {!listView && filterParam === 'all' && !search.trim() && lookCount > 0 && (
+        <section aria-label="Needs a look" className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3.5 sm:px-5" data-testid="parents-look-strip">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">Needs a look · {lookCount}</h2>
+            {lookCount > 3 && (
+              <button type="button" onClick={() => updateUrl({ filter: 'look' })} className="text-xs font-semibold text-[#4ecde6] hover:text-white">See all {lookCount}</button>
+            )}
+          </div>
+          <ul className="mt-2 divide-y divide-[#1d2c42]">
+            {rows.filter(r => r.look.length > 0).slice(0, 3).map(r => (
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 py-2.5">
+                <p className="flex min-w-0 items-start gap-2.5 text-sm">
+                  <span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#d8a95a]" />
+                  <span className="min-w-0"><span className="font-semibold text-white">{r.parentName}</span> <span className="text-[#93a2ba]">· {r.look[0].todo}</span></span>
+                </p>
+                <Link href={`/dashboard/parents/${r.id}`} className="shrink-0 rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:border-[#4ecde6]">Open family</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* ── Family cards (everyday view) ── */}
+      {!listView && (
+        visibleRows.length === 0 ? (
+          <p className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-10 text-center text-sm text-[#93a2ba]">
+            {filterParam === 'look' && !search.trim()
+              ? 'Nothing needs a look. No failed payments, and everyone who should be in a class is.'
+              : 'No families match this.'}
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3" data-testid="parents-cards">
+            {visibleRows.map(r => <FamilyCard key={r.id} r={r} tints={tints} showTodo={filterParam === 'look'} />)}
+          </div>
+        )
+      )}
+
       {/* ── List ── */}
+      {listView && (
       <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -278,7 +328,62 @@ export default function ParentsTable({ rows }: { rows: ParentsTableRow[] }) {
           </table>
         </div>
       </div>
+      )}
     </div>
+  )
+}
+
+function FamilyCard({ r, showTodo, tints }: { r: ParentsTableRow; showTodo: boolean; tints: ClassTints }) {
+  const waNumber = (r.parentPhone || '').replace(/[\s\-()+]+/g, '').replace(/^0/, '44')
+  return (
+    <article className="flex flex-col gap-3 rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4 transition-colors hover:border-[#293b58]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link href={`/dashboard/parents/${r.id}`} className="block truncate text-[15px] font-semibold text-white hover:text-[#4ecde6]">{r.parentName}</Link>
+          {(r.parentEmail || r.parentPhone) && (
+            <p className="truncate text-xs text-[#93a2ba]">{r.parentEmail || r.parentPhone}</p>
+          )}
+        </div>
+        <p className="shrink-0 whitespace-nowrap text-xl font-bold tabular-nums text-white">
+          {r.familyValue > 0
+            ? <>£{r.familyValue.toFixed(0)}<span className="text-[11px] font-medium text-[#93a2ba]"> /mo</span></>
+            : <span className="text-sm font-normal text-[#5b6c86]">—</span>}
+        </p>
+      </div>
+
+      {r.kids.length === 0 ? (
+        <p className="rounded-[10px] border border-dashed border-[#293b58] px-3 py-2 text-xs text-[#5b6c86]">No children added</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {r.kids.map(k => (
+            <li key={k.id}>
+              <Link href={`/dashboard/players/${k.id}`} className="flex items-center gap-2.5 rounded-[10px] border border-[#1d2c42] bg-[#080e18] px-2.5 py-1.5 text-[13px] transition-colors hover:border-[#293b58]">
+                <span aria-hidden className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-[#080e18]" style={{ background: classTint(tints, k.className) }}>
+                  {k.firstName.charAt(0).toUpperCase()}
+                </span>
+                <span className="shrink-0 font-medium text-white">{k.firstName}</span>
+                <span className={`ml-auto min-w-0 truncate text-right text-xs ${k.className ? 'text-[#93a2ba]' : 'text-[#5b6c86]'}`}>{k.place}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {showTodo && r.look.map(l => <p key={l.key} className="text-xs leading-snug text-[#93a2ba]">{l.todo}</p>)}
+
+      <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-2 pt-0.5">
+        <Pill tone={r.pill.tone}>{r.pill.label}</Pill>
+        <div className="ml-auto inline-flex items-center gap-1">
+          <RowActionLink href={`/dashboard/messages?to=${r.id}`} title="Message"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionLink>
+          {r.parentPhone && <RowActionAnchor href={`tel:${r.parentPhone}`} title="Call"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['phone']}</svg></RowActionAnchor>}
+          {r.parentPhone && <RowActionAnchor href={`https://wa.me/${waNumber}`} title="WhatsApp" external><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>{PALETTE_ICON_PATHS['chat']}</svg></RowActionAnchor>}
+        </div>
+        {/* The Edit button sits with the icons; once open, the form takes the card's full width. */}
+        <div className="has-[input]:basis-full [&>div]:!mt-0 [&>div]:!w-full [&>div>div]:!grid-cols-1">
+          <ParentProfileEditor parent={r.editor} />
+        </div>
+      </div>
+    </article>
   )
 }
 

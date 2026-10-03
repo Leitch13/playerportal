@@ -39,6 +39,7 @@ import {
   type AttendanceFilterKey,
 } from '@/lib/attendance-risk-derive'
 import { membershipPill, type PillTone } from '@/lib/needs-a-look'
+import { classTint, classTintMap } from '@/lib/class-tint'
 
 // ─── Row contract ──────────────────────────────────────────────────────
 // The page-level loader computes these per player and hands the list to
@@ -143,7 +144,9 @@ const LEVEL_CHIP: Record<string, string> = {
   elite:        'bg-red-500/15 text-red-400',
 }
 
-export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
+export interface PlayersClassInfo { name: string; when: string; capacity: number | null }
+
+export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTableRow[]; classes?: PlayersClassInfo[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -163,7 +166,12 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
   const usingChip = !TAB_KEYS.includes(filterParam)
   const [moreOpen, setMoreOpen] = useState(usingChip || sortParam !== 'name')
   const showMore = moreOpen || usingChip
+  // Squad sheets (one block per class) are the everyday view of the Active tab.
+  // The list is one click away, and opens by itself with "More filters".
+  const [asList, setAsList] = useState(false)
   const tab: 'active' | 'paused' | 'archived' = filterParam === 'archived' ? 'archived' : filterParam === 'paused' ? 'paused' : 'active'
+
+  const squadView = tab === 'active' && !asList && !showMore
 
   const tabCounts = useMemo(() => ({
     active: rows.filter(r => !r.archivedAt && r.rowStatus !== 'paused').length,
@@ -280,10 +288,42 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
     return out
   }, [rows, search, filterParam, sortParam, classPick])
 
+  const tints = useMemo(() => classTintMap(classes.map(c => c.name)), [classes])
+
+  // One block per class, in class-name order; children with no class come last.
+  // `total` counts everyone active in the class (not just the search matches),
+  // so "7 of 16 places" stays true while searching.
+  const squads = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const r of rows) {
+      if (r.archivedAt || r.rowStatus === 'paused') continue
+      for (const c of r.className.split(', ').filter(Boolean)) totals.set(c, (totals.get(c) || 0) + 1)
+    }
+    const by = new Map<string, PlayersTableRow[]>()
+    for (const r of visibleRows) {
+      const names = r.className.split(', ').filter(Boolean)
+      for (const c of (names.length ? names : [''])) {
+        if (classPick && c !== classPick) continue
+        if (!by.has(c)) by.set(c, [])
+        by.get(c)!.push(r)
+      }
+    }
+    const info = new Map(classes.map(c => [c.name, c]))
+    return [...by.entries()]
+      .sort(([a], [b]) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))
+      .map(([name, players]) => ({
+        name,
+        players,
+        total: totals.get(name) ?? players.length,
+        when: info.get(name)?.when || '',
+        capacity: name ? (info.get(name)?.capacity ?? null) : null,
+      }))
+  }, [rows, visibleRows, classes, classPick])
+
   return (
     <div className="space-y-4">
       {/* ── Toolbar: search + class + the three tabs + More filters ── */}
-      <div className="flex flex-col xl:flex-row xl:items-center gap-3">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-center gap-3">
         <div className="relative flex-1 min-w-0">
           <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5b6c86]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
           <input
@@ -314,6 +354,12 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
             <SegButton active={tab === 'paused'} onClick={() => updateUrl({ filter: 'paused' })}>Paused <Count>{tabCounts.paused}</Count></SegButton>
             <SegButton active={tab === 'archived'} onClick={() => updateUrl({ filter: 'archived' })}>Archived <Count>{tabCounts.archived}</Count></SegButton>
           </div>
+          {tab === 'active' && (
+            <div className="inline-flex gap-0.5 rounded-[10px] border border-[#1d2c42] bg-[#0f1a2b] p-[3px]" role="group" aria-label="Layout">
+              <SegButton active={squadView} onClick={() => { setAsList(false); setMoreOpen(false); if (usingChip) updateUrl({ filter: 'all' }) }}>By class</SegButton>
+              <SegButton active={!squadView} onClick={() => setAsList(true)}>List</SegButton>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setMoreOpen(o => !o)}
@@ -370,7 +416,74 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
         </div>
       )}
 
+      {/* ── Squad sheets: one block per class (everyday view) ── */}
+      {squadView && (
+        visibleRows.length === 0 ? (
+          <p className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-10 text-center text-sm text-[#93a2ba]">No players match this.</p>
+        ) : (
+          <div className="space-y-3.5" data-testid="players-squads">
+            {squads.map(sq => {
+              const tint = classTint(tints, sq.name)
+              const pct = sq.capacity ? Math.min(100, Math.round((sq.total / sq.capacity) * 100)) : null
+              const free = sq.capacity != null ? Math.max(0, sq.capacity - sq.total) : null
+              return (
+                <section key={sq.name || 'none'} className="overflow-hidden rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]">
+                  <header className="border-b border-[#1d2c42] px-4 py-3.5 sm:px-5">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                      <h2 className="flex items-center gap-2.5 text-[15px] font-semibold text-white">
+                        <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: tint }} />
+                        {sq.name || 'Not in a class yet'}
+                      </h2>
+                      <p className="text-xs tabular-nums text-[#93a2ba]">
+                        {sq.name
+                          ? (sq.capacity != null ? `${sq.total} of ${sq.capacity} places` : `${sq.total} ${sq.total === 1 ? 'player' : 'players'}`)
+                          : `${sq.players.length} ${sq.players.length === 1 ? 'player' : 'players'}`}
+                        {sq.players.length !== sq.total && sq.name ? ` · showing ${sq.players.length}` : ''}
+                      </p>
+                    </div>
+                    {sq.when && <p className="mt-0.5 text-xs text-[#93a2ba]">{sq.when}</p>}
+                    {pct != null && (
+                      <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#1d2c42]" aria-hidden>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: tint }} />
+                      </div>
+                    )}
+                  </header>
+                  <ul className="grid grid-cols-1 gap-2 p-3.5 sm:grid-cols-2 sm:px-5 lg:grid-cols-3 xl:grid-cols-4">
+                    {sq.players.map(r => {
+                      const m = membershipPill(r.subStatuses ?? [])
+                      const flag = m.tone === 'bad' ? 'Payment problem' : m.tone === 'warn' ? m.label : null
+                      return (
+                        <li key={r.id}>
+                          <Link href={`/dashboard/players/${r.id}`} className="flex items-center gap-2.5 rounded-[11px] border border-[#1d2c42] bg-[#080e18] px-2.5 py-2 transition-colors hover:border-[#293b58]">
+                            <PlayerAvatar photoUrl={r.photo_url} firstName={r.first_name} lastName={r.last_name} size="sm" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[13px] font-semibold text-white">{r.first_name} {r.last_name}</span>
+                              <span className="block truncate text-[11px] text-[#93a2ba]">
+                                {r.age != null ? `Age ${r.age}` : 'Age not set'}
+                                {!sq.name && r.otherPlace ? ` · ${r.otherPlace}` : ''}
+                                {r.rowStatus === 'trial' ? ' · on a trial' : ''}
+                              </span>
+                            </span>
+                            {flag && <span title={flag} aria-label={flag} className={`h-2 w-2 shrink-0 rounded-full ${m.tone === 'bad' ? 'bg-[#e0736d]' : 'bg-[#d8a95a]'}`} />}
+                          </Link>
+                        </li>
+                      )
+                    })}
+                    {free != null && free > 0 && !search.trim() && (
+                      <li className="flex items-center justify-center rounded-[11px] border border-dashed border-[#293b58] px-2.5 py-2 text-xs text-[#5b6c86]">
+                        {free} {free === 1 ? 'place' : 'places'} free
+                      </li>
+                    )}
+                  </ul>
+                </section>
+              )
+            })}
+          </div>
+        )
+      )}
+
       {/* ── List ── */}
+      {!squadView && (
       <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -398,6 +511,7 @@ export default function PlayersTable({ rows }: { rows: PlayersTableRow[] }) {
           </table>
         </div>
       </div>
+      )}
     </div>
   )
 }

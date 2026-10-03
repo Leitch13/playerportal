@@ -18,6 +18,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import EmptyState from '@/components/EmptyState'
+import { classTintMap } from '@/lib/class-tint'
 import ParentsTable, { type ParentsTableRow } from './ParentsTable'
 // Oct 2026 — the calm list. The four insight tiles and the "Families requiring
 // attention" box (which flagged every family) are no longer rendered here; one
@@ -323,6 +324,18 @@ export default async function ParentsPage({
       parentPhone: p.phone,
       childCount: kids.length,
       childrenNames: kids.map(c => `${c.first_name} ${c.last_name}`.trim()),
+      // Oct 2026 — family cards: each live child and where they train. Display only.
+      kids: liveKids.map(c => {
+        const live = (c.enrolments || []).filter(e => ['active', 'pending', 'paused'].includes(e.status || ''))
+        const named = live.find(e => e.group?.name)
+        return {
+          id: c.id,
+          firstName: c.first_name,
+          className: named?.group?.name ?? null,
+          place: named?.group?.name
+            ?? (hasOtherPlace.has(c.id) ? '1-2-1 or camp' : 'No class yet'),
+        }
+      }),
       familyValue,
       billingStatus,
       badges,
@@ -349,6 +362,9 @@ export default async function ParentsPage({
     }
   })
 
+  // Class names, only to give each class its colour on the family cards (same order as Players).
+  const { data: classNames } = await supabase.from('training_groups').select('name').eq('organisation_id', orgId)
+
   // ─── 7. Header summary: families and what they pay each month ────────
   const monthlyTotal = tableRows.reduce((sum, r) => sum + r.familyValue, 0)
 
@@ -368,7 +384,7 @@ export default async function ParentsPage({
         {tableRows.length === 0 ? (
           <EmptyState message="No parents registered yet." />
         ) : (
-          <ParentsTable rows={tableRows} />
+          <ParentsTable rows={tableRows} tints={classTintMap((classNames || []).map(g => g.name as string))} />
         )}
       </div>
     </div>
