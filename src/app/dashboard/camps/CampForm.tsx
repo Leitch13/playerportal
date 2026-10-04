@@ -375,9 +375,9 @@ export default function CampForm({ orgId, orgSlug, trainingGroups, existingCamps
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+        className="rounded-[10px] bg-[#4ecde6] px-3.5 py-2 text-sm font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee]"
       >
-        Create Camp
+        + Create camp
       </button>
     )
   }
