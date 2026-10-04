@@ -15,6 +15,8 @@ import PremiumBookingView, { type PremiumClassCard } from './PremiumBookingView'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import AcademyPixel from '@/components/AcademyPixel'
 import { isPremiumBookingOrg } from '@/lib/premium-booking'
+import TidyClassList from './TidyClassList'
+import { isTidyBookingOrg } from '@/lib/tidy-booking'
 
 export async function generateMetadata({
   params,
@@ -387,9 +389,13 @@ export default async function PublicBookingPage({
   // keep the original rich cards below the threshold.
   const GROUPED_VIEW_THRESHOLD = 12
   const useGroupedView = sortedGroups.length > GROUPED_VIEW_THRESHOLD
+  // Tidy layout (look only, one academy at a time: src/lib/tidy-booking.ts), or
+  // any academy's page previewed with ?look=tidy. It reuses the programme
+  // grouping below, so that runs for it too, whatever the class count.
+  const useTidy = isTidyBookingOrg(org.id as string) || sp.look === 'tidy'
   type ProgrammeGroupT = import('./GroupedClassList').ProgrammeGroup
   let programmeGroups: ProgrammeGroupT[] = []
-  if (useGroupedView) {
+  if (useGroupedView || useTidy) {
     const byKey = new Map<string, ProgrammeGroupT & { _prices: { v: number; unit: string }[] }>()
     for (const group of sortedGroups) {
       const g = group as unknown as {
@@ -506,7 +512,7 @@ export default async function PublicBookingPage({
   // 078 RPC (countByGroup), prices via the exact same precedence as the
   // standard flat card (price_per_session first, else findCheapestPlanFor
   // monthly amount), and CTAs link to the same class-detail hrefs.
-  if (!useGroupedView && isPremiumBookingOrg(org.id as string)) {
+  if (!useTidy && !useGroupedView && isPremiumBookingOrg(org.id as string)) {
     const premiumClasses: PremiumClassCard[] = sortedGroups.map((group) => {
       const count = countByGroup.get(group.id) || 0
       const capacity = (group as unknown as { max_capacity: number }).max_capacity ?? 20
@@ -587,7 +593,7 @@ export default async function PublicBookingPage({
         totalClasses={(groups || []).length}
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-16">
+      <div className={useTidy ? 'max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8 sm:space-y-10' : 'max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12 space-y-8 sm:space-y-16'}>
         {/* Stripe-not-connected notice — shown when the academy hasn't finished Stripe Connect yet */}
         {/* pilot/demo orgs skip the setup banner — it's a showcase, not a live shop */}
         {!org.stripe_account_id && !(org as { pilot?: boolean }).pilot && (
@@ -607,6 +613,7 @@ export default async function PublicBookingPage({
         )}
 
         {/* Trial CTA Banner — neutral copy, never implies free/no-payment */}
+        {!useTidy && (<>
         <section>
           <Link
             href={trialHref}
@@ -652,14 +659,22 @@ export default async function PublicBookingPage({
           </div>
         </section>
 
+        </>)}
+
         {/* "Our Plans" generic section removed — each class card now shows its
             own class-specific pricing. Showing org-wide generic plans here
             confused parents with prices that didn't match individual classes. */}
 
         <section>
+          {useTidy ? (
+            <h2 id="classes" className="scroll-mt-24 text-xl sm:text-2xl font-bold mb-5 text-white">Classes</h2>
+          ) : (<>
           <h2 id="classes" className="scroll-mt-24 text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
           <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Our regular training schedule</p>
-          {useGroupedView ? (
+          </>)}
+          {useTidy ? (
+            <TidyClassList groups={programmeGroups} primaryColor={primaryColor} slug={slug} />
+          ) : useGroupedView ? (
             <GroupedClassList groups={programmeGroups} primaryColor={primaryColor} slug={slug} />
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -850,6 +865,17 @@ export default async function PublicBookingPage({
           </section>
         )}
 
+        {useTidy && (
+          <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-4 sm:px-5" style={{ borderColor: `${primaryColor}55`, backgroundColor: `${primaryColor}0f` }} data-testid="tidy-trial">
+            <p className="text-[15px] text-white">
+              Not sure yet?
+              <span className="block text-[13.5px] text-gray-400">{offersFreeTrial ? 'Try a session first. No account needed.' : trialSubtitle}</span>
+            </p>
+            <Link href={trialHref} className="rounded-[10px] border px-4 py-2 text-[13.5px] font-bold" style={{ borderColor: primaryColor, color: primaryColor }}>Book a {trialWord.toLowerCase()}</Link>
+          </section>
+        )}
+
+        {!useTidy && (<>
         <section className="relative overflow-hidden rounded-2xl p-4 sm:p-8 text-center text-white" style={{ background: `linear-gradient(135deg, #0a0a0a 0%, ${primaryColor} 100%)` }}>
           <div className="relative z-10">
             <span className="text-2xl sm:text-3xl block mb-2">&#9917;</span>
@@ -903,14 +929,20 @@ export default async function PublicBookingPage({
           </div>
         </section>
 
+        </>)}
+
         {/* FAQ Accordion — the academy's own questions if they've set any
             (Settings → Branding), hidden if they've cleared them, otherwise
             the standard five. */}
         {faqs.length > 0 && (
         <section>
+          {useTidy ? (
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-white">Good to know</h2>
+          ) : (<>
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Frequently Asked Questions</h2>
           <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Everything you need to know</p>
-          <div className="space-y-3 max-w-2xl mx-auto">
+          </>)}
+          <div className={useTidy ? 'space-y-2.5' : 'space-y-3 max-w-2xl mx-auto'}>
             {faqs.map((faq) => (
               <details key={faq.q} className="group rounded-2xl border border-[#1e1e1e] bg-[#141414] overflow-hidden">
                 <summary className="flex cursor-pointer items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-semibold text-white select-none list-none [&::-webkit-details-marker]:hidden">
@@ -925,6 +957,13 @@ export default async function PublicBookingPage({
         )}
 
         <section className="text-center py-6 sm:py-12 px-4 rounded-2xl border border-[#1e1e1e]" style={{ backgroundColor: `${primaryColor}08` }}>
+          {useTidy ? (<>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-white">Got a question?</h2>
+          <p className="text-sm sm:text-base text-gray-400 mb-5">Ask {org.name} before you book.</p>
+          <div className="flex flex-wrap gap-3 justify-center items-center">
+            <EnquiryButton orgId={org.id} academyName={org.name} primaryColor={primaryColor} />
+          </div>
+          </>) : (<>
           <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-white">Ready to get started?</h2>
           <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Sign up today and book your child&apos;s first class</p>
           <div className="flex flex-wrap gap-3 justify-center items-center">
@@ -932,6 +971,7 @@ export default async function PublicBookingPage({
             <Link href={trialHref} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a {trialWord}</Link>
             <EnquiryButton orgId={org.id} academyName={org.name} primaryColor={primaryColor} />
           </div>
+          </>)}
           {(org.contact_email || org.contact_phone) && (
             <div className="mt-6 flex flex-wrap gap-4 justify-center text-sm text-gray-500">
               {org.contact_email && <span>&#9993;&#65039; {org.contact_email}</span>}
