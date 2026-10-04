@@ -491,9 +491,9 @@ function HolidayRow({
   onDelete: (id: string) => void
 }) {
   return (
-    <div className="flex items-center justify-between py-1.5 px-2 rounded bg-red-500/10 border border-red-500/20">
+    <div className="flex items-center justify-between py-2 px-3 rounded-[10px] bg-[#080e18] border border-[#1d2c42]">
       <div className="flex items-center gap-2 text-sm">
-        <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+        <span className="w-2 h-2 rounded-full bg-[#d8a95a] shrink-0" />
         <span className="text-white/80 font-medium">{holiday.name}</span>
         <span className="text-white/40 text-xs">
           {fmtShort(holiday.start_date)} - {fmtShort(holiday.end_date)}
@@ -501,7 +501,7 @@ function HolidayRow({
       </div>
       <button
         onClick={() => onDelete(holiday.id)}
-        className="text-red-400/60 hover:text-red-400 text-xs transition"
+        className="text-[#5b6c86] hover:text-[#e0736d] text-xs transition"
       >
         Remove
       </button>
@@ -562,9 +562,9 @@ function AddHolidayForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+        className="rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9]"
       >
-        + Add Holiday
+        + Add a holiday
       </button>
     )
   }
@@ -682,25 +682,24 @@ function ClassAssignmentSection({
   }
 
   return (
-    <div className="mt-3 mb-3 pt-3 border-t border-white/5">
+    <div>
       <div className="flex items-center justify-between mb-2">
-        <h4 className="text-xs font-medium text-white/40 uppercase tracking-wider">
-          Assigned Classes ({assigned.length})
+        <h4 className="text-[11px] font-semibold text-[#5b6c86] uppercase tracking-[0.07em]">
+          Classes in this term · {assigned.length}
         </h4>
         {canWrite && !picking && available.length > 0 && (
           <button
             onClick={() => setPicking(true)}
-            className="text-xs text-cyan-400 hover:text-cyan-300 transition"
+            className="rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9]"
           >
-            + Assign classes
+            + Add classes
           </button>
         )}
       </div>
 
       {assigned.length === 0 && !picking && (
-        <p className="text-xs text-white/35 italic">
-          No classes assigned. Parents won&apos;t see this term anywhere until you
-          assign at least one class.
+        <p className="text-xs text-[#93a2ba]">
+          No classes yet. Parents only see a term&apos;s dates on the classes that are in it.
         </p>
       )}
 
@@ -709,10 +708,9 @@ function ClassAssignmentSection({
           {assigned.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between py-1.5 px-2 rounded bg-white/5 border border-white/10"
+              className="flex items-center justify-between py-2 px-3 rounded-[10px] bg-[#080e18] border border-[#1d2c42]"
             >
               <div className="flex items-center gap-2 text-sm min-w-0">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
                 <span className="text-white/80 font-medium truncate">{c.name}</span>
                 {(c.day_of_week || c.time_slot) && (
                   <span className="text-white/40 text-xs truncate">
@@ -725,7 +723,7 @@ function ClassAssignmentSection({
               {canWrite && (
                 <button
                   onClick={() => handleRemove(c.id)}
-                  className="text-white/40 hover:text-red-400 text-xs transition shrink-0"
+                  className="text-[#5b6c86] hover:text-[#e0736d] text-xs transition shrink-0"
                 >
                   Remove
                 </button>
@@ -810,6 +808,7 @@ function TermCard({
   onRefresh,
   classes,
   canWrite,
+  todayISO,
 }: {
   term: Term
   holidays: Holiday[]
@@ -817,6 +816,7 @@ function TermCard({
   onRefresh: () => void
   classes: ClassRow[]
   canWrite: boolean
+  todayISO: string | null
 }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(term.name)
@@ -873,147 +873,47 @@ function TermCard({
     onRefresh()
   }
 
+  // Whole weeks, in plain words. "6.6 weeks" helped nobody.
+  const wholeWeeks = Math.max(1, Math.round(termWeeks))
+  const teachWhole = Math.max(0, Math.round(teachingWeeks))
+  const lengthText = holidays.length > 0 && teachWhole !== wholeWeeks
+    ? `${wholeWeeks} weeks, ${teachWhole} of them with sessions`
+    : `${wholeWeeks} ${wholeWeeks === 1 ? 'week' : 'weeks'}`
+  // Where the term is against today's date. Empty until mounted (no clock on the server).
+  const when = todayISO == null ? null
+    : todayISO < term.start_date ? { text: `Starts ${fmtShort(term.start_date)}`, tone: 'border-[#293b58] text-[#93a2ba]' }
+    : todayISO > term.end_date ? { text: `Finished ${fmtShort(term.end_date)}`, tone: 'border-[#293b58] text-[#93a2ba]' }
+    : { text: 'Running now', tone: 'border-[#67c79a]/40 text-[#67c79a]' }
+  const quietBtn = 'rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9]'
+  const field = 'bg-[#080e18] border border-[#293b58] rounded-[10px] px-3 py-2 text-sm text-white focus:outline-none focus:border-[#4ecde6]'
+
   return (
-    <div
-      className={`rounded-xl border p-5 transition-all ${
-        term.is_active
-          ? 'bg-white/[0.06] border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.08)]'
-          : 'bg-white/[0.03] border-white/10'
-      }`}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
+    <section className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]" data-testid="term-card">
+      {/* Header: name, dates, length, where it is today */}
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#1d2c42] px-4 py-4 sm:px-5">
+        <div className="min-w-0 flex-1">
           {editing ? (
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white w-full focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-            />
+            <div className="grid gap-2 sm:grid-cols-[1.4fr_1fr_1fr]">
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} aria-label="Term name" className={field} />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} aria-label="First day" className={`${field} [color-scheme:dark]`} />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} aria-label="Last day" className={`${field} [color-scheme:dark]`} />
+            </div>
           ) : (
-            <h3 className="text-base font-semibold text-white truncate">{term.name}</h3>
-          )}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <StatusBadge active={term.is_active} />
-          {canWrite && !term.is_active && (
-            <button
-              onClick={handleSetActive}
-              className="text-[10px] px-2 py-1 rounded bg-white/10 text-white/50 hover:text-white hover:bg-white/20 transition"
-            >
-              Set Active
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Date range */}
-      {editing ? (
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 [color-scheme:dark]"
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 [color-scheme:dark]"
-          />
-        </div>
-      ) : (
-        <p className="text-sm text-white/50 mb-3">
-          {fmtDate(term.start_date)} &mdash; {fmtDate(term.end_date)}
-        </p>
-      )}
-
-      {/* Parent message (Phase 1B) */}
-      {editing ? (
-        <div className="mb-3">
-          <label className="block text-[11px] uppercase tracking-wider text-white/40 mb-1">
-            Parent message (optional)
-          </label>
-          <textarea
-            value={parentMessage}
-            onChange={(e) => setParentMessage(e.target.value)}
-            maxLength={1000}
-            rows={3}
-            placeholder="Shown to parents on the booking page, dashboard, and emails. e.g. ‘No classes during July while our Summer Camp runs.’"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-          />
-          <p className="text-[10px] text-white/35 mt-1 text-right">
-            {parentMessage.length}/1000
-          </p>
-        </div>
-      ) : term.parent_message ? (
-        <div className="mb-3 px-3 py-2 rounded-lg border border-cyan-500/15 bg-cyan-500/[0.05]">
-          <p className="text-[10px] uppercase tracking-wider text-cyan-300/60 mb-1">
-            Parent message
-          </p>
-          <p className="text-xs text-white/70 whitespace-pre-wrap">
-            {term.parent_message}
-          </p>
-        </div>
-      ) : null}
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-white/5 rounded-lg p-3 text-center">
-          <div className="text-lg font-bold text-white">{termWeeks.toFixed(1)}</div>
-          <div className="text-[10px] text-white/40 uppercase tracking-wider">Total Weeks</div>
-        </div>
-        <div className="bg-red-500/10 rounded-lg p-3 text-center">
-          <div className="text-lg font-bold text-red-300">{holWeeks.toFixed(1)}</div>
-          <div className="text-[10px] text-white/40 uppercase tracking-wider">Holiday Weeks</div>
-        </div>
-        <div className="bg-cyan-500/10 rounded-lg p-3 text-center">
-          <div className="text-lg font-bold text-cyan-300">{teachingWeeks.toFixed(1)}</div>
-          <div className="text-[10px] text-white/40 uppercase tracking-wider">Teaching Weeks</div>
-        </div>
-      </div>
-
-      {/* Holidays list */}
-      {holidays.length > 0 && (
-        <div className="space-y-1.5 mb-3">
-          <h4 className="text-xs font-medium text-white/40 uppercase tracking-wider">Holidays</h4>
-          {holidays.map((h) => (
-            <HolidayRow key={h.id} holiday={h} onDelete={handleDeleteHoliday} />
-          ))}
-        </div>
-      )}
-
-      {/* Add holiday */}
-      {canWrite && (
-        <AddHolidayForm
-          termId={term.id}
-          orgId={orgId}
-          termStart={term.start_date}
-          termEnd={term.end_date}
-          onAdded={onRefresh}
-        />
-      )}
-
-      {/* Class assignment (Phase 1B) */}
-      <ClassAssignmentSection
-        termId={term.id}
-        allClasses={classes}
-        onRefresh={onRefresh}
-        canWrite={canWrite}
-      />
-
-      {/* Actions */}
-      {canWrite && (
-        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
-          {editing ? (
             <>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="text-xs px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-40 transition"
-              >
+              <h3 className="truncate text-[17px] font-semibold text-[#eef2f9]">{term.name}</h3>
+              <p className="mt-0.5 text-sm text-[#93a2ba]">
+                {fmtDate(term.start_date)} to {fmtDate(term.end_date)} · {lengthText}
+              </p>
+            </>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {when && !editing && (
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${when.tone}`}>{when.text}</span>
+          )}
+          {canWrite && (editing ? (
+            <>
+              <button onClick={handleSave} disabled={saving} className="rounded-[9px] bg-[#4ecde6] px-3 py-1.5 text-xs font-semibold text-[#04141a] disabled:opacity-40">
                 {saving ? 'Saving...' : 'Save'}
               </button>
               <button
@@ -1024,30 +924,83 @@ function TermCard({
                   setEndDate(term.end_date)
                   setParentMessage(term.parent_message || '')
                 }}
-                className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
+                className={quietBtn}
               >
                 Cancel
               </button>
             </>
           ) : (
             <>
-              <button
-                onClick={() => setEditing(true)}
-                className="text-xs px-3 py-1.5 rounded-lg bg-white/10 text-white/60 hover:text-white transition"
-              >
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/20 transition"
-              >
-                Delete
-              </button>
+              <button onClick={() => setEditing(true)} className={quietBtn}>Edit</button>
+              <details className="relative">
+                <summary className={`${quietBtn} cursor-pointer list-none [&::-webkit-details-marker]:hidden`} aria-label={`More for ${term.name}`}>More</summary>
+                <div className="absolute right-0 z-10 mt-1 w-60 overflow-hidden rounded-[11px] border border-[#293b58] bg-[#142236] py-1 shadow-xl">
+                  {!term.is_active && (
+                    <button onClick={handleSetActive} className="block w-full px-3 py-2 text-left text-xs text-[#eef2f9] hover:bg-white/[0.06]">Use this term for the awards table</button>
+                  )}
+                  <button onClick={handleDelete} className="block w-full px-3 py-2 text-left text-xs text-[#e0736d] hover:bg-white/[0.06]">Delete term</button>
+                </div>
+              </details>
             </>
-          )}
+          ))}
         </div>
-      )}
-    </div>
+      </div>
+
+      <div className="grid gap-5 px-4 py-4 sm:px-5 lg:grid-cols-2">
+        {/* Left: what parents are told, and the breaks */}
+        <div className="space-y-4">
+          <div>
+            <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">What parents are told</h4>
+            {editing ? (
+              <>
+                <textarea
+                  value={parentMessage}
+                  onChange={(e) => setParentMessage(e.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  placeholder="Shown to parents on the booking page, dashboard, and emails. e.g. ‘No classes during July while our Summer Camp runs.’"
+                  className={`w-full ${field} placeholder-white/30`}
+                />
+                <p className="mt-1 text-right text-[10px] text-[#5b6c86]">{parentMessage.length}/1000</p>
+              </>
+            ) : term.parent_message ? (
+              <p className="whitespace-pre-wrap text-sm text-[#eef2f9]">{term.parent_message}</p>
+            ) : (
+              <p className="text-xs text-[#93a2ba]">Just the dates. Press Edit to add a note, such as a week with no sessions.</p>
+            )}
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">Holidays in this term · {holidays.length}</h4>
+            {holidays.length > 0 && (
+              <div className="mb-2 space-y-1.5">
+                {holidays.map((h) => (
+                  <HolidayRow key={h.id} holiday={h} onDelete={handleDeleteHoliday} />
+                ))}
+              </div>
+            )}
+            {canWrite && (
+              <AddHolidayForm
+                termId={term.id}
+                orgId={orgId}
+                termStart={term.start_date}
+                termEnd={term.end_date}
+                onAdded={onRefresh}
+              />
+            )}
+          </div>
+          {term.is_active && <p className="text-xs text-[#5b6c86]">The awards table counts this term.</p>}
+        </div>
+
+        {/* Right: the classes that run in it */}
+        <ClassAssignmentSection
+          termId={term.id}
+          allClasses={classes}
+          onRefresh={onRefresh}
+          canWrite={canWrite}
+        />
+      </div>
+    </section>
   )
 }
 
@@ -1089,11 +1042,6 @@ export default function TermManager({
     setNowMs(Date.now())
   }, [])
   const todayISO = nowMs != null ? todayISOFromMs(nowMs) : null
-
-  const period = useMemo(
-    () => (nowMs != null ? deriveCurrentPeriod(terms, holidays, nowMs) : null),
-    [terms, holidays, nowMs],
-  )
 
   function refresh() {
     router.refresh()
@@ -1164,118 +1112,54 @@ export default function TermManager({
     return map
   }, [terms, holidays])
 
-  const totalTeachingWeeks = useMemo(() => {
-    return terms.reduce((sum, t) => {
-      const tw = weeksBetween(t.start_date, t.end_date)
-      const hw = holidayWeeks(termHolidayMap[t.id] || [])
-      return sum + Math.max(0, tw - hw)
-    }, 0)
-  }, [terms, termHolidayMap])
+  // One plain line instead of a band, four tiles and a timeline.
+  const headline = (() => {
+    if (terms.length === 0) return 'No terms yet.'
+    const count = `${terms.length} ${terms.length === 1 ? 'term' : 'terms'}`
+    if (!todayISO) return count
+    const running = terms.find((t) => t.start_date <= todayISO && todayISO <= t.end_date)
+    if (running) {
+      const left = dayDiff(todayISO, running.end_date)
+      return `${count} · ${running.name} is running and ends ${fmtShort(running.end_date)}${left >= 0 ? ` (${left === 0 ? 'today' : left === 1 ? 'tomorrow' : `in ${left} days`})` : ''}`
+    }
+    const next = terms.find((t) => t.start_date > todayISO)
+    return next ? `${count} · no term running today · ${next.name} starts ${fmtShort(next.start_date)}` : `${count} · no term running today`
+  })()
 
   return (
-    <div className="space-y-6">
-      {/* Current Teaching Period band (read-only; appears after mount) */}
-      {period && terms.length > 0 && <CurrentPeriodBand period={period} />}
-
-      {/* Summary row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {/* Terms */}
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <span className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.12] flex items-center justify-center text-white/70 mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          </span>
-          <div className="text-2xl font-bold text-white">{terms.length}</div>
-          <div className="text-xs text-white/50 mt-0.5">Terms</div>
-          <div className="text-[11px] text-white/35 mt-0.5">{terms.filter((t) => t.is_active).length} active</div>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-[#93a2ba]" data-testid="terms-headline">{headline}</p>
+        <div className="flex items-center gap-2">
+          {terms.length > 0 && (
+            <div className="inline-flex gap-0.5 rounded-[10px] border border-[#1d2c42] bg-[#0f1a2b] p-[3px]" role="group" aria-label="Layout">
+              {(['cards', 'calendar'] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  aria-pressed={view === v}
+                  className={`rounded-[7px] px-3 py-1.5 text-[13px] font-semibold transition-colors ${view === v ? 'bg-[#142236] text-white' : 'text-[#93a2ba] hover:text-white'}`}
+                >
+                  {v === 'cards' ? 'List' : 'Calendar'}
+                </button>
+              ))}
+            </div>
+          )}
+          {canWrite && !showAdd && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="rounded-[10px] bg-[#4ecde6] px-3.5 py-2 text-xs font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee]"
+            >
+              + Add term
+            </button>
+          )}
         </div>
-        {/* Holidays */}
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <span className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center text-red-300 mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-          </span>
-          <div className="text-2xl font-bold text-white">{holidays.length}</div>
-          <div className="text-xs text-white/50 mt-0.5">Holidays</div>
-          <div className="text-[11px] text-white/35 mt-0.5">across all terms</div>
-        </div>
-        {/* Teaching weeks */}
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <span className="w-8 h-8 rounded-lg bg-[#4ecde6]/15 border border-[#4ecde6]/25 flex items-center justify-center text-[#4ecde6] mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.42a12 12 0 01.84 4.42 12 12 0 01-14 0 12 12 0 01.84-4.42L12 14z" /></svg>
-          </span>
-          <div className="text-2xl font-bold text-[#4ecde6]">{totalTeachingWeeks.toFixed(1)}</div>
-          <div className="text-xs text-white/50 mt-0.5">Teaching Weeks</div>
-          <div className="text-[11px] text-white/35 mt-0.5">this academic year</div>
-        </div>
-        {/* Current term — name at readable size + range sub-label */}
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <span className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-300 mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </span>
-          {(() => {
-            const active = terms.find((t) => t.is_active)
-            return active ? (
-              <>
-                <div className="text-base font-bold text-emerald-300 truncate">{active.name}</div>
-                <div className="text-xs text-white/50 mt-0.5">Current Term</div>
-                <div className="text-[11px] text-white/35 mt-0.5 truncate">{fmtShort(active.start_date)} – {fmtShort(active.end_date)}</div>
-              </>
-            ) : (
-              <>
-                <div className="text-base font-bold text-white/50">Not set</div>
-                <div className="text-xs text-white/50 mt-0.5">Current Term</div>
-                <div className="text-[11px] text-white/35 mt-0.5">No active term</div>
-              </>
-            )
-          })()}
-        </div>
-      </div>
-
-      {/* Timeline */}
-      {terms.length > 0 && (
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-3">Term Timeline</h2>
-          <Timeline terms={terms} holidays={holidays} todayISO={todayISO} />
-        </div>
-      )}
-
-      {/* View toggle + Add button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
-          <button
-            onClick={() => setView('cards')}
-            className={`text-xs px-3 py-1.5 rounded-md transition ${
-              view === 'cards'
-                ? 'bg-white/10 text-white'
-                : 'text-white/40 hover:text-white/70'
-            }`}
-          >
-            Cards
-          </button>
-          <button
-            onClick={() => setView('calendar')}
-            className={`text-xs px-3 py-1.5 rounded-md transition ${
-              view === 'calendar'
-                ? 'bg-white/10 text-white'
-                : 'text-white/40 hover:text-white/70'
-            }`}
-          >
-            Calendar
-          </button>
-        </div>
-        {canWrite && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="text-sm px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 transition font-medium"
-          >
-            + Add Term
-          </button>
-        )}
       </div>
 
       {/* Add term form */}
       {canWrite && showAdd && (
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-white">New Term</h3>
+        <div className="bg-[#0f1a2b] border border-[#293b58] rounded-[15px] p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-white">New term</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input
               type="text"
@@ -1321,15 +1205,15 @@ export default function TermManager({
               onChange={(e) => setNewActive(e.target.checked)}
               className="rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50"
             />
-            Set as active term
+            Use this term for the awards table
           </label>
           <div className="flex gap-2">
             <button
               onClick={handleAddTerm}
               disabled={saving || !newName || !newStart || !newEnd}
-              className="text-sm px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-500 disabled:opacity-40 transition font-medium"
+              className="rounded-[10px] bg-[#4ecde6] px-4 py-2 text-sm font-semibold text-[#04141a] hover:bg-[#7fdcee] disabled:opacity-40 transition"
             >
-              {saving ? 'Creating...' : 'Create Term'}
+              {saving ? 'Creating...' : 'Create term'}
             </button>
             <button
               onClick={() => setShowAdd(false)}
@@ -1344,11 +1228,11 @@ export default function TermManager({
       {/* Content */}
       {view === 'cards' ? (
         terms.length === 0 ? (
-          <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-12 text-center">
-            <p className="text-white/40 text-sm">No terms created yet. Click &quot;Add Term&quot; to get started.</p>
+          <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-[15px] p-12 text-center">
+            <p className="text-[#93a2ba] text-sm">No terms yet. Press &quot;Add term&quot; to set your first one.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {terms.map((t) => (
               <TermCard
                 key={t.id}
@@ -1358,12 +1242,13 @@ export default function TermManager({
                 onRefresh={refresh}
                 classes={classes}
                 canWrite={canWrite}
+                todayISO={todayISO}
               />
             ))}
           </div>
         )
       ) : (
-        <div className="bg-white/[0.04] backdrop-blur-sm border border-white/10 rounded-xl p-5">
+        <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-[15px] p-5">
           <CalendarView terms={terms} holidays={holidays} />
         </div>
       )}

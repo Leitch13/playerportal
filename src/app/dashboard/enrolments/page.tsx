@@ -120,6 +120,31 @@ export default async function EnrolmentsPage({
   const notPayingActive = active.filter(e => (payMap.get(e.player_id) ?? 'no_sub') !== 'paying')
   const payingCount = active.length - notPayingActive.length
 
+  // ── Enrol → "send a payment link?" The Enrol form offers the academy's
+  // existing Request payment step straight after a child is enrolled, instead
+  // of leaving them to find the child again under "In a class, not paying".
+  // Admins only (the request-payment route refuses anyone else). READ-ONLY:
+  // the active plans, and which children already have a membership or a
+  // request waiting (those get no offer, because the route would refuse). ──
+  let enrolPlans: Array<{ id: string; name: string; amount: number | null }> = []
+  let enrolHasMembership: string[] = []
+  let enrolCanRequest = false
+  {
+    const { data: myRole } = await supabase.rpc('get_my_role')
+    enrolCanRequest = myRole === 'admin'
+    if (enrolCanRequest) {
+      const [{ data: planRows }, { data: subRows }] = await Promise.all([
+        supabase.from('subscription_plans').select('id, name, amount')
+          .eq('organisation_id', orgId).eq('active', true).order('sort_order', { ascending: true }),
+        supabase.from('subscriptions').select('player_id')
+          .eq('organisation_id', orgId).not('player_id', 'is', null)
+          .in('status', ['active', 'trialing', 'past_due', 'pending_migration', 'paused', 'scheduled']),
+      ])
+      enrolPlans = (planRows || []) as typeof enrolPlans
+      enrolHasMembership = [...new Set(((subRows || []) as Array<{ player_id: string }>).map(r => r.player_id))]
+    }
+  }
+
   // ── "In a class, not paying" → chase it from here. Loaded only for that
   // view, and only for admins (the route refuses anyone else): the academy's
   // active plans, and which of these children already have a payment request
@@ -272,7 +297,7 @@ export default async function EnrolmentsPage({
         />
       )}
 
-      <EnrolmentForm players={players || []} groups={groups || []} orgId={orgId} />
+      <EnrolmentForm players={players || []} groups={groups || []} orgId={orgId} canRequestPayment={enrolCanRequest} plans={enrolPlans} hasMembership={enrolHasMembership} />
 
       {/* ─── Phase 2.4: TRIAL FOLLOW-UP DUE ─────────────────────────────
           Rendered OUTSIDE the empty-state branch so brand-new orgs that

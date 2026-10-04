@@ -3,21 +3,35 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import RequestPaymentButton from '../players/[id]/RequestPaymentButton'
 
 export default function EnrolmentForm({
   players,
   groups,
   orgId,
+  canRequestPayment = false,
+  plans = [],
+  hasMembership = [],
 }: {
   players: { id: string; first_name: string; last_name: string }[]
   groups: { id: string; name: string; day_of_week: string | null }[]
   orgId: string
+  /** Admins only: offer the existing Request payment step straight after Enrol. */
+  canRequestPayment?: boolean
+  plans?: { id: string; name: string; amount: number | null }[]
+  /** Players who already have a membership or a payment request waiting. */
+  hasMembership?: string[]
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [playerId, setPlayerId] = useState('')
   const [groupId, setGroupId] = useState('')
   const [loading, setLoading] = useState(false)
+  // Set once a child has just been enrolled: the form is replaced by "X is in
+  // Y" and, for admins, the offer to send the parent a payment link.
+  const [linkSent, setLinkSent] = useState<null | 'sent' | 'saved'>(null)
+  const [done, setDone] = useState<{ playerId: string; firstName: string; className: string; alreadyHad: boolean } | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -47,7 +61,10 @@ export default function EnrolmentForm({
       setOpen(false)
       router.refresh()
     } else {
-      setOpen(false)
+      const pl = players.find((p) => p.id === playerId)
+      const gr = groups.find((g) => g.id === groupId)
+      setLinkSent(null)
+      setDone({ playerId, firstName: pl?.first_name || 'They', className: gr?.name || 'the class', alreadyHad: hasMembership.includes(playerId) })
       setPlayerId('')
       setGroupId('')
       router.refresh()
@@ -63,6 +80,40 @@ export default function EnrolmentForm({
       >
         + Enrol Player
       </button>
+    )
+  }
+
+  if (done) {
+    // Fixed at the moment of enrolling: sending the link makes this child "have
+    // a request waiting", and the offer must not vanish under the open dialog.
+    const alreadyHas = done.alreadyHad
+    const quiet = 'px-4 py-2 border border-[#1d2c42] rounded-[10px] text-sm font-medium text-[#93a2ba] hover:bg-[#142236] hover:text-white transition-colors'
+    return (
+      <div className="bg-[#0f1a2b] text-white rounded-[15px] border border-[#1d2c42] p-6" data-testid="enrol-done">
+        <h2 className="text-lg font-semibold">{done.firstName} is in {done.className}</h2>
+        {!canRequestPayment ? (
+          <p className="mt-1 text-sm text-[#93a2ba]">They&rsquo;re on the register now.</p>
+        ) : alreadyHas ? (
+          <p className="mt-1 text-sm text-[#93a2ba]">{done.firstName} already has a membership or a payment link waiting, so there&rsquo;s nothing to send.</p>
+        ) : plans.length === 0 ? (
+          <p className="mt-1 text-sm text-[#93a2ba]">
+            There are no plans on sale yet, so there&rsquo;s no payment link to send. <Link href="/dashboard/plans" className="font-semibold text-[#4ecde6] hover:underline">Add a plan</Link>
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-[#93a2ba]">
+            {linkSent === 'sent' ? `${done.firstName}’s parent has been emailed a link to set up payment. You can chase it under “In a class, not paying”.`
+              : linkSent === 'saved' ? 'The request is saved but the email didn’t send. Resend it under “In a class, not paying”.'
+              : 'Nothing has been sent to the parent. Send them a link to set up payment?'}
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {canRequestPayment && !alreadyHas && plans.length > 0 && (
+            <RequestPaymentButton playerId={done.playerId} playerFirstName={done.firstName} plans={plans} lockAfterSent onSent={(emailed) => setLinkSent(emailed ? 'sent' : 'saved')} />
+          )}
+          <button type="button" onClick={() => setDone(null)} className={quiet}>Enrol another</button>
+          <button type="button" onClick={() => { setDone(null); setOpen(false) }} className={quiet}>Done</button>
+        </div>
+      </div>
     )
   }
 

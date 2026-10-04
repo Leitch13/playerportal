@@ -78,7 +78,7 @@ export default async function TermsPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Terms &amp; Holidays</h1>
         <p className="text-sm text-white/60 mt-1">
-          Manage academy term dates and holiday periods
+          When your sessions run, the breaks, and which classes follow each term.
         </p>
       </div>
 

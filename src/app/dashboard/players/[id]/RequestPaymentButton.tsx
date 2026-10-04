@@ -24,12 +24,17 @@ export default function RequestPaymentButton({
   plans,
   compact = false,
   pendingSentAt = null,
+  lockAfterSent = false,
+  onSent,
 }: {
   playerId: string
   playerFirstName: string
   plans: Plan[]
   compact?: boolean
   pendingSentAt?: string | null
+  /** Enrol form: once a link has gone, the button reads "Payment link sent" and can't send twice. */
+  lockAfterSent?: boolean
+  onSent?: (emailed: boolean) => void
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -38,6 +43,7 @@ export default function RequestPaymentButton({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
+  const [everSent, setEverSent] = useState(false)
   const [warning, setWarning] = useState('')
   const [resent, setResent] = useState<'idle' | 'sending' | 'sent'>('idle')
 
@@ -103,6 +109,8 @@ export default function RequestPaymentButton({
       // hasn't been told yet, so say so instead of "sent".
       setWarning(data.emailed === false ? (data.warning || 'The request is saved, but the email didn\'t send. Press Resend.') : '')
       setSent(true)
+      setEverSent(true)
+      onSent?.(data.emailed !== false)
       setLoading(false)
       router.refresh()
     } catch {
@@ -113,9 +121,14 @@ export default function RequestPaymentButton({
 
   return (
     <>
+      {lockAfterSent && everSent && !open ? (
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#67c79a]/40 px-3.5 py-2 text-sm font-semibold text-[#67c79a]" data-testid="request-payment-sent">
+          {warning ? 'Saved, not emailed yet' : 'Payment link sent'}
+        </span>
+      ) : (
       <button
         type="button"
-        onClick={() => { setOpen(true); setSent(false); setError(''); setWarning('') }}
+        onClick={() => { if (lockAfterSent && everSent) return; setOpen(true); setSent(false); setError(''); setWarning('') }}
         className={compact
           ? 'inline-flex items-center rounded-lg border border-[#4ecde6]/35 bg-[#4ecde6]/[0.12] px-3 py-1.5 text-xs font-semibold text-[#4ecde6] transition-colors hover:bg-[#4ecde6]/20'
           : 'inline-flex items-center gap-2 rounded-lg bg-[#4ecde6]/12 border border-[#4ecde6]/35 text-[#4ecde6] px-3.5 py-2 text-sm font-semibold hover:bg-[#4ecde6]/20 transition-colors'}
@@ -123,6 +136,7 @@ export default function RequestPaymentButton({
         {!compact && <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>}
         Request payment
       </button>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 text-left">
