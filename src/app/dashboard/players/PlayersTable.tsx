@@ -448,7 +448,7 @@ export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTabl
                       </div>
                     )}
                   </header>
-                  <ul className="grid grid-cols-1 gap-2 p-3.5 sm:grid-cols-2 sm:px-5 lg:grid-cols-3 xl:grid-cols-4">
+                  <ul className="grid grid-cols-1 gap-2 p-3.5 min-[420px]:grid-cols-2 sm:px-5 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
                     {sq.players.map(r => {
                       const m = membershipPill(r.subStatuses ?? [])
                       const flag = m.tone === 'bad' ? 'Payment problem' : m.tone === 'warn' ? m.label : null

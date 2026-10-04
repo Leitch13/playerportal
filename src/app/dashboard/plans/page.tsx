@@ -32,8 +32,8 @@ export default async function PlansPage() {
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-4 sm:p-6 lg:p-8 min-h-screen text-white space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Subscription Plans</h1>
-        <p className="text-white/50 text-sm mt-1">Create plans by class type — they automatically apply to all classes of that type</p>
+        <h1 className="text-2xl font-bold">Plans &amp; Pricing</h1>
+        <p className="text-[#93a2ba] text-sm mt-1">What parents can sign up to, and what each costs a month.</p>
       </div>
 
       <PlanManager

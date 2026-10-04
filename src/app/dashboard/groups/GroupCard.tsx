@@ -203,16 +203,16 @@ export default function GroupCard({
     )
   }
 
+  // One quiet chip. Nearly full is good news, so nothing here is red.
+  const chipBase = 'px-2 py-0.5 rounded-full text-[10px] font-semibold border'
   const statusChip = waitlistOnly ? (
-    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30" title="Capacity is 0 — parents can only join the waiting list">WAITLIST ONLY</span>
+    <span className={`${chipBase} border-[#d8a95a]/40 text-[#d8a95a]`} title="Capacity is 0 — parents can only join the waiting list">Waiting list only</span>
   ) : isFull ? (
-    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">FULL</span>
-  ) : isWarning ? (
-    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">{spotsLeft} LEFT</span>
-  ) : isNearFull ? (
-    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">{spotsLeft} LEFT</span>
+    <span className={`${chipBase} border-[#293b58] text-[#93a2ba]`}>Full</span>
+  ) : isWarning || isNearFull ? (
+    <span className={`${chipBase} border-[#d8a95a]/40 text-[#d8a95a]`}>{spotsLeft} left</span>
   ) : (
-    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">OPEN</span>
+    <span className={`${chipBase} border-[#67c79a]/40 text-[#67c79a]`}>Open</span>
   )
 
   return (
@@ -382,27 +382,21 @@ export default function GroupCard({
       {/* Capacity bar */}
       <div className="mt-auto pt-4">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-white/40">Capacity</span>
-          <span className={`text-xs font-bold ${isFull ? 'text-red-400' : isWarning ? 'text-red-400' : isNearFull ? 'text-amber-400' : 'text-emerald-400'}`}>
-            {enrolled}/{group.max_capacity}
+          <span className="text-[11px] font-medium uppercase tracking-wider text-white/40">Places</span>
+          <span className="text-xs font-semibold tabular-nums text-[#eef2f9]">
+            {enrolled} of {group.max_capacity}
           </span>
         </div>
         <div className="w-full bg-[#080e18] rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all duration-500 ${
-              isFull || isWarning
-                ? 'bg-gradient-to-r from-red-400 to-red-500'
-                : isNearFull
-                  ? 'bg-gradient-to-r from-amber-400 to-amber-500'
-                  : 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-            }`}
+            className="h-2 rounded-full bg-[#4ecde6] transition-all duration-500"
             style={{ width: `${fillPercent}%` }}
           />
         </div>
         {isFull && (
-          <p className="text-[10px] text-red-400 font-medium mt-1.5">
-            Full — new players waitlisted
-            {waitlistCount > 0 && <span className="ml-1 text-orange-400">({waitlistCount} waiting)</span>}
+          <p className="text-[10px] text-[#93a2ba] font-medium mt-1.5">
+            Full — new players go on the waiting list
+            {waitlistCount > 0 && <span className="ml-1 text-[#d8a95a]">({waitlistCount} waiting)</span>}
           </p>
         )}
       </div>

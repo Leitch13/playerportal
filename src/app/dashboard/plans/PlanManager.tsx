@@ -156,112 +156,126 @@ export default function PlanManager({
     if (data) { setPlans([...plans, data as Plan]); router.refresh() }
   }
 
-  function getTypeBadge(type: string) {
-    return CLASS_TYPES.find(t => t.value === type) || { label: type, color: 'bg-white/10 text-white' }
-  }
+  // The label an academy leaves on the default "1 session a week" is noise, and
+  // wrong for plans like "2x per week" that were never changed from it. Only
+  // say it when the academy set something else.
+  const sessionsLabel = (n: number | null) =>
+    n === 0 ? 'Unlimited sessions' : n && n > 1 ? `${n} sessions a week` : null
+  const price = (n: number) => Number(n).toFixed(Number(n) % 1 ? 2 : 0)
+  const quietBtn = 'rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-medium text-[#93a2ba] transition-colors hover:border-[#4ecde6] hover:text-[#eef2f9]'
+
+  const planRow = (plan: Plan, where: React.ReactNode | null, editHref: string) => (
+    <li key={plan.id} className={`flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4 sm:px-5 ${plan.is_active ? '' : 'opacity-60'}`}>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-[#eef2f9]">{plan.name}</p>
+        {(where || sessionsLabel(plan.sessions_per_week) || plan.description) && (
+          <p className="mt-0.5 truncate text-xs text-[#93a2ba]">
+            {where}
+            {!where && [sessionsLabel(plan.sessions_per_week), plan.description].filter(Boolean).join(' · ')}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4">
+        <p className="text-sm tabular-nums text-[#eef2f9] sm:w-28 sm:text-right">
+          <span className="text-base font-semibold">&pound;{price(plan.amount)}</span>
+          <span className="text-xs text-[#93a2ba]"> a month</span>
+        </p>
+        <span className={`inline-flex w-[92px] justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+          plan.is_active ? 'border-[#67c79a]/40 text-[#67c79a]' : 'border-[#293b58] text-[#93a2ba]'
+        }`}>
+          {plan.is_active ? 'On sale' : 'Switched off'}
+        </span>
+        <div className="ml-auto flex items-center gap-2 sm:ml-0">
+          <a href={editHref} className={quietBtn}>Edit</a>
+          <button onClick={() => handleToggle(plan.id, plan.is_active)} className={`${quietBtn} w-[84px]`}>
+            {plan.is_active ? 'Switch off' : 'Switch on'}
+          </button>
+          <details className="relative">
+            <summary className={`${quietBtn} cursor-pointer list-none [&::-webkit-details-marker]:hidden`} aria-label={`More for ${plan.name}`}>More</summary>
+            <div className="absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-[11px] border border-[#293b58] bg-[#142236] py-1 shadow-xl">
+              {!plan.training_group_id && (
+                <button onClick={() => handleDuplicate(plan)} className="block w-full px-3 py-2 text-left text-xs text-[#eef2f9] hover:bg-white/[0.06]">Make a copy</button>
+              )}
+              <button onClick={() => handleDelete(plan.id)} className="block w-full px-3 py-2 text-left text-xs text-[#e0736d] hover:bg-white/[0.06]">Delete plan</button>
+            </div>
+          </details>
+        </div>
+      </div>
+    </li>
+  )
+
+  const onSale = plans.filter((p) => p.is_active).length
+  const sortPlans = (list: Plan[]) => [...list].sort((x, y) => Number(y.is_active) - Number(x.is_active) || Number(x.amount) - Number(y.amount))
 
   return (
-    <div className="space-y-8">
-      {/* Info banner */}
-      <div className="bg-[#4ecde6]/5 border border-[#4ecde6]/10 rounded-2xl p-4">
-        <p className="text-sm text-[#4ecde6]">
-          <strong>How it works:</strong> Create plans by class type (e.g. &quot;1-2-1&quot;, &quot;Group&quot;).
-          Every class of that type will automatically show these plans to parents.
-          No need to set plans on each class individually.
+    <div className="space-y-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-[#93a2ba]">
+          {plans.length === 0 ? 'No plans yet.' : `${onSale} on sale${plans.length - onSale > 0 ? ` · ${plans.length - onSale} switched off` : ''}. A plan shows on every class of its type.`}
         </p>
+        {!showAdd && (
+          <button onClick={() => setShowAdd(true)} className="rounded-[10px] bg-[#4ecde6] px-3.5 py-2 text-xs font-semibold text-[#04141a] transition-colors hover:bg-[#7fdcee]">
+            + Add plan
+          </button>
+        )}
       </div>
 
-      {/* Plans by class type */}
+      {/* Plans by class type: one quiet heading, one list */}
       {CLASS_TYPES.map(type => {
         const typePlans = grouped[type.value] || []
         if (typePlans.length === 0) return null
         return (
-          <div key={type.value}>
-            <div className="flex items-center gap-3 mb-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${type.color}`}>{type.label}</span>
-              <span className="text-white/30 text-xs">{typePlans.length} plan{typePlans.length !== 1 ? 's' : ''}</span>
-              <div className="flex-1 h-px bg-white/[0.06]" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {typePlans.map(plan => (
-                <div key={plan.id} className={`bg-[#0f1a2b] border rounded-2xl p-4 transition-all ${plan.is_active ? 'border-[#1d2c42]' : 'border-[#1d2c42] opacity-50'}`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-bold text-white text-sm">{plan.name}</h3>
-                      {!plan.is_active && <span className="text-[9px] px-1.5 py-0.5 bg-white/10 text-white/40 rounded-full">INACTIVE</span>}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-extrabold text-[#4ecde6]">&pound;{Number(plan.amount).toFixed(0)}</div>
-                      <div className="text-[10px] text-white/40">/month</div>
-                    </div>
-                  </div>
-                  {plan.description && <p className="text-xs text-white/40 mb-2">{plan.description}</p>}
-                  <p className="text-xs text-white/30 mb-3">
-                    {plan.sessions_per_week === 0 ? 'Unlimited sessions' : `${plan.sessions_per_week} session${(plan.sessions_per_week || 0) > 1 ? 's' : ''}/week`}
-                  </p>
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#1d2c42]">
-                    <button onClick={() => handleDuplicate(plan)} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.06] text-white/50 hover:bg-white/[0.1] transition-colors">Duplicate</button>
-                    <button onClick={() => handleToggle(plan.id, plan.is_active)} className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${plan.is_active ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'}`}>
-                      {plan.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button onClick={() => handleDelete(plan.id)} className="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <section key={type.value} data-testid="plans-type-list">
+            <h2 className="mb-2 flex items-baseline gap-2 text-[15px] font-semibold text-[#eef2f9]">
+              {type.label}
+              <span className="text-xs font-normal tabular-nums text-[#5b6c86]">{typePlans.length} {typePlans.length === 1 ? 'plan' : 'plans'}</span>
+            </h2>
+            <ul className="divide-y divide-[#1d2c42] rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]">
+              {sortPlans(typePlans).map(plan => planRow(plan, null, '/dashboard/payments?tab=manage'))}
+            </ul>
+          </section>
         )
       })}
 
-      {/* Plans attached to one specific class. Previously dropped on the floor. */}
+      {/* Plans with no class type: the fallback when a class has nothing else. Previously not listed here at all. */}
+      {unlinked.length > 0 && (
+        <section data-testid="plans-unlinked">
+          <h2 className="mb-1 flex items-baseline gap-2 text-[15px] font-semibold text-[#eef2f9]">
+            Any class
+            <span className="text-xs font-normal tabular-nums text-[#5b6c86]">{unlinked.length} {unlinked.length === 1 ? 'plan' : 'plans'}</span>
+          </h2>
+          <p className="mb-2 text-xs text-[#93a2ba]">No class type set. These show on a class only when it has no plan of its own type.</p>
+          <ul className="divide-y divide-[#1d2c42] rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]">
+            {sortPlans(unlinked).map(plan => planRow(plan, null, '/dashboard/payments?tab=manage'))}
+          </ul>
+        </section>
+      )}
+
+      {/* Plans attached to one specific class. */}
       {classSpecific.length > 0 && (
-        <div data-testid="class-specific-plans">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#4ecde6]/10 text-[#4ecde6]">One class only</span>
-            <span className="text-white/30 text-xs">{classSpecific.length} plan{classSpecific.length !== 1 ? 's' : ''}</span>
-            <div className="flex-1 h-px bg-white/[0.06]" />
-          </div>
-          <p className="text-xs text-white/40 mb-3">
-            These show on one class instead of every class of that type. Parents booking that class see only these.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {classSpecific.map(plan => {
+        <section data-testid="class-specific-plans">
+          <h2 className="mb-1 flex items-baseline gap-2 text-[15px] font-semibold text-[#eef2f9]">
+            One class only
+            <span className="text-xs font-normal tabular-nums text-[#5b6c86]">{classSpecific.length} {classSpecific.length === 1 ? 'plan' : 'plans'}</span>
+          </h2>
+          <p className="mb-2 text-xs text-[#93a2ba]">These show on one class instead of every class of that type. Parents booking that class see only these.</p>
+          <ul className="divide-y divide-[#1d2c42] rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]">
+            {sortPlans(classSpecific).map(plan => {
               const cls = classById.get(plan.training_group_id as string)
-              return (
-                <div key={plan.id} className={`bg-[#0f1a2b] border rounded-2xl p-4 transition-all ${plan.is_active ? 'border-[#4ecde6]/20' : 'border-[#1d2c42] opacity-50'}`}>
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-bold text-white text-sm">{plan.name}</h3>
-                      {!plan.is_active && <span className="text-[9px] px-1.5 py-0.5 bg-white/10 text-white/40 rounded-full">INACTIVE</span>}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-extrabold text-[#4ecde6]">&pound;{Number(plan.amount).toFixed(0)}</div>
-                      <div className="text-[10px] text-white/40">/month</div>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-white/50 mb-3">
-                    {cls
-                      ? <>Only on <span className="text-white/75 font-medium">{cls.name}</span>{cls.day_of_week ? ` · ${cls.day_of_week}` : ''}{cls.time_slot ? ` ${cls.time_slot}` : ''}</>
-                      : <span className="text-amber-300/80">Attached to a class that no longer exists</span>}
-                  </p>
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#1d2c42]">
-                    {cls && (
-                      <a href={`/dashboard/groups/${cls.id}/plans`} className="text-[10px] px-2 py-1 rounded-lg bg-white/[0.06] text-white/50 hover:bg-white/[0.1] transition-colors">Edit on class</a>
-                    )}
-                    <button onClick={() => handleToggle(plan.id, plan.is_active)} className={`text-[10px] px-2 py-1 rounded-lg transition-colors ${plan.is_active ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'}`}>
-                      {plan.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button onClick={() => handleDelete(plan.id)} className="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">Delete</button>
-                  </div>
-                </div>
+              return planRow(
+                plan,
+                cls
+                  ? <>Only on <span className="text-[#eef2f9]">{cls.name}</span>{cls.day_of_week ? ` · ${cls.day_of_week}` : ''}{cls.time_slot ? ` ${cls.time_slot}` : ''}</>
+                  : <span className="text-[#d8a95a]">Attached to a class that no longer exists</span>,
+                cls ? `/dashboard/groups/${cls.id}/plans` : '/dashboard/payments?tab=manage',
               )
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
       {/* Empty state for types with no plans */}
-      {Object.keys(grouped).length === 0 && classSpecific.length === 0 && (
+      {Object.keys(grouped).length === 0 && classSpecific.length === 0 && unlinked.length === 0 && (
         <div className="text-center py-12">
           <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['card']}</svg></span>
           <h3 className="font-bold text-lg mb-1">No plans yet</h3>
@@ -271,7 +285,7 @@ export default function PlanManager({
 
       {/* Add plan form */}
       {showAdd ? (
-        <div className="bg-[#0f1a2b] border border-[#4ecde6]/20 rounded-2xl p-5 space-y-4">
+        <div className="bg-[#0f1a2b] border border-[#293b58] rounded-[15px] p-5 space-y-4">
           <h3 className="font-bold text-white">New Plan</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
@@ -312,21 +326,17 @@ export default function PlanManager({
             <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 text-sm text-white/50 hover:text-white transition-colors">Cancel</button>
           </div>
         </div>
-      ) : (
-        <button onClick={() => setShowAdd(true)} className="px-5 py-2.5 bg-[#4ecde6] text-[#0a0a0a] rounded-xl text-sm font-bold hover:bg-[#6dd8ee] transition-colors">
-          + Create Plan
-        </button>
-      )}
+      ) : null}
 
       {/* Applies to info */}
-      <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5">
-        <h3 className="font-bold text-sm mb-3">How plans apply to classes</h3>
-        <div className="space-y-2 text-xs text-white/50">
+      <details className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] px-5 py-4">
+        <summary className="cursor-pointer text-sm font-semibold text-[#eef2f9]">Which plans does a parent see on a class?</summary>
+        <div className="mt-3 space-y-2 text-xs text-white/50">
           <p>1. If a class has <strong className="text-white/70">class-specific plans</strong> (set from Classes → Plans), those show first</p>
           <p>2. If not, plans matching the <strong className="text-white/70">class type</strong> (created here) are shown</p>
           <p>3. If neither exist, <strong className="text-white/70">org-wide plans</strong> (no type set) are shown as fallback</p>
         </div>
-      </div>
+      </details>
     </div>
   )
 }

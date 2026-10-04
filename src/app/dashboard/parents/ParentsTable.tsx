@@ -294,7 +294,7 @@ export default function ParentsTable({ rows, tints = {} }: { rows: ParentsTableR
               : 'No families match this.'}
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3" data-testid="parents-cards">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" data-testid="parents-cards">
             {visibleRows.map(r => <FamilyCard key={r.id} r={r} tints={tints} showTodo={filterParam === 'look'} />)}
           </div>
         )
@@ -361,8 +361,10 @@ function FamilyCard({ r, showTodo, tints }: { r: ParentsTableRow; showTodo: bool
                 <span aria-hidden className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-[#080e18]" style={{ background: classTint(tints, k.className) }}>
                   {k.firstName.charAt(0).toUpperCase()}
                 </span>
-                <span className="shrink-0 font-medium text-white">{k.firstName}</span>
-                <span className={`ml-auto min-w-0 truncate text-right text-xs ${k.className ? 'text-[#93a2ba]' : 'text-[#5b6c86]'}`}>{k.place}</span>
+                <span className="min-w-0 truncate">
+                  <span className="font-medium text-white">{k.firstName}</span>
+                  <span className={`text-xs ${k.className ? 'text-[#93a2ba]' : 'text-[#5b6c86]'}`}> · {k.place}</span>
+                </span>
               </Link>
             </li>
           ))}

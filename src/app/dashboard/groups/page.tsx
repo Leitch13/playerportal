@@ -13,7 +13,7 @@ import {
   type ClassIntel,
   type ClassesRollup,
 } from '@/lib/classes-revops'
-import ClassesRevenueStrip, { type ClassesView } from '@/components/classes/ClassesRevenueStrip'
+import type { ClassesView } from '@/components/classes/ClassesRevenueStrip'
 
 // Mirrors the Waitlist page's column-duality handling (task #248/#249).
 const WAITLIST_SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true'
@@ -168,7 +168,7 @@ export default async function GroupsPage({
   }
   const viewGroups = visibleGroups.filter((g) => matchesView(g.id))
   const VIEW_LABEL: Record<ClassesView, string> = {
-    open: 'classes with open seats', risk: 'classes below viable', waitlist: 'classes with waitlist demand',
+    open: 'classes with places free', risk: 'quiet classes', waitlist: 'classes with a waiting list',
     full: 'full classes', attention: 'classes needing attention',
   }
 
@@ -226,8 +226,35 @@ export default async function GroupsPage({
         </form>
       </div>
 
+      {/* Oct 2026 — the calm page. The big "Revenue & capacity" band (classes at
+          risk, below viable) is gone from the top. The same four filters are
+          still here as one quiet row, and only the ones with something in them. */}
       {CLASSES_REVOPS_ENABLED && classRollup && (
-        <ClassesRevenueStrip rollup={classRollup} needsAttention={classNeedsAttention} active={view} />
+        <div className="flex flex-wrap items-center gap-2" data-testid="classes-quick-filters">
+          {([
+            ['open', classRollup.totalOpenSeats, `${classRollup.totalOpenSeats} ${classRollup.totalOpenSeats === 1 ? 'place' : 'places'} free`],
+            ['waitlist', classRollup.totalWaitlisted, `${classRollup.totalWaitlisted} on a waiting list`],
+            ['risk', classRollup.atRiskCount, `${classRollup.atRiskCount} quiet ${classRollup.atRiskCount === 1 ? 'class' : 'classes'}`],
+          ] as Array<[ClassesView, number, string]>).filter(([, n]) => n > 0).map(([key, , label]) => (
+            <Link
+              key={key}
+              href={view === key ? '/dashboard/groups' : `/dashboard/groups?view=${key}`}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                view === key ? 'border-[#4ecde6] bg-[#4ecde6] text-[#04141a]' : 'border-[#293b58] text-[#93a2ba] hover:text-white'
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+          <Link
+            href={view === 'full' ? '/dashboard/groups' : '/dashboard/groups?view=full'}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              view === 'full' ? 'border-[#4ecde6] bg-[#4ecde6] text-[#04141a]' : 'border-[#293b58] text-[#93a2ba] hover:text-white'
+            }`}
+          >
+            Full classes
+          </Link>
+        </div>
       )}
 
       {/* Create new class (admin only) */}
