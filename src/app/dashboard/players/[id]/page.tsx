@@ -1,3 +1,4 @@
+import { plansForClasses } from '@/lib/plans-for-class'
 import { redirect } from 'next/navigation'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
@@ -118,7 +119,7 @@ export default async function PlayerDetailPage({
       id, status, group_id,
       enrolled_at, activates_on, is_trial, trial_expires_at,
       group:training_groups(
-        name, day_of_week, time_slot, location,
+        name, day_of_week, time_slot, location, class_type,
         coach:profiles!training_groups_coach_id_fkey(full_name)
       )
     `)
@@ -149,11 +150,18 @@ export default async function PlayerDetailPage({
   // is hidden so it can never create a duplicate (anti-double-billing).
   const { data: orgPlans } = await supabase
     .from('subscription_plans')
-    .select('id, name, amount')
+    .select('id, name, amount, training_group_id, class_type')
     .eq('organisation_id', orgId)
     .eq('active', true)
     .order('sort_order', { ascending: true })
-  const requestPaymentPlans = (orgPlans || []) as { id: string; name: string; amount: number | null }[]
+  const allRequestPlans = (orgPlans || []) as { id: string; name: string; amount: number | null; training_group_id: string | null; class_type: string | null }[]
+  // Offer the plans that fit this child's class (or classes) first; the rest
+  // sit behind "Show all plans". No class yet → every plan, as before.
+  const requestClasses = ((enrolments || []) as unknown as Array<{ status: string | null; group_id: string; group: { class_type?: string | null } | null }>)
+    .filter((e) => e.status === 'active' || e.status === 'pending')
+    .map((e) => ({ id: e.group_id, class_type: e.group?.class_type ?? null }))
+  const requestPaymentPlans = plansForClasses(allRequestPlans, requestClasses)
+  const requestMorePlans = allRequestPlans.filter((p) => !requestPaymentPlans.includes(p))
   const hasActiveOrPendingSub = (playerSubscriptions || []).some((s) =>
     ['active', 'trialing', 'past_due', 'pending_migration'].includes(
       String((s as { status: string | null }).status)
@@ -521,6 +529,7 @@ export default async function PlayerDetailPage({
             playerId={id}
             playerFirstName={player.first_name || 'this player'}
             plans={requestPaymentPlans}
+            morePlans={requestMorePlans}
           />
         </div>
       )}

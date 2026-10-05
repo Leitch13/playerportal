@@ -22,6 +22,7 @@ export default function RequestPaymentButton({
   playerId,
   playerFirstName,
   plans,
+  morePlans = [],
   compact = false,
   pendingSentAt = null,
   lockAfterSent = false,
@@ -30,6 +31,8 @@ export default function RequestPaymentButton({
   playerId: string
   playerFirstName: string
   plans: Plan[]
+  /** The academy's other plans, when `plans` has been narrowed to the child's class. Behind "Show all plans". */
+  morePlans?: Plan[]
   compact?: boolean
   pendingSentAt?: string | null
   /** Enrol form: once a link has gone, the button reads "Payment link sent" and can't send twice. */
@@ -39,6 +42,8 @@ export default function RequestPaymentButton({
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [planId, setPlanId] = useState<string>(plans.length === 1 ? plans[0].id : '')
+  const [showAll, setShowAll] = useState(false)
+  const offered = showAll ? [...plans, ...morePlans] : plans
   const [firstBilling, setFirstBilling] = useState<'today' | 'next_month'>('today')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -166,7 +171,7 @@ export default function RequestPaymentButton({
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-2">Membership plan</p>
                   <div className="space-y-2">
-                    {plans.map((p) => (
+                    {offered.map((p) => (
                       <button
                         type="button"
                         key={p.id}
@@ -181,6 +186,11 @@ export default function RequestPaymentButton({
                       </button>
                     ))}
                   </div>
+                  {morePlans.length > 0 && !showAll && (
+                    <button type="button" onClick={() => setShowAll(true)} data-testid="show-all-plans" className="mt-2 text-xs font-semibold text-white/50 hover:text-white">
+                      {plans.length === 1 ? 'Not this plan? Show all plans' : 'Show all plans'}
+                    </button>
+                  )}
                 </div>
 
                 <div>

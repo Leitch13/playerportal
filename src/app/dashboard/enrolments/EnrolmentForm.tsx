@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import RequestPaymentButton from '../players/[id]/RequestPaymentButton'
+import { plansForClasses } from '@/lib/plans-for-class'
 
 export default function EnrolmentForm({
   players,
@@ -15,11 +16,11 @@ export default function EnrolmentForm({
   hasMembership = [],
 }: {
   players: { id: string; first_name: string; last_name: string }[]
-  groups: { id: string; name: string; day_of_week: string | null }[]
+  groups: { id: string; name: string; day_of_week: string | null; class_type?: string | null }[]
   orgId: string
   /** Admins only: offer the existing Request payment step straight after Enrol. */
   canRequestPayment?: boolean
-  plans?: { id: string; name: string; amount: number | null }[]
+  plans?: { id: string; name: string; amount: number | null; training_group_id?: string | null; class_type?: string | null }[]
   /** Players who already have a membership or a payment request waiting. */
   hasMembership?: string[]
 }) {
@@ -31,7 +32,7 @@ export default function EnrolmentForm({
   // Set once a child has just been enrolled: the form is replaced by "X is in
   // Y" and, for admins, the offer to send the parent a payment link.
   const [linkSent, setLinkSent] = useState<null | 'sent' | 'saved'>(null)
-  const [done, setDone] = useState<{ playerId: string; firstName: string; className: string; alreadyHad: boolean } | null>(null)
+  const [done, setDone] = useState<{ playerId: string; firstName: string; className: string; alreadyHad: boolean; groupId: string; classType: string | null } | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,7 +65,7 @@ export default function EnrolmentForm({
       const pl = players.find((p) => p.id === playerId)
       const gr = groups.find((g) => g.id === groupId)
       setLinkSent(null)
-      setDone({ playerId, firstName: pl?.first_name || 'They', className: gr?.name || 'the class', alreadyHad: hasMembership.includes(playerId) })
+      setDone({ playerId, firstName: pl?.first_name || 'They', className: gr?.name || 'the class', alreadyHad: hasMembership.includes(playerId), groupId, classType: gr?.class_type ?? null })
       setPlayerId('')
       setGroupId('')
       router.refresh()
@@ -87,6 +88,8 @@ export default function EnrolmentForm({
     // Fixed at the moment of enrolling: sending the link makes this child "have
     // a request waiting", and the offer must not vanish under the open dialog.
     const alreadyHas = done.alreadyHad
+    // The plans that fit the class they've just joined; the rest sit behind "Show all plans".
+    const fitPlans = plansForClasses(plans, [{ id: done.groupId, class_type: done.classType }])
     const quiet = 'px-4 py-2 border border-[#1d2c42] rounded-[10px] text-sm font-medium text-[#93a2ba] hover:bg-[#142236] hover:text-white transition-colors'
     return (
       <div className="bg-[#0f1a2b] text-white rounded-[15px] border border-[#1d2c42] p-6" data-testid="enrol-done">
@@ -108,7 +111,7 @@ export default function EnrolmentForm({
         )}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {canRequestPayment && !alreadyHas && plans.length > 0 && (
-            <RequestPaymentButton playerId={done.playerId} playerFirstName={done.firstName} plans={plans} lockAfterSent onSent={(emailed) => setLinkSent(emailed ? 'sent' : 'saved')} />
+            <RequestPaymentButton key={`${done.playerId}:${done.groupId}`} playerId={done.playerId} playerFirstName={done.firstName} plans={fitPlans} morePlans={plans.filter((p) => !fitPlans.includes(p))} lockAfterSent onSent={(emailed) => setLinkSent(emailed ? 'sent' : 'saved')} />
           )}
           <button type="button" onClick={() => setDone(null)} className={quiet}>Enrol another</button>
           <button type="button" onClick={() => { setDone(null); setOpen(false) }} className={quiet}>Done</button>

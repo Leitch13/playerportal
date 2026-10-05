@@ -29,6 +29,14 @@ export default async function NeedsAttentionPage() {
   const adhoc = thisWeek.filter((s) => s.source === 'adhoc').length
   const cover = items.filter((i) => i.kind === 'cover' || i.kind === 'closure').length
   const unpaid = items.filter((i) => i.kind === 'charge').length
+  // A regular whose parent hasn't paid the set-up link has paid nothing yet, so the
+  // tile must not say "everyone is paid up" while those are open.
+  const notSetUp = items.filter((i) => i.kind === 'unpaid').length
+  const owing = unpaid + notSetUp
+  const owingSub = unpaid && notSetUp ? `${unpaid} card failed · ${notSetUp} not set up yet`
+    : unpaid ? 'the card failed, your call'
+    : notSetUp ? `${notSetUp === 1 ? "hasn't" : "haven't"} paid the set-up link`
+    : 'everyone is paid up'
   const empty = active.length === 0 && items.length === 0
   const cname = (id: string) => coaches.find((c) => c.id === id)?.full_name?.split(' ')[0] || 'Coach'
   const vname = (id: string) => venues.find((v) => v.id === id)?.name || ''
@@ -40,7 +48,7 @@ export default async function NeedsAttentionPage() {
         <Stat n={active.length} label="Regulars" sub={paused ? `${paused} paused` : 'all rolling on'} href="/dashboard/one-to-one/regulars" />
         <Stat n={thisWeek.length} label="Sessions this week" sub={adhoc ? `${adhoc} booked as one-offs` : 'none booked as one-offs yet'} href="/dashboard/one-to-one/timetable" />
         <Stat n={cover} label="Cover needed" sub={cover ? 'a coach or a venue is out' : 'every session has its coach'} tone={cover ? 'danger' : 'ok'} />
-        <Stat n={unpaid} label="Unpaid months" sub={unpaid ? 'the card failed, your call' : 'everyone is paid up'} tone={unpaid ? 'danger' : 'ok'} />
+        <Stat n={owing} label={unpaid || !notSetUp ? 'Unpaid months' : 'Not paid yet'} sub={owingSub} tone={owing ? 'danger' : 'ok'} />
       </div>
 
       {empty ? (

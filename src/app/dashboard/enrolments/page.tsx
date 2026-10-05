@@ -1,3 +1,4 @@
+import { plansForClasses } from '@/lib/plans-for-class'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -37,7 +38,7 @@ type EnrolmentRow = {
   trial_expires_at?: string | null
   activates_on?: string | null
   player: { first_name: string; last_name: string; age_group?: string } | null
-  group: { name: string; day_of_week?: string; time_slot?: string } | null
+  group: { name: string; day_of_week?: string; time_slot?: string; class_type?: string | null } | null
 }
 
 export default async function EnrolmentsPage({
@@ -73,7 +74,7 @@ export default async function EnrolmentsPage({
         id, status, enrolled_at, player_id, group_id,
         is_trial, trial_expires_at, activates_on,
         player:players(first_name, last_name, age_group),
-        group:training_groups(name, day_of_week, time_slot)
+        group:training_groups(name, day_of_week, time_slot, class_type)
       `)
       .eq('organisation_id', orgId)
       .order('enrolled_at', { ascending: false }),
@@ -86,7 +87,7 @@ export default async function EnrolmentsPage({
       .order('first_name'),
     supabase
       .from('training_groups')
-      .select('id, name, day_of_week, time_slot, max_capacity')
+      .select('id, name, day_of_week, time_slot, max_capacity, class_type')
       .eq('organisation_id', orgId)
       .order('name'),
     loadTrialFollowUpRows(supabase, orgId).catch(() => []),
@@ -126,7 +127,7 @@ export default async function EnrolmentsPage({
   // Admins only (the request-payment route refuses anyone else). READ-ONLY:
   // the active plans, and which children already have a membership or a
   // request waiting (those get no offer, because the route would refuse). ──
-  let enrolPlans: Array<{ id: string; name: string; amount: number | null }> = []
+  let enrolPlans: Array<{ id: string; name: string; amount: number | null; training_group_id: string | null; class_type: string | null }> = []
   let enrolHasMembership: string[] = []
   let enrolCanRequest = false
   {
@@ -134,7 +135,7 @@ export default async function EnrolmentsPage({
     enrolCanRequest = myRole === 'admin'
     if (enrolCanRequest) {
       const [{ data: planRows }, { data: subRows }] = await Promise.all([
-        supabase.from('subscription_plans').select('id, name, amount')
+        supabase.from('subscription_plans').select('id, name, amount, training_group_id, class_type')
           .eq('organisation_id', orgId).eq('active', true).order('sort_order', { ascending: true }),
         supabase.from('subscriptions').select('player_id')
           .eq('organisation_id', orgId).not('player_id', 'is', null)
@@ -149,7 +150,7 @@ export default async function EnrolmentsPage({
   // view, and only for admins (the route refuses anyone else): the academy's
   // active plans, and which of these children already have a payment request
   // waiting. READ-ONLY. ──
-  let chasePlans: Array<{ id: string; name: string; amount: number | null }> = []
+  let chasePlans: Array<{ id: string; name: string; amount: number | null; training_group_id: string | null; class_type: string | null }> = []
   const pendingSentByPlayer = new Map<string, string>()
   const blockedByPlayer = new Set<string>()
   let canChase = false
@@ -159,7 +160,7 @@ export default async function EnrolmentsPage({
     if (canChase) {
       const ids = [...new Set(notPayingActive.map(e => e.player_id))]
       const [{ data: planRows }, { data: subRows }] = await Promise.all([
-        supabase.from('subscription_plans').select('id, name, amount')
+        supabase.from('subscription_plans').select('id, name, amount, training_group_id, class_type')
           .eq('organisation_id', orgId).eq('active', true).order('sort_order', { ascending: true }),
         supabase.from('subscriptions').select('player_id, status, invite_sent_at, created_at')
           .eq('organisation_id', orgId).in('player_id', ids)
@@ -174,6 +175,19 @@ export default async function EnrolmentsPage({
         else blockedByPlayer.add(r.player_id)
       }
     }
+  }
+  // Offer the plans that fit the child's class (or classes), not every plan the
+  // academy sells. The rest stay one tap away behind "Show all plans".
+  const classesByPlayer = new Map<string, Array<{ id: string; class_type: string | null }>>()
+  for (const e of active) {
+    const list = classesByPlayer.get(e.player_id) || []
+    list.push({ id: e.group_id, class_type: e.group?.class_type ?? null })
+    classesByPlayer.set(e.player_id, list)
+  }
+  const chaseFor = (playerId: string) => {
+    const fit = plansForClasses(chasePlans, classesByPlayer.get(playerId) || [])
+    const ids = new Set(fit.map(p => p.id))
+    return { fit, more: chasePlans.filter(p => !ids.has(p.id)) }
   }
   const fmtShort = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' })
 
@@ -460,7 +474,7 @@ export default async function EnrolmentsPage({
                                     ) : blocked ? (
                                       <Link href="/dashboard/payments" className="text-xs font-semibold text-[#93a2ba] hover:text-white">Sort in Payments</Link>
                                     ) : chasePlans.length > 0 ? (
-                                      <RequestPaymentButton playerId={e.player_id} playerFirstName={e.player?.first_name || 'this player'} plans={chasePlans} compact />
+                                      <RequestPaymentButton playerId={e.player_id} playerFirstName={e.player?.first_name || 'this player'} plans={chaseFor(e.player_id).fit} morePlans={chaseFor(e.player_id).more} compact />
                                     ) : (
                                       <Link href="/dashboard/payments?tab=manage" className="text-xs font-semibold text-[#93a2ba] hover:text-white">Add a plan first</Link>
                                     )
