@@ -136,6 +136,26 @@ const PILL_TONE: Record<PillTone, string> = {
   bad:  'text-[#e0736d] bg-[#e0736d]/[0.13]',
   off:  'text-[#93a2ba] bg-[#93a2ba]/[0.10]',
 }
+// The squad sheet's "who has paid" — the same rule as the list's membership pill.
+type SquadPay = 'paying' | 'problem' | 'invite' | 'none' | 'other'
+const SQUAD_PAY_ORDER: SquadPay[] = ['paying', 'problem', 'invite', 'none', 'other']
+const SQUAD_PAY: Record<SquadPay, { label: string; card: string; text: string; dot: string }> = {
+  paying:  { label: 'paying',               card: 'Paying',               text: 'text-[#67c79a]', dot: 'bg-[#67c79a]' },
+  problem: { label: 'payment problem',      card: 'Payment problem',      text: 'text-[#e0736d]', dot: 'bg-[#e0736d]' },
+  invite:  { label: 'invite not confirmed', card: 'Invite not confirmed', text: 'text-[#d8a95a]', dot: 'bg-[#d8a95a]' },
+  none:    { label: 'no membership',        card: 'No membership',        text: 'text-[#d8a95a]', dot: 'bg-[#d8a95a]' },
+  other:   { label: 'trial or not started', card: '',                     text: 'text-[#93a2ba]', dot: 'bg-[#5b6c86]' },
+}
+function squadPay(r: PlayersTableRow): SquadPay {
+  const m = membershipPill(r.subStatuses ?? [])
+  if (m.tone === 'bad') return 'problem'
+  if (m.tone === 'ok') return 'paying'
+  if (m.tone === 'warn') return 'invite'
+  // A trial, a class that hasn't started, or a paused/scheduled membership is not "unpaid".
+  if (m.label !== 'No membership' || r.rowStatus === 'trial' || r.rowStatus === 'pending') return 'other'
+  return 'none'
+}
+
 const LEVEL_CHIP: Record<string, string> = {
   beginner:     'bg-green-500/15 text-green-400',
   development:  'bg-blue-500/15 text-blue-400',
@@ -295,9 +315,16 @@ export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTabl
   // so "7 of 16 places" stays true while searching.
   const squads = useMemo(() => {
     const totals = new Map<string, number>()
+    // Who has paid, per class — counted over everyone in the class, like `total`.
+    const pay = new Map<string, Record<SquadPay, number>>()
     for (const r of rows) {
       if (r.archivedAt || r.rowStatus === 'paused') continue
-      for (const c of r.className.split(', ').filter(Boolean)) totals.set(c, (totals.get(c) || 0) + 1)
+      const state = squadPay(r)
+      for (const c of r.className.split(', ').filter(Boolean)) {
+        totals.set(c, (totals.get(c) || 0) + 1)
+        if (!pay.has(c)) pay.set(c, { paying: 0, problem: 0, invite: 0, none: 0, other: 0 })
+        pay.get(c)![state] += 1
+      }
     }
     const by = new Map<string, PlayersTableRow[]>()
     for (const r of visibleRows) {
@@ -316,6 +343,7 @@ export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTabl
         players,
         total: totals.get(name) ?? players.length,
         when: info.get(name)?.when || '',
+        pay: name ? (pay.get(name) ?? null) : null,
         capacity: name ? (info.get(name)?.capacity ?? null) : null,
       }))
   }, [rows, visibleRows, classes, classPick])
@@ -442,6 +470,16 @@ export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTabl
                       </p>
                     </div>
                     {sq.when && <p className="mt-0.5 text-xs text-[#93a2ba]">{sq.when}</p>}
+                    {sq.pay && (
+                      <p className="mt-1.5 flex flex-wrap gap-x-3.5 gap-y-1 text-xs tabular-nums" data-testid="squad-pay">
+                        {SQUAD_PAY_ORDER.filter(k => sq.pay![k] > 0).map(k => (
+                          <span key={k} className={`inline-flex items-center gap-1.5 ${SQUAD_PAY[k].text}`}>
+                            <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${SQUAD_PAY[k].dot}`} />
+                            {sq.pay![k]} {SQUAD_PAY[k].label}
+                          </span>
+                        ))}
+                      </p>
+                    )}
                     {pct != null && (
                       <div className="mt-2.5 h-[5px] overflow-hidden rounded-full bg-[#1d2c42]" aria-hidden>
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: tint }} />
@@ -450,11 +488,11 @@ export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTabl
                   </header>
                   <ul className="grid grid-cols-1 gap-2 p-3.5 min-[420px]:grid-cols-2 sm:px-5 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
                     {sq.players.map(r => {
-                      const m = membershipPill(r.subStatuses ?? [])
-                      const flag = m.tone === 'bad' ? 'Payment problem' : m.tone === 'warn' ? m.label : null
+                      const state = squadPay(r)
+                      const flag = sq.name && state !== 'paying' && state !== 'other' ? SQUAD_PAY[state] : null
                       return (
                         <li key={r.id}>
-                          <Link href={`/dashboard/players/${r.id}`} className="flex items-center gap-2.5 rounded-[11px] border border-[#1d2c42] bg-[#080e18] px-2.5 py-2 transition-colors hover:border-[#293b58]">
+                          <Link href={`/dashboard/players/${r.id}`} className="flex h-full items-center gap-2.5 rounded-[11px] border border-[#1d2c42] bg-[#080e18] px-2.5 py-2 transition-colors hover:border-[#293b58]">
                             <PlayerAvatar photoUrl={r.photo_url} firstName={r.first_name} lastName={r.last_name} size="sm" />
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-[13px] font-semibold text-white">{r.first_name} {r.last_name}</span>
@@ -463,8 +501,9 @@ export default function PlayersTable({ rows, classes = [] }: { rows: PlayersTabl
                                 {!sq.name && r.otherPlace ? ` · ${r.otherPlace}` : ''}
                                 {r.rowStatus === 'trial' ? ' · on a trial' : ''}
                               </span>
+                              {flag && <span className={`block truncate text-[11px] font-semibold ${flag.text}`}>{flag.card}</span>}
                             </span>
-                            {flag && <span title={flag} aria-label={flag} className={`h-2 w-2 shrink-0 rounded-full ${m.tone === 'bad' ? 'bg-[#e0736d]' : 'bg-[#d8a95a]'}`} />}
+                            {flag && <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${flag.dot}`} />}
                           </Link>
                         </li>
                       )
