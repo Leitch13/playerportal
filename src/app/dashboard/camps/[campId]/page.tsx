@@ -19,6 +19,8 @@ import AddPlayerToCamp, { type RosterPlayer } from './AddPlayerToCamp'
 import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
 import RosterClient, { type CampRosterBooking } from './RosterClient'
+import CampWaitingList, { type WaitingPerson } from './CampWaitingList'
+import { CAMP_WAITLIST_SOURCE, campMarker } from '@/lib/camp-waitlist'
 
 function fmtDateRange(start: string, end: string): string {
   const s = new Date(start + 'T00:00:00Z')
@@ -345,6 +347,24 @@ export default async function CampDetailPage({
     }))
     .filter((p) => !bookedChildNames.has(`${p.first_name} ${p.last_name}`.trim()))
 
+  // Waiting list: people who asked for a place after the camp filled. Read-only here.
+  const { data: waitRows } = await supabase
+    .from('leads')
+    .select('id, first_name, last_name, email, phone, child_name, child_age, status, notes, created_at')
+    .eq('organisation_id', orgId)
+    .eq('source', CAMP_WAITLIST_SOURCE)
+    .ilike('notes', `%${campMarker(camp.id as string)}%`)
+    .not('status', 'in', '(enrolled,lost)')
+    .order('created_at', { ascending: true })
+    .limit(200)
+  const waiting: WaitingPerson[] = ((waitRows || []) as Array<{ id: string; first_name: string; last_name: string | null; email: string | null; phone: string | null; child_name: string | null; child_age: number | null; notes: string | null; created_at: string }>).map((l) => ({
+    id: l.id,
+    parentName: `${l.first_name} ${l.last_name || ''}`.trim(),
+    childName: l.child_name, childAge: l.child_age, email: l.email, phone: l.phone,
+    joined: new Date(l.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' }),
+    invited: (l.notes || '').includes('Invited to book'),
+  }))
+
   return (
     <div className="space-y-6 p-6 lg:p-8">
       {/* Breadcrumb */}
@@ -390,6 +410,8 @@ export default async function CampDetailPage({
         <StatCard label="Remaining spaces" value={remaining === null ? '—' : String(remaining)} tone={remaining === 0 ? 'red' : 'cyan'} testId="stat-remaining" />
         <StatCard label="Revenue collected" value={`£${revenue.toFixed(2)}`} tone="green" testId="stat-revenue" />
       </div>
+
+      <CampWaitingList campId={camp.id as string} people={waiting} isFull={remaining === 0} canInvite={profile.role === 'admin'} />
 
       {/* Sprint 10 — Roster Workspace.
           Search · Send-to-all · Print · CSV · WhatsApp · Resend confirmation.

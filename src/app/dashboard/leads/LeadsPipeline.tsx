@@ -70,6 +70,7 @@ const SOURCES = ['manual', 'facebook', 'website', 'phone', 'walk_in', 'referral'
 const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual', facebook: 'Facebook', website: 'Website',
   phone: 'Phone', walk_in: 'Walk-in', referral: 'Referral',
+  camp_waitlist: 'Camp waiting list',
 }
 
 const LOST_REASONS = [

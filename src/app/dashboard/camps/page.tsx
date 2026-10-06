@@ -1,3 +1,4 @@
+import { CAMP_WAITLIST_SOURCE, waitingByCamp } from '@/lib/camp-waitlist'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -125,6 +126,16 @@ export default async function CampsPage() {
 
     allBookings = (bookings || []) as CampBooking[]
   }
+
+  // How many people are on each camp's waiting list (read-only; see src/lib/camp-waitlist.ts).
+  const { data: waitRows } = await supabase
+    .from('leads')
+    .select('notes')
+    .eq('organisation_id', orgId)
+    .eq('source', CAMP_WAITLIST_SOURCE)
+    .not('status', 'in', '(enrolled,lost)')
+    .limit(1000)
+  const waitingCounts = waitingByCamp((waitRows || []) as Array<{ notes: string | null }>)
 
   // Build booking stats per camp
   const campStats: Record<string, { bookingCount: number; paidCount: number; revenue: number; unpaidCount: number }> = {}
@@ -292,6 +303,7 @@ export default async function CampsPage() {
               <dt className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">Booked</dt>
               <dd className="mt-0.5 text-[15px] font-semibold tabular-nums text-white">
                 {stats.bookingCount}{camp.max_capacity ? <span className="font-normal text-[#93a2ba]"> of {camp.max_capacity}</span> : null}
+                {(waitingCounts.get(camp.id) || 0) > 0 && <span className="ml-2 text-xs font-semibold text-[#d8a95a]" data-testid="camp-waiting-count">{waitingCounts.get(camp.id)} waiting</span>}
               </dd>
             </div>
             <div>

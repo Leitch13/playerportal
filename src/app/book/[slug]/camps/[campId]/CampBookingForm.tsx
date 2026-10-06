@@ -1,5 +1,6 @@
 'use client'
 
+import CampWaitlistForm from './CampWaitlistForm'
 import { useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
 import { postJson } from '@/lib/post-json'
@@ -278,9 +279,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
       </div>
 
       {isFull && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center">
-          <p className="text-red-400 font-semibold text-sm">This camp is full.</p>
-        </div>
+        <CampWaitlistForm campId={camp.id} primaryColor={primaryColor} defaultName={loggedInParent?.name || ''} defaultEmail={loggedInParent?.email || ''} />
       )}
 
       {/* Returning parent? Offer sign-in to reuse their details + child. */}
