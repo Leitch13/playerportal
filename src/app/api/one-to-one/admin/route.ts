@@ -4,7 +4,7 @@ import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, 
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed } from '@/lib/one-to-one/emails'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
-import { seatForNewSlot, seatForSession, seatClashMessage, type SessionType } from '@/lib/one-to-one/seats'
+import { seatForNewSlot, seatForSession, seatClashMessage, sameWeeks, onSameWeeks, type SessionType } from '@/lib/one-to-one/seats'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +38,14 @@ const nightMsg = (start: number) => `${String(Math.floor(start / 60)).padStart(2
 const DAY_KEY = ['', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const DAY_NAME = ['', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays']
 const bad = (m: string) => NextResponse.json({ error: m }, { status: 400 })
+
+type SlotAtTime = { id: string; session_type: SessionType; pair_seat: number; frequency: string; starts_on: string; weekday: number }
+
+// When a fortnightly slot is refused by other fortnightly slots, the usual answer is to put it on the opposite weeks.
+function oppositeWeeksHint(frequency: string, taken: SlotAtTime[]): string {
+  if (frequency !== 'fortnightly' || taken.length === 0 || !taken.every((t) => t.frequency === 'fortnightly')) return ''
+  return ' If this is for the opposite weeks, set "First session on or after" to the following week.'
+}
 
 // A coach's time is taken: say which coach, when, and who is already there.
 async function clashMessage(admin: Awaited<ReturnType<typeof requireAdmin>>['admin'], coachId: string, weekday: number, start: number, type: SessionType, takenIds: string[]): Promise<string> {
@@ -216,12 +224,31 @@ export async function POST(req: NextRequest) {
         if (!playerId || !coachId || !venueId || !(weekday >= 1 && weekday <= 7) || !(start >= 0) || !(price >= 0) || !(dur >= 15)) return bad('Fill in the slot')
         const { data: player } = await admin.from('players').select('id, parent_id, organisation_id').eq('id', playerId).single()
         if (!player || player.organisation_id !== orgId) return bad('That child is not in your academy')
+        // A 2-to-1 can be set up as a pair in one go: the second keeper takes the other seat.
+        const secondId = type === 'two_to_one' ? str(body.secondPlayerId) : ''
+        type Kid = { id: string; parent_id: string | null; organisation_id: string }
+        let second = null as Kid | null
+        if (secondId) {
+          if (secondId === playerId) return bad('Pick two different keepers for the pair. Nothing was saved.')
+          const { data: p2 } = await admin.from('players').select('id, parent_id, organisation_id').eq('id', secondId).single()
+          if (!p2 || p2.organisation_id !== orgId) return bad('The second keeper is not in your academy. Nothing was saved.')
+          second = p2 as Kid
+        }
         // The coach must be free at that time on that day. A 2-to-1 is the exception: a second
         // 2-to-1 keeper joins the first in the other seat and the two are paired (migration 119).
-        const { data: taken } = await admin.from('regular_slots').select('id, session_type, pair_seat').eq('coach_id', coachId).eq('weekday', weekday)
+        const { data: atTime } = await admin.from('regular_slots').select('id, session_type, pair_seat, frequency, starts_on, weekday').eq('coach_id', coachId).eq('weekday', weekday)
           .eq('start_minutes', start).in('status', ['pending', 'active', 'paused'])
-        const seat = seatForNewSlot((taken ?? []) as { id: string; session_type: SessionType; pair_seat: number }[], type)
-        if (!seat.ok) return bad(await clashMessage(admin, coachId, weekday, start, type, (taken ?? []).map((t) => t.id as string)))
+        // Fortnightly slots on opposite weeks never meet, so they don't take each other's seats.
+        const taken = onSameWeeks((atTime ?? []) as SlotAtTime[], { frequency: freq, startsOn, weekday })
+        const seat = seatForNewSlot(taken, type)
+        if (!seat.ok) return bad(await clashMessage(admin, coachId, weekday, start, type, taken.map((t) => t.id)) + oppositeWeeksHint(freq, taken))
+        // Two keepers need both seats. If one is already taken, only one more can join.
+        if (second && taken.length > 0) {
+          const { data: coachRow } = await admin.from('profiles').select('full_name').eq('id', coachId).maybeSingle()
+          const { data: there } = await admin.from('regular_slots').select('player:players(first_name)').in('id', taken.map((t) => t.id))
+          const who = ((there ?? []) as unknown as Array<{ player: { first_name: string | null } | null }>).map((r) => r.player?.first_name).filter(Boolean).join(' and ')
+          return bad(`${((coachRow?.full_name as string) || 'That coach').split(' ')[0]} already has one keeper at ${DAY[weekday] || 'that day'} ${hhmm(start)}${who ? ` (${who})` : ''}, so only one more can join. Nothing was saved. Add one keeper to join them, or choose a different coach for a new pair.`)
+        }
         const { data, error } = await admin.from('regular_slots').insert({
           organisation_id: orgId, player_id: playerId, parent_id: player.parent_id, coach_id: coachId, venue_id: venueId,
           weekday, start_minutes: start, duration_minutes: dur, session_type: type, frequency: freq, price_pence: price,
@@ -235,13 +262,36 @@ export async function POST(req: NextRequest) {
           const { error: pe } = await admin.from('regular_slots').update({ partner_slot_id: data.id }).eq('id', seat.pairWith).eq('organisation_id', orgId)
           if (pe) throw pe
         }
+        // The second keeper of a new pair: seat 2, paired with the first. If this can't be
+        // saved, the first slot is removed again so the academy is never left with half a pair
+        // it didn't ask for.
+        let secondSlotId: string | null = null
+        if (second) {
+          const { data: s2, error: e2 } = await admin.from('regular_slots').insert({
+            organisation_id: orgId, player_id: second.id, parent_id: second.parent_id, coach_id: coachId, venue_id: venueId,
+            weekday, start_minutes: start, duration_minutes: dur, session_type: type, frequency: freq, price_pence: price,
+            status: 'pending', starts_on: startsOn, note: str(body.note) || null,
+            pair_seat: seat.seat === 1 ? 2 : 1, partner_slot_id: data.id,
+          }).select('id').single()
+          if (e2 || !s2) {
+            await admin.from('regular_slots').delete().eq('id', data.id).eq('organisation_id', orgId)
+            return bad(`The pair could not be saved${e2?.message ? ` (${e2.message})` : ''}. Nothing was saved.`)
+          }
+          secondSlotId = s2.id as string
+          const { error: pe2 } = await admin.from('regular_slots').update({ partner_slot_id: secondSlotId }).eq('id', data.id).eq('organisation_id', orgId)
+          if (pe2) throw pe2
+        }
         await rollAhead(admin, orgId, startsOn)
         let setup: { url: string; amountPence: number } | null = null
         let setupError: string | null = null
         try { setup = await sendSetupCheckout(admin, orgId, data.id) } catch (e) { setupError = e instanceof Error ? e.message : 'set-up link failed' }
+        if (secondSlotId) {
+          try { await sendSetupCheckout(admin, orgId, secondSlotId) } catch (e) { setupError = setupError || (e instanceof Error ? e.message : 'set-up link failed') }
+        }
         // The slot is saved either way. If the link could not go, the academy is told so on screen, in their words.
-        const warning = setupError ? `Slot saved and the time is held. ${/payment setup/i.test(setupError) ? ACADEMY_NOT_READY_MESSAGE : `No pay link was sent: ${setupError}`}` : null
-        return NextResponse.json({ ok: true, id: data.id, setup, setupError, warning })
+        const saved = secondSlotId ? 'Both slots saved and the time is held.' : 'Slot saved and the time is held.'
+        const warning = setupError ? `${saved} ${/payment setup/i.test(setupError) ? ACADEMY_NOT_READY_MESSAGE : `No pay link was sent: ${setupError}`}` : null
+        return NextResponse.json({ ok: true, id: data.id, secondId: secondSlotId, setup, setupError, warning })
       }
       case 'slot.status': {
         const status = str(body.status); if (!['active', 'paused', 'released'].includes(status)) return bad('Bad status')
@@ -297,10 +347,11 @@ export async function POST(req: NextRequest) {
         }
         let seat: { seat: number; pairWith: string | null } = { seat: cur.pair_seat ?? 0, pairWith: null }
         if (moved) {
-          const { data: taken } = await admin.from('regular_slots').select('id, session_type, pair_seat').eq('coach_id', coachId).eq('weekday', weekday)
+          const { data: atTime } = await admin.from('regular_slots').select('id, session_type, pair_seat, frequency, starts_on, weekday').eq('coach_id', coachId).eq('weekday', weekday)
             .eq('start_minutes', start).in('status', ['pending', 'active', 'paused']).neq('id', id)
-          const r = seatForNewSlot((taken ?? []) as { id: string; session_type: SessionType; pair_seat: number }[], cur.session_type as SessionType)
-          if (!r.ok) return bad(await clashMessage(admin, coachId, weekday, start, cur.session_type as SessionType, (taken ?? []).map((t) => t.id as string)))
+          const taken = onSameWeeks((atTime ?? []) as SlotAtTime[], { frequency: cur.frequency as string, startsOn: cur.starts_on as string, weekday })
+          const r = seatForNewSlot(taken, cur.session_type as SessionType)
+          if (!r.ok) return bad(await clashMessage(admin, coachId, weekday, start, cur.session_type as SessionType, taken.map((t) => t.id)) + oppositeWeeksHint(cur.frequency as string, taken))
           seat = { seat: r.seat, pairWith: r.pairWith }
         }
         const { error: ue } = await admin.from('regular_slots').update({
@@ -343,12 +394,15 @@ export async function POST(req: NextRequest) {
       case 'slot.pair': {
         const a = str(body.slotId), b = str(body.partnerSlotId)
         if (!a || !b || a === b) return bad('Pick two different keepers')
-        const { data: pair } = await admin.from('regular_slots').select('id, coach_id, weekday, start_minutes, session_type, pair_seat')
+        const { data: pair } = await admin.from('regular_slots').select('id, coach_id, weekday, start_minutes, session_type, pair_seat, frequency, starts_on')
           .in('id', [a, b]).eq('organisation_id', orgId)
         const [x, y] = [pair?.find((r) => r.id === a), pair?.find((r) => r.id === b)]
         if (!x || !y) return bad('Slot not found')
         if (x.coach_id !== y.coach_id || x.weekday !== y.weekday || x.start_minutes !== y.start_minutes) {
           return bad('A pair shares one coach, day and time. Give the second keeper a 2-to-1 slot on the first keeper\'s time instead: they pair automatically.')
+        }
+        if (!sameWeeks({ frequency: x.frequency as string, startsOn: x.starts_on as string, weekday: x.weekday as number }, { frequency: y.frequency as string, startsOn: y.starts_on as string, weekday: y.weekday as number })) {
+          return bad('Those two train on opposite weeks, so they are never at the same session and can\'t be a pair.')
         }
         if (x.session_type !== 'two_to_one' || y.session_type !== 'two_to_one' || x.pair_seat === y.pair_seat) {
           return bad('Those two can\'t be paired as they are. Give the second keeper a 2-to-1 slot on the first keeper\'s time instead.')

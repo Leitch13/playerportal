@@ -1,3 +1,4 @@
+import SlotTypeFields from './SlotTypeFields'
 import { requireAdmin, getCoaches, getVenues, getSlots, getSettings, DAY, hhmm, gbp, fmtShort, type SlotRowDb } from '@/lib/one-to-one/db'
 import { todayLondon } from '@/lib/one-to-one/time'
 import { academyPaymentsReady } from '@/lib/one-to-one/checkout'
@@ -7,6 +8,7 @@ import { inputCls } from '../styles'
 export const dynamic = 'force-dynamic'
 
 // Regulars — the protected thing. A slot is theirs until they give it up.
+const DAY_LONG: Record<number, string> = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' }
 const STATUS: Record<SlotRowDb['status'], { label: string; cls: string }> = {
   active: { label: 'active', cls: 'bg-[#67c79a]/15 text-[#8fdcb6]' },
   pending: { label: 'awaiting payment', cls: 'bg-[#4ecde6]/15 text-[#4ecde6]' },
@@ -31,6 +33,19 @@ export default async function RegularsPage() {
   const sorted = [...slots].sort((a, b) => order[a.status] - order[b.status] || a.weekday - b.weekday || a.start_minutes - b.start_minutes)
   const live = sorted.filter((s) => s.status !== 'released')
   const twoToOne = slots.filter((s) => s.session_type === 'two_to_one' && s.status !== 'released')
+  const released = sorted.filter((s) => s.status === 'released')
+  const counts = { active: live.filter((s) => s.status === 'active').length, pending: live.filter((s) => s.status === 'pending').length, paused: live.filter((s) => s.status === 'paused').length }
+  // One card per session: a 2-to-1 pair sits together, everyone else stands alone. Then by day and time.
+  const seen = new Set<string>()
+  const blocks: SlotRowDb[][] = []
+  for (const s of [...live].sort((a, b) => a.weekday - b.weekday || a.start_minutes - b.start_minutes || cname(a.coach_id).localeCompare(cname(b.coach_id)) || a.starts_on.localeCompare(b.starts_on) || (a.pair_seat ?? 0) - (b.pair_seat ?? 0))) {
+    if (seen.has(s.id)) continue
+    const partner = s.partner_slot_id ? live.find((x) => x.id === s.partner_slot_id) : undefined
+    const block = partner && !seen.has(partner.id) ? [s, partner].sort((a, b) => (a.pair_seat ?? 0) - (b.pair_seat ?? 0)) : [s]
+    block.forEach((x) => seen.add(x.id))
+    blocks.push(block)
+  }
+  const days = [1, 2, 3, 4, 5, 6, 7].map((d) => [d, blocks.filter((b) => b[0].weekday === d)] as const).filter(([, b]) => b.length > 0)
   const weekly = live.filter((s) => s.status === 'active').reduce((a, s) => a + (s.frequency === 'weekly' ? s.price_pence : s.frequency === 'fortnightly' ? s.price_pence / 2 : s.price_pence / 4.33), 0)
 
   const money = (parentId: string) => {
@@ -44,7 +59,6 @@ export default async function RegularsPage() {
   const chip = (s: SlotRowDb) => s.status === 'pending' && !ready
     ? { label: 'pay link not sent', cls: 'bg-[#d8a95a]/15 text-[#ecc98a]' }
     : STATUS[s.status]
-  const type = (s: SlotRowDb) => s.session_type === 'two_to_one' ? `2-to-1${s.partner_slot_id ? ' with ' + (slots.find((x) => x.id === s.partner_slot_id)?.player?.first_name || 'partner') : ' · needs a partner'}` : '1-to-1'
   const creditCell = (s: SlotRowDb) => {
     const bal = creditOf(s.parent_id)
     return (
@@ -62,16 +76,18 @@ export default async function RegularsPage() {
       </div>
     )
   }
-  const buttons = (s: SlotRowDb) => (
+  // The one action that moves things on, shown on the row. Everything else sits under "More".
+  const primary = (s: SlotRowDb) => s.status === 'pending'
+    ? <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: s.id }}>Resend link</ActionButton>
+    : s.status === 'paused' ? <ActionButton tone="primary" body={{ action: 'slot.status', id: s.id, status: 'active' }}>Resume</ActionButton>
+    : null
+  const others = (s: SlotRowDb) => (
     <div className="flex flex-wrap gap-1">
-      {s.status === 'pending' && <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: s.id }}>Resend link</ActionButton>}
       {s.status === 'active' && <ActionButton body={{ action: 'slot.status', id: s.id, status: 'paused' }}>Pause</ActionButton>}
-      {s.status === 'paused' && <ActionButton tone="primary" body={{ action: 'slot.status', id: s.id, status: 'active' }}>Resume</ActionButton>}
       {s.status !== 'released' && <ActionButton tone="quiet" confirm="Release this slot? Their future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: s.id, status: 'released' }}>Release</ActionButton>}
       {s.status !== 'released' && <ActionButton tone="danger" confirm="Delete this slot completely? Only for one added by mistake: it works while nothing has been paid or coached, and any pay link sent stops working." body={{ action: 'slot.delete', id: s.id }}>Delete</ActionButton>}
     </div>
   )
-  // Change a regular without ending it. Sessions from today move with it; a new price reaches only unpaid sessions.
   const editForm = (s: SlotRowDb) => s.status === 'released' ? null : (
     <Disclosure label="Edit">
       <ActionForm action="slot.update" extra={{ id: s.id }} submitLabel="Save changes" className="w-full max-w-md rounded-xl border border-white/[0.08] bg-[#0b1422] p-3 text-left">
@@ -91,7 +107,7 @@ export default async function RegularsPage() {
   )
 
   const form = (
-    <ActionForm action="slot.create" submitLabel="Create the slot and email the parent" className="mt-4">
+    <ActionForm action="slot.create" submitLabel="Create and email the pay link" className="mt-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Field label="Child" className="col-span-2">
           <select name="playerId" required className={inputCls}>
@@ -102,13 +118,15 @@ export default async function RegularsPage() {
             })}
           </select>
         </Field>
-        <Field label="Coach"><select name="coachId" className={inputCls}>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
+        <Field label="Coach"><select name="coachId" required defaultValue="" className={inputCls}><option value="">Choose a coach</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
         <Field label="Venue"><select name="venueId" className={inputCls}>{venues.filter((v) => v.is_active).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>
         <Field label="Day"><select name="weekday" className={inputCls}>{[1, 2, 3, 4, 5, 6, 7].map((d) => <option key={d} value={d}>{DAY[d]}</option>)}</select></Field>
         <Field label="Start time"><input name="start" placeholder="16:30" required className={inputCls + ' tabular-nums'} /></Field>
-        <Field label="Type"><select name="sessionType" className={inputCls}><option value="one_to_one">1-to-1</option><option value="two_to_one">2-to-1</option></select></Field>
+        <SlotTypeFields
+          players={(players || []).map((p) => { const parent = p.parent as unknown as { full_name: string | null } | null; return { id: p.id as string, label: `${p.first_name} ${p.last_name}${parent?.full_name ? ` · ${parent.full_name}` : ''}` } })}
+          oneToOnePence={settings.one_to_one_price_pence} twoToOnePence={settings.two_to_one_price_pence}
+        />
         <Field label="How often"><select name="frequency" className={inputCls}><option value="weekly">Every week</option><option value="fortnightly">Every fortnight</option><option value="monthly">Once a month</option></select></Field>
-        <Field label="Price per session"><PoundsInput name="pricePence" defaultPence={settings.one_to_one_price_pence} /></Field>
         <Field label="Length, minutes"><input name="durationMinutes" type="number" defaultValue={settings.session_minutes} className={inputCls + ' tabular-nums'} /></Field>
         <Field label="First session on or after"><input name="startsOn" type="date" defaultValue={todayLondon()} className={inputCls} /></Field>
         <Field label="Note for you"><input name="note" placeholder="optional" className={inputCls} /></Field>
@@ -132,54 +150,83 @@ export default async function RegularsPage() {
       </section>
 
       {sorted.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/[0.15] p-8 text-center text-sm text-white/45">No regulars yet.</div>
+        <div className="rounded-[15px] border border-dashed border-[#293b58] p-8 text-center text-sm text-[#93a2ba]">No regulars yet.</div>
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0f1a2b] lg:block">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-white/[0.06] text-left text-[10px] uppercase tracking-[0.08em] text-white/40">
-                  <th className="px-5 py-3 font-semibold">Keeper</th><th className="px-3 py-3 font-semibold">Slot</th><th className="px-3 py-3 font-semibold">Coach and venue</th><th className="px-3 py-3 font-semibold">Type</th><th className="px-3 py-3 text-right font-semibold">Price</th><th className="px-3 py-3 font-semibold">Status</th><th className="px-3 py-3 font-semibold">This month</th><th className="px-3 py-3 font-semibold">Credit</th><th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.05]">
-                {sorted.map((s) => (
-                  <tr key={s.id} className={s.status === 'released' ? 'opacity-45' : ''}>
-                    <td className="px-5 py-3">
-                      <div className="text-sm font-semibold text-white">{s.player ? `${s.player.first_name} ${s.player.last_name}` : 'Child'}</div>
-                      <div className="text-[11px] text-white/40">{s.parent?.full_name || s.parent?.email || ''} · since {fmtShort(s.starts_on)}</div>
-                    </td>
-                    <td className="px-3 py-3"><span className="text-sm font-semibold tabular-nums text-white">{DAY[s.weekday]} {hhmm(s.start_minutes)}</span><div className="text-[11px] text-white/40">{s.frequency === 'weekly' ? 'every week' : s.frequency === 'fortnightly' ? 'every fortnight' : 'monthly'}</div></td>
-                    <td className="px-3 py-3 text-white/75">{cname(s.coach_id)}<div className="text-[11px] text-white/40">{vname(s.venue_id)}</div></td>
-                    <td className="px-3 py-3 text-white/75">{type(s)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-white/85">{gbp(s.price_pence)}</td>
-                    <td className="px-3 py-3"><span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${chip(s).cls}`}>{chip(s).label}</span></td>
-                    <td className="px-3 py-3">{money(s.parent_id) ?? <span className="text-white/25">—</span>}</td>
-                    <td className="px-3 py-3">{creditCell(s)}</td>
-                    <td className="px-5 py-3"><div className="flex flex-col items-end gap-1.5">{buttons(s)}{editForm(s)}</div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="text-sm text-[#93a2ba]" data-testid="regulars-headline">
+            <b className="font-semibold text-white">{live.length} {live.length === 1 ? 'regular' : 'regulars'}</b>
+            {counts.active > 0 && <> · <span className="text-[#67c79a]">{counts.active} set up and paying</span></>}
+            {counts.pending > 0 && <> · <span className="text-[#d8a95a]">{counts.pending} {ready ? 'awaiting payment' : 'not sent a pay link'}</span></>}
+            {counts.paused > 0 && <> · {counts.paused} paused</>}
+          </p>
 
-          <div className="grid gap-2.5 lg:hidden">
-            {sorted.map((s) => (
-              <div key={s.id} className={`rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-4 ${s.status === 'released' ? 'opacity-45' : ''}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">{s.player ? `${s.player.first_name} ${s.player.last_name}` : 'Child'}</div>
-                    <div className="truncate text-[11px] text-white/40">{s.parent?.full_name || s.parent?.email || ''}</div>
-                  </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${chip(s).cls}`}>{chip(s).label}</span>
+          <div className="space-y-5" data-testid="regulars-list">
+            {days.map(([weekday, dayBlocks]) => (
+              <section key={weekday}>
+                <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#5b6c86]">{DAY_LONG[weekday] || DAY[weekday]}</h3>
+                <div className="space-y-2.5">
+                  {dayBlocks.map((block) => {
+                    const first = block[0]
+                    const pair = first.session_type === 'two_to_one'
+                    return (
+                      <article key={first.id} className="overflow-hidden rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]" data-testid="regular-block">
+                        <header className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[#1d2c42] px-4 py-3 sm:px-5">
+                          <span className="text-lg font-bold tabular-nums text-white">{hhmm(first.start_minutes)}</span>
+                          <span className="min-w-0 flex-1 text-sm text-[#93a2ba]">
+                            <b className="font-semibold text-white">{cname(first.coach_id)}</b> · {vname(first.venue_id)}
+                            <span className="block text-xs text-[#5b6c86]">{first.frequency === 'weekly' ? 'Every week' : first.frequency === 'fortnightly' ? `Every fortnight, from ${fmtShort(first.starts_on)}` : 'Once a month'}</span>
+                          </span>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${pair ? 'bg-[#4ecde6]/[0.12] text-[#4ecde6]' : 'bg-[#93a2ba]/[0.10] text-[#93a2ba]'}`}>{pair ? '2-to-1' : '1-to-1'}</span>
+                          {pair && block.length < 2 && <span className="rounded-full bg-[#d8a95a]/[0.13] px-2.5 py-1 text-xs font-semibold text-[#d8a95a]">1 seat free</span>}
+                        </header>
+                        <ul className="divide-y divide-[#1d2c42]">
+                          {block.map((s) => (
+                            <li key={s.id} className="flex flex-col gap-2 px-4 py-3 sm:px-5 lg:flex-row lg:items-start lg:gap-4" data-testid="regular-row">
+                              <div className="min-w-0 lg:w-56 lg:shrink-0">
+                                <p className="truncate text-sm font-semibold text-white">{s.player ? `${s.player.first_name} ${s.player.last_name}` : 'Child'}</p>
+                                <p className="truncate text-xs text-[#93a2ba]">{s.parent?.full_name || s.parent?.email || ''} · {gbp(s.price_pence)} a session</p>
+                              </div>
+                              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                                <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${chip(s).cls}`}>{chip(s).label}</span>
+                                {money(s.parent_id)}
+                                {creditOf(s.parent_id) !== 0 && <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${creditOf(s.parent_id) > 0 ? 'bg-[#67c79a]/15 text-[#8fdcb6]' : 'bg-[#e0736d]/15 text-[#f3a7a2]'}`}>{creditOf(s.parent_id) > 0 ? `${gbp(creditOf(s.parent_id))} credit` : `owes ${gbp(-creditOf(s.parent_id))}`}</span>}
+                              </div>
+                              <div className="flex flex-col items-start gap-1.5 lg:items-end">
+                                {primary(s)}
+                                <Disclosure label="More">
+                                  <div className="flex flex-col items-start gap-3 rounded-xl border border-[#1d2c42] bg-[#080e18] p-3 lg:items-end">
+                                    {others(s)}
+                                    {editForm(s)}
+                                    {creditCell(s)}
+                                  </div>
+                                </Disclosure>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
+                    )
+                  })}
                 </div>
-                <div className="mt-2 text-sm text-white/85"><b className="tabular-nums text-white">{DAY[s.weekday]} {hhmm(s.start_minutes)}</b> · {cname(s.coach_id)} · {vname(s.venue_id)}</div>
-                <div className="mt-0.5 text-[11px] text-white/45">{type(s)} · {gbp(s.price_pence)} · {s.frequency} · since {fmtShort(s.starts_on)}</div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">{money(s.parent_id) ?? <span />}{buttons(s)}</div>
-                <div className="mt-2 flex flex-wrap items-start gap-4">{creditCell(s)}{editForm(s)}</div>
-              </div>
+              </section>
             ))}
           </div>
+
+          {released.length > 0 && (
+            <details className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]" data-testid="regulars-released">
+              <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#93a2ba] sm:px-5">Released slots ({released.length})</summary>
+              <ul className="divide-y divide-[#1d2c42] border-t border-[#1d2c42]">
+                {released.map((s) => (
+                  <li key={s.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm text-[#93a2ba] sm:px-5">
+                    <span className="font-semibold text-white/80">{s.player ? `${s.player.first_name} ${s.player.last_name}` : 'Child'}</span>
+                    <span className="tabular-nums">{DAY[s.weekday]} {hhmm(s.start_minutes)}</span>
+                    <span>{cname(s.coach_id)} · {vname(s.venue_id)}</span>
+                    <span className="text-xs text-[#5b6c86]">{s.session_type === 'two_to_one' ? '2-to-1' : '1-to-1'} · since {fmtShort(s.starts_on)}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </>
       )}
 

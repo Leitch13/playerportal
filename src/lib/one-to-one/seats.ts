@@ -7,6 +7,8 @@
 // These helpers decide the seat BEFORE anything is written, so the academy gets
 // a plain answer instead of a database error.
 
+import { addDays, daysBetween, isoWeekday } from './time'
+
 export type SessionType = 'one_to_one' | 'two_to_one'
 
 export interface SeatHolder {
@@ -75,4 +77,33 @@ export function seatClashMessage(input: {
     return `${coach} has a 2-to-1 at ${input.when}${who ? ` with ${who}` : ''}. ${nothing} To add this keeper to that pair, choose 2-to-1 as the type. Otherwise choose a different coach or time.`
   }
   return `${coach} already has two keepers at ${input.when}${who ? `: ${who}` : ''}. ${nothing} Choose a different coach for this pair. The same day, time and venue are fine.`
+}
+
+// ─── Alternating weeks ───────────────────────────────────────────────
+//
+// Two fortnightly slots can share one coach's time when they fall on opposite
+// weeks (pair A this Friday, pair B next Friday). Weeks are counted the same way
+// the roll counts them: from the first matching weekday on or after starts_on.
+// Anything involving a weekly or monthly slot is treated as the same weeks, so
+// the only thing this ever allows is two fortnightly slots that never meet.
+export interface WeekRule {
+  frequency: string
+  startsOn: string
+  weekday: number
+}
+
+const anchorOf = (r: WeekRule) => addDays(r.startsOn, (r.weekday - isoWeekday(r.startsOn) + 7) % 7)
+
+/** True when the two rules can ever fall on the same date. */
+export function sameWeeks(a: WeekRule, b: WeekRule): boolean {
+  if (a.frequency !== 'fortnightly' || b.frequency !== 'fortnightly') return true
+  if (a.weekday !== b.weekday) return true // not comparable; be safe
+  const weeksApart = Math.abs(daysBetween(anchorOf(a), anchorOf(b))) / 7
+  if (!Number.isInteger(weeksApart)) return true
+  return weeksApart % 2 === 0
+}
+
+/** The slots at a coach's time that the new rule would actually meet. */
+export function onSameWeeks<T extends { frequency: string; starts_on: string; weekday: number }>(taken: T[], rule: WeekRule): T[] {
+  return taken.filter((t) => sameWeeks({ frequency: t.frequency, startsOn: t.starts_on, weekday: t.weekday }, rule))
 }

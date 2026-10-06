@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { seatForNewSlot, seatForSession } from './seats'
-import { seatClashMessage } from './seats'
+import { seatClashMessage, sameWeeks, onSameWeeks } from './seats'
 
 const one = (id: string) => ({ id, session_type: 'one_to_one' as const, pair_seat: 0 })
 const two = (id: string, seat: number) => ({ id, session_type: 'two_to_one' as const, pair_seat: seat })
@@ -54,5 +54,37 @@ describe('seatClashMessage: the refusal, with the names in it', () => {
   })
   it('still reads properly with no names to hand', () => {
     expect(seatClashMessage({ coachName: '', when, type: 'two_to_one', taken: [{ session_type: 'two_to_one' }, { session_type: 'two_to_one', keeper: null }] })).toBe('That coach already has two keepers at Fri 15:45. Nothing was saved. Choose a different coach for this pair. The same day, time and venue are fine.')
+  })
+})
+
+describe('alternating weeks: two fortnightly slots on one coach\'s time', () => {
+  // Fridays: 9, 16, 23, 30 October 2026
+  const fri = (startsOn: string, frequency = 'fortnightly') => ({ frequency, startsOn, weekday: 5 })
+  it('opposite weeks never meet, so both are allowed', () => {
+    expect(sameWeeks(fri('2026-10-09'), fri('2026-10-16'))).toBe(false)
+    expect(sameWeeks(fri('2026-10-16'), fri('2026-10-09'))).toBe(false)
+  })
+  it('the same weeks do meet', () => {
+    expect(sameWeeks(fri('2026-10-09'), fri('2026-10-23'))).toBe(true)
+    expect(sameWeeks(fri('2026-10-09'), fri('2026-10-09'))).toBe(true)
+  })
+  it('counts from the first Friday on or after the start date, like the roll does', () => {
+    // Starts Mon 5 Oct -> first Friday is the 9th. Starts Sat 10 Oct -> first Friday is the 16th.
+    expect(sameWeeks(fri('2026-10-05'), fri('2026-10-09'))).toBe(true)
+    expect(sameWeeks(fri('2026-10-05'), fri('2026-10-10'))).toBe(false)
+  })
+  it('a weekly or monthly slot meets everything', () => {
+    expect(sameWeeks(fri('2026-10-09', 'weekly'), fri('2026-10-16'))).toBe(true)
+    expect(sameWeeks(fri('2026-10-09'), fri('2026-10-16', 'monthly'))).toBe(true)
+    expect(sameWeeks(fri('2026-10-09', 'weekly'), fri('2026-10-16', 'weekly'))).toBe(true)
+  })
+  it('filters a coach\'s time down to the slots the new one would actually meet', () => {
+    const taken = [
+      { id: 'a', frequency: 'fortnightly', starts_on: '2026-10-09', weekday: 5 },
+      { id: 'b', frequency: 'fortnightly', starts_on: '2026-10-09', weekday: 5 },
+    ]
+    expect(onSameWeeks(taken, fri('2026-10-16'))).toHaveLength(0)
+    expect(onSameWeeks(taken, fri('2026-10-23'))).toHaveLength(2)
+    expect(onSameWeeks(taken, fri('2026-10-16', 'weekly'))).toHaveLength(2)
   })
 })
