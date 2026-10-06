@@ -42,6 +42,8 @@ const FEATURES = [
   ['How-to videos: linked on the class page', `${A}/book/[slug]/class/[groupId]/page.tsx`, ['how-to-videos-link', '/help/parents']],
   ['How-to videos: linked on the parent home', 'src/components/parent/ParentHub.tsx', ['how-to-videos-link', '/help/parents']],
   ['How-to videos: the page itself', `${A}/help/parents/page.tsx`, ['<video']],
+  ['How-to videos for academies: the page', `${A}/help/academies/page.tsx`, ['<video', 'academy-who-has-paid', 'academy-one-to-ones', 'academy-camps', 'academy-class-and-plan', 'academy-first-ten-minutes']],
+  ['How-to videos for academies: in the academy menu', 'src/components/Navigation.tsx', ["href: '/help/academies'", "href: '/help/parents'"]],
 
   // ── camp waiting list
   ['Camp waiting list: a full camp offers it', `${A}/book/[slug]/camps/[campId]/CampBookingForm.tsx`, ['<CampWaitlistForm']],
@@ -68,6 +70,10 @@ const FEATURES = [
 ]
 
 const fail = []
+// The video files themselves.
+for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones']) {
+  for (const ext of ['mp4', 'jpg']) if (!existsSync(`public/help/${f}.${ext}`)) fail.push(`How-to videos: public/help/${f}.${ext} is missing`)
+}
 for (const [feature, file, needles] of FEATURES) {
   if (!existsSync(file)) { fail.push(`${feature}: ${file} is missing`); continue }
   const text = readFileSync(file, 'utf8')

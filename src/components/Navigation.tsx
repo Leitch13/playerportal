@@ -292,6 +292,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
       { href: '/dashboard/engagement', label: 'Engagement', icon: 'chart-bar', feature: 'engagement' },
     ]},
     { title: '', items: [
+      { href: '/help/academies', label: 'How-to videos', icon: 'play-circle' },
       { href: '/dashboard/billing', label: 'Billing & Plan', icon: 'credit-card' },
       { href: '/dashboard/settings', label: 'Settings', icon: 'cog' },
     ]},
