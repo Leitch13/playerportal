@@ -51,3 +51,28 @@ export function seatForSession(taken: { session_type: SessionType; pair_seat: nu
   if (!used.has(2)) return 2
   return null
 }
+
+/**
+ * The same refusals as seatForNewSlot, said with the names in them, so the academy
+ * can see at a glance which coach is full and what to do. Wording only: what is
+ * allowed is still decided by seatForNewSlot.
+ */
+export function seatClashMessage(input: {
+  coachName: string
+  when: string
+  taken: Array<{ session_type: SessionType; keeper?: string | null }>
+  type: SessionType
+}): string {
+  const coach = input.coachName || 'That coach'
+  const names = input.taken.map((t) => (t.keeper || '').trim()).filter(Boolean)
+  const who = names.length === 0 ? '' : names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+  const hasOneToOne = input.taken.some((t) => t.session_type === 'one_to_one')
+  const nothing = 'Nothing was saved.'
+  if (hasOneToOne) {
+    return `${coach} already has a 1-to-1 at ${input.when}${who ? ` with ${who}` : ''}. ${nothing} Choose a different coach or a different time.`
+  }
+  if (input.type === 'one_to_one') {
+    return `${coach} has a 2-to-1 at ${input.when}${who ? ` with ${who}` : ''}. ${nothing} To add this keeper to that pair, choose 2-to-1 as the type. Otherwise choose a different coach or time.`
+  }
+  return `${coach} already has two keepers at ${input.when}${who ? `: ${who}` : ''}. ${nothing} Choose a different coach for this pair. The same day, time and venue are fine.`
+}

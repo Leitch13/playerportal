@@ -135,8 +135,13 @@ export function ActionForm({
         <button type="submit" disabled={pending} className="rounded-lg border border-[#4ecde6] bg-[#4ecde6] px-3 py-1.5 text-xs font-semibold text-[#04141a] disabled:opacity-50">
           {pending ? 'Saving…' : submitLabel}
         </button>
-        {err && <span className="text-xs text-red-300">{err}</span>}
       </div>
+      {err && (
+        <div role="alert" ref={(el) => { el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }} className="rounded-lg border border-[#e0736d]/60 bg-[#e0736d]/[0.12] px-3 py-2.5 text-sm leading-relaxed text-[#f6c1bd]" data-testid="action-error">
+          <span className="block text-[11px] font-bold uppercase tracking-wide text-[#e0736d]">Not saved</span>
+          {err}
+        </div>
+      )}
       {warn && <p role="status" className="rounded-lg border border-[#d8a95a]/40 bg-[#d8a95a]/10 px-3 py-2 text-xs leading-relaxed text-[#ecc98a]">{warn}</p>}
     </form>
   )

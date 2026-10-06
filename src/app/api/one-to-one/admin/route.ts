@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort } from '@/lib/one-to-one/db'
+import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/lib/one-to-one/db'
 import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed } from '@/lib/one-to-one/emails'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
-import { seatForNewSlot, seatForSession, type SessionType } from '@/lib/one-to-one/seats'
+import { seatForNewSlot, seatForSession, seatClashMessage, type SessionType } from '@/lib/one-to-one/seats'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +38,23 @@ const nightMsg = (start: number) => `${String(Math.floor(start / 60)).padStart(2
 const DAY_KEY = ['', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const DAY_NAME = ['', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays']
 const bad = (m: string) => NextResponse.json({ error: m }, { status: 400 })
+
+// A coach's time is taken: say which coach, when, and who is already there.
+async function clashMessage(admin: Awaited<ReturnType<typeof requireAdmin>>['admin'], coachId: string, weekday: number, start: number, type: SessionType, takenIds: string[]): Promise<string> {
+  const [{ data: coach }, { data: rows }] = await Promise.all([
+    admin.from('profiles').select('full_name').eq('id', coachId).maybeSingle(),
+    takenIds.length
+      ? admin.from('regular_slots').select('session_type, player:players(first_name)').in('id', takenIds)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ])
+  const taken = ((rows ?? []) as unknown as Array<{ session_type: SessionType; player: { first_name: string | null } | null }>)
+    .map((r) => ({ session_type: r.session_type, keeper: r.player?.first_name ?? null }))
+  return seatClashMessage({
+    coachName: ((coach?.full_name as string) || '').split(' ')[0],
+    when: `${DAY[weekday] || 'that day'} ${hhmm(start)}`,
+    taken, type,
+  })
+}
 
 export async function POST(req: NextRequest) {
   let ctx
@@ -204,7 +221,7 @@ export async function POST(req: NextRequest) {
         const { data: taken } = await admin.from('regular_slots').select('id, session_type, pair_seat').eq('coach_id', coachId).eq('weekday', weekday)
           .eq('start_minutes', start).in('status', ['pending', 'active', 'paused'])
         const seat = seatForNewSlot((taken ?? []) as { id: string; session_type: SessionType; pair_seat: number }[], type)
-        if (!seat.ok) return bad(seat.reason)
+        if (!seat.ok) return bad(await clashMessage(admin, coachId, weekday, start, type, (taken ?? []).map((t) => t.id as string)))
         const { data, error } = await admin.from('regular_slots').insert({
           organisation_id: orgId, player_id: playerId, parent_id: player.parent_id, coach_id: coachId, venue_id: venueId,
           weekday, start_minutes: start, duration_minutes: dur, session_type: type, frequency: freq, price_pence: price,
@@ -283,7 +300,7 @@ export async function POST(req: NextRequest) {
           const { data: taken } = await admin.from('regular_slots').select('id, session_type, pair_seat').eq('coach_id', coachId).eq('weekday', weekday)
             .eq('start_minutes', start).in('status', ['pending', 'active', 'paused']).neq('id', id)
           const r = seatForNewSlot((taken ?? []) as { id: string; session_type: SessionType; pair_seat: number }[], cur.session_type as SessionType)
-          if (!r.ok) return bad(r.reason)
+          if (!r.ok) return bad(await clashMessage(admin, coachId, weekday, start, cur.session_type as SessionType, (taken ?? []).map((t) => t.id as string)))
           seat = { seat: r.seat, pairWith: r.pairWith }
         }
         const { error: ue } = await admin.from('regular_slots').update({
