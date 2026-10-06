@@ -10,6 +10,7 @@ import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/q
 import { feePercentFromRate } from '@/lib/stripe-fee'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import { recordSignupRefusal, type SignupRefusalContext } from '@/lib/signup-refusals'
+import { SIBLING_QUALIFYING_STATUSES } from '@/lib/billing/sibling'
 import {
   firstOfNextMonthUnix,
   isStartTodayOrEarlier,
@@ -409,8 +410,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Detect if this parent already has an active subscription with the academy ──
-    // If they do, and the academy has sibling discount enabled, auto-apply.
+    // ── Detect if this parent already has a child paying, or signed up and waiting
+    // for the 1st, at this academy (see src/lib/billing/sibling.ts). If they do,
+    // and the academy has sibling discount enabled, auto-apply.
     let siblingCouponId: string | null = null
     if (planOrg?.sibling_discount_enabled && Number(planOrg?.sibling_discount_percent) > 0) {
       const { count: existingActiveSubs } = await supabase
@@ -418,7 +420,7 @@ export async function POST(request: NextRequest) {
         .select('id', { count: 'exact', head: true })
         .eq('parent_id', user.id)
         .eq('organisation_id', plan.organisation_id)
-        .eq('status', 'active')
+        .in('status', [...SIBLING_QUALIFYING_STATUSES])
 
       if ((existingActiveSubs || 0) > 0) {
         // Get or create the Stripe coupon for this org's sibling discount
