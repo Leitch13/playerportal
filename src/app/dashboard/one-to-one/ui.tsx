@@ -48,7 +48,7 @@ export function ActionButton({
   // (mail apps, the home-screen app) silently block the pop-up, so the tap did nothing.
   const [asking, setAsking] = useState(false)
   const tones = {
-    default: 'border-white/[0.12] bg-white/[0.06] text-white hover:bg-white/[0.1]',
+    default: 'border-[#293b58] bg-white/[0.06] text-white hover:bg-white/[0.1]',
     primary: 'border-[#4ecde6] bg-[#4ecde6] text-[#04141a] hover:brightness-110',
     quiet: 'border-transparent bg-transparent text-white/60 hover:text-white',
     danger: 'border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/15',
@@ -68,7 +68,7 @@ export function ActionButton({
   const cls = `inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50`
   if (asking) {
     return (
-      <span className="inline-flex max-w-xs flex-col items-start gap-1.5 rounded-lg border border-white/[0.12] bg-black/20 p-2" role="alertdialog">
+      <span className="inline-flex max-w-xs flex-col items-start gap-1.5 rounded-lg border border-[#293b58] bg-black/20 p-2" role="alertdialog">
         <span className="text-[11px] leading-snug text-white/80">{confirmText}</span>
         <span className="flex gap-1.5">
           <button type="button" onClick={run} className={`${cls} ${tones[tone === 'quiet' ? 'default' : tone]}`}>Yes, {typeof children === 'string' ? children.toLowerCase() : 'do it'}</button>
@@ -148,7 +148,7 @@ export function ActionForm({
 }
 
 export { inputCls }
-export const labelCls = 'block text-[11px] font-semibold uppercase tracking-wide text-white/45 mb-1'
+export const labelCls = 'block text-[11px] font-semibold uppercase tracking-wide text-[#93a2ba] mb-1'
 
 export function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
   return <label className={`block ${className}`}><span className={labelCls}>{label}</span>{children}</label>
@@ -181,7 +181,7 @@ export function VenueForm({ venue }: { venue?: { id: string; name: string; addre
   if (venue && !open) return <button type="button" onClick={() => setOpen(true)} className="text-xs font-medium text-[#4ecde6] hover:underline">Edit hours</button>
   return (
     <form
-      className="space-y-3 rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-4"
+      className="space-y-3 rounded-xl border border-[#1d2c42] bg-[#0f1a2b] p-4"
       onSubmit={(e) => {
         e.preventDefault()
         const fd = new FormData(e.currentTarget)
@@ -238,7 +238,7 @@ export function PoundsInput({ name, defaultPence, className = '' }: { name: stri
   const pence = Math.max(0, Math.round((parseFloat(v) || 0) * 100))
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">£</span>
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5b6c86]">£</span>
       <input inputMode="decimal" value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.]/g, ''))} className={`${inputCls} !pl-7 tabular-nums ${className}`} />
       <input type="hidden" name={name} value={pence} />
     </div>
@@ -251,7 +251,7 @@ export function SignedPoundsInput({ name, className = '' }: { name: string; clas
   const pence = Math.round((parseFloat(v) || 0) * 100)
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-white/40">£</span>
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5b6c86]">£</span>
       <input inputMode="decimal" value={v} onChange={(e) => setV(e.target.value.replace(/[^0-9.\-]/g, ''))} placeholder="120" className={`${inputCls} !pl-7 tabular-nums ${className}`} />
       <input type="hidden" name={name} value={pence} />
     </div>

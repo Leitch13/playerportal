@@ -20,7 +20,7 @@ export default async function OneToOneLayout({ children }: { children: React.Rea
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">1-2-1s</h1>
-          <p className="mt-1 text-sm text-white/55">Regulars keep their slot and it rolls on. Free time goes on sale. Anything that needs you lands here.</p>
+          <p className="mt-1 text-sm text-[#93a2ba]">Regulars keep their slot and it rolls on. Free time goes on sale. Anything that needs you lands here.</p>
         </div>
       </div>
       {!ready && (

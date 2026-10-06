@@ -61,10 +61,10 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
           <ActionButton key={c.id} body={{ action: 'session.cover', sessionId: s.id, coachId: c.id }}>Cover: {cname(c.id)}</ActionButton>
         ))}
         {(s.status === 'attended' || s.status === 'no_show') && <>
-          <span className="self-center text-[11px] text-white/55">Marked {s.status === 'attended' ? 'coached' : 'no show'}.</span>
+          <span className="self-center text-[11px] text-[#93a2ba]">Marked {s.status === 'attended' ? 'coached' : 'no show'}.</span>
           <ActionButton tone="quiet" body={{ action: 'session.status', sessionId: s.id, status: 'scheduled' }}>Undo</ActionButton>
         </>}
-        {s.status === 'held' && <span className="self-center text-[11px] text-white/55">Being paid for right now. Nothing to change yet.</span>}
+        {s.status === 'held' && <span className="self-center text-[11px] text-[#93a2ba]">Being paid for right now. Nothing to change yet.</span>}
         {s.status === 'scheduled' && <ActionButton tone="danger" confirm="Cancel this session? If it's been paid the parent is credited in full. The time goes back on sale." body={{ action: 'session.academy_cancel', sessionId: s.id }}>Cancel</ActionButton>}
       </div>
       {s.status === 'scheduled' && (
@@ -81,24 +81,24 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex items-center rounded-xl border border-white/[0.1] bg-[#0f1a2b]">
+        <div className="inline-flex items-center rounded-xl border border-[#293b58] bg-[#0f1a2b]">
           <Link href={qs(addDays(start, -7), coachFilter)} aria-label="Previous week" className="px-3 py-2 text-sm text-white/70 hover:text-white">‹</Link>
-          <span className="border-x border-white/[0.08] px-3 py-2 text-sm font-semibold text-white tabular-nums">{fmtDate(start).replace(/^\w+ /, '')} – {fmtDate(end).replace(/^\w+ /, '')}</span>
+          <span className="border-x border-[#1d2c42] px-3 py-2 text-sm font-semibold text-white tabular-nums">{fmtDate(start).replace(/^\w+ /, '')} – {fmtDate(end).replace(/^\w+ /, '')}</span>
           <Link href={qs(addDays(start, 7), coachFilter)} aria-label="Next week" className="px-3 py-2 text-sm text-white/70 hover:text-white">›</Link>
         </div>
-        {start !== addDays(today, -(isoWeekday(today) - 1)) && <Link href="/dashboard/one-to-one/timetable" className="rounded-xl border border-white/[0.1] px-3 py-2 text-xs text-white/70 hover:text-white">This week</Link>}
-        <span className="text-xs text-white/45">{weekBooked} booked · {free.length} free</span>
+        {start !== addDays(today, -(isoWeekday(today) - 1)) && <Link href="/dashboard/one-to-one/timetable" className="rounded-xl border border-[#293b58] px-3 py-2 text-xs text-white/70 hover:text-white">This week</Link>}
+        <span className="text-xs text-[#93a2ba]">{weekBooked} booked · {free.length} free</span>
         {coaches.length > 1 && (
-          <div className="ml-auto inline-flex max-w-full overflow-x-auto rounded-xl border border-white/[0.1] bg-[#0f1a2b] p-0.5 text-xs">
-            <Link href={qs(start)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 ${!coachFilter ? 'bg-white/[0.1] font-semibold text-white' : 'text-white/55 hover:text-white'}`}>All coaches</Link>
+          <div className="ml-auto inline-flex max-w-full overflow-x-auto rounded-xl border border-[#293b58] bg-[#0f1a2b] p-0.5 text-xs">
+            <Link href={qs(start)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 ${!coachFilter ? 'bg-white/[0.1] font-semibold text-white' : 'text-[#93a2ba] hover:text-white'}`}>All coaches</Link>
             {coaches.map((c) => (
-              <Link key={c.id} href={qs(start, c.id)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 ${coachFilter === c.id ? 'bg-white/[0.1] font-semibold text-white' : 'text-white/55 hover:text-white'}`}>{cname(c.id)}</Link>
+              <Link key={c.id} href={qs(start, c.id)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 ${coachFilter === c.id ? 'bg-white/[0.1] font-semibold text-white' : 'text-[#93a2ba] hover:text-white'}`}>{cname(c.id)}</Link>
             ))}
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-white/55">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#93a2ba]">
         <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px] bg-[#4ecde6]/70 align-[-1px]" />Regular, their slot</span>
         <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px] bg-[#d8a95a]/80 align-[-1px]" />One-off booking</span>
         <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px] bg-[#e0736d]/80 align-[-1px]" />Cover needed</span>
@@ -106,34 +106,34 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
       </div>
 
       {!hasSetup ? (
-        <div className="rounded-2xl border border-dashed border-white/[0.15] p-8 text-center text-sm text-white/55">
+        <div className="rounded-[15px] border border-dashed border-[#293b58] p-8 text-center text-sm text-[#93a2ba]">
           No hours yet. Add a venue and a coach&apos;s hours under <Link href="/dashboard/one-to-one/coaches" className="text-[#4ecde6]">Coaches &amp; venues</Link> and the week fills in.
         </div>
       ) : (
         <>
           {/* ── Desktop: the week as a grid ── */}
-          <div className="hidden overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0f1a2b] md:block">
+          <div className="hidden overflow-hidden rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] md:block">
             <table className="w-full table-fixed border-collapse text-xs">
               <colgroup><col className="w-14" />{days.map((d) => <col key={d} />)}</colgroup>
               <thead>
-                <tr className="border-b border-white/[0.08]">
+                <tr className="border-b border-[#1d2c42]">
                   <th />
                   {days.map((d) => {
                     const b = live.filter((s) => s.session_date === d && s.status !== 'held').length, f = free.filter((x) => x.date === d).length
                     return (
                       <th key={d} className={`px-2 py-2.5 text-left font-normal ${d === today ? 'bg-[#4ecde6]/[0.06]' : ''}`}>
-                        <div className={`text-[11px] font-semibold uppercase tracking-wide ${d === today ? 'text-[#4ecde6]' : 'text-white/55'}`}>{DAY[isoWeekday(d)]} <span className="tabular-nums">{Number(d.slice(8))}</span></div>
-                        <div className="mt-0.5 text-[10px] text-white/35">{b || f ? `${b} booked · ${f} free` : 'no hours'}</div>
+                        <div className={`text-[11px] font-semibold uppercase tracking-wide ${d === today ? 'text-[#4ecde6]' : 'text-[#93a2ba]'}`}>{DAY[isoWeekday(d)]} <span className="tabular-nums">{Number(d.slice(8))}</span></div>
+                        <div className="mt-0.5 text-[10px] text-[#5b6c86]">{b || f ? `${b} booked · ${f} free` : 'no hours'}</div>
                       </th>
                     )
                   })}
                 </tr>
               </thead>
               <tbody>
-                {times.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-white/45">Nothing on this week. Hours may start later, or every day is closed.</td></tr>}
+                {times.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-[#93a2ba]">Nothing on this week. Hours may start later, or every day is closed.</td></tr>}
                 {times.map((t) => (
                   <tr key={t} className={`align-top ${t % 60 === 0 ? 'border-t border-white/[0.07]' : 'border-t border-white/[0.03]'}`}>
-                    <td className={`px-2 py-2 text-right text-[11px] tabular-nums ${t % 60 === 0 ? 'text-white/55' : 'text-white/25'}`}>{hhmm(t)}</td>
+                    <td className={`px-2 py-2 text-right text-[11px] tabular-nums ${t % 60 === 0 ? 'text-[#93a2ba]' : 'text-[#5b6c86]'}`}>{hhmm(t)}</td>
                     {days.map((d) => {
                       const cellLive = live.filter((s) => s.session_date === d && s.start_minutes === t)
                       const cellFree = free.filter((f) => f.date === d && f.startMinutes === t)
@@ -150,7 +150,7 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
                               </details>
                             ) })}
                             {cellFree.length > 0 && (
-                              <div className="truncate rounded-lg border border-dashed border-white/[0.12] px-2 py-1 text-[10px] leading-tight text-white/35" title={cellFree.map((f) => `${cname(f.coachId)} at ${vname(f.venueId)}`).join(', ')}>
+                              <div className="truncate rounded-lg border border-dashed border-[#293b58] px-2 py-1 text-[10px] leading-tight text-[#5b6c86]" title={cellFree.map((f) => `${cname(f.coachId)} at ${vname(f.venueId)}`).join(', ')}>
                                 free · {[...new Set(cellFree.map((f) => cname(f.coachId)))].join(', ')}
                               </div>
                             )}
@@ -171,10 +171,10 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
               const dayFree = [...new Set(free.filter((f) => f.date === d).map((f) => f.startMinutes))].sort((a, b) => a - b)
               if (!dayLive.length && !dayFree.length) return null
               return (
-                <section key={d} className={`rounded-2xl border bg-[#0f1a2b] p-4 ${d === today ? 'border-[#4ecde6]/35' : 'border-white/[0.08]'}`}>
+                <section key={d} className={`rounded-2xl border bg-[#0f1a2b] p-4 ${d === today ? 'border-[#4ecde6]/35' : 'border-[#1d2c42]'}`}>
                   <div className="flex items-baseline justify-between">
                     <h3 className={`text-sm font-semibold ${d === today ? 'text-[#4ecde6]' : 'text-white'}`}>{d === today ? 'Today · ' : ''}{fmtDate(d)}</h3>
-                    <span className="text-[11px] text-white/40">{dayLive.filter((s) => s.status !== 'held').length} booked · {dayFree.length} free</span>
+                    <span className="text-[11px] text-[#5b6c86]">{dayLive.filter((s) => s.status !== 'held').length} booked · {dayFree.length} free</span>
                   </div>
                   {dayLive.length > 0 && (
                     <div className="mt-2 grid gap-1.5">
@@ -191,22 +191,22 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
                   )}
                   {dayFree.length > 0 && (
                     <div className="mt-2.5 flex flex-wrap items-center gap-1">
-                      <span className="mr-1 text-[10px] uppercase tracking-wide text-white/35">Free</span>
-                      {dayFree.map((m) => <span key={m} className="rounded-md border border-dashed border-white/[0.14] px-1.5 py-0.5 text-[11px] tabular-nums text-white/45">{hhmm(m)}</span>)}
+                      <span className="mr-1 text-[10px] uppercase tracking-wide text-[#5b6c86]">Free</span>
+                      {dayFree.map((m) => <span key={m} className="rounded-md border border-dashed border-white/[0.14] px-1.5 py-0.5 text-[11px] tabular-nums text-[#93a2ba]">{hhmm(m)}</span>)}
                     </div>
                   )}
                 </section>
               )
             })}
-            {times.length === 0 && <div className="rounded-2xl border border-dashed border-white/[0.15] p-6 text-center text-sm text-white/45">Nothing on this week.</div>}
+            {times.length === 0 && <div className="rounded-[15px] border border-dashed border-[#293b58] p-6 text-center text-sm text-[#93a2ba]">Nothing on this week.</div>}
           </div>
         </>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-5">
+        <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
           <h3 className="text-sm font-semibold text-white">Block time</h3>
-          <p className="mt-0.5 text-[11px] text-white/45">A buffer, admin, a holiday. Anything a coach is around for but shouldn&apos;t be sold.</p>
+          <p className="mt-0.5 text-[11px] text-[#93a2ba]">A buffer, admin, a holiday. Anything a coach is around for but shouldn&apos;t be sold.</p>
           <ActionForm action="exception.add" extra={{ kind: 'block' }} submitLabel="Block it" className="mt-3">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Field label="Coach"><select name="coachId" className={inputCls}>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
@@ -216,9 +216,9 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
             </div>
           </ActionForm>
         </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-5">
+        <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
           <h3 className="text-sm font-semibold text-white">Create a month&apos;s sessions</h3>
-          <p className="mt-0.5 text-[11px] text-white/45">This runs by itself on the 20th. Press it if you&apos;ve added a regular mid-month and want their dates now. Safe to press twice.</p>
+          <p className="mt-0.5 text-[11px] text-[#93a2ba]">This runs by itself on the 20th. Press it if you&apos;ve added a regular mid-month and want their dates now. Safe to press twice.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <ActionButton tone="primary" result="roll" body={{ action: 'roll', month: today }}>This month</ActionButton>
             <ActionButton result="roll" body={{ action: 'roll', month: addDays(today.slice(0, 8) + '01', 32) }}>Next month</ActionButton>

@@ -13,7 +13,7 @@ const STATUS: Record<SlotRowDb['status'], { label: string; cls: string }> = {
   active: { label: 'active', cls: 'bg-[#67c79a]/15 text-[#8fdcb6]' },
   pending: { label: 'awaiting payment', cls: 'bg-[#4ecde6]/15 text-[#4ecde6]' },
   paused: { label: 'paused', cls: 'bg-[#d8a95a]/15 text-[#ecc98a]' },
-  released: { label: 'released', cls: 'bg-white/10 text-white/50' },
+  released: { label: 'released', cls: 'bg-white/10 text-[#93a2ba]' },
 }
 
 export default async function RegularsPage() {
@@ -51,7 +51,7 @@ export default async function RegularsPage() {
   const money = (parentId: string) => {
     const c = chargeFor(parentId); if (!c) return null
     const ok = c.status === 'paid_online' || c.status === 'paid_cash'
-    const cls = ok ? 'bg-[#67c79a]/15 text-[#8fdcb6]' : c.status === 'failed' ? 'bg-[#e0736d]/15 text-[#f3a7a2]' : c.status === 'waived' || c.status === 'refunded' ? 'bg-white/10 text-white/55' : 'bg-[#d8a95a]/15 text-[#ecc98a]'
+    const cls = ok ? 'bg-[#67c79a]/15 text-[#8fdcb6]' : c.status === 'failed' ? 'bg-[#e0736d]/15 text-[#f3a7a2]' : c.status === 'waived' || c.status === 'refunded' ? 'bg-white/10 text-[#93a2ba]' : 'bg-[#d8a95a]/15 text-[#ecc98a]'
     const label = c.status === 'paid_online' ? `Paid ${gbp(c.amount_pence)}` : c.status === 'paid_cash' ? `Cash ${gbp(c.amount_pence)}` : c.status === 'failed' ? `Card failed ×${c.attempt_count}` : c.status === 'waived' ? 'Covered by credit' : c.status === 'refunded' ? 'Refunded' : `Due ${gbp(c.amount_pence)}`
     return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{label}</span>
   }
@@ -66,8 +66,8 @@ export default async function RegularsPage() {
         {bal !== 0 && <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${bal > 0 ? 'bg-[#67c79a]/15 text-[#8fdcb6]' : 'bg-[#e0736d]/15 text-[#f3a7a2]'}`}>{bal > 0 ? `${gbp(bal)} credit` : `owes ${gbp(-bal)}`}</span>}
         {s.status !== 'released' && (
           <Disclosure label={bal === 0 ? 'Add credit' : 'Adjust'}>
-            <ActionForm action="credit.add" submitLabel="Save credit" extra={{ parentId: s.parent_id }} className="mt-2 w-64 rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-3">
-              <p className="text-[11px] leading-relaxed text-white/50">What this family has already paid you. It comes off their pay link and their 1st-of-month charges until it is used up. Enter a minus amount to record money they owe.</p>
+            <ActionForm action="credit.add" submitLabel="Save credit" extra={{ parentId: s.parent_id }} className="mt-2 w-64 rounded-xl border border-[#1d2c42] bg-[#0f1a2b] p-3">
+              <p className="text-[11px] leading-relaxed text-[#93a2ba]">What this family has already paid you. It comes off their pay link and their 1st-of-month charges until it is used up. Enter a minus amount to record money they owe.</p>
               <Field label="Amount"><SignedPoundsInput name="amountPence" /></Field>
               <Field label="What for"><input name="note" required placeholder="block of 10 paid in September" className={inputCls} /></Field>
             </ActionForm>
@@ -90,7 +90,7 @@ export default async function RegularsPage() {
   )
   const editForm = (s: SlotRowDb) => s.status === 'released' ? null : (
     <Disclosure label="Edit">
-      <ActionForm action="slot.update" extra={{ id: s.id }} submitLabel="Save changes" className="w-full max-w-md rounded-xl border border-white/[0.08] bg-[#0b1422] p-3 text-left">
+      <ActionForm action="slot.update" extra={{ id: s.id }} submitLabel="Save changes" className="w-full max-w-md rounded-xl border border-[#1d2c42] bg-[#080e18] p-3 text-left">
         <div className="grid grid-cols-2 gap-2">
           <Field label="Coach"><select name="coachId" defaultValue={s.coach_id} className={inputCls}>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
           <Field label="Venue"><select name="venueId" defaultValue={s.venue_id} className={inputCls}>{venues.filter((v) => v.is_active || v.id === s.venue_id).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>
@@ -101,7 +101,7 @@ export default async function RegularsPage() {
             ? <input type="hidden" name="pricePence" value={s.price_pence} />
             : <Field label="Price per session"><PoundsInput name="pricePence" defaultPence={s.price_pence} /></Field>}
         </div>
-        <p className="text-[11px] leading-relaxed text-white/45">Their sessions from today move with the slot. Anything already paid stays paid; a new price applies to sessions not yet paid for.{s.status === 'pending' ? ' The price can\'t change until the set-up link is paid: Delete and add again instead.' : ''}{s.partner_slot_id ? ' In a 2-to-1 pair the coach, day and time stay with the partner.' : ''}</p>
+        <p className="text-[11px] leading-relaxed text-[#93a2ba]">Their sessions from today move with the slot. Anything already paid stays paid; a new price applies to sessions not yet paid for.{s.status === 'pending' ? ' The price can\'t change until the set-up link is paid: Delete and add again instead.' : ''}{s.partner_slot_id ? ' In a 2-to-1 pair the coach, day and time stay with the partner.' : ''}</p>
       </ActionForm>
     </Disclosure>
   )
@@ -131,21 +131,21 @@ export default async function RegularsPage() {
         <Field label="First session on or after"><input name="startsOn" type="date" defaultValue={todayLondon()} className={inputCls} /></Field>
         <Field label="Note for you"><input name="note" placeholder="optional" className={inputCls} /></Field>
       </div>
-      <p className="text-[11px] leading-relaxed text-white/45">The rest of this month&apos;s sessions are created straight away. The parent is emailed a link to pay for them and save a card. From then on the card is charged on the 1st.</p>
+      <p className="text-[11px] leading-relaxed text-[#93a2ba]">The rest of this month&apos;s sessions are created straight away. The parent is emailed a link to pay for them and save a card. From then on the card is charged on the 1st.</p>
     </ActionForm>
   )
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-5">
+      <section className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-sm font-semibold text-white">{live.length === 0 ? 'Add your first regular' : 'Add a regular'}</h3>
-          {live.length > 0 && <span className="text-xs text-white/45">{live.filter((s) => s.status === 'active').length} active · about {gbp(Math.round(weekly))} a week</span>}
+          {live.length > 0 && <span className="text-xs text-[#93a2ba]">{live.filter((s) => s.status === 'active').length} active · about {gbp(Math.round(weekly))} a week</span>}
         </div>
         {venues.length === 0 || coaches.length === 0 ? (
-          <p className="mt-2 text-xs text-white/55">Add a venue and a coach first, under Coaches &amp; venues.</p>
+          <p className="mt-2 text-xs text-[#93a2ba]">Add a venue and a coach first, under Coaches &amp; venues.</p>
         ) : (players || []).length === 0 ? (
-          <p className="mt-2 text-xs text-white/55">A slot belongs to a child, so add your keepers first. Players, then Import or Quick Add. Each one needs a parent&apos;s email, because that&apos;s where the pay link goes.</p>
+          <p className="mt-2 text-xs text-[#93a2ba]">A slot belongs to a child, so add your keepers first. Players, then Import or Quick Add. Each one needs a parent&apos;s email, because that&apos;s where the pay link goes.</p>
         ) : live.length === 0 ? form : <div className="mt-2"><Disclosure label="Give a child a slot">{form}</Disclosure></div>}
       </section>
 
@@ -231,7 +231,7 @@ export default async function RegularsPage() {
       )}
 
       {twoToOne.filter((s) => !s.partner_slot_id).length >= 2 && (
-        <section className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-5">
+        <section className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
           <h3 className="text-sm font-semibold text-white">Pair two keepers for a 2-to-1</h3>
           <Disclosure label="Choose a pair">
             <ActionForm action="slot.pair" submitLabel="Pair them">
@@ -242,7 +242,7 @@ export default async function RegularsPage() {
                   </Field>
                 ))}
               </div>
-              <p className="text-[11px] text-white/40">Easiest: give the second keeper a 2-to-1 slot with the same coach, day and time. They pair automatically. Use this only for two 2-to-1 keepers already on the same time.</p>
+              <p className="text-[11px] text-[#5b6c86]">Easiest: give the second keeper a 2-to-1 slot with the same coach, day and time. They pair automatically. Use this only for two 2-to-1 keepers already on the same time.</p>
             </ActionForm>
           </Disclosure>
         </section>

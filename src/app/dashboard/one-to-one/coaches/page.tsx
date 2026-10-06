@@ -30,15 +30,15 @@ export default async function CoachesPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-white">Venues</h2>
         {venues.map((v) => (
-          <div key={v.id} className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-4">
+          <div key={v.id} className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <div className="font-semibold text-white">{v.name} {!v.is_active && <span className="ml-1 text-[11px] text-white/45">not in use</span>}</div>
-                <div className="text-[11px] text-white/45">{v.address || ''}</div>
+                <div className="font-semibold text-white">{v.name} {!v.is_active && <span className="ml-1 text-[11px] text-[#93a2ba]">not in use</span>}</div>
+                <div className="text-[11px] text-[#93a2ba]">{v.address || ''}</div>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((k) => {
                     const r = v.weekly_hours?.[k]?.[0]
-                    return <span key={k} className={`rounded-md border px-1.5 py-0.5 text-[11px] ${r ? 'border-white/[0.12] text-white/80' : 'border-white/[0.06] text-white/30'}`}>{k[0].toUpperCase() + k.slice(1)} {r ? `${r[0]}–${r[1]}` : 'closed'}</span>
+                    return <span key={k} className={`rounded-md border px-1.5 py-0.5 text-[11px] ${r ? 'border-[#293b58] text-white/80' : 'border-[#1d2c42] text-white/30'}`}>{k[0].toUpperCase() + k.slice(1)} {r ? `${r[0]}–${r[1]}` : 'closed'}</span>
                   })}
                 </div>
               </div>
@@ -66,26 +66,26 @@ export default async function CoachesPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-white">Coaches and their hours</h2>
-        <p className="-mt-1 text-[11px] text-white/45">Times are 24-hour (16:30), or type 4:30pm. A coach's hours only go on sale while the venue is open, so set the venue's opening hours first.</p>
-        {coaches.length === 0 && <p className="text-xs text-white/55">No coach logins in this academy yet. Add staff under Settings first.</p>}
+        <p className="-mt-1 text-[11px] text-[#93a2ba]">Times are 24-hour (16:30), or type 4:30pm. A coach's hours only go on sale while the venue is open, so set the venue's opening hours first.</p>
+        {coaches.length === 0 && <p className="text-xs text-[#93a2ba]">No coach logins in this academy yet. Add staff under Settings first.</p>}
         {coaches.map((c) => {
           const mine = liveHours.filter((h) => h.coach_id === c.id)
           const myEx = exceptions.filter((e) => e.coach_id === c.id)
           return (
-            <div key={c.id} className="rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-4">
+            <div key={c.id} className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4">
               <div className="font-semibold text-white">{c.full_name || c.email}</div>
               <dl className="mt-2 grid grid-cols-[44px_1fr] gap-x-3 gap-y-1 text-xs">
                 {[1, 2, 3, 4, 5, 6, 7].map((d) => (
                   <div key={d} className="contents">
-                    <dt className="text-white/40">{DAY[d]}</dt>
+                    <dt className="text-[#5b6c86]">{DAY[d]}</dt>
                     <dd className="flex flex-wrap gap-1.5">
                       {mine.filter((h) => h.weekday === d).map((h) => (
-                        <span key={h.id} className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 ${onSale(h) ? 'border-white/[0.12] bg-white/[0.04] text-white/85' : 'border-[#e0736d]/45 bg-[#e0736d]/10 text-[#fbd9d6]'}`} title={onSale(h) ? undefined : 'Outside this venue\'s opening hours, so nothing here is on sale'}>
+                        <span key={h.id} className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 ${onSale(h) ? 'border-[#293b58] bg-white/[0.04] text-white/85' : 'border-[#e0736d]/45 bg-[#e0736d]/10 text-[#fbd9d6]'}`} title={onSale(h) ? undefined : 'Outside this venue\'s opening hours, so nothing here is on sale'}>
                           {hhmm(h.start_minutes)}–{hhmm(h.end_minutes)} · {vname(h.venue_id)}{onSale(h) ? '' : ' · not on sale, venue closed then'}
                           <ActionButton tone="quiet" className="!px-1 !py-0 !text-[11px]" confirm="Remove these hours? Sessions already booked stay as they are." body={{ action: 'hours.remove', id: h.id }}>Remove</ActionButton>
                         </span>
                       ))}
-                      {mine.filter((h) => h.weekday === d).length === 0 && <span className="text-white/25">off</span>}
+                      {mine.filter((h) => h.weekday === d).length === 0 && <span className="text-[#5b6c86]">off</span>}
                     </dd>
                   </div>
                 ))}
@@ -104,7 +104,7 @@ export default async function CoachesPage() {
               {myEx.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {myEx.map((e) => (
-                    <span key={e.id} className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${e.kind === 'flag' && e.status === 'open' ? 'border-red-400/40 bg-red-400/10 text-red-200' : e.kind === 'extra' ? 'border-emerald-400/35 bg-emerald-400/[0.07] text-emerald-200' : 'border-white/[0.12] text-white/60'}`}>
+                    <span key={e.id} className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] ${e.kind === 'flag' && e.status === 'open' ? 'border-red-400/40 bg-red-400/10 text-red-200' : e.kind === 'extra' ? 'border-emerald-400/35 bg-emerald-400/[0.07] text-emerald-200' : 'border-[#293b58] text-white/60'}`}>
                       {e.kind === 'flag' ? 'Flagged' : e.kind === 'extra' ? 'Extra' : 'Blocked'} {fmtDate(e.exception_date)}{e.start_minutes != null ? ` ${hhmm(e.start_minutes)}–${hhmm(e.end_minutes!)}` : ''}{e.status === 'resolved' && e.kind === 'flag' ? ' · sorted' : ''}
                       <ActionButton tone="quiet" className="!px-1 !py-0 !text-[11px]" body={{ action: 'exception.remove', id: e.id }}>✕</ActionButton>
                     </span>
@@ -113,7 +113,7 @@ export default async function CoachesPage() {
               )}
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <ActionForm action="exception.add" extra={{ coachId: c.id, kind: 'extra' }} submitLabel="Add extra hours" className="!space-y-1.5">
-                  <span className="text-[11px] text-white/45">One-off extra hours, on sale straight away</span>
+                  <span className="text-[11px] text-[#93a2ba]">One-off extra hours, on sale straight away</span>
                   <div className="grid grid-cols-4 gap-1">
                     <input name="date" type="date" className={inputCls + ' !py-1 !text-[11px]'} />
                     <select name="venueId" className={inputCls + ' !py-1 !text-[11px]'}>{venues.filter((v) => v.is_active).map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}</select>
@@ -122,7 +122,7 @@ export default async function CoachesPage() {
                   </div>
                 </ActionForm>
                 <ActionForm action="exception.add" extra={{ coachId: c.id, kind: 'flag' }} submitLabel="Flag a day" className="!space-y-1.5">
-                  <span className="text-[11px] text-white/45">Can&apos;t make it · lands on Needs attention as a cover problem</span>
+                  <span className="text-[11px] text-[#93a2ba]">Can&apos;t make it · lands on Needs attention as a cover problem</span>
                   <div className="grid grid-cols-4 gap-1">
                     <input name="date" type="date" className={inputCls + ' !py-1 !text-[11px]'} />
                     <input name="start" placeholder="all day" className={inputCls + ' !py-1 !text-[11px]'} />
