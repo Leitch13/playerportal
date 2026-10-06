@@ -423,6 +423,7 @@ function SignUp() {
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">{orgName ? orgName : 'Player Portal'}</h1>
           {orgName && <p className="text-xs sm:text-sm text-white/40">Create your account to get started</p>}
           {!orgName && !searchParams.get('org') && <p className="text-xs sm:text-sm text-white/40">Sign up to join your academy</p>}
+          <a href="/help/parents#booking" target="_blank" rel="noopener" data-testid="how-to-videos-link" className="mt-2 inline-block text-xs sm:text-sm font-semibold text-white/60 underline underline-offset-2 hover:text-white">First time? Watch how it works (30 seconds)</a>
         </div>
 
         {isTrial && <div className="rounded-xl px-3.5 py-2.5 sm:px-4 sm:py-3 mb-3 sm:mb-4 border border-green-500/20 bg-green-500/10 backdrop-blur-xl"><p className="text-xs sm:text-sm font-medium text-green-400 text-center">&#127881; Free Trial — try a class with no commitment!</p></div>}

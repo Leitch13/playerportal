@@ -9,6 +9,7 @@ import { clampTrialEndForCheckout } from '@/lib/billing/anchor'
 import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
+import { recordSignupRefusal, type SignupRefusalContext } from '@/lib/signup-refusals'
 import {
   firstOfNextMonthUnix,
   isStartTodayOrEarlier,
@@ -90,6 +91,9 @@ async function getOrCreateQuarterlyCoupon(percent: number, organisationId: strin
 }
 
 export async function POST(request: NextRequest) {
+  // Filled in as the request is understood, so any refusal below can be recorded
+  // with who it was for. Recording never changes the response.
+  const refusalCtx: SignupRefusalContext = {}
   try {
     const supabase = await createClient()
     const {
@@ -99,6 +103,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    refusalCtx.userId = user.id
 
     // Service-role client for PUBLIC reads (subscription plans, organisations,
     // training groups, platform_plans) and for SYSTEM writes that don't depend
@@ -140,8 +145,11 @@ export async function POST(request: NextRequest) {
     //   to today (the picker's safe default).
     const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput, activatesOn: activatesOnInput } = await request.json()
     if (!planId) {
-      return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
+      return NextResponse.json({ error: 'Please choose a plan before continuing.' }, { status: 400 })
     }
+    refusalCtx.planId = planId
+    refusalCtx.playerId = playerId || null
+    refusalCtx.classId = classId || null
 
     // Parse activatesOn defensively. Anything we can't make sense of falls back to today.
     let activatesOnDate: Date | null = null
@@ -207,6 +215,7 @@ export async function POST(request: NextRequest) {
     if (planError || !plan) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     }
+    refusalCtx.organisationId = plan.organisation_id
 
     // Look up the organisation's Stripe Connect account, platform plan, discounts, etc.
     // Service-role: same cross-academy concern as the plan read above.
@@ -231,6 +240,7 @@ export async function POST(request: NextRequest) {
     // so future academies are never auto-exposed. Fires BEFORE any Stripe object
     // is created, so a blocked quarterly request makes zero Stripe calls.
     if (isQuarterly && !isQuarterlyEnabledForOrg(plan.organisation_id, planOrg?.quarterly_billing_enabled)) {
+      await recordSignupRefusal(refusalCtx, 'quarterly_unavailable', QUARTERLY_UNAVAILABLE_MESSAGE, 400)
       return NextResponse.json({ error: QUARTERLY_UNAVAILABLE_MESSAGE }, { status: 400 })
     }
 
@@ -242,10 +252,9 @@ export async function POST(request: NextRequest) {
     // Without this, payments would silently route to the platform account instead of the academy,
     // and the academy would never see the money. Better to block at checkout with a clear message.
     if (!connectedAccountId) {
-      return NextResponse.json(
-        { error: 'This academy is still finishing their setup. Payments are not available yet — please check back in a day or two.' },
-        { status: 503 }
-      )
+      const notSetUp = 'This academy is still finishing their setup. Payments are not available yet — please check back in a day or two.'
+      await recordSignupRefusal(refusalCtx, 'academy_payments_not_set_up', notSetUp, 503)
+      return NextResponse.json({ error: notSetUp }, { status: 503 })
     }
 
     // CONNECT READINESS PRE-FLIGHT — presence of a connected account isn't enough:
@@ -255,6 +264,7 @@ export async function POST(request: NextRequest) {
     // pre-flight in /api/migration/confirm-checkout. Additive — does not alter fee
     // math, on_behalf_of, or transfer_data below.
     if (!(await isConnectChargeReady(connectedAccountId))) {
+      await recordSignupRefusal(refusalCtx, 'academy_payments_not_ready', CONNECT_NOT_READY_MESSAGE, 503)
       return NextResponse.json({ error: CONNECT_NOT_READY_MESSAGE }, { status: 503 })
     }
 
@@ -312,6 +322,7 @@ export async function POST(request: NextRequest) {
     //
     // Service-role read on purpose: an RLS-hidden row is exactly the row that
     // would let a duplicate through.
+    refusalCtx.playerId = resolvedPlayerId || null
     if (resolvedPlayerId) {
       const { data: existingForPlayer } = await serviceDb
         .from('subscriptions')
@@ -331,7 +342,14 @@ export async function POST(request: NextRequest) {
             ? 'There is already a payment link waiting for this player. Please use that link (check your email, or your Payments page) rather than starting a second membership.'
             : blocking.status === 'past_due'
               ? 'This player already has a membership, but the last payment did not go through. Please update the card on your Payments page — starting a second membership would mean paying twice.'
-              : 'This player already has an active subscription.'
+              // One membership per child. A child joining a second class reaches this too, so
+              // say what to do next rather than only that it can't be done.
+              : 'This child already has a membership here, so a second one can’t be started. If they are joining another class as well, please contact the academy and they will update the membership for you.'
+        await recordSignupRefusal(
+          refusalCtx,
+          blocking.status === 'pending_migration' ? 'existing_payment_link_waiting' : blocking.status === 'past_due' ? 'existing_membership_payment_failed' : 'existing_membership',
+          message, 400, { existing_status: blocking.status },
+        )
         return NextResponse.json({ error: message }, { status: 400 })
       }
     }
@@ -382,6 +400,7 @@ export async function POST(request: NextRequest) {
         const seat = Number(seatRow?.seat_count ?? 0)
         if (cap > 0 && seat >= cap) {
           console.log('[capacity-rpc][preflight] class_full', { classId, seat, capacity: cap })
+          await recordSignupRefusal(refusalCtx, 'class_full', 'class_full', 409, { count: seat, capacity: cap })
           return NextResponse.json(
             { error: 'class_full', count: seat, capacity: cap },
             { status: 409 }
@@ -706,10 +725,9 @@ export async function POST(request: NextRequest) {
     if (!startsTodayOrEarlier && classDayOfWeek) {
       const { isClassDay } = await import('@/lib/billing/sessions')
       if (!isClassDay(activatesOnIso, classDayOfWeek)) {
-        return NextResponse.json(
-          { error: `Selected start date is not a ${classDayOfWeek} class session.` },
-          { status: 400 },
-        )
+        const wrongDay = `That start date isn’t a ${classDayOfWeek}, the day this class runs. Please go back and pick one of the dates offered.`
+        await recordSignupRefusal(refusalCtx, 'start_date_not_a_class_day', wrongDay, 400, { start_date: activatesOnIso, class_day: classDayOfWeek })
+        return NextResponse.json({ error: wrongDay }, { status: 400 })
       }
     }
 
@@ -823,9 +841,8 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     console.error('Subscribe checkout error:', err)
-    return NextResponse.json(
-      { error: mapStripeCheckoutError(err) },
-      { status: 500 }
-    )
+    const mapped = mapStripeCheckoutError(err)
+    await recordSignupRefusal(refusalCtx, 'checkout_error', mapped, 500, { raw: (err instanceof Error ? err.message : String(err)).slice(0, 300) })
+    return NextResponse.json({ error: mapped }, { status: 500 })
   }
 }

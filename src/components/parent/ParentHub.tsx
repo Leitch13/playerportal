@@ -277,7 +277,10 @@ export default function ParentHub(props: ParentHubProps) {
 
         {/* ── Quick Actions ── */}
         <section className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
-          <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Quick Actions</p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Quick Actions</p>
+            <Link href="/help/parents" data-testid="how-to-videos-link" className="text-xs font-semibold text-[#4ecde6] hover:underline">Not sure how something works? Watch the 30-second videos &rarr;</Link>
+          </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {[
               { label: 'Add Child', href: '/dashboard/children' },
