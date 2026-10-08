@@ -36,6 +36,7 @@ import ActiveClassesList, { type ActiveClass } from './ActiveClassesList'
 import BillingPanel, { type BillingFacts } from './BillingPanel'
 import MembershipManagement from './MembershipManagement'
 import AvailableUpgrades from './AvailableUpgrades'
+import type { ClassOption } from '@/lib/class-for-payment'
 import MembershipTabs from './MembershipTabs'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import PayoutsBox from './PayoutsBox'
@@ -166,6 +167,25 @@ async function ParentPayments({
         .in('player_id', playerIds)
         .eq('status', 'active')
     : { data: [] as never[] }
+
+  // The classes a plan can be bought for: the ones the academy has open to
+  // join, plus any class a child is already in (which may not be public).
+  // AvailableUpgrades asks "which class?" with these — see class-for-payment.ts.
+  const heldGroupIds = Array.from(new Set(((enrolments || []) as { group_id: string }[]).map((e) => e.group_id)))
+  const classCols = 'id, name, class_type, day_of_week, time_slot'
+  const { data: openClasses } = orgId
+    ? await supabase.from('training_groups').select(classCols).eq('organisation_id', orgId).eq('is_published', true).order('name')
+    : { data: [] as never[] }
+  const { data: heldClasses } = heldGroupIds.length > 0
+    ? await supabase.from('training_groups').select(classCols).in('id', heldGroupIds)
+    : { data: [] as never[] }
+  const joinableClasses = Array.from(
+    new Map([...(openClasses || []), ...(heldClasses || [])].map((c) => [c.id as string, c as ClassOption])).values(),
+  )
+  const childClassIds: Record<string, string[]> = {}
+  for (const e of (enrolments || []) as { player_id: string; group_id: string }[]) {
+    (childClassIds[e.player_id] ||= []).push(e.group_id)
+  }
 
   type BookedClass = {
     id: string
@@ -470,7 +490,7 @@ async function ParentPayments({
 
         <MyChildrenList children={childSummaries} />
         <ActiveClassesList classes={activeClassesEnriched} retentionEnabled={retentionEnabled} retentionPercent={retentionPercent} retentionMonths={retentionMonths} />
-        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} myChildren={(myPlayers || []).map((p) => ({ id: p.id as string, first_name: p.first_name as string | null, last_name: p.last_name as string | null }))} />
+        <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} myChildren={(myPlayers || []).map((p) => ({ id: p.id as string, first_name: p.first_name as string | null, last_name: p.last_name as string | null }))} classes={joinableClasses} childClassIds={childClassIds} />
         <MembershipManagement
           hasActiveSub={activeSubs.length > 0}
           noticeDays={cancellationNoticeDays}
@@ -639,7 +659,7 @@ async function ParentPayments({
         </div>
       )}
 
-      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} myChildren={(myPlayers || []).map((p) => ({ id: p.id as string, first_name: p.first_name as string | null, last_name: p.last_name as string | null }))} />
+      <AvailableUpgrades plans={(plans || []) as Parameters<typeof AvailableUpgrades>[0]['plans']} hasActiveSub={activeSubs.length > 0} quarterlyEnabled={quarterlyEnabledForOrg} myChildren={(myPlayers || []).map((p) => ({ id: p.id as string, first_name: p.first_name as string | null, last_name: p.last_name as string | null }))} classes={joinableClasses} childClassIds={childClassIds} />
 
     </div>
     </div>

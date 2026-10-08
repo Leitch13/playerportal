@@ -8,6 +8,8 @@ export default function SubscribeButton({
   amount,
   interval,
   playerId,
+  classId,
+  disabled = false,
   label,
   quarterlyEnabled = false,
 }: {
@@ -16,6 +18,10 @@ export default function SubscribeButton({
   amount: number
   interval: string
   playerId?: string
+  /** The class this membership is for. The server refuses a payment without one. */
+  classId?: string
+  /** Shut until the parent has answered what the page asks (child, class). */
+  disabled?: boolean
   label?: string
   // Global quarterly safety kill-switch. When false the toggle is hidden and
   // billing stays monthly-only. Default false for safety.
@@ -35,7 +41,7 @@ export default function SubscribeButton({
       const res = await fetch('/api/stripe/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, playerId, billingOption }),
+        body: JSON.stringify({ planId, playerId, billingOption, classId }),
       })
 
       const data = await res.json()
@@ -43,7 +49,7 @@ export default function SubscribeButton({
       if (data.url) {
         window.location.href = data.url
       } else {
-        alert(data.error || 'Something went wrong')
+        alert(data.error === 'class_full' ? 'That class is full. Please choose another class, or ask the academy about its waiting list.' : data.error || 'Something went wrong')
         setLoading(false)
       }
     } catch {
@@ -95,7 +101,7 @@ export default function SubscribeButton({
       {/* Subscribe button */}
       <button
         onClick={handleSubscribe}
-        disabled={loading}
+        disabled={loading || disabled}
         className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors flex items-center justify-center gap-2 ${
           billingOption === 'quarterly'
             ? 'bg-green-600 text-white hover:bg-green-700'

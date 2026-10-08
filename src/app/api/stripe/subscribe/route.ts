@@ -10,6 +10,7 @@ import { isQuarterlyEnabledForOrg, QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/q
 import { feePercentFromRate } from '@/lib/stripe-fee'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import { recordSignupRefusal, type SignupRefusalContext } from '@/lib/signup-refusals'
+import { classForPayment, CLASS_REQUIRED_MESSAGE } from '@/lib/class-for-payment'
 import { SIBLING_QUALIFYING_STATUSES } from '@/lib/billing/sibling'
 import {
   firstOfNextMonthUnix,
@@ -144,13 +145,13 @@ export async function POST(request: NextRequest) {
     //   Stage 2 (behind BILLING_FLOW_STARTDATE_ENABLED flag) uses it for the new immediate_prorated
     //   billing branch. Cap matches the picker UI: today through today+28 days. Bad input → defaults
     //   to today (the picker's safe default).
-    const { planId, playerId, billingOption, classId, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput, activatesOn: activatesOnInput } = await request.json()
+    const { planId, playerId, billingOption, classId: classIdSent, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput, activatesOn: activatesOnInput } = await request.json()
     if (!planId) {
       return NextResponse.json({ error: 'Please choose a plan before continuing.' }, { status: 400 })
     }
     refusalCtx.planId = planId
     refusalCtx.playerId = playerId || null
-    refusalCtx.classId = classId || null
+    refusalCtx.classId = classIdSent || null
 
     // Parse activatesOn defensively. Anything we can't make sense of falls back to today.
     let activatesOnDate: Date | null = null
@@ -355,6 +356,66 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── A MEMBERSHIP IS ALWAYS FOR A CLASS — every billing path ───────
+    // John, 8 Oct 2026, in writing: "Any parent who is in the app pays what
+    // is left of that month and has to be registered to a class."
+    //
+    // The Membership page and the general sign-up page used to send no class.
+    // With none, everything below that depends on it was silently skipped: the
+    // class-full check, the sessions-left count (so the parent was charged by
+    // weeks — £40 where three Sundays left is £30), and the enrolment on
+    // payment (so the child paid but was on no register).
+    //
+    // The class is the one the page sent; failing that the one the plan
+    // belongs to; failing that the child's own class when they are in exactly
+    // one. Otherwise the payment is refused, before any Stripe object exists.
+    // See src/lib/class-for-payment.ts.
+    let childClassIds: string[] = []
+    if (!classIdSent && !plan.training_group_id && resolvedPlayerId) {
+      const { data: ownClasses } = await serviceDb
+        .from('enrolments')
+        .select('group_id, group:training_groups!inner(organisation_id)')
+        .eq('player_id', resolvedPlayerId)
+        .eq('status', 'active')
+        .eq('group.organisation_id', plan.organisation_id)
+      childClassIds = ((ownClasses || []) as { group_id: string }[]).map((r) => r.group_id)
+    }
+    const wantedClassId = classForPayment({
+      sent: typeof classIdSent === 'string' ? classIdSent : null,
+      planClassId: (plan.training_group_id as string | null) ?? null,
+      childClassIds,
+    })
+    const { data: paidClass } = wantedClassId
+      ? await serviceDb
+          .from('training_groups')
+          .select('id')
+          .eq('id', wantedClassId)
+          .eq('organisation_id', plan.organisation_id)
+          .maybeSingle()
+      : { data: null }
+    if (!paidClass) {
+      await recordSignupRefusal(refusalCtx, 'class_required', CLASS_REQUIRED_MESSAGE, 400, {
+        class_sent: !!classIdSent, child_classes: childClassIds.length,
+      })
+      return NextResponse.json({ error: CLASS_REQUIRED_MESSAGE, code: 'class_required' }, { status: 400 })
+    }
+    const classId = paidClass.id as string
+    refusalCtx.classId = classId
+
+    // A child who already holds a place in this class is paying for the place
+    // they have, not taking a new one — so a full class must not turn them away.
+    let alreadyInClass = false
+    if (resolvedPlayerId) {
+      const { data: heldPlace } = await serviceDb
+        .from('enrolments')
+        .select('id')
+        .eq('player_id', resolvedPlayerId)
+        .eq('group_id', classId)
+        .in('status', ['active', 'pending'])
+        .limit(1)
+      alreadyInClass = (heldPlace || []).length > 0
+    }
+
     // ════════════════════════════════════════════════════════════════
     // Capacity preflight (RPC) — Phase 1a, flag-gated.
     // Grafted from hotfix 841f97b onto day1's richer route during the
@@ -378,7 +439,7 @@ export async function POST(request: NextRequest) {
     //
     // Flag OFF: this block is skipped entirely.
     // ════════════════════════════════════════════════════════════════
-    if (classId && process.env.CAPACITY_RPC_ENABLED === 'true') {
+    if (classId && !alreadyInClass && process.env.CAPACITY_RPC_ENABLED === 'true') {
       // Service-role for class metadata + seat-count RPC: same cross-academy
       // concern (a parent in Academy A booking at Academy B would be RLS-
       // blocked from reading B's class row). The RPC is SECURITY DEFINER

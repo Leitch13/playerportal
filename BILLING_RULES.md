@@ -16,6 +16,11 @@ John Leitch, 10 September 2026, after the sixth regression in three months:
    The academy's own Settings toggle is the only thing that governs it.
 4. Nothing about billing differs by academy. No flags, no allowlists, no pilots, no "just for X".
 5. Any billing change a parent could notice is John's decision, in writing, before it is built.
+6. **A membership is always for a class.** John, 8 October 2026: "Any parent who is in the app
+   pays what is left of that month and has to be registered to a class." The subscribe route
+   works out the class (the one the page sent, else the one the plan belongs to, else the child's
+   only class) and refuses the payment if there is none. Code: `src/lib/class-for-payment.ts`.
+   Every page that sells a plan asks "which class?" first. Never add a way to buy a plan without one.
 
 ## What enforces it
 - `scripts/check-billing-invariants.mjs` runs before every build and fails it on any of the retired

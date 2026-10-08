@@ -25,10 +25,24 @@
  *
  * So the section now asks. One child is filled in automatically; several means
  * the parent picks before they can subscribe. The question is never skipped.
+ *
+ * WHICH CLASS?
+ * ------------
+ * It also sold a plan without saying which class it was for. With no class the
+ * app cannot count the sessions left, so it charged by weeks: on 8 Oct 2026 a
+ * parent with three Sundays left paid the full £40, not £30, and her child was
+ * paying but on no register. John, the same day, in writing: "Any parent who is
+ * in the app pays what is left of that month and has to be registered to a class."
+ *
+ * So each plan now names its class. One possible class is filled in; several
+ * means the parent picks. The server refuses a payment with no class either way
+ * (src/lib/class-for-payment.ts) — this is the question, that is the lock.
  */
 import { useState } from 'react'
 import SubscribeButton from './SubscribeButton'
 import type { SubscriptionPlan } from '@/lib/types'
+import { classesForPlan, classLabel, type ClassOption } from '@/lib/class-for-payment'
+import { firstChargeFor, firstChargeLabel } from '@/lib/billing/sessions'
 
 export interface UpgradeChild {
   id: string
@@ -41,6 +55,8 @@ export default function AvailableUpgrades({
   hasActiveSub,
   quarterlyEnabled = false,
   myChildren = [],
+  classes = [],
+  childClassIds = {},
 }: {
   plans: SubscriptionPlan[]
   hasActiveSub: boolean
@@ -50,13 +66,24 @@ export default function AvailableUpgrades({
   quarterlyEnabled?: boolean
   /** The parent's own children. Empty is tolerated — see below. */
   myChildren?: UpgradeChild[]
+  /** The academy's classes a parent can join, plus any their children are already in. */
+  classes?: ClassOption[]
+  /** Each child's current classes, so the one they are already in is offered first. */
+  childClassIds?: Record<string, string[]>
 }) {
   // One child needs no question asked; several must be chosen between.
   const [selectedChildId, setSelectedChildId] = useState<string>(
     myChildren.length === 1 ? myChildren[0].id : '',
   )
 
+  // The class chosen for each plan card. Unset means "not answered yet".
+  const [classByPlan, setClassByPlan] = useState<Record<string, string>>({})
+
   if (!plans || plans.length === 0) return null
+
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const anchorIso = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString().slice(0, 10)
 
   const name = (c: UpgradeChild) =>
     `${(c.first_name ?? '').trim()} ${(c.last_name ?? '').trim()}`.trim() || 'Unnamed child'
@@ -116,6 +143,12 @@ export default function AvailableUpgrades({
         {plans.map(plan => {
           const monthly = Number(plan.amount)
           const sessions = (plan as { sessions_per_week?: number | null }).sessions_per_week ?? null
+          const offered = classesForPlan(plan, plans, classes)
+          const own = (childClassIds[selectedChildId] || []).filter((id) => offered.some((c) => c.id === id))
+          // One possible class needs no question; the child's own class is the default among several.
+          const chosenId = classByPlan[plan.id] ?? (offered.length === 1 ? offered[0].id : own.length === 1 ? own[0] : '')
+          const chosen = offered.find((c) => c.id === chosenId) || null
+          const today = chosen ? firstChargeFor(monthly, todayIso, anchorIso, chosen.day_of_week ?? null) : null
           return (
             <div
               key={plan.id}
@@ -134,13 +167,51 @@ export default function AvailableUpgrades({
                   </p>
                 )}
               </div>
-              <div className={`mt-auto pt-2${blocked ? ' opacity-40 pointer-events-none' : ''}`}>
+              <div data-testid="upgrade-class">
+                {offered.length === 0 ? (
+                  <p className="text-[11.5px] text-amber-300/80" data-testid="upgrade-class-none">
+                    This academy has no class open to join yet. Please ask them to add you to a class.
+                  </p>
+                ) : offered.length === 1 ? (
+                  <p className="text-xs text-white/40" data-testid="upgrade-class-implied">
+                    Class: <span className="text-white/70 font-medium">{classLabel(offered[0])}</span>
+                  </p>
+                ) : (
+                  <>
+                    <label htmlFor={`upgrade-class-${plan.id}`} className="block text-xs font-semibold text-white/70 mb-1.5">
+                      Which class is this for?
+                    </label>
+                    <select
+                      id={`upgrade-class-${plan.id}`}
+                      value={chosenId}
+                      onChange={(e) => setClassByPlan((m) => ({ ...m, [plan.id]: e.target.value }))}
+                      data-testid="upgrade-class-select"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#080e18] border border-[#1d2c42] text-white text-sm focus:outline-none focus:border-[#4ecde6]/50"
+                    >
+                      <option value="">Choose a class…</option>
+                      {offered.map((c) => (
+                        <option key={c.id} value={c.id}>{classLabel(c)}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
+                {today && (
+                  <p className="text-[11.5px] text-white/55 mt-2" data-testid="upgrade-today">
+                    {today.pence > 0
+                      ? <>Paying monthly: <span className="text-white/80 font-semibold">£{(today.pence / 100).toFixed(2)} today</span> for {firstChargeLabel(today)}, then £{monthly.toFixed(0)} on the 1st.</>
+                      : <>Paying monthly: nothing today, then £{monthly.toFixed(0)} on the 1st.</>}
+                  </p>
+                )}
+              </div>
+              <div className={`mt-auto pt-2${blocked || !chosen ? ' opacity-40 pointer-events-none' : ''}`}>
                 <SubscribeButton
                   planId={plan.id}
                   planName={plan.name}
                   amount={Number(plan.amount)}
                   interval={plan.interval || 'month'}
                   playerId={selectedChildId || undefined}
+                  classId={chosen?.id}
+                  disabled={blocked || !chosen}
                   quarterlyEnabled={quarterlyEnabled}
                 />
               </div>

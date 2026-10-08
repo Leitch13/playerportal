@@ -19,6 +19,7 @@ export type SignupRefusalReason =
   | 'existing_payment_link_waiting'
   | 'existing_membership_payment_failed'
   | 'class_full'
+  | 'class_required'
   | 'start_date_not_a_class_day'
   | 'checkout_error'
 

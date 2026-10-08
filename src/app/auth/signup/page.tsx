@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import AcademySearch from '@/components/AcademySearch'
 import { isQuarterlyEnabledForOrgPublic } from '@/lib/quarterly-billing'
+import { classesForPlan, classLabel, type ClassOption } from '@/lib/class-for-payment'
+import type { PlanForClass } from '@/lib/plans-for-class'
 
 export default function SignUpPage() {
   return (
@@ -63,6 +65,13 @@ function SignUp() {
   const [addedChildId, setAddedChildId] = useState<string | null>(null)
   const [plans, setPlans] = useState<{id: string; name: string; description: string | null; amount: number; sessions_per_week: number; interval: string}[]>([])
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  // A membership is always for a class (John, 8 Oct 2026). A parent who came
+  // from a class page brings it in the link; anyone else — the "Join Now"
+  // button, a referral link, the academy's own join link — is asked here.
+  // The server refuses a payment with no class: src/lib/class-for-payment.ts.
+  const [joinableClasses, setJoinableClasses] = useState<ClassOption[]>([])
+  const [everyPlan, setEveryPlan] = useState<PlanForClass[]>([])
+  const [chosenClassId, setChosenClassId] = useState('')
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
   const [subscribing, setSubscribing] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -94,6 +103,27 @@ function SignUp() {
   const [referrerName, setReferrerName] = useState<string | null>(null)
 
   useEffect(() => { if (preSelectedBilling === 'quarterly' && isQuarterlyEnabledForOrgPublic(orgId, orgQuarterlyEnabled)) setBillingOption('quarterly') }, [preSelectedBilling, orgId, orgQuarterlyEnabled])
+
+  useEffect(() => {
+    if (step !== 3 || preSelectedClassId) return
+    let cancelled = false
+    ;(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: profile } = await supabase.from('profiles').select('organisation_id').eq('id', user.id).single()
+      const org = profile?.organisation_id as string | undefined
+      if (!org) return
+      const [{ data: cls }, { data: pl }] = await Promise.all([
+        supabase.from('training_groups').select('id, name, class_type, day_of_week, time_slot').eq('organisation_id', org).eq('is_published', true).order('name'),
+        supabase.from('subscription_plans').select('id, training_group_id, class_type').eq('organisation_id', org).eq('active', true),
+      ])
+      if (cancelled) return
+      setJoinableClasses((cls as ClassOption[] | null) || [])
+      setEveryPlan((pl as PlanForClass[] | null) || [])
+    })()
+    return () => { cancelled = true }
+  }, [step, preSelectedClassId])
 
   // ─── Logged-in parents adding a new subscription ───
   // If the user is already authenticated and lands on /auth/signup (e.g. clicked
@@ -392,11 +422,18 @@ function SignUp() {
     setStep(3); setLoading(false)
   }
 
+  // The classes the chosen plan can be bought for; one possible class needs no question.
+  const offeredClasses = !preSelectedClassId && selectedPlanId
+    ? classesForPlan({ id: selectedPlanId, ...(everyPlan.find((p) => p.id === selectedPlanId) || {}) }, everyPlan, joinableClasses)
+    : []
+  const classForThisPayment = preSelectedClassId
+    || (offeredClasses.some((c) => c.id === chosenClassId) ? chosenClassId : offeredClasses.length === 1 ? offeredClasses[0].id : '')
+
   async function handleSubscribe() {
-    if (!selectedPlanId || !addedChildId) return
+    if (!selectedPlanId || !addedChildId || !classForThisPayment) return
     setSubscribing(true)
     try {
-      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: preSelectedClassId || null, firstBillingDate: billedFrom || null }) })
+      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: classForThisPayment, firstBillingDate: billedFrom || null }) })
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else { setError(data.error || 'Failed to start subscription'); setSubscribing(false) }
@@ -591,7 +628,25 @@ function SignUp() {
                       </button>
                     )
                   })}
-                  <button onClick={handleSubscribe} disabled={!selectedPlanId || subscribing} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: billingOption === 'quarterly' ? '#22c55e' : primaryColor, color: billingOption === 'quarterly' ? 'white' : '#0a0a0a' }}>
+                  {!preSelectedClassId && selectedPlanId && (
+                    <div className="rounded-xl border border-[#1e1e1e] bg-[#0e0e0e] p-3.5 sm:p-4" data-testid="signup-class">
+                      {offeredClasses.length === 0 ? (
+                        <p className="text-xs text-amber-300/80" data-testid="signup-class-none">This academy has no class open to join yet. Please ask them to add you to a class.</p>
+                      ) : offeredClasses.length === 1 ? (
+                        <p className="text-xs text-white/40" data-testid="signup-class-implied">Class: <span className="text-white/70 font-medium">{classLabel(offeredClasses[0])}</span></p>
+                      ) : (
+                        <>
+                          <label htmlFor="signup-class-select" className="block text-xs sm:text-sm text-white/50 mb-1.5">Which class is this for? *</label>
+                          <select id="signup-class-select" data-testid="signup-class-select" value={classForThisPayment} onChange={(e) => setChosenClassId(e.target.value)} className={inputCls}>
+                            <option value="">Choose a class…</option>
+                            {offeredClasses.map((c) => <option key={c.id} value={c.id}>{classLabel(c)}</option>)}
+                          </select>
+                          <p className="text-[11px] text-white/30 mt-1.5">You only pay for the sessions left this month, and your child goes straight onto the register.</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <button onClick={handleSubscribe} disabled={!selectedPlanId || !classForThisPayment || subscribing} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: billingOption === 'quarterly' ? '#22c55e' : primaryColor, color: billingOption === 'quarterly' ? 'white' : '#0a0a0a' }}>
                     {subscribing ? <><Spinner size={20} />Setting up payment...</> : billingOption === 'quarterly' ? 'Pay 3 Months & Save 10% \u2192' : 'Subscribe & Pay \u2192'}
                   </button>
                   {billingOption === 'quarterly' && selectedPlanId && <p className="text-xs text-center text-green-400 font-medium">One payment of &pound;{getQuarterlyPrice(Number(plans.find(p => p.id === selectedPlanId)?.amount || 0)).discounted.toFixed(2)} covers 3 full months</p>}

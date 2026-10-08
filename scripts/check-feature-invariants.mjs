@@ -38,6 +38,14 @@ const FEATURES = [
   ['Sign-up: the two-class refusal says what to do next', `${A}/api/stripe/subscribe/route.ts`, ['already has a membership here', 'please contact the academy']],
   ['Sign-up: sibling discount counts a child who signed up this month', `${A}/api/stripe/subscribe/route.ts`, ['SIBLING_QUALIFYING_STATUSES']],
   ['Sign-up: sibling rule', 'src/lib/billing/sibling.ts', ["'trialing'", "'active'"]],
+
+  // ── a membership is always for a class (John, 8 Oct 2026)
+  ['Class required: the rule', 'src/lib/class-for-payment.ts', ['export function classForPayment', 'export function classesForPlan', 'CLASS_REQUIRED_MESSAGE']],
+  ['Class required: the payment route refuses a payment with no class', `${A}/api/stripe/subscribe/route.ts`, ['classForPayment(', "'class_required'", 'CLASS_REQUIRED_MESSAGE', '!alreadyInClass']],
+  ['Class required: the Membership page asks which class', `${D}/payments/AvailableUpgrades.tsx`, ['classesForPlan(', 'upgrade-class-select', 'classId={chosen?.id}', 'upgrade-today']],
+  ['Class required: the Subscribe button sends the class', `${D}/payments/SubscribeButton.tsx`, ['billingOption, classId }']],
+  ['Class required: the Membership page is given the classes', `${D}/payments/page.tsx`, ['classes={joinableClasses}']],
+  ['Class required: the sign-up page asks which class', `${A}/auth/signup/page.tsx`, ['classesForPlan(', 'signup-class-select', 'classId: classForThisPayment']],
   ['How-to videos: linked on the sign-up page', `${A}/auth/signup/page.tsx`, ['how-to-videos-link', '/help/parents']],
   ['How-to videos: linked on the class page', `${A}/book/[slug]/class/[groupId]/page.tsx`, ['how-to-videos-link', '/help/parents']],
   ['How-to videos: linked on the parent home', 'src/components/parent/ParentHub.tsx', ['how-to-videos-link', '/help/parents']],
