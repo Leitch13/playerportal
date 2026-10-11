@@ -39,6 +39,11 @@ const FEATURES = [
   ['Sign-up: sibling discount counts a child who signed up this month', `${A}/api/stripe/subscribe/route.ts`, ['SIBLING_QUALIFYING_STATUSES']],
   ['Sign-up: sibling rule', 'src/lib/billing/sibling.ts', ["'trialing'", "'active'"]],
 
+  // ── trials (Oct 2026: paid trials told nobody for four months)
+  ['Trials: a paid trial shows as paid', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-paid"', 'paidTrialPence(']],
+  ['Trials: the parent of a paid trial gets a confirmation', 'src/lib/email-templates.ts', ['export function paidTrialConfirmationEmail']],
+  ['Trials: one booking per child, class and date', `${A}/api/trial-bookings/paid/route.ts`, ['sameTrial(', "'trial_already_booked'"]],
+
   // ── a membership is always for a class (John, 8 Oct 2026)
   ['Class required: the rule', 'src/lib/class-for-payment.ts', ['export function classForPayment', 'export function classesForPlan', 'CLASS_REQUIRED_MESSAGE']],
   ['Class required: the payment route refuses a payment with no class', `${A}/api/stripe/subscribe/route.ts`, ['classForPayment(', "'class_required'", 'CLASS_REQUIRED_MESSAGE', '!alreadyInClass']],

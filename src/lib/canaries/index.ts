@@ -861,6 +861,66 @@ async function canary16DoubleRecordedPayments(sb: Supabase): Promise<Omit<Canary
   return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
 }
 
+/**
+ * Canary 17 — a trial was booked and the academy was never told.
+ *
+ * Paid trials were silent for four months (May–Oct 2026): ten bookings in six weeks at three
+ * academies, none announced, and one parent who heard nothing paid twice. Every trial, free or
+ * paid, now goes through alertAcademyOfTrial(), which writes an audit_log row. This reads every
+ * trial of the last 3 days and checks for that row, so a route that forgets — or a new, third
+ * way to book a trial — is caught the next morning.
+ *
+ * It also repairs: a trial with no record is announced now, then reported as late. And it
+ * reads Stripe the other way round: a paid-trial payment with no booking at all means the
+ * webhook failed, and the academy has money for a child they do not know is coming.
+ */
+async function canary17TrialNotAnnounced(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const { alertAcademyOfTrial, TRIAL_ALERTED_ACTION, paidTrialSessionId } = await import('../trial-alerts')
+  // Trials booked before the record existed (11 Oct 2026, 19:00 UTC) are not judged: they could not have one.
+  const RECORDS_BEGAN = '2026-10-11T19:00:00.000Z'
+  const threeDays = new Date(Date.now() - 3 * 86400_000).toISOString()
+  const since = threeDays > RECORDS_BEGAN ? threeDays : RECORDS_BEGAN
+  // Give a booking 15 minutes: the free-trial alert is sent from the parent's browser just after the save.
+  const settled = new Date(Date.now() - 15 * 60_000).toISOString()
+  const { data: trialRows } = await sb.from('trial_bookings').select('id, organisation_id, child_name, notes, created_at')
+    .gte('created_at', since).order('created_at')
+  const trials = (trialRows ?? []) as { id: string; organisation_id: string; child_name: string | null; notes: string | null; created_at: string }[]
+  const { data: alertRows } = await sb.from('audit_log').select('entity_id, details').eq('action', TRIAL_ALERTED_ACTION).gte('created_at', since)
+  const alerted = new Map<string, { email_sent?: boolean; notifications?: number }>()
+  for (const r of (alertRows ?? []) as { entity_id: string; details: { email_sent?: boolean; notifications?: number } | null }[]) alerted.set(r.entity_id, r.details || {})
+
+  const problems: { org: string; what: string }[] = []
+  for (const t of trials.filter((x) => x.created_at <= settled)) {
+    const rec = alerted.get(t.id)
+    const child = (t.child_name || 'a child').trim()
+    if (!rec) {
+      const late = await alertAcademyOfTrial(sb, t.id)
+      problems.push({ org: t.organisation_id, what: `${child}'s trial (booked ${t.created_at.slice(0, 16).replace('T', ' ')}) was not announced to the academy at the time. ${late.ok ? 'Sent now.' : `Still not sent: ${late.error || 'no admin and no email went'}.`}` })
+    } else if (!rec.email_sent && !(rec.notifications && rec.notifications > 0)) {
+      problems.push({ org: t.organisation_id, what: `${child}'s trial was booked but neither the email nor the in-app alert reached the academy.` })
+    }
+  }
+
+  // Stripe's side: a paid trial that was charged but has no booking.
+  const Stripe = (await import('stripe')).default
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const known = new Set(trials.map((t) => paidTrialSessionId(t.notes)).filter(Boolean) as string[])
+  const sinceUnix = Math.floor(new Date(since).getTime() / 1000)
+  for await (const cs of stripe.checkout.sessions.list({ created: { gte: sinceUnix }, limit: 100 })) {
+    if (cs.metadata?.type !== 'paid_trial' || cs.payment_status !== 'paid') continue
+    if (cs.created > Math.floor(Date.now() / 1000) - 15 * 60) continue
+    if (known.has(cs.id)) continue
+    const { data: found } = await sb.from('trial_bookings').select('id').ilike('notes', `%(${cs.id})%`).limit(1)
+    if (found && found.length > 0) continue
+    problems.push({ org: cs.metadata?.supabase_org_id || 'unknown', what: `a parent paid £${((cs.amount_total ?? 0) / 100).toFixed(2)} for a trial (${cs.metadata?.child_first_name || 'child'}, ${cs.metadata?.session_date || 'no date'}) and no booking was saved. Stripe session ${cs.id}.` })
+  }
+
+  if (!problems.length) return { rowCount: 0, lines: [] }
+  const names = await orgNames(sb, [...new Set(problems.map((p) => p.org))])
+  const findings: CanaryFinding[] = problems.map((p) => ({ org: names.get(p.org) || p.org, what: p.what }))
+  return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -877,6 +937,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 14, name: 'refunds Player Portal paid, not repaid in 30 days', run: canary14RefundsNotRepaid },
   { id: 15, name: 'paused membership Stripe will still charge', run: canary15PausedButCharging },
   { id: 16, name: 'one Stripe payment recorded twice', run: canary16DoubleRecordedPayments },
+  { id: 17, name: 'trial booked and the academy not told', run: canary17TrialNotAnnounced },
 ]
 
 /**

@@ -1,3 +1,4 @@
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
@@ -227,6 +228,16 @@ export async function POST(request: NextRequest) {
       const template = waitlistAcceptedEmail({ parentName, childName, className })
       await sendEmail({ to: parent.email, ...template })
     }
+
+    // Tell the academy the place has been taken up. Best-effort.
+    await notifyOrgAdmins({
+      orgId: entry.organisation_id as string,
+      type: 'waitlist_accepted',
+      title: 'Waiting-list place accepted',
+      body: `${player?.full_name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'A player'} has taken the place offered in ${group?.name || 'a class'} and is now enrolled.`,
+      link: '/dashboard/enrolments',
+      email: true,
+    })
 
     return NextResponse.json({ success: true, enrolment_created: true })
   } catch {

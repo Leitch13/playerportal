@@ -1,3 +1,4 @@
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
@@ -151,6 +152,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Tell the academy. Best-effort.
+    await notifyOrgAdmins({
+      orgId: group.organisation_id as string,
+      type: 'plan_changed',
+      title: 'A parent changed their plan',
+      body: `A membership was moved to ${newPlan.name} (£${Number(newPlan.amount).toFixed(2)}) by the parent.`,
+      link: '/dashboard/payments',
+      email: true,
+    })
     return NextResponse.json({ success: true, newPlanName: newPlan.name })
   } catch (err) {
     console.error('Change-plan error:', err)

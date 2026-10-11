@@ -28,16 +28,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendEmail } from '@/lib/email'
-import { newTrialBookingAdminEmail } from '@/lib/email-templates'
+import { alertAcademyOfTrial } from '@/lib/trial-alerts'
 
 export const dynamic = 'force-dynamic'
-
-// Real notifications column is `user_id` (migration-confirmed). The
-// hotfix-era version flag-gated this behind NOTIFICATIONS_SCHEMA_FIX_ENABLED;
-// on this lineage every notification write path uses user_id unconditionally,
-// so the gate is dropped (Batch 1 / 4e adaptation).
-const NOTIF_USER_COL = 'user_id' as const
 
 const TRIAL_ACADEMY_NOTIFY_ENABLED =
   process.env.TRIAL_ACADEMY_NOTIFY_ENABLED === 'true'
@@ -74,7 +67,7 @@ export async function POST(request: NextRequest) {
   const { data: trial, error: trialErr } = await supabase
     .from('trial_bookings')
     .select(
-      'id, organisation_id, training_group_id, parent_name, parent_email, parent_phone, child_name, child_age, preferred_date, notes, created_at, training_group:training_groups(name), organisation:organisations(name, contact_email)'
+      'id'
     )
     .eq('organisation_id', organisation_id)
     .eq('parent_email', parent_email)
@@ -95,75 +88,15 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const group = trial.training_group as unknown as { name: string } | null
-  const org = trial.organisation as unknown as { name: string; contact_email: string | null } | null
-  const academyName = org?.name || 'your academy'
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
-  const dashboardUrl = `${appUrl}/dashboard/trials`
-
-  // ── Bell notifications: one row per admin profile in the org.
-  // Coaches deliberately excluded — owners need to be paged on new
-  // bookings, coaches get the existing in-session trial-guest view.
-  const { data: admins } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('organisation_id', organisation_id)
-    .eq('role', 'admin')
-
-  let notificationsInserted = 0
-  if (admins && admins.length > 0) {
-    const notifRows = admins.map((a) => ({
-      [NOTIF_USER_COL]: a.id,
-      organisation_id,
-      type: 'new_trial',
-      title: `New trial: ${trial.child_name}`,
-      body: `${trial.parent_name} booked a free trial${group?.name ? ` for ${group.name}` : ''}${
-        trial.preferred_date ? ` — ${trial.preferred_date}` : ''
-      }.`,
-      link: '/dashboard/trials',
-    }))
-    const { error: notifErr, count } = await supabase
-      .from('notifications')
-      .insert(notifRows, { count: 'exact' })
-    if (!notifErr) notificationsInserted = count ?? notifRows.length
-  }
-
-  // ── Admin email: one send, to the org owner.
-  // Recipient chain mirrors notifyNewAcademy() in /api/onboard:
-  //   org.contact_email → env.ADMIN_NOTIFICATION_EMAIL → hardcoded fallback.
-  const recipient =
-    org?.contact_email ||
-    process.env.ADMIN_NOTIFICATION_EMAIL ||
-    'johnleitch970@gmail.com'
-
-  const formattedDate = trial.preferred_date
-    ? new Date(trial.preferred_date + 'T00:00:00').toLocaleDateString('en-GB', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      })
-    : null
-
-  const template = newTrialBookingAdminEmail({
-    academyName,
-    parentName: trial.parent_name,
-    parentEmail: trial.parent_email,
-    parentPhone: trial.parent_phone,
-    childName: trial.child_name,
-    childAge: trial.child_age,
-    className: group?.name ?? null,
-    preferredDate: formattedDate,
-    notes: trial.notes,
-    dashboardUrl,
-  })
-  const emailResult = await sendEmail({ to: recipient, ...template })
+  // One place tells the academy about a trial, free or paid, and writes down
+  // that it did: src/lib/trial-alerts.ts. Canary 17 checks every trial has that record.
+  const alerted = await alertAcademyOfTrial(supabase, trial.id as string)
 
   return NextResponse.json({
-    ok: true,
+    ok: alerted.ok,
     trialId: trial.id,
-    notificationsInserted,
-    emailRecipient: recipient,
-    emailSent: emailResult.success,
+    notificationsInserted: alerted.notifications,
+    emailSent: alerted.emailSent,
+    already: alerted.already,
   })
 }

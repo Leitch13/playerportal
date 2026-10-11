@@ -1,5 +1,6 @@
 'use client'
 
+import { paidTrialPence } from '@/lib/trial-booking'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -241,6 +242,12 @@ export default function TrialManager({
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
                           {cfg.label}
                         </span>
+                        {/* A paid trial's money never showed anywhere an academy looks, so it read as unpaid (Talent FA, Oct 2026). */}
+                        {paidTrialPence(t.notes) != null && (
+                          <span data-testid="trial-paid" className="ml-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300">
+                            Paid £{(paidTrialPence(t.notes)! / 100).toFixed(2)}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
                         {badge ? (

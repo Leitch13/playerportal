@@ -1,3 +1,4 @@
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
@@ -75,6 +76,20 @@ export async function POST(request: NextRequest) {
     fromName: org?.name || undefined,
     replyTo: org?.contact_email || undefined,
   })
+
+  // Tell the academy. Schedule → Book saves the place straight from the parent's
+  // browser, so this confirmation step is where the academy hears of it (it
+  // did not, until Oct 2026). Best-effort.
+  if (group.organisation_id) {
+    await notifyOrgAdmins({
+      orgId: group.organisation_id as string,
+      type: 'class_booked',
+      title: `New class booking: ${player.first_name}`,
+      body: `${player.first_name} ${player.last_name} was booked into ${group.name}${group.day_of_week ? ` (${group.day_of_week}${group.time_slot ? ' ' + group.time_slot : ''})` : ''} by ${parent.full_name || 'their parent'}.`,
+      link: '/dashboard/enrolments',
+      email: true,
+    })
+  }
 
   // Also create in-app notification
   await supabase.from('notifications').insert({

@@ -143,6 +143,33 @@ export function trialConfirmationEmail(params: {
   }
 }
 
+/** A paid trial: what was booked, when, and what was paid. Sent the moment the payment lands. */
+export function paidTrialConfirmationEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className?: string | null
+  date?: string | null
+  time?: string | null
+  location?: string | null
+  paid?: string | null
+}) {
+  const row = (label: string, value: string | null | undefined) =>
+    value ? `<p style="margin:0 0 8px;font-size:14px;color:#aaa"><strong>${label}:</strong> ${value}</p>` : ''
+  return {
+    subject: `Trial booked and paid — ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">You're booked in</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${params.parentName},</p>
+      <p style="color:#aaa;line-height:1.6">${params.childName}'s trial session at <strong>${params.academyName}</strong> is booked${params.paid ? ` and your payment of <strong>${params.paid}</strong> has gone through` : ''}. There is nothing more to pay for this session.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px 16px 8px;margin:20px 0">
+        ${row('Class', params.className)}${row('Date', params.date)}${row('Time', params.time)}${row('Where', params.location)}${row('Paid', params.paid)}
+      </div>
+      <p style="color:#aaa;line-height:1.6">Just turn up a few minutes early. If you need to change anything, reply to this email and the academy will help.</p>
+    `, undefined, params.academyName),
+  }
+}
+
 export function waitlistOfferEmail(params: {
   parentName: string
   childName: string

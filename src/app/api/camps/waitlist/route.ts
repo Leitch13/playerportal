@@ -1,3 +1,4 @@
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
@@ -70,5 +71,15 @@ export async function POST(request: NextRequest) {
     console.error('[camp-waitlist] insert failed', error.message)
     return NextResponse.json({ error: 'We couldn’t add you just now. Please try again in a moment.' }, { status: 500 })
   }
+  // Tell the academy. A join used to show only as a count on the camp page, which
+  // nobody sees unless they open it. Best-effort: the join already stands.
+  await notifyOrgAdmins({
+    orgId: camp.organisation_id as string,
+    type: 'camp_waitlist_joined',
+    title: 'New camp waiting list request',
+    body: `${v.childName} is on the waiting list for ${String(camp.name || 'a camp')}.`,
+    link: `/dashboard/camps/${v.campId}`,
+    email: true,
+  })
   return NextResponse.json({ ok: true })
 }

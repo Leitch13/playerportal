@@ -1015,6 +1015,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         throw new Error(`migration payments.insert failed: ${migPayErr.message}`)
       }
     }
+    // Tell the academy a parent has confirmed their invite. This branch returned
+    // without a word until Oct 2026. In-app only, no email: an import can bring
+    // dozens of confirmations in one evening. Best-effort.
+    if (migSub?.organisation_id) {
+      const { data: who } = await supabase.from('subscriptions').select('player:players(first_name, last_name)').eq('id', subId).maybeSingle()
+      const kid = (who?.player as unknown as { first_name: string | null; last_name: string | null } | null)
+      const { notifyOrgAdmins } = await import('@/lib/notify-admins')
+      await notifyOrgAdmins({
+        orgId: migSub.organisation_id as string,
+        type: 'invite_confirmed',
+        title: `Membership confirmed: ${kid?.first_name || 'a player'}`,
+        body: `${`${kid?.first_name || ''} ${kid?.last_name || ''}`.trim() || 'A player'}'s parent has confirmed their invite and set up payment.`,
+        link: '/dashboard/payments',
+      })
+    }
     return
   }
 
@@ -1033,7 +1048,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) childAge--
       }
     }
-    const { error: trialBookingErr } = await supabase.from('trial_bookings').insert({
+    // One booking per Stripe payment, however many times Stripe delivers the event.
+    const { data: priorBooking } = await supabase.from('trial_bookings').select('id').ilike('notes', `%(${session.id})%`).limit(1)
+    let trialId: string | null = (priorBooking as { id: string }[] | null)?.[0]?.id ?? null
+    const { data: newBooking, error: trialBookingErr } = trialId ? { data: null, error: null } : await supabase.from('trial_bookings').insert({
       organisation_id: m.supabase_org_id,
       training_group_id: m.supabase_class_id,
       parent_name: m.parent_name || 'Parent',
@@ -1047,8 +1065,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       confirmed_at: new Date().toISOString(),
       terms_accepted_at: m.terms_accepted_at || null,
       terms_version_hash: m.terms_version_hash || null,
-    })
+    }).select('id').single()
     if (trialBookingErr) throw new Error(`trial_bookings.insert failed: ${trialBookingErr.message}`)
+    trialId = trialId || ((newBooking as { id: string } | null)?.id ?? null)
+    // Tell the academy and confirm to the parent. A paid trial did neither until
+    // 10 Oct 2026 (see src/lib/trial-alerts.ts). Neither can fail the webhook:
+    // the money is taken and the booking is saved; canary 17 reports a missed alert.
+    if (trialId) {
+      const { alertAcademyOfTrial, confirmPaidTrialToParent } = await import('@/lib/trial-alerts')
+      const alerted = await alertAcademyOfTrial(supabase, trialId)
+      if (!alerted.ok) console.error('[webhook:paid_trial] academy not alerted', { trialId, ...alerted })
+      if (!alerted.already) {
+        const confirmed = await confirmPaidTrialToParent(supabase, trialId)
+        if (!confirmed) console.error('[webhook:paid_trial] parent confirmation not sent', { trialId })
+      }
+    }
     return
   }
 

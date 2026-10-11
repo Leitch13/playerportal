@@ -5,6 +5,7 @@ import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stri
 import { adminClient, getCoaches, getVenues } from '@/lib/one-to-one/db'
 import { ONE_TO_ONE_MODULE } from '@/lib/one-to-one/checkout'
 import { sendAdhocReceipt } from '@/lib/one-to-one/emails'
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 import { completeSetup, completePayNow } from '@/lib/one-to-one/money'
 
 export const dynamic = 'force-dynamic'
@@ -48,7 +49,21 @@ export async function POST(req: NextRequest) {
         const cs = event.data.object as Stripe.Checkout.Session
         if (cs.metadata?.pp_module !== ONE_TO_ONE_MODULE) break
         // Regulars' money (phase 4): the set-up link and the pay-now link.
-        if (cs.metadata.kind === 'setup') { await completeSetup(admin, cs); break }
+        if (cs.metadata.kind === 'setup') {
+          await completeSetup(admin, cs)
+          // Tell the academy a regular's parent has set up payment. Best-effort.
+          if (cs.metadata.organisation_id) {
+            await notifyOrgAdmins({
+              orgId: cs.metadata.organisation_id,
+              type: 'one_to_one_set_up',
+              title: 'A 1-2-1 regular has set up payment',
+              body: `${cs.customer_details?.name || 'A parent'} has paid their set-up link${cs.amount_total ? ` (£${(cs.amount_total / 100).toFixed(2)})` : ''}. Their place is now paid for.`,
+              link: '/dashboard/one-to-one',
+              email: true,
+            })
+          }
+          break
+        }
         if (cs.metadata.kind === 'paynow') { await completePayNow(admin, cs); break }
         const sessionId = cs.metadata.coaching_session_id
         const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', sessionId).maybeSingle()
@@ -80,6 +95,16 @@ export async function POST(req: NextRequest) {
             venue: venue?.name || 'the venue', venueAddress: venue?.address, pricePence: s.price_pence,
           }).catch((e) => console.error('one-to-one receipt failed', e))
         }
+        // Tell the academy. A 1-2-1 booked and paid online used to reach only the
+        // parent; the academy found it by opening the timetable. Best-effort.
+        await notifyOrgAdmins({
+          orgId: s.organisation_id,
+          type: 'one_to_one_booked',
+          title: `New 1-2-1 booked: ${s.guest_child_name || 'a player'}`,
+          body: `${s.guest_name || 'A parent'} booked and paid £${(Number(s.price_pence || 0) / 100).toFixed(2)} for ${s.session_date} with ${coaches.find((c) => c.id === s.coach_id)?.full_name?.split(' ')[0] || 'a coach'}${venue?.name ? ` at ${venue.name}` : ''}.`,
+          link: '/dashboard/one-to-one',
+          email: true,
+        })
         break
       }
 

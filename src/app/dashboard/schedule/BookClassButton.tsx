@@ -63,6 +63,8 @@ export default function BookClassButton({
           setResult('error')
         }
       } else {
+        // The row is saved from the browser, so the academy is told here (it was silent until Oct 2026).
+        await fetch('/api/waitlist/announce', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId, playerId }) }).catch(() => {})
         setResult('waitlisted')
         router.refresh()
       }

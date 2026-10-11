@@ -29,6 +29,7 @@
  * Reason codes accepted (mapped from UI):
  *   too_expensive | schedule_conflict | child_stopped | switching | other
  */
+import { notifyOrgAdmins } from '@/lib/notify-admins'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -104,6 +105,19 @@ export async function POST(request: NextRequest) {
   // ── 2. Cancellations audit row (class-type). Best-effort: if migration 076
   //       isn't applied yet, retry without the new columns. ──
   const orgId = (enrol as { organisation_id?: string }).organisation_id || null
+  // Tell the academy a place has been given up. Best-effort.
+  if (orgId) {
+    const { data: cls } = await service.from('training_groups').select('name').eq('id', (enrol as { group_id?: string }).group_id || '').maybeSingle()
+    const p = player as { first_name?: string | null; last_name?: string | null }
+    await notifyOrgAdmins({
+      orgId,
+      type: 'class_cancelled',
+      title: `Class place cancelled: ${p.first_name || 'a player'}`,
+      body: `${`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'A player'} was taken out of ${(cls?.name as string | undefined) || 'a class'} by their parent${canonicalReason ? ` (${canonicalReason})` : ''}.`,
+      link: '/dashboard/enrolments',
+      email: true,
+    })
+  }
   const fullInsert = {
     profile_id: user.id,
     organisation_id: orgId,

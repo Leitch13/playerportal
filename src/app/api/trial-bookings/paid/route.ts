@@ -3,6 +3,8 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { sameTrial, TRIAL_ALREADY_BOOKED_MESSAGE } from '@/lib/trial-alerts'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -82,6 +84,27 @@ export async function POST(request: NextRequest) {
         { error: 'This academy is still finishing their setup. Trials can\'t be booked just yet.' },
         { status: 503 }
       )
+    }
+
+    // One paid booking per child, class and date. On 9 Oct 2026 a parent paid
+    // twice for the same Saturday session because nothing told her the first
+    // had worked, and nothing stopped the second. Checked before any Stripe
+    // object exists, so a refusal costs nothing. Service role: a visitor with
+    // no account cannot read trial_bookings.
+    const childName = `${childFirstName || ''} ${childLastName || ''}`.trim()
+    if (sessionDate && childName) {
+      const service = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const { data: sameDay } = await service
+        .from('trial_bookings')
+        .select('training_group_id, preferred_date, parent_email, child_name, status')
+        .eq('training_group_id', groupId)
+        .eq('preferred_date', sessionDate)
+        .neq('status', 'cancelled')
+        .limit(200)
+      const wanted = { training_group_id: groupId, preferred_date: sessionDate, parent_email: parentEmail, child_name: childName }
+      if ((sameDay || []).some((b) => sameTrial(b, wanted))) {
+        return NextResponse.json({ error: TRIAL_ALREADY_BOOKED_MESSAGE, code: 'trial_already_booked' }, { status: 409 })
+      }
     }
 
     // Resolve the platform fee rate from the academy's platform plan
