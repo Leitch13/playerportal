@@ -23,6 +23,10 @@ const FEATURES = [
   ['Enrol: offers the payment link straight after', `${D}/enrolments/EnrolmentForm.tsx`, ['enrol-done', '<RequestPaymentButton']],
   ['Camps: card layout', `${D}/camps/page.tsx`, ['camp-card', 'camps-headline']],
   ['Camps: day register is a day picker and one list', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-register', 'camp-perday-tab', 'function PerDayRegister(']],
+  ['Camps: tap a name on the day register for the child\'s details', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-name', 'camp-perday-details', 'tel:']],
+  ['Camps: tick a child in on the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-tick', '/check-in']],
+  ['Camps: a tick is saved', `${A}/api/admin/camps/[campId]/check-in/route.ts`, ['CHECKED_IN_ACTION', "['admin', 'coach']"]],
+  ['Camps: ticks are read back on the camp page', `${D}/camps/[campId]/page.tsx`, ['checkedInNow(']],
   ['Booking page: tidy layout', `${A}/book/[slug]/TidyClassList.tsx`, ['tidy-class-list']],
   ['Booking page: tidy layout is switched on by the shared rule', `${A}/book/[slug]/page.tsx`, ['isTidyBookingOrg(']],
 

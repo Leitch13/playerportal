@@ -18,6 +18,8 @@ import { requireFeature } from '@/lib/features'
 import AddPlayerToCamp, { type RosterPlayer } from './AddPlayerToCamp'
 import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { checkedInNow, checkinKey, CHECKIN_ACTIONS, type CheckinRow } from '@/lib/camp-checkin'
 import RosterClient, { type CampRosterBooking } from './RosterClient'
 import CampWaitingList, { type WaitingPerson } from './CampWaitingList'
 import { CAMP_WAITLIST_SOURCE, campMarker } from '@/lib/camp-waitlist'
@@ -123,7 +125,7 @@ export default async function CampDetailPage({
     date: string
     label: string
     isAvailable: boolean
-    children: { bookingId: string; childName: string | null }[]
+    children: { bookingId: string; childName: string | null; in: boolean }[]
   }
   const perDayGroups: PerDayGroup[] = []
   if (isFlexibleCamp) {
@@ -194,13 +196,26 @@ export default async function CampDetailPage({
       ? bookings.filter((b) => (b.payment_status === 'pending' || b.payment_status === 'paid') && (b as { booking_mode?: string | null }).booking_mode !== 'flexible_days')
           .map((b) => ({ bookingId: b.id, childName: b.child_name }))
       : []
+    // Who has been ticked in, per child per day (src/lib/camp-checkin.ts). Read with the
+    // service role: this page has already checked the camp belongs to this academy, and a
+    // coach must see the same ticks an admin does.
+    const service = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
+    const { data: tickRows } = await service
+      .from('audit_log')
+      .select('action, entity_id, created_at, details')
+      .eq('organisation_id', orgId)
+      .in('action', CHECKIN_ACTIONS)
+      .contains('details', { camp_id: campId })
+      .order('created_at', { ascending: true })
+      .limit(5000)
+    const tickedIn = checkedInNow((tickRows || []) as CheckinRow[])
     for (const d of dayRows) {
       perDayGroups.push({
         dayId: d.id,
         date: d.date,
         label: fmtDay(d.date),
         isAvailable: d.is_available,
-        children: [...weekChildren, ...(bookingsByDay.get(d.id) || [])],
+        children: [...weekChildren, ...(bookingsByDay.get(d.id) || [])].map((c) => ({ ...c, in: tickedIn.has(checkinKey(c.bookingId, d.id)) })),
       })
     }
   }

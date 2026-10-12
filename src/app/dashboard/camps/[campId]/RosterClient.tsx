@@ -52,7 +52,7 @@ export interface CampPerDayGroup {
   date: string     // ISO YYYY-MM-DD
   label: string    // pre-formatted "Mon 8 Jul"
   isAvailable: boolean
-  children: { bookingId: string; childName: string | null }[]
+  children: { bookingId: string; childName: string | null; in?: boolean }[]
 }
 
 export interface EligibleTargetCamp {
@@ -629,7 +629,7 @@ export default function RosterClient({
           BOOKED a specific day appear on that day's list. When the
           camp is whole-camp, this section is not rendered — the flat
           roster above IS the register. */}
-      {isFlexibleCamp && perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} />}
+      {isFlexibleCamp && perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} bookings={bookings} campId={campId} />}
 
       {/* Move Camp Booking Phase 1 — modal */}
       {moveOpen && (
@@ -826,21 +826,45 @@ function tidyName(name: string | null): string {
 }
 
 /**
- * The day register for a flexible camp: pick a day, read a list.
+ * The day register for a flexible camp: pick a day, tick children in, tap a name for their details.
  *
  * It used to show every day at once, each as a cloud of name tags wrapping at
  * random widths. On a phone with fifteen children a day that was a wall of
- * boxes (No.1 Goalkeeping, Oct 2026). A coach standing at a pitch wants one
- * day, in alphabetical order, one name per line.
+ * boxes (No.1 Goalkeeping, Oct 2026), and a name was only a name: the parent's
+ * number and the medical notes were in a wide table further up the page.
+ *
+ * A coach standing at a pitch wants one day, in alphabetical order, one name
+ * per line, a tick for who has arrived, and the phone number one tap away.
  */
-function PerDayRegister({ groups }: { groups: CampPerDayGroup[] }) {
+function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[]; bookings: CampRosterBooking[]; campId: string }) {
   const today = new Date().toISOString().slice(0, 10)
   const running = groups.filter((g) => g.isAvailable)
   // Open on today if the camp is on today, else the next day it runs, else the first day.
   const first = running.find((g) => g.date === today) || running.find((g) => g.date > today) || running[0] || groups[0]
   const [dayId, setDayId] = useState<string>(first.dayId)
+  const [openId, setOpenId] = useState<string | null>(null)
+  // Ticks start from what the server saved and change the moment they are pressed.
+  const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(groups.flatMap((g) => g.children.map((c) => [`${c.bookingId}:${g.dayId}`, !!c.in]))))
+  const [saving, setSaving] = useState<string | null>(null)
+  const [tickError, setTickError] = useState('')
   const day = groups.find((g) => g.dayId === dayId) || first
-  const names = day.children.map((c) => ({ id: c.bookingId, name: tidyName(c.childName) })).sort((a, b) => a.name.localeCompare(b.name))
+  const byId = new Map(bookings.map((b) => [b.id, b]))
+  const names = day.children.map((c) => ({ id: c.bookingId, name: tidyName(c.childName) })).sort((a, b) => (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0))
+  const inCount = (g: CampPerDayGroup) => g.children.filter((c) => ticks[`${c.bookingId}:${g.dayId}`]).length
+
+  async function toggle(bookingId: string) {
+    const key = `${bookingId}:${day.dayId}`, next = !ticks[key]
+    setTickError(''); setSaving(key); setTicks((t) => ({ ...t, [key]: next }))
+    try {
+      const res = await fetch(`/api/admin/camps/${campId}/check-in`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, dayId: day.dayId, in: next }) })
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'That didn’t save. Please try again.')
+    } catch (e) {
+      setTicks((t) => ({ ...t, [key]: !next }))
+      setTickError(e instanceof Error ? e.message : 'That didn’t save. Please try again.')
+    }
+    setSaving(null)
+  }
+
   return (
     <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0f1a2b]" data-testid="camp-perday-register">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -851,13 +875,14 @@ function PerDayRegister({ groups }: { groups: CampPerDayGroup[] }) {
         {groups.map((g) => {
           const on = g.dayId === day.dayId
           const [dow, ...rest] = g.label.split(' ')
+          const arrived = inCount(g)
           return (
             <button
               key={g.dayId}
               type="button"
               role="tab"
               aria-selected={on}
-              onClick={() => setDayId(g.dayId)}
+              onClick={() => { setDayId(g.dayId); setOpenId(null); setTickError('') }}
               data-testid="camp-perday-tab"
               className={`min-w-[64px] shrink-0 rounded-lg border px-2.5 py-1.5 text-center transition-colors ${
                 on ? 'border-[#4ecde6]/50 bg-[#4ecde6]/[0.12]' : 'border-white/[0.08] hover:bg-white/[0.04]'
@@ -865,29 +890,69 @@ function PerDayRegister({ groups }: { groups: CampPerDayGroup[] }) {
             >
               <span className={`block text-[10px] font-semibold uppercase tracking-wide ${on ? 'text-[#4ecde6]' : 'text-white/45'}`}>{dow}</span>
               <span className="block text-sm font-bold text-white">{rest.join(' ')}</span>
-              <span className="block text-[10px] tabular-nums text-white/50">{g.isAvailable ? g.children.length : 'off'}</span>
+              <span className="block text-[10px] tabular-nums text-white/50">{!g.isAvailable ? 'off' : arrived > 0 ? `${arrived}/${g.children.length} in` : g.children.length}</span>
             </button>
           )
         })}
       </div>
       <div className="px-4 py-3 sm:px-6" data-testid="camp-perday-group">
-        <div className="mb-2 flex items-baseline justify-between gap-3">
+        <div className="mb-1 flex items-baseline justify-between gap-3">
           <span className="text-sm font-semibold text-white">{day.label}</span>
-          <span className="text-xs text-white/50">
-            {!day.isAvailable ? 'Camp not running this day' : `${names.length} attending`}
+          <span className="text-xs text-white/50" data-testid="camp-perday-count">
+            {!day.isAvailable ? 'Camp not running this day' : `${inCount(day)} of ${names.length} in`}
           </span>
         </div>
+        {names.length > 0 && <p className="mb-1 text-[11px] text-white/35">Tap the circle to tick a child in. Tap a name for their details.</p>}
+        {tickError && <p className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300" data-testid="camp-perday-error">{tickError}</p>}
         {names.length === 0 ? (
           <p className="py-2 text-xs text-white/40">{day.isAvailable ? 'No bookings yet for this day.' : 'Nobody can book this day.'}</p>
         ) : (
-          <ol className="grid grid-cols-1 gap-x-8 sm:grid-cols-2" data-testid="camp-perday-list">
-            {names.map((c, i) => (
-              <li key={c.id} className="flex items-baseline gap-3 border-t border-white/[0.05] py-2 first:border-t-0 sm:[&:nth-child(2)]:border-t-0">
-                <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-white/35">{i + 1}</span>
-                <span className="min-w-0 truncate text-sm text-white">{c.name}</span>
-              </li>
-            ))}
-          </ol>
+          <ul data-testid="camp-perday-list">
+            {names.map((c) => {
+              const key = `${c.id}:${day.dayId}`, isIn = !!ticks[key], open = openId === c.id, b = byId.get(c.id)
+              const row = (label: string, value: React.ReactNode) => value ? <div className="flex gap-3 py-1"><dt className="w-20 shrink-0 text-[11px] uppercase tracking-wide text-white/35">{label}</dt><dd className="min-w-0 flex-1 break-words text-[13px] text-white/85">{value}</dd></div> : null
+              return (
+                <li key={c.id} className="border-t border-white/[0.05] first:border-t-0">
+                  <div className="flex items-center gap-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => toggle(c.id)}
+                      disabled={saving === key || !day.isAvailable}
+                      aria-pressed={isIn}
+                      aria-label={isIn ? `${c.name} is ticked in. Tap to untick.` : `Tick ${c.name} in`}
+                      data-testid="camp-perday-tick"
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold transition-colors disabled:opacity-50 ${
+                        isIn ? 'border-emerald-400 bg-emerald-400 text-[#04141a]' : 'border-white/25 text-transparent hover:border-white/50'
+                      }`}
+                    >
+                      ✓
+                    </button>
+                    <button type="button" onClick={() => setOpenId(open ? null : c.id)} aria-expanded={open} data-testid="camp-perday-name" className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left">
+                      <span className="min-w-0">
+                        <span className={`block truncate text-sm ${isIn ? 'text-white' : 'text-white/85'}`}>{c.name}</span>
+                        {b?.medical_info && <span className="block truncate text-[11px] text-amber-300/90">Medical note</span>}
+                      </span>
+                      <span className={`shrink-0 text-xs text-white/35 transition-transform ${open ? 'rotate-90' : ''}`}>›</span>
+                    </button>
+                  </div>
+                  {open && (
+                    <dl className="mb-2.5 ml-10 rounded-lg border border-white/[0.07] bg-[#080e18] px-3 py-2" data-testid="camp-perday-details">
+                      {!b ? <p className="py-1 text-xs text-white/50">No details found for this booking.</p> : <>
+                        {row('Age', b.child_age != null ? String(b.child_age) : null)}
+                        {row('Parent', b.parent_name)}
+                        {row('Phone', b.parent_phone ? <a href={`tel:${b.parent_phone.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6] underline-offset-2 hover:underline">{b.parent_phone}</a> : <span className="text-white/45">None given</span>)}
+                        {row('Email', b.parent_email ? <a href={`mailto:${b.parent_email}`} className="text-[#4ecde6] underline-offset-2 hover:underline">{b.parent_email}</a> : null)}
+                        {row('Medical', b.medical_info ? <span className="text-amber-200">{b.medical_info}</span> : <span className="text-white/45">Nothing noted</span>)}
+                        {row('Photos', b.photo_consent === true ? 'Yes, photos are fine' : b.photo_consent === false ? <span className="text-amber-200">No photos</span> : <span className="text-white/45">Not asked</span>)}
+                        {row('Days', b.selected_day_labels?.length ? b.selected_day_labels.join(', ') : 'Every day')}
+                        {row('Payment', b.payment_status === 'paid' ? `Paid${b.amount_paid ? ` £${Number(b.amount_paid).toFixed(2)}` : ''}` : <span className="text-amber-200">Not paid yet</span>)}
+                      </>}
+                    </dl>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
     </div>
