@@ -27,6 +27,7 @@
 //   * `FLEXIBLE_CAMPS_ENABLED` and the Phase 1 publish lock together
 //     keep this UI unreachable in production until QA + pilot land
 
+import { campDetailsProblem, NOTHING_TO_REPORT } from '@/lib/camp-booking-details'
 import { useMemo, useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
 import { postJson } from '@/lib/post-json'
@@ -108,6 +109,9 @@ export default function CampFlexibleDayPicker({
   const [childName, setChildName] = useState('')
   const [childDob, setChildDob] = useState('')
   const [medicalInfo, setMedicalInfo] = useState('')
+  // Ticked when there is nothing medical to tell us. Either this or some text is needed.
+  const [medicalNone, setMedicalNone] = useState(false)
+  const medicalAnswer = medicalNone ? NOTHING_TO_REPORT : medicalInfo
   const [consentGiven, setConsentGiven] = useState(false)
   // Photo & video consent (migration 111). '' = unanswered (blocks submit),
   // 'yes' / 'no' are sent as a boolean. Never defaulted.
@@ -214,12 +218,15 @@ export default function CampFlexibleDayPicker({
 
   const hasAvailable = orderedDays.some((d) => !isEffectivelyUnavailable(d))
 
+  const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo: medicalAnswer, collectMedical: collectMedicalInfo })
   const requiredFieldsComplete =
     parentName.trim() !== '' &&
     parentEmail.trim() !== '' &&
     childName.trim() !== '' &&
     (!requireConsent || consentGiven) &&
-    photoConsent !== ''
+    photoConsent !== '' &&
+    // Date of birth, phone and the medical answer (src/lib/camp-booking-details.ts).
+    detailsProblem === null
 
   const canContinue =
     !loading &&
@@ -265,7 +272,7 @@ export default function CampFlexibleDayPicker({
         parentPhone,
         childName,
         childDob,
-        medicalInfo,
+        medicalInfo: medicalAnswer,
         consentGiven,
         photoConsent: photoConsent === 'yes',
         siblingDiscount,
@@ -482,7 +489,9 @@ export default function CampFlexibleDayPicker({
           type="tel"
           value={parentPhone}
           onChange={(e) => setParentPhone(e.target.value)}
-          placeholder="Phone (optional)"
+          placeholder="Phone number *"
+          required
+          data-testid="camp-phone"
           autoComplete="tel"
           inputMode="tel"
           className={inputCls}
@@ -495,21 +504,37 @@ export default function CampFlexibleDayPicker({
           required
           className={inputCls}
         />
-        <input
-          type="date"
-          value={childDob}
-          onChange={(e) => setChildDob(e.target.value)}
-          placeholder="Child's date of birth (optional)"
-          className={inputCls}
-        />
-        {collectMedicalInfo && (
-          <textarea
-            value={medicalInfo}
-            onChange={(e) => setMedicalInfo(e.target.value)}
-            placeholder="Any medical or allergy information we should know"
-            rows={3}
-            className={inputCls}
+        <div>
+          <label htmlFor="flex-camp-dob" className="mb-1 block text-xs text-white/50">Child&apos;s date of birth *</label>
+          <input
+            id="flex-camp-dob"
+            type="date"
+            value={childDob}
+            onChange={(e) => setChildDob(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            required
+            data-testid="camp-dob"
+            className={`${inputCls} [color-scheme:dark]`}
           />
+        </div>
+        {collectMedicalInfo && (
+          <div>
+            <label htmlFor="flex-camp-medical" className="mb-1 block text-xs text-white/50">Medical or allergy information *</label>
+            <textarea
+              id="flex-camp-medical"
+              value={medicalNone ? '' : medicalInfo}
+              onChange={(e) => setMedicalInfo(e.target.value)}
+              disabled={medicalNone}
+              placeholder="Any allergies, medical conditions or medication we should know about"
+              rows={3}
+              data-testid="camp-medical"
+              className={`${inputCls}${medicalNone ? ' opacity-50' : ''}`}
+            />
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-white/80">
+              <input type="checkbox" checked={medicalNone} onChange={(e) => setMedicalNone(e.target.checked)} data-testid="camp-medical-none" className="h-4 w-4" />
+              {NOTHING_TO_REPORT}
+            </label>
+          </div>
         )}
         {siblingDiscountEnabled && siblingDiscountPercent ? (
           <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer">

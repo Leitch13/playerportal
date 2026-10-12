@@ -20,6 +20,7 @@
 //     booking to 'paid' and send a whole-camp-shaped email. Emails +
 //     day-aware payments-row description arrive in Phase 3C.
 
+import { campDetailsProblem } from '@/lib/camp-booking-details'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -162,6 +163,14 @@ export async function POST(request: NextRequest) {
     }
     if (camp.organisation_id !== organisationId) {
       return NextResponse.json({ error: 'Organisation mismatch.' }, { status: 400 })
+    }
+    // A booking must say who the child is and how to reach the parent: date of
+    // birth, a phone number, and an answer to the medical question when the
+    // camp asks it. Same rule as the form (src/lib/camp-booking-details.ts),
+    // checked here so it cannot be skipped. Before anything is saved or charged.
+    const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo, collectMedical: camp.collect_medical_info === true })
+    if (detailsProblem) {
+      return NextResponse.json({ error: detailsProblem, code: 'camp_details_missing' }, { status: 400 })
     }
     // NOTE: flexible-days camps are booked per-day, so we do NOT block the
     // whole camp once its overall start_date has passed — a camp mid-run can

@@ -44,6 +44,13 @@ const FEATURES = [
   ['Sign-up: sibling discount counts a child who signed up this month', `${A}/api/stripe/subscribe/route.ts`, ['SIBLING_QUALIFYING_STATUSES']],
   ['Sign-up: sibling rule', 'src/lib/billing/sibling.ts', ["'trialing'", "'active'"]],
 
+  // ── a camp booking must give a date of birth, a phone number and a medical answer (12 Oct 2026)
+  ['Camp booking: the rule', 'src/lib/camp-booking-details.ts', ['export function campDetailsProblem', 'NOTHING_TO_REPORT', 'export function validChildDob']],
+  ['Camp booking: whole-camp form asks for them', `${A}/book/[slug]/camps/[campId]/CampBookingForm.tsx`, ['campDetailsProblem(', 'data-testid="camp-dob"', 'data-testid="camp-phone"', 'data-testid="camp-medical-none"']],
+  ['Camp booking: by-the-day form asks for them', `${A}/book/[slug]/camps/[campId]/CampFlexibleDayPicker.tsx`, ['campDetailsProblem(', 'data-testid="camp-dob"', 'data-testid="camp-phone"', 'data-testid="camp-medical-none"']],
+  ['Camp booking: the whole-camp route refuses a booking without them', `${A}/api/stripe/camp-checkout/route.ts`, ['campDetailsProblem(', "'camp_details_missing'"]],
+  ['Camp booking: the by-the-day route refuses a booking without them', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['campDetailsProblem(', "'camp_details_missing'"]],
+
   // ── released 12 Oct 2026
   ['Dashboard: the calm academy home', 'src/components/CommandCentre.tsx', ['data-testid="calm-dashboard"', 'data-testid="dash-todo"', 'data-testid="dash-figures"']],
   ['Request payment: the academy must choose when the parent starts paying', `${D}/players/[id]/RequestPaymentButton.tsx`, ["useState<'today' | 'next_month' | null>(null)", 'Choose when they start paying.', '!firstBilling']],

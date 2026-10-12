@@ -1,3 +1,4 @@
+import { campDetailsProblem } from '@/lib/camp-booking-details'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -76,6 +77,14 @@ export async function POST(request: NextRequest) {
     // set, is the "all days" price the day checkout applies — never a week place.
     if (camp.booking_mode === 'flexible_days') {
       return NextResponse.json({ error: 'This camp is booked by the day. Pick your days on the camp page.' }, { status: 400 })
+    }
+    // A booking must say who the child is and how to reach the parent: date of
+    // birth, a phone number, and an answer to the medical question when the
+    // camp asks it. Same rule as the form (src/lib/camp-booking-details.ts),
+    // checked here so it cannot be skipped. Before anything is saved or charged.
+    const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo, collectMedical: camp.collect_medical_info === true })
+    if (detailsProblem) {
+      return NextResponse.json({ error: detailsProblem, code: 'camp_details_missing' }, { status: 400 })
     }
     if (camp.is_published === false) {
       return NextResponse.json({ error: 'This camp isn’t open for bookings.' }, { status: 404 })

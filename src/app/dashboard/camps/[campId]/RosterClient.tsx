@@ -19,6 +19,7 @@
  */
 'use client'
 
+import { hasMedicalNote } from '@/lib/camp-booking-details'
 import { useState, useMemo } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
@@ -930,7 +931,7 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
                     <button type="button" onClick={() => setOpenId(open ? null : c.id)} aria-expanded={open} data-testid="camp-perday-name" className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left">
                       <span className="min-w-0">
                         <span className={`block truncate text-sm ${isIn ? 'text-white' : 'text-white/85'}`}>{c.name}</span>
-                        {b?.medical_info && <span className="block truncate text-[11px] text-amber-300/90">Medical note</span>}
+                        {hasMedicalNote(b?.medical_info) && <span className="block truncate text-[11px] text-amber-300/90">Medical note</span>}
                       </span>
                       <span className={`shrink-0 text-xs text-white/35 transition-transform ${open ? 'rotate-90' : ''}`}>›</span>
                     </button>
@@ -942,7 +943,7 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
                         {row('Parent', b.parent_name)}
                         {row('Phone', b.parent_phone ? <a href={`tel:${b.parent_phone.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6] underline-offset-2 hover:underline">{b.parent_phone}</a> : <span className="text-white/45">None given</span>)}
                         {row('Email', b.parent_email ? <a href={`mailto:${b.parent_email}`} className="text-[#4ecde6] underline-offset-2 hover:underline">{b.parent_email}</a> : null)}
-                        {row('Medical', b.medical_info ? <span className="text-amber-200">{b.medical_info}</span> : <span className="text-white/45">Nothing noted</span>)}
+                        {row('Medical', hasMedicalNote(b.medical_info) ? <span className="text-amber-200">{b.medical_info}</span> : b.medical_info ? b.medical_info : <span className="text-amber-200/80">Not answered</span>)}
                         {row('Photos', b.photo_consent === true ? 'Yes, photos are fine' : b.photo_consent === false ? <span className="text-amber-200">No photos</span> : <span className="text-white/45">Not asked</span>)}
                         {row('Days', b.selected_day_labels?.length ? b.selected_day_labels.join(', ') : 'Every day')}
                         {row('Payment', b.payment_status === 'paid' ? `Paid${b.amount_paid ? ` £${Number(b.amount_paid).toFixed(2)}` : ''}` : <span className="text-amber-200">Not paid yet</span>)}

@@ -1,5 +1,6 @@
 'use client'
 
+import { campDetailsProblem, NOTHING_TO_REPORT } from '@/lib/camp-booking-details'
 import CampWaitlistForm from './CampWaitlistForm'
 import { useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
@@ -73,6 +74,8 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
   const [childName, setChildName] = useState('')
   const [childDob, setChildDob] = useState('')
   const [medicalInfo, setMedicalInfo] = useState('')
+  // Ticked when there is nothing medical to tell us. Either this or some text is needed.
+  const [medicalNone, setMedicalNone] = useState(false)
   const [consentGiven, setConsentGiven] = useState(false)
   // Photo & video consent (migration 111). '' = unanswered (blocks submit),
   // 'yes' / 'no' are sent as a boolean. Never defaulted.
@@ -144,12 +147,22 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
     }
   }
 
+  const medicalAnswer = medicalNone ? NOTHING_TO_REPORT : medicalInfo
+  // A saved child with no date of birth on record must be able to add one here.
+  const savedChildDob = existingChildren.find((k) => k.id === selectedChildId)?.dob || ''
+  const dobLocked = !!selectedChildId && !!savedChildDob
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isFull) return
 
     if (camp.require_consent && !consentGiven) {
       setError('You must accept the terms and consent to proceed.')
+      return
+    }
+    const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo: medicalAnswer, collectMedical: camp.collect_medical_info })
+    if (detailsProblem) {
+      setError(detailsProblem)
       return
     }
     if (!photoConsent) {
@@ -169,7 +182,7 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
         parentPhone,
         childName,
         childDob,
-        medicalInfo,
+        medicalInfo: medicalAnswer,
         consentGiven,
         photoConsent: photoConsent === 'yes',
         siblingDiscount,
@@ -320,9 +333,13 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
           />
           <input
             type="tel"
-            placeholder="Phone number"
+            placeholder="Phone number *"
             value={parentPhone}
             onChange={(e) => setParentPhone(e.target.value)}
+            required
+            autoComplete="tel"
+            inputMode="tel"
+            data-testid="camp-phone"
             className={inputCls}
           />
         </div>
@@ -360,28 +377,38 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
             className={`${inputCls}${selectedChildId ? ' opacity-70' : ''}`}
           />
           <div>
-            <label className="block text-[11px] text-white/40 mb-1">Date of birth</label>
+            <label htmlFor="camp-dob" className="block text-[11px] text-white/40 mb-1">Date of birth *</label>
             <input
+              id="camp-dob"
               type="date"
               value={childDob}
               onChange={(e) => setChildDob(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
-              readOnly={!!selectedChildId}
-              className={`${inputCls} [color-scheme:dark]${selectedChildId ? ' opacity-70' : ''}`}
+              required
+              readOnly={dobLocked}
+              data-testid="camp-dob"
+              className={`${inputCls} [color-scheme:dark]${dobLocked ? ' opacity-70' : ''}`}
             />
           </div>
         </div>
 
         {camp.collect_medical_info && (
           <div>
-            <label className="block text-xs text-white/40 mb-1">Medical / Allergy Information</label>
+            <label htmlFor="camp-medical" className="block text-xs text-white/40 mb-1">Medical / Allergy Information *</label>
             <textarea
+              id="camp-medical"
               placeholder="Please list any allergies, medical conditions, or medications..."
-              value={medicalInfo}
+              value={medicalNone ? '' : medicalInfo}
               onChange={(e) => setMedicalInfo(e.target.value)}
+              disabled={medicalNone}
               rows={3}
-              className={inputCls}
+              data-testid="camp-medical"
+              className={`${inputCls}${medicalNone ? ' opacity-50' : ''}`}
             />
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-white/70">
+              <input type="checkbox" checked={medicalNone} onChange={(e) => setMedicalNone(e.target.checked)} data-testid="camp-medical-none" className="h-4 w-4" />
+              {NOTHING_TO_REPORT}
+            </label>
           </div>
         )}
       </fieldset>
