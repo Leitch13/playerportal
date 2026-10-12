@@ -65,12 +65,13 @@ export default function ChildEditor({ child }: { child: ChildData }) {
 
   if (!open) {
     return (
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => setOpen(true)}
-          className="text-xs text-accent hover:underline font-medium"
+          data-testid="child-edit"
+          className="rounded-xl border border-white/[0.14] px-4 py-2 text-xs font-bold text-white/85 transition hover:border-white/30 hover:text-white"
         >
-          Edit Details
+          Edit details
         </button>
         {success && (
           <span className="text-xs text-accent">{success}</span>
@@ -82,7 +83,7 @@ export default function ChildEditor({ child }: { child: ChildData }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-3 pt-3 border-t border-[#1d2c42] space-y-3"
+      className="space-y-3"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>

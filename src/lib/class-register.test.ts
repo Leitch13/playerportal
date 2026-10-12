@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nextMark, ageOn, weekdayOf, latestClassDate, countMarks, registerCsv } from './class-register'
+import { nextMark, ageOn, weekdayOf, latestClassDate, nextClassDate, countMarks, registerCsv } from './class-register'
 
 describe('marking a child', () => {
   it('goes not marked → here → away → not marked', () => {
@@ -32,4 +32,10 @@ describe('exporting a register', () => {
   it('quotes every cell and doubles any quote inside one', () => {
     expect(registerCsv([['Name', 'Medical'], ['Ava "Sparky" Reid', 'Nut allergy, EpiPen']])).toBe('"Name","Medical"\r\n"Ava ""Sparky"" Reid","Nut allergy, EpiPen"')
   })
+})
+
+describe('when a child is next in', () => {
+  it('is today when the class runs today', () => { expect(nextClassDate('2026-10-13', 'Tuesday')).toBe('2026-10-13') })
+  it('is the coming class day otherwise', () => { expect(nextClassDate('2026-10-12', 'Tuesday')).toBe('2026-10-13'); expect(nextClassDate('2026-10-14', 'Tuesday')).toBe('2026-10-20') })
+  it('is unknown when the class has no set day', () => { expect(nextClassDate('2026-10-12', null)).toBeNull() })
 })

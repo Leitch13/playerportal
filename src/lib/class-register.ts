@@ -38,6 +38,15 @@ export function latestClassDate(today: string, classDay: string | null | undefin
   return d.toISOString().slice(0, 10)
 }
 
+/** The next date on or after `today` that falls on the class's day. Null when the class has no set day. */
+export function nextClassDate(today: string, classDay: string | null | undefined): string | null {
+  const want = DAYS.indexOf(classDay || '')
+  if (want < 0) return null
+  const d = new Date(today + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + ((want - d.getUTCDay() + 7) % 7))
+  return d.toISOString().slice(0, 10)
+}
+
 export function countMarks(ids: string[], marks: Record<string, Mark | undefined>): { present: number; absent: number; unmarked: number } {
   let present = 0, absent = 0
   for (const id of ids) { if (marks[id] === 'present') present++; else if (marks[id] === 'absent') absent++ }

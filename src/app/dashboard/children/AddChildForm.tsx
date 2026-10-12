@@ -86,9 +86,10 @@ export default function AddChildForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+        data-testid="add-child"
+        className="w-full rounded-2xl border border-dashed border-[#293b58] px-4 py-3.5 text-sm font-semibold text-white/75 transition-colors hover:border-[#4ecde6]/50 hover:text-white sm:w-auto"
       >
-        + Add Child
+        + Add a child
       </button>
     )
   }

@@ -47,6 +47,10 @@ const FEATURES = [
   ['Sign-up: sibling discount counts a child who signed up this month', `${A}/api/stripe/subscribe/route.ts`, ['SIBLING_QUALIFYING_STATUSES']],
   ['Sign-up: sibling rule', 'src/lib/billing/sibling.ts', ["'trialing'", "'active'"]],
 
+  // ── parents: My Children (Oct 2026)
+  ['My Children: a card per child with age, membership, classes and details for the coach', `${D}/children/page.tsx`, ['data-testid="child-card"', 'data-testid="child-membership"', 'data-testid="child-stats"', 'data-testid="child-next"', 'data-testid="child-missing"', 'ageOn(', 'nextClassDate(', "'en-GB'"]],
+  ['My Children: add and edit are still there', `${D}/children/page.tsx`, ['<AddChildForm', '<ChildEditor', '<PhotoUpload']],
+
   // ── the class register (Oct 2026): one list to run a session from
   ['Class register: on the class page', `${D}/groups/[id]/page.tsx`, ['<ClassRegister', 'membershipPill(', 'latestClassDate(']],
   ['Class register: mark here or away, age, flags, details, sort, export', `${D}/groups/[id]/ClassRegister.tsx`, ['data-testid="register-mark"', 'data-testid="register-details"', 'data-testid="register-age"', '<SortBar', 'register-all-here', 'register-export', "onConflict: 'player_id,group_id,session_date'", 'tel:']],
