@@ -24,6 +24,8 @@ const FEATURES = [
   ['Camps: card layout', `${D}/camps/page.tsx`, ['camp-card', 'camps-headline']],
   ['Camps: day register is a day picker and one list', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-register', 'camp-perday-tab', 'function PerDayRegister(']],
   ['Camps: tap a name on the day register for the child\'s details', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-name', 'camp-perday-details', 'tel:']],
+  ['Camps: sort by name or age and show one age, on the bookings table and the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['function SortBar(', 'camp-roster-sort', 'camp-perday-sort', 'sortRoster(', 'onlyAge(']],
+  ['Camps: the sort rule', 'src/lib/roster-sort.ts', ['export function sortRoster', 'export function agesPresent']],
   ['Camps: tick a child in on the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-tick', '/check-in']],
   ['Camps: a tick is saved', `${A}/api/admin/camps/[campId]/check-in/route.ts`, ['CHECKED_IN_ACTION', "['admin', 'coach']"]],
   ['Camps: ticks are read back on the camp page', `${D}/camps/[campId]/page.tsx`, ['checkedInNow(']],

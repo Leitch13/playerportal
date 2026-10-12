@@ -20,6 +20,7 @@
 'use client'
 
 import { hasMedicalNote } from '@/lib/camp-booking-details'
+import { sortRoster, agesPresent, onlyAge, ROSTER_SORT_LABEL, type RosterSort } from '@/lib/roster-sort'
 import { useState, useMemo } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
@@ -91,6 +92,9 @@ export default function RosterClient({
   perDayGroups?: CampPerDayGroup[]
 }) {
   const [search, setSearch] = useState('')
+  // Order and age filter for the bookings table. 'booked' is the order they came in.
+  const [sort, setSort] = useState<RosterSort>('booked')
+  const [ageOnly, setAgeOnly] = useState<number | 'all'>('all')
   const [resendingId, setResendingId] = useState<string | null>(null)
   const [resentMap, setResentMap] = useState<Record<string, 'ok' | 'fail'>>({})
 
@@ -152,8 +156,7 @@ export default function RosterClient({
   // ─── Filtered view ───
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return bookings
-    return bookings.filter((b) => {
+    const found = !q ? bookings : bookings.filter((b) => {
       const hay = [
         b.child_name || '',
         b.parent_name || '',
@@ -162,7 +165,9 @@ export default function RosterClient({
       ].join(' ').toLowerCase()
       return hay.includes(q)
     })
-  }, [search, bookings])
+    return sortRoster(onlyAge(found, ageOnly, (b) => b.child_age), sort, (b) => b.child_name, (b) => b.child_age)
+  }, [search, bookings, sort, ageOnly])
+  const tableAges = useMemo(() => agesPresent(bookings, (b) => b.child_age), [bookings])
 
   // ─── Send-to-all deep-link ───
   // Re-uses the Messages page's existing `?recipients=<csv>` contract
@@ -300,6 +305,7 @@ export default function RosterClient({
             />
           </div>
         </div>
+        <SortBar sort={sort} onSort={setSort} ages={tableAges} age={ageOnly} onAge={setAgeOnly} options={['booked', 'name', 'youngest', 'oldest']} testid="camp-roster-sort" />
 
         <div className="flex items-center gap-2 flex-wrap">
           {sendToAllHref ? (
@@ -844,13 +850,19 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
   const first = running.find((g) => g.date === today) || running.find((g) => g.date > today) || running[0] || groups[0]
   const [dayId, setDayId] = useState<string>(first.dayId)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [sort, setSort] = useState<RosterSort>('name')
+  const [ageOnly, setAgeOnly] = useState<number | 'all'>('all')
   // Ticks start from what the server saved and change the moment they are pressed.
   const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(groups.flatMap((g) => g.children.map((c) => [`${c.bookingId}:${g.dayId}`, !!c.in]))))
   const [saving, setSaving] = useState<string | null>(null)
   const [tickError, setTickError] = useState('')
   const day = groups.find((g) => g.dayId === dayId) || first
   const byId = new Map(bookings.map((b) => [b.id, b]))
-  const names = day.children.map((c) => ({ id: c.bookingId, name: tidyName(c.childName) })).sort((a, b) => (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0))
+  const everyone = day.children.map((c) => ({ id: c.bookingId, name: tidyName(c.childName), age: byId.get(c.bookingId)?.child_age ?? null }))
+  const dayAges = agesPresent(everyone, (c) => c.age)
+  // An age that isn't on this day falls back to everyone, so switching day never shows an empty list by surprise.
+  const ageShown = ageOnly !== 'all' && dayAges.some((a) => a.age === ageOnly) ? ageOnly : 'all'
+  const names = sortRoster(onlyAge(everyone, ageShown, (c) => c.age), sort, (c) => c.name, (c) => c.age)
   const inCount = (g: CampPerDayGroup) => g.children.filter((c) => ticks[`${c.bookingId}:${g.dayId}`]).length
 
   async function toggle(bookingId: string) {
@@ -900,10 +912,11 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
         <div className="mb-1 flex items-baseline justify-between gap-3">
           <span className="text-sm font-semibold text-white">{day.label}</span>
           <span className="text-xs text-white/50" data-testid="camp-perday-count">
-            {!day.isAvailable ? 'Camp not running this day' : `${inCount(day)} of ${names.length} in`}
+            {!day.isAvailable ? 'Camp not running this day' : `${inCount(day)} of ${everyone.length} in`}
           </span>
         </div>
-        {names.length > 0 && <p className="mb-1 text-[11px] text-white/35">Tap the circle to tick a child in. Tap a name for their details.</p>}
+        {everyone.length > 0 && <div className="mb-2"><SortBar sort={sort} onSort={setSort} ages={dayAges} age={ageShown} onAge={setAgeOnly} options={['name', 'youngest', 'oldest']} testid="camp-perday-sort" /></div>}
+        {everyone.length > 0 && <p className="mb-1 text-[11px] text-white/35">Tap the circle to tick a child in. Tap a name for their details.</p>}
         {tickError && <p className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300" data-testid="camp-perday-error">{tickError}</p>}
         {names.length === 0 ? (
           <p className="py-2 text-xs text-white/40">{day.isAvailable ? 'No bookings yet for this day.' : 'Nobody can book this day.'}</p>
@@ -933,7 +946,10 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
                         <span className={`block truncate text-sm ${isIn ? 'text-white' : 'text-white/85'}`}>{c.name}</span>
                         {hasMedicalNote(b?.medical_info) && <span className="block truncate text-[11px] text-amber-300/90">Medical note</span>}
                       </span>
-                      <span className={`shrink-0 text-xs text-white/35 transition-transform ${open ? 'rotate-90' : ''}`}>›</span>
+                      <span className="flex shrink-0 items-center gap-2">
+                        {c.age != null && <span className="text-xs tabular-nums text-white/45" data-testid="camp-perday-age">{c.age}</span>}
+                        <span className={`text-xs text-white/35 transition-transform ${open ? 'rotate-90' : ''}`}>›</span>
+                      </span>
                     </button>
                   </div>
                   {open && (
@@ -956,6 +972,33 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
           </ul>
         )}
       </div>
+    </div>
+  )
+}
+
+/** Order a list of children by name or age, and narrow it to one age. Used above the bookings table and the day register. */
+function SortBar({ sort, onSort, ages, age, onAge, options, testid }: {
+  sort: RosterSort; onSort: (s: RosterSort) => void
+  ages: { age: number; count: number }[]; age: number | 'all'; onAge: (a: number | 'all') => void
+  options: RosterSort[]; testid: string
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2" data-testid={testid}>
+      <div className="inline-flex overflow-hidden rounded-lg border border-[#1d2c42] bg-[#080e18] text-xs" role="group" aria-label="Sort by">
+        {options.map((o) => (
+          <button key={o} type="button" onClick={() => onSort(o)} aria-pressed={sort === o} data-sort={o}
+            className={`px-2.5 py-1.5 font-semibold transition-colors ${sort === o ? 'bg-[#4ecde6]/[0.14] text-[#4ecde6]' : 'text-white/55 hover:text-white'}`}>
+            {ROSTER_SORT_LABEL[o]}
+          </button>
+        ))}
+      </div>
+      {ages.length > 1 && (
+        <select value={String(age)} onChange={(e) => onAge(e.target.value === 'all' ? 'all' : Number(e.target.value))} aria-label="Show one age" data-testid={`${testid}-age`}
+          className="rounded-lg border border-[#1d2c42] bg-[#080e18] px-2 py-1.5 text-xs text-white/80 focus:border-[#4ecde6]/50 focus:outline-none">
+          <option value="all">All ages</option>
+          {ages.map((a) => <option key={a.age} value={a.age}>Age {a.age} ({a.count})</option>)}
+        </select>
+      )}
     </div>
   )
 }
