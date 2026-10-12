@@ -46,6 +46,13 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
     cover: 'bg-[#e0736d]/[0.15] text-[#fbd9d6] ring-1 ring-inset ring-[#e0736d]/45',
     held: 'bg-white/[0.04] text-white/60 border border-dashed border-white/20',
   }
+  // The small label on a phone row: the same four colours as the grid, at a whisper.
+  const chip: Record<string, string> = {
+    regular: 'bg-[#4ecde6]/[0.12] text-[#9fe3f1]',
+    adhoc: 'bg-[#d8a95a]/[0.16] text-[#f0d6a6]',
+    cover: 'bg-[#e0736d]/[0.18] text-[#fbd9d6]',
+    held: 'bg-white/[0.06] text-white/60',
+  }
   const sub = (s: SessionRowDb, k: string) => k === 'cover' ? 'cover needed' : k === 'held' ? 'paying now' : k === 'adhoc' ? `one-off${s.charge_state === 'paid_online' ? ' · paid' : ''}` : s.session_type === 'two_to_one' ? '2-to-1' : 'regular'
   const done = (s: SessionRowDb) => s.status === 'attended' ? ' ✓' : s.status === 'no_show' ? ' · no show' : ''
   const qs = (f: string, c?: string | null) => `/dashboard/one-to-one/timetable?from=${f}${c ? `&coach=${c}` : ''}`
@@ -81,7 +88,7 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex items-center rounded-xl border border-[#293b58] bg-[#0f1a2b]">
+        <div className="flex w-full items-center justify-between rounded-xl border border-[#293b58] bg-[#0f1a2b] sm:inline-flex sm:w-auto">
           <Link href={qs(addDays(start, -7), coachFilter)} aria-label="Previous week" className="px-3 py-2 text-sm text-white/70 hover:text-white">‹</Link>
           <span className="border-x border-[#1d2c42] px-3 py-2 text-sm font-semibold text-white tabular-nums">{fmtDate(start).replace(/^\w+ /, '')} – {fmtDate(end).replace(/^\w+ /, '')}</span>
           <Link href={qs(addDays(start, 7), coachFilter)} aria-label="Next week" className="px-3 py-2 text-sm text-white/70 hover:text-white">›</Link>
@@ -89,7 +96,7 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
         {start !== addDays(today, -(isoWeekday(today) - 1)) && <Link href="/dashboard/one-to-one/timetable" className="rounded-xl border border-[#293b58] px-3 py-2 text-xs text-white/70 hover:text-white">This week</Link>}
         <span className="text-xs text-[#93a2ba]">{weekBooked} booked · {free.length} free</span>
         {coaches.length > 1 && (
-          <div className="ml-auto inline-flex max-w-full overflow-x-auto rounded-xl border border-[#293b58] bg-[#0f1a2b] p-0.5 text-xs">
+          <div className="flex w-full overflow-x-auto rounded-xl border border-[#293b58] bg-[#0f1a2b] p-0.5 text-xs sm:ml-auto sm:inline-flex sm:w-auto sm:max-w-full">
             <Link href={qs(start)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 ${!coachFilter ? 'bg-white/[0.1] font-semibold text-white' : 'text-[#93a2ba] hover:text-white'}`}>All coaches</Link>
             {coaches.map((c) => (
               <Link key={c.id} href={qs(start, c.id)} className={`whitespace-nowrap rounded-lg px-3 py-1.5 ${coachFilter === c.id ? 'bg-white/[0.1] font-semibold text-white' : 'text-[#93a2ba] hover:text-white'}`}>{cname(c.id)}</Link>
@@ -98,7 +105,7 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
         )}
       </div>
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#93a2ba]">
+      <div className="hidden flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#93a2ba] md:flex">
         <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px] bg-[#4ecde6]/70 align-[-1px]" />Regular, their slot</span>
         <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px] bg-[#d8a95a]/80 align-[-1px]" />One-off booking</span>
         <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-[3px] bg-[#e0736d]/80 align-[-1px]" />Cover needed</span>
@@ -164,36 +171,43 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
             </table>
           </div>
 
-          {/* ── Phone: the week as an agenda ── */}
-          <div className="space-y-3 md:hidden">
+          {/* ── Phone: the week as an agenda. One quiet list per day: time, who, coach and venue,
+              and a small label for what it is. Tap a row for its actions. ── */}
+          <div className="space-y-2.5 md:hidden" data-testid="timetable-agenda">
             {days.map((d) => {
               const dayLive = live.filter((s) => s.session_date === d).sort((a, b) => a.start_minutes - b.start_minutes)
               const dayFree = [...new Set(free.filter((f) => f.date === d).map((f) => f.startMinutes))].sort((a, b) => a - b)
               if (!dayLive.length && !dayFree.length) return null
+              const booked = dayLive.filter((s) => s.status !== 'held').length
               return (
-                <section key={d} className={`rounded-2xl border bg-[#0f1a2b] p-4 ${d === today ? 'border-[#4ecde6]/35' : 'border-[#1d2c42]'}`}>
-                  <div className="flex items-baseline justify-between">
+                <section key={d} className={`overflow-hidden rounded-2xl border bg-[#0f1a2b] ${d === today ? 'border-[#4ecde6]/40' : 'border-[#1d2c42]'} ${d < today ? 'opacity-75' : ''}`}>
+                  <div className="flex items-baseline justify-between gap-3 px-4 pb-2 pt-3">
                     <h3 className={`text-sm font-semibold ${d === today ? 'text-[#4ecde6]' : 'text-white'}`}>{d === today ? 'Today · ' : ''}{fmtDate(d)}</h3>
-                    <span className="text-[11px] text-[#5b6c86]">{dayLive.filter((s) => s.status !== 'held').length} booked · {dayFree.length} free</span>
+                    <span className="shrink-0 text-[11px] text-[#5b6c86]">{booked} booked{dayFree.length ? ` · ${dayFree.length} free` : ''}</span>
                   </div>
                   {dayLive.length > 0 && (
-                    <div className="mt-2 grid gap-1.5">
+                    <ul className="divide-y divide-white/[0.06] border-t border-white/[0.06]">
                       {dayLive.map((s) => { const k = kindOf(s, d); return (
-                        <details key={s.id} className={`rounded-xl px-3 py-2 ${tone[k]}`}>
-                          <summary className="flex cursor-pointer list-none items-center gap-3">
-                            <span className="w-11 shrink-0 text-sm font-semibold tabular-nums">{hhmm(s.start_minutes)}</span>
-                            <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{who(s)}{done(s)}</span><span className="block truncate text-[11px] opacity-70">{cname(s.coach_id)} · {vname(s.venue_id)} · {sub(s, k)}</span></span>
-                          </summary>
-                          <Actions s={s} d={d} />
-                        </details>
+                        <li key={s.id}>
+                          <details>
+                            <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-2.5">
+                              <span className="w-11 shrink-0 text-[13px] font-semibold tabular-nums text-white">{hhmm(s.start_minutes)}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-semibold text-white">{who(s)}{done(s)}</span>
+                                <span className="block truncate text-[11px] text-[#93a2ba]">{cname(s.coach_id)} · {vname(s.venue_id)}</span>
+                              </span>
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${chip[k]}`}>{sub(s, k)}</span>
+                            </summary>
+                            <div className="px-4 pb-3"><Actions s={s} d={d} /></div>
+                          </details>
+                        </li>
                       ) })}
-                    </div>
+                    </ul>
                   )}
                   {dayFree.length > 0 && (
-                    <div className="mt-2.5 flex flex-wrap items-center gap-1">
-                      <span className="mr-1 text-[10px] uppercase tracking-wide text-[#5b6c86]">Free</span>
-                      {dayFree.map((m) => <span key={m} className="rounded-md border border-dashed border-white/[0.14] px-1.5 py-0.5 text-[11px] tabular-nums text-[#93a2ba]">{hhmm(m)}</span>)}
-                    </div>
+                    <p className="truncate border-t border-white/[0.06] px-4 py-2 text-[11px] tabular-nums text-[#93a2ba]">
+                      <span className="mr-2 text-[10px] uppercase tracking-wide text-[#5b6c86]">Free</span>{dayFree.map((m) => hhmm(m)).join(' · ')}
+                    </p>
                   )}
                 </section>
               )
@@ -203,10 +217,10 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
         </>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
-          <h3 className="text-sm font-semibold text-white">Block time</h3>
-          <p className="mt-0.5 text-[11px] text-[#93a2ba]">A buffer, admin, a holiday. Anything a coach is around for but shouldn&apos;t be sold.</p>
+      <div className="grid items-start gap-2.5 md:grid-cols-2 md:gap-4">
+        <details className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4" data-testid="timetable-block-time">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-white">Block time<span className="text-xs font-normal text-[#93a2ba]">a buffer or a holiday</span></summary>
+          <p className="mt-2 text-[11px] text-[#93a2ba]">A buffer, admin, a holiday. Anything a coach is around for but shouldn&apos;t be sold.</p>
           <ActionForm action="exception.add" extra={{ kind: 'block' }} submitLabel="Block it" className="mt-3">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Field label="Coach"><select name="coachId" className={inputCls}>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
@@ -215,15 +229,15 @@ export default async function TimetablePage({ searchParams }: { searchParams: Pr
               <Field label="To"><input name="end" placeholder="18:00" className={inputCls} /></Field>
             </div>
           </ActionForm>
-        </div>
-        <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
-          <h3 className="text-sm font-semibold text-white">Create a month&apos;s sessions</h3>
-          <p className="mt-0.5 text-[11px] text-[#93a2ba]">This runs by itself on the 20th. Press it if you&apos;ve added a regular mid-month and want their dates now. Safe to press twice.</p>
+        </details>
+        <details className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4" data-testid="timetable-roll">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-white">Create a month&apos;s sessions<span className="text-xs font-normal text-[#93a2ba]">runs itself on the 20th</span></summary>
+          <p className="mt-2 text-[11px] text-[#93a2ba]">This runs by itself on the 20th. Press it if you&apos;ve added a regular mid-month and want their dates now. Safe to press twice.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <ActionButton tone="primary" result="roll" body={{ action: 'roll', month: today }}>This month</ActionButton>
             <ActionButton result="roll" body={{ action: 'roll', month: addDays(today.slice(0, 8) + '01', 32) }}>Next month</ActionButton>
           </div>
-        </div>
+        </details>
       </div>
     </div>
   )

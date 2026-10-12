@@ -278,112 +278,102 @@ export default function CommandCentre(props: CommandCentreProps) {
       )
       : 'paid so far this month'
 
+    // ── Oct 2026 — the calm dashboard. Same numbers, fewer of them, and no
+    // alarm counts. The old "Today · 117 actions" queue listed every family as
+    // at risk and every child as an attendance risk; an owner learned to
+    // ignore it. Now: what the academy earns, the two things that are real
+    // problems (a failed payment, a trial nobody followed up), this week's
+    // classes, and the booking link. The softer counts (reviews due, not been
+    // in a while) are one quiet line of links, not a list of warnings. ──
+    const allClear = isLive && stripeReady && overdueCount === 0
+      && (readiness.isPilot || readiness.trialDaysRemaining == null || readiness.trialDaysRemaining > 7)
+    const todo: Array<{ key: string; text: string; href: string; cta: string }> = []
+    if (actionQueueCounts.paymentIssues > 0) todo.push({
+      key: 'pay',
+      text: `${actionQueueCounts.paymentIssues} ${actionQueueCounts.paymentIssues === 1 ? 'family has' : 'families have'} a payment problem`,
+      href: '/dashboard/parents?filter=payment_issues', cta: 'See who',
+    })
+    if (overdueCount > 0) todo.push({
+      key: 'overdue',
+      text: `${overdueCount} overdue ${overdueCount === 1 ? 'payment' : 'payments'}, ${formatGBP(overdueAmount)} to collect`,
+      href: '/dashboard/payments?tab=overview&filter=overdue', cta: 'Chase',
+    })
+    if (trialFollowUps > 0) todo.push({
+      key: 'trial',
+      text: `${trialFollowUps} ${trialFollowUps === 1 ? 'trial is' : 'trials are'} waiting on a follow-up`,
+      href: '/dashboard/enrolments#trial-followup', cta: 'Follow up',
+    })
+    if (newLeadsThisWeek > 0) todo.push({
+      key: 'leads',
+      text: `${newLeadsThisWeek} new ${newLeadsThisWeek === 1 ? 'enquiry' : 'enquiries'} this week`,
+      href: '/dashboard/leads', cta: 'Open',
+    })
+    const softer: Array<{ text: string; href: string }> = []
+    if (actionQueueCounts.reviewsDue > 0) softer.push({ text: `${actionQueueCounts.reviewsDue} player reports due`, href: '/dashboard/reviews' })
+    if (actionQueueCounts.attendanceRisks > 0) softer.push({ text: `${actionQueueCounts.attendanceRisks} not been in a while`, href: '/dashboard/players?filter=attendance_risk' })
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    const week = [...sessionsWithTimes].sort((x, y) => (DAYS.indexOf(x.day) + 1 || 9) - (DAYS.indexOf(y.day) + 1 || 9) || (x.time || '').localeCompare(y.time || ''))
+    const figure = (label: string, value: string, sub: React.ReactNode, href: string, muted = false) => (
+      <Link href={href} className="block rounded-[13px] px-4 py-3.5 transition-colors hover:bg-[#142236]">
+        <p className="text-xs text-[#93a2ba]">{label}</p>
+        <p className={`mt-1 text-[26px] font-semibold leading-none tracking-tight tabular-nums ${muted ? 'text-[#5b6c86]' : 'text-[#eef2f9]'}`}>{value}</p>
+        <p className="mt-1.5 text-xs text-[#5b6c86]">{sub}</p>
+      </Link>
+    )
+
     return (
       <div className="min-h-screen -m-6 bg-[#080e18] p-6 text-white lg:-m-8 lg:p-8">
-        <div className="mx-auto max-w-5xl space-y-6">
+        <div className="mx-auto max-w-5xl space-y-5" data-testid="calm-dashboard">
           {/* ── Greeting ── */}
           <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Good morning, {firstName}</h1>
-              <p className="mt-1 text-sm text-[#93a2ba]">
-                Here&apos;s what matters at {orgName || 'your academy'} today.
-              </p>
+              <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Hello, {firstName}</h1>
+              <p className="mt-1 text-sm text-[#93a2ba]">{orgName || 'Your academy'}</p>
             </div>
             {bookingSlug && (
               <Link
                 href={`/book/${bookingSlug}`}
-                className="rounded-xl border border-[#293b58] bg-transparent px-4 py-2 text-sm font-medium text-[#93a2ba] transition hover:border-[#3a4f6e] hover:text-white"
+                className="rounded-[10px] border border-[#293b58] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:border-[#4ecde6]"
               >
-                View Booking Page
+                View booking page
               </Link>
             )}
           </header>
 
-          {/* ── SECTION 1: Academy Health Bar (Am I healthy?) ── */}
-          <AcademyHealthBar
-            isLive={isLive}
-            stripeReadiness={readiness.stripeReadiness}
-            isPilot={readiness.isPilot}
-            trialDaysRemaining={readiness.trialDaysRemaining}
-            doneCount={readiness.doneCount}
-            totalCount={readiness.totalCount}
-            overdueCount={overdueCount}
-            overdueAmount={overdueAmount}
-          />
-
-          {/* Pre-live: expanded readiness checklist; Snapshot suppressed (no £0 cards). */}
-          {!isLive && <AcademyReadinessWidget state={readiness} />}
-
-          {/* ── SECTION 2: Business Snapshot — 6 cells, one hairline-divided container ── */}
-          {isLive && (
-            <div className="overflow-hidden rounded-2xl border border-[#1d2c42]">
-              <div className="grid grid-cols-2 gap-px bg-[#1d2c42] md:grid-cols-3 lg:grid-cols-6">
-                {/* Guided zero-states fire whenever the tile genuinely has
-                    nothing yet (no paying members), not only on day one — an
-                    academy with imported contacts but £0 collecting (JSI)
-                    deserves guidance, not a bold wall of failure. Any academy
-                    with a single active sub renders exactly as before. */}
-                <StatCard
-                  label="Recurring Revenue"
-                  value={formatGBP(recurringRevenue)}
-                  ghosted={activeSubs === 0 && recurringRevenue === 0}
-                  sub={activeSubs === 0 && recurringRevenue === 0
-                    ? 'Collects itself every month once your first member joins.'
-                    : `from ${activeSubs} active sub${activeSubs === 1 ? '' : 's'}`}
-                  href="/dashboard/payments"
-                />
-                <StatCard
-                  label="Collected This Month"
-                  value={formatGBP(collectedThisMonth)}
-                  ghosted={activeSubs === 0 && collectedThisMonth === 0}
-                  sub={collectedSub}
-                  href="/dashboard/payments"
-                />
-                <StatCard
-                  label="Active Players"
-                  value={String(activePlayers)}
-                  ghosted={activePlayers === 0}
-                  sub={activePlayers === 0
-                    ? <>Invite your contacts to enrol →</>
-                    : `of ${totalPlayers} · enrolled & paying`}
-                  href={activePlayers === 0 ? '/dashboard/contacts' : '/dashboard/players'}
-                />
-                <StatCard
-                  label="Outstanding"
-                  value={formatGBP(outstanding)}
-                  sub={overdueCount > 0
-                    ? <><span className="text-[#e0736d]">{overdueCount} overdue</span> · chase →</>
-                    : 'all up to date'}
-                  href="/dashboard/payments"
-                />
-                <StatCard
-                  label="At-Risk Families"
-                  value={String(atRiskFamilies)}
-                  sub="needing attention →"
-                  href="/dashboard/parents?filter=needs_attention"
-                />
-                <StatCard
-                  label="Attendance"
-                  value={attendanceRate > 0 ? `${attendanceRate}%` : '—'}
-                  ghosted={isFirstRun && attendanceRate === 0}
-                  sub={attendanceRate > 0
-                    ? 'last 30 days'
-                    : isFirstRun
-                      ? 'Registers appear here after your first session · 30-second tap-to-mark.'
-                      : 'no sessions yet'}
-                  href="/dashboard/attendance"
-                />
-              </div>
-            </div>
+          {/* Status chips only when something about the account needs saying. */}
+          {!allClear && (
+            <AcademyHealthBar
+              isLive={isLive}
+              stripeReadiness={readiness.stripeReadiness}
+              isPilot={readiness.isPilot}
+              trialDaysRemaining={readiness.trialDaysRemaining}
+              doneCount={readiness.doneCount}
+              totalCount={readiness.totalCount}
+              overdueCount={overdueCount}
+              overdueAmount={overdueAmount}
+            />
           )}
 
-          {/* ── SECTION 3: Action Centre — promoted full-width anchor ──
-              Ranking: revenue risk → revenue opportunity → retention risk →
-              operations. Reuses DashboardActionQueue with an order override;
-              the component default (and the flag-OFF path) is unchanged.
-              First-run (live but no classes or no players yet): the queue has
-              nothing real to say, so the setup journey renders in its place
-              and retires itself once classes AND players both exist. */}
+          {/* Pre-live: expanded readiness checklist; the money row waits until live. */}
+          {!isLive && <AcademyReadinessWidget state={readiness} />}
+
+          {/* ── The money, in four numbers ── */}
+          {isLive && (
+            <section aria-label="This month" className="grid grid-cols-2 gap-1 rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-1.5 lg:grid-cols-4" data-testid="dash-figures">
+              {figure('Coming in each month', formatGBP(recurringRevenue),
+                activeSubs === 0 ? 'Starts when your first member joins' : `from ${activeSubs} ${activeSubs === 1 ? 'membership' : 'memberships'}`,
+                '/dashboard/payments', activeSubs === 0 && recurringRevenue === 0)}
+              {figure('Taken this month', formatGBP(collectedThisMonth), collectedSub, '/dashboard/payments', activeSubs === 0 && collectedThisMonth === 0)}
+              {figure('Paying players', String(activePlayers),
+                activePlayers === 0 ? 'Invite your contacts to enrol' : `of ${totalPlayers} on your books`,
+                activePlayers === 0 ? '/dashboard/contacts' : '/dashboard/players', activePlayers === 0)}
+              {figure('Still to collect', formatGBP(outstanding),
+                overdueCount > 0 ? <span className="text-[#d8a95a]">{overdueCount} overdue</span> : 'Everyone is up to date',
+                '/dashboard/payments', outstanding === 0)}
+            </section>
+          )}
+
+          {/* ── Needs you: real problems only. First-run shows the setup journey instead. ── */}
           {isLive && isFirstRun ? (
             <FirstRunJourney
               stripeReady={stripeReady}
@@ -392,18 +382,34 @@ export default function CommandCentre(props: CommandCentreProps) {
               bookingUrl={bookingUrl}
             />
           ) : (
-            <DashboardActionQueue
-              counts={actionQueueCounts}
-              order={['paymentIssues', 'trialFollowUps', 'atRiskFamilies', 'attendanceRisks', 'reviewsDue']}
-            />
+            <section aria-label="Needs you" className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] px-4 py-4 sm:px-5" data-testid="dash-todo">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">Needs you{todo.length > 0 ? ` · ${todo.length}` : ''}</h2>
+              {todo.length === 0 ? (
+                <p className="mt-2 text-sm text-[#93a2ba]">Nothing right now. No payment problems and no trials waiting.</p>
+              ) : (
+                <ul className="mt-1.5 divide-y divide-[#1d2c42]">
+                  {todo.map((t) => (
+                    <li key={t.key} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 py-2.5">
+                      <p className="flex min-w-0 items-center gap-2.5 text-sm text-[#eef2f9]">
+                        <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-[#d8a95a]" />
+                        {t.text}
+                      </p>
+                      <Link href={t.href} className="shrink-0 rounded-[9px] border border-[#293b58] px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:border-[#4ecde6]">{t.cta}</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-[#1d2c42] pt-3 text-xs text-[#5b6c86]">
+                <Link href="/dashboard/enrolments?view=notpaying" className="hover:text-white">In a class, not paying</Link>
+                <Link href="/dashboard/parents?filter=look" className="hover:text-white">Families that need a look</Link>
+                {softer.map((x) => <Link key={x.href} href={x.href} className="hover:text-white">{x.text}</Link>)}
+              </p>
+            </section>
           )}
 
-          {/* ── First-run: no classes yet — a dashed invitation, not a blank.
-              Ghost button (the journey card above holds this moment's one
-              cyan primary). Renders only pre-first-class; gone forever after. ── */}
+          {/* ── First-run: no classes yet — a dashed invitation, not a blank. ── */}
           {isLive && !hasClasses && (
-            <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
-              <p className="mb-4 text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">This Week&apos;s Sessions</p>
+            <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
               <div className="rounded-xl border border-dashed border-[#293b58] px-5 py-6 text-center">
                 <p className="text-[13.5px] font-semibold text-[#eef2f9]">No classes yet</p>
                 <p className="mx-auto mt-1 max-w-[40ch] text-[11.5px] text-[#5b6c86]">
@@ -419,43 +425,41 @@ export default function CommandCentre(props: CommandCentreProps) {
             </div>
           )}
 
-          {/* ── This week's sessions (operations, below the fold) ── */}
-          {sessionsWithTimes.length > 0 && (
-            <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">This Week&apos;s Sessions</p>
-                <Link href="/dashboard/calendar" className="text-xs font-medium text-[#4ecde6] hover:underline">Full timetable →</Link>
+          {/* ── This week's classes ── */}
+          {week.length > 0 && (
+            <section aria-label="This week" className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]" data-testid="dash-week">
+              <div className="flex items-center justify-between px-4 pb-1 pt-4 sm:px-5">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">This week · {week.length} {week.length === 1 ? 'class' : 'classes'}</h2>
+                <Link href="/dashboard/calendar" className="text-xs font-semibold text-[#4ecde6] hover:text-white">Timetable</Link>
               </div>
-              <ul className="divide-y divide-[#1d2c42]">
-                {sessionsWithTimes.slice(0, 6).map((s) => (
-                  <li key={s.id} className="flex items-center justify-between py-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-[#eef2f9]">{s.name}</p>
-                      <p className="text-[11px] text-[#5b6c86]">{s.day}{s.time ? ` · ${s.time}` : ''}{s.location ? ` · ${s.location}` : ''}</p>
-                    </div>
-                    <span className="shrink-0 font-mono text-[12px] tabular-nums text-[#93a2ba]">{s.count}/{s.capacity}</span>
-                  </li>
-                ))}
+              <ul className="divide-y divide-[#1d2c42] px-4 sm:px-5">
+                {week.slice(0, 8).map((s) => {
+                  const pct = s.capacity > 0 ? Math.min(100, Math.round((s.count / s.capacity) * 100)) : 0
+                  return (
+                    <li key={s.id} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-3 sm:grid-cols-[190px_1fr_120px_auto]">
+                      <p className="whitespace-nowrap text-[13px] text-[#93a2ba] sm:order-1"><span className="font-semibold text-[#eef2f9]">{s.day}</span>{s.time ? <span className="ml-2 tabular-nums">{s.time}</span> : null}</p>
+                      <p className="col-span-2 min-w-0 truncate text-sm font-medium text-[#eef2f9] sm:order-2 sm:col-span-1">{s.name}{s.location ? <span className="font-normal text-[#5b6c86]"> · {s.location}</span> : null}</p>
+                      <div className="hidden h-[5px] overflow-hidden rounded-full bg-[#1d2c42] sm:order-3 sm:block" aria-hidden><div className="h-full rounded-full bg-[#4ecde6]" style={{ width: `${pct}%` }} /></div>
+                      <p className="col-start-2 row-start-1 whitespace-nowrap text-right text-[13px] tabular-nums text-[#93a2ba] sm:order-4 sm:col-start-auto sm:row-start-auto"><span className="font-semibold text-[#eef2f9]">{s.count}</span> of {s.capacity}</p>
+                    </li>
+                  )
+                })}
               </ul>
-            </div>
+              {week.length > 8 && <p className="px-5 pb-4 pt-2 text-xs text-[#5b6c86]">+{week.length - 8} more on the <Link href="/dashboard/calendar" className="text-[#4ecde6]">timetable</Link></p>}
+            </section>
           )}
 
-          {/* ── Booking share + leads (below the fold; status now lives in the Health Bar) ── */}
+          {/* ── Booking link ── */}
           {bookingUrl && (
-            <div id="share-booking-page" className="scroll-mt-24 rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-5">
-              <p className="mb-3 text-[10px] font-mono uppercase tracking-[0.15em] text-[#5b6c86]">Share Your Booking Page</p>
+            <section id="share-booking-page" className="scroll-mt-24 rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4 sm:p-5">
+              <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.07em] text-[#5b6c86]">Your booking link</h2>
               <BookingShareBar bookingUrl={bookingUrl} academyName={orgName} />
               {!hasAnyPlayers && (
                 <p className="mt-3 text-[11px] leading-relaxed text-[#5b6c86]">
                   This link is your shop window — parents pick a class, pay, and appear in your dashboard automatically.
                 </p>
               )}
-              {newLeadsThisWeek > 0 && (
-                <Link href="/dashboard/leads" className="mt-3 inline-block text-xs font-medium text-[#4ecde6] hover:underline">
-                  {newLeadsThisWeek} new lead{newLeadsThisWeek === 1 ? '' : 's'} this week →
-                </Link>
-              )}
-            </div>
+            </section>
           )}
         </div>
       </div>

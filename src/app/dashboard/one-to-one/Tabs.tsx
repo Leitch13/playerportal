@@ -21,7 +21,7 @@ export default function Tabs() {
           <Link
             key={t.href}
             href={t.href}
-            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium ${on ? 'border-[#4ecde6] text-white' : 'border-transparent text-[#93a2ba] hover:text-white'}`}
+            className={`-mb-px whitespace-nowrap border-b-2 px-2.5 py-2.5 text-[13px] font-medium sm:px-3 sm:text-sm ${on ? 'border-[#4ecde6] text-white' : 'border-transparent text-[#93a2ba] hover:text-white'}`}
           >
             {t.label}
           </Link>

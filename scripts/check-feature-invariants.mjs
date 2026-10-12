@@ -44,6 +44,11 @@ const FEATURES = [
   ['Sign-up: sibling discount counts a child who signed up this month', `${A}/api/stripe/subscribe/route.ts`, ['SIBLING_QUALIFYING_STATUSES']],
   ['Sign-up: sibling rule', 'src/lib/billing/sibling.ts', ["'trialing'", "'active'"]],
 
+  // ── released 12 Oct 2026
+  ['Dashboard: the calm academy home', 'src/components/CommandCentre.tsx', ['data-testid="calm-dashboard"', 'data-testid="dash-todo"', 'data-testid="dash-figures"']],
+  ['Request payment: the academy must choose when the parent starts paying', `${D}/players/[id]/RequestPaymentButton.tsx`, ["useState<'today' | 'next_month' | null>(null)", 'Choose when they start paying.', '!firstBilling']],
+  ['1-2-1 timetable: the phone agenda', `${D}/one-to-one/timetable/page.tsx`, ['data-testid="timetable-agenda"', 'timetable-block-time', 'timetable-roll']],
+
   // ── trials (Oct 2026: paid trials told nobody for four months)
   ['Trials: a paid trial shows as paid', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-paid"', 'paidTrialPence(']],
   ['Trials: the parent of a paid trial gets a confirmation', 'src/lib/email-templates.ts', ['export function paidTrialConfirmationEmail']],

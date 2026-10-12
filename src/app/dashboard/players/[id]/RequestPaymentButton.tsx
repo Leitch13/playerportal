@@ -44,7 +44,10 @@ export default function RequestPaymentButton({
   const [planId, setPlanId] = useState<string>(plans.length === 1 ? plans[0].id : '')
   const [showAll, setShowAll] = useState(false)
   const offered = showAll ? [...plans, ...morePlans] : plans
-  const [firstBilling, setFirstBilling] = useState<'today' | 'next_month'>('today')
+  // Nothing is chosen for the academy: charging a parent who has already paid
+  // them this month, or not charging one who hasn't, are both real mistakes,
+  // so they pick one before Send works.
+  const [firstBilling, setFirstBilling] = useState<'today' | 'next_month' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -96,6 +99,7 @@ export default function RequestPaymentButton({
 
   async function submit() {
     if (!planId) { setError('Choose a plan.'); return }
+    if (!firstBilling) { setError('Choose when they start paying.'); return }
     setLoading(true)
     setError('')
     try {
@@ -133,7 +137,7 @@ export default function RequestPaymentButton({
       ) : (
       <button
         type="button"
-        onClick={() => { if (lockAfterSent && everSent) return; setOpen(true); setSent(false); setError(''); setWarning('') }}
+        onClick={() => { if (lockAfterSent && everSent) return; setOpen(true); setSent(false); setError(''); setWarning(''); setFirstBilling(null) }}
         className={compact
           ? 'inline-flex items-center rounded-lg border border-[#4ecde6]/35 bg-[#4ecde6]/[0.12] px-3 py-1.5 text-xs font-semibold text-[#4ecde6] transition-colors hover:bg-[#4ecde6]/20'
           : 'inline-flex items-center gap-2 rounded-lg bg-[#4ecde6]/12 border border-[#4ecde6]/35 text-[#4ecde6] px-3.5 py-2 text-sm font-semibold hover:bg-[#4ecde6]/20 transition-colors'}
@@ -219,7 +223,7 @@ export default function RequestPaymentButton({
 
                 <div className="flex gap-2 pt-1">
                   <button type="button" onClick={() => setOpen(false)} disabled={loading} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-white/70 text-sm font-semibold hover:bg-white/5 transition-colors disabled:opacity-50">Cancel</button>
-                  <button type="button" onClick={submit} disabled={loading || !planId} className="flex-1 py-2.5 rounded-xl bg-[#4ecde6] text-[#072830] text-sm font-bold hover:brightness-105 transition disabled:opacity-50">
+                  <button type="button" onClick={submit} disabled={loading || !planId || !firstBilling} className="flex-1 py-2.5 rounded-xl bg-[#4ecde6] text-[#072830] text-sm font-bold hover:brightness-105 transition disabled:opacity-50">
                     {loading ? 'Sending…' : 'Send payment link'}
                   </button>
                 </div>
