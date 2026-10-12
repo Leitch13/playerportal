@@ -629,47 +629,7 @@ export default function RosterClient({
           BOOKED a specific day appear on that day's list. When the
           camp is whole-camp, this section is not rendered — the flat
           roster above IS the register. */}
-      {isFlexibleCamp && perDayGroups.length > 0 && (
-        <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] mt-4">
-          <div className="flex items-center justify-between px-6 py-3 border-b border-white/[0.05]">
-            <h3 className="text-sm font-bold text-white">Who&apos;s attending each day</h3>
-            <span className="text-[10px] uppercase tracking-wider text-[#4ecde6] font-bold">Flexible days</span>
-          </div>
-          <div className="divide-y divide-white/[0.04]">
-            {perDayGroups.map((day) => (
-              <div key={day.dayId} className="px-6 py-4" data-testid="camp-perday-group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-white">{day.label}</span>
-                    {!day.isAvailable && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/40">
-                        Excluded
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-white/40 uppercase tracking-wider font-bold">
-                    {day.children.length} attending
-                  </span>
-                </div>
-                {day.children.length === 0 ? (
-                  <p className="text-xs text-white/40 italic">No bookings yet</p>
-                ) : (
-                  <ul className="flex flex-wrap gap-1.5" data-testid="camp-perday-list">
-                    {day.children.map((c) => (
-                      <li
-                        key={c.bookingId}
-                        className="px-2.5 py-1 rounded-md text-xs text-white bg-white/[0.06] border border-white/[0.08]"
-                      >
-                        {c.childName || '—'}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {isFlexibleCamp && perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} />}
 
       {/* Move Camp Booking Phase 1 — modal */}
       {moveOpen && (
@@ -855,5 +815,81 @@ function PaymentStatusPill({ status }: { status: string }) {
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${m.cls}`}>
       {m.label}
     </span>
+  )
+}
+
+/** "tyler smith" → "Tyler Smith". Only lifts a word typed all in lower case; "JohnGabriel" and "McKay" are left as typed. */
+function tidyName(name: string | null): string {
+  const clean = (name || '').trim().replace(/\s+/g, ' ')
+  if (!clean) return '—'
+  return clean.split(' ').map((w) => (w === w.toLowerCase() ? w.charAt(0).toUpperCase() + w.slice(1) : w)).join(' ')
+}
+
+/**
+ * The day register for a flexible camp: pick a day, read a list.
+ *
+ * It used to show every day at once, each as a cloud of name tags wrapping at
+ * random widths. On a phone with fifteen children a day that was a wall of
+ * boxes (No.1 Goalkeeping, Oct 2026). A coach standing at a pitch wants one
+ * day, in alphabetical order, one name per line.
+ */
+function PerDayRegister({ groups }: { groups: CampPerDayGroup[] }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const running = groups.filter((g) => g.isAvailable)
+  // Open on today if the camp is on today, else the next day it runs, else the first day.
+  const first = running.find((g) => g.date === today) || running.find((g) => g.date > today) || running[0] || groups[0]
+  const [dayId, setDayId] = useState<string>(first.dayId)
+  const day = groups.find((g) => g.dayId === dayId) || first
+  const names = day.children.map((c) => ({ id: c.bookingId, name: tidyName(c.childName) })).sort((a, b) => a.name.localeCompare(b.name))
+  return (
+    <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0f1a2b]" data-testid="camp-perday-register">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <h3 className="text-sm font-bold text-white">Who&apos;s attending each day</h3>
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#4ecde6]">Flexible days</span>
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto border-y border-white/[0.05] px-4 py-2.5 sm:px-6" role="tablist" aria-label="Camp days">
+        {groups.map((g) => {
+          const on = g.dayId === day.dayId
+          const [dow, ...rest] = g.label.split(' ')
+          return (
+            <button
+              key={g.dayId}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setDayId(g.dayId)}
+              data-testid="camp-perday-tab"
+              className={`min-w-[64px] shrink-0 rounded-lg border px-2.5 py-1.5 text-center transition-colors ${
+                on ? 'border-[#4ecde6]/50 bg-[#4ecde6]/[0.12]' : 'border-white/[0.08] hover:bg-white/[0.04]'
+              } ${g.isAvailable ? '' : 'opacity-50'}`}
+            >
+              <span className={`block text-[10px] font-semibold uppercase tracking-wide ${on ? 'text-[#4ecde6]' : 'text-white/45'}`}>{dow}</span>
+              <span className="block text-sm font-bold text-white">{rest.join(' ')}</span>
+              <span className="block text-[10px] tabular-nums text-white/50">{g.isAvailable ? g.children.length : 'off'}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div className="px-4 py-3 sm:px-6" data-testid="camp-perday-group">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <span className="text-sm font-semibold text-white">{day.label}</span>
+          <span className="text-xs text-white/50">
+            {!day.isAvailable ? 'Camp not running this day' : `${names.length} attending`}
+          </span>
+        </div>
+        {names.length === 0 ? (
+          <p className="py-2 text-xs text-white/40">{day.isAvailable ? 'No bookings yet for this day.' : 'Nobody can book this day.'}</p>
+        ) : (
+          <ol className="grid grid-cols-1 gap-x-8 sm:grid-cols-2" data-testid="camp-perday-list">
+            {names.map((c, i) => (
+              <li key={c.id} className="flex items-baseline gap-3 border-t border-white/[0.05] py-2 first:border-t-0 sm:[&:nth-child(2)]:border-t-0">
+                <span className="w-5 shrink-0 text-right text-[11px] tabular-nums text-white/35">{i + 1}</span>
+                <span className="min-w-0 truncate text-sm text-white">{c.name}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </div>
   )
 }

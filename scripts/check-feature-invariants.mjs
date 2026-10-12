@@ -22,6 +22,7 @@ const FEATURES = [
   ['Terms: calm page', `${D}/terms/TermManager.tsx`, ['terms-headline', 'term-card']],
   ['Enrol: offers the payment link straight after', `${D}/enrolments/EnrolmentForm.tsx`, ['enrol-done', '<RequestPaymentButton']],
   ['Camps: card layout', `${D}/camps/page.tsx`, ['camp-card', 'camps-headline']],
+  ['Camps: day register is a day picker and one list', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-register', 'camp-perday-tab', 'function PerDayRegister(']],
   ['Booking page: tidy layout', `${A}/book/[slug]/TidyClassList.tsx`, ['tidy-class-list']],
   ['Booking page: tidy layout is switched on by the shared rule', `${A}/book/[slug]/page.tsx`, ['isTidyBookingOrg(']],
 
