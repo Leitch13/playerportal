@@ -48,6 +48,8 @@ export interface ClassRosterRowProps {
   // Sprint 8b v1 — surfaces the source class id + org id to the Move modal.
   groupId: string
   organisationId: string
+  /** Render only the ⋮ menu (and its dialogs), for a list that draws the row itself. */
+  menuOnly?: boolean
 }
 
 export default function ClassRosterRow({
@@ -62,6 +64,7 @@ export default function ClassRosterRow({
   otherActiveClasses,
   groupId,
   organisationId,
+  menuOnly = false,
 }: ClassRosterRowProps) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -143,8 +146,9 @@ export default function ClassRosterRow({
       <div
         data-testid="class-roster-row"
         data-enrolment-id={enrolmentId}
-        className="bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-4 flex items-center gap-3 hover:bg-[#142236] hover:border-[#4ecde6]/30 transition-all group"
+        className={menuOnly ? 'shrink-0' : 'bg-[#0f1a2b] border border-[#1d2c42] rounded-xl p-4 flex items-center gap-3 hover:bg-[#142236] hover:border-[#4ecde6]/30 transition-all group'}
       >
+        {!menuOnly && (<>
         {/* Photo or initials. Stays as a link to the profile so the existing
             click-through behaviour is preserved as the default action. */}
         <Link href={`/dashboard/players/${playerId}`} className="shrink-0">
@@ -174,6 +178,8 @@ export default function ClassRosterRow({
             <div className="text-[11px] text-white/40 truncate">Parent: {parentName}</div>
           )}
         </div>
+
+        </>)}
 
         {/* Kebab menu — same visual language as the GroupCard kebab. */}
         <div ref={menuRef} className="relative">

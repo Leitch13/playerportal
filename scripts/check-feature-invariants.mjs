@@ -24,7 +24,8 @@ const FEATURES = [
   ['Camps: card layout', `${D}/camps/page.tsx`, ['camp-card', 'camps-headline']],
   ['Camps: day register is a day picker and one list', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-register', 'camp-perday-tab', 'function PerDayRegister(']],
   ['Camps: tap a name on the day register for the child\'s details', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-name', 'camp-perday-details', 'tel:']],
-  ['Camps: sort by name or age and show one age, on the bookings table and the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['function SortBar(', 'camp-roster-sort', 'camp-perday-sort', 'sortRoster(', 'onlyAge(']],
+  ['Camps: sort by name or age and show one age, on the bookings table and the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['<SortBar', 'camp-roster-sort', 'camp-perday-sort', 'sortRoster(', 'onlyAge(']],
+  ['Registers: the shared sort and age control', 'src/components/SortBar.tsx', ['export default function SortBar(', 'All ages']],
   ['Camps: the sort rule', 'src/lib/roster-sort.ts', ['export function sortRoster', 'export function agesPresent']],
   ['Camps: tick a child in on the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-tick', '/check-in']],
   ['Camps: a tick is saved', `${A}/api/admin/camps/[campId]/check-in/route.ts`, ['CHECKED_IN_ACTION', "['admin', 'coach']"]],
@@ -45,6 +46,12 @@ const FEATURES = [
   ['Sign-up: the two-class refusal says what to do next', `${A}/api/stripe/subscribe/route.ts`, ['already has a membership here', 'please contact the academy']],
   ['Sign-up: sibling discount counts a child who signed up this month', `${A}/api/stripe/subscribe/route.ts`, ['SIBLING_QUALIFYING_STATUSES']],
   ['Sign-up: sibling rule', 'src/lib/billing/sibling.ts', ["'trialing'", "'active'"]],
+
+  // ── the class register (Oct 2026): one list to run a session from
+  ['Class register: on the class page', `${D}/groups/[id]/page.tsx`, ['<ClassRegister', 'membershipPill(', 'latestClassDate(']],
+  ['Class register: mark here or away, age, flags, details, sort, export', `${D}/groups/[id]/ClassRegister.tsx`, ['data-testid="register-mark"', 'data-testid="register-details"', 'data-testid="register-age"', '<SortBar', 'register-all-here', 'register-export', "onConflict: 'player_id,group_id,session_date'", 'tel:']],
+  ['Class register: move and remove are still reachable', `${D}/groups/[id]/ClassRegister.tsx`, ['<ClassRosterRow menuOnly']],
+  ['Class register: the rules', 'src/lib/class-register.ts', ['export function nextMark', 'export function ageOn', 'export function latestClassDate']],
 
   // ── a camp booking must give a date of birth, a phone number and a medical answer (12 Oct 2026)
   ['Camp booking: the rule', 'src/lib/camp-booking-details.ts', ['export function campDetailsProblem', 'NOTHING_TO_REPORT', 'export function validChildDob']],

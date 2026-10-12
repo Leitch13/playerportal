@@ -3,7 +3,10 @@ import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 // Sprint 8a — per-row kebab with View / Message parent / Remove from class.
-import ClassRosterRow from './ClassRosterRow'
+import ClassRegister, { type RegisterChild, type RegisterTrialGuest } from './ClassRegister'
+import { membershipPill } from '@/lib/needs-a-look'
+import { ageOn, latestClassDate } from '@/lib/class-register'
+import { paidTrialPence } from '@/lib/trial-booking'
 
 export default async function GroupDetailPage({
   params,
@@ -48,11 +51,16 @@ export default async function GroupDetailPage({
       last_name: string
       photo_url: string | null
       parent_id: string | null
+      date_of_birth?: string | null
+      medical_info?: string | null
+      emergency_contact_name?: string | null
+      emergency_contact_phone?: string | null
     } | null
+    is_trial?: boolean | null
   }
   const { data: enrolmentsRaw } = await supabase
     .from('enrolments')
-    .select('id, status, player:players(id, first_name, last_name, photo_url, parent_id)')
+    .select('id, status, is_trial, player:players(id, first_name, last_name, photo_url, parent_id, date_of_birth, medical_info, emergency_contact_name, emergency_contact_phone)')
     .eq('group_id', id)
     .eq('status', 'active')
 
@@ -64,13 +72,15 @@ export default async function GroupDetailPage({
     new Set(enrolments.map((e) => e.player?.parent_id).filter((v): v is string => !!v))
   )
   const parentNameById = new Map<string, string>()
+  const parentContactById = new Map<string, { phone: string | null; email: string | null }>()
   if (parentIds.length > 0) {
     const { data: parents } = await supabase
       .from('profiles')
-      .select('id, full_name')
+      .select('id, full_name, phone, email')
       .in('id', parentIds)
     for (const p of parents || []) {
       parentNameById.set(p.id as string, (p as { full_name?: string | null }).full_name || 'Parent')
+      parentContactById.set(p.id as string, { phone: (p as { phone?: string | null }).phone || null, email: (p as { email?: string | null }).email || null })
     }
   }
 
@@ -99,6 +109,56 @@ export default async function GroupDetailPage({
     .map((e) => e.player)
     .filter((p): p is NonNullable<EnrolmentRosterRow['player']> => !!p)
     .sort((a, b) => a.first_name.localeCompare(b.first_name))
+
+  // ── The register (admins and coaches). Everything a coach needs about each
+  //    child in one list; see ClassRegister.tsx and src/lib/class-register.ts.
+  const todayUk = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+  const subStatusesByPlayer = new Map<string, string[]>()
+  let trialGuests: RegisterTrialGuest[] = []
+  if (isAdmin) {
+    if (playerIds.length > 0) {
+      const { data: subs } = await supabase
+        .from('subscriptions')
+        .select('player_id, status')
+        .in('player_id', playerIds)
+        .eq('organisation_id', group.organisation_id)
+      for (const sRow of (subs || []) as { player_id: string | null; status: string | null }[]) {
+        if (!sRow.player_id || !sRow.status) continue
+        subStatusesByPlayer.set(sRow.player_id, [...(subStatusesByPlayer.get(sRow.player_id) || []), sRow.status])
+      }
+    }
+    const from = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10)
+    const { data: trials } = await supabase
+      .from('trial_bookings')
+      .select('id, child_name, child_age, parent_name, parent_phone, preferred_date, notes, status')
+      .eq('training_group_id', id)
+      .gte('preferred_date', from)
+      .neq('status', 'cancelled')
+    trialGuests = ((trials || []) as { id: string; child_name: string; child_age: number | null; parent_name: string | null; parent_phone: string | null; preferred_date: string | null; notes: string | null }[])
+      .map((t) => ({ id: t.id, childName: (t.child_name || '').replace(/\s+/g, ' ').trim(), childAge: t.child_age, parentName: t.parent_name, parentPhone: t.parent_phone, date: t.preferred_date, paid: paidTrialPence(t.notes) != null }))
+  }
+  const registerChildren: RegisterChild[] = enrolments.filter((e) => e.player).map((e) => {
+    const p = e.player!
+    const contact = p.parent_id ? parentContactById.get(p.parent_id) : undefined
+    return {
+      enrolmentId: e.id,
+      playerId: p.id,
+      firstName: p.first_name,
+      lastName: p.last_name,
+      age: ageOn(p.date_of_birth, todayUk),
+      dob: p.date_of_birth || null,
+      medical: p.medical_info || null,
+      emergencyName: p.emergency_contact_name || null,
+      emergencyPhone: p.emergency_contact_phone || null,
+      parentId: p.parent_id,
+      parentName: p.parent_id ? parentNameById.get(p.parent_id) || null : null,
+      parentPhone: contact?.phone || null,
+      parentEmail: contact?.email || null,
+      membership: membershipPill(subStatusesByPlayer.get(p.id) || []),
+      isTrial: e.is_trial === true,
+      otherActiveClasses: otherActiveCountById.get(p.id) || 0,
+    }
+  })
 
   const coach = group.coach as unknown as { id: string; full_name: string; email: string } | null
   const capacity = (group.max_capacity as number) ?? 20
@@ -268,41 +328,25 @@ export default async function GroupDetailPage({
               <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['parents']}</svg></span>
               <p className="text-sm text-white/50">No players enrolled in this class yet</p>
             </div>
+          ) : isAdmin ? (
+            <ClassRegister
+              groupId={group.id as string}
+              organisationId={group.organisation_id as string}
+              className={group.name as string}
+              classDay={(group.day_of_week as string | null) ?? null}
+              today={todayUk}
+              startDate={latestClassDate(todayUk, group.day_of_week as string | null)}
+              trialGuests={trialGuests}
+            >
+              {registerChildren}
+            </ClassRegister>
           ) : (
             <div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
               data-testid="class-roster"
             >
-              {/* Admin/coach get the kebab menu (View / Message parent /
-                  Remove from class). Parents viewing this page get a plain
-                  read-only tile — they can't remove other people's children. */}
-              {isAdmin
-                ? enrolments
-                    .filter((e) => e.player)
-                    .sort((a, b) =>
-                      (a.player?.first_name || '').localeCompare(b.player?.first_name || '')
-                    )
-                    .map((e) => {
-                      const p = e.player!
-                      return (
-                        <ClassRosterRow
-                          key={e.id}
-                          enrolmentId={e.id}
-                          playerId={p.id}
-                          playerFirstName={p.first_name}
-                          playerLastName={p.last_name}
-                          playerPhotoUrl={p.photo_url}
-                          parentId={p.parent_id}
-                          parentName={p.parent_id ? parentNameById.get(p.parent_id) || null : null}
-                          className={group.name as string}
-                          otherActiveClasses={otherActiveCountById.get(p.id) || 0}
-                          // Sprint 8b v1 — Move modal needs these.
-                          groupId={group.id as string}
-                          organisationId={group.organisation_id as string}
-                        />
-                      )
-                    })
-                : players.map((player) => (
+              {/* Parents viewing this page get a plain read-only tile. */}
+              {players.map((player) => (
                     <Link
                       key={player.id}
                       href={`/dashboard/players/${player.id}`}
