@@ -7,6 +7,8 @@ import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory } from '@/lib/scoring-categories'
 import ReviewForm from './ReviewForm'
 import PlayerFirstReports from './PlayerFirstReports'
+import ReportClassFilter from './ReportClassFilter'
+import { playersInClass, reportCoverage, classOptionLabel, type ClassPlace } from '@/lib/report-class-filter'
 import { REPORT_VIEWED_TRACKING_ENABLED } from '@/lib/report-visibility'
 
 // Player Reports Glow-Up Phase 1A — flag-gated, default OFF. When OFF the page
@@ -17,7 +19,7 @@ const REPORTS_REDESIGN_ENABLED = process.env.REPORTS_REDESIGN_ENABLED === 'true'
 export default async function ReviewsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ add?: string }>
+  searchParams: Promise<{ add?: string; class?: string }>
 }) {
   const params = await searchParams
   const supabase = await createClient()
@@ -44,12 +46,24 @@ export default async function ReviewsPage({
     .order('sort_order', { ascending: true })
   const scoringCategories = normalizeCategories(dbScoringCats as ScoringCategory[] | null)
 
-  const { data: players } = await supabase
+  const { data: allPlayers } = await supabase
     .from('players')
     .select('id, first_name, last_name, age_group')
     .order('first_name')
 
-  const { data: reviews } = await supabase
+  // ?class=<id> — one class at a time. See src/lib/report-class-filter.ts.
+  const [{ data: classRows }, { data: placeRows }] = await Promise.all([
+    supabase.from('training_groups').select('id, name, day_of_week').eq('organisation_id', orgId).order('name'),
+    supabase.from('enrolments').select('player_id, group_id').eq('organisation_id', orgId).eq('status', 'active'),
+  ])
+  const places = (placeRows || []) as ClassPlace[]
+  const classOptions = (classRows || []).map((c) => ({ id: c.id as string, label: classOptionLabel(c as { name: string; day_of_week: string | null }), count: playersInClass(places, c.id as string).length }))
+  const chosenClass = classOptions.find((c) => c.id === params.class) || null
+  const classPlayerIds = chosenClass ? playersInClass(places, chosenClass.id) : null
+  // With a class chosen, the "New Report" child list is that class too.
+  const players = classPlayerIds ? (allPlayers || []).filter((p) => classPlayerIds.includes(p.id)) : allPlayers
+
+  let reviewsQuery = supabase
     .from('progress_reviews')
     .select(`
       *,
@@ -58,6 +72,16 @@ export default async function ReviewsPage({
     `)
     .order('review_date', { ascending: false })
     .limit(50)
+  if (classPlayerIds) reviewsQuery = reviewsQuery.in('player_id', classPlayerIds.length ? classPlayerIds : ['00000000-0000-0000-0000-000000000000'])
+  const { data: reviews } = await reviewsQuery
+
+  // Who in the class has no report yet. Asked of every report, not just the 50 shown.
+  let coverage: ReturnType<typeof reportCoverage> | null = null
+  if (classPlayerIds && classPlayerIds.length > 0) {
+    const { data: reported } = await supabase.from('progress_reviews').select('player_id').in('player_id', classPlayerIds)
+    coverage = reportCoverage(classPlayerIds, (reported || []).map((r) => r.player_id as string))
+  }
+  const nameOf = (id: string) => { const p = (allPlayers || []).find((x) => x.id === id); return p ? `${p.first_name} ${p.last_name}`.trim() : 'Unknown' }
 
   return (
     <div className="space-y-6">
@@ -65,14 +89,28 @@ export default async function ReviewsPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Player Reports</h1>
-          <p className="text-sm text-white/50 mt-1">{(reviews || []).length} report{(reviews || []).length !== 1 ? 's' : ''} created</p>
+          <p className="text-sm text-white/50 mt-1">{(reviews || []).length} report{(reviews || []).length !== 1 ? 's' : ''}{chosenClass ? ` for ${chosenClass.label}` : ' created'}</p>
         </div>
       </div>
+
+      <ReportClassFilter classes={classOptions} current={chosenClass?.id || ''} />
+
+      {chosenClass && coverage && (
+        <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3.5" data-testid="report-class-coverage">
+          <p className="text-sm text-white/85"><span className="font-bold text-white">{coverage.withReport} of {coverage.total}</span> children in this class have a report.</p>
+          {coverage.missing.length > 0 && (
+            <p className="mt-1.5 text-xs leading-relaxed text-white/55" data-testid="report-class-missing"><span className="font-semibold text-[#4ecde6]">Still to write:</span> {coverage.missing.map(nameOf).sort((a, b) => a.localeCompare(b)).join(', ')}</p>
+          )}
+        </div>
+      )}
+      {chosenClass && classPlayerIds && classPlayerIds.length === 0 && (
+        <p className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3.5 text-sm text-white/60" data-testid="report-class-empty">Nobody is in this class yet.</p>
+      )}
 
       <ReviewForm players={players || []} autoOpen={params.add === '1'} orgId={orgId} />
 
       {(reviews || []).length === 0 ? (
-        <EmptyState message="No reports created yet. Click '+ New Report' above to get started." />
+        <EmptyState message={chosenClass ? "No reports for this class yet. Click '+ New Report' above to write the first." : "No reports created yet. Click '+ New Report' above to get started."} />
       ) : REPORTS_REDESIGN_ENABLED ? (
         <PlayerFirstReports
           reviews={(reviews || []) as unknown as Parameters<typeof PlayerFirstReports>[0]['reviews']}

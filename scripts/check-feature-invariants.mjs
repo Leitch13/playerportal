@@ -19,6 +19,9 @@ const FEATURES = [
   ['Players: who has paid on each class sheet', `${D}/players/PlayersTable.tsx`, ['data-testid="squad-pay"', 'function squadPay(']],
   ['Plans & Pricing: plans by type', `${D}/plans/PlanManager.tsx`, ['plans-type-list']],
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
+  // Player Reports one class at a time (13 Oct 2026). See src/lib/report-class-filter.ts.
+  ['Player Reports: filter by class, and who still needs a report', `${D}/reviews/page.tsx`, ['<ReportClassFilter', 'playersInClass(', 'reportCoverage(', 'report-class-coverage', 'report-class-missing']],
+  ['Player Reports: the class dropdown', `${D}/reviews/ReportClassFilter.tsx`, ['report-class-select', 'All classes', "next.set('class', id)"]],
   // After a trial: one joining link, sent in one tap, that opens sign-up filled in (13 Oct 2026). See src/lib/trial-join.ts.
   ['Trials: the academy sends a joining link in one tap', `${D}/trials/TrialJoinActions.tsx`, ['trial-send-join-link', "'send-join-link'", 'trial-date-picker', 'type="date"', 'trial-not-joining']],
   ['Trials: an attended trial offers the joining link, and Copy link copies it', `${D}/trials/TrialManager.tsx`, ['<TrialJoinActions', 'trialJoinPath(academySlug, trial.id)', "t.status === 'attended' && !t.converted && ("]],
