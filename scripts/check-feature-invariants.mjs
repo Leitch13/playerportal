@@ -19,6 +19,17 @@ const FEATURES = [
   ['Players: who has paid on each class sheet', `${D}/players/PlayersTable.tsx`, ['data-testid="squad-pay"', 'function squadPay(']],
   ['Plans & Pricing: plans by type', `${D}/plans/PlanManager.tsx`, ['plans-type-list']],
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
+  // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
+  ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],
+  ['Welcome packs: one page for the academy and for the parent', `${D}/welcome-packs/page.tsx`, ['loadFamilyPacks(', 'loadAcademyPacks(', 'packCoverage(', 'welcome-packs-parent']],
+  ['Welcome packs: on the parent home page until opened', 'src/components/WelcomePackCard.tsx', ['welcome-pack-card', '!r.opened.has(p.packId)', '/api/welcome-pack/${p.packId}']],
+  ['Welcome packs: the card is on the parent home page', `${D}/page.tsx`, ['<WelcomePackCard userId={userId} />']],
+  ['Welcome packs: opening checks the family is entitled and writes it down', `${A}/api/welcome-pack/[id]/route.ts`, ['packsForFamily(', 'PACK_OPENED_ACTION', 'createSignedUrl(', 'pathBelongsTo(']],
+  ['Welcome packs: only an admin adds or removes, only inside their own academy', `${A}/api/admin/welcome-packs/route.ts`, ["me.role !== 'admin'", 'pathBelongsTo(path, orgId)', 'createSignedUploadUrl(', ".eq('organisation_id', orgId).in('id', classIds)"]],
+  ['Welcome packs: the welcome email carries the button', 'src/lib/email-templates.ts', ['params.welcomePackUrl ?', 'Open your welcome pack']],
+  ['Welcome packs: both welcome emails ask for the link', `${A}/api/stripe/webhooks/route.ts`, ['welcomePackLink(supabase, ctx.userId, appUrl)', 'welcomePackLink(supabase, userId, appUrl)']],
+  ['Welcome packs: in both menus', 'src/components/Navigation.tsx', ["label: 'Welcome Pack'", "label: 'Welcome Packs'"]],
+  ['Welcome packs: kept off the ordinary Documents list', `${D}/documents/page.tsx`, [".or('doc_type.is.null,doc_type.neq.welcome_pack')"]],
   // Player Reports one class at a time (13 Oct 2026). See src/lib/report-class-filter.ts.
   ['Player Reports: filter by class, and who still needs a report', `${D}/reviews/page.tsx`, ['<ReportClassFilter', 'playersInClass(', 'reportCoverage(', 'report-class-coverage', 'report-class-missing']],
   // The academy is told whether the parent was emailed a report and whether they opened it (13 Oct 2026). See src/lib/report-status.ts.

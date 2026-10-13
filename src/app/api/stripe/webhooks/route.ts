@@ -1,3 +1,4 @@
+import { welcomePackLink } from '@/lib/welcome-pack-server'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -868,6 +869,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           planName: plan?.name ?? 'Subscription',
           amount: `£${Number(((plan as unknown as { amount?: number })?.amount) ?? 0).toFixed(2)}`,
           dashboardUrl: `${appUrl}/dashboard`,
+          welcomePackUrl: await welcomePackLink(supabase, userId, appUrl),
           academyLogoUrl: (org?.logo_url as string | undefined) || undefined,
           academyContactEmail: (org?.contact_email as string | undefined) || undefined,
         })
@@ -1297,6 +1299,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         amount: `\u00a3${amountPaid.toFixed(2)}`,
         nextClass,
         dashboardUrl: `${appUrl}/dashboard`,
+        welcomePackUrl: await welcomePackLink(supabase, ctx.userId, appUrl),
         academyLogoUrl: (orgBranding?.logo_url as string | undefined) || undefined,
         academyContactEmail: (orgBranding?.contact_email as string | undefined) || undefined,
         billingContext,

@@ -511,6 +511,8 @@ export function subscriptionStartedEmail(params: {
   amount: string
   nextClass?: { name: string; day: string; time: string; location?: string }
   dashboardUrl: string
+  /** Set when the academy has a welcome pack for this family's class. See src/lib/welcome-pack.ts. */
+  welcomePackUrl?: string
   academyLogoUrl?: string
   academyContactEmail?: string
   billingContext?: SubscriptionStartedBillingContext
@@ -579,6 +581,13 @@ export function subscriptionStartedEmail(params: {
         Hi ${greetingName} — your subscription to <strong style="color:#fff">${params.academyName}</strong> is active.
         ${params.childName ? `Welcome to the squad, <strong style="color:#fff">${params.childName}</strong>!` : ''}
       </p>
+
+      ${params.welcomePackUrl ? `
+      <div style="background:rgba(78,205,230,0.08);border:1px solid rgba(78,205,230,0.35);border-radius:12px;padding:18px 20px;margin:20px 0;text-align:center">
+        <p style="margin:0 0 4px;font-size:12px;color:#4ecde6;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Start here</p>
+        <p style="margin:0 0 14px;font-size:15px;color:#fff;line-height:1.5">${params.academyName} has a welcome pack for you. It covers what to expect and what to bring.</p>
+        <a href="${params.welcomePackUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:13px 30px;border-radius:12px;font-weight:700;text-decoration:none;font-size:15px">Open your welcome pack</a>
+      </div>` : ''}
 
       ${breakdownPanel}
 

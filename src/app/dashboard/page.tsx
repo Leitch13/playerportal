@@ -1,3 +1,4 @@
+import WelcomePackCard from '@/components/WelcomePackCard'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -258,7 +259,7 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
   // Protected #8 (Parent Hub) recomposition; #9 + #4 untouched. See
   // PARENT_HUB_MVP_PHASE0.md.
   if (PARENT_HUB_ENABLED) {
-    return <ParentHub {...await loadParentHub(supabase, userId, name)} />
+    return <><WelcomePackCard userId={userId} /><ParentHub {...await loadParentHub(supabase, userId, name)} /></>
   }
 
   // players_active (migration 109): parent-facing child list.

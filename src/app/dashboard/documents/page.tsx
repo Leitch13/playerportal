@@ -31,6 +31,8 @@ export default async function DocumentsPage({
   let query = supabase
     .from('documents')
     .select('*, player:players(first_name, last_name), uploader:profiles!documents_uploaded_by_fkey(full_name)')
+    // Welcome packs have their own page (src/lib/welcome-pack.ts). Written so a document with no type still shows.
+    .or('doc_type.is.null,doc_type.neq.welcome_pack')
     .order('created_at', { ascending: false })
 
   if (params.player) {
@@ -46,6 +48,7 @@ export default async function DocumentsPage({
   const { data: allDocs } = await supabase
     .from('documents')
     .select('folder')
+    .or('doc_type.is.null,doc_type.neq.welcome_pack')
 
   const folders = [...new Set((allDocs || []).map((d) => d.folder as string))].filter(Boolean).sort()
   const activeFolder = params.folder || 'all'

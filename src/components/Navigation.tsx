@@ -198,6 +198,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     ]},
     { title: 'My Family', items: [
       { href: '/dashboard/children', label: 'My Children', icon: 'users' },
+      { href: '/dashboard/welcome-packs', label: 'Welcome Pack', icon: 'clipboard-document' },
       { href: '/dashboard/schedule', label: 'Schedule', icon: 'calendar' },
       { href: '/dashboard/sessions', label: '1-2-1 Sessions', icon: 'calendar', module: 'one_to_one' },
       { href: '/dashboard/feedback', label: 'Progress', icon: 'chart-bar', feature: 'progress_reviews' },
@@ -276,6 +277,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'Communication', items: [
       { href: '/dashboard/messages', label: 'Messages', icon: 'chat-bubble', feature: 'messaging' },
       { href: '/dashboard/announcements', label: 'Announcements', icon: 'megaphone' },
+      { href: '/dashboard/welcome-packs', label: 'Welcome Packs', icon: 'clipboard-document' },
       { href: '/dashboard/awards', label: 'Awards', icon: 'trophy', feature: 'achievements' },
     ]},
     { title: 'Finance', items: [
