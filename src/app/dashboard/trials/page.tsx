@@ -1,3 +1,4 @@
+import { TRIAL_JOIN_SENT_ACTION } from '@/lib/trial-join'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
@@ -45,6 +46,9 @@ export default async function TrialsPage() {
   ])
 
   const allTrials = trials || []
+  // When each family was last emailed their joining link ("Link sent 13 Oct" on the row).
+  const { data: joinSends } = await supabase.from('audit_log').select('entity_id, created_at').eq('organisation_id', orgId).eq('action', TRIAL_JOIN_SENT_ACTION).order('created_at', { ascending: true })
+  const joinSentAt = new Map<string, string>((joinSends || []).map((r) => [r.entity_id as string, r.created_at as string]))
   const stats = {
     pending: allTrials.filter(t => t.status === 'pending').length,
     confirmed: allTrials.filter(t => t.status === 'confirmed').length,
@@ -82,6 +86,7 @@ export default async function TrialsPage() {
         parentName: t.parent_name,
         parentEmail: t.parent_email,
         parentPhone: t.parent_phone,
+        joinLinkSentAt: joinSentAt.get(t.id) ?? null,
         childName: t.child_name,
         childAge: t.child_age,
         groupName: (t.group as unknown as { name: string } | null)?.name || null,

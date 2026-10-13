@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { trialFollowUpEmail } from '@/lib/email-templates'
+import { trialJoinPath } from '@/lib/trial-join'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -71,9 +72,8 @@ export async function GET(request: NextRequest) {
     // attribution. The webhook auto-link uses `trial` as the primary
     // match key (via trial_signup_attributions written by the booking
     // page when the parent clicks through).
-    const personalisedSignupUrl = trial.parent_email
-      ? `${appUrl}/book/${org?.slug || ''}?trial=${trial.id}&email=${encodeURIComponent(trial.parent_email)}`
-      : `${appUrl}/book/${org?.slug || ''}`
+    // The one joining link per trial: sign-up with their details filled in. See src/lib/trial-join.ts.
+    const personalisedSignupUrl = org?.slug ? `${appUrl}${trialJoinPath(org.slug, trial.id)}` : `${appUrl}/book/`
 
     const template = trialFollowUpEmail({
       parentName: trial.parent_name?.split(' ')[0] || 'there',

@@ -13,7 +13,8 @@ import {
   type TrialStage,
 } from '@/lib/trial-derive'
 // Phase 2.4 step 5 — DB-only admin actions for the follow-up cohort.
-import TrialFollowUpActions from '@/app/dashboard/enrolments/TrialFollowUpActions'
+import TrialJoinActions from './TrialJoinActions'
+import { trialJoinPath } from '@/lib/trial-join'
 // Sprint 6 — per-row WhatsApp deep-link.
 import WhatsAppButton from '@/components/WhatsAppButton'
 import { WA_TEMPLATES } from '@/lib/whatsapp'
@@ -23,6 +24,8 @@ interface Trial {
   parentName: string
   parentEmail: string
   parentPhone: string | null
+  /** When the academy last emailed this family their joining link (audit_log). */
+  joinLinkSentAt?: string | null
   childName: string
   childAge: number | null
   groupName: string | null
@@ -54,7 +57,7 @@ function getReminderBadge(t: Trial, stage: TrialStage): { label: string; color: 
   // see first; they override "Followed up" / reminder chips below.
   if (stage === 'stale_followup')    return { label: STAGE_LABEL.stale_followup,    color: 'text-rose-300 bg-rose-500/15 border border-rose-500/30' }
   if (stage === 'awaiting_followup') return { label: STAGE_LABEL.awaiting_followup, color: 'text-amber-300 bg-amber-500/15 border border-amber-500/30' }
-  if (t.converted) return { label: 'Converted', color: 'text-[#4ecde6] bg-[#4ecde6]/10' }
+  if (t.converted) return { label: 'Joined', color: 'text-[#4ecde6] bg-[#4ecde6]/10' }
   if (t.followupSent) return { label: 'Followed up', color: 'text-amber-400 bg-amber-500/10' }
   if (t.reminder2h) return { label: '2h sent', color: 'text-emerald-400 bg-emerald-500/10' }
   if (t.reminder24h) return { label: '24h sent', color: 'text-blue-400 bg-blue-500/10' }
@@ -94,14 +97,14 @@ export default function TrialManager({
 
   async function copySignupLink(trial: Trial) {
     if (!academySlug) return
-    const personalisedUrl = `${baseUrl}/book/${academySlug}?trial=${trial.id}&email=${encodeURIComponent(trial.parentEmail)}`
+    const personalisedUrl = `${baseUrl}${trialJoinPath(academySlug, trial.id)}`
     try {
       await navigator.clipboard.writeText(personalisedUrl)
       setCopiedTrialId(trial.id)
       setTimeout(() => setCopiedTrialId(null), 2000)
     } catch {
       // Last-ditch fallback for clipboard-blocked contexts: open a prompt
-      window.prompt('Copy this signup link:', personalisedUrl)
+      window.prompt('Copy this joining link:', personalisedUrl)
     }
   }
   const [loading, setLoading] = useState<string | null>(null)
@@ -181,7 +184,10 @@ export default function TrialManager({
 
   // The buttons for one trial. Shared by the table (wide screens) and the cards (phones),
   // so a phone gets every action the table has.
-  const rowActions = (t: Trial) => {
+  // Phone-card button looks: one cyan primary per card, bordered secondaries. The table keeps its small chips.
+  const CARD_PRIMARY = 'order-first w-full rounded-xl bg-[#4ecde6] px-4 py-3 text-sm font-bold text-[#06121c] transition-opacity hover:opacity-90 disabled:opacity-50'
+  const CARD_SECOND = 'flex-1 whitespace-nowrap rounded-xl border border-[#243652] bg-white/[0.02] px-3 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:border-white/30 hover:text-white disabled:opacity-50'
+  const rowActions = (t: Trial, card = false) => {
     const stage = stageById.get(t.id) ?? 'upcoming'
     return (
       <>
@@ -189,7 +195,7 @@ export default function TrialManager({
                               pre-filled template based on funnel stage: a chase
                               for pending/confirmed trials, a follow-up nudge
                               for already-attended trials. */}
-                          <WhatsAppButton
+                          {!card && <WhatsAppButton
                             phone={t.parentPhone}
                             message={
                               t.status === 'attended'
@@ -197,7 +203,7 @@ export default function TrialManager({
                                     parentName: t.parentName,
                                     academyName,
                                     childName: t.childName,
-                                  })
+                                  }) + (academySlug ? ` You can join here: ${baseUrl}${trialJoinPath(academySlug, t.id)}` : '')
                                 : WA_TEMPLATES.trialChase({
                                     parentName: t.parentName,
                                     academyName,
@@ -206,27 +212,29 @@ export default function TrialManager({
                             }
                             iconOnly
                             testId="trial-row-whatsapp"
-                          />
+                          />}
                           {/* Trial Conversion 1A — Phase 4: per-row copyable
                               personalised signup link. Includes ?trial=<id> +
                               ?email=<encoded> so the booking page can write
                               an attribution row for webhook primary-match. */}
-                          {academySlug && (
+                          {/* On a card the joining link is only offered once the trial has happened. */}
+                          {academySlug && !t.converted && (!card || t.status === 'attended') && (
                             <button
                               onClick={() => copySignupLink(t)}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-colors"
-                              title="Copy personalised signup link"
+                              className={card ? CARD_SECOND : "px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition-colors"}
+                              title="Copy this family's joining link, to send by text"
                             >
-                              {copiedTrialId === t.id ? ' Copied' : 'Copy link'}
+                              {copiedTrialId === t.id ? 'Copied' : card ? 'Copy joining link' : 'Copy link'}
                             </button>
                           )}
                           {t.status === 'pending' && (
                             <button
+                              data-testid="trial-confirm"
                               onClick={() => updateStatus(t.id, 'confirmed')}
                               disabled={loading === t.id}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                              className={card ? CARD_PRIMARY : "px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"}
                             >
-                              Confirm
+                              {card ? 'Confirm trial' : 'Confirm'}
                             </button>
                           )}
                           {t.status === 'confirmed' && (
@@ -234,16 +242,16 @@ export default function TrialManager({
                               <button
                                 onClick={() => updateStatus(t.id, 'attended')}
                                 disabled={loading === t.id}
-                                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                                className={card ? CARD_PRIMARY : "px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"}
                               >
-                                Attended
+                                {card ? 'They came' : 'Attended'}
                               </button>
                               <button
                                 onClick={() => updateStatus(t.id, 'no_show')}
                                 disabled={loading === t.id}
-                                className="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                                className={card ? CARD_SECOND : "px-2.5 py-1 rounded-md text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"}
                               >
-                                No Show
+                                {card ? 'Did not come' : 'No Show'}
                               </button>
                             </>
                           )}
@@ -251,22 +259,20 @@ export default function TrialManager({
                             <button
                               onClick={() => updateStatus(t.id, 'cancelled')}
                               disabled={loading === t.id}
-                              className="px-2.5 py-1 rounded-md text-xs font-semibold text-white/30 hover:text-red-400 transition-colors disabled:opacity-50"
+                              className={card ? CARD_SECOND : "px-2.5 py-1 rounded-md text-xs font-semibold text-white/30 hover:text-red-400 transition-colors disabled:opacity-50"}
                             >
-                              Cancel
+                              {card ? 'Cancel trial' : 'Cancel'}
                             </button>
                           )}
                           {/* Phase 2.4 step 5 — Convert / Extend / Mark lost.
                               Only shown for the needsFollowUp() cohort so the
                               existing pending/confirmed action cluster stays
                               uncluttered for those rows. */}
-                          {needsFollowUp(stage) && (
-                            <TrialFollowUpActions
-                              source="booking"
-                              id={t.id}
-                              signupHref="/dashboard/groups"
-                              layout="inline"
-                            />
+                          {/* Every trial that has happened and has not joined keeps these, whatever
+                              follow-up emails have gone out. (They used to vanish for a week once
+                              the automatic follow-up was sent.) */}
+                          {t.status === 'attended' && !t.converted && (
+                            <TrialJoinActions card={card} id={t.id} childName={t.childName} hasEmail={!!t.parentEmail} sentAt={t.joinLinkSentAt ?? null} />
                           )}
       </>
     )
@@ -275,13 +281,13 @@ export default function TrialManager({
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 bg-[#0f1a2b] rounded-lg p-1 w-fit max-w-full overflow-x-auto border border-[#1d2c42]" data-testid="trial-tabs">
+      <div className="flex gap-1 mb-4 bg-[#0f1a2b] rounded-full p-1 w-fit max-w-full overflow-x-auto border border-[#1d2c42] [scrollbar-width:none]" data-testid="trial-tabs">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              filter === tab.key ? 'bg-[#1d2c42] text-white shadow-sm' : 'text-white/40 hover:text-white/70'
+            className={`shrink-0 whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              filter === tab.key ? 'bg-[#4ecde6] text-[#06121c] shadow-sm' : 'text-white/40 hover:text-white/70'
             }`}
           >
             {tab.label}
@@ -298,34 +304,76 @@ export default function TrialManager({
         {/* Phones: one card per trial. The table hid the class and the date below 768px and
             pushed its buttons off the right-hand edge, so on a phone a trial was a name and
             a status with nothing to press (reported Oct 2026). */}
-        <ul className="space-y-2.5 md:hidden" data-testid="trial-cards">
+        <ul className="space-y-4 md:hidden" data-testid="trial-cards">
           {filtered.map((t) => {
             const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending
-            const badge = getReminderBadge(t, stageById.get(t.id) ?? 'upcoming')
+            const stage = stageById.get(t.id) ?? 'upcoming'
+            const badge = getReminderBadge(t, stage)
             const paid = paidTrialPence(t.notes)
             const when = t.preferredDate
               ? new Date(t.preferredDate.slice(0, 10) + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
               : 'Any date'
+            const initials = t.childName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || '').join('')
+            const live = !t.converted && ['pending', 'confirmed', 'attended'].includes(t.status)
+            // One line that tells the academy what to do next with this trial.
+            const next = t.converted ? null
+              : t.status === 'pending' ? 'New booking. Confirm it so the parent knows to come.'
+              : t.status === 'confirmed' ? 'After the session, say whether they came.'
+              : t.status === 'attended' ? (t.joinLinkSentAt ? 'Joining link sent. Waiting for them to pay.' : 'They came. Invite them to join.')
+              : null
             return (
-              <li key={t.id} className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-4" data-testid="trial-card">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-bold text-white">{t.childName}{t.childAge ? <span className="font-normal text-white/45"> · {t.childAge}</span> : null}</p>
-                    <p className="mt-0.5 truncate text-[13px] text-white/60">{t.groupName || 'Any class'} · {when}</p>
+              <li key={t.id} className="relative overflow-hidden rounded-3xl border border-[#243652] bg-gradient-to-b from-[#132238] to-[#0d1726] p-5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.9)]" data-testid="trial-card">
+                <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#4ecde6]/10 blur-3xl" />
+                <div className="relative flex items-center gap-3.5">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#0b1524] text-sm font-bold text-[#4ecde6] ring-2 ring-[#4ecde6]/40">{initials || '?'}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 break-words text-[17px] font-bold leading-tight text-white">{t.childName}</p>
+                    <p className="mt-0.5 text-[13px] text-white/50">{t.childAge ? `Age ${t.childAge}` : 'Age not given'}</p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-white/85">
+                    <span className={`h-1.5 w-1.5 rounded-full ${t.converted ? 'bg-[#4ecde6]' : live ? 'bg-[#4ecde6]' : 'bg-white/30'}`} />{t.converted ? 'Joined' : cfg.label}
+                  </span>
                 </div>
-                <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
-                  <span className="text-white/80">{t.parentName}</span>
-                  {t.parentPhone && <a href={`tel:${t.parentPhone.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6]">{t.parentPhone}</a>}
+
+                <div className="relative mt-4 grid grid-cols-2 divide-x divide-white/[0.07] rounded-2xl border border-white/[0.07] bg-[#0b1524]/70">
+                  <div className="min-w-0 px-3.5 py-3"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Class</p><p className="mt-1 truncate text-sm font-semibold text-white">{t.groupName || 'Any class'}</p></div>
+                  <div className="min-w-0 px-3.5 py-3"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Trial date</p><p className="mt-1 truncate text-sm font-semibold text-white">{when}</p></div>
                 </div>
-                {(paid != null || badge) && (
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {paid != null && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300" data-testid="trial-paid">Paid £{(paid / 100).toFixed(2)}</span>}
-                    {badge && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.color}`}>{badge.label}</span>}
+
+                <div className="relative mt-3 flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.8-3.6 3.5-5.5 7-5.5s6.2 1.9 7 5.5" /></svg>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white/90">{t.parentName}</p>
+                    {t.parentPhone && <p className="text-xs text-white/45">{t.parentPhone}</p>}
+                  </div>
+                  {t.parentPhone && (
+                    <a href={`tel:${t.parentPhone.replace(/\s+/g, '')}`} aria-label={`Call ${t.parentName}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#243652] text-[#4ecde6] transition-colors hover:border-[#4ecde6]/60" data-testid="trial-call">
+                      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z" /></svg>
+                    </a>
+                  )}
+                  <WhatsAppButton
+                    phone={t.parentPhone}
+                    message={(t.status === 'attended' ? WA_TEMPLATES.trialFollowUp : WA_TEMPLATES.trialChase)({ parentName: t.parentName, academyName, childName: t.childName }) + (t.status === 'attended' && academySlug ? ` You can join here: ${baseUrl}${trialJoinPath(academySlug, t.id)}` : '')}
+                    iconOnly
+                    testId="trial-card-whatsapp"
+                    className="!h-10 !w-10 shrink-0 !justify-center !rounded-full !border-[#243652] !bg-transparent !p-0 !text-[#4ecde6] hover:!border-[#4ecde6]/60 [&_svg]:!h-[18px] [&_svg]:!w-[18px]"
+                  />
+                </div>
+
+                {(paid != null || (badge && !t.converted)) && (
+                  <div className="relative mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">
+                    {paid != null && <span data-testid="trial-paid"><span className="font-semibold text-white/85">Paid £{(paid / 100).toFixed(2)}</span> online</span>}
+                    {badge && !t.converted && <span>{badge.label}</span>}
                   </div>
                 )}
-                <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/[0.06] pt-3" data-testid="trial-card-actions">{rowActions(t)}</div>
+
+                {next && (
+                  <div className="relative mt-4 rounded-2xl border border-[#4ecde6]/25 bg-[#4ecde6]/[0.06] px-3.5 py-3" data-testid="trial-next-step">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4ecde6]">Next step</p>
+                    <p className="mt-1 text-sm text-white/90">{next}</p>
+                  </div>
+                )}
+                <div className="relative mt-4 flex flex-wrap items-center gap-2" data-testid="trial-card-actions">{rowActions(t, true)}</div>
               </li>
             )
           })}

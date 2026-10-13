@@ -2108,6 +2108,30 @@ export function trialReminder2hEmail(params: {
 // to `promo_codes` and that nothing at checkout ever read, so the discount
 // was unhonourable as well as unauthorised.) An academy that wants to run a
 // taster offer creates a real promo code and shares it themselves.
+/** Sent when an academy taps "Send joining link" on a trial. One button, straight to sign-up with their details filled in. */
+export function trialJoinLinkEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className?: string | null
+  joinUrl: string
+}) {
+  const first = (params.parentName || '').trim().split(/\s+/)[0] || 'there'
+  return {
+    subject: `${params.childName}'s place at ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">${params.childName}'s place is ready</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${first},</p>
+      <p style="color:#aaa;line-height:1.6">It was great to have <strong>${params.childName}</strong> along${params.className ? ` to <strong>${params.className}</strong>` : ''}. We'd love them to join us at <strong>${params.academyName}</strong>.</p>
+      <p style="color:#aaa;line-height:1.6">The button below opens sign-up with your details already filled in. It takes about two minutes.</p>
+      <div style="text-align:center;margin:26px 0">
+        <a href="${params.joinUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Join ${params.academyName} &rarr;</a>
+      </div>
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:20px">Any questions, just reply to this email.</p>
+    `, undefined, params.academyName),
+  }
+}
+
 export function trialConversionEmail(params: {
   parentName: string
   childName: string

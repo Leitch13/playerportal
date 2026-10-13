@@ -19,6 +19,16 @@ const FEATURES = [
   ['Players: who has paid on each class sheet', `${D}/players/PlayersTable.tsx`, ['data-testid="squad-pay"', 'function squadPay(']],
   ['Plans & Pricing: plans by type', `${D}/plans/PlanManager.tsx`, ['plans-type-list']],
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
+  // After a trial: one joining link, sent in one tap, that opens sign-up filled in (13 Oct 2026). See src/lib/trial-join.ts.
+  ['Trials: the academy sends a joining link in one tap', `${D}/trials/TrialJoinActions.tsx`, ['trial-send-join-link', "'send-join-link'", 'trial-date-picker', 'type="date"', 'trial-not-joining']],
+  ['Trials: an attended trial offers the joining link, and Copy link copies it', `${D}/trials/TrialManager.tsx`, ['<TrialJoinActions', 'trialJoinPath(academySlug, trial.id)', "t.status === 'attended' && !t.converted && ("]],
+  ['Trials: the page shows when the link was sent', `${D}/trials/page.tsx`, ['TRIAL_JOIN_SENT_ACTION', 'joinLinkSentAt']],
+  ['Trials: the joining link ties the payment to the trial and opens sign-up', `${A}/book/[slug]/join/[trialId]/route.ts`, ['trial_signup_attributions', 'trialSignupPath(', 'to(fallback)']],
+  ['Trials: sending the link emails the parent and is written down', `${A}/api/admin/trials/[id]/send-join-link/route.ts`, ['trialJoinLinkEmail(', 'TRIAL_JOIN_SENT_ACTION', 'joinLinkProblem(', 'conversion_offer_sent: true']],
+  ['Trials: sign-up fills in a trial family\'s details', `${A}/auth/signup/page.tsx`, ["searchParams.get('tj')", '/api/trials/join-details', 'signup-from-trial']],
+  ['Trials: the pre-fill gives nothing once a family has joined', `${A}/api/trials/join-details/route.ts`, ['t.converted', 'splitChildName(']],
+  ['Trials: the day-1 follow-up email uses the joining link', `${A}/api/cron/trial-followup/route.ts`, ['trialJoinPath(org.slug, trial.id)']],
+  ['Trials: the day-3 offer email uses the joining link', `${A}/api/cron/trial-conversion/route.ts`, ['trialJoinPath(org.slug, trial.id)']],
   ['Classes: filter by day, age group, venue and coach', `${D}/groups/page.tsx`, ['<ClassFilters', 'matchesClassFilters(', 'classFilterOptions(']],
   ['Classes: the filter row', `${D}/groups/ClassFilters.tsx`, ['class-filter-${key}', 'class-filters-clear', 'Any age group']],
   ['Terms: calm page', `${D}/terms/TermManager.tsx`, ['terms-headline', 'term-card']],
@@ -78,7 +88,7 @@ const FEATURES = [
   ['1-2-1 timetable: the phone agenda', `${D}/one-to-one/timetable/page.tsx`, ['data-testid="timetable-agenda"', 'timetable-block-time', 'timetable-roll']],
 
   // ── trials (Oct 2026: paid trials told nobody for four months)
-  ['Trials: on a phone each trial is a card with its class, date, phone and every button', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-cards"', 'data-testid="trial-card-actions"', 'rowActions(t)', 'md:hidden', 'tel:']],
+  ['Trials: on a phone each trial is a card with its class, date, phone and every button', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-cards"', 'data-testid="trial-card-actions"', 'rowActions(t, true)', 'trial-next-step', 'md:hidden', 'tel:']],
   ['Trials: a paid trial shows as paid', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-paid"', 'paidTrialPence(']],
   ['Trials: the parent of a paid trial gets a confirmation', 'src/lib/email-templates.ts', ['export function paidTrialConfirmationEmail']],
   ['Trials: one booking per child, class and date', `${A}/api/trial-bookings/paid/route.ts`, ['sameTrial(', "'trial_already_booked'"]],

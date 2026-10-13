@@ -1,3 +1,4 @@
+import { trialJoinPath } from '@/lib/trial-join'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, sendEmailBatch } from '@/lib/email'
@@ -78,7 +79,8 @@ export async function GET(request: NextRequest) {
     //
     // NO `discount` param: the platform does not offer money off an
     // academy's classes on their behalf. See trialConversionEmail.
-    const signupUrl = `${appUrl}/book/${slug}?trial=${trial.id}&email=${encodeURIComponent(trial.parent_email)}`
+    // The one joining link per trial: sign-up with their details filled in. See src/lib/trial-join.ts.
+    const signupUrl = org?.slug ? `${appUrl}${trialJoinPath(org.slug, trial.id)}` : `${appUrl}/book/${slug}`
 
     const template = trialConversionEmail({
       parentName: trial.parent_name?.split(' ')[0] || 'there',

@@ -102,6 +102,22 @@ function SignUp() {
   const inviteRole = 'parent'
   const [referrerName, setReferrerName] = useState<string | null>(null)
 
+  // Arriving from a trial's joining link (?tj=<trial id>): fill in what the parent already gave
+  // us when they booked the trial. Only fills empty boxes. See src/lib/trial-join.ts.
+  const trialJoinId = searchParams.get('tj')
+  const [trialJoin, setTrialJoin] = useState<{ childFirst: string; className: string | null } | null>(null)
+  useEffect(() => {
+    if (!trialJoinId) return
+    let cancelled = false
+    fetch(`/api/trials/join-details?id=${encodeURIComponent(trialJoinId)}`).then((r) => r.ok ? r.json() : null).then((d) => {
+      if (cancelled || !d?.ok) return
+      setFullName((v) => v || d.parentName); setEmail((v) => v || d.email); setPhone((v) => v || d.phone)
+      setChildFirstName((v) => v || d.childFirst); setChildLastName((v) => v || d.childLast)
+      setTrialJoin({ childFirst: d.childFirst, className: d.className })
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [trialJoinId])
+
   useEffect(() => { if (preSelectedBilling === 'quarterly' && isQuarterlyEnabledForOrgPublic(orgId, orgQuarterlyEnabled)) setBillingOption('quarterly') }, [preSelectedBilling, orgId, orgQuarterlyEnabled])
 
   useEffect(() => {
@@ -513,6 +529,12 @@ function SignUp() {
 
           {step === 1 && (!showAcademySearch || orgName) && (
             <form onSubmit={handleCreateAccount} className="space-y-3 sm:space-y-4">
+              {trialJoin && (
+                <div className="rounded-xl border border-[#4ecde6]/30 bg-[#4ecde6]/10 px-4 py-3" data-testid="signup-from-trial">
+                  <p className="text-sm font-semibold text-white">Welcome back{trialJoin.childFirst ? ` — let's get ${trialJoin.childFirst} signed up` : ''}</p>
+                  <p className="mt-0.5 text-xs text-white/60">We've filled in the details from your trial{trialJoin.className ? ` at ${trialJoin.className}` : ''}. Just choose a password.</p>
+                </div>
+              )}
               {orgName && !searchParams.get('org') && (
                 <div className="flex items-center gap-3 rounded-xl px-4 py-3 border bg-[#0e0e0e]" style={{ borderColor: `${primaryColor}30` }}>
                   {orgLogo && <img src={orgLogo} alt="" className="w-8 h-8 rounded-lg object-cover bg-[#2a2a2a]" />}
