@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { savedReportMessage } from '@/lib/report-status'
 import { createClient } from '@/lib/supabase/client'
 import { SCORE_CATEGORIES } from '@/lib/types'
 import { normalizeCategories, type ScoringCategory, type NormalizedCategory, FOOTBALL_DEFAULTS, GOALKEEPER_DEFAULTS, CUSTOM_SPORT_DEFAULTS } from '@/lib/scoring-categories'
@@ -145,9 +146,10 @@ export default function ReviewForm({
       alert(error.message)
     } else {
       const player = players.find((p) => p.id === playerId)
-      setSuccess(`Review published for ${player?.first_name} ${player?.last_name}!`)
+      const childName = `${player?.first_name || ''} ${player?.last_name || ''}`.trim() || 'this player'
+      setSuccess(`Report saved for ${childName}. Emailing the parent…`)
 
-      // Send progress report email to parent
+      // Email the parent, and tell the coach what actually happened. See src/lib/report-status.ts.
       if (playerId) {
         fetch('/api/email/progress-report', {
           method: 'POST',
@@ -159,7 +161,8 @@ export default function ReviewForm({
             focusAreas: focusNext || '',
             coachComment: parentSummary || '',
           }),
-        }).catch(() => {})
+        }).then(async (res) => { const j = await res.json().catch(() => ({})) as { emailed?: boolean; error?: string }; setSuccess(savedReportMessage(childName, { emailed: res.ok && !!j.emailed, reason: j.error }).text); router.refresh() })
+          .catch(() => setSuccess(savedReportMessage(childName, { emailed: false }).text))
       }
 
       setPlayerId('')

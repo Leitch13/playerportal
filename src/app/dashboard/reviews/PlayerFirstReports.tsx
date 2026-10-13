@@ -15,6 +15,8 @@
  * (REPORTS_REDESIGN_ENABLED); off → original list. Server component; native
  * <details> + SVG, no client JS.
  */
+import ReportResendButton from './ReportResendButton'
+import { reportStatus } from '@/lib/report-status'
 import ScoreBadge from '@/components/ScoreBadge'
 import type { NormalizedCategory } from '@/lib/scoring-categories'
 
@@ -25,7 +27,9 @@ type Review = Record<string, unknown> & {
   focus_next?: string | null
   parent_summary?: string | null
   scores?: Record<string, number> | null
-  player?: { first_name: string; last_name: string; age_group?: string | null; photo_url?: string | null; position?: string | null } | null
+  emailed_at?: string | null
+  viewed_at?: string | null
+  player?: { first_name: string; last_name: string; age_group?: string | null; photo_url?: string | null; position?: string | null; parent?: { full_name: string | null; email: string | null } | null } | null
   coach?: { full_name: string } | null
 }
 
@@ -71,6 +75,13 @@ function insights(rows: CatRow[], history: Review[], cats: NormalizedCategory[])
     largestDecline: largestDecline && largestDecline.delta < 0 ? largestDecline : null,
     consistency,
   }
+}
+
+/** Has the parent been emailed this report, and have they opened it? See src/lib/report-status.ts. */
+function ReportStatusLine({ review }: { review: Review }) {
+  const parent = review.player?.parent
+  const st = reportStatus({ emailed_at: review.emailed_at, viewed_at: review.viewed_at, parentEmail: parent?.email, parentName: parent?.full_name })
+  return <ReportResendButton reviewId={review.id} sent={st.sent} seen={st.seen} canSend={st.canSend} who={(parent?.full_name || '').trim().split(/\s+/)[0] || 'the parent'} />
 }
 
 /* ── presentational atoms ── */
@@ -220,6 +231,7 @@ export default function PlayerFirstReports({
                     {[latest.player?.age_group, position].filter(Boolean).join(' · ') || '—'}
                   </p>
                   <p className="text-[11px] text-white/40 mt-1">Last report: {fmt(latest.review_date)}{latest.coach?.full_name ? ` · ${latest.coach.full_name}` : ''}</p>
+                  <ReportStatusLine review={latest} />
                 </div>
               </div>
               {/* overall score */}

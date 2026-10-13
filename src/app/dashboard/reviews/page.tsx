@@ -67,7 +67,7 @@ export default async function ReviewsPage({
     .from('progress_reviews')
     .select(`
       *,
-      player:players(first_name, last_name, age_group, photo_url, position),
+      player:players(first_name, last_name, age_group, photo_url, position, parent:profiles!players_parent_id_fkey(full_name, email)),
       coach:profiles!progress_reviews_coach_id_fkey(full_name)
     `)
     .order('review_date', { ascending: false })

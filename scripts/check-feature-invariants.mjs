@@ -21,6 +21,12 @@ const FEATURES = [
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
   // Player Reports one class at a time (13 Oct 2026). See src/lib/report-class-filter.ts.
   ['Player Reports: filter by class, and who still needs a report', `${D}/reviews/page.tsx`, ['<ReportClassFilter', 'playersInClass(', 'reportCoverage(', 'report-class-coverage', 'report-class-missing']],
+  // The academy is told whether the parent was emailed a report and whether they opened it (13 Oct 2026). See src/lib/report-status.ts.
+  ['Player Reports: each report says emailed / seen, with a send button', `${D}/reviews/PlayerFirstReports.tsx`, ['<ReportStatusLine review={latest}', 'reportStatus(', '<ReportResendButton']],
+  ['Player Reports: the status line and its send button', `${D}/reviews/ReportResendButton.tsx`, ['report-status-sent', 'report-status-seen', 'report-resend', 'json.emailed']],
+  ['Player Reports: the coach is told whether the email went', `${D}/reviews/ReviewForm.tsx`, ['savedReportMessage(childName, { emailed: res.ok && !!j.emailed']],
+  ['Player Reports: the email route reports the truth and can re-send a saved report', `${A}/api/email/progress-report/route.ts`, ['body.reviewId', "success: true, emailed })", "'No parent email', emailed: false"]],
+  ['Player Reports: the list is given the parent and both times', `${D}/reviews/page.tsx`, ['parent:profiles!players_parent_id_fkey(full_name, email)']],
   ['Player Reports: the class dropdown', `${D}/reviews/ReportClassFilter.tsx`, ['report-class-select', 'All classes', "next.set('class', id)"]],
   // After a trial: one joining link, sent in one tap, that opens sign-up filled in (13 Oct 2026). See src/lib/trial-join.ts.
   ['Trials: the academy sends a joining link in one tap', `${D}/trials/TrialJoinActions.tsx`, ['trial-send-join-link', "'send-join-link'", 'trial-date-picker', 'type="date"', 'trial-not-joining']],

@@ -24,7 +24,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const { playerId, scores, strengths, focusAreas, coachComment } = await request.json()
+  const body = await request.json()
+  let { playerId, scores, strengths, focusAreas, coachComment } = body as { playerId?: string; scores?: Record<string, number>; strengths?: string; focusAreas?: string; coachComment?: string }
+  // Sending a report that is already saved ("Email again" on Player Reports): read it back by id.
+  // The coach's own session reads it, so a report from another academy is simply not found.
+  const reviewId = typeof body.reviewId === 'string' ? body.reviewId : null
+  if (reviewId) {
+    const { data: review } = await supabase.from('progress_reviews').select('*').eq('id', reviewId).maybeSingle()
+    if (!review) return NextResponse.json({ error: 'Report not found', emailed: false }, { status: 404 })
+    const r = review as Record<string, unknown>
+    playerId = r.player_id as string
+    scores = scores ?? ((r.scores as Record<string, number> | null) || Object.fromEntries(FALLBACK_SCORE_CATEGORIES.map((c) => [c.key, Number(r[c.key] || 0)])))
+    strengths = strengths ?? ((r.strengths as string | null) || '')
+    focusAreas = focusAreas ?? ((r.focus_next as string | null) || '')
+    coachComment = coachComment ?? ((r.parent_summary as string | null) || '')
+  }
   if (!playerId) {
     return NextResponse.json({ error: 'Missing playerId' }, { status: 400 })
   }
@@ -39,7 +53,7 @@ export async function POST(request: NextRequest) {
   if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
   const parent = player.profiles as unknown as { full_name: string; email: string } | null
-  if (!parent?.email) return NextResponse.json({ error: 'No parent email' }, { status: 400 })
+  if (!parent?.email) return NextResponse.json({ error: 'No parent email', emailed: false }, { status: 400 })
 
   // Get org name (+ logo for the premium email)
   const { data: orgId } = await supabase.rpc('get_my_org')
@@ -173,7 +187,11 @@ export async function POST(request: NextRequest) {
   // just-created review (the latest for this player) so the daily cron skips
   // it. Failure ⇒ emailed_at stays NULL ⇒ cron retries. Uses the coach's
   // session (existing coach/admin UPDATE policy) — no RLS change, idempotent.
-  if (REPORT_EMAIL_IDEMPOTENCY_ENABLED && result?.success) {
+  const emailed = !!result?.success && !('skipped' in result && result.skipped)
+  if (reviewId && emailed) {
+    // A named report: stamp that one, with the time of this send.
+    await supabase.from('progress_reviews').update({ emailed_at: new Date().toISOString() }).eq('id', reviewId)
+  } else if (REPORT_EMAIL_IDEMPOTENCY_ENABLED && result?.success) {
     const { data: latest } = await supabase
       .from('progress_reviews')
       .select('id')
@@ -200,5 +218,6 @@ export async function POST(request: NextRequest) {
     link: `/dashboard/players/${playerId}/report`,
   })
 
-  return NextResponse.json({ ...result, success: true })
+  // `emailed` is the truth the coach is shown. See src/lib/report-status.ts.
+  return NextResponse.json({ ...result, success: true, emailed })
 }
