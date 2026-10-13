@@ -1,3 +1,5 @@
+import ClassFilters from './ClassFilters'
+import { classFilterOptions, matchesClassFilters } from '@/lib/class-filters'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -21,7 +23,7 @@ const WAITLIST_SCHEMA_FIX_ON = process.env.WAITLIST_SCHEMA_FIX_ENABLED === 'true
 export default async function GroupsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; view?: string }>
+  searchParams?: Promise<{ q?: string; view?: string; day?: string; age?: string; venue?: string; coach?: string }>
 }) {
   const sp = await searchParams
   const q = (sp?.q || '').trim().toLowerCase()
@@ -166,7 +168,17 @@ export default async function GroupsPage({
       case 'attention': return c.status !== 'healthy'
     }
   }
-  const viewGroups = visibleGroups.filter((g) => matchesView(g.id))
+  // ?day= ?age= ?venue= ?coach= — the filter row. Options come from the academy's own
+  // classes, so nothing is offered that would show an empty list. See src/lib/class-filters.ts.
+  const filterable = (g: (typeof visibleGroups)[number]) => ({
+    day_of_week: g.day_of_week as string | null,
+    age_group: (g as unknown as { age_group?: string | null }).age_group ?? null,
+    location: g.location as string | null,
+    coachName: (g.coach as unknown as { full_name?: string } | null)?.full_name || null,
+  })
+  const classFilters = { day: (sp?.day || '').trim(), age: (sp?.age || '').trim(), venue: (sp?.venue || '').trim(), coach: (sp?.coach || '').trim() }
+  const filterOptions = classFilterOptions((groups || []).map(filterable))
+  const viewGroups = visibleGroups.filter((g) => matchesView(g.id) && matchesClassFilters(filterable(g), classFilters))
   const VIEW_LABEL: Record<ClassesView, string> = {
     open: 'classes with places free', risk: 'quiet classes', waitlist: 'classes with a waiting list',
     full: 'full classes', attention: 'classes needing attention',
@@ -257,6 +269,8 @@ export default async function GroupsPage({
         </div>
       )}
 
+      <ClassFilters {...filterOptions} current={classFilters} shown={viewGroups.length} total={(groups || []).length} />
+
       {/* Create new class (admin only) */}
       {isAdmin && <GroupForm coaches={coaches || []} orgId={orgId} terms={termsForDropdown || []} />}
 
@@ -274,7 +288,7 @@ export default async function GroupsPage({
           {q ? (
             <p className="text-sm text-white/60">Nothing matches <span className="font-semibold text-white">&ldquo;{q}&rdquo;</span></p>
           ) : (
-            <p className="text-sm text-white/60">No {view ? VIEW_LABEL[view] : 'classes'} right now.</p>
+            <p className="text-sm text-white/60" data-testid="classes-none-match">{classFilters.day || classFilters.age || classFilters.venue || classFilters.coach ? 'No classes match those filters.' : `No ${view ? VIEW_LABEL[view] : 'classes'} right now.`}</p>
           )}
           <a href="/dashboard/groups" className="mt-2 inline-block text-xs font-semibold text-[#4ecde6] hover:underline">{q ? 'Clear search' : 'Show all classes'}</a>
         </div>

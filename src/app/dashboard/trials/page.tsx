@@ -65,7 +65,7 @@ export default async function TrialsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Trial Bookings</h1>
-          <p className="text-white/60 text-sm mt-1">Manage free trial requests from new families</p>
+          <p className="text-white/60 text-sm mt-1">Free and paid trials booked by new families</p>
         </div>
         <Link
           href="/dashboard/trials/funnel"
@@ -74,6 +74,30 @@ export default async function TrialsPage() {
           View Funnel
         </Link>
       </div>
+
+      {/* The trials themselves come first. On a phone they used to sit under a screen and a half of
+          statistics; the numbers now follow the list. */}
+      <TrialManager academyName={academyName} academySlug={academySlug} trials={allTrials.map(t => ({
+        id: t.id,
+        parentName: t.parent_name,
+        parentEmail: t.parent_email,
+        parentPhone: t.parent_phone,
+        childName: t.child_name,
+        childAge: t.child_age,
+        groupName: (t.group as unknown as { name: string } | null)?.name || null,
+        preferredDate: t.preferred_date,
+        notes: t.notes,
+        status: t.status,
+        createdAt: t.created_at,
+        // Phase 2.4 — exposes `updated_at` so the client can derive
+        // stale_followup (>7d since the follow-up was marked sent).
+        updatedAt: t.updated_at ?? null,
+        reminder48h: t.reminder_48h_sent ?? false,
+        reminder24h: t.reminder_24h_sent ?? false,
+        reminder2h: t.reminder_2h_sent ?? false,
+        followupSent: t.followup_sent ?? false,
+        converted: t.converted ?? false,
+      }))} />
 
       {/* Phase 2.7 placement fix — ConversionMetrics promoted here from
           /dashboard/trials/funnel. Lives in exactly one place so the
@@ -111,28 +135,6 @@ export default async function TrialsPage() {
           <p className="text-xs text-white/60 font-medium">Conversion</p>
         </div>
       </div>
-
-      <TrialManager academyName={academyName} academySlug={academySlug} trials={allTrials.map(t => ({
-        id: t.id,
-        parentName: t.parent_name,
-        parentEmail: t.parent_email,
-        parentPhone: t.parent_phone,
-        childName: t.child_name,
-        childAge: t.child_age,
-        groupName: (t.group as unknown as { name: string } | null)?.name || null,
-        preferredDate: t.preferred_date,
-        notes: t.notes,
-        status: t.status,
-        createdAt: t.created_at,
-        // Phase 2.4 — exposes `updated_at` so the client can derive
-        // stale_followup (>7d since the follow-up was marked sent).
-        updatedAt: t.updated_at ?? null,
-        reminder48h: t.reminder_48h_sent ?? false,
-        reminder24h: t.reminder_24h_sent ?? false,
-        reminder2h: t.reminder_2h_sent ?? false,
-        followupSent: t.followup_sent ?? false,
-        converted: t.converted ?? false,
-      }))} />
     </div>
   )
 }

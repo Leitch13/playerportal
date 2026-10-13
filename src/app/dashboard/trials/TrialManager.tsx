@@ -179,87 +179,12 @@ export default function TrialManager({
     { key: 'followup', label: `Follow-up due${followupCount > 0 ? ` (${followupCount})` : ''}` },
   ]
 
-  return (
-    <div>
-      {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 bg-[#0f1a2b] rounded-lg p-1 w-fit border border-[#1d2c42]">
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              filter === tab.key ? 'bg-[#1d2c42] text-white shadow-sm' : 'text-white/40 hover:text-white/70'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
-          <p className="text-white/40">No trial bookings {filter !== 'all' ? `with status "${filter}"` : 'yet'}</p>
-        </div>
-      ) : (
-        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1d2c42]">
-                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Child</th>
-                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Parent</th>
-                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden md:table-cell">Class</th>
-                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden lg:table-cell">Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Status</th>
-                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden lg:table-cell">Funnel</th>
-                  <th className="text-right px-4 py-3 font-semibold text-white/50 text-xs">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((t) => {
-                  const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending
-                  const stage = stageById.get(t.id) ?? 'upcoming'
-                  const badge = getReminderBadge(t, stage)
-                  return (
-                    <tr key={t.id} className="border-b border-[#1d2c42]/50 hover:bg-white/[0.02]">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-white">{t.childName}</p>
-                        {t.childAge && <p className="text-xs text-white/40">Age {t.childAge}</p>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-white/80">{t.parentName}</p>
-                        <p className="text-xs text-white/40">{t.parentEmail}</p>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-white/50">
-                        {t.groupName || 'Any'}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-white/50">
-                        {t.preferredDate
-                          ? new Date(t.preferredDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                          : 'Flexible'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
-                          {cfg.label}
-                        </span>
-                        {/* A paid trial's money never showed anywhere an academy looks, so it read as unpaid (Talent FA, Oct 2026). */}
-                        {paidTrialPence(t.notes) != null && (
-                          <span data-testid="trial-paid" className="ml-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300">
-                            Paid £{(paidTrialPence(t.notes)! / 100).toFixed(2)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        {badge ? (
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${badge.color}`}>
-                            {badge.label}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-white/20">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center gap-1 justify-end flex-wrap">
+  // The buttons for one trial. Shared by the table (wide screens) and the cards (phones),
+  // so a phone gets every action the table has.
+  const rowActions = (t: Trial) => {
+    const stage = stageById.get(t.id) ?? 'upcoming'
+    return (
+      <>
                           {/* Sprint 6 — WhatsApp deep-link. Chooses the right
                               pre-filled template based on funnel stage: a chase
                               for pending/confirmed trials, a follow-up nudge
@@ -343,7 +268,127 @@ export default function TrialManager({
                               layout="inline"
                             />
                           )}
-                        </div>
+      </>
+    )
+  }
+
+  return (
+    <div>
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-4 bg-[#0f1a2b] rounded-lg p-1 w-fit max-w-full overflow-x-auto border border-[#1d2c42]" data-testid="trial-tabs">
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              filter === tab.key ? 'bg-[#1d2c42] text-white shadow-sm' : 'text-white/40 hover:text-white/70'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-12 text-center">
+          <p className="text-white/40">No trial bookings {filter !== 'all' ? `with status "${filter}"` : 'yet'}</p>
+        </div>
+      ) : (
+        <>
+        {/* Phones: one card per trial. The table hid the class and the date below 768px and
+            pushed its buttons off the right-hand edge, so on a phone a trial was a name and
+            a status with nothing to press (reported Oct 2026). */}
+        <ul className="space-y-2.5 md:hidden" data-testid="trial-cards">
+          {filtered.map((t) => {
+            const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending
+            const badge = getReminderBadge(t, stageById.get(t.id) ?? 'upcoming')
+            const paid = paidTrialPence(t.notes)
+            const when = t.preferredDate
+              ? new Date(t.preferredDate.slice(0, 10) + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+              : 'Any date'
+            return (
+              <li key={t.id} className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-4" data-testid="trial-card">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-bold text-white">{t.childName}{t.childAge ? <span className="font-normal text-white/45"> · {t.childAge}</span> : null}</p>
+                    <p className="mt-0.5 truncate text-[13px] text-white/60">{t.groupName || 'Any class'} · {when}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
+                  <span className="text-white/80">{t.parentName}</span>
+                  {t.parentPhone && <a href={`tel:${t.parentPhone.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6]">{t.parentPhone}</a>}
+                </div>
+                {(paid != null || badge) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {paid != null && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300" data-testid="trial-paid">Paid £{(paid / 100).toFixed(2)}</span>}
+                    {badge && <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.color}`}>{badge.label}</span>}
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/[0.06] pt-3" data-testid="trial-card-actions">{rowActions(t)}</div>
+              </li>
+            )
+          })}
+        </ul>
+        <div className="hidden bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] overflow-hidden md:block" data-testid="trial-table">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#1d2c42]">
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Child</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Parent</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden md:table-cell">Class</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden lg:table-cell">Date</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs">Status</th>
+                  <th className="text-left px-4 py-3 font-semibold text-white/50 text-xs hidden lg:table-cell">Funnel</th>
+                  <th className="text-right px-4 py-3 font-semibold text-white/50 text-xs">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((t) => {
+                  const cfg = STATUS_CONFIG[t.status] || STATUS_CONFIG.pending
+                  const stage = stageById.get(t.id) ?? 'upcoming'
+                  const badge = getReminderBadge(t, stage)
+                  return (
+                    <tr key={t.id} className="border-b border-[#1d2c42]/50 hover:bg-white/[0.02]">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-white">{t.childName}</p>
+                        {t.childAge && <p className="text-xs text-white/40">Age {t.childAge}</p>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-white/80">{t.parentName}</p>
+                        <p className="text-xs text-white/40">{t.parentEmail}</p>
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell text-white/50">
+                        {t.groupName || 'Any'}
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell text-white/50">
+                        {t.preferredDate
+                          ? new Date(t.preferredDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                          : 'Flexible'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
+                          {cfg.label}
+                        </span>
+                        {/* A paid trial's money never showed anywhere an academy looks, so it read as unpaid (Talent FA, Oct 2026). */}
+                        {paidTrialPence(t.notes) != null && (
+                          <span data-testid="trial-paid" className="ml-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300">
+                            Paid £{(paidTrialPence(t.notes)! / 100).toFixed(2)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {badge ? (
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-white/20">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center gap-1 justify-end flex-wrap">{rowActions(t)}</div>
                       </td>
                     </tr>
                   )
@@ -352,6 +397,7 @@ export default function TrialManager({
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   )

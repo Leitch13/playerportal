@@ -19,6 +19,8 @@ const FEATURES = [
   ['Players: who has paid on each class sheet', `${D}/players/PlayersTable.tsx`, ['data-testid="squad-pay"', 'function squadPay(']],
   ['Plans & Pricing: plans by type', `${D}/plans/PlanManager.tsx`, ['plans-type-list']],
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
+  ['Classes: filter by day, age group, venue and coach', `${D}/groups/page.tsx`, ['<ClassFilters', 'matchesClassFilters(', 'classFilterOptions(']],
+  ['Classes: the filter row', `${D}/groups/ClassFilters.tsx`, ['class-filter-${key}', 'class-filters-clear', 'Any age group']],
   ['Terms: calm page', `${D}/terms/TermManager.tsx`, ['terms-headline', 'term-card']],
   ['Enrol: offers the payment link straight after', `${D}/enrolments/EnrolmentForm.tsx`, ['enrol-done', '<RequestPaymentButton']],
   ['Camps: card layout', `${D}/camps/page.tsx`, ['camp-card', 'camps-headline']],
@@ -76,6 +78,7 @@ const FEATURES = [
   ['1-2-1 timetable: the phone agenda', `${D}/one-to-one/timetable/page.tsx`, ['data-testid="timetable-agenda"', 'timetable-block-time', 'timetable-roll']],
 
   // ── trials (Oct 2026: paid trials told nobody for four months)
+  ['Trials: on a phone each trial is a card with its class, date, phone and every button', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-cards"', 'data-testid="trial-card-actions"', 'rowActions(t)', 'md:hidden', 'tel:']],
   ['Trials: a paid trial shows as paid', `${D}/trials/TrialManager.tsx`, ['data-testid="trial-paid"', 'paidTrialPence(']],
   ['Trials: the parent of a paid trial gets a confirmation', 'src/lib/email-templates.ts', ['export function paidTrialConfirmationEmail']],
   ['Trials: one booking per child, class and date', `${A}/api/trial-bookings/paid/route.ts`, ['sameTrial(', "'trial_already_booked'"]],

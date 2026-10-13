@@ -42,7 +42,7 @@ export default function ConversionMetrics({
       <header>
         <h2 className="text-sm font-bold text-white">Conversion metrics</h2>
         <p className="text-[11px] text-white/40 mt-0.5">
-          Booking-side only. Enrolment-source conversions are not tracked yet — see audit gap.
+          Counts trials booked through your booking page.
         </p>
       </header>
 
