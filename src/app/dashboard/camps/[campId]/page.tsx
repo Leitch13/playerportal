@@ -19,7 +19,7 @@ import AddPlayerToCamp, { type RosterPlayer } from './AddPlayerToCamp'
 import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { checkedInNow, checkinKey, CHECKIN_ACTIONS, type CheckinRow } from '@/lib/camp-checkin'
+import { checkedInNow, checkinKey, dateDayId, datesBetween, CHECKIN_ACTIONS, type CheckinRow } from '@/lib/camp-checkin'
 import RosterClient, { type CampRosterBooking } from './RosterClient'
 import CampWaitingList, { type WaitingPerson } from './CampWaitingList'
 import { CAMP_WAITLIST_SOURCE, campMarker } from '@/lib/camp-waitlist'
@@ -217,6 +217,25 @@ export default async function CampDetailPage({
         isAvailable: d.is_available,
         children: [...weekChildren, ...(bookingsByDay.get(d.id) || [])].map((c) => ({ ...c, in: tickedIn.has(checkinKey(c.bookingId, d.id)) })),
       })
+    }
+  } else {
+    // A whole-week camp: no day rows, so the register has one day per date of the camp and
+    // every booked child is on each of them. Ticks are kept by date (src/lib/camp-checkin.ts).
+    const service = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
+    const { data: tickRows } = await service
+      .from('audit_log')
+      .select('action, entity_id, created_at, details')
+      .eq('organisation_id', orgId)
+      .in('action', CHECKIN_ACTIONS)
+      .contains('details', { camp_id: campId })
+      .order('created_at', { ascending: true })
+      .limit(5000)
+    const tickedIn = checkedInNow((tickRows || []) as CheckinRow[])
+    const everyone = bookings.filter((b) => b.payment_status === 'pending' || b.payment_status === 'paid').map((b) => ({ bookingId: b.id, childName: b.child_name }))
+    const fmtDay = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+    for (const iso of datesBetween(camp.start_date as string | null, camp.end_date as string | null)) {
+      const id = dateDayId(iso)
+      perDayGroups.push({ dayId: id, date: iso, label: fmtDay(iso), isAvailable: true, children: everyone.map((c) => ({ ...c, in: tickedIn.has(checkinKey(c.bookingId, id)) })) })
     }
   }
 
@@ -443,7 +462,7 @@ export default async function CampDetailPage({
         // breakdown section + the "Days" column in the roster. When
         // false (whole-camp), RosterClient renders exactly as before.
         isFlexibleCamp={isFlexibleCamp}
-        perDayGroups={isFlexibleCamp ? perDayGroups : []}
+        perDayGroups={perDayGroups}
       />
     </div>
   )

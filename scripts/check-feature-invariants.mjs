@@ -30,6 +30,8 @@ const FEATURES = [
   ['Camps: tick a child in on the day register', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-tick', '/check-in']],
   ['Camps: a tick is saved', `${A}/api/admin/camps/[campId]/check-in/route.ts`, ['CHECKED_IN_ACTION', "['admin', 'coach']"]],
   ['Camps: ticks are read back on the camp page', `${D}/camps/[campId]/page.tsx`, ['checkedInNow(']],
+  ['Camps: a whole-week camp has the same tick-in register, kept by date', `${D}/camps/[campId]/page.tsx`, ['datesBetween(', 'dateDayId(', 'perDayGroups={perDayGroups}']],
+  ['Camps: the tick route accepts a date for a whole-week camp', `${A}/api/admin/camps/[campId]/check-in/route.ts`, ['byDate', 'datesBetween(']],
   ['Booking page: tidy layout', `${A}/book/[slug]/TidyClassList.tsx`, ['tidy-class-list']],
   ['Booking page: tidy layout is switched on by the shared rule', `${A}/book/[slug]/page.tsx`, ['isTidyBookingOrg(']],
 

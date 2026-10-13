@@ -20,6 +20,7 @@
 'use client'
 
 import { hasMedicalNote } from '@/lib/camp-booking-details'
+import { isDateDay } from '@/lib/camp-checkin'
 import { sortRoster, agesPresent, onlyAge, type RosterSort } from '@/lib/roster-sort'
 import SortBar from '@/components/SortBar'
 import { useState, useMemo } from 'react'
@@ -637,7 +638,7 @@ export default function RosterClient({
           BOOKED a specific day appear on that day's list. When the
           camp is whole-camp, this section is not rendered — the flat
           roster above IS the register. */}
-      {isFlexibleCamp && perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} bookings={bookings} campId={campId} />}
+      {perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} bookings={bookings} campId={campId} flexible={isFlexibleCamp} />}
 
       {/* Move Camp Booking Phase 1 — modal */}
       {moveOpen && (
@@ -844,7 +845,7 @@ function tidyName(name: string | null): string {
  * A coach standing at a pitch wants one day, in alphabetical order, one name
  * per line, a tick for who has arrived, and the phone number one tap away.
  */
-function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[]; bookings: CampRosterBooking[]; campId: string }) {
+function PerDayRegister({ groups, bookings, campId, flexible }: { groups: CampPerDayGroup[]; bookings: CampRosterBooking[]; campId: string; flexible: boolean }) {
   const today = new Date().toISOString().slice(0, 10)
   const running = groups.filter((g) => g.isAvailable)
   // Open on today if the camp is on today, else the next day it runs, else the first day.
@@ -870,7 +871,7 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
     const key = `${bookingId}:${day.dayId}`, next = !ticks[key]
     setTickError(''); setSaving(key); setTicks((t) => ({ ...t, [key]: next }))
     try {
-      const res = await fetch(`/api/admin/camps/${campId}/check-in`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, dayId: day.dayId, in: next }) })
+      const res = await fetch(`/api/admin/camps/${campId}/check-in`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isDateDay(day.dayId) ? { bookingId, date: day.date, in: next } : { bookingId, dayId: day.dayId, in: next }) })
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'That didn’t save. Please try again.')
     } catch (e) {
       setTicks((t) => ({ ...t, [key]: !next }))
@@ -882,8 +883,8 @@ function PerDayRegister({ groups, bookings, campId }: { groups: CampPerDayGroup[
   return (
     <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0f1a2b]" data-testid="camp-perday-register">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <h3 className="text-sm font-bold text-white">Who&apos;s attending each day</h3>
-        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#4ecde6]">Flexible days</span>
+        <h3 className="text-sm font-bold text-white">{flexible ? 'Who’s attending each day' : 'Register'}</h3>
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#4ecde6]">{flexible ? 'Flexible days' : 'Day by day'}</span>
       </div>
       <div className="flex gap-1.5 overflow-x-auto border-y border-white/[0.05] px-4 py-2.5 sm:px-6" role="tablist" aria-label="Camp days">
         {groups.map((g) => {
