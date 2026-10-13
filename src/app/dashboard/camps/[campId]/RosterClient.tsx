@@ -20,6 +20,7 @@
 'use client'
 
 import { hasMedicalNote } from '@/lib/camp-booking-details'
+import { backupContactPath } from '@/lib/camp-backup-contact'
 import { isDateDay } from '@/lib/camp-checkin'
 import { sortRoster, agesPresent, onlyAge, type RosterSort } from '@/lib/roster-sort'
 import SortBar from '@/components/SortBar'
@@ -35,6 +36,9 @@ export interface CampRosterBooking {
   parent_name: string | null
   parent_email: string | null
   parent_phone: string | null
+  // A second adult to ring (src/lib/camp-backup-contact.ts). null = none given yet.
+  backup_name?: string | null
+  backup_phone?: string | null
   parent_profile_id: string | null   // resolved server-side; null when anon
   medical_info: string | null
   amount_paid: number | null
@@ -74,6 +78,7 @@ export default function RosterClient({
   campId,
   campName,
   academyName,
+  academySlug = '',
   bookings,
   eligibleTargetCamps = [],
   sourceCampPrice = 0,
@@ -86,6 +91,7 @@ export default function RosterClient({
   campId: string
   campName: string
   academyName: string
+  academySlug?: string
   bookings: CampRosterBooking[]
   eligibleTargetCamps?: EligibleTargetCamp[]
   sourceCampPrice?: number
@@ -202,8 +208,8 @@ export default function RosterClient({
   // to today's CSV format.
   function downloadCsv() {
     const headers = isFlexibleCamp
-      ? ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Photo consent', 'Booked at', 'Booked days', 'Amount paid (£)', 'Payment status', 'Source']
-      : ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Medical info', 'Photo consent', 'Booked at', 'Amount paid (£)', 'Payment status', 'Source']
+      ? ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Backup contact', 'Backup phone', 'Medical info', 'Photo consent', 'Booked at', 'Booked days', 'Amount paid (£)', 'Payment status', 'Source']
+      : ['Child', 'Age', 'Parent', 'Email', 'Phone', 'Backup contact', 'Backup phone', 'Medical info', 'Photo consent', 'Booked at', 'Amount paid (£)', 'Payment status', 'Source']
     const rows = filtered.map((b) => {
       const base = [
         b.child_name || '',
@@ -211,6 +217,8 @@ export default function RosterClient({
         b.parent_name || '',
         b.parent_email || '',
         b.parent_phone || '',
+        b.backup_name || '',
+        b.backup_phone || '',
         b.medical_info || '',
         b.photo_consent === true ? 'Yes' : b.photo_consent === false ? 'No' : 'Not asked',
         b.created_at,
@@ -445,6 +453,7 @@ export default function RosterClient({
                           </div>
                         )}
                         {b.parent_phone && <div>{b.parent_phone}</div>}
+                        {b.backup_phone && <div className="text-white/50" data-testid="camp-roster-backup">Backup: {b.backup_name} · {b.backup_phone}</div>}
                       </td>
                       <td className="px-3 py-3" data-testid="camp-roster-medical-cell">
                         {hasMedical ? (
@@ -638,7 +647,7 @@ export default function RosterClient({
           BOOKED a specific day appear on that day's list. When the
           camp is whole-camp, this section is not rendered — the flat
           roster above IS the register. */}
-      {perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} bookings={bookings} campId={campId} flexible={isFlexibleCamp} />}
+      {perDayGroups.length > 0 && <PerDayRegister groups={perDayGroups} bookings={bookings} campId={campId} flexible={isFlexibleCamp} academySlug={academySlug} />}
 
       {/* Move Camp Booking Phase 1 — modal */}
       {moveOpen && (
@@ -845,7 +854,14 @@ function tidyName(name: string | null): string {
  * A coach standing at a pitch wants one day, in alphabetical order, one name
  * per line, a tick for who has arrived, and the phone number one tap away.
  */
-function PerDayRegister({ groups, bookings, campId, flexible }: { groups: CampPerDayGroup[]; bookings: CampRosterBooking[]; campId: string; flexible: boolean }) {
+function PerDayRegister({ groups, bookings, campId, flexible, academySlug }: { groups: CampPerDayGroup[]; bookings: CampRosterBooking[]; campId: string; flexible: boolean; academySlug: string }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  // The link a family uses to add a backup contact to a booking they have already made.
+  const copyBackupLink = async (bookingId: string) => {
+    const url = `${window.location.origin}${backupContactPath(academySlug, bookingId)}`
+    try { await navigator.clipboard.writeText(url); setCopiedId(bookingId); setTimeout(() => setCopiedId(null), 2000) } catch { window.prompt('Copy this link and send it to the parent:', url) }
+  }
+  const noBackup = bookings.filter((b) => b.payment_status === 'paid' && !b.backup_phone).length
   const today = new Date().toISOString().slice(0, 10)
   const running = groups.filter((g) => g.isAvailable)
   // Open on today if the camp is on today, else the next day it runs, else the first day.
@@ -919,6 +935,7 @@ function PerDayRegister({ groups, bookings, campId, flexible }: { groups: CampPe
         </div>
         {everyone.length > 0 && <div className="mb-2"><SortBar sort={sort} onSort={setSort} ages={dayAges} age={ageShown} onAge={setAgeOnly} options={['name', 'youngest', 'oldest']} testid="camp-perday-sort" /></div>}
         {everyone.length > 0 && <p className="mb-1 text-[11px] text-white/35">Tap the circle to tick a child in. Tap a name for their details.</p>}
+        {noBackup > 0 && <p className="mb-2 text-[11px] text-amber-200/80" data-testid="camp-no-backup-count">{noBackup} of {bookings.filter((b) => b.payment_status === 'paid').length} booked children have no backup contact. Tap a name to copy a link asking for one.</p>}
         {tickError && <p className="mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300" data-testid="camp-perday-error">{tickError}</p>}
         {names.length === 0 ? (
           <p className="py-2 text-xs text-white/40">{day.isAvailable ? 'No bookings yet for this day.' : 'Nobody can book this day.'}</p>
@@ -960,6 +977,9 @@ function PerDayRegister({ groups, bookings, campId, flexible }: { groups: CampPe
                         {row('Age', b.child_age != null ? String(b.child_age) : null)}
                         {row('Parent', b.parent_name)}
                         {row('Phone', b.parent_phone ? <a href={`tel:${b.parent_phone.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6] underline-offset-2 hover:underline">{b.parent_phone}</a> : <span className="text-white/45">None given</span>)}
+                        {row('Backup', b.backup_phone
+                          ? <span data-testid="camp-perday-backup">{b.backup_name} · <a href={`tel:${b.backup_phone.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6] underline-offset-2 hover:underline">{b.backup_phone}</a></span>
+                          : <span data-testid="camp-perday-no-backup"><span className="text-amber-200/80">None given</span>{academySlug && <> · <button type="button" onClick={() => copyBackupLink(b.id)} className="font-semibold text-[#4ecde6] underline-offset-2 hover:underline" data-testid="camp-backup-copy-link">{copiedId === b.id ? 'Link copied' : 'Copy link to ask'}</button></>}</span>)}
                         {row('Email', b.parent_email ? <a href={`mailto:${b.parent_email}`} className="text-[#4ecde6] underline-offset-2 hover:underline">{b.parent_email}</a> : null)}
                         {row('Medical', hasMedicalNote(b.medical_info) ? <span className="text-amber-200">{b.medical_info}</span> : b.medical_info ? b.medical_info : <span className="text-amber-200/80">Not answered</span>)}
                         {row('Photos', b.photo_consent === true ? 'Yes, photos are fine' : b.photo_consent === false ? <span className="text-amber-200">No photos</span> : <span className="text-white/45">Not asked</span>)}

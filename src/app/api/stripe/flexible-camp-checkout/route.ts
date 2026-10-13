@@ -21,6 +21,7 @@
 //     day-aware payments-row description arrive in Phase 3C.
 
 import { campDetailsProblem } from '@/lib/camp-booking-details'
+import { backupContactProblem, saveBackupContact } from '@/lib/camp-backup-contact'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -99,6 +100,8 @@ export async function POST(request: NextRequest) {
       parentName,
       parentEmail,
       parentPhone,
+      backupName,
+      backupPhone,
       childName,
       childDob,
       medicalInfo,
@@ -171,6 +174,13 @@ export async function POST(request: NextRequest) {
     const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo, collectMedical: camp.collect_medical_info === true })
     if (detailsProblem) {
       return NextResponse.json({ error: detailsProblem, code: 'camp_details_missing' }, { status: 400 })
+    }
+    // A backup contact (src/lib/camp-backup-contact.ts): refused if it is wrong, recorded if it is right.
+    // Not yet refused when absent, so a parent with the old form still open can pay.
+    const hasBackup = !!(backupName || backupPhone)
+    if (hasBackup) {
+      const backupProblem = backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })
+      if (backupProblem) return NextResponse.json({ error: backupProblem, code: 'camp_details_missing' }, { status: 400 })
     }
     // NOTE: flexible-days camps are booked per-day, so we do NOT block the
     // whole camp once its overall start_date has passed — a camp mid-run can
@@ -419,6 +429,9 @@ export async function POST(request: NextRequest) {
       console.error('[flexible-camp-checkout] RPC returned invalid booking id:', rpcData)
       return NextResponse.json({ error: 'Booking could not be created. Please try again.' }, { status: 500 })
     }
+
+    // The backup contact, now the booking exists. Never costs the parent their booking.
+    if (hasBackup) await saveBackupContact(supabase, { organisationId: camp.organisation_id, bookingId, name: backupName, phone: backupPhone, source: 'booking' })
 
     // Photo & video consent (migration 111). Best-effort, AFTER the booking
     // exists: a failure here is logged and must never cost the parent their

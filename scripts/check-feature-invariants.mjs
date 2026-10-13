@@ -19,6 +19,15 @@ const FEATURES = [
   ['Players: who has paid on each class sheet', `${D}/players/PlayersTable.tsx`, ['data-testid="squad-pay"', 'function squadPay(']],
   ['Plans & Pricing: plans by type', `${D}/plans/PlanManager.tsx`, ['plans-type-list']],
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
+  // A backup contact on every camp booking (13 Oct 2026). See src/lib/camp-backup-contact.ts.
+  ['Camps: the whole-camp form asks for a backup contact', `${A}/book/[slug]/camps/[campId]/CampBookingForm.tsx`, ['camp-backup-name', 'camp-backup-phone', 'backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })', 'backupName,\n        backupPhone,']],
+  ['Camps: the by-the-day form asks for a backup contact', `${A}/book/[slug]/camps/[campId]/CampFlexibleDayPicker.tsx`, ['camp-backup-name', 'camp-backup-phone', 'backupProblem === null', 'backupName,\n        backupPhone,']],
+  ['Camps: whole-camp checkout checks and records the backup contact', `${A}/api/stripe/camp-checkout/route.ts`, ['backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })', 'bookingId: booking.id, name: backupName']],
+  ['Camps: by-the-day checkout checks and records the backup contact', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })', 'bookingId, name: backupName']],
+  ['Camps: the register shows the backup contact and a link to ask for one', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-backup', 'camp-backup-copy-link', 'camp-no-backup-count', "'Backup contact', 'Backup phone'"]],
+  ['Camps: the camp page reads each booking\'s backup contact', `${D}/camps/[campId]/page.tsx`, ['latestBackups(', 'CAMP_BACKUP_ACTION', 'backup_phone: backups.get(b.id)']],
+  ['Camps: a booked family can add a backup contact from a link', `${A}/api/camps/backup-contact/route.ts`, ['backupContactProblem(', "source: 'link'", 'parentPhone: booking.parent_phone']],
+  ['Camps: the add-a-backup page', `${A}/book/[slug]/camps/backup/[bookingId]/page.tsx`, ['camp-backup-page', '<BackupContactForm']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
   ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],
   ['Welcome packs: one page for the academy and for the parent', `${D}/welcome-packs/page.tsx`, ['loadFamilyPacks(', 'loadAcademyPacks(', 'packCoverage(', 'welcome-packs-parent']],

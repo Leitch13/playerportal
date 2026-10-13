@@ -1,4 +1,5 @@
 import { campDetailsProblem } from '@/lib/camp-booking-details'
+import { backupContactProblem, saveBackupContact } from '@/lib/camp-backup-contact'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
       parentName,
       parentEmail,
       parentPhone,
+      backupName,
+      backupPhone,
       childName,
       childDob,
       medicalInfo,
@@ -85,6 +88,13 @@ export async function POST(request: NextRequest) {
     const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo, collectMedical: camp.collect_medical_info === true })
     if (detailsProblem) {
       return NextResponse.json({ error: detailsProblem, code: 'camp_details_missing' }, { status: 400 })
+    }
+    // A backup contact (src/lib/camp-backup-contact.ts): refused if it is wrong, recorded if it is right.
+    // Not yet refused when absent, so a parent with the old form still open can pay.
+    const hasBackup = !!(backupName || backupPhone)
+    if (hasBackup) {
+      const backupProblem = backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })
+      if (backupProblem) return NextResponse.json({ error: backupProblem, code: 'camp_details_missing' }, { status: 400 })
     }
     if (camp.is_published === false) {
       return NextResponse.json({ error: 'This camp isn’t open for bookings.' }, { status: 404 })
@@ -152,6 +162,7 @@ export async function POST(request: NextRequest) {
         const existing = await stripe.checkout.sessions.retrieve(prior.stripe_session_id)
         if (existing.status === 'open' && existing.url) {
           // Same booking, same link — no second row, no second seat.
+          if (hasBackup) await saveBackupContact(supabase, { organisationId: camp.organisation_id, bookingId: prior.id, name: backupName, phone: backupPhone, source: 'booking' })
           return NextResponse.json({ url: existing.url, bookingId: prior.id, resumed: true })
         }
       } catch {
@@ -243,6 +254,9 @@ export async function POST(request: NextRequest) {
     if (bookingError || !booking) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
+
+    // The backup contact, now the booking exists. Never costs the parent their booking.
+    if (hasBackup) await saveBackupContact(supabase, { organisationId: camp.organisation_id, bookingId: booking.id, name: backupName, phone: backupPhone, source: 'booking' })
 
     // Photo & video consent (migration 111). Best-effort, AFTER the booking
     // exists: a failure here is logged and must never cost the parent their

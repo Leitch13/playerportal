@@ -20,6 +20,7 @@ import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { checkedInNow, checkinKey, dateDayId, datesBetween, CHECKIN_ACTIONS, type CheckinRow } from '@/lib/camp-checkin'
+import { CAMP_BACKUP_ACTION, latestBackups } from '@/lib/camp-backup-contact'
 import RosterClient, { type CampRosterBooking } from './RosterClient'
 import CampWaitingList, { type WaitingPerson } from './CampWaitingList'
 import { CAMP_WAITLIST_SOURCE, campMarker } from '@/lib/camp-waitlist'
@@ -264,10 +265,16 @@ export default async function CampDetailPage({
   // Academy display name for the WhatsApp templates.
   const { data: orgRow } = await supabase
     .from('organisations')
-    .select('name')
+    .select('name, slug')
     .eq('id', orgId)
     .maybeSingle()
   const academyName = (orgRow as { name?: string | null } | null)?.name || 'this academy'
+  const academySlug = (orgRow as { slug?: string | null } | null)?.slug || ''
+
+  // Each booking's backup contact (src/lib/camp-backup-contact.ts). Read with the service role: this
+  // page has already checked the camp belongs to this academy.
+  const backups = bookings.length === 0 ? new Map<string, { name: string; phone: string }>() : latestBackups((((await createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
+    .from('audit_log').select('entity_id, created_at, details').eq('action', CAMP_BACKUP_ACTION).in('entity_id', bookings.map((b) => b.id))).data) || []) as { entity_id: string; created_at: string; details: unknown }[])
 
   // Build the RosterClient input.
   const rosterBookings: CampRosterBooking[] = bookings.map((b) => ({
@@ -277,6 +284,8 @@ export default async function CampDetailPage({
     parent_name: b.parent_name,
     parent_email: b.parent_email,
     parent_phone: b.parent_phone,
+    backup_name: backups.get(b.id)?.name ?? null,
+    backup_phone: backups.get(b.id)?.phone ?? null,
     parent_profile_id: parentProfileIdByEmail.get((b.parent_email || '').toLowerCase()) || null,
     medical_info: b.medical_info,
     amount_paid: b.amount_paid,
@@ -454,6 +463,7 @@ export default async function CampDetailPage({
         campId={camp.id as string}
         campName={camp.name as string}
         academyName={academyName}
+        academySlug={academySlug}
         bookings={rosterBookings}
         eligibleTargetCamps={eligibleTargetCamps}
         sourceCampPrice={(camp.price as number | null) ?? 0}

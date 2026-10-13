@@ -28,6 +28,7 @@
 //     keep this UI unreachable in production until QA + pilot land
 
 import { campDetailsProblem, NOTHING_TO_REPORT } from '@/lib/camp-booking-details'
+import { backupContactProblem } from '@/lib/camp-backup-contact'
 import { useMemo, useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
 import { postJson } from '@/lib/post-json'
@@ -106,6 +107,8 @@ export default function CampFlexibleDayPicker({
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [parentPhone, setParentPhone] = useState('')
+  const [backupName, setBackupName] = useState('')
+  const [backupPhone, setBackupPhone] = useState('')
   const [childName, setChildName] = useState('')
   const [childDob, setChildDob] = useState('')
   const [medicalInfo, setMedicalInfo] = useState('')
@@ -219,6 +222,7 @@ export default function CampFlexibleDayPicker({
   const hasAvailable = orderedDays.some((d) => !isEffectivelyUnavailable(d))
 
   const detailsProblem = campDetailsProblem({ childDob, parentPhone, medicalInfo: medicalAnswer, collectMedical: collectMedicalInfo })
+  const backupProblem = backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })
   const requiredFieldsComplete =
     parentName.trim() !== '' &&
     parentEmail.trim() !== '' &&
@@ -226,7 +230,9 @@ export default function CampFlexibleDayPicker({
     (!requireConsent || consentGiven) &&
     photoConsent !== '' &&
     // Date of birth, phone and the medical answer (src/lib/camp-booking-details.ts).
-    detailsProblem === null
+    detailsProblem === null &&
+    // A second adult to ring (src/lib/camp-backup-contact.ts).
+    backupProblem === null
 
   const canContinue =
     !loading &&
@@ -270,6 +276,8 @@ export default function CampFlexibleDayPicker({
         parentName,
         parentEmail,
         parentPhone,
+        backupName,
+        backupPhone,
         childName,
         childDob,
         medicalInfo: medicalAnswer,
@@ -494,6 +502,30 @@ export default function CampFlexibleDayPicker({
           data-testid="camp-phone"
           autoComplete="tel"
           inputMode="tel"
+          className={inputCls}
+        />
+        {/* A second adult the academy can ring. See src/lib/camp-backup-contact.ts. */}
+        <input
+          type="text"
+          placeholder="Backup contact name * (a second adult)"
+          value={backupName}
+          onChange={(e) => setBackupName(e.target.value)}
+          required
+          maxLength={80}
+          autoComplete="off"
+          data-testid="camp-backup-name"
+          className={inputCls}
+        />
+        <input
+          type="tel"
+          placeholder="Backup contact phone * (not your own)"
+          value={backupPhone}
+          onChange={(e) => setBackupPhone(e.target.value)}
+          required
+          maxLength={30}
+          autoComplete="off"
+          inputMode="tel"
+          data-testid="camp-backup-phone"
           className={inputCls}
         />
         <input

@@ -1,6 +1,7 @@
 'use client'
 
 import { campDetailsProblem, NOTHING_TO_REPORT } from '@/lib/camp-booking-details'
+import { backupContactProblem } from '@/lib/camp-backup-contact'
 import CampWaitlistForm from './CampWaitlistForm'
 import { useState } from 'react'
 import { applyPromoPence, type PromoRow } from '@/lib/promo'
@@ -69,6 +70,8 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
   const [parentName, setParentName] = useState(loggedInParent?.name || '')
   const [parentEmail, setParentEmail] = useState(loggedInParent?.email || '')
   const [parentPhone, setParentPhone] = useState('')
+  const [backupName, setBackupName] = useState('')
+  const [backupPhone, setBackupPhone] = useState('')
   // '' = add a new child; otherwise the id of an existing child.
   const [selectedChildId, setSelectedChildId] = useState('')
   const [childName, setChildName] = useState('')
@@ -165,6 +168,11 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
       setError(detailsProblem)
       return
     }
+    const backupProblem = backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })
+    if (backupProblem) {
+      setError(backupProblem)
+      return
+    }
     if (!photoConsent) {
       setError('Please tell us whether photos and video of your child are OK.')
       return
@@ -180,6 +188,8 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
         parentName,
         parentEmail,
         parentPhone,
+        backupName,
+        backupPhone,
         childName,
         childDob,
         medicalInfo: medicalAnswer,
@@ -340,6 +350,30 @@ export default function CampBookingForm({ camp, slug, spotsLeft, primaryColor, b
             autoComplete="tel"
             inputMode="tel"
             data-testid="camp-phone"
+            className={inputCls}
+          />
+          {/* A second adult the academy can ring. See src/lib/camp-backup-contact.ts. */}
+          <input
+            type="text"
+            placeholder="Backup contact name * (a second adult)"
+            value={backupName}
+            onChange={(e) => setBackupName(e.target.value)}
+            required
+            maxLength={80}
+            autoComplete="off"
+            data-testid="camp-backup-name"
+            className={inputCls}
+          />
+          <input
+            type="tel"
+            placeholder="Backup contact phone * (not your own)"
+            value={backupPhone}
+            onChange={(e) => setBackupPhone(e.target.value)}
+            required
+            maxLength={30}
+            autoComplete="off"
+            inputMode="tel"
+            data-testid="camp-backup-phone"
             className={inputCls}
           />
         </div>
