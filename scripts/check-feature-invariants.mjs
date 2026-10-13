@@ -55,6 +55,8 @@ const FEATURES = [
   ['Camps: the tick route accepts a date for a whole-week camp', `${A}/api/admin/camps/[campId]/check-in/route.ts`, ['byDate', 'datesBetween(']],
   ['Booking page: tidy layout', `${A}/book/[slug]/TidyClassList.tsx`, ['tidy-class-list']],
   ['Booking page: tidy layout is switched on by the shared rule', `${A}/book/[slug]/page.tsx`, ['isTidyBookingOrg(']],
+  // A link that shows one programme only, for ads (13 Oct 2026). See src/lib/programme-filter.ts.
+  ['Booking page: a link for one programme only (?programme=)', `${A}/book/[slug]/page.tsx`, ['classesForProgramme(allSortedGroups, sp.programme)', 'data-testid="programme-only"', 'See all our classes']],
 
   // ── request payment offers the class's plans
   ['Request payment: plan-matching rule', 'src/lib/plans-for-class.ts', ['export function plansForClasses']],

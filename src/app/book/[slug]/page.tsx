@@ -17,6 +17,7 @@ import AcademyPixel from '@/components/AcademyPixel'
 import { isPremiumBookingOrg } from '@/lib/premium-booking'
 import TidyClassList from './TidyClassList'
 import { isTidyBookingOrg } from '@/lib/tidy-booking'
+import { classesForProgramme, programmeTitle } from '@/lib/programme-filter'
 
 export async function generateMetadata({
   params,
@@ -369,7 +370,7 @@ export default async function PublicBookingPage({
     .in('group_id', groupIds)
 
   const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-  const sortedGroups = [...(groups || [])].sort((a, b) => {
+  const allSortedGroups = [...(groups || [])].sort((a, b) => {
     const aFeat = (a.is_featured as boolean) ? 0 : 1
     const bFeat = (b.is_featured as boolean) ? 0 : 1
     if (aFeat !== bFeat) return aFeat - bFeat
@@ -377,6 +378,11 @@ export default async function PublicBookingPage({
     const dayB = DAY_ORDER.indexOf(b.day_of_week || '')
     return (dayA === -1 ? 99 : dayA) - (dayB === -1 ? 99 : dayB)
   })
+  // One programme only (?programme=goalscorers): the link an academy puts behind an ad.
+  // Look only. An unknown programme shows the full page. See src/lib/programme-filter.ts.
+  const programmeOnly = classesForProgramme(allSortedGroups, sp.programme)
+  const sortedGroups = programmeOnly ?? allSortedGroups
+  const programmeName = programmeOnly && typeof sp.programme === 'string' ? programmeTitle(sp.programme) : null
 
   const primaryColor = org.primary_color || '#4ecde6'
 
@@ -666,7 +672,13 @@ export default async function PublicBookingPage({
             confused parents with prices that didn't match individual classes. */}
 
         <section>
-          {useTidy ? (
+          {programmeName ? (<>
+          <h2 id="classes" data-testid="programme-only" className="scroll-mt-24 text-2xl sm:text-3xl font-bold text-center mb-2 text-white">{programmeName}</h2>
+          <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">
+            Pick a class to book your place.{' '}
+            <a href={`/book/${slug}#classes`} className="underline hover:text-white">See all our classes</a>
+          </p>
+          </>) : useTidy ? (
             <h2 id="classes" className="scroll-mt-24 text-xl sm:text-2xl font-bold mb-5 text-white">Classes</h2>
           ) : (<>
           <h2 id="classes" className="scroll-mt-24 text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
