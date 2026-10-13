@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { packFolder, classOfFolder, isPackFolder, packPath, packIdOfPath, pathBelongsTo, groupPacks, packsForFamily, packCoverage, packProblem, PACK_MAX_BYTES } from './welcome-pack'
+import { packFolder, classOfFolder, isPackFolder, packPath, packIdOfPath, pathBelongsTo, groupPacks, packsForFamily, packCoverage, packProblem, packEmailRecipients, PACK_MAX_BYTES } from './welcome-pack'
 
 const ORG = '11111111-1111-4111-8111-111111111111', OTHER = '22222222-2222-4222-8222-222222222222'
 const A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
@@ -38,4 +38,16 @@ describe('what an academy is told when a pack will not save', () => {
   it('every class needs no class list', () => { expect(packProblem({ ...ok, classIds: [], everyClass: true })).toBeNull() })
   it('not a PDF', () => { expect(packProblem({ ...ok, fileName: 'pack.docx', fileType: 'application/msword' })).toMatch(/PDF/) })
   it('too big', () => { expect(packProblem({ ...ok, fileSize: PACK_MAX_BYTES + 1 })).toMatch(/30MB/) })
+})
+
+describe('who is emailed a pack', () => {
+  const parents = [{ id: 'p1', email: 'amy@gmail.com' }, { id: 'p2', email: 'ben@gmail.com' }, { id: 'p2', email: 'ben@gmail.com' }, { id: 'p3', email: null }, { id: 'p4', email: 'AMY@gmail.com ' }]
+  it('each parent once, even with two children in the class', () => { expect(packEmailRecipients(parents, []).map((p) => p.id)).toEqual(['p1', 'p2']) })
+  it('never a parent who has already opened it', () => { expect(packEmailRecipients(parents, ['p1']).map((p) => p.id)).toEqual(['p2', 'p4']) })
+  it('never a parent with no email address', () => { expect(packEmailRecipients([{ id: 'p3', email: '' }], [])).toEqual([]) })
+  it('two accounts sharing one address get one email', () => { expect(packEmailRecipients([{ id: 'a', email: 'x@y.org' }, { id: 'b', email: 'X@Y.org' }], [])).toHaveLength(1) })
+  it('never a demo or test address', () => { expect(packEmailRecipients([{ id: 'a', email: 'demo.oscar.milne@example.com' }, { id: 'b', email: 'test.parent1@playerportal-test.invalid' }, { id: 'c', email: 'real@outlook.com' }], []).map((p) => p.id)).toEqual(['c']) })
+  it('the automatic sends never email a parent the system has already emailed', () => { expect(packEmailRecipients(parents, [], ['p1']).map((p) => p.id)).toEqual(['p2', 'p4']) })
+  it('the academy pressing the button does remind them', () => { expect(packEmailRecipients(parents, []).map((p) => p.id)).toEqual(['p1', 'p2']) })
+  it('nobody left to email once everyone has opened it', () => { expect(packEmailRecipients(parents, ['p1', 'p2', 'p4'])).toEqual([]) })
 })

@@ -15,6 +15,9 @@
 export const PACK_BUCKET = 'welcome-packs'
 export const PACK_DOC_TYPE = 'welcome_pack'
 export const PACK_OPENED_ACTION = 'welcome_pack.opened'
+export const PACK_EMAILED_ACTION = 'welcome_pack.emailed'
+/** One row per parent a pack was emailed to, so the automatic sends never email the same parent twice. */
+export const PACK_EMAILED_TO_ACTION = 'welcome_pack.emailed_to'
 export const PACK_MAX_BYTES = 30 * 1024 * 1024
 const ALL = 'all', PREFIX = 'welcome_pack:'
 
@@ -67,4 +70,26 @@ export function packProblem(p: { title?: string; everyClass?: boolean; classIds?
     if (!p.fileSize) return 'That file is empty.'
   }
   return null
+}
+
+/**
+ * Who a pack is emailed to: every parent in its classes who has an email address
+ * and has not opened it yet. Each parent once, however many children they have.
+ *
+ * A pack goes out three ways (John, 13 Oct 2026: "can it not send auto?"):
+ *   1. when the academy saves it, to the families already in those classes;
+ *   2. every morning, to anyone who has joined one of those classes since;
+ *   3. when the academy presses "Email again", to everyone who still has not opened it.
+ * The two automatic sends pass `alreadyEmailed`, so nobody is emailed twice by the
+ * system. The button does not: it is the academy choosing to remind them.
+ */
+export function packEmailRecipients<T extends { id: string; email?: string | null }>(entitled: T[], openedBy: string[], alreadyEmailed: string[] = []): T[] {
+  const opened = new Set([...openedBy, ...alreadyEmailed]), seen = new Set<string>(), out: T[] = []
+  for (const p of entitled) {
+    const email = (p.email || '').trim().toLowerCase()
+    // Reserved test domains (example.com, .invalid, .test) can never receive mail: demo families are never emailed.
+    if (!email.includes('@') || /@(example\.(com|org|net)|[^@]*\.(invalid|test|example))$/.test(email) || opened.has(p.id) || seen.has(p.id) || seen.has(email)) continue
+    seen.add(p.id); seen.add(email); out.push(p)
+  }
+  return out
 }

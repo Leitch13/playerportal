@@ -30,6 +30,12 @@ const FEATURES = [
   ['Camps: the add-a-backup page', `${A}/book/[slug]/camps/backup/[bookingId]/page.tsx`, ['camp-backup-page', '<BackupContactForm']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
   ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],
+  ['Welcome packs: the academy can email a pack to parents who have not opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-email', "action: 'email', packId: p.packId", 'window.confirm(`Email', 'welcome-pack-emailed']],
+  ['Welcome packs: saving a pack emails the families already in its classes; the button reminds', `${A}/api/admin/welcome-packs/route.ts`, ["body.action === 'email'", "mode: 'on_save'", "mode: 'button'", 'body.emailNow !== false']],
+  ['Welcome packs: one send routine, nobody emailed twice by the system, never after opening', 'src/lib/welcome-pack-server.ts', ['export async function emailPack(', 'packEmailRecipients(', 'PACK_EMAILED_TO_ACTION', "opts.mode === 'new_joiners'", 's.enrolled_at >= pack.createdAt', "via: 'welcome_email'"]],
+  ['Welcome packs: the morning job emails families who joined since', `${A}/api/cron/welcome-packs/route.ts`, ["mode: 'new_joiners'", 'CRON_SECRET', 'loadAllPacks(']],
+  ['Welcome packs: the morning job is scheduled', 'vercel.json', ['"/api/cron/welcome-packs"']],
+  ['Welcome packs: the form says it will email, and lets the academy choose not to', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-email-now', 'emailNow }) })', 'Save and email parents']],
   ['Welcome packs: one page for the academy and for the parent', `${D}/welcome-packs/page.tsx`, ['loadFamilyPacks(', 'loadAcademyPacks(', 'packCoverage(', 'welcome-packs-parent']],
   ['Welcome packs: on the parent home page until opened', 'src/components/WelcomePackCard.tsx', ['welcome-pack-card', '!r.opened.has(p.packId)', '/api/welcome-pack/${p.packId}']],
   ['Welcome packs: the card is on the parent home page', `${D}/page.tsx`, ['<WelcomePackCard userId={userId} />']],

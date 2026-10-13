@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { loadAcademyPacks, loadFamilyPacks } from '@/lib/welcome-pack-server'
-import { PACK_OPENED_ACTION, packCoverage } from '@/lib/welcome-pack'
+import { PACK_OPENED_ACTION, PACK_EMAILED_ACTION, packCoverage, packEmailRecipients } from '@/lib/welcome-pack'
 import { classOptionLabel } from '@/lib/report-class-filter'
 import WelcomePackManager from './WelcomePackManager'
 
@@ -63,15 +63,22 @@ export default async function WelcomePacksPage({ searchParams }: { searchParams?
     ? await service.from('audit_log').select('entity_id, user_id, created_at').eq('action', PACK_OPENED_ACTION).eq('organisation_id', orgId).in('entity_id', packs.map((p) => p.packId))
     : { data: [] }
   const parentIds = [...new Set(seats.map((s) => s.player!.parent_id as string))]
-  const { data: parents } = parentIds.length ? await service.from('profiles').select('id, full_name').in('id', parentIds) : { data: [] }
+  const { data: parents } = parentIds.length ? await service.from('profiles').select('id, full_name, email').in('id', parentIds) : { data: [] }
+  const { data: sends } = packs.length
+    ? await service.from('audit_log').select('entity_id, created_at, details').eq('action', PACK_EMAILED_ACTION).eq('organisation_id', orgId).in('entity_id', packs.map((p) => p.packId)).order('created_at', { ascending: true })
+    : { data: [] }
   const nameOf = new Map(((parents || []) as { id: string; full_name: string | null }[]).map((p) => [p.id, (p.full_name || '').trim() || 'A parent']))
 
   const view = packs.map((p) => {
     const entitled = seats.filter((s) => p.everyClass || p.classIds.includes(s.group_id)).map((s) => s.player!.parent_id as string)
-    const cov = packCoverage(entitled, ((opens || []) as { entity_id: string; user_id: string }[]).filter((o) => o.entity_id === p.packId).map((o) => o.user_id))
+    const openedBy = ((opens || []) as { entity_id: string; user_id: string }[]).filter((o) => o.entity_id === p.packId).map((o) => o.user_id)
+    const cov = packCoverage(entitled, openedBy)
+    const lastSend = ((sends || []) as { entity_id: string; created_at: string; details: { sent?: number } | null }[]).filter((x) => x.entity_id === p.packId).at(-1)
     return {
       packId: p.packId, title: p.title, message: p.message, added: p.createdAt ? shortDate(p.createdAt) : '',
       forWhom: p.everyClass ? 'Every class' : p.classIds.map((c) => classes.find((x) => x.id === c)?.label || 'A class that no longer exists').join(', '),
+      canEmail: packEmailRecipients(((parents || []) as { id: string; email: string | null }[]).filter((x) => entitled.includes(x.id)), openedBy).length,
+      lastEmailed: lastSend ? { on: shortDate(lastSend.created_at), sent: lastSend.details?.sent ?? 0 } : null,
       total: cov.total, opened: cov.opened, notOpened: cov.notOpened.map((id) => nameOf.get(id) || 'A parent').sort((a, b) => a.localeCompare(b)),
     }
   })
@@ -80,7 +87,7 @@ export default async function WelcomePacksPage({ searchParams }: { searchParams?
     <div className="mx-auto max-w-3xl space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-white">Welcome packs</h1>
-        <p className="mt-1 text-sm text-white/50">Upload the PDF you give new families. Parents in the classes you choose get it on their home page and in their welcome email.</p>
+        <p className="mt-1 text-sm text-white/50">Upload the PDF you give new families. Parents in the classes you choose are emailed it, and anyone who joins later gets it automatically.</p>
       </div>
       <WelcomePackManager packs={view} classes={classes} canEdit={role === 'admin'} />
     </div>

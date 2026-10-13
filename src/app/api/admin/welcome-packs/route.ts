@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'node:crypto'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
-import { PACK_BUCKET, PACK_DOC_TYPE, packFolder, packPath, packIdOfPath, pathBelongsTo, packProblem } from '@/lib/welcome-pack'
+import { PACK_BUCKET, PACK_DOC_TYPE, packFolder, packPath, packIdOfPath, pathBelongsTo, packProblem, groupPacks, type PackRow } from '@/lib/welcome-pack'
+import { emailPack } from '@/lib/welcome-pack-server'
 
 /**
  * Academy admin: add or remove a welcome pack. See src/lib/welcome-pack.ts.
@@ -25,7 +26,7 @@ async function admin() {
 export async function POST(req: NextRequest) {
   const a = await admin(); if (a.error) return a.error
   const { user, orgId, service } = a
-  const body = await req.json().catch(() => ({})) as { action?: string; title?: string; message?: string; path?: string; everyClass?: boolean; classIds?: string[] }
+  const body = await req.json().catch(() => ({})) as { action?: string; title?: string; message?: string; path?: string; everyClass?: boolean; classIds?: string[]; packId?: string; dryRun?: boolean; emailNow?: boolean }
 
   if (body.action === 'upload-url') {
     const path = packPath(orgId, randomUUID())
@@ -54,7 +55,28 @@ export async function POST(req: NextRequest) {
     const { error } = await service.from('documents').insert(rows)
     if (error) return NextResponse.json({ ok: false, error: 'The pack could not be saved. Please try again.' }, { status: 500 })
     await service.from('audit_log').insert({ organisation_id: orgId, user_id: user.id, action: 'welcome_pack.added', entity_type: 'welcome_pack', entity_id: packIdOfPath(path), details: { title: base.title, every_class: !!body.everyClass, classes: own.length } })
-    return NextResponse.json({ ok: true })
+    // Sent automatically to the families already in those classes, unless the academy unticked the box.
+    let emailed = 0
+    if (body.emailNow !== false) {
+      const { data: saved } = await service.from('documents').select('id, organisation_id, title, description, url, folder, created_at').eq('organisation_id', orgId).eq('doc_type', PACK_DOC_TYPE).eq('url', path)
+      const pack = groupPacks((saved || []) as PackRow[])[0]
+      if (pack) emailed = (await emailPack(service, pack, { mode: 'on_save', actorId: user.id })).sent
+    }
+    return NextResponse.json({ ok: true, emailed })
+  }
+  // "Email again": every parent in the pack's classes who has not opened it yet, whether or not
+  // they were emailed before. dryRun returns the count.
+  if (body.action === 'email') {
+    const path = packPath(orgId, body.packId || '')
+    if (!pathBelongsTo(path, orgId)) return NextResponse.json({ ok: false, error: 'That pack could not be found.' }, { status: 404 })
+    const { data: rows } = await service.from('documents').select('id, organisation_id, title, description, url, folder, created_at').eq('organisation_id', orgId).eq('doc_type', PACK_DOC_TYPE).eq('url', path)
+    const pack = groupPacks((rows || []) as PackRow[])[0]
+    if (!pack) return NextResponse.json({ ok: false, error: 'That pack could not be found.' }, { status: 404 })
+    const r = await emailPack(service, pack, { mode: 'button', actorId: user.id, dryRun: !!body.dryRun })
+    if (body.dryRun) return NextResponse.json({ ok: true, wouldEmail: r.asked, parents: r.parents })
+    if (r.asked === 0) return NextResponse.json({ ok: false, error: 'There is nobody to email: every parent in those classes has already opened it, or has no email address.' }, { status: 400 })
+    if (r.sent === 0) return NextResponse.json({ ok: false, error: 'None of the emails could be sent. Please try again.' }, { status: 502 })
+    return NextResponse.json({ ok: true, sent: r.sent, notSent: r.notSent })
   }
   return NextResponse.json({ ok: false, error: 'Unknown request.' }, { status: 400 })
 }

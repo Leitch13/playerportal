@@ -2117,6 +2117,24 @@ export function trialReminder2hEmail(params: {
 // to `promo_codes` and that nothing at checkout ever read, so the discount
 // was unhonourable as well as unauthorised.) An academy that wants to run a
 // taster offer creates a real promo code and shares it themselves.
+/** Sent when an academy presses "Email to parents" on a welcome pack. See src/lib/welcome-pack.ts. */
+export function welcomePackEmail(params: { parentName?: string | null; academyName: string; title: string; message?: string | null; packUrl: string }) {
+  const first = (params.parentName || '').trim().split(/\s+/)[0] || 'there'
+  const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return {
+    subject: `${params.title} — ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">${esc(params.title)}</h2>
+      <p style="color:#aaa;margin:0 0 16px">Hi ${esc(first)},</p>
+      <p style="color:#aaa;line-height:1.6">${params.message ? esc(params.message) : `<strong>${esc(params.academyName)}</strong> has put together a welcome pack for you. It covers what to expect and what to bring.`}</p>
+      <div style="text-align:center;margin:26px 0">
+        <a href="${params.packUrl}" style="display:inline-block;background:#4ecde6;color:#0a0a0a;padding:16px 40px;border-radius:14px;font-weight:700;text-decoration:none;font-size:16px">Open your welcome pack &rarr;</a>
+      </div>
+      <p style="color:#666;font-size:13px;text-align:center;margin-top:20px">You'll be asked to sign in. It stays in your account under Welcome Pack. Any questions, just reply to this email.</p>
+    `, undefined, params.academyName),
+  }
+}
+
 /** Sent when an academy taps "Send joining link" on a trial. One button, straight to sign-up with their details filled in. */
 export function trialJoinLinkEmail(params: {
   parentName: string
