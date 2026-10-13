@@ -16,6 +16,8 @@ import RadarChart from '@/components/RadarChart'
 import PlayerTimeline from '@/components/PlayerTimeline'
 import type { TimelineItem } from '@/components/PlayerTimeline'
 import AttendanceStreak from '@/components/AttendanceStreak'
+import { ageOn } from '@/lib/class-register'
+import { membershipPill } from '@/lib/needs-a-look'
 import PlayerLevelEditor from './PlayerLevelEditor'
 // Sprint 7 — Archive replaces destructive Delete. DeletePlayerButton was
 // removed this sprint (it cascaded through 9 FK'd tables wiping attendance,
@@ -320,137 +322,105 @@ export default async function PlayerDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* ═══ CINEMATIC HEADER ═══ */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#0e1518] via-[#080e18] to-[#080e18] p-6 sm:p-8">
-        {/* Ambient brand glow */}
-        <div className="absolute -top-24 -right-20 w-[400px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none bg-[#4ecde6]" />
-        <div className="absolute -bottom-24 -left-20 w-[300px] h-[300px] rounded-full blur-[120px] opacity-10 pointer-events-none bg-purple-500" />
-        <div
-          className="absolute inset-0 opacity-[0.025] pointer-events-none"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
+      {/* ═══ HEADER ═══
+          The same card language as the parent's My Children page: one cyan accent,
+          a ringed photo, a stats strip, and four matching buttons with line icons.
+          It used to mix a purple glow, a yellow, a green and a purple-to-pink button,
+          and three emoji standing in for icons. */}
+      {(() => {
+        const todayUk = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
+        const age = ageOn(player.date_of_birth as string | null, todayUk)
+        const born = player.date_of_birth
+          ? new Date((player.date_of_birth as string).slice(0, 10) + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+          : null
+        const pill = membershipPill((playerSubscriptions || []).map((x) => x.status as string | null))
+        const dot = pill.tone === 'ok' ? 'bg-emerald-400' : pill.tone === 'bad' ? 'bg-red-400' : pill.tone === 'warn' ? 'bg-amber-400' : 'bg-white/30'
+        const classesNow = (enrolments || []).filter((e) => e.status === 'active').length
+        const chip = 'rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-white/70'
+        const stat = (label: string, big: React.ReactNode, small?: string) => (
+          <div className="px-3 py-3 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/35">{label}</p>
+            <p className="mt-1 text-lg font-bold leading-none tabular-nums text-white">{big}</p>
+            {small && <p className="mt-1 text-[11px] text-white/45">{small}</p>}
+          </div>
+        )
+        const action = (href: string, label: string, icon: string, primary = false) => (
+          <Link href={href} className={`inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${primary ? 'bg-[#4ecde6] text-[#04141a] hover:brightness-105' : 'border border-white/[0.12] text-white/85 hover:border-white/30 hover:text-white'}`}>
+            <svg className={`h-3.5 w-3.5 ${primary ? '' : 'text-[#4ecde6]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9}><path strokeLinecap="round" strokeLinejoin="round" d={icon} /></svg>
+            {label}
+          </Link>
+        )
+        const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
+        const leagueLabels: Record<string, string> = { recreational: 'Recreational', grassroots: 'Grassroots', b_league: 'B League', a_league: 'A League', academy: 'Academy', professional: 'Pro Development' }
+        return (
+          <div className="relative overflow-hidden rounded-3xl border border-[#243652] bg-gradient-to-b from-[#132238] to-[#0d1726] p-5 shadow-[0_18px_50px_-24px_rgba(0,0,0,0.9)] sm:p-7" data-testid="player-header">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(120%_100%_at_0%_0%,rgba(78,205,230,0.16),transparent_60%)]" />
 
-        <Link href={isStaff ? '/dashboard/players' : '/dashboard/children'} className="relative inline-flex items-center gap-1 text-xs text-white/40 hover:text-white/70 transition-colors mb-5">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to {isStaff ? 'players' : 'children'}
-        </Link>
+            <Link href={isStaff ? '/dashboard/players' : '/dashboard/children'} className="relative mb-5 inline-flex items-center gap-1 text-xs text-white/45 transition-colors hover:text-white/80">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Back to {isStaff ? 'players' : 'children'}
+            </Link>
 
-        <div className="relative flex items-start gap-4 sm:gap-5">
-        <div className="flex-shrink-0">
-          <div className="relative">
-            {/* Glow ring around avatar */}
-            <div className="absolute inset-0 rounded-full blur-md opacity-50 bg-gradient-to-br from-[#4ecde6] to-purple-500" />
-            <div className="relative">
-              {isStaff ? (
-                <PhotoUpload
-                  playerId={player.id}
-                  currentPhotoUrl={player.photo_url}
-                  firstName={player.first_name}
-                  lastName={player.last_name}
-                  size="xl"
-                />
-              ) : (
-                <PlayerAvatar
-                  photoUrl={player.photo_url}
-                  firstName={player.first_name}
-                  lastName={player.last_name}
-                  size="xl"
-                />
-              )}
+            <div className="relative flex items-center gap-4 sm:gap-5">
+              <div className="shrink-0 [&_.group>:first-child]:border-transparent [&_.group>:first-child]:ring-2 [&_.group>:first-child]:ring-[#4ecde6]/70 [&_.group>:first-child]:ring-offset-[3px] [&_.group>:first-child]:ring-offset-[#122035]">
+                {isStaff ? (
+                  <PhotoUpload playerId={player.id} currentPhotoUrl={player.photo_url} firstName={player.first_name} lastName={player.last_name} size="xl" />
+                ) : (
+                  <div className="rounded-full ring-2 ring-[#4ecde6]/70 ring-offset-[3px] ring-offset-[#122035]">
+                    <PlayerAvatar photoUrl={player.photo_url} firstName={player.first_name} lastName={player.last_name} size="xl" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">{player.first_name} {player.last_name}</h1>
+                <p className="mt-0.5 text-[13px] text-white/50">{born ? `Born ${born}` : 'Date of birth not added'}</p>
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/85" data-testid="player-header-membership">
+                    <i className={`h-1.5 w-1.5 rounded-full ${dot}`} />{pill.label === 'Paying' ? 'Active member' : pill.label}
+                  </span>
+                  {/* Photo consent (migration 110). Shown to staff so a coach can answer "can I post a
+                      picture of this child" without leaving the page. "Not asked" is deliberately visible:
+                      an academy chasing consent needs to tell a family that declined from one nobody asked. */}
+                  {isStaff && (() => {
+                    const c = (player as Record<string, unknown>).photo_consent as boolean | null | undefined
+                    const when = (player as Record<string, unknown>).photo_consent_at as string | null | undefined
+                    const style = c === true ? 'bg-green-500/15 text-green-400' : c === false ? 'bg-red-500/15 text-red-400' : 'bg-white/10 text-white/50'
+                    const label = c === true ? 'Photos OK' : c === false ? 'No photos' : 'Photo consent not asked'
+                    return (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`} title={when ? `Recorded ${new Date(when).toLocaleDateString('en-GB')}` : 'Nobody has asked this family yet'} data-testid="photo-consent-badge">
+                        {label}
+                      </span>
+                    )
+                  })()}
+                  {isStaff ? (
+                    <PlayerLevelEditor playerId={player.id} playingLevel={player.playing_level} leagueLevel={player.league_level} />
+                  ) : (
+                    <>
+                      {player.playing_level && <span className={chip}>{levelLabels[player.playing_level] || player.playing_level}</span>}
+                      {player.league_level && <span className={chip}>{leagueLabels[player.league_level] || player.league_level}</span>}
+                    </>
+                  )}
+                  {player.position && <span className={chip}>{player.position}</span>}
+                  {player.kit_size && <span className={chip}>Kit: {player.kit_size}</span>}
+                </div>
+              </div>
+            </div>
+
+            <div className="relative mt-5 grid grid-cols-3 divide-x divide-white/[0.07] rounded-2xl border border-white/[0.07] bg-black/20" data-testid="player-header-stats">
+              {stat('Age', age ?? '—', (player.age_group as string | null) || undefined)}
+              {stat('Attendance', totalSessions > 0 ? `${attendanceRate}%` : '—', totalSessions > 0 ? `${presentCount} of ${totalSessions} sessions` : 'no sessions yet')}
+              {stat('Classes', classesNow, 'a week')}
+            </div>
+
+            <div className="relative mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" data-testid="player-header-actions">
+              {action(`/dashboard/players/${id}/report`, 'Progress report', 'M9 12h6m-6 4h6M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z', true)}
+              {action(`/dashboard/players/${id}/passport`, 'Passport', 'M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z')}
+              {action(`/dashboard/players/${id}/highlights`, 'Monthly highlights', 'M12 3l2.6 5.6 6 .7-4.5 4.2 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.4 9.3l6-.7L12 3z')}
+              {action(`/dashboard/players/${id}/report/print`, 'Download PDF', 'M12 4v11m0 0l-4-4m4 4l4-4M5 19h14')}
             </div>
           </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-1">{player.first_name} {player.last_name}</h1>
-          <div className="flex flex-wrap gap-2 mt-1">
-            {/* Photo consent (migration 110). Shown to staff beside the level
-                badges so a coach can answer "can I post a picture of this
-                child" without leaving the page.
-                Three states, and "not asked" is deliberately visible rather
-                than blank — an academy chasing consent needs to tell a family
-                that declined apart from one nobody asked. */}
-            {isStaff && (() => {
-              const c = (player as Record<string, unknown>).photo_consent as boolean | null | undefined
-              const when = (player as Record<string, unknown>).photo_consent_at as string | null | undefined
-              const style = c === true
-                ? 'bg-green-500/15 text-green-400'
-                : c === false
-                  ? 'bg-red-500/15 text-red-400'
-                  : 'bg-white/10 text-white/50'
-              const label = c === true ? 'Photos OK' : c === false ? 'No photos' : 'Photo consent not asked'
-              return (
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${style}`}
-                  title={when ? `Recorded ${new Date(when).toLocaleDateString('en-GB')}` : 'Nobody has asked this family yet'}
-                  data-testid="photo-consent-badge"
-                >
-                  {label}
-                </span>
-              )
-            })()}
-            {isStaff ? (
-              <PlayerLevelEditor
-                playerId={player.id}
-                playingLevel={player.playing_level}
-                leagueLevel={player.league_level}
-              />
-            ) : (
-              <>
-                {player.playing_level && (() => {
-                  const levelColors: Record<string, string> = { beginner: 'bg-green-500/15 text-green-400', development: 'bg-blue-500/15 text-blue-400', intermediate: 'bg-amber-500/15 text-amber-400', advanced: 'bg-purple-500/15 text-purple-400', elite: 'bg-red-500/15 text-red-400' }
-                  const levelLabels: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
-                  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColors[player.playing_level] || 'bg-white/10 text-white'}`}>{levelLabels[player.playing_level] || player.playing_level}</span>
-                })()}
-                {player.league_level && (() => {
-                  const leagueColors: Record<string, string> = { recreational: 'bg-gray-500/15 text-gray-400', grassroots: 'bg-lime-500/15 text-lime-400', b_league: 'bg-sky-500/15 text-sky-400', a_league: 'bg-orange-500/15 text-orange-400', academy: 'bg-violet-500/15 text-violet-400', professional: 'bg-rose-500/15 text-rose-400' }
-                  const leagueLabels: Record<string, string> = { recreational: 'Recreational', grassroots: 'Grassroots', b_league: 'B League', a_league: 'A League', academy: 'Academy', professional: 'Pro Development' }
-                  return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${leagueColors[player.league_level] || 'bg-white/10 text-white'}`}>{leagueLabels[player.league_level] || player.league_level}</span>
-                })()}
-              </>
-            )}
-            {player.age_group && <span className="px-2 py-0.5 rounded-full text-xs bg-white/10 text-white font-medium">{player.age_group}</span>}
-            {player.position && <span className="px-2 py-0.5 rounded-full text-xs bg-accent/10 text-accent font-medium">{player.position}</span>}
-            {player.kit_size && <span className="px-2 py-0.5 rounded-full text-xs bg-white/[0.05] text-white/60 font-medium">Kit: {player.kit_size}</span>}
-          </div>
-        </div>
-        <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
-          <div>
-            <div className="text-3xl font-bold text-accent">{attendanceRate}%</div>
-            <div className="text-xs text-white/60">Attendance</div>
-          </div>
-          <Link
-            href={`/dashboard/players/${id}/passport`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors"
-          >
-            <span>{'\u{1F3AE}'}</span> Passport
-          </Link>
-          <Link
-            href={`/dashboard/players/${id}/report`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
-          >
-            <span>{'\u{1F4C4}'}</span> Progress Report
-          </Link>
-          <Link
-            href={`/dashboard/players/${id}/report/print`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Download PDF
-          </Link>
-          <Link
-            href={`/dashboard/players/${id}/highlights`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-purple-500/15 to-pink-500/15 text-purple-400 hover:from-purple-500/25 hover:to-pink-500/25 transition-colors border border-purple-500/10"
-          >
-            <span>{'\u{2728}'}</span> Monthly Highlights
-          </Link>
-        </div>
-        </div>
-      </div>
+        )
+      })()}
 
       {/* Radar Chart + Attendance Streak */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -458,15 +428,17 @@ export default async function PlayerDetailPage({
           <Card title="Skills Overview">
             <RadarChart scores={radarScores} />
             <p className="text-xs text-white/60 text-center mt-2">
-              Based on latest review ({new Date(latestReview.review_date).toLocaleDateString()})
+              Based on latest review ({new Date(latestReview.review_date).toLocaleDateString('en-GB')})
             </p>
           </Card>
         ) : (
           <Card>
             <div className="text-center py-8">
-              <div className="text-4xl mb-2">{'\u{26BD}'}</div>
-              <p className="text-sm text-white/60">No reviews yet</p>
-              <p className="text-xs text-white/60 mt-1">Skills chart will appear after the first progress review</p>
+              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
+                <svg className="h-5 w-5 text-[#4ecde6]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-6" /></svg>
+              </span>
+              <p className="text-sm font-semibold text-white">No reviews yet</p>
+              <p className="mt-1 text-xs text-white/50">The skills chart appears after the first progress review.</p>
             </div>
           </Card>
         )}
@@ -484,7 +456,7 @@ export default async function PlayerDetailPage({
             <PlayerProfileEditor player={player} />
           ) : (
             <div className="space-y-2 text-sm">
-              {player.date_of_birth && <p><span className="text-white/60">DOB:</span> {new Date(player.date_of_birth).toLocaleDateString()}</p>}
+              {player.date_of_birth && <p><span className="text-white/60">DOB:</span> {new Date(player.date_of_birth).toLocaleDateString('en-GB')}</p>}
               {player.position && <p><span className="text-white/60">Position:</span> {player.position}</p>}
               {player.school && <p><span className="text-white/60">School:</span> {player.school}</p>}
               {player.kit_size && <p><span className="text-white/60">Kit Size:</span> {player.kit_size}</p>}
@@ -867,7 +839,7 @@ export default async function PlayerDetailPage({
                   <span className="text-3xl mb-1">{achievement.emoji}</span>
                   <span className="text-xs font-medium text-[#eef2f9]">{achievement.name}</span>
                   <span className="text-[10px] text-white/60 mt-0.5">
-                    {new Date(ach.awarded_at).toLocaleDateString()}
+                    {new Date(ach.awarded_at).toLocaleDateString('en-GB')}
                   </span>
                 </div>
               )
@@ -884,7 +856,7 @@ export default async function PlayerDetailPage({
               <div key={r.id} className="border-b border-white/[0.08] pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-white/60">
-                    {new Date(r.review_date).toLocaleDateString()}
+                    {new Date(r.review_date).toLocaleDateString('en-GB')}
                     {' · '}{(r.coach as unknown as { full_name: string })?.full_name}
                   </span>
                 </div>
@@ -947,7 +919,7 @@ export default async function PlayerDetailPage({
                           <a href={d.url as string} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-purple-400 hover:underline flex items-center gap-1.5">
                             <span></span> {d.title}
                           </a>
-                          <span className="text-xs text-white/60">{new Date(d.created_at).toLocaleDateString()}</span>
+                          <span className="text-xs text-white/60">{new Date(d.created_at).toLocaleDateString('en-GB')}</span>
                         </div>
                         {embedUrl && (
                           <div className="rounded-lg overflow-hidden border border-purple-500/20">
@@ -1026,7 +998,7 @@ export default async function PlayerDetailPage({
               <tbody>
                 {(attendance || []).map((a) => (
                   <tr key={a.id} className="border-b border-white/[0.08] last:border-0">
-                    <td className="py-2">{new Date(a.session_date).toLocaleDateString()}</td>
+                    <td className="py-2">{new Date(a.session_date).toLocaleDateString('en-GB')}</td>
                     <td className="py-2">{(a.group as unknown as { name: string })?.name || '—'}</td>
                     <td className="py-2">
                       <span className={`inline-block w-2 h-2 rounded-full mr-1 ${a.present ? 'bg-accent' : 'bg-danger'}`} />
