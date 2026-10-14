@@ -38,7 +38,7 @@ const FEATURES = [
   ['Welcome packs: the form says it will email, and lets the academy choose not to', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-email-now', 'emailNow }) })', 'Save and email parents']],
   ['Welcome packs: one page for the academy and for the parent', `${D}/welcome-packs/page.tsx`, ['loadFamilyPacks(', 'loadAcademyPacks(', 'packCoverage(', 'welcome-packs-parent']],
   ['Welcome packs: on the parent home page until opened', 'src/components/WelcomePackCard.tsx', ['welcome-pack-card', '!r.opened.has(p.packId)', '/api/welcome-pack/${p.packId}']],
-  ['Welcome packs: the card is on the parent home page', `${D}/page.tsx`, ['<WelcomePackCard userId={userId} />']],
+  ['Welcome packs: the card is on the parent home page', `${D}/page.tsx`, ['<WelcomePackCard userId={userId} />}']],
   ['Welcome packs: opening checks the family is entitled and writes it down', `${A}/api/welcome-pack/[id]/route.ts`, ['packsForFamily(', 'PACK_OPENED_ACTION', 'createSignedUrl(', 'pathBelongsTo(']],
   ['Welcome packs: only an admin adds or removes, only inside their own academy', `${A}/api/admin/welcome-packs/route.ts`, ["me.role !== 'admin'", 'pathBelongsTo(path, orgId)', 'createSignedUploadUrl(', ".eq('organisation_id', orgId).in('id', classIds)"]],
   ['Welcome packs: the welcome email carries the button', 'src/lib/email-templates.ts', ['params.welcomePackUrl ?', 'Open your welcome pack']],
@@ -140,6 +140,9 @@ const FEATURES = [
   ['How-to videos: linked on the sign-up page', `${A}/auth/signup/page.tsx`, ['how-to-videos-link', '/help/parents']],
   ['How-to videos: linked on the class page', `${A}/book/[slug]/class/[groupId]/page.tsx`, ['how-to-videos-link', '/help/parents']],
   ['How-to videos: linked on the parent home', 'src/components/parent/ParentHub.tsx', ['how-to-videos-link', '/help/parents']],
+  // Parent home in the premium look, 14 Oct 2026. Greeted without a name (accounts are often "X Family"). See src/lib/parent-greeting.ts.
+  ['Parent home: greeting with no surname, and a line about today', 'src/components/parent/ParentHub.tsx', ['greetingFor()', 'todayLine(nextSession)', 'parent-greeting', 'parent-next-session', '{props.welcomePack}', 'MembershipOverview activeSubs={activeSubs}']],
+  ['Parent home: the welcome pack sits inside the home page', `${D}/page.tsx`, ['welcomePack={<WelcomePackCard userId={userId} />}']],
   ['How-to videos: the page itself', `${A}/help/parents/page.tsx`, ['<video']],
   ['How-to videos for academies: the page', `${A}/help/academies/page.tsx`, ['<video', 'academy-who-has-paid', 'academy-one-to-ones', 'academy-camps', 'academy-class-and-plan', 'academy-first-ten-minutes']],
   ['How-to videos for academies: in the academy menu', 'src/components/Navigation.tsx', ["href: '/help/academies'", "href: '/help/parents'"]],

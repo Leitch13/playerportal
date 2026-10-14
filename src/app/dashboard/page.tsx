@@ -195,7 +195,7 @@ async function loadParentHub(
     return `${isToday ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'short' })}, ${time}`
   }
   const nextSession = ranked[0]
-    ? { label: formatNext(ranked[0].n.whenMs), name: ranked[0].s.name, child: ranked[0].s.childName }
+    ? { label: formatNext(ranked[0].n.whenMs), name: ranked[0].s.name, child: ranked[0].s.childName, location: ranked[0].s.location }
     : null
 
   const kids = pls.map((p) => {
@@ -259,7 +259,8 @@ async function ParentDashboard({ userId, name }: { userId: string; name: string 
   // Protected #8 (Parent Hub) recomposition; #9 + #4 untouched. See
   // PARENT_HUB_MVP_PHASE0.md.
   if (PARENT_HUB_ENABLED) {
-    return <><WelcomePackCard userId={userId} /><ParentHub {...await loadParentHub(supabase, userId, name)} /></>
+    // The welcome pack card sits inside the home page, under the next session (src/components/WelcomePackCard.tsx).
+    return <ParentHub {...await loadParentHub(supabase, userId, name)} welcomePack={<WelcomePackCard userId={userId} />} />
   }
 
   // players_active (migration 109): parent-facing child list.
