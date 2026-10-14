@@ -168,6 +168,9 @@ const FEATURES = [
   ['1-2-1s: the admin route saves a pair in one go', `${A}/api/one-to-one/admin/route.ts`, ['secondPlayerId']],
   ['1-2-1s: alternating fortnightly slots', 'src/lib/one-to-one/seats.ts', ['export function sameWeeks', 'export function onSameWeeks']],
   ['1-2-1s: the admin route checks the weeks', `${A}/api/one-to-one/admin/route.ts`, ['onSameWeeks(']],
+  // ── Reminders: never "see you tomorrow" for a class between its blocks (G&G, 14 Oct 2026)
+  ['Session reminders: skip classes outside their block dates', `${A}/api/cron/session-reminders/route.ts`, ['term:terms(start_date, end_date)', 'classRunsOn(tomorrowDate', 'ukDateFromNow(1)']],
+  ['Session reminders: the block-date rule', 'src/lib/term-window.ts', ['export function classRunsOn', 'export function ukDateFromNow']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

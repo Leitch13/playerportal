@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, sendEmailBatch } from '@/lib/email'
 import { sessionReminderEmail } from '@/lib/email-templates'
+import { classRunsOn, ukDateFromNow, type TermDates } from '@/lib/term-window'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -25,9 +26,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ skipped: 'disabled by SESSION_REMINDERS_ENABLED' })
   }
 
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowDay = DAYS[tomorrow.getDay()]
+  // Tomorrow's date in the UK, and its weekday, worked out from that date.
+  const tomorrowDate = ukDateFromNow(1)
+  const tomorrowDay = DAYS[new Date(tomorrowDate + 'T12:00:00Z').getUTCDay()]
 
   // Find all classes scheduled for tomorrow's day of week.
   //
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
   // Group classes, tots, intensity etc. really are weekly, so they keep it.
   const { data: groups, error: groupsError } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, class_type, organisation:organisations(name)')
+    .select('id, name, day_of_week, time_slot, location, class_type, organisation:organisations(name), term:terms(start_date, end_date)')
     .eq('day_of_week', tomorrowDay)
     .not('class_type', 'in', '("1-2-1","2-1")')
 
@@ -48,8 +49,17 @@ export async function GET(request: NextRequest) {
   }
 
   const jobs: Parameters<typeof sendEmail>[0][] = []
+  let outsideTerm = 0
 
   for (const group of groups || []) {
+    // A class in a block (term) only runs between the block's dates. Between
+    // blocks there is no session, so no "see you tomorrow" — parents were
+    // turning up to sessions that weren't on. See src/lib/term-window.ts.
+    if (!classRunsOn(tomorrowDate, group.term as unknown as TermDates | null)) {
+      outsideTerm++
+      continue
+    }
+
     // Find all enrolled players and their parents.
     //
     // players → profiles has TWO foreign keys since Archive Player added
@@ -100,6 +110,8 @@ export async function GET(request: NextRequest) {
     sent,
     errors,
     groupsChecked: (groups || []).length,
+    skippedOutsideTerm: outsideTerm,
     tomorrowDay,
+    tomorrowDate,
   })
 }
