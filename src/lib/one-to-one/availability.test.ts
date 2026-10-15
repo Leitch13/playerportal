@@ -56,9 +56,13 @@ describe('subtractions', () => {
     const part = freeSessions(base({ exceptions: [{ coachId: 'cammy', date: '2026-10-19', kind: 'block', startMinutes: 1020, endMinutes: 1080 }] }))
     expect(at(part, '2026-10-19', 'cammy')).toEqual([960, 990, 1080, 1110, 1140])
   })
-  it('a resolved flag no longer subtracts', () => {
+  it('a flag still subtracts once it is resolved (cover sorted, the coach is still away)', () => {
     const free = freeSessions(base({ exceptions: [{ coachId: 'matty', date: '2026-10-22', kind: 'flag', status: 'resolved' }] }))
-    expect(at(free, '2026-10-22', 'matty').length).toBe(6)
+    expect(free.filter((x) => x.coachId === 'matty' && x.date === '2026-10-22')).toHaveLength(0)
+  })
+  it('an academy block is saved resolved and still takes the coach out (15 Oct 2026)', () => {
+    const free = freeSessions(base({ exceptions: [{ coachId: 'matty', date: '2026-10-22', kind: 'block', status: 'resolved' }] }))
+    expect(free.filter((x) => x.coachId === 'matty' && x.date === '2026-10-22')).toHaveLength(0)
   })
   it('live sessions (regular, held, ad hoc) are never free; declined and cancelled are', () => {
     const free = freeSessions(base({ sessions: [

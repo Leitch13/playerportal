@@ -119,6 +119,7 @@ export default async function NeedsAttentionPage() {
                       {it.kind === 'unpaid' && (
                         <>
                           <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: it.ids.slotId }}>Resend the link</ActionButton>
+                          <ActionButton confirm="Mark this family's first month as paid in cash? Their place goes live and it records your name and the time." body={{ action: 'slot.cash_setup', id: it.ids.slotId }}>Paid in cash</ActionButton>
                           <ActionButton tone="quiet" confirm="Release this slot? The time goes back on sale." body={{ action: 'slot.status', id: it.ids.slotId, status: 'released' }}>Release the slot</ActionButton>
                         </>
                       )}

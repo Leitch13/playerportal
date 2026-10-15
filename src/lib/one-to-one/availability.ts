@@ -129,7 +129,11 @@ export function freeSessions(input: AvailabilityInput): FreeSession[] {
   }
   const exByCoachDate = new Map<string, ExceptionRow[]>()
   for (const e of input.exceptions) {
-    if (e.status === 'resolved' && e.kind !== 'extra') continue
+    // Blocks and flags ALWAYS take the coach out, whatever their status. A block is
+    // saved 'resolved' (nothing to sort), and a flag becomes 'resolved' once cover is
+    // arranged; the coach is still away either way. Until 15 Oct 2026 both were
+    // skipped, so blocked holidays and flagged days went back on public sale.
+    // A coach who takes a flag back deletes the row, so that case never reaches here.
     const k = `${e.coachId}|${e.date}`
     const arr = exByCoachDate.get(k) ?? []
     arr.push(e)

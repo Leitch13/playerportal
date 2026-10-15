@@ -135,13 +135,24 @@ export async function sendDeclined(f: { academy: string; to: string; parentName:
   })
 }
 
-export async function sendAcademyCancelled(f: { academy: string; to: string; date: string; startMinutes: number; creditedPence: number; reason: string | null }) {
+export async function sendSessionMoved(f: { academy: string; to: string; fromDate: string; fromMinutes: number; toDate: string; toMinutes: number; coach: string | null; venue: string | null }) {
+  return sendEmail({
+    to: f.to, fromName: f.academy,
+    subject: `Moved: ${fmtDate(f.fromDate)} is now ${fmtDate(f.toDate)} ${hhmm(f.toMinutes)}`,
+    html: shell(f.academy, `
+      <h1 style="font-size:22px;margin:12px 0 4px">Your session has moved</h1>
+      <p style="margin:0 0 12px;color:#5b6674">${esc(f.academy)} has moved the ${esc(fmtDate(f.fromDate))} ${esc(hhmm(f.fromMinutes))} session to <b>${esc(fmtDate(f.toDate))} at ${esc(hhmm(f.toMinutes))}</b>${f.venue ? ` at ${esc(f.venue)}` : ''}${f.coach ? ` with ${esc(f.coach)}` : ''}. The price is the same and nothing else changes.</p>
+    `),
+  })
+}
+
+export async function sendAcademyCancelled(f: { academy: string; to: string; date: string; startMinutes: number; creditedPence: number; refundedPence?: number; reason: string | null }) {
   return sendEmail({
     to: f.to, fromName: f.academy,
     subject: `Cancelled: ${fmtDate(f.date)} ${hhmm(f.startMinutes)}`,
     html: shell(f.academy, `
       <h1 style="font-size:22px;margin:12px 0 4px">Sorry, ${esc(fmtDate(f.date))} is off</h1>
-      <p style="margin:0 0 12px;color:#5b6674">${esc(f.academy)} has had to cancel the ${esc(hhmm(f.startMinutes))} session${f.reason ? ` (${esc(f.reason)})` : ''}. ${f.creditedPence > 0 ? `${gbp(f.creditedPence)} has been credited to your account and comes off your next month.` : 'It won\'t be charged.'} Everything else stays as it was.</p>
+      <p style="margin:0 0 12px;color:#5b6674">${esc(f.academy)} has had to cancel the ${esc(hhmm(f.startMinutes))} session${f.reason ? ` (${esc(f.reason)})` : ''}. ${f.refundedPence ? `${gbp(f.refundedPence)} has been refunded to your card; it usually shows within 5 to 10 working days.` : f.creditedPence > 0 ? `${gbp(f.creditedPence)} has been credited to your account and comes off your next month.` : 'It won\'t be charged.'} Everything else stays as it was.</p>
     `),
   })
 }

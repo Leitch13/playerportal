@@ -170,9 +170,19 @@ const FEATURES = [
   ['1-2-1s: the admin route checks the weeks', `${A}/api/one-to-one/admin/route.ts`, ['onSameWeeks(']],
   // ── A trial booked from the class dropdown always asks for a date (Jamie's ads, 15 Oct 2026)
   ['Trials: picking a class from the dropdown shows Pick your date', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ['data-testid="trial-date-after-class"', "setSessionDate('') }}", "Please pick a date for the trial."]],
+  // ── 1-2-1 audit fixes (15 Oct 2026)
+  ['1-2-1s: regulars not yet rolled are never sold to the public', 'src/lib/one-to-one/db.ts', ['const notYetRolled', '...notYetRolled']],
+  ['1-2-1s: blocks and resolved flags still take the coach out', 'src/lib/one-to-one/availability.ts', ['Blocks and flags ALWAYS take the coach out']],
+  ['1-2-1s: the hold outlives the payment page', `${A}/api/one-to-one/public/route.ts`, ['hold_expires_at: new Date(Date.now() + 31 * 60_000)']],
+  ['1-2-1s: paid with no session is refunded at once', `${A}/api/stripe/one-to-one-webhooks/route.ts`, ['Never keep\n          // money for nothing']],
+  ['1-2-1s: moved sessions are billed', 'src/lib/one-to-one/money.ts', ["const BILLED_SOURCES = ['regular', 'admin']"]],
+  ['1-2-1s: pause credits paid dates, resume brings dates back', 'src/lib/one-to-one/money.ts', ['export async function takeOffSlotSessions', 'export async function resumeSlotSessions']],
+  ['1-2-1s: a set-up link never reopens a paid month, one link per month', 'src/lib/one-to-one/money.ts', ['async function prepareSetupCharge', 'await expireIfOpen(existing.stripe_checkout_session_id']],
+  ['1-2-1s: cash families can be set up', `${D}/one-to-one/page.tsx`, ["action: 'slot.cash_setup'"]],
+  ['1-2-1s: a cancelled guest booking is refunded', 'src/lib/one-to-one/money.ts', ['} else if (wasCharged && !s.parent_id && s.stripe_payment_intent_id']],
   // ── 1-2-1 money owed from a late cancellation is billed once (live JSL test, 15 Oct 2026)
   ['1-2-1s: owed money goes on the bill without negative credit', 'src/lib/one-to-one/ledger.ts', ['export function chargeRow', 'export function owedOnCharge', 'Math.max(0, b.creditAppliedPence)']],
-  ['1-2-1s: both charge paths write the row through chargeRow, and paying clears what was owed', 'src/lib/one-to-one/money.ts', ['...chargeRow(b),\n    status:', '...chargeRow(b),\n    breakdown:', 'const owed = owedOnCharge(charge)']],
+  ['1-2-1s: both charge paths write the row through chargeRow, and paying clears what was owed', 'src/lib/one-to-one/money.ts', ['...chargeRow(b),\n      status:', '...chargeRow(b),\n    breakdown:', 'const owed = owedOnCharge(charge)']],
   // ── Analytics counts paid 1-2-1s (No.1 GK, 15 Oct 2026)
   ['Analytics: revenue includes paid 1-2-1s', `${D}/analytics/page.tsx`, ["from('coaching_charges')", 'oneToOneByMonth(', 'from 1-2-1s']],
   ['Analytics: the 1-2-1 revenue rule', 'src/lib/analytics-revenue.ts', ["export const PAID_ONE_TO_ONE = ['paid_online', 'paid_cash']", 'export function oneToOneByMonth']],

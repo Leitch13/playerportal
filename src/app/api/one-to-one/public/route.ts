@@ -97,7 +97,14 @@ export async function POST(req: NextRequest) {
           coachName: coaches.find((c) => c.id === s.coach_id)?.full_name?.split(' ')[0] || 'your coach',
           venueName: venues.find((v) => v.id === s.venue_id)?.name || 'the venue',
         })
-        await admin.from('coaching_sessions').update({ stripe_checkout_session_id: checkoutId }).eq('id', s.id)
+        // Stripe keeps the payment page open for 30 minutes (its minimum), so the hold
+        // must outlive it. Before 15 Oct 2026 the hold lasted 12 minutes: the hourly
+        // cron could clear it, and a parent paying at minute 20 was charged with no
+        // session. If the page expires unpaid, the expired webhook removes the hold.
+        await admin.from('coaching_sessions').update({
+          stripe_checkout_session_id: checkoutId,
+          hold_expires_at: new Date(Date.now() + 31 * 60_000).toISOString(),
+        }).eq('id', s.id).eq('status', 'held')
         return NextResponse.json({ url })
       }
 

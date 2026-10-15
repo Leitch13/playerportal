@@ -159,10 +159,27 @@ export async function getRequests(admin: SupabaseClient, orgId: string): Promise
 
 /** Everything the engine needs for a window, straight from the tables. */
 export async function loadAvailability(admin: SupabaseClient, orgId: string, from: string, to: string, now = new Date()): Promise<AvailabilityInput> {
-  const [settings, venues, closures, hours, exceptions, sessions] = await Promise.all([
+  const [settings, venues, closures, hours, exceptions, sessions, slots] = await Promise.all([
     getSettings(admin, orgId), getVenues(admin, orgId), getClosures(admin, orgId, from, to),
-    getHours(admin, orgId), getExceptions(admin, orgId, from, to), getSessions(admin, orgId, from, to),
+    getHours(admin, orgId), getExceptions(admin, orgId, from, to), getSessions(admin, orgId, from, to), getSlots(admin, orgId),
   ])
+  // A regular's dates only become session rows when the month rolls on the 20th, but
+  // the public page looks 28 days ahead. Until 15 Oct 2026 a regular's early-next-month
+  // time showed as free from about the 5th and could be sold, and the regular then lost
+  // that date. Every date a live slot falls on now counts as taken unless a row for
+  // that slot and date already exists (a declined or cancelled row decides it instead).
+  const rowFor = new Set(sessions.filter((x) => x.regular_slot_id).map((x) => `${x.regular_slot_id}|${x.session_date}`))
+  const notYetRolled: AvailabilityInput['sessions'] = []
+  for (const sl of slots) {
+    const rule: SlotRule = {
+      id: sl.id, weekday: sl.weekday, startMinutes: sl.start_minutes, durationMinutes: sl.duration_minutes,
+      frequency: sl.frequency, startsOn: sl.starts_on, endsOn: sl.ends_on, status: sl.status,
+    }
+    for (const date of occurrences(rule, from, to)) {
+      if (rowFor.has(`${sl.id}|${date}`)) continue
+      notYetRolled.push({ coachId: sl.coach_id, date, startMinutes: sl.start_minutes, durationMinutes: sl.duration_minutes, status: 'scheduled' })
+    }
+  }
   return {
     from, to, now,
     durationMinutes: settings.session_minutes,
@@ -176,9 +193,12 @@ export async function loadAvailability(admin: SupabaseClient, orgId: string, fro
       coachId: e.coach_id, date: e.exception_date, kind: e.kind, venueId: e.venue_id,
       startMinutes: e.start_minutes, endMinutes: e.end_minutes, status: e.status,
     })),
-    sessions: sessions.map((s) => ({
-      coachId: s.coach_id, date: s.session_date, startMinutes: s.start_minutes, durationMinutes: s.duration_minutes, status: s.status,
-    })),
+    sessions: [
+      ...sessions.map((s) => ({
+        coachId: s.coach_id, date: s.session_date, startMinutes: s.start_minutes, durationMinutes: s.duration_minutes, status: s.status,
+      })),
+      ...notYetRolled,
+    ],
   }
 }
 

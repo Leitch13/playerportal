@@ -67,7 +67,20 @@ export async function POST(req: NextRequest) {
         if (cs.metadata.kind === 'paynow') { await completePayNow(admin, cs); break }
         const sessionId = cs.metadata.coaching_session_id
         const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', sessionId).maybeSingle()
-        if (!s) break
+        if (!s) {
+          // Paid, but the hold is gone, so there is no session to give them. Never keep
+          // money for nothing: refund in full at once and tell the academy.
+          const piId = typeof cs.payment_intent === 'string' ? cs.payment_intent : cs.payment_intent?.id
+          if (piId) await stripe.refunds.create({ payment_intent: piId, reverse_transfer: true, refund_application_fee: true, reason: 'requested_by_customer' })
+          const orgId = cs.metadata.organisation_id
+          if (orgId) await notifyOrgAdmins({
+            orgId, type: 'one_to_one', title: 'A 1-2-1 payment was refunded', email: true,
+            body: `${cs.customer_details?.email || 'A parent'} paid after their hold ran out, so the time was no longer held for them. The payment has been refunded in full.`,
+            link: '/dashboard/one-to-one',
+          }).catch(() => {})
+          console.error('[one-to-one webhook] paid with no held session; refunded', cs.id, piId)
+          break
+        }
         if (s.status === 'scheduled' && s.charge_state === 'paid_online') break // already done
         const paymentIntent = typeof cs.payment_intent === 'string' ? cs.payment_intent : cs.payment_intent?.id
         // Paid: the hold becomes a real session. If the hold had expired and the

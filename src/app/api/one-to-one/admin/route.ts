@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/lib/one-to-one/db'
-import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot } from '@/lib/one-to-one/money'
+import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
-import { sendPaymentFailed } from '@/lib/one-to-one/emails'
+import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { seatForNewSlot, seatForSession, seatClashMessage, sameWeeks, onSameWeeks, type SessionType } from '@/lib/one-to-one/seats'
 
@@ -297,7 +297,7 @@ export async function POST(req: NextRequest) {
         const status = str(body.status); if (!['active', 'paused', 'released'].includes(status)) return bad('Bad status')
         const id = str(body.id)
         const patch: Record<string, unknown> = { status }
-        const { data: cur } = await admin.from('regular_slots').select('starts_on, partner_slot_id').eq('id', id).eq('organisation_id', orgId).maybeSingle()
+        const { data: cur } = await admin.from('regular_slots').select('starts_on, partner_slot_id, status, parent_id').eq('id', id).eq('organisation_id', orgId).maybeSingle()
         if (!cur) return bad('Slot not found')
         if (status === 'released') {
           // A slot that hasn't started yet ends on its start date (the end can't be before the start).
@@ -308,16 +308,17 @@ export async function POST(req: NextRequest) {
         const { error } = await admin.from('regular_slots').update(patch).eq('id', id).eq('organisation_id', orgId)
         if (error) throw error
         // The partner keeps their seat and is ready for a new keeper to join them.
+        // A released slot that was never set up must not stay payable through an old link.
+        if (status === 'released' && cur.status === 'pending') {
+          const { data: open } = await admin.from('coaching_charges').select('stripe_checkout_session_id')
+            .eq('organisation_id', orgId).eq('parent_id', cur.parent_id).in('status', ['pending', 'failed']).not('stripe_checkout_session_id', 'is', null)
+          for (const c of open ?? []) await expireIfOpen(c.stripe_checkout_session_id as string)
+        }
         if (status === 'released' && cur.partner_slot_id) {
           await admin.from('regular_slots').update({ partner_slot_id: null }).eq('id', cur.partner_slot_id).eq('organisation_id', orgId)
         }
-        if (status !== 'active') {
-          // Future dated sessions from this slot come off the timetable and go back on sale.
-          await admin.from('coaching_sessions').update({ status: 'cancelled', note: `slot ${status}` })
-            .eq('regular_slot_id', id).eq('status', 'scheduled').gte('session_date', todayLondon())
-        } else {
-          await rollAhead(admin, orgId, todayLondon())
-        }
+        if (status !== 'active') await takeOffSlotSessions(admin, orgId, id, status as 'paused' | 'released')
+        else await resumeSlotSessions(admin, orgId, id)
         return NextResponse.json({ ok: true })
       }
       // Change a regular's coach, venue, day, time, length or price without ending the slot.
@@ -413,6 +414,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true })
       }
 
+      case 'slot.cash_setup': {
+        await setUpWithCash(admin, orgId, str(body.id), userId)
+        return NextResponse.json({ ok: true })
+      }
       case 'slot.setup_link': {
         if (!(await paymentsReady(admin, orgId))) return bad(ACADEMY_NOT_READY_MESSAGE)
         const r = await sendSetupCheckout(admin, orgId, str(body.id))
@@ -469,6 +474,7 @@ export async function POST(req: NextRequest) {
         if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !(start >= 0)) return bad('Pick a session, a date and a time')
         const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', id).eq('organisation_id', orgId).single()
         if (!s) return bad('Session not found')
+        if (s.status !== 'scheduled') return bad('Only a session that is still on can be moved')
         const coachId = str(body.coachId) || s.coach_id, venueId = str(body.venueId) || s.venue_id
         const { data: there } = await admin.from('coaching_sessions').select('session_type, pair_seat')
           .eq('coach_id', coachId).eq('session_date', date).eq('start_minutes', start)
@@ -486,6 +492,20 @@ export async function POST(req: NextRequest) {
         if (e1) return bad(e1.code === '23505' || e1.code === '23P01' ? 'That coach is already booked then' : e1.message)
         const { error: e2 } = await admin.from('coaching_sessions').update({ status: 'cancelled', note: `moved to ${date} ${hhmm(start)}` }).eq('id', id)
         if (e2) throw e2
+        // Tell the family. Best-effort: the move stands even if the email fails.
+        if (date !== s.session_date || start !== s.start_minutes || coachId !== s.coach_id || venueId !== s.venue_id) {
+          const [{ data: org }, { data: parent }, { data: coach }, { data: venue }] = await Promise.all([
+            admin.from('organisations').select('name').eq('id', orgId).single(),
+            s.parent_id ? admin.from('profiles').select('email').eq('id', s.parent_id).maybeSingle() : Promise.resolve({ data: null }),
+            admin.from('profiles').select('full_name').eq('id', coachId).maybeSingle(),
+            admin.from('coaching_venues').select('name').eq('id', venueId).maybeSingle(),
+          ])
+          const to = (parent as { email?: string } | null)?.email || s.guest_email
+          if (to) await sendSessionMoved({
+            academy: (org?.name as string) || 'Your academy', to, fromDate: s.session_date, fromMinutes: s.start_minutes, toDate: date, toMinutes: start,
+            coach: ((coach as { full_name?: string } | null)?.full_name || '').split(' ')[0] || null, venue: (venue as { name?: string } | null)?.name || null,
+          }).catch(() => {})
+        }
         return NextResponse.json({ ok: true })
       }
       case 'session.status': {
