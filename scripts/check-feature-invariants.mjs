@@ -168,6 +168,9 @@ const FEATURES = [
   ['1-2-1s: the admin route saves a pair in one go', `${A}/api/one-to-one/admin/route.ts`, ['secondPlayerId']],
   ['1-2-1s: alternating fortnightly slots', 'src/lib/one-to-one/seats.ts', ['export function sameWeeks', 'export function onSameWeeks']],
   ['1-2-1s: the admin route checks the weeks', `${A}/api/one-to-one/admin/route.ts`, ['onSameWeeks(']],
+  // ── 1-2-1 money owed from a late cancellation is billed once (live JSL test, 15 Oct 2026)
+  ['1-2-1s: owed money goes on the bill without negative credit', 'src/lib/one-to-one/ledger.ts', ['export function chargeRow', 'export function owedOnCharge', 'Math.max(0, b.creditAppliedPence)']],
+  ['1-2-1s: both charge paths write the row through chargeRow, and paying clears what was owed', 'src/lib/one-to-one/money.ts', ['...chargeRow(b),\n    status:', '...chargeRow(b),\n    breakdown:', 'const owed = owedOnCharge(charge)']],
   // ── Analytics counts paid 1-2-1s (No.1 GK, 15 Oct 2026)
   ['Analytics: revenue includes paid 1-2-1s', `${D}/analytics/page.tsx`, ["from('coaching_charges')", 'oneToOneByMonth(', 'from 1-2-1s']],
   ['Analytics: the 1-2-1 revenue rule', 'src/lib/analytics-revenue.ts', ["export const PAID_ONE_TO_ONE = ['paid_online', 'paid_cash']", 'export function oneToOneByMonth']],

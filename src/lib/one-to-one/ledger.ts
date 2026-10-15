@@ -44,6 +44,31 @@ export function chargeBreakdown(sessions: ChargeableSession[], creditBalancePenc
   }
 }
 
+/**
+ * What goes on the coaching_charges row. The table only holds credit as a
+ * positive number (credit_applied_pence >= 0), but a parent can OWE money: a
+ * late cancellation (7 days to 48 hours) keeps half the fee as a debit on the
+ * ledger. Writing that negative credit to the row broke the 1st-of-month
+ * charge for the whole family (found by the live JSL test, 15 Oct 2026).
+ *
+ * So the row keeps credit >= 0 and the amount owed is simply part of
+ * amount_pence. owedOnCharge() reads it back, and settling the charge clears
+ * it from the ledger, so it is charged once and only once.
+ */
+export function chargeRow(b: ChargeBreakdown): { sessions_pence: number; credit_applied_pence: number; amount_pence: number } {
+  return { sessions_pence: b.sessionsPence, credit_applied_pence: Math.max(0, b.creditAppliedPence), amount_pence: b.amountPence }
+}
+
+/** Money owed from earlier months that this charge collects. */
+export function owedOnCharge(c: { sessions_pence: number; credit_applied_pence: number; amount_pence: number }): number {
+  return Math.max(0, c.amount_pence - (c.sessions_pence - c.credit_applied_pence))
+}
+
+/** Credit as the parent sees it on a receipt: positive = credit used, negative = owed from last month. */
+export function receiptCreditPence(c: { sessions_pence: number; credit_applied_pence: number; amount_pence: number }): number {
+  return c.credit_applied_pence - owedOnCharge(c)
+}
+
 export interface DeclineEffect {
   /** ledger movement for the parent: + credit, − debit, 0 nothing */
   ledgerPence: number

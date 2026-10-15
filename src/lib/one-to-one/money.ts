@@ -15,7 +15,7 @@ import type Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
 import { ONE_TO_ONE_MODULE, platformFeeRate, CheckoutBlocked } from './checkout'
-import { chargeBreakdown, declineEffect, nextAttemptOn, type ChargeableSession } from './ledger'
+import { chargeBreakdown, declineEffect, nextAttemptOn, type ChargeableSession, chargeRow, owedOnCharge, receiptCreditPence } from './ledger'
 import { declineOutcome } from './policy'
 import { getCoaches, getSettings, getVenues, hhmm, fmtDate, DAY } from './db'
 import { monthEnd, monthStart, todayLondon } from './time'
@@ -72,7 +72,7 @@ export async function sendSetupCheckout(admin: SupabaseClient, orgId: string, sl
   // One charge row per parent per month. Set-up lives on that row.
   const { data: charge, error } = await admin.from('coaching_charges').upsert({
     organisation_id: orgId, parent_id: slot.parent_id, billing_month: month,
-    sessions_pence: b.sessionsPence, credit_applied_pence: Math.max(0, b.creditAppliedPence), amount_pence: b.amountPence,
+    ...chargeRow(b),
     status: 'pending', breakdown: b.sessionIds.map((id) => ({ session_id: id })),
   }, { onConflict: 'parent_id,billing_month' }).select('id, status').single()
   if (error) throw new Error(error.message)
@@ -145,7 +145,7 @@ export async function completeSetup(admin: SupabaseClient, cs: Stripe.Checkout.S
     const parent = await parentBits(admin, slot.parent_id)
     const bits = await orgBits(admin, slot.organisation_id)
     if (parent.email && charge.amount_pence > 0) {
-      await sendMonthReceipt({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(charge.billing_month), sessionsPence: charge.sessions_pence, creditPence: charge.credit_applied_pence, amountPence: charge.amount_pence, count: (charge.breakdown as unknown[]).length }).catch(() => {})
+      await sendMonthReceipt({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(charge.billing_month), sessionsPence: charge.sessions_pence, creditPence: receiptCreditPence(charge), amountPence: charge.amount_pence, count: (charge.breakdown as unknown[]).length }).catch(() => {})
     }
   }
 }
@@ -229,7 +229,7 @@ export async function chargeParentMonth(admin: SupabaseClient, orgId: string, pa
   const b = m.breakdown
   const row = {
     organisation_id: orgId, parent_id: parentId, billing_month: month,
-    sessions_pence: b.sessionsPence, credit_applied_pence: b.creditAppliedPence, amount_pence: b.amountPence,
+    ...chargeRow(b),
     breakdown: b.sessionIds.map((id) => ({ session_id: id })),
   }
   const { data: charge, error } = await admin.from('coaching_charges')
@@ -288,7 +288,7 @@ export async function chargeParentMonth(admin: SupabaseClient, orgId: string, pa
   return 'failed'
 }
 
-async function settleCharge(admin: SupabaseClient, charge: { id: string; organisation_id: string; parent_id: string; credit_applied_pence: number; breakdown: unknown; billing_month: string }, opts: { how: 'paid_online' | 'waived' | 'paid_cash'; paymentIntent: string | null; by?: string }) {
+async function settleCharge(admin: SupabaseClient, charge: { id: string; organisation_id: string; parent_id: string; sessions_pence: number; credit_applied_pence: number; amount_pence: number; breakdown: unknown; billing_month: string }, opts: { how: 'paid_online' | 'waived' | 'paid_cash'; paymentIntent: string | null; by?: string }) {
   const ids = ((charge.breakdown as { session_id: string }[]) || []).map((x) => x.session_id)
   await admin.from('coaching_charges').update({
     status: opts.how, stripe_payment_intent_id: opts.paymentIntent, last_attempt_at: new Date().toISOString(), next_attempt_on: null, failure_message: null,
@@ -297,6 +297,11 @@ async function settleCharge(admin: SupabaseClient, charge: { id: string; organis
   if (ids.length) await admin.from('coaching_sessions').update({ charge_state: opts.how === 'paid_cash' ? 'paid_cash' : 'charged', charge_id: charge.id }).in('id', ids)
   if (charge.credit_applied_pence && charge.credit_applied_pence !== 0) {
     await admin.from('coaching_credits').insert({ organisation_id: charge.organisation_id, parent_id: charge.parent_id, amount_pence: -charge.credit_applied_pence, reason: 'applied_to_charge', charge_id: charge.id, note: `applied to ${monthLabel(charge.billing_month)}` })
+  }
+  // Money owed from a late cancellation was added to this charge; now it is paid, clear it.
+  const owed = owedOnCharge(charge)
+  if (owed > 0) {
+    await admin.from('coaching_credits').insert({ organisation_id: charge.organisation_id, parent_id: charge.parent_id, amount_pence: owed, reason: 'applied_to_charge', charge_id: charge.id, note: `owed amount paid with ${monthLabel(charge.billing_month)}` })
   }
 }
 
@@ -334,7 +339,7 @@ export async function completePayNow(admin: SupabaseClient, cs: Stripe.Checkout.
     if (pm && customer) await admin.from('regular_slots').update({ stripe_customer_id: customer, stripe_payment_method_id: pm }).eq('organisation_id', charge.organisation_id).eq('parent_id', charge.parent_id)
   }
   const parent = await parentBits(admin, charge.parent_id); const bits = await orgBits(admin, charge.organisation_id)
-  if (parent.email) await sendMonthReceipt({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(charge.billing_month), sessionsPence: charge.sessions_pence, creditPence: charge.credit_applied_pence, amountPence: charge.amount_pence, count: (charge.breakdown as unknown[]).length }).catch(() => {})
+  if (parent.email) await sendMonthReceipt({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(charge.billing_month), sessionsPence: charge.sessions_pence, creditPence: receiptCreditPence(charge), amountPence: charge.amount_pence, count: (charge.breakdown as unknown[]).length }).catch(() => {})
 }
 
 // ─── 3. declines, cancellations, cash, refunds ───────────────────────────

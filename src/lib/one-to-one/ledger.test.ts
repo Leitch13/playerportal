@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chargeBreakdown, declineEffect, isChargeable, nextAttemptOn } from './ledger'
+import { chargeBreakdown, declineEffect, isChargeable, nextAttemptOn, chargeRow, owedOnCharge, receiptCreditPence } from './ledger'
 
 const s = (id: string, status: string, declineTier: string | null = null) => ({ id, pricePence: 3500, status, declineTier })
 
@@ -54,5 +54,28 @@ describe('retry calendar', () => {
     expect(nextAttemptOn('2026-10-01', 1)).toBe('2026-10-04')
     expect(nextAttemptOn('2026-10-01', 2)).toBe('2026-10-08')
     expect(nextAttemptOn('2026-10-01', 3)).toBeNull()
+  })
+})
+
+describe('money owed from a late cancellation (live JSL test, 15 Oct 2026)', () => {
+  const two = [{ id: 'a', pricePence: 4000, status: 'scheduled' }, { id: 'b', pricePence: 4000, status: 'scheduled' }]
+  it('the charge row never holds negative credit, so the database accepts it', () => {
+    const row = chargeRow(chargeBreakdown(two, -2000))
+    expect(row).toEqual({ sessions_pence: 8000, credit_applied_pence: 0, amount_pence: 10000 })
+  })
+  it('the owed £20 is read back from the row and cleared once paid', () => {
+    const row = chargeRow(chargeBreakdown(two, -2000))
+    expect(owedOnCharge(row)).toBe(2000)
+    expect(receiptCreditPence(row)).toBe(-2000)
+  })
+  it('credit and nothing owed: unchanged', () => {
+    const row = chargeRow(chargeBreakdown(two, 3000))
+    expect(row).toEqual({ sessions_pence: 8000, credit_applied_pence: 3000, amount_pence: 5000 })
+    expect(owedOnCharge(row)).toBe(0)
+    expect(receiptCreditPence(row)).toBe(3000)
+  })
+  it('credit bigger than the month: nothing charged, nothing owed', () => {
+    const row = chargeRow(chargeBreakdown(two, 9000))
+    expect([row.amount_pence, owedOnCharge(row)]).toEqual([0, 0])
   })
 })
