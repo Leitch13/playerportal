@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import InvoiceActions from './InvoiceActions'
 import RefundButton from './RefundButton'
+import { canRefund, refundKind } from '@/lib/refund-kind'
 
 export default async function InvoicePage({
   params,
@@ -130,33 +131,20 @@ export default async function InvoicePage({
           The server route re-checks all of these; the UI gate just avoids
           rendering a button that would always error.
         */}
-        {(() => {
-          const desc = (description as string) || ''
-          const kind: 'camp' | 'subscription' | 'bridge' | null =
-            desc.startsWith('Camp:') ? 'camp'
-            : desc.startsWith('First session ') ? 'bridge'
-            : (desc.includes('— subscription') || desc.startsWith('Subscription payment')) ? 'subscription'
-            : null
-          const ageDays = Math.floor(
-            (Date.now() - new Date(payment.created_at as string).getTime()) /
-            (24 * 60 * 60 * 1000)
-          )
-          if (
-            !(isAdmin && sameOrg && isPaid && payment.status !== 'refunded' &&
-              payment.stripe_session_id && kind)
-          ) return null
-          return (
-            <RefundButton
-              paymentId={id}
-              amount={amount}
-              player={playerName}
-              camp={description}
-              academy={org?.name || null}
-              kind={kind}
-              paymentAgeDays={ageDays}
-            />
-          )
-        })()}
+        {/* Refund: admins only (coaches can view the receipt but not refund),
+            every paid card payment — src/lib/refund-kind.ts. The server
+            route re-checks all of it. */}
+        {profile.role === 'admin' && sameOrg && canRefund(payment) && (
+          <RefundButton
+            paymentId={id}
+            amount={amountPaid > 0 ? amountPaid : amount}
+            player={playerName}
+            camp={description}
+            academy={org?.name || null}
+            kind={refundKind(description)}
+            paymentAgeDays={Math.floor((Date.now() - new Date(payment.created_at as string).getTime()) / 86400000)}
+          />
+        )}
       </div>
 
       {/* Invoice document */}

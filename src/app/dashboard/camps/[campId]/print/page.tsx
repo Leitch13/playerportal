@@ -16,6 +16,7 @@
  * Reads from camp_bookings directly. Forward-compatible with missing
  * `booking_source` column (Sprint 9 migration 081 may not be applied).
  */
+import { outstanding } from '@/lib/camp-payment-display'
 import { redirect } from 'next/navigation'
 import { sellsSingleDays } from '@/lib/flexible-camps'
 import { createClient } from '@/lib/supabase/server'
@@ -81,6 +82,7 @@ export default async function CampPrintRegisterPage({
     medical_info: string | null
     photo_consent: boolean | null
     payment_status: string
+    amount_paid?: number | null
   }
   // Photo & video consent (migration 111) is selected first; if the column
   // is not there yet (42703) fall back to the pre-111 select so the print
@@ -88,7 +90,7 @@ export default async function CampPrintRegisterPage({
   let bookingsRaw: unknown[] | null = null
   const withPhoto = await supabase
     .from('camp_bookings')
-    .select('id, child_name, child_age, parent_name, parent_phone, medical_info, photo_consent, payment_status, booking_mode')
+    .select('id, child_name, child_age, parent_name, parent_phone, medical_info, photo_consent, payment_status, booking_mode, amount_paid')
     .eq('camp_id', campId)
     .eq('organisation_id', orgId)
     .in('payment_status', ['paid', 'pending'])
@@ -96,7 +98,7 @@ export default async function CampPrintRegisterPage({
   if (withPhoto.error && (withPhoto.error as { code?: string }).code === '42703') {
     const legacy = await supabase
       .from('camp_bookings')
-      .select('id, child_name, child_age, parent_name, parent_phone, medical_info, payment_status, booking_mode')
+      .select('id, child_name, child_age, parent_name, parent_phone, medical_info, payment_status, booking_mode, amount_paid')
       .eq('camp_id', campId)
       .eq('organisation_id', orgId)
       .in('payment_status', ['paid', 'pending'])
@@ -182,6 +184,7 @@ export default async function CampPrintRegisterPage({
         .print-register td { padding: 8px; border: 1px solid #ccc; vertical-align: top; }
         .print-register td.signature { width: 22%; }
         .print-register td.medical { color: #b00020; font-weight: 600; }
+        .print-register .not-paid { display: inline-block; margin-top: 2px; border: 1.5px solid #b00020; border-radius: 3px; padding: 0 4px; color: #b00020; font-weight: 800; font-size: 10px; }
         .print-register .medical-empty { color: #999; font-weight: 400; }
         .print-register td.no-photos { color: #b00020; font-weight: 800; letter-spacing: 0.04em; }
         .print-register .toolbar { margin-bottom: 16px; }
@@ -238,7 +241,7 @@ export default async function CampPrintRegisterPage({
                         return (
                           <tr key={r.id}>
                             <td>{i + 1}</td>
-                            <td>{r.child_name || '—'}</td>
+                            <td>{r.child_name || '—'}{outstanding(r.payment_status, r.amount_paid) && <span className="not-paid" data-testid="print-outstanding">{outstanding(r.payment_status, r.amount_paid)}</span>}</td>
                             <td>{r.child_age != null ? r.child_age : '—'}</td>
                             <td>{r.parent_name || '—'}</td>
                             <td>{r.parent_phone || '—'}</td>
@@ -280,7 +283,7 @@ export default async function CampPrintRegisterPage({
                 return (
                   <tr key={r.id}>
                     <td>{i + 1}</td>
-                    <td>{r.child_name || '—'}</td>
+                    <td>{r.child_name || '—'}{outstanding(r.payment_status, r.amount_paid) && <span className="not-paid" data-testid="print-outstanding">{outstanding(r.payment_status, r.amount_paid)}</span>}</td>
                     <td>{r.child_age != null ? r.child_age : '—'}</td>
                     <td>{r.parent_name || '—'}</td>
                     <td>{r.parent_phone || '—'}</td>

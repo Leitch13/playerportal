@@ -60,6 +60,9 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
 import { resolveChargeAndSubscription } from '@/lib/stripe-refund-resolver'
 import { isEmptyBalanceError, refundCoveredByPlatform } from '@/lib/refund-recovery'
+import { refundKind, hasRefundableStripeId } from '@/lib/refund-kind'
+import { sendEmail } from '@/lib/email'
+import { refundedEmail } from '@/lib/email-templates'
 
 const ALLOWED_REASONS = [
   'customer_request',
@@ -73,16 +76,6 @@ type RefundReason = (typeof ALLOWED_REASONS)[number]
 
 function isRefundReason(v: unknown): v is RefundReason {
   return typeof v === 'string' && (ALLOWED_REASONS as readonly string[]).includes(v)
-}
-
-function classifyPayment(description: string | null | undefined): 'camp' | 'subscription' | 'bridge' | 'unknown' {
-  const d = (description || '').trim()
-  if (d.startsWith('Camp:')) return 'camp'
-  if (d.startsWith('First session ')) return 'bridge'
-  // matches "Plan Name — subscription" (first payment) AND
-  // "Subscription payment" (some renewals)
-  if (d.includes('— subscription') || d.startsWith('Subscription payment')) return 'subscription'
-  return 'unknown'
 }
 
 export async function POST(
@@ -141,7 +134,7 @@ export async function POST(
   const { data: payment } = await service
     .from('payments')
     .select(
-      'id, organisation_id, status, amount, amount_paid, amount_refunded, stripe_session_id, stripe_charge_id, description, created_at'
+      'id, organisation_id, status, amount, amount_paid, amount_refunded, stripe_session_id, stripe_charge_id, description, created_at, parent:profiles!payments_parent_id_fkey(full_name, email), player:players(first_name)'
     )
     .eq('id', paymentId)
     .maybeSingle()
@@ -167,28 +160,20 @@ export async function POST(
       { status: 409 }
     )
   }
-  if (!payment.stripe_session_id) {
+  if (!hasRefundableStripeId(payment.stripe_session_id as string | null)) {
     return NextResponse.json(
       {
         ok: false,
         error:
-          'This payment was not collected through Stripe and cannot be refunded automatically.',
+          'This payment was not taken by card through Player Portal, so there is nothing to refund automatically.',
       },
       { status: 422 }
     )
   }
 
-  const kind = classifyPayment(payment.description as string | null)
-  if (kind === 'unknown') {
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          'Payment type could not be classified. Please refund via Stripe Dashboard — the webhook will sync.',
-      },
-      { status: 422 }
-    )
-  }
+  // Every card payment can be refunded (src/lib/refund-kind.ts); the kind only
+  // decides the side effects (free a camp place, offer to cancel a membership).
+  const kind = refundKind(payment.description as string | null)
 
   // ─── Resolve charge id + (when applicable) subscription id ───
   const resolved = await resolveChargeAndSubscription(payment.stripe_session_id as string)
@@ -360,6 +345,27 @@ export async function POST(
     })
   } catch {
     // Swallow audit failures — primary state change already succeeded.
+  }
+
+  // ─── Tell the parent (best-effort — the money has already gone back) ───
+  try {
+    const parent = payment.parent as unknown as { full_name: string | null; email: string | null } | null
+    const child = payment.player as unknown as { first_name: string | null } | null
+    if (parent?.email) {
+      const { data: org } = await service.from('organisations').select('name, contact_email').eq('id', myOrgId).single()
+      const t = refundedEmail({
+        parentName: (parent.full_name || '').split(' ')[0] || 'there',
+        academyName: org?.name || 'your academy',
+        amountPence: refundAmount,
+        what: (payment.description as string | null) || 'your payment',
+        childName: child?.first_name || null,
+        membershipCancelled: shouldAttemptCancel && !cancelWarning,
+        canReply: !!org?.contact_email,
+      })
+      await sendEmail({ to: parent.email, ...t, fromName: org?.name || undefined, replyTo: org?.contact_email || undefined })
+    }
+  } catch (err) {
+    console.error('[refund] parent email failed', { paymentId, error: err instanceof Error ? err.message : String(err) })
   }
 
   return NextResponse.json({

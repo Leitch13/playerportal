@@ -50,6 +50,8 @@ import {
   type AttendanceRiskAssessment,
 } from '@/lib/attendance-risk-derive'
 import AttendanceBanner from './AttendanceBanner'
+import RefundButton from '../../payments/invoice/[id]/RefundButton'
+import { canRefund, refundKind } from '@/lib/refund-kind'
 
 export default async function ParentDetailPage({
   params,
@@ -64,6 +66,8 @@ export default async function ParentDetailPage({
 
   const { data: orgId } = await supabase.rpc('get_my_org')
   if (!orgId) redirect('/dashboard')
+  const { data: myRole } = await supabase.rpc('get_my_role')
+  const isAdmin = myRole === 'admin'
 
   // ── 1. Parent profile (org-scoped to defend against cross-tenant URL guesses) ──
   const { data: parentProfile } = await supabase
@@ -113,7 +117,9 @@ export default async function ParentDetailPage({
   // ── 4. Payments for this parent (READ-ONLY) ──
   const { data: paymentsRows } = await supabase
     .from('payments')
-    .select('id, amount, amount_paid, status, paid_date, created_at, description, plan:subscription_plans(name)')
+    // No plan join: payments has no link to subscription_plans, and asking for one made
+    // this query fail, so the family's payment history and "last paid" never showed (found 15 Oct 2026).
+    .select('id, amount, amount_paid, status, paid_date, created_at, description, stripe_session_id')
     .eq('organisation_id', orgId)
     .eq('parent_id', parentId)
     .order('paid_date', { ascending: false, nullsFirst: false })
@@ -413,6 +419,7 @@ export default async function ParentDetailPage({
                     <th className="px-1 pb-2 font-bold">For</th>
                     <th className="px-1 pb-2 text-right font-bold">Amount</th>
                     <th className="px-1 pb-2 text-right font-bold">Status</th>
+                    {isAdmin && <th className="px-1 pb-2" />}
                   </tr>
                 </thead>
                 <tbody>
@@ -420,9 +427,7 @@ export default async function ParentDetailPage({
                     const amt = Number(pay.amount_paid || 0) > 0 ? Number(pay.amount_paid) : Number(pay.amount || 0)
                     const dateIso = (pay.paid_date as string | null) || (pay.created_at as string | null)
                     const isPaid = pay.status === 'paid'
-                    const label = (pay.description as string | null)
-                      || ((pay.plan as unknown as { name?: string } | null)?.name)
-                      || 'Payment'
+                    const label = (pay.description as string | null) || 'Payment'
                     return (
                       <tr key={(pay.id as string) || i} className="border-t border-white/[0.05]">
                         <td className="px-1 py-2.5 whitespace-nowrap text-white/70">
@@ -440,6 +445,20 @@ export default async function ParentDetailPage({
                             : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
                           }`}>{String(pay.status)}</span>
                         </td>
+                        {isAdmin && (
+                          <td className="px-1 py-2.5 text-right">
+                            {canRefund(pay) && (
+                              <RefundButton
+                                compact
+                                paymentId={pay.id as string}
+                                amount={amt}
+                                camp={label}
+                                kind={refundKind(pay.description as string | null)}
+                                paymentAgeDays={Math.floor((Date.now() - new Date(pay.created_at as string).getTime()) / 86400000)}
+                              />
+                            )}
+                          </td>
+                        )}
                       </tr>
                     )
                   })}

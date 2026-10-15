@@ -42,3 +42,24 @@ Recurring 1-to-1 / 2-to-1 coaching lives in `src/lib/one-to-one`, `src/app/api/o
 - It creates no Stripe subscriptions. Money there is one-off Connect charges (Checkout in payment mode, then off-session payment intents on the 1st). The guard refuses `subscriptions.create` and `mode: 'subscription'` under the module.
 - Its cancellation tiers are fixed in code for every academy. An academy sets prices and session length only.
 - The module is on for every academy. There is no allowlist and no pilot flag.
+
+## Camps: nobody is on a camp without paying, and the academy is always told
+
+John, 15 October 2026, after WLFA had two unpaid children (£180) on a camp starting the next Monday,
+shown in green on the register as if paid, and nobody told them:
+
+> **There's no way that people can book camps and not pay. The academy has to be told that they are not paying.**
+
+These are the same rules as everywhere else ("nobody uses services free", "the academy is always told").
+They apply to camps, classes, 1-2-1s, trials and anything added later. Never assume a rule
+doesn't apply to one product.
+
+1. **An unpaid camp booking never looks paid.** A red box next to the child's name says what is
+   outstanding ("£80.00 outstanding") on the register, the day check-in list and the printed register.
+   Only a paid booking shows an amount received. Code: `src/lib/camp-payment-display.ts` (+ test).
+2. **The academy is told when a family books and does not pay.** When a camp payment link runs out,
+   the place is released and the academy gets an alert and email naming the child and the amount.
+   Code: `handleCheckoutExpired` in `src/app/api/stripe/webhooks/route.ts`.
+3. A confirmation email is only ever sent for a paid booking. Unpaid bookings get a payment link.
+
+Enforced by `scripts/check-feature-invariants.mjs` (build fails if any of this is removed).

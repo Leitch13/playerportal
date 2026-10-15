@@ -156,3 +156,31 @@ export async function sendAcademyCancelled(f: { academy: string; to: string; dat
     `),
   })
 }
+
+/**
+ * The academy changed a regular's price (John, 15 Oct 2026: "so if Matty/Cammy need to email").
+ * Sent the moment it is saved, so the family hears it from the academy before the monthly
+ * notice or the card charge shows a different number.
+ */
+export async function sendPriceChanged(f: { academy: string; to: string; parentName: string | null; childName: string; slotLabel: string; oldPence: number; newPence: number; fromDate: string; monthLabel: string; dates: { date: string; startMinutes: number }[] }) {
+  const up = f.newPence > f.oldPence
+  return sendEmail({
+    to: f.to, fromName: f.academy,
+    subject: `${f.childName}'s sessions: new price ${gbp(f.newPence)} from ${fmtDate(f.fromDate)}`,
+    html: shell(f.academy, `
+      <h1 style="font-size:22px;margin:12px 0 4px">A change to ${esc(f.childName)}'s price</h1>
+      <p style="margin:0 0 12px;color:#5b6674">Hi ${esc((f.parentName || '').split(' ')[0] || 'there')}, ${esc(f.academy)} has ${up ? 'changed' : 'lowered'} the price of ${esc(f.childName)}'s ${esc(f.slotLabel)} sessions.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:15px;margin:8px 0 14px">
+        <tr><td style="padding:8px 0;color:#5b6674;border-top:1px solid #e6e9ee">Was</td><td style="padding:8px 0;text-align:right;border-top:1px solid #e6e9ee">${gbp(f.oldPence)} a session</td></tr>
+        <tr><td style="padding:8px 0;color:#5b6674;border-top:1px solid #e6e9ee">Now</td><td style="padding:8px 0;text-align:right;font-weight:700;border-top:1px solid #e6e9ee">${gbp(f.newPence)} a session</td></tr>
+        <tr><td style="padding:8px 0;color:#5b6674;border-top:1px solid #e6e9ee">From</td><td style="padding:8px 0;text-align:right;border-top:1px solid #e6e9ee">${esc(fmtDate(f.fromDate))}</td></tr>
+      </table>
+      ${f.dates.length ? `<p style="margin:0 0 6px;font-weight:600">${esc(f.monthLabel)} at the new price</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin:0 0 14px">
+        ${f.dates.map((d) => `<tr><td style="padding:6px 0;border-top:1px solid #e6e9ee">${esc(fmtDate(d.date))} · ${esc(hhmm(d.startMinutes))}</td><td style="padding:6px 0;text-align:right;border-top:1px solid #e6e9ee">${gbp(f.newPence)}</td></tr>`).join('')}
+        <tr><td style="padding:8px 0;border-top:2px solid #141a22;font-weight:700">${f.dates.length} session${f.dates.length === 1 ? '' : 's'}</td><td style="padding:8px 0;text-align:right;border-top:2px solid #141a22;font-weight:700">${gbp(f.dates.length * f.newPence)}</td></tr>
+      </table>` : ''}
+      <p style="margin:0;color:#5b6674">Sessions already paid for stay at the old price. Nothing else changes: same day, time and coach. Your card is charged as usual on the 1st.</p>
+    `),
+  })
+}

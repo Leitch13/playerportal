@@ -189,6 +189,27 @@ const FEATURES = [
   // ── Reminders: never "see you tomorrow" for a class between its blocks (G&G, 14 Oct 2026)
   ['Session reminders: skip classes outside their block dates', `${A}/api/cron/session-reminders/route.ts`, ['term:terms(start_date, end_date)', 'classRunsOn(tomorrowDate', 'ukDateFromNow(1)']],
   ['Session reminders: the block-date rule', 'src/lib/term-window.ts', ['export function classRunsOn', 'export function ukDateFromNow']],
+  // ── Refunds made easy (John, 15 Oct 2026: "is it easier to send a refund?")
+  ['Refunds: every paid card payment is refundable', 'src/lib/refund-kind.ts', ["startsWith('cs_') || stripeSessionId.startsWith('in_')", "return 'one_off'", "d.startsWith('Sessions this month')"]],
+  ['Refunds: one-window refund button', `${D}/payments/invoice/[id]/RefundButton.tsx`, ['data-testid="refund-confirm"', 'Cancel this membership too', 'compact']],
+  ['Refunds: button on every payment row', `${D}/payments/page.tsx`, ['canRefund(p) && (', '<RefundButton\n                                  compact']],
+  ['Refunds: button on the family payment history', `${D}/parents/[id]/page.tsx`, ['canRefund(pay) && (', "rpc('get_my_role')"]],
+  ['Refunds: receipt button is admins only', `${D}/payments/invoice/[id]/page.tsx`, ["profile.role === 'admin' && sameOrg && canRefund(payment)"]],
+  ['Refunds: route takes every card payment and emails the parent', `${A}/api/admin/payments/[id]/refund/route.ts`, ['hasRefundableStripeId(payment.stripe_session_id', 'refundedEmail({']],
+  ['Refunds: Stripe refunds synced for every kind', `${A}/api/stripe/webhooks/route.ts`, ["refundKind(payment.description as string | null) === 'camp'"]],
+  ['Payments: search a parent or child', `${D}/payments/page.tsx`, ['data-testid="payments-search"', 'const searching = q.length >= 2']],
+  // ── A regular's new price is emailed to the family when saved (John, 15 Oct 2026)
+  ['1-2-1s: price change emails the family', 'src/lib/one-to-one/price-change.ts', ['export async function emailPriceChange', 'sendPriceChanged({', ".eq('charge_state', 'unpaid')", 'dates: (dates ?? []).map(']],
+  ['1-2-1s: saving a new price sends it', `${A}/api/one-to-one/admin/route.ts`, ["price !== cur.price_pence && (cur.status === 'active' || cur.status === 'paused')", 'emailPriceChange(admin, orgId']],
+  ['1-2-1s: the form shows "emailed to"', `${O}/ui.tsx`, ['data-testid="action-notice"', 'r.notice']],
+  ['Camps: resend confirmation only for paid bookings', `${D}/camps/[campId]/RosterClient.tsx`, ["b.payment_status !== 'paid' || !b.parent_email", 'setResendError(']],
+  // ── Unpaid camp bookings never look paid (WLFA, 15 Oct 2026 — John: "make sure it never goes away")
+  ['Camps: the unpaid display rule', 'src/lib/camp-payment-display.ts', ["if (status !== 'pending') return null", '`£${pounds.toFixed(2)} outstanding`', "return status === 'paid' ? Number(amount || 0) : 0"]],
+  ['Camps: the unpaid display rule is tested', 'src/lib/camp-payment-display.test.ts', ["expect(outstanding('pending', 80)).toBe('£80.00 outstanding')", "expect(paidAmount('pending', 80)).toBe(0)"]],
+  ['Camps: red outstanding box on the register', `${D}/camps/[campId]/RosterClient.tsx`, ['data-testid="camp-roster-outstanding"', 'data-testid="camp-perday-outstanding"', 'paidAmount(b.payment_status, b.amount_paid) > 0 ?']],
+  ['Camps: printed register shows the outstanding box', `${D}/camps/[campId]/print/page.tsx`, ['data-testid="print-outstanding"', 'booking_mode, amount_paid']],
+  ['Camps: academy told when a family books and does not pay', `${A}/api/stripe/webhooks/route.ts`, ["type: 'camp_unpaid'", 'but did not pay', '.select(\'organisation_id, camp_id, child_name, parent_name, amount_paid, camps(name, start_date)\')']],
+  ['Camps: the rule is written down', 'BILLING_RULES.md', ["There's no way that people can book camps and not pay. The academy has to be told that they are not paying.", 'Never assume a rule']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

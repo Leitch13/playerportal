@@ -2,86 +2,65 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { RefundKind } from '@/lib/refund-kind'
 
 /**
- * Refunds Phase 1A + 1B — admin refund UI.
+ * Refund a card payment — one window, three taps (15 Oct 2026, John: "is it
+ * easier to send a refund?"). It used to be a three-step wizard reachable only
+ * from the receipt page; now it sits on the payment row, the family's payment
+ * history and the receipt.
  *
- * Three-step confirmation flow (mirrors CancelFlow pattern):
- *   Step 1 — Reason picker
- *   Step 2 — Review (+ for subs: "cancel membership too" checkbox)
- *   Step 3 — Final confirm + submit
+ *   tap Refund → pick a reason (and, for a membership, whether to cancel it)
+ *   → tap the red "Refund £X" button.
  *
- * Phase 1B addition: when the payment is a subscription kind, step 2
- * adds a "Cancel this membership immediately" checkbox. Default is
- * CHECKED (refund + cancel — the approved Phase 1B default). For
- * invoices older than 35 days the checkbox defaults to UNCHECKED to
- * avoid retroactively cancelling a long-running subscription based on
- * one historical refund.
+ * Memberships: "Cancel this membership too" is ticked for payments under 35
+ * days old and unticked for older ones, so a historical refund never quietly
+ * ends a running membership.
  *
- * After success the button disables itself + router.refresh() so the
- * status badge + payment fields update without manual reload.
- *
- * Visibility: the parent server page enforces all the real gates
- * (admin role, own org, paid status, has stripe_session_id, etc).
- * This component just trusts the props.
+ * The server route (/api/admin/payments/[id]/refund) re-checks everything; the
+ * pages only mount this for admins on paid card payments (src/lib/refund-kind.ts).
  */
 
 const REASONS = [
-  { value: 'customer_request', label: 'Customer request' },
-  { value: 'duplicate_booking', label: 'Duplicate booking' },
-  { value: 'event_cancelled', label: 'Camp cancelled' },
-  { value: 'booking_error', label: 'Booking error' },
+  { value: 'customer_request', label: 'Parent asked' },
+  { value: 'duplicate_booking', label: 'Paid twice' },
+  { value: 'event_cancelled', label: 'Session or camp cancelled' },
+  { value: 'booking_error', label: 'Booking mistake' },
   { value: 'other', label: 'Other' },
 ] as const
 
 type RefundReason = (typeof REASONS)[number]['value']
 
-export type PaymentKind = 'camp' | 'subscription' | 'bridge'
+export type PaymentKind = RefundKind
 
 interface Props {
   paymentId: string
   amount: number
   player?: string | null
+  /** What the payment was for (its description). */
   camp?: string | null
   academy?: string | null
   kind: PaymentKind
-  /**
-   * Days since payment.created_at. Used to set the default for the
-   * "cancel membership" checkbox: ≥35 days → unchecked (avoid surprise
-   * retroactive cancellation), <35 days → checked (the common case).
-   */
+  /** Days since the payment; ≥35 leaves "cancel membership" unticked. */
   paymentAgeDays?: number
+  /** Small button for a table row. */
+  compact?: boolean
 }
 
-export default function RefundButton({
-  paymentId,
-  amount,
-  player,
-  camp,
-  academy,
-  kind,
-  paymentAgeDays = 0,
-}: Props) {
+export default function RefundButton({ paymentId, amount, player, camp, kind, paymentAgeDays = 0, compact = false }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [reason, setReason] = useState<RefundReason | null>(null)
-
-  // Sub-only checkbox. Default checked for recent subs, unchecked for old.
-  const initialCancel = kind === 'subscription' && paymentAgeDays < 35
-  const [cancelSubscription, setCancelSubscription] = useState(initialCancel)
-
+  const isSubKind = kind === 'subscription'
+  const [cancelSubscription, setCancelSubscription] = useState(isSubKind && paymentAgeDays < 35)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [done, setDone] = useState(false)
 
-  const isSubKind = kind === 'subscription'
-
   function close() {
     if (busy) return
     setOpen(false)
-    setStep(1)
     setReason(null)
     setError('')
   }
@@ -94,25 +73,14 @@ export default function RefundButton({
       const res = await fetch(`/api/admin/payments/${paymentId}/refund`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason,
-          // Only send the flag for sub kinds — the server defaults to true
-          // and ignores it for camp/bridge anyway, but keeping the wire
-          // payload tidy.
-          ...(isSubKind ? { cancel_subscription: cancelSubscription } : {}),
-        }),
+        body: JSON.stringify({ reason, ...(isSubKind ? { cancel_subscription: cancelSubscription } : {}) }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(data.error || `Refund failed (HTTP ${res.status})`)
-      }
+      if (!res.ok) throw new Error(data.error || `Refund failed (HTTP ${res.status})`)
       if (data.covered_message) setNotice(data.covered_message)
-      if (data.cancel_warning) {
-        // Refund landed but cancel failed. Show the warning prominently
-        // but still flip to done state — money has been returned.
-        setError(`Refund succeeded BUT: ${data.cancel_warning}`)
-      }
+      if (data.cancel_warning) setError(`Refunded, but: ${data.cancel_warning}`)
       setDone(true)
+      setOpen(false)
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Refund failed')
@@ -123,13 +91,10 @@ export default function RefundButton({
 
   if (done) {
     return (
-      <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        Refunded
-        {notice && <span className="ml-2 text-xs font-normal text-emerald-800">{notice}</span>}
-        {error && <span className="ml-2 text-xs text-amber-700">{error}</span>}
+      <span data-testid="refund-done" className={`inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-300 ${compact ? 'px-2 py-0.5 text-[11px]' : 'px-4 py-2 text-sm'}`}>
+        Refunded £{amount.toFixed(2)}
+        {notice && <span className="font-normal text-emerald-200/80">{notice}</span>}
+        {error && <span className="font-normal text-amber-300">{error}</span>}
       </span>
     )
   }
@@ -137,222 +102,99 @@ export default function RefundButton({
   return (
     <>
       <button
+        type="button"
+        data-testid="refund-open"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+        className={compact
+          ? 'rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-300 hover:bg-rose-500/20'
+          : 'inline-flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/20'}
+        title={`Refund £${amount.toFixed(2)} to the parent's card`}
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-          />
-        </svg>
-        Refund Payment
+        Refund
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={close}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={close}>
           <div
-            className="bg-[#080e18] border border-white/10 rounded-xl shadow-2xl max-w-md w-full p-6"
+            role="dialog"
+            aria-label="Refund payment"
+            className="w-full max-w-md rounded-xl border border-white/10 bg-[#080e18] p-6 text-left shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-white">
-                {step === 1 && 'Refund — Step 1 of 3'}
-                {step === 2 && 'Refund — Step 2 of 3'}
-                {step === 3 && 'Refund — Step 3 of 3'}
-              </h2>
-              <button
-                onClick={close}
-                disabled={busy}
-                className="text-white/50 hover:text-white disabled:opacity-30 text-xl leading-none"
-              >
-                ×
-              </button>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-white">Refund £{amount.toFixed(2)}</h2>
+                <p className="mt-0.5 text-sm text-white/60">
+                  {[player, camp].filter(Boolean).join(' · ') || 'Card payment'}
+                </p>
+              </div>
+              <button onClick={close} disabled={busy} className="text-xl leading-none text-white/50 hover:text-white disabled:opacity-30" aria-label="Close">×</button>
             </div>
 
-            {/* Step 1 — Reason picker */}
-            {step === 1 && (
-              <>
-                <p className="text-sm text-white/70 mb-4">
-                  Why are you refunding this payment?
-                </p>
-                <div className="space-y-2 mb-6">
-                  {REASONS.map((r) => (
-                    <label
-                      key={r.value}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
-                        reason === r.value
-                          ? 'bg-[#4ecde6]/10 border-[#4ecde6] text-white'
-                          : 'bg-white/[0.02] border-white/10 text-white/80 hover:bg-white/[0.04]'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="refund_reason"
-                        value={r.value}
-                        checked={reason === r.value}
-                        onChange={() => setReason(r.value)}
-                        className="accent-[#4ecde6]"
-                      />
-                      <span className="text-sm">{r.label}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <button onClick={close} className="px-4 py-2 text-sm text-white/70 hover:text-white">
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => setStep(2)}
-                    disabled={!reason}
-                    className="px-5 py-2 bg-[#4ecde6] text-black font-semibold rounded-lg text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#3bb8d0]"
-                  >
-                    Next →
-                  </button>
-                </div>
-              </>
-            )}
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">Why?</p>
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              {REASONS.map((r) => (
+                <button
+                  key={r.value}
+                  type="button"
+                  data-testid={`refund-reason-${r.value}`}
+                  onClick={() => setReason(r.value)}
+                  className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                    reason === r.value ? 'border-[#4ecde6] bg-[#4ecde6]/10 text-white' : 'border-white/10 bg-white/[0.02] text-white/75 hover:bg-white/[0.05]'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
 
-            {/* Step 2 — Review */}
-            {step === 2 && (
-              <>
-                <p className="text-sm text-white/70 mb-4">
-                  Please review the refund details before continuing.
-                </p>
-                <div className="bg-white/[0.03] border border-white/10 rounded-lg p-4 mb-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-white/50">Player</span>
-                    <span className="text-white">{player || '—'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/50">{kind === 'camp' ? 'Camp' : 'Item'}</span>
-                    <span className="text-white text-right">{camp || '—'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/50">Academy</span>
-                    <span className="text-white">{academy || '—'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/50">Reason</span>
-                    <span className="text-white">
-                      {REASONS.find((r) => r.value === reason)?.label}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-white/10 pt-2 mt-2">
-                    <span className="text-white/50">Refund amount</span>
-                    <span className="text-emerald-400 font-bold">
-                      £{amount.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Subscription-only: cancel checkbox */}
-                {isSubKind && (
-                  <div className="bg-white/[0.03] border border-white/10 rounded-lg p-4 mb-6">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={cancelSubscription}
-                        onChange={(e) => setCancelSubscription(e.target.checked)}
-                        className="mt-1 accent-[#4ecde6]"
-                      />
-                      <div>
-                        <div className="text-sm font-semibold text-white">
-                          Cancel this membership immediately
-                        </div>
-                        <div className="text-xs text-white/60 mt-1 leading-relaxed">
-                          Stops future billing, ends the subscription in Stripe,
-                          and removes the player from class enrolments.
-                          {paymentAgeDays >= 35 && (
-                            <span className="block mt-1 text-amber-300">
-                               This payment is {paymentAgeDays} days old — cancellation
-                              now would end an active subscription based on a
-                              historical refund. Verify this is intentional.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </label>
-                    {!cancelSubscription && (
-                      <div className="mt-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded text-xs text-amber-200">
-                        <strong>Refund-only:</strong> the parent will be charged
-                        again on the next renewal date. Make sure this is what
-                        you want.
-                      </div>
+            {isSubKind && (
+              <label className="mb-4 flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+                <input
+                  type="checkbox"
+                  data-testid="refund-cancel-membership"
+                  checked={cancelSubscription}
+                  onChange={(e) => setCancelSubscription(e.target.checked)}
+                  className="mt-1 accent-[#4ecde6]"
+                />
+                <span className="text-sm text-white">
+                  Cancel this membership too
+                  <span className="mt-0.5 block text-xs text-white/55">
+                    {cancelSubscription
+                      ? 'No more payments, and the child comes off the class.'
+                      : 'The membership carries on and the parent is charged again next month.'}
+                    {paymentAgeDays >= 35 && cancelSubscription && (
+                      <span className="mt-1 block text-amber-300">This payment is {paymentAgeDays} days old. Only tick this if the membership should end now.</span>
                     )}
-                  </div>
-                )}
-
-                <div className="flex gap-3 justify-end">
-                  <button onClick={() => setStep(1)} className="px-4 py-2 text-sm text-white/70 hover:text-white">
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => setStep(3)}
-                    className="px-5 py-2 bg-[#4ecde6] text-black font-semibold rounded-lg text-sm hover:bg-[#3bb8d0]"
-                  >
-                    Continue →
-                  </button>
-                </div>
-              </>
+                  </span>
+                </span>
+              </label>
             )}
 
-            {/* Step 3 — Final confirm */}
-            {step === 3 && (
-              <>
-                <p className="text-sm text-white/80 mb-4">
-                  Are you sure you want to refund{' '}
-                  <span className="font-bold text-emerald-400">£{amount.toFixed(2)}</span>
-                  {isSubKind && cancelSubscription ? ' and cancel this membership' : ''}?
-                </p>
-                <ul className="text-xs text-white/60 space-y-1.5 mb-6 list-disc list-inside">
-                  <li>The full amount will be returned to the parent&apos;s card</li>
-                  <li>Stripe will reverse the academy&apos;s payout</li>
-                  <li>The platform fee will be reversed</li>
-                  {kind === 'camp' && <li>This frees the seat on the camp roster</li>}
-                  {isSubKind && cancelSubscription && (
-                    <>
-                      <li>The subscription ends immediately in Stripe</li>
-                      <li>The player is removed from class enrolments</li>
-                    </>
-                  )}
-                  {isSubKind && !cancelSubscription && (
-                    <li className="text-amber-300">
-                      The subscription continues — parent will be billed again next cycle
-                    </li>
-                  )}
-                  <li>This action cannot be undone from the app</li>
-                </ul>
+            <ul className="mb-5 space-y-1 text-xs text-white/55">
+              <li>The full £{amount.toFixed(2)} goes back to the parent&apos;s card (5 to 10 working days).</li>
+              <li>The parent is emailed to say it&apos;s on its way.</li>
+              {kind === 'camp' && <li>Their place on the camp is freed.</li>}
+              <li>This can&apos;t be undone.</li>
+            </ul>
 
-                {error && (
-                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300">
-                    {error}
-                  </div>
-                )}
-
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() => setStep(2)}
-                    disabled={busy}
-                    className="px-4 py-2 text-sm text-white/70 hover:text-white disabled:opacity-30"
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    onClick={submit}
-                    disabled={busy}
-                    className="px-5 py-2 bg-red-500 text-white font-semibold rounded-lg text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {busy ? 'Refunding…' : isSubKind && cancelSubscription ? 'Confirm Refund + Cancel' : 'Confirm Refund'}
-                  </button>
-                </div>
-              </>
+            {error && (
+              <div className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>
             )}
+
+            <div className="flex justify-end gap-3">
+              <button onClick={close} disabled={busy} className="px-4 py-2 text-sm text-white/70 hover:text-white disabled:opacity-30">Cancel</button>
+              <button
+                type="button"
+                data-testid="refund-confirm"
+                onClick={submit}
+                disabled={!reason || busy}
+                className="rounded-lg bg-rose-500 px-5 py-2 text-sm font-semibold text-white hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {busy ? 'Refunding…' : `Refund £${amount.toFixed(2)}${isSubKind && cancelSubscription ? ' and cancel' : ''}`}
+              </button>
+            </div>
+            {!reason && <p className="mt-2 text-right text-[11px] text-white/40">Pick a reason first.</p>}
           </div>
         </div>
       )}

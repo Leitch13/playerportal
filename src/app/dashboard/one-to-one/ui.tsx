@@ -105,6 +105,8 @@ export function ActionForm({
   const [err, setErr] = useState<string | null>(null)
   // Saved, but something the academy must know (e.g. the pay link could not go). Stays until the next save.
   const [warn, setWarn] = useState<string | null>(null)
+  // Saved, and something worth saying (e.g. "the new price was emailed to the family").
+  const [note, setNote] = useState<string | null>(null)
   return (
     <form
       className={`space-y-3 ${className}`}
@@ -119,11 +121,12 @@ export function ActionForm({
           if (input.type === 'checkbox' && input.name) body[input.name] = input.checked
         }
         const form = e.currentTarget
-        setErr(null); setWarn(null)
+        setErr(null); setWarn(null); setNote(null)
         start(async () => {
           const r = await act(body, endpoint)
           if (!r.ok) { setErr(r.error || 'Failed'); return }
           if (typeof r.warning === 'string' && r.warning) setWarn(r.warning)
+          if (typeof r.notice === 'string' && r.notice) setNote(r.notice)
           form.reset()
           onDone?.()
           router.refresh()
@@ -142,6 +145,7 @@ export function ActionForm({
           {err}
         </div>
       )}
+      {note && <p role="status" data-testid="action-notice" className="rounded-lg border border-[#67c79a]/40 bg-[#67c79a]/10 px-3 py-2 text-xs leading-relaxed text-[#8fdcb6]">{note}</p>}
       {warn && <p role="status" className="rounded-lg border border-[#d8a95a]/40 bg-[#d8a95a]/10 px-3 py-2 text-xs leading-relaxed text-[#ecc98a]">{warn}</p>}
     </form>
   )

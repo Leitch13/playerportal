@@ -22,6 +22,7 @@
 import { hasMedicalNote } from '@/lib/camp-booking-details'
 import { backupContactPath } from '@/lib/camp-backup-contact'
 import { isDateDay } from '@/lib/camp-checkin'
+import { outstanding, paidAmount } from '@/lib/camp-payment-display'
 import { sortRoster, agesPresent, onlyAge, type RosterSort } from '@/lib/roster-sort'
 import SortBar from '@/components/SortBar'
 import { useState, useMemo } from 'react'
@@ -104,6 +105,7 @@ export default function RosterClient({
   const [sort, setSort] = useState<RosterSort>('booked')
   const [ageOnly, setAgeOnly] = useState<number | 'all'>('all')
   const [resendingId, setResendingId] = useState<string | null>(null)
+  const [resendError, setResendError] = useState<Record<string, string>>({})
   const [resentMap, setResentMap] = useState<Record<string, 'ok' | 'fail'>>({})
 
   // Move Camp Booking Phase 1 — modal state
@@ -227,8 +229,9 @@ export default function RosterClient({
         ? [(b.selected_day_labels || []).join('; ')]
         : []
       const tail = [
-        (b.amount_paid != null ? Number(b.amount_paid).toFixed(2) : '0.00'),
-        b.payment_status,
+        // Paid column is money received only; an unpaid booking's price is what is owed.
+        paidAmount(b.payment_status, b.amount_paid).toFixed(2),
+        b.payment_status === 'pending' ? `not paid (${outstanding(b.payment_status, b.amount_paid)})` : b.payment_status,
         b.booking_source === 'admin_created' ? 'Added by admin' : 'Online booking',
       ]
       return [...base, ...daysCol, ...tail]
@@ -289,6 +292,7 @@ export default function RosterClient({
       })
       const json = await res.json().catch(() => ({}))
       const ok = res.ok && (json as { ok?: boolean }).ok
+      if (!ok) setResendError((m) => ({ ...m, [bookingId]: (json as { error?: string }).error || 'please retry' }))
       setResentMap((m) => ({ ...m, [bookingId]: ok ? 'ok' : 'fail' }))
     } catch {
       setResentMap((m) => ({ ...m, [bookingId]: 'fail' }))
@@ -443,7 +447,11 @@ export default function RosterClient({
                       data-booking-id={b.id}
                       className="border-t border-white/[0.04] hover:bg-white/[0.02]"
                     >
-                      <td className="px-6 py-3 text-white font-medium">{b.child_name || '—'}</td>
+                      <td className="px-6 py-3 text-white font-medium">
+                        {b.child_name || '—'}
+                        {/* Unpaid: red box with what's outstanding — src/lib/camp-payment-display.ts */}
+                        {outstanding(b.payment_status, b.amount_paid) && <span data-testid="camp-roster-outstanding" className="ml-2 inline-block rounded-md border border-red-500/50 bg-red-500/15 px-2 py-0.5 text-[11px] font-bold text-red-300 whitespace-nowrap">{outstanding(b.payment_status, b.amount_paid)}</span>}
+                      </td>
                       <td className="px-3 py-3 text-white/70 text-xs">{b.child_age != null ? `${b.child_age}` : '—'}</td>
                       <td className="px-6 py-3 text-white/70">{b.parent_name || '—'}</td>
                       <td className="px-6 py-3 text-white/55 text-xs">
@@ -506,10 +514,10 @@ export default function RosterClient({
                         </td>
                       )}
                       <td className="px-6 py-3 text-right">
-                        {Number(b.amount_paid || 0) > 0 ? (
-                          <span className="text-emerald-400 font-semibold">£{Number(b.amount_paid).toFixed(2)}</span>
+                        {paidAmount(b.payment_status, b.amount_paid) > 0 ? (
+                          <span data-testid="camp-roster-amount" className="text-emerald-400 font-semibold">£{paidAmount(b.payment_status, b.amount_paid).toFixed(2)}</span>
                         ) : (
-                          <span className="text-white/30">£0.00</span>
+                          <span data-testid="camp-roster-amount" className="text-white/30">—</span>
                         )}
                       </td>
                       <td className="px-6 py-3">
@@ -562,10 +570,13 @@ export default function RosterClient({
                           {/* Resend confirmation */}
                           <button
                             type="button"
-                            disabled={resendingId === b.id || !b.parent_email || b.parent_email.endsWith('@theplayerportal.net')}
+                            // Only a paid booking has a confirmation to resend. Unpaid ones get
+                            // "Send payment link" instead; the server refuses them, and the icon
+                            // used to just turn red with no reason (WLFA, 15 Oct 2026).
+                            disabled={resendingId === b.id || b.payment_status !== 'paid' || !b.parent_email || b.parent_email.endsWith('@theplayerportal.net')}
                             onClick={() => resendConfirmation(b.id)}
                             data-testid="camp-roster-row-resend"
-                            title={resent === 'ok'? 'Sent ' : resent === 'fail' ? 'Failed — retry' : 'Resend confirmation email'}
+                            title={b.payment_status !== 'paid' ? 'Not paid yet, so there is no confirmation to resend. Use Send payment link.' : resent === 'ok'? 'Sent ' : resent === 'fail' ? `Failed: ${resendError[b.id] || 'please retry'}` : 'Resend confirmation email'}
                             className={`p-1.5 rounded-md transition-colors ${
                               resent === 'ok'
                                 ? 'text-emerald-300 bg-emerald-500/15'
@@ -689,7 +700,7 @@ export default function RosterClient({
               </div>
               <div className="flex justify-between">
                 <span className="text-white/50">Amount paid</span>
-                <span className="text-emerald-400 font-semibold">£{Number(moveOpen.amount_paid ?? 0).toFixed(2)}</span>
+                {outstanding(moveOpen.payment_status, moveOpen.amount_paid) ? <span className="font-bold text-red-300">{outstanding(moveOpen.payment_status, moveOpen.amount_paid)}</span> : <span className="text-emerald-400 font-semibold">£{Number(moveOpen.amount_paid ?? 0).toFixed(2)}</span>}
               </div>
             </div>
 
@@ -823,7 +834,7 @@ function fmtBookedAt(iso: string): string {
 function PaymentStatusPill({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     paid:      { label: 'Paid',      cls: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-    pending:   { label: 'Pending',   cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+    pending:   { label: 'Not paid',  cls: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     failed:    { label: 'Failed',    cls: 'bg-red-500/20 text-red-300 border-red-500/30' },
     refunded:  { label: 'Refunded',  cls: 'bg-violet-500/20 text-violet-300 border-violet-500/30' },
     cancelled: { label: 'Cancelled', cls: 'bg-white/10 text-white/60 border-white/15' },
@@ -964,6 +975,7 @@ function PerDayRegister({ groups, bookings, campId, flexible, academySlug }: { g
                       <span className="min-w-0">
                         <span className={`block truncate text-sm ${isIn ? 'text-white' : 'text-white/85'}`}>{c.name}</span>
                         {hasMedicalNote(b?.medical_info) && <span className="block truncate text-[11px] text-amber-300/90">Medical note</span>}
+                        {b && outstanding(b.payment_status, b.amount_paid) && <span className="mt-0.5 inline-block rounded-md border border-red-500/50 bg-red-500/15 px-1.5 py-0.5 text-[11px] font-bold text-red-300" data-testid="camp-perday-outstanding">{outstanding(b.payment_status, b.amount_paid)}</span>}
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
                         {c.age != null && <span className="text-xs tabular-nums text-white/45" data-testid="camp-perday-age">{c.age}</span>}

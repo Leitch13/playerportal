@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stripe-events'
 import { settleRepayments, takeRepaymentFromDraftInvoice } from '@/lib/refund-recovery'
+import { refundKind } from '@/lib/refund-kind'
 import { effectiveStatus } from '@/lib/membership-pause'
 
 export const dynamic = 'force-dynamic'
@@ -225,13 +226,30 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
     // says the session has expired, the seat is free: mark the booking
     // cancelled (only if it is still pending — a later paid session on the
     // same row must never be undone). Nothing is deleted.
-    const { error } = await supabase
+    const { data: released, error } = await supabase
       .from('camp_bookings')
       .update({ payment_status: 'cancelled' })
       .eq('id', session.metadata.camp_booking_id)
       .eq('payment_status', 'pending')
       .eq('stripe_session_id', session.id)
+      .select('organisation_id, camp_id, child_name, parent_name, amount_paid, camps(name, start_date)')
+      .maybeSingle()
     if (error) console.error('[webhook:camp_checkout_expired] could not release seat', session.metadata.camp_booking_id, error.message)
+    // The academy is ALWAYS told when a family books a camp and does not pay
+    // (John, 15 Oct 2026; BILLING_RULES.md "Camps"). This used to happen in silence.
+    if (released?.organisation_id) {
+      const camp = released.camps as unknown as { name: string | null; start_date: string | null } | null
+      const owed = Number(released.amount_paid || 0)
+      const { notifyOrgAdmins } = await import('@/lib/notify-admins')
+      await notifyOrgAdmins({
+        orgId: released.organisation_id as string,
+        type: 'camp_unpaid',
+        title: `Camp not paid: ${(released.child_name || 'a child').trim()}`,
+        body: `${(released.child_name || 'A child').trim()}${released.parent_name ? ` (${String(released.parent_name).trim()})` : ''} booked ${camp?.name || 'a camp'} but did not pay${owed > 0 ? ` the £${owed.toFixed(2)}` : ''}. The payment link ran out, so the place has been released and they are NOT booked on. To keep them, send a new payment link from the camp page.`,
+        link: `/dashboard/camps/${released.camp_id}`,
+        email: true,
+      })
+    }
     return
   }
 
@@ -2393,22 +2411,10 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     return
   }
 
-  // Phase 1B: sync refunds for ALL payment kinds we can classify. The
-  // classifier mirrors the refund route's classifyPayment() — anything we
-  // can't classify gets logged + skipped (manual Dashboard refund of a
-  // weird description; admin can reconcile).
-  const description = (payment.description as string | null) || ''
-  const isCamp = description.startsWith('Camp:')
-  const isBridge = description.startsWith('First session ') || description.startsWith('Sessions this month')
-  const isSubscription = description.includes('— subscription') || description.startsWith('Subscription payment')
-  if (!isCamp && !isBridge && !isSubscription) {
-    console.log('[webhook:charge.refunded] unclassified payment refund — skipping sync', {
-      payment_id: payment.id,
-      description,
-      refund_id: refundId,
-    })
-    return
-  }
+  // Every card payment is refundable from the app (src/lib/refund-kind.ts), so a
+  // refund made in Stripe is synced for every kind too — payment links and
+  // "Sessions this month" used to be skipped and stayed 'paid' in the app.
+  const isCamp = refundKind(payment.description as string | null) === 'camp'
 
   // Idempotent UPDATE: if already refunded with this refund id, no-op.
   if (payment.status === 'refunded') {

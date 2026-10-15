@@ -16,6 +16,8 @@ import type { UserRole, SubscriptionPlan } from '@/lib/types'
 import PaymentManager from './PaymentManager'
 import PaymentStatusToggleClient from './PaymentStatusToggleClient'
 import SendPayLinkButton from './SendPayLinkButton'
+import RefundButton from './invoice/[id]/RefundButton'
+import { canRefund, refundKind } from '@/lib/refund-kind'
 import OutstandingInvoices, { toOutstandingRows } from './OutstandingInvoices'
 import SubscribeButton from './SubscribeButton'
 import ManageBillingButton from './ManageBillingButton'
@@ -62,6 +64,7 @@ export default async function PaymentsPage({
     sub_success?: string
     sub_cancelled?: string
     month?: string
+    q?: string
     tab?: string
   }>
 }) {
@@ -109,7 +112,7 @@ export default async function PaymentsPage({
     notFound()
   }
 
-  return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} month={params.month || 'current'} orgId={orgId} activeTab={params.tab || 'overview'} />
+  return <AdminPayments autoOpen={params.add === '1'} filter={params.filter || 'all'} month={params.month || 'current'} q={(params.q || '').trim()} orgId={orgId} activeTab={params.tab || 'overview'} />
 }
 
 /* ═══════════════════════════════════════════════
@@ -679,12 +682,14 @@ async function AdminPayments({
   orgId,
   activeTab,
   month,
+  q,
 }: {
   autoOpen: boolean
   filter: string
   orgId: string
   activeTab: string
   month: string
+  q: string
 }) {
   const supabase = await createClient()
 
@@ -780,10 +785,30 @@ async function AdminPayments({
   else if (filter === 'unpaid') query = query.in('status', ['unpaid', 'partial'])
   else if (filter === 'paid') query = query.eq('status', 'paid')
 
+  // ─── Search (?q=) — find a family's payments by parent or child name/email,
+  // across every month (15 Oct 2026: finding the payment to refund meant
+  // scrolling a month's list). Wins over the month window. ───
+  const searching = q.length >= 2
+  if (searching) {
+    const like = `%${q.replace(/[%_,()]/g, ' ')}%`
+    const [{ data: ps }, { data: kids }] = await Promise.all([
+      supabase.from('profiles').select('id').eq('organisation_id', orgId).or(`full_name.ilike.${like},email.ilike.${like}`).limit(200),
+      supabase.from('players').select('id').eq('organisation_id', orgId).or(`first_name.ilike.${like},last_name.ilike.${like}`).limit(200),
+    ])
+    const parentIds = (ps || []).map((r) => r.id as string)
+    const playerIds = (kids || []).map((r) => r.id as string)
+    const ors = [
+      parentIds.length ? `parent_id.in.(${parentIds.join(',')})` : '',
+      playerIds.length ? `player_id.in.(${playerIds.join(',')})` : '',
+    ].filter(Boolean)
+    // No family matches: an impossible id keeps the list empty instead of showing everything.
+    query = query.or(ors.length ? ors.join(',') : 'id.eq.00000000-0000-0000-0000-000000000000')
+  }
+
   // ─── Month window (?month=YYYY-MM) — "what came in on the 1st of August?"
   // Filters on paid_date for settled money, falling back to created_at for
   // rows never paid, so an unpaid August invoice still appears under August.
-  if (/^\d{4}-\d{2}$/.test(effectiveMonth)) {
+  if (!searching && /^\d{4}-\d{2}$/.test(effectiveMonth)) {
     const from = `${effectiveMonth}-01`
     const [yy, mm] = effectiveMonth.split('-').map(Number)
     const to = new Date(Date.UTC(yy, mm, 0)).toISOString().slice(0, 10)
@@ -812,7 +837,7 @@ async function AdminPayments({
     }
   })
   const selectedMonth = monthOptions.find((m) => m.key === effectiveMonth) || null
-  const monthLabel = selectedMonth?.long || null
+  const monthLabel = searching ? null : (selectedMonth?.long || null)
   const monthRows = selectedMonth
     ? (allPayments || []).filter((p) => (((p.paid_date as string | null) || (p.created_at as string | null) || '').slice(0, 7)) === selectedMonth.key)
     : []
@@ -1237,13 +1262,13 @@ async function AdminPayments({
               <div className="flex flex-wrap items-center gap-1.5">
                 <a
                   href={`/dashboard/payments?tab=overview&month=all${filter !== 'all' ? `&filter=${filter}` : ''}`}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${month === 'all' ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${month === 'all' && !searching ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
                 >All time</a>
                 {monthOptions.map((m) => (
                   <a
                     key={m.key}
                     href={`/dashboard/payments?tab=overview&month=${m.key}${filter !== 'all' ? `&filter=${filter}` : ''}`}
-                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${effectiveMonth === m.key ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors ${effectiveMonth === m.key && !searching ? 'bg-[#4ecde6] text-black' : 'bg-white/[0.06] text-white/50 hover:text-white'}`}
                   >{m.short}</a>
                 ))}
               </div>
@@ -1255,11 +1280,31 @@ async function AdminPayments({
               </p>
             )}
 
+            <form method="get" action="/dashboard/payments" className="flex flex-wrap items-center gap-2" role="search">
+              <input type="hidden" name="tab" value="overview" />
+              {filter !== 'all' && <input type="hidden" name="filter" value={filter} />}
+              <input
+                type="search"
+                name="q"
+                defaultValue={q}
+                data-testid="payments-search"
+                placeholder="Search a parent or child"
+                aria-label="Search payments by parent or child name"
+                className="w-full max-w-xs rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-[#4ecde6] focus:outline-none"
+              />
+              <button type="submit" className="rounded-lg bg-white/[0.08] px-3 py-2 text-xs font-bold text-white hover:bg-white/[0.12]">Search</button>
+              {searching && (
+                <a href={`/dashboard/payments?tab=overview${filter !== 'all' ? `&filter=${filter}` : ''}`} className="text-xs font-semibold text-[#4ecde6]">
+                  Clear · showing every month for &ldquo;{q}&rdquo;
+                </a>
+              )}
+            </form>
+
             <div className="flex flex-wrap gap-2">
               {filters.map((f) => (
                 <a
                   key={f.key}
-                  href={`/dashboard/payments?tab=overview${f.key !== 'all' ? `&filter=${f.key}` : ''}`}
+                  href={`/dashboard/payments?tab=overview${f.key !== 'all' ? `&filter=${f.key}` : ''}${month !== 'current' ? `&month=${month}` : ''}${searching ? `&q=${encodeURIComponent(q)}` : ''}`}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                     filter === f.key
                       ? 'bg-[#4ecde6] text-[#0a0a0a]'
@@ -1272,7 +1317,7 @@ async function AdminPayments({
             </div>
 
             {(payments || []).length === 0 ? (
-              <EmptyState message={filter === 'all' ? 'No payments recorded yet.' : `No ${filter} payments.`} />
+              <EmptyState message={searching ? `No payments found for "${q}".` : filter === 'all' ? 'No payments recorded yet.' : `No ${filter} payments.`} />
             ) : (
               <div className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-5">
                 <div className="overflow-x-auto">
@@ -1354,6 +1399,17 @@ async function AdminPayments({
                                 p.status === 'partial' ||
                                 p.status === 'overdue') && (
                                 <SendPayLinkButton paymentId={p.id as string} />
+                              )}
+                              {canRefund(p) && (
+                                <RefundButton
+                                  compact
+                                  paymentId={p.id as string}
+                                  amount={Number(p.amount_paid || 0) > 0 ? Number(p.amount_paid) : Number(p.amount)}
+                                  player={(p.player as unknown as { first_name: string; last_name: string } | null)?.first_name || null}
+                                  camp={(p.description as string) || null}
+                                  kind={refundKind(p.description as string | null)}
+                                  paymentAgeDays={Math.floor((Date.now() - new Date(p.created_at as string).getTime()) / 86400000)}
+                                />
                               )}
                               {p.status === 'overdue' && (
                                 <SendReminderButton paymentId={p.id as string} />

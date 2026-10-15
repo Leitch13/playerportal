@@ -3,6 +3,7 @@ import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/l
 import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
+import { emailPriceChange } from '@/lib/one-to-one/price-change'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { seatForNewSlot, seatForSession, seatClashMessage, sameWeeks, onSameWeeks, type SessionType } from '@/lib/one-to-one/seats'
 
@@ -384,7 +385,13 @@ export async function POST(req: NextRequest) {
         const warning = stayed.length
           ? `Saved. ${stayed.length} date${stayed.length === 1 ? '' : 's'} stayed as ${stayed.length === 1 ? 'it was' : 'they were'}: ${stayed.join('; ')}. Move ${stayed.length === 1 ? 'it' : 'them'} by hand on the timetable if needed.`
           : null
-        return NextResponse.json({ ok: true, warning })
+        // A new price on a live regular: tell the family now, not on the monthly notice
+        // (John, 15 Oct 2026). Pending slots can't change price (above), so the set-up link stays true.
+        let notice: string | null = null
+        if (price !== cur.price_pence && (cur.status === 'active' || cur.status === 'paused')) {
+          notice = await emailPriceChange(admin, orgId, { slotId: id, parentId: cur.parent_id, playerId: cur.player_id, weekday, start, sessionType: cur.session_type, oldPence: cur.price_pence, newPence: price, today })
+        }
+        return NextResponse.json({ ok: true, warning, notice })
       }
       // A slot added by mistake: gone completely, as if it never existed. Only while nothing
       // has been paid or coached; after that the history stays and Release is the way out.

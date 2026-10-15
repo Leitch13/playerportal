@@ -2963,3 +2963,35 @@ export function platformInvoiceEmail(p: {
     html: baseLayout(content),
   }
 }
+
+/** The academy refunded a card payment from the app (15 Oct 2026): the parent is told it is on its way back. */
+export function refundedEmail(params: {
+  parentName: string
+  academyName: string
+  amountPence: number
+  what: string
+  childName?: string | null
+  membershipCancelled?: boolean
+  /** The academy has a contact email, so a reply reaches someone. */
+  canReply?: boolean
+}) {
+  const amount = `£${(params.amountPence / 100).toFixed(2)}`
+  const academy = escapeHtml(params.academyName)
+  return {
+    subject: `${params.academyName}: ${amount} refunded`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">Your refund is on its way</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${escapeHtml(params.parentName)},</p>
+      <p style="color:#aaa;line-height:1.6"><strong>${academy}</strong> has refunded <strong>${amount}</strong> to the card you paid with. It usually shows within 5 to 10 working days.</p>
+      <div style="background:#1a1a1a;border-radius:12px;padding:20px;margin:20px 0">
+        <table style="width:100%;font-size:14px;color:#ddd" cellpadding="6">
+          <tr><td style="color:#999">For</td><td style="text-align:right">${escapeHtml(params.what)}</td></tr>
+          ${params.childName ? `<tr><td style="color:#999">Child</td><td style="text-align:right">${escapeHtml(params.childName)}</td></tr>` : ''}
+          <tr><td style="color:#999">Refunded</td><td style="text-align:right;font-weight:600">${amount}</td></tr>
+        </table>
+      </div>
+      ${params.membershipCancelled ? `<p style="color:#aaa;line-height:1.6">The membership has also been cancelled, so there will be no further payments.</p>` : ''}
+      ${params.canReply ? `<p style="color:#666;font-size:13px">Any questions, reply to this email and ${academy} will get back to you.</p>` : ''}
+    `, undefined, params.academyName),
+  }
+}
