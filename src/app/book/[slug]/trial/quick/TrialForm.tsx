@@ -164,6 +164,10 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       setError('Please fill in all required fields.')
       return
     }
+    if (validDates.length > 0 && !sessionDate) {
+      setError('Please pick a date for the trial.')
+      return
+    }
     if (!agreedToTerms) {
       setError('Please tick to confirm you’ve read the Terms & Conditions.')
       return
@@ -440,7 +444,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
             className={inputClass}
             style={{ ['--tw-ring-color' as string]: primaryColor }}
             value={groupId}
-            onChange={(e) => setGroupId(e.target.value)}
+            onChange={(e) => { setGroupId(e.target.value); setSessionDate('') }}
           >
             <option value="">Any available class</option>
             {groups.map((g) => (
@@ -452,6 +456,27 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               </option>
             ))}
           </select>
+          {/* Once a class is picked, ask for the date too. Without this, a parent who
+              came from the main booking page (every ad link) booked a trial with no
+              date, so no reminders went out and the academy had to chase a day
+              (Jamie Allan, Kayleigh Childs + Tracy Anderson, 14 Oct 2026). */}
+          {validDates.length > 0 && (
+            <div className="mt-3" data-testid="trial-date-after-class">
+              <label className="text-xs font-medium text-white/50 block mb-1.5">Pick your date</label>
+              <select
+                className={inputClass}
+                style={{ ['--tw-ring-color' as string]: primaryColor }}
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+                required
+              >
+                <option value="">Select a date…</option>
+                {validDates.map((d) => (
+                  <option key={d.iso} value={d.iso}>{d.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 

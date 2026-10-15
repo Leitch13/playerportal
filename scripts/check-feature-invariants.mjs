@@ -168,6 +168,8 @@ const FEATURES = [
   ['1-2-1s: the admin route saves a pair in one go', `${A}/api/one-to-one/admin/route.ts`, ['secondPlayerId']],
   ['1-2-1s: alternating fortnightly slots', 'src/lib/one-to-one/seats.ts', ['export function sameWeeks', 'export function onSameWeeks']],
   ['1-2-1s: the admin route checks the weeks', `${A}/api/one-to-one/admin/route.ts`, ['onSameWeeks(']],
+  // ── A trial booked from the class dropdown always asks for a date (Jamie's ads, 15 Oct 2026)
+  ['Trials: picking a class from the dropdown shows Pick your date', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ['data-testid="trial-date-after-class"', "setSessionDate('') }}", "Please pick a date for the trial."]],
   // ── 1-2-1 money owed from a late cancellation is billed once (live JSL test, 15 Oct 2026)
   ['1-2-1s: owed money goes on the bill without negative credit', 'src/lib/one-to-one/ledger.ts', ['export function chargeRow', 'export function owedOnCharge', 'Math.max(0, b.creditAppliedPence)']],
   ['1-2-1s: both charge paths write the row through chargeRow, and paying clears what was owed', 'src/lib/one-to-one/money.ts', ['...chargeRow(b),\n    status:', '...chargeRow(b),\n    breakdown:', 'const owed = owedOnCharge(charge)']],
