@@ -5,6 +5,7 @@ import BarChart from '@/components/BarChart'
 import LineChart from '@/components/LineChart'
 import AttendanceHeatmap from '@/components/AttendanceHeatmap'
 import RevenueForecast from '@/components/RevenueForecast'
+import { oneToOneByMonth, type OneToOneCharge } from '@/lib/analytics-revenue'
 
 export default async function AnalyticsPage() {
   const supabase = await createClient()
@@ -38,6 +39,21 @@ export default async function AnalyticsPage() {
       revenueByMonth.set(key, (revenueByMonth.get(key) || 0) + Number(p.amount))
     }
   }
+  // Paid 1-2-1s live in coaching_charges, not payments. Add them in. See src/lib/analytics-revenue.ts.
+  const { data: oneToOneCharges } = await supabase
+    .from('coaching_charges')
+    .select('status, amount_pence, cash_received_at, updated_at, created_at')
+    .eq('organisation_id', orgId)
+    .in('status', ['paid_online', 'paid_cash'])
+    .gte('updated_at', sixMonthsAgo.toISOString())
+  const oneToOneMonths = oneToOneByMonth(
+    (oneToOneCharges || []) as OneToOneCharge[],
+    (d) => d.toLocaleString('en-GB', { month: 'short', year: '2-digit' }),
+    Array.from(revenueByMonth.keys()),
+  )
+  for (const [key, pounds] of oneToOneMonths) revenueByMonth.set(key, (revenueByMonth.get(key) || 0) + pounds)
+  const oneToOneRevenue = Math.round([...oneToOneMonths.values()].reduce((a, b) => a + b, 0))
+
   const revenueData = Array.from(revenueByMonth.entries()).map(([label, value]) => ({
     label,
     value: Math.round(value),
@@ -683,7 +699,7 @@ export default async function AnalyticsPage() {
 
       {/* Key metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Total Revenue" value={`£${totalRevenue.toLocaleString()}`} sub="Last 6 months" color="#059669" />
+        <MetricCard label="Total Revenue" value={`£${totalRevenue.toLocaleString()}`} sub={oneToOneRevenue > 0 ? `Last 6 months · £${oneToOneRevenue.toLocaleString()} from 1-2-1s` : 'Last 6 months'} color="#059669" />
         <MetricCard label="Total Players" value={totalPlayers.toString()} sub="All time" color="#4ecde6" />
         <MetricCard label="Active Subscriptions" value={(activeSubs || 0).toString()} sub="Current" color="#8b5cf6" />
         <MetricCard
