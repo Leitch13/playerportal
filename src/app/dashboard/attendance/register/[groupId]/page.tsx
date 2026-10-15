@@ -21,6 +21,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { loadClassOutstanding } from '@/lib/class-outstanding'
 import type { UserRole } from '@/lib/types'
 import LiveRegisterClient, {
   type LiveRegisterPlayer,
@@ -106,9 +108,16 @@ export default async function RegisterPage({
     .eq('group_id', groupId)
     .eq('status', 'active')
 
-  const players: LiveRegisterPlayer[] = (enrolments || [])
+  const basePlayers: LiveRegisterPlayer[] = (enrolments || [])
     .map((e) => e.player as unknown as LiveRegisterPlayer | null)
     .filter((p): p is LiveRegisterPlayer => !!p)
+  // Red box next to each child: what's outstanding (src/lib/class-outstanding.ts).
+  const outstandingByPlayer = await loadClassOutstanding(
+    createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
+    orgId, basePlayers.map((p) => p.id),
+  )
+  const players: LiveRegisterPlayer[] = basePlayers
+    .map((p) => ({ ...p, outstanding: outstandingByPlayer.get(p.id) ?? null }))
     .sort((a, b) => {
       const an = `${a.last_name || ''} ${a.first_name || ''}`.toLowerCase()
       const bn = `${b.last_name || ''} ${b.first_name || ''}`.toLowerCase()

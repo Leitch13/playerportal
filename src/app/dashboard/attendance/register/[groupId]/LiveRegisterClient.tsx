@@ -52,6 +52,8 @@ export interface LiveRegisterPlayer {
    *   null   nobody has asked, which is NOT permission
    */
   photo_consent: boolean | null
+  /** Red box next to the name: what's outstanding (src/lib/class-outstanding.ts). */
+  outstanding?: string | null
 }
 
 export interface LiveRegisterTrial {
@@ -349,6 +351,7 @@ export default function LiveRegisterClient({
                           <span className="text-sm font-bold text-white truncate">
                             {p.first_name} {p.last_name}
                           </span>
+                          {p.outstanding && <span data-testid="live-register-outstanding" className="rounded-md border border-red-500/50 bg-red-500/15 px-1.5 py-0.5 text-[11px] font-bold text-red-300">{p.outstanding}</span>}
                           {age != null && <span className="text-[11px] text-white/45">age {age}</span>}
                           {/* Photo consent (migration 110).
                               A refusal is loud — red, filled, with a slashed

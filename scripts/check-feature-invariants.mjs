@@ -210,6 +210,15 @@ const FEATURES = [
   ['Camps: printed register shows the outstanding box', `${D}/camps/[campId]/print/page.tsx`, ['data-testid="print-outstanding"', 'booking_mode, amount_paid']],
   ['Camps: academy told when a family books and does not pay', `${A}/api/stripe/webhooks/route.ts`, ["type: 'camp_unpaid'", 'but did not pay', '.select(\'organisation_id, camp_id, child_name, parent_name, amount_paid, camps(name, start_date)\')']],
   ['Camps: the rule is written down', 'BILLING_RULES.md', ["There's no way that people can book camps and not pay. The academy has to be told that they are not paying.", 'Never assume a rule']],
+  // ── Class registers: red "£X outstanding" box next to the child (John, 15 Oct 2026, "like ClassForKids")
+  ['Classes: the outstanding rule', 'src/lib/class-outstanding.ts', ["const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']", "const FAILED_SUB = ['past_due', 'unpaid', 'incomplete']", "return 'No membership'", 'export async function loadClassOutstanding']],
+  ['Classes: the outstanding rule is tested', 'src/lib/class-outstanding.test.ts', ["toBe('£36.00 outstanding')", "toBe('No membership')"]],
+  ['Classes: red box on the class page register', `${D}/groups/[id]/ClassRegister.tsx`, ['data-testid="register-outstanding"']],
+  ['Classes: class page loads what is outstanding', `${D}/groups/[id]/page.tsx`, ['loadClassOutstanding(', 'outstanding: outstandingByPlayer.get(p.id)']],
+  ['Classes: red box on the live register', `${D}/attendance/register/[groupId]/LiveRegisterClient.tsx`, ['data-testid="live-register-outstanding"']],
+  ['Classes: live register loads what is outstanding', `${D}/attendance/register/[groupId]/page.tsx`, ['loadClassOutstanding(']],
+  ['Classes: red box on the printed register', `${D}/attendance/register/[groupId]/blank/page.tsx`, ['data-testid="print-register-outstanding"', 'loadClassOutstanding(']],
+  ['Classes: Remove from class can cancel a failing membership too', `${D}/groups/[id]/ClassRosterRow.tsx`, ['data-testid="roster-remove-cancel-membership"', "fetch('/api/stripe/cancel'", 'Cancel their membership too']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

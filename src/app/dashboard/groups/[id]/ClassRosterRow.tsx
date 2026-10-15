@@ -50,6 +50,10 @@ export interface ClassRosterRowProps {
   organisationId: string
   /** Render only the ⋮ menu (and its dialogs), for a list that draws the row itself. */
   menuOnly?: boolean
+  /** Stripe ids of memberships whose payment failed (admins only). Remove offers to cancel them too. */
+  failingSubIds?: string[]
+  /** What the child owes, shown in the Remove pop-up. */
+  outstanding?: string | null
 }
 
 export default function ClassRosterRow({
@@ -65,6 +69,8 @@ export default function ClassRosterRow({
   groupId,
   organisationId,
   menuOnly = false,
+  failingSubIds = [],
+  outstanding = null,
 }: ClassRosterRowProps) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -83,6 +89,8 @@ export default function ClassRosterRow({
     if (menuOpen) document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [menuOpen])
+
+  const [cancelMembership, setCancelMembership] = useState(true)
 
   async function handleRemove() {
     setRemoving(true)
@@ -113,6 +121,26 @@ export default function ClassRosterRow({
       setError(updErr.message)
       setRemoving(false)
       return
+    }
+
+    // Their membership's payment failed: cancel it too, through the same route as
+    // Payments → Memberships → Cancel, so Stripe stops billing (John, 15 Oct 2026).
+    // What is already owed stays owed.
+    if (failingSubIds.length > 0 && cancelMembership) {
+      for (const subscriptionId of failingSubIds) {
+        const res = await fetch('/api/stripe/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscriptionId, reason: 'admin_cancelled' }),
+        }).catch(() => null)
+        if (!res || !res.ok) {
+          const data = res ? await res.json().catch(() => ({})) : {}
+          setError(`Removed from the class, but the membership could not be cancelled: ${(data as { error?: string }).error || 'please cancel it in Payments → Memberships'}`)
+          setRemoving(false)
+          router.refresh()
+          return
+        }
+      }
     }
 
     // Waitlist auto-promote — same fire-and-forget as EnrolmentStatusToggle.
@@ -295,8 +323,9 @@ export default function ClassRosterRow({
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-3 text-xs text-white/60 space-y-1">
               <p>
                 <span className="text-white/80 font-semibold">Subscription:</span>{' '}
-                Not affected — the parent will continue to be billed as before.
-                Manage their subscription separately if needed.
+                {failingSubIds.length > 0 && cancelMembership
+                  ? 'Cancelled in Stripe as well (ticked below).'
+                  : 'Not affected — the parent will continue to be billed as before. Manage their subscription separately if needed.'}
               </p>
               {otherActiveClasses > 0 && (
                 <p>
@@ -305,6 +334,18 @@ export default function ClassRosterRow({
                 </p>
               )}
             </div>
+
+            {failingSubIds.length > 0 && (
+              <label className="flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-3 cursor-pointer" data-testid="roster-remove-cancel-membership">
+                <input type="checkbox" checked={cancelMembership} onChange={(e) => setCancelMembership(e.target.checked)} className="mt-0.5 accent-red-500" />
+                <span className="text-sm text-white">
+                  Cancel their membership too
+                  <span className="mt-0.5 block text-xs text-white/65">
+                    Their payment has failed{outstanding ? ` (${outstanding})` : ''}. Ticked, the membership is cancelled in Stripe and no more monthly bills go out. What&apos;s already owed stays owed.
+                  </span>
+                </span>
+              </label>
+            )}
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs text-red-300">
@@ -320,7 +361,7 @@ export default function ClassRosterRow({
                 data-testid="roster-remove-confirm-button"
                 className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
               >
-                {removing ? 'Removing…' : 'Remove from class'}
+                {removing ? 'Removing…' : failingSubIds.length > 0 && cancelMembership ? 'Remove and cancel membership' : 'Remove from class'}
               </button>
               <button
                 type="button"

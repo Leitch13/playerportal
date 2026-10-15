@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 // Sprint 8a — per-row kebab with View / Message parent / Remove from class.
 import ClassRegister, { type RegisterChild, type RegisterTrialGuest } from './ClassRegister'
 import { membershipPill } from '@/lib/needs-a-look'
+import { loadClassOutstanding } from '@/lib/class-outstanding'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ageOn, latestClassDate } from '@/lib/class-register'
 import { paidTrialPence } from '@/lib/trial-booking'
 
@@ -114,16 +116,21 @@ export default async function GroupDetailPage({
   //    child in one list; see ClassRegister.tsx and src/lib/class-register.ts.
   const todayUk = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
   const subStatusesByPlayer = new Map<string, string[]>()
+  const failingSubsByPlayer = new Map<string, string[]>()
   let trialGuests: RegisterTrialGuest[] = []
   if (isAdmin) {
     if (playerIds.length > 0) {
       const { data: subs } = await supabase
         .from('subscriptions')
-        .select('player_id, status')
+        .select('player_id, status, stripe_subscription_id')
         .in('player_id', playerIds)
         .eq('organisation_id', group.organisation_id)
-      for (const sRow of (subs || []) as { player_id: string | null; status: string | null }[]) {
+      for (const sRow of (subs || []) as { player_id: string | null; status: string | null; stripe_subscription_id: string | null }[]) {
         if (!sRow.player_id || !sRow.status) continue
+        // Memberships whose payment failed or was never finished: Remove offers to cancel them too.
+        if (['past_due', 'unpaid', 'incomplete'].includes(sRow.status) && sRow.stripe_subscription_id) {
+          failingSubsByPlayer.set(sRow.player_id, [...(failingSubsByPlayer.get(sRow.player_id) || []), sRow.stripe_subscription_id])
+        }
         subStatusesByPlayer.set(sRow.player_id, [...(subStatusesByPlayer.get(sRow.player_id) || []), sRow.status])
       }
     }
@@ -137,6 +144,15 @@ export default async function GroupDetailPage({
     trialGuests = ((trials || []) as { id: string; child_name: string; child_age: number | null; parent_name: string | null; parent_phone: string | null; preferred_date: string | null; notes: string | null }[])
       .map((t) => ({ id: t.id, childName: (t.child_name || '').replace(/\s+/g, ' ').trim(), childAge: t.child_age, parentName: t.parent_name, parentPhone: t.parent_phone, date: t.preferred_date, paid: paidTrialPence(t.notes) != null }))
   }
+  // Red box next to each child: what's outstanding (src/lib/class-outstanding.ts). Staff only.
+  const outstandingByPlayer = isAdmin
+    ? await loadClassOutstanding(
+        createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
+        group.organisation_id as string,
+        enrolments.filter((e) => e.player).map((e) => e.player!.id),
+        new Set(enrolments.filter((e) => e.player && e.is_trial === true).map((e) => e.player!.id)),
+      )
+    : new Map<string, string | null>()
   const registerChildren: RegisterChild[] = enrolments.filter((e) => e.player).map((e) => {
     const p = e.player!
     const contact = p.parent_id ? parentContactById.get(p.parent_id) : undefined
@@ -156,6 +172,8 @@ export default async function GroupDetailPage({
       parentEmail: contact?.email || null,
       membership: membershipPill(subStatusesByPlayer.get(p.id) || []),
       isTrial: e.is_trial === true,
+      outstanding: outstandingByPlayer.get(p.id) ?? null,
+      failingSubIds: failingSubsByPlayer.get(p.id) || [],
       otherActiveClasses: otherActiveCountById.get(p.id) || 0,
     }
   })
@@ -330,6 +348,7 @@ export default async function GroupDetailPage({
             </div>
           ) : isAdmin ? (
             <ClassRegister
+              canCancelMembership={role === 'admin'}
               groupId={group.id as string}
               organisationId={group.organisation_id as string}
               className={group.name as string}

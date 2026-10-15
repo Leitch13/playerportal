@@ -41,6 +41,10 @@ export interface RegisterChild {
   /** "Paying", "No membership", "Payment problem", "Invite not confirmed"… and how loud to be about it. */
   membership: { label: string; tone: 'ok' | 'warn' | 'bad' | 'off' }
   isTrial: boolean
+  /** Red box next to the name: "£36.00 outstanding" / "No membership" (src/lib/class-outstanding.ts). Null = nothing owed. */
+  outstanding?: string | null
+  /** Stripe ids of this child's memberships whose payment failed or was never finished. */
+  failingSubIds?: string[]
   otherActiveClasses: number
 }
 
@@ -62,8 +66,9 @@ const TONE: Record<string, string> = {
 }
 
 export default function ClassRegister({
-  groupId, organisationId, className, classDay, today, startDate, children: kids, trialGuests,
+  canCancelMembership = false, groupId, organisationId, className, classDay, today, startDate, children: kids, trialGuests,
 }: {
+  canCancelMembership?: boolean
   groupId: string
   organisationId: string
   className: string
@@ -124,9 +129,9 @@ export default function ClassRegister({
   const unmarkedIds = kids.filter((c) => !marks[c.playerId]).map((c) => c.playerId)
 
   function downloadCsv() {
-    const rows: (string | number | null)[][] = [['Child', 'Age', 'Date of birth', date, 'Parent', 'Phone', 'Email', 'Emergency contact', 'Emergency phone', 'Medical', 'Membership']]
+    const rows: (string | number | null)[][] = [['Child', 'Age', 'Date of birth', date, 'Parent', 'Phone', 'Email', 'Emergency contact', 'Emergency phone', 'Medical', 'Membership', 'Outstanding']]
     for (const c of sortRoster(kids, 'name', (k) => `${k.firstName} ${k.lastName}`, (k) => k.age)) {
-      rows.push([`${c.firstName} ${c.lastName}`.trim(), c.age, c.dob, marks[c.playerId] === 'present' ? 'Here' : marks[c.playerId] === 'absent' ? 'Away' : '', c.parentName, c.parentPhone, c.parentEmail, c.emergencyName, c.emergencyPhone, c.medical, c.membership.label])
+      rows.push([`${c.firstName} ${c.lastName}`.trim(), c.age, c.dob, marks[c.playerId] === 'present' ? 'Here' : marks[c.playerId] === 'absent' ? 'Away' : '', c.parentName, c.parentPhone, c.parentEmail, c.emergencyName, c.emergencyPhone, c.medical, c.membership.label, c.outstanding || ''])
     }
     const url = URL.createObjectURL(new Blob([registerCsv(rows)], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a'); a.href = url; a.download = `${className.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-register-${date}.csv`; a.click(); URL.revokeObjectURL(url)
@@ -178,7 +183,7 @@ export default function ClassRegister({
           const name = `${c.firstName} ${c.lastName}`.trim()
           const flags: { text: string; cls: string }[] = []
           if (hasMedicalNote(c.medical)) flags.push({ text: 'Medical note', cls: 'text-amber-300' })
-          if (c.membership.tone !== 'ok') flags.push({ text: c.membership.label, cls: c.membership.tone === 'bad' ? 'text-red-300' : 'text-amber-300/90' })
+          if (c.membership.tone !== 'ok' && !c.outstanding) flags.push({ text: c.membership.label, cls: c.membership.tone === 'bad' ? 'text-red-300' : 'text-amber-300/90' })
           if (c.isTrial) flags.push({ text: 'On a trial', cls: 'text-[#9fe3f1]' })
           return (
             <li key={c.playerId} className="border-t border-white/[0.05] first:border-t-0">
@@ -193,7 +198,10 @@ export default function ClassRegister({
                 </button>
                 <button type="button" onClick={() => setOpenId(open ? null : c.playerId)} aria-expanded={open} data-testid="register-name" className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left">
                   <span className="min-w-0">
-                    <span className="block truncate text-sm text-white">{name}</span>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-white">
+                      <span className="truncate">{name}</span>
+                      {c.outstanding && <span data-testid="register-outstanding" className="inline-block rounded-md border border-red-500/50 bg-red-500/15 px-1.5 py-0.5 align-middle text-[11px] font-bold text-red-300">{c.outstanding}</span>}
+                    </span>
                     {flags.length > 0 && <span className="block truncate text-[11px]">{flags.map((f, i) => <span key={f.text} className={f.cls}>{i > 0 ? ' · ' : ''}{f.text}</span>)}</span>}
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
@@ -218,7 +226,8 @@ export default function ClassRegister({
                     {c.parentId && <Link href={`/dashboard/messages?recipients=${encodeURIComponent(c.parentId)}`} className="rounded-lg border border-[#1d2c42] px-2.5 py-1 text-xs font-semibold text-white/75 hover:text-white">Message parent</Link>}
                     <span className="ml-auto flex items-center gap-1 text-[11px] text-white/40">Move or remove
                       <ClassRosterRow menuOnly enrolmentId={c.enrolmentId} playerId={c.playerId} playerFirstName={c.firstName} playerLastName={c.lastName} playerPhotoUrl={null}
-                        parentId={c.parentId} parentName={c.parentName} className={className} otherActiveClasses={c.otherActiveClasses} groupId={groupId} organisationId={organisationId} />
+                        parentId={c.parentId} parentName={c.parentName} className={className} otherActiveClasses={c.otherActiveClasses} groupId={groupId} organisationId={organisationId}
+                        failingSubIds={canCancelMembership ? c.failingSubIds || [] : []} outstanding={c.outstanding || null} />
                     </span>
                   </div>
                 </div>

@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { loadClassOutstanding } from '@/lib/class-outstanding'
 import type { UserRole } from '@/lib/types'
 import PrintButton from '../../PrintButton'
 import RegisterTabs from '../Tabs'
@@ -62,6 +64,12 @@ export default async function BlankRegisterPage({
       const nameB = `${b.last_name} ${b.first_name}`.toLowerCase()
       return nameA.localeCompare(nameB)
     })
+
+  // Red box next to each child: what's outstanding (src/lib/class-outstanding.ts).
+  const outstandingByPlayer = await loadClassOutstanding(
+    createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
+    orgId, players.map((p) => p.id),
+  )
 
   const blankColumns = Array.from({ length: 8 }, (_, i) => i)
 
@@ -183,6 +191,11 @@ export default async function BlankRegisterPage({
                   <tr key={player.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="border border-gray-300 px-3 py-2 font-medium">
                       {player.last_name}, {player.first_name}
+                      {outstandingByPlayer.get(player.id) && (
+                        <span data-testid="print-register-outstanding" className="ml-2 inline-block rounded border-2 border-red-700 px-1 text-[10px] font-extrabold text-red-700" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                          {outstandingByPlayer.get(player.id)}
+                        </span>
+                      )}
                     </td>
                     {blankColumns.map((i) => (
                       <td
