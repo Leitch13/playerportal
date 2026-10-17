@@ -13,8 +13,11 @@ export const metadata: Metadata = {
 
 const CLIPS = [
   { id: 'first-ten-minutes', file: 'academy-first-ten-minutes', title: 'Your first ten minutes', blurb: 'Just signed up? Your home page, making it yours, adding classes, and your booking page.' },
-  { id: 'class-and-plan', file: 'academy-class-and-plan', title: 'Add a class and a plan', blurb: 'Create a class, set its price under Plans & Pricing, and see what parents see.' },
+  { id: 'class-and-plan', file: 'academy-class-and-plan', title: 'Add a class and its price', blurb: 'Create a class, give it its own price with your own name under £ Prices, and see what parents see.' },
+  { id: 'class-start-date', file: 'academy-class-start-date', title: 'Start a class on a date', blurb: 'Starting a new class later? Add a term, put the class in it, and parents can only start from that date.' },
   { id: 'who-has-paid', file: 'academy-who-has-paid', title: 'Who has paid', blurb: 'See who’s paying in each class, find anyone who isn’t, and send them a payment link.' },
+  { id: 'who-owes', file: 'academy-who-owes', title: 'Who owes you money', blurb: 'The red box next to a child’s name shows what’s outstanding, on screen and on the printed register.' },
+  { id: 'refund', file: 'academy-refund', title: 'Refund a payment', blurb: 'Find the family, pick why, tap Refund. The money goes back to their card and the parent is told.' },
   { id: 'camps', file: 'academy-camps', title: 'Camps and waiting lists', blurb: 'Set up a camp. When it fills, parents join the waiting list and you invite them when a place opens.' },
   { id: 'one-to-ones', file: 'academy-one-to-ones', title: '1-2-1s and 2-to-1s', blurb: 'Regular slots, adding a pair in one go, resending a pay link, and the week’s timetable.' },
 ] as const
@@ -33,7 +36,7 @@ export default function AcademyHelpPage() {
           </div>
         </header>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" data-testid="academy-videos">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="academy-videos">
           {CLIPS.map((c) => (
             <section key={c.id} id={c.id} className="scroll-mt-6 rounded-2xl border border-white/[0.08] bg-[#0f1a2b] p-3">
               <video

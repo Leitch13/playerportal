@@ -144,7 +144,7 @@ const FEATURES = [
   ['Parent home: greeting with no surname, and a line about today', 'src/components/parent/ParentHub.tsx', ['greetingFor()', 'todayLine(nextSession)', 'parent-greeting', 'parent-next-session', '{props.welcomePack}', 'MembershipOverview activeSubs={activeSubs}']],
   ['Parent home: the welcome pack sits inside the home page', `${D}/page.tsx`, ['welcomePack={<WelcomePackCard userId={userId} />}']],
   ['How-to videos: the page itself', `${A}/help/parents/page.tsx`, ['<video']],
-  ['How-to videos for academies: the page', `${A}/help/academies/page.tsx`, ['<video', 'academy-who-has-paid', 'academy-one-to-ones', 'academy-camps', 'academy-class-and-plan', 'academy-first-ten-minutes']],
+  ['How-to videos for academies: the page', `${A}/help/academies/page.tsx`, ['<video', 'academy-who-has-paid', 'academy-one-to-ones', 'academy-camps', 'academy-class-and-plan', 'academy-first-ten-minutes', 'academy-refund', 'academy-who-owes', 'academy-class-start-date']],
   ['How-to videos for academies: in the academy menu', 'src/components/Navigation.tsx', ["href: '/help/academies'", "href: '/help/parents'"]],
 
   // ── camp waiting list
@@ -236,7 +236,7 @@ const FEATURES = [
 
 const fail = []
 // The video files themselves.
-for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones']) {
+for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones', 'academy-refund', 'academy-who-owes', 'academy-class-start-date']) {
   for (const ext of ['mp4', 'jpg']) if (!existsSync(`public/help/${f}.${ext}`)) fail.push(`How-to videos: public/help/${f}.${ext} is missing`)
 }
 for (const [feature, file, needles] of FEATURES) {
