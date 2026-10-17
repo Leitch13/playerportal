@@ -57,8 +57,10 @@ doesn't apply to one product.
 1. **An unpaid camp booking never looks paid.** A red box next to the child's name says what is
    outstanding ("£80.00 outstanding") on the register, the day check-in list and the printed register.
    Only a paid booking shows an amount received. Code: `src/lib/camp-payment-display.ts` (+ test).
-2. **The academy is told when a family books and does not pay.** When a camp payment link runs out,
-   the place is released and the academy gets an alert and email naming the child and the amount.
+2. **An unpaid booking stays on the camp in red, and the academy sends the link.** A booking is never
+   cancelled because a Stripe page ran out (17 Oct 2026, WLFA's Felix dropped off twice). The academy is
+   alerted when a parent walks away from paying, presses Send payment link, and that link never runs
+   out (`src/lib/camp-payment-link.ts`, `/pay/camp/<booking id>`). The academy removes a booking by hand.
    Code: `handleCheckoutExpired` in `src/app/api/stripe/webhooks/route.ts`.
 3. A confirmation email is only ever sent for a paid booking. Unpaid bookings get a payment link.
 

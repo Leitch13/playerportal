@@ -220,33 +220,32 @@ async function convertLeadToEnrolled(orgId: string | null, email: string | null 
 async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
   if (session.metadata?.type === 'platform_subscription') return
   if (session.metadata?.camp_booking_id) {
-    // An abandoned camp checkout used to leave its 'pending' row behind for
-    // ever — on the roster, counted against capacity, chased by nobody. A
-    // camp with one real booking showed 25 of 30 seats left. When Stripe
-    // says the session has expired, the seat is free: mark the booking
-    // cancelled (only if it is still pending — a later paid session on the
-    // same row must never be undone). Nothing is deleted.
-    const { data: released, error } = await supabase
+    // An unpaid camp booking STAYS on the camp, in red with what's outstanding,
+    // and the academy sends a payment link (John, 17 Oct 2026: "it should come up
+    // red and then the academy sends the link"). It used to be cancelled the
+    // moment Stripe's 24-hour page ran out, so WLFA's Felix dropped off a camp
+    // twice while his family was still being chased. The academy removes a
+    // booking by hand if the family isn't coming (Remove on the register).
+    //
+    // The academy's own link never runs out (src/lib/camp-payment-link.ts), so
+    // its pages expiring means nothing. A parent who started booking online and
+    // walked away: the academy is told once, so they can chase or remove them.
+    if (session.metadata.sent_by === 'academy_payment_link') return
+    const { data: unpaid } = await supabase
       .from('camp_bookings')
-      .update({ payment_status: 'cancelled' })
+      .select('organisation_id, camp_id, child_name, parent_name, amount_paid, payment_status, stripe_session_id, camps(name)')
       .eq('id', session.metadata.camp_booking_id)
-      .eq('payment_status', 'pending')
-      .eq('stripe_session_id', session.id)
-      .select('organisation_id, camp_id, child_name, parent_name, amount_paid, camps(name, start_date)')
       .maybeSingle()
-    if (error) console.error('[webhook:camp_checkout_expired] could not release seat', session.metadata.camp_booking_id, error.message)
-    // The academy is ALWAYS told when a family books a camp and does not pay
-    // (John, 15 Oct 2026; BILLING_RULES.md "Camps"). This used to happen in silence.
-    if (released?.organisation_id) {
-      const camp = released.camps as unknown as { name: string | null; start_date: string | null } | null
-      const owed = Number(released.amount_paid || 0)
+    if (unpaid?.organisation_id && unpaid.payment_status === 'pending' && unpaid.stripe_session_id === session.id) {
+      const camp = unpaid.camps as unknown as { name: string | null } | null
+      const owed = Number(unpaid.amount_paid || 0)
       const { notifyOrgAdmins } = await import('@/lib/notify-admins')
       await notifyOrgAdmins({
-        orgId: released.organisation_id as string,
+        orgId: unpaid.organisation_id as string,
         type: 'camp_unpaid',
-        title: `Camp not paid: ${(released.child_name || 'a child').trim()}`,
-        body: `${(released.child_name || 'A child').trim()}${released.parent_name ? ` (${String(released.parent_name).trim()})` : ''} booked ${camp?.name || 'a camp'} but did not pay${owed > 0 ? ` the £${owed.toFixed(2)}` : ''}. The payment link ran out, so the place has been released and they are NOT booked on. To keep them, send a new payment link from the camp page.`,
-        link: `/dashboard/camps/${released.camp_id}`,
+        title: `Camp not paid: ${(unpaid.child_name || 'a child').trim()}`,
+        body: `${(unpaid.child_name || 'A child').trim()}${unpaid.parent_name ? ` (${String(unpaid.parent_name).trim()})` : ''} booked ${camp?.name || 'a camp'} but hasn't paid${owed > 0 ? ` the £${owed.toFixed(2)}` : ''}. They're on the register in red. Send them a payment link from the camp page, or remove them if they're not coming.`,
+        link: `/dashboard/camps/${unpaid.camp_id}`,
         email: true,
       })
     }

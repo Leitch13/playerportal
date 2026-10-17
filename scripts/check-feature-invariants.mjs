@@ -208,7 +208,11 @@ const FEATURES = [
   ['Camps: the unpaid display rule is tested', 'src/lib/camp-payment-display.test.ts', ["expect(outstanding('pending', 80)).toBe('£80.00 outstanding')", "expect(paidAmount('pending', 80)).toBe(0)"]],
   ['Camps: red outstanding box on the register', `${D}/camps/[campId]/RosterClient.tsx`, ['data-testid="camp-roster-outstanding"', 'data-testid="camp-perday-outstanding"', 'paidAmount(b.payment_status, b.amount_paid) > 0 ?']],
   ['Camps: printed register shows the outstanding box', `${D}/camps/[campId]/print/page.tsx`, ['data-testid="print-outstanding"', 'booking_mode, amount_paid']],
-  ['Camps: academy told when a family books and does not pay', `${A}/api/stripe/webhooks/route.ts`, ["type: 'camp_unpaid'", 'but did not pay', '.select(\'organisation_id, camp_id, child_name, parent_name, amount_paid, camps(name, start_date)\')']],
+  ['Camps: unpaid booking stays on (red) and the academy is told', `${A}/api/stripe/webhooks/route.ts`, ["type: 'camp_unpaid'", "They're on the register in red", "if (session.metadata.sent_by === 'academy_payment_link') return"]],
+  ['Camps: the academy\'s payment link never runs out', 'src/lib/camp-payment-link.ts', ['export async function checkCampLink', 'export async function openCampCheckout', "sent_by: 'academy_payment_link'"]],
+  ['Camps: payment link email opens the never-expiring pay page', `${A}/api/admin/camps/[campId]/bookings/[bookingId]/payment-link/route.ts`, ['/pay/camp/${booking.id}', 'checkCampLink(svc, bookingId)']],
+  ['Camps: parent pay page and its checkout', `${A}/pay/camp/[bookingId]/page.tsx`, ['checkoutPath={`/api/camp-bookings/${b.id}/checkout`}']],
+  ['Camps: pay page checkout route', `${A}/api/camp-bookings/[id]/checkout/route.ts`, ['openCampCheckout(svc, c, origin)']],
   ['Camps: the rule is written down', 'BILLING_RULES.md', ["There's no way that people can book camps and not pay. The academy has to be told that they are not paying.", 'Never assume a rule']],
   // ── Class registers: red "£X outstanding" box next to the child (John, 15 Oct 2026, "like ClassForKids")
   ['Classes: the outstanding rule', 'src/lib/class-outstanding.ts', ["const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']", "const FAILED_SUB = ['past_due', 'unpaid', 'incomplete']", "return 'No membership'", 'export async function loadClassOutstanding']],

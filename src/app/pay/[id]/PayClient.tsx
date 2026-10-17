@@ -17,6 +17,7 @@ export default function PayClient({
   primaryColor,
   logoUrl,
   contactEmail,
+  checkoutPath,
 }: {
   paymentId: string
   description: string
@@ -31,6 +32,8 @@ export default function PayClient({
   primaryColor: string
   logoUrl: string | null
   contactEmail: string | null
+  /** Where "Pay" asks for a fresh Stripe payment. Defaults to the invoice route; camps use their own. */
+  checkoutPath?: string
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -41,7 +44,7 @@ export default function PayClient({
   async function handlePay() {
     setLoading(true)
     setError('')
-    const res = await postJson(`/api/payments/${paymentId}/checkout`)
+    const res = await postJson(checkoutPath || `/api/payments/${paymentId}/checkout`)
     const url = res.data.url
     if (!res.ok || typeof url !== 'string' || !url) {
       setError((typeof res.data.error === 'string' && res.data.error) || res.error || 'Could not start the payment. Please try again.')

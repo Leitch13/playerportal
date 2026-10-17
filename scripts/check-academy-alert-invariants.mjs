@@ -45,6 +45,8 @@ const LEDGER = {
   [`${A}/stripe/camp-checkout/route.ts`]: { alert: [[WH, 'Academy admin notification']] },
   [`${A}/stripe/flexible-camp-checkout/route.ts`]: { alert: [[WH, 'Academy admin notification']] },
   [`${A}/admin/camps/[campId]/bookings/[bookingId]/payment-link/route.ts`]: { alert: [[WH, 'Academy admin notification']] },
+  // the camp link that never runs out: paid through it lands in the same webhook branch
+  ['src/lib/camp-payment-link.ts']: { alert: [[WH, 'Academy admin notification']] },
   'src/lib/invoice-checkout.ts': { alert: [[WH, "session.metadata?.payment_id"], [WH, 'notifyOrgAdmins(']] },
   // ── classes and waiting lists
   [`${A}/enrolments/book/route.ts`]: { alert: [[`${A}/enrolments/book/route.ts`, 'notifyOrgAdmins(']] },
