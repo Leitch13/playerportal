@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { earliestStart, termNotStarted } from '@/lib/class-start'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
       activatesOnDate = new Date()
       activatesOnDate.setUTCHours(0, 0, 0, 0)
     }
-    const activatesOnIso = activatesOnDate.toISOString().split('T')[0]
+    let activatesOnIso = activatesOnDate.toISOString().split('T')[0]
 
     // Parse the migration "first billing date" if provided and in the future.
     // Cap how far out it can be (anti-tamper): the date rides in the URL, so a
@@ -401,6 +402,30 @@ export async function POST(request: NextRequest) {
     }
     const classId = paidClass.id as string
     refusalCtx.classId = classId
+
+    // A class in a term that hasn't started yet starts on the term's first class
+    // day, never before (CFCoaching, 17 Oct 2026; src/lib/class-start.ts). The
+    // picker only offers those dates; a page with no picker, or an earlier date
+    // sent anyway, is moved to that first day so nobody pays for sessions that
+    // don't exist. More than 28 days away: places can't be booked yet.
+    if (!migrationTrialEnd) {
+      const { data: termRow } = await serviceDb.from('training_groups').select('day_of_week, term:terms(start_date)').eq('id', classId).maybeSingle()
+      const termStart = (termRow?.term as unknown as { start_date?: string | null } | null)?.start_date ?? null
+      const todayIsoUtc = new Date().toISOString().slice(0, 10)
+      if (termNotStarted(todayIsoUtc, termStart)) {
+        const first = earliestStart(todayIsoUtc, termStart, (termRow?.day_of_week as string | null) ?? null)
+        const latest = new Date(Date.now() + 28 * 86400000).toISOString().slice(0, 10)
+        if (first > latest) {
+          const tooEarly = `This class starts on ${new Date(first + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}. Places can be booked up to 28 days before.`
+          await recordSignupRefusal(refusalCtx, 'class_term_not_open_yet', tooEarly, 400, { term_start: termStart })
+          return NextResponse.json({ error: tooEarly }, { status: 400 })
+        }
+        if (activatesOnIso < first) {
+          activatesOnDate = new Date(first + 'T00:00:00Z')
+          activatesOnIso = first
+        }
+      }
+    }
 
     // A child who already holds a place in this class is paying for the place
     // they have, not taking a new one — so a full class must not turn them away.

@@ -48,7 +48,7 @@ export default async function QuickBookPage({
   const { data: group } = await publicSupabase
     .from('training_groups')
     .select(
-      'id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, class_type, coach:profiles!training_groups_coach_id_fkey(full_name)'
+      'id, name, day_of_week, time_slot, location, max_capacity, age_group, description, price_per_session, class_type, coach:profiles!training_groups_coach_id_fkey(full_name), term:terms(start_date)'
     )
     .eq('id', groupId)
     .eq('organisation_id', org.id)
@@ -248,6 +248,7 @@ export default async function QuickBookPage({
         groupId={groupId}
         groupName={group.name}
         primaryColor={primaryColor}
+        termStartIso={((group as { term?: { start_date?: string | null } | null }).term?.start_date) ?? null}
         classDayOfWeek={group.day_of_week as string | null}
         classTimeSlot={group.time_slot as string | null}
         metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}

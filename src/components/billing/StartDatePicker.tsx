@@ -16,6 +16,7 @@
 import { useEffect, useMemo } from 'react'
 import { firstOfNextMonthLabel, firstOfNextMonthUnix } from '@/lib/billing/anchor'
 import { isoDate, latestAllowedStartDate } from '@/lib/billing/next-session'
+import { earliestStart, termNotStarted } from '@/lib/class-start'
 import { firstChargeFor, firstChargeLabel, generateSessionDates } from '@/lib/billing/sessions'
 
 interface Props {
@@ -28,6 +29,8 @@ interface Props {
   /** Monthly plan amount in £ (pounds). */
   monthlyAmount: number
   primaryColor: string
+  /** The class's term start (YYYY-MM-DD). A term that hasn't started yet is the earliest start — src/lib/class-start.ts. */
+  termStartIso?: string | null
 }
 
 function formatLabel(iso: string): string {
@@ -36,17 +39,22 @@ function formatLabel(iso: string): string {
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' })
 }
 
-export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, monthlyAmount, primaryColor }: Props) {
+export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, monthlyAmount, primaryColor, termStartIso = null }: Props) {
   const today = useMemo(() => new Date(), [])
   const todayIso = useMemo(() => isoDate(today), [today])
   const maxIso = useMemo(() => isoDate(latestAllowedStartDate(today)), [today])
 
-  // Class dates in [today, today+28]. Empty when the class has no set day.
+  // Earliest start: today, or the term's first class day when the term starts later.
+  const startFromIso = useMemo(() => earliestStart(todayIso, termStartIso, classDayOfWeek), [todayIso, termStartIso, classDayOfWeek])
+  const waitingForTerm = termNotStarted(todayIso, termStartIso)
+  // Class dates in [earliest start, today+28]. Empty when the class has no set day.
   const sessionDateOptions = useMemo(() => {
     if (!classDayOfWeek) return [] as string[]
     const end = new Date(todayIso + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() + 29)
-    return generateSessionDates(todayIso, end.toISOString().slice(0, 10), classDayOfWeek)
-  }, [todayIso, classDayOfWeek])
+    return generateSessionDates(startFromIso, end.toISOString().slice(0, 10), classDayOfWeek)
+  }, [todayIso, startFromIso, classDayOfWeek])
+  // The term starts more than 28 days away: nothing can be booked yet.
+  const tooEarly = startFromIso > maxIso
   const dayKnown = sessionDateOptions.length > 0
 
   // Default to the first class date so the preview is right from first render.
@@ -57,7 +65,7 @@ export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, m
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayKnown, sessionDateOptions.join('|')])
 
-  const effectiveValue = value || (dayKnown ? sessionDateOptions[0] : todayIso)
+  const effectiveValue = value || (dayKnown ? sessionDateOptions[0] : startFromIso)
   const startDate = new Date(effectiveValue + 'T00:00:00Z')
   const anchorIso = new Date(firstOfNextMonthUnix(startDate) * 1000).toISOString().slice(0, 10)
   const fc = firstChargeFor(monthlyAmount, effectiveValue, anchorIso, classDayOfWeek)
@@ -87,8 +95,13 @@ export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, m
   return (
     <div>
       <label className="block text-xs text-white/50 mb-2">When does it start?</label>
+      {waitingForTerm && (
+        <div className="text-[11px] text-white/70 mb-2" data-testid="start-term-note">
+          {classLabel} starts on {formatLabel(startFromIso)}.{tooEarly ? ` Places can be booked from ${formatLabel(isoDate(new Date(new Date(startFromIso + 'T00:00:00Z').getTime() - 28 * 86400000)))}.` : ''}
+        </div>
+      )}
 
-      {dayKnown ? (
+      {tooEarly ? null : dayKnown ? (
         <>
           <div className="text-[11px] text-white/50 mb-2">
             {classLabel} meets on {classDayOfWeek}s — pick your first session:
@@ -97,7 +110,7 @@ export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, m
         </>
       ) : (
         <>
-          {pill(todayIso, 'Start today')}
+          {!waitingForTerm && pill(todayIso, 'Start today')}
           <div className="rounded-xl border border-white/[0.06] p-3 mb-3 bg-white/[0.02]">
             <label className="block text-[11px] text-white/50 mb-1.5">
               Pick a start date — your coach will confirm session times.
@@ -105,7 +118,7 @@ export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, m
             <input
               type="date"
               value={effectiveValue}
-              min={todayIso}
+              min={startFromIso}
               max={maxIso}
               onChange={(e) => onChange(e.target.value)}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white focus:outline-none"

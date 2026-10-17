@@ -33,6 +33,8 @@ interface QuickBookFormProps {
   primaryColor: string
   /** Class day/time so the picker can default to the next upcoming session. */
   classDayOfWeek?: string | null
+  /** The class's term start: a term not started yet is the earliest start (src/lib/class-start.ts). */
+  termStartIso?: string | null
   classTimeSlot?: string | null
   metaPixelId?: string | null
   /** The academy's own Settings toggle (organisations.quarterly_billing_enabled). */
@@ -89,7 +91,7 @@ function SuccessOverlay({ groupName, primaryColor }: { groupName: string; primar
   )
 }
 
-export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, metaPixelId = null, quarterlyEnabled = false }: QuickBookFormProps) {
+export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, plans, orgSlug, orgId, orgName, groupId, groupName, primaryColor, classDayOfWeek, classTimeSlot, metaPixelId = null, quarterlyEnabled = false, termStartIso = null }: QuickBookFormProps) {
   const [ready, setReady] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -517,6 +519,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
                   classDayOfWeek={classDayOfWeek ?? null}
                   classTimeSlot={classTimeSlot ?? null}
                   classLabel={groupName}
+                  termStartIso={termStartIso}
                   monthlyAmount={selectedPlan.amount}
                   primaryColor={primaryColor}
                 />

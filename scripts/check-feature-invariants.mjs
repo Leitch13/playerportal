@@ -219,6 +219,18 @@ const FEATURES = [
   ['Classes: live register loads what is outstanding', `${D}/attendance/register/[groupId]/page.tsx`, ['loadClassOutstanding(']],
   ['Classes: red box on the printed register', `${D}/attendance/register/[groupId]/blank/page.tsx`, ['data-testid="print-register-outstanding"', 'loadClassOutstanding(']],
   ['Classes: Remove from class can cancel a failing membership too', `${D}/groups/[id]/ClassRosterRow.tsx`, ['data-testid="roster-remove-cancel-membership"', "fetch('/api/stripe/cancel'", 'Cancel their membership too']],
+  // ── A class whose term hasn't started starts on the term (CFCoaching, 17 Oct 2026)
+  ['Sign-up: earliest start is the term start', 'src/lib/class-start.ts', ['export function earliestStart', 'export function termNotStarted']],
+  ['Sign-up: earliest start is tested', 'src/lib/class-start.test.ts', ["toBe('2026-11-02')"]],
+  ['Sign-up: picker only offers dates from the term', 'src/components/billing/StartDatePicker.tsx', ['earliestStart(todayIso, termStartIso, classDayOfWeek)', 'generateSessionDates(startFromIso', 'data-testid="start-term-note"']],
+  ['Sign-up: booking page passes the term', `${A}/book/[slug]/class/[groupId]/quick-book/page.tsx`, ['term:terms(start_date)', 'termStartIso=']],
+  ['Sign-up: server moves an early start to the term', `${A}/api/stripe/subscribe/route.ts`, ['termNotStarted(todayIsoUtc, termStart)', "'class_term_not_open_yet'", 'activatesOnIso = first']],
+  // ── Class prices visible, academies' own names (John, 17 Oct 2026)
+  ['Classes: prices rule', 'src/lib/class-prices.ts', ['export function pricesForClass', 'p.active !== false']],
+  ['Classes: prices rule tested', 'src/lib/class-prices.test.ts', ["a class with nothing on sale for it has no prices"]],
+  ['Classes: class page shows its prices, red when none', `${D}/groups/[id]/page.tsx`, ['data-testid="class-prices"', 'data-testid="class-prices-none"', 'data-testid="class-prices-button"']],
+  ['Classes: list flags a class with no price', `${D}/groups/GroupCard.tsx`, ['data-testid="class-card-no-price"']],
+  ['Classes: price page has no ready-made templates, own names', `${D}/groups/[id]/plans/ClassPlanManager.tsx`, ['+ Add a price', 'Name parents see *']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

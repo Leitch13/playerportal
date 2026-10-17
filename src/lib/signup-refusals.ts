@@ -21,6 +21,7 @@ export type SignupRefusalReason =
   | 'class_full'
   | 'class_required'
   | 'start_date_not_a_class_day'
+  | 'class_term_not_open_yet'
   | 'checkout_error'
 
 export interface SignupRefusalContext {

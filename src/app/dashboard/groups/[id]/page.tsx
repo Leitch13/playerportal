@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import ClassRegister, { type RegisterChild, type RegisterTrialGuest } from './ClassRegister'
 import { membershipPill } from '@/lib/needs-a-look'
 import { loadClassOutstanding } from '@/lib/class-outstanding'
+import { pricesForClass } from '@/lib/class-prices'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ageOn, latestClassDate } from '@/lib/class-register'
 import { paidTrialPence } from '@/lib/trial-booking'
@@ -153,6 +154,11 @@ export default async function GroupDetailPage({
         new Set(enrolments.filter((e) => e.player && e.is_trial === true).map((e) => e.player!.id)),
       )
     : new Map<string, string | null>()
+  const { data: orgPlans } = isAdmin
+    ? await supabase.from('subscription_plans').select('id, name, amount, training_group_id, class_type, active').eq('organisation_id', group.organisation_id)
+    : { data: [] }
+  const classPrices = pricesForClass((orgPlans || []) as { id: string; name: string; amount: number; training_group_id: string | null; class_type: string | null; active: boolean | null }[], { id: group.id as string, class_type: group.class_type as string | null })
+
   const registerChildren: RegisterChild[] = enrolments.filter((e) => e.player).map((e) => {
     const p = e.player!
     const contact = p.parent_id ? parentContactById.get(p.parent_id) : undefined
@@ -306,12 +312,11 @@ export default async function GroupDetailPage({
             </Link>
             <Link
               href={`/dashboard/groups/${group.id}/plans`}
+              data-testid="class-prices-button"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-[#0f1a2b] border border-[#1d2c42] hover:bg-[#142236] transition-colors"
             >
-              <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              Session Plans
+              <span className="text-white/60 font-bold">£</span>
+              Prices
             </Link>
             {/* Message class — reuses the Messages page's existing
                 ?recipients=<csv> deep-link (same contract as the camp
@@ -330,6 +335,28 @@ export default async function GroupDetailPage({
               </Link>
             )}
           </div>
+        )}
+
+        {/* Prices for this class — what parents are offered when they book it (src/lib/class-prices.ts). */}
+        {isAdmin && (
+          classPrices.prices.length > 0 ? (
+            <div className="rounded-xl border border-[#1d2c42] bg-[#0f1a2b] px-4 py-3" data-testid="class-prices">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">Prices parents see{classPrices.own ? '' : ' (your general prices)'}</p>
+                <Link href={`/dashboard/groups/${group.id}/plans`} className="text-xs font-semibold text-[#4ecde6]">{classPrices.own ? 'Change' : 'Give this class its own price'}</Link>
+              </div>
+              <ul className="mt-1.5 flex flex-wrap gap-2">
+                {classPrices.prices.map((p) => (
+                  <li key={p.id} className="rounded-lg bg-white/[0.05] px-2.5 py-1 text-sm text-white">{p.name} · <span className="font-semibold">£{Number(p.amount).toFixed(2)}</span><span className="text-white/45"> a month</span></li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3" data-testid="class-prices-none">
+              <p className="text-sm font-semibold text-red-200">No price set: parents can&apos;t join or pay for this class.</p>
+              <Link href={`/dashboard/groups/${group.id}/plans`} className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-600">Add a price</Link>
+            </div>
+          )
         )}
 
         <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent" />

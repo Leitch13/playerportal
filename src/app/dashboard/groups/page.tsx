@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import EmptyState from '@/components/EmptyState'
 import GroupForm from './GroupForm'
 import GroupCard from './GroupCard'
+import { pricesForClass } from '@/lib/class-prices'
 // Classes Revenue Intelligence Phase 1A — read-only Revenue & Capacity strip.
 // Flag-gated; OFF ⇒ no extra reads, byte-identical page.
 import {
@@ -60,6 +61,12 @@ export default async function GroupsPage({
     .select('*, coach:profiles!training_groups_coach_id_fkey(full_name)')
     .eq('organisation_id', orgId)
     .order('name')
+
+  // Classes parents can't pay for: no price fits them (src/lib/class-prices.ts). Admins only.
+  const { data: pricePlans } = isAdmin
+    ? await supabase.from('subscription_plans').select('id, name, amount, training_group_id, class_type, active').eq('organisation_id', orgId)
+    : { data: [] }
+  const noPriceIds = new Set((groups || []).filter((g) => isAdmin && pricesForClass((pricePlans || []) as { id: string; name: string; amount: number; training_group_id: string | null; class_type: string | null; active: boolean | null }[], { id: g.id as string, class_type: (g as { class_type?: string | null }).class_type ?? null }).prices.length === 0).map((g) => g.id as string))
 
   const { data: coaches } = await supabase
     .from('profiles')
@@ -341,6 +348,7 @@ export default async function GroupsPage({
                       coachName={coach?.full_name || null}
                       enrolled={enrolled}
                       isAdmin={isAdmin}
+                      noPrice={noPriceIds.has(g.id as string)}
                       coaches={coaches || []}
                       orgId={orgId}
                       orgSlug={orgSlug}

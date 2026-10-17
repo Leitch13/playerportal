@@ -62,6 +62,7 @@ export default function GroupCard({
   waitlistCount = 0,
   orgSlug = '',
   terms = [],
+  noPrice = false,
 }: {
   group: GroupData
   coachName: string | null
@@ -73,6 +74,8 @@ export default function GroupCard({
   orgSlug?: string
   // Phase 1B — passed through to inline edit form.
   terms?: { id: string; name: string; start_date: string; end_date: string }[]
+  /** No price fits this class: parents can't join or pay (src/lib/class-prices.ts). */
+  noPrice?: boolean
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -325,6 +328,11 @@ export default function GroupCard({
           {group.name}
         </h3>
       </Link>
+      {noPrice && (
+        <Link href={`/dashboard/groups/${group.id}/plans`} data-testid="class-card-no-price" className="mt-1 inline-block rounded-md border border-red-500/50 bg-red-500/15 px-2 py-0.5 text-[11px] font-bold text-red-300 hover:bg-red-500/25">
+          No price set — add one
+        </Link>
+      )}
       <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-white/35">
         {typeBadge.label}{group.age_group ? ` · ${group.age_group}` : ''}
       </p>
