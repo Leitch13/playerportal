@@ -10,13 +10,14 @@ export const dynamic = 'force-dynamic'
 
 export default async function CampBackupContactPage({ params }: { params: Promise<{ slug: string; bookingId: string }> }) {
   const { slug, bookingId } = await params
-  let found: { child: string; camp: string; academy: string } | null = null
+  let found: { child: string; camp: string; academy: string; needBackup: boolean; needDob: boolean } | null = null
   if (/^[0-9a-f-]{36}$/i.test(bookingId)) {
     const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-    const { data: b } = await sb.from('camp_bookings').select('child_name, payment_status, camp:camps(name), organisation:organisations(name, slug)').eq('id', bookingId).maybeSingle()
+    const { data: b } = await sb.from('camp_bookings').select('child_name, child_dob, payment_status, camp:camps(name), organisation:organisations(name, slug)').eq('id', bookingId).maybeSingle()
     const org = b?.organisation as unknown as { name: string; slug: string } | null
     if (b && org?.slug?.toLowerCase() === slug.toLowerCase() && !['cancelled', 'refunded'].includes(b.payment_status as string)) {
-      found = { child: ((b.child_name as string) || '').trim().split(/\s+/)[0] || 'your child', camp: (b.camp as unknown as { name: string } | null)?.name || 'the camp', academy: org.name }
+      const { count: backups } = await sb.from('audit_log').select('id', { count: 'exact', head: true }).eq('action', 'camp.backup_contact').eq('entity_id', bookingId)
+      found = { child: ((b.child_name as string) || '').trim().split(/\s+/)[0] || 'your child', camp: (b.camp as unknown as { name: string } | null)?.name || 'the camp', academy: org.name, needBackup: !backups, needDob: !b.child_dob }
     }
   }
   return (
@@ -25,9 +26,11 @@ export default async function CampBackupContactPage({ params }: { params: Promis
         {found ? (
           <>
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#4ecde6]">{found.academy}</p>
-            <h1 className="mt-1 text-2xl font-bold leading-tight">A backup contact for {found.child}</h1>
-            <p className="mt-2 text-sm leading-relaxed text-white/65">For {found.camp}. If we cannot reach you during the camp, who else can we ring? It takes ten seconds.</p>
-            <BackupContactForm bookingId={bookingId} child={found.child} />
+            <h1 className="mt-1 text-2xl font-bold leading-tight">{found.needBackup ? `A backup contact for ${found.child}` : `${found.child}'s details`}</h1>
+            <p className="mt-2 text-sm leading-relaxed text-white/65">For {found.camp}. {found.needBackup ? 'If we cannot reach you during the camp, who else can we ring?' : ''}{found.needDob ? ' And their date of birth, so the coaches have their age.' : ''} It takes ten seconds.</p>
+            {found.needBackup || found.needDob
+              ? <BackupContactForm bookingId={bookingId} child={found.child} needBackup={found.needBackup} needDob={found.needDob} />
+              : <p className="mt-5 text-sm text-white/80" data-testid="camp-backup-nothing">Thank you, we have everything we need.</p>}
           </>
         ) : (
           <>

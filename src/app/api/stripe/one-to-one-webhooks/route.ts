@@ -1,3 +1,4 @@
+import { coachSessionChange } from '@/lib/one-to-one/coach-notify'
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
             venue: venue?.name || 'the venue', venueAddress: venue?.address, pricePence: s.price_pence,
           }).catch((e) => console.error('one-to-one receipt failed', e))
         }
+        await coachSessionChange(admin, 'booked', s)
         // Tell the academy. A 1-2-1 booked and paid online used to reach only the
         // parent; the academy found it by opening the timetable. Best-effort.
         await notifyOrgAdmins({

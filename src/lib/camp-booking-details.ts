@@ -46,9 +46,13 @@ export function medicalAnswered(medicalInfo: string | null | undefined): boolean
 }
 
 /** True when the answer was "nothing", so a register does not flag it as a medical note. */
+// What parents type when there's nothing to say. No.1 had six camp bookings reading "NA"
+// shown in red as a medical note (Cammy, 18 Oct 2026). Treated as "Nothing to report".
+const NOTHING = /^(n\/?a|n\.a\.?|none|no|nope|nil|nothing|nothing to report|not applicable|no issues|no medical( issues| conditions)?|-+|\.+|x)$/i
+
 export function hasMedicalNote(medicalInfo: string | null | undefined): boolean {
-  const t = (medicalInfo || '').trim()
-  return t.length > 0 && t.toLowerCase() !== NOTHING_TO_REPORT.toLowerCase()
+  const t = (medicalInfo || '').trim().replace(/[.!]+$/, '')
+  return t.length > 0 && t.toLowerCase() !== NOTHING_TO_REPORT.toLowerCase() && !NOTHING.test(t)
 }
 
 /** The first thing missing, in plain words for the parent, or null when the booking can go ahead. */

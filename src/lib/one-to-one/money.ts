@@ -11,6 +11,7 @@
  * Credits are rows in coaching_credits. The balance is their sum.
  */
 
+import { coachNewRegular, coachSessionChange } from './coach-notify'
 import type Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
@@ -192,6 +193,7 @@ export async function setUpWithCash(admin: SupabaseClient, orgId: string, slotId
     await markCash(admin, orgId, chargeId, byUserId)
   }
   await admin.from('regular_slots').update({ status: 'active' }).eq('id', slotId).eq('status', 'pending')
+  await coachNewRegular(admin, slot)
 }
 
 /** Webhook: the set-up Checkout completed. Slot goes active, card is remembered, month is paid. */
@@ -213,7 +215,8 @@ export async function completeSetup(admin: SupabaseClient, cs: Stripe.Checkout.S
   // The card belongs to the parent: every slot of theirs at this academy can use it.
   await admin.from('regular_slots').update({ stripe_customer_id: customer || null, stripe_payment_method_id: paymentMethod })
     .eq('organisation_id', slot.organisation_id).eq('parent_id', slot.parent_id)
-  await admin.from('regular_slots').update({ status: 'active' }).eq('id', slotId).eq('status', 'pending')
+  const { data: wentLive } = await admin.from('regular_slots').update({ status: 'active' }).eq('id', slotId).eq('status', 'pending').select('id')
+  if (wentLive?.length) await coachNewRegular(admin, slot)
   // No charge id = the month was already paid; the link only saved the card.
   const { data: charge } = chargeId ? await admin.from('coaching_charges').select('*').eq('id', chargeId).single() : { data: null }
   if (charge && (charge.status === 'pending' || charge.status === 'failed')) {
@@ -441,6 +444,7 @@ export async function declineByParent(admin: SupabaseClient, sessionId: string, 
     await admin.from('coaching_credits').insert({ organisation_id: s.organisation_id, parent_id: parentId, amount_pence: effect.ledgerPence, reason: 'parent_decline', session_id: s.id, note: `${outcome.tier} · ${fmtDate(s.session_date)} ${hhmm(s.start_minutes)}` })
   }
   const parent = await parentBits(admin, parentId); const bits = await orgBits(admin, s.organisation_id)
+  await coachSessionChange(admin, 'off', s, { why: "the family can't make it" })
   if (parent.email && !quiet) await sendDeclined({ academy: bits.name, to: parent.email, parentName: parent.name, date: s.session_date, startMinutes: s.start_minutes, message: effect.message }).catch(() => {})
   return { tier: outcome.tier, message: effect.message, ledgerPence: effect.ledgerPence }
 }
@@ -465,6 +469,7 @@ export async function cancelByAcademy(admin: SupabaseClient, orgId: string, sess
   }
   const to = s.guest_email || (s.parent_id ? (await parentBits(admin, s.parent_id)).email : null)
   const bits = await orgBits(admin, orgId)
+  await coachSessionChange(admin, 'off', s, { why: reason || 'cancelled by the academy' })
   if (to && !quiet) await sendAcademyCancelled({ academy: bits.name, to, date: s.session_date, startMinutes: s.start_minutes, creditedPence: wasCharged && s.parent_id ? s.price_pence : 0, refundedPence, reason }).catch(() => {})
 }
 

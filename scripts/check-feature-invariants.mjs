@@ -249,6 +249,18 @@ const FEATURES = [
   ['1-2-1s: academy date actions', `${A}/api/one-to-one/admin/route.ts`, ["case 'session.cant_make_it'", "case 'family.send_month'", 'markBreakdownDue(admin, orgId']],
   ['1-2-1s: 6pm run sends any breakdown still due', `${A}/api/cron/one-to-one-breakdowns/route.ts`, ['breakdownsDue(admin)']],
   ['1-2-1s: the 6pm run is scheduled', 'vercel.json', ['"/api/cron/one-to-one-breakdowns"']],
+  // ── Release A (18 Oct 2026): NA medical, credit history, change amount, coach emails, missing details, held dates
+  ['Camps: "NA" and the like are not medical notes', 'src/lib/camp-booking-details.ts', ['const NOTHING = /^(n', '!NOTHING.test(t)']],
+  ['1-2-1s: credit history and credit waiting', `${O}/regulars/page.tsx`, ['data-testid="credit-history"', 'data-testid="credit-waiting"', 'data-testid="family-month-setup"']],
+  ['1-2-1s: held dates shown for a family not set up yet', 'src/lib/one-to-one/family-month.ts', ["tag: 'held · not set up yet'", 'setUpPence']],
+  ['Camps: change amount on an unpaid booking, never £0', `${A}/api/admin/camps/[campId]/bookings/[bookingId]/amount/route.ts`, ['amount <= 0', "payment_status !== 'pending'", "action: 'camp_booking.amount_changed'"]],
+  ['Camps: change amount on the register', `${D}/camps/[campId]/RosterClient.tsx`, ['data-testid="camp-roster-change-amount"', 'data-testid="camp-roster-age-missing"', 'data-testid="camp-ask-details"']],
+  ['Camps: ask families for missing details', `${A}/api/admin/camps/[campId]/ask-details/route.ts`, ['missingDetails(svc, campId)', "action: 'camp.details_requested'"]],
+  ['Camps: family link takes a missing date of birth', `${A}/api/camps/backup-contact/route.ts`, ['validChildDob(body.dob)']],
+  ['1-2-1s: coaches emailed about their sessions', 'src/lib/one-to-one/coach-notify.ts', ['export async function coachNewRegular', 'export async function coachSessionChange']],
+  ['1-2-1s: coach emails wired in', 'src/lib/one-to-one/money.ts', ['await coachNewRegular(admin, slot)', "await coachSessionChange(admin, 'off', s"]],
+  ['1-2-1s: coach told about one-off bookings', `${A}/api/stripe/one-to-one-webhooks/route.ts`, ["await coachSessionChange(admin, 'booked', s)"]],
+  ['1-2-1s: coach told about cover and moves', `${A}/api/one-to-one/admin/route.ts`, ["coachSessionChange(admin, 'cover'", "coachSessionChange(admin, 'moved_out'"]],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

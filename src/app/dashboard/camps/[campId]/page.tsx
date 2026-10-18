@@ -11,6 +11,7 @@
  * No subscription / capacity-RPC / trial / Stripe-fee logic is touched.
  * Read-only SELECTs on camps, camp_bookings, players, profiles.
  */
+import { missingDetails } from '@/lib/camp-missing-details'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -277,6 +278,8 @@ export default async function CampDetailPage({
     .from('audit_log').select('entity_id, created_at, details').eq('action', CAMP_BACKUP_ACTION).in('entity_id', bookings.map((b) => b.id))).data) || []) as { entity_id: string; created_at: string; details: unknown }[])
 
   // Build the RosterClient input.
+  // Families missing a backup contact or a date of birth (for "Ask for missing details").
+  const missingCount = profile.role === 'admin' ? (await missingDetails(createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), campId)).length : 0
   const rosterBookings: CampRosterBooking[] = bookings.map((b) => ({
     id: b.id,
     child_name: b.child_name,
@@ -468,6 +471,7 @@ export default async function CampDetailPage({
         eligibleTargetCamps={eligibleTargetCamps}
         sourceCampPrice={(camp.price as number | null) ?? 0}
         callerIsAdmin={profile.role === 'admin'}
+        missingDetailsCount={missingCount}
         // Flexible Camps (Phase 3E). isFlexibleCamp gates the per-day
         // breakdown section + the "Days" column in the roster. When
         // false (whole-camp), RosterClient renders exactly as before.

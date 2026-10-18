@@ -229,3 +229,21 @@ export async function sendMonthBreakdown(f: {
     `),
   })
 }
+
+/**
+ * The coach is told about their own 1-2-1s (Cammy, No.1, 18 Oct 2026: "coaches receiving
+ * emails if someone books a 1-1 with them so I don't have to manually update them").
+ * New regular, new one-off, a date moved, a date off, cover. Plain and short.
+ */
+export async function sendCoachNotice(f: { academy: string; to: string; coachName: string | null; subject: string; heading: string; lines: string[]; parentPhone?: string | null }) {
+  return sendEmail({
+    to: f.to, fromName: f.academy, subject: f.subject,
+    html: shell(f.academy, `
+      <h1 style="font-size:20px;margin:12px 0 8px">${esc(f.heading)}</h1>
+      <p style="margin:0 0 10px;color:#5b6674">Hi ${esc((f.coachName || '').split(' ')[0] || 'coach')},</p>
+      ${f.lines.map((l) => `<p style="margin:0 0 6px;font-size:15px">${esc(l)}</p>`).join('')}
+      ${f.parentPhone ? `<p style="margin:12px 0 0;font-size:14px;color:#5b6674">Parent's phone: <a href="tel:${esc(f.parentPhone.replace(/\s+/g, ''))}">${esc(f.parentPhone)}</a></p>` : ''}
+      <p style="margin:16px 0 0;font-size:13px;color:#5b6674">It's on your timetable in Player Portal.</p>
+    `),
+  })
+}

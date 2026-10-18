@@ -33,6 +33,8 @@ export interface FamilyMonth {
   creditPence: number
   toPayPence: number
   state: 'due' | 'paid' | 'failed' | 'covered'
+  /** Dates held for a regular the parent hasn't set up yet: shown, not on this bill, they go on the set-up link. */
+  setUpPence: number
 }
 
 const PAID = ['paid_online', 'paid_cash']
@@ -61,25 +63,32 @@ export function offReason(r: Pick<FamilySessionRow, 'status' | 'decline_tier' | 
  * the month has not been charged yet, exactly as the 1st-of-month charge would).
  */
 export function buildFamilyMonth(rows: FamilySessionRow[], charge: FamilyCharge | null, creditBalancePence: number, pendingSlotIds: Set<string> = new Set()): FamilyMonth {
-  const mine = rows.filter((r) => r.status !== 'held' && (!r.regular_slot_id || !pendingSlotIds.has(r.regular_slot_id)))
   const line = (r: FamilySessionRow): MonthLine => ({ id: r.id, date: r.session_date, startMinutes: r.start_minutes, coachId: r.coach_id, venueId: r.venue_id, pricePence: r.price_pence, slotId: r.regular_slot_id, playerId: r.player_id })
-  const on: MonthLine[] = []
+  const notSetUp = (r: FamilySessionRow) => !!r.regular_slot_id && pendingSlotIds.has(r.regular_slot_id)
+  const all = rows.filter((r) => r.status !== 'held')
+  const mine = all.filter((r) => !notSetUp(r))
+  // A regular the parent hasn't set up yet: its dates are held and shown (Aaron, Granite, 18 Oct 2026:
+  // the panel said "no sessions" while three dates were held), but they are not on this bill.
+  const held = all.filter(notSetUp).sort((a, b) => a.session_date.localeCompare(b.session_date) || a.start_minutes - b.start_minutes)
+  const setUpPence = held.filter((r) => r.charge_state === 'unpaid' && isChargeable({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier })).reduce((a, r) => a + r.price_pence, 0)
+  const on: MonthLine[] = held.filter((r) => isChargeable({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier })).map((r) => ({ ...line(r), tag: 'held · not set up yet' }))
   const off: OffLine[] = []
   for (const r of [...mine].sort((a, b) => a.session_date.localeCompare(b.session_date) || a.start_minutes - b.start_minutes)) {
     const chargeable = isChargeable({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier })
     if (chargeable) on.push({ ...line(r), ...(r.status === 'declined' ? { tag: 'released late · still charged' } : r.source === 'admin' ? { tag: 'moved here' } : {}) })
     else off.push({ ...line(r), why: offReason(r) })
   }
+  on.sort((a, b) => a.date.localeCompare(b.date) || a.startMinutes - b.startMinutes)
   if (charge && (PAID.includes(charge.status) || charge.status === 'waived')) {
-    return { on, off, sessionsPence: charge.sessions_pence, creditPence: charge.credit_applied_pence, toPayPence: 0, state: charge.status === 'waived' ? 'covered' : 'paid' }
+    return { on, off, sessionsPence: charge.sessions_pence, creditPence: charge.credit_applied_pence, toPayPence: 0, state: charge.status === 'waived' ? 'covered' : 'paid', setUpPence }
   }
   if (charge && (charge.status === 'failed' || charge.status === 'pending')) {
-    return { on, off, sessionsPence: charge.sessions_pence, creditPence: charge.credit_applied_pence, toPayPence: charge.amount_pence, state: charge.status === 'failed' ? 'failed' : 'due' }
+    return { on, off, sessionsPence: charge.sessions_pence, creditPence: charge.credit_applied_pence, toPayPence: charge.amount_pence, state: charge.status === 'failed' ? 'failed' : 'due', setUpPence }
   }
   // Not charged yet: exactly what the 1st-of-month charge would take.
   const unpaid = mine.filter((r) => r.charge_state === 'unpaid' && ['regular', 'admin'].includes(r.source))
   const b = chargeBreakdown(unpaid.map((r) => ({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier })), creditBalancePence)
-  return { on, off, sessionsPence: b.sessionsPence, creditPence: b.creditAppliedPence, toPayPence: b.amountPence, state: b.amountPence === 0 && b.sessionsPence > 0 ? 'covered' : 'due' }
+  return { on, off, sessionsPence: b.sessionsPence, creditPence: b.creditAppliedPence, toPayPence: b.amountPence, state: b.amountPence === 0 && b.sessionsPence > 0 ? 'covered' : 'due', setUpPence }
 }
 
 export const lineWhen = (l: MonthLine) => `${fmtDate(l.date)} · ${hhmm(l.startMinutes)}`

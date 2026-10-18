@@ -12,6 +12,11 @@ export const dynamic = 'force-dynamic'
 
 // Regulars — the protected thing. A slot is theirs until they give it up.
 const DAY_LONG: Record<number, string> = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' }
+// Credit history in plain words.
+const CREDIT_REASON: Record<string, string> = {
+  admin_adjust: 'Added by the academy', applied_to_charge: 'Used on a month', academy_cancel: 'Session cancelled by the academy',
+  parent_decline: "Couldn't make a date", requested_by_customer: 'Refund',
+}
 const STATUS: Record<SlotRowDb['status'], { label: string; cls: string }> = {
   active: { label: 'active', cls: 'bg-[#67c79a]/15 text-[#8fdcb6]' },
   pending: { label: 'awaiting payment', cls: 'bg-[#4ecde6]/15 text-[#4ecde6]' },
@@ -27,7 +32,7 @@ export default async function RegularsPage() {
   const { data: chargeRows } = await admin.from('coaching_charges').select('parent_id, status, amount_pence, attempt_count').eq('organisation_id', orgId).eq('billing_month', thisMonth)
   const chargeFor = (parentId: string) => (chargeRows ?? []).find((c) => c.parent_id === parentId)
   // Credit on account per family: the sum of their ledger. Shown on every row, entered from any row.
-  const { data: creditRows } = await admin.from('coaching_credits').select('parent_id, amount_pence').eq('organisation_id', orgId)
+  const { data: creditRows } = await admin.from('coaching_credits').select('parent_id, amount_pence, reason, note, created_at').eq('organisation_id', orgId).order('created_at')
   const creditOf = (parentId: string) => (creditRows ?? []).filter((c) => c.parent_id === parentId).reduce((a, c) => a + c.amount_pence, 0)
   // Each family's dates and bill for this month and next (Regulars → More). John, 18 Oct 2026.
   const today = todayLondon()
@@ -76,6 +81,20 @@ export default async function RegularsPage() {
     return (
       <div className="flex flex-col items-start gap-1">
         {bal !== 0 && <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${bal > 0 ? 'bg-[#67c79a]/15 text-[#8fdcb6]' : 'bg-[#e0736d]/15 text-[#f3a7a2]'}`}>{bal > 0 ? `${gbp(bal)} credit` : `owes ${gbp(-bal)}`}</span>}
+        {/* Credit you can see (Cammy, 18 Oct 2026: "I've added credits but it hasn't changed"). */}
+        {bal > 0 && s.status === 'pending' && <span className="text-[12px] font-semibold text-[#ecc98a]" data-testid="credit-waiting">Credit waiting: it comes off once they&apos;re set up (set-up link or Paid in cash).</span>}
+        {(creditRows ?? []).some((c) => c.parent_id === s.parent_id) && (
+          <Disclosure label="See credit history">
+            <ul className="mt-1 w-full max-w-md divide-y divide-[#1d2c42] rounded-lg border border-[#1d2c42] bg-[#0f1a2b] text-[13px]" data-testid="credit-history">
+              {(creditRows ?? []).filter((c) => c.parent_id === s.parent_id).map((c, i) => (
+                <li key={i} className="flex items-start justify-between gap-3 px-3 py-2">
+                  <span className="min-w-0 text-[#93a2ba]"><span className="text-white/80">{new Date(c.created_at as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span> · {CREDIT_REASON[c.reason as string] || c.reason}{c.note ? ` · ${c.note}` : ''}</span>
+                  <span className={`shrink-0 tabular-nums font-semibold ${(c.amount_pence as number) >= 0 ? 'text-[#8fdcb6]' : 'text-[#f3a7a2]'}`}>{(c.amount_pence as number) >= 0 ? '+' : '−'}{gbp(Math.abs(c.amount_pence as number))}</span>
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
+        )}
         {s.status !== 'released' && (
           <Disclosure label={bal === 0 ? 'Add credit' : 'Adjust'}>
             <ActionForm action="credit.add" submitLabel="Save credit" extra={{ parentId: s.parent_id }} className="mt-2 w-64 rounded-xl border border-[#1d2c42] bg-[#0f1a2b] p-3">
@@ -138,7 +157,7 @@ export default async function RegularsPage() {
           {fm.on.filter(ours).map((l) => (
             <div key={l.id} className={row} data-testid="family-month-line">
               <span className="text-sm"><span className="font-semibold text-white">{lineWhen(l)}</span> <span className="text-[#93a2ba]">· {cname(l.coachId)} · {gbp(l.pricePence)}</span>{l.tag && <span className="ml-2 rounded-full bg-[#4ecde6]/[0.12] px-2 py-0.5 text-[11px] font-semibold text-[#4ecde6]">{l.tag}</span>}</span>
-              {l.date >= today && !l.tag?.startsWith('released') && (
+              {l.date >= today && !l.tag?.startsWith('released') && !l.tag?.startsWith('held') && (
                 <span className="flex flex-wrap items-start gap-1.5">
                   <Disclosure label="Move" asButton>
                     <ActionForm action="session.move" extra={{ sessionId: l.id, quiet: true }} submitLabel="Move it" className="mt-1.5 w-60 rounded-lg border border-[#1d2c42] bg-[#0f1a2b] p-2.5">
@@ -158,16 +177,21 @@ export default async function RegularsPage() {
               <span className="rounded-full bg-[#d8a95a]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#ecc98a]">{l.why}</span>
             </div>
           ))}
+          {fm.setUpPence > 0 && (
+            <p className="mt-2 rounded-lg border border-[#d8a95a]/40 bg-[#d8a95a]/10 px-3 py-2 text-[13px] text-[#ecc98a]" data-testid="family-month-setup">Not set up yet: these dates are held. {gbp(fm.setUpPence)} goes on their set-up link when they pay it, or mark them paid in cash.</p>
+          )}
+          {(fm.sessionsPence > 0 || fm.state !== 'due') && (
           <div className="mt-2 rounded-lg bg-white/[0.04] px-3 py-2.5 text-sm" data-testid="family-month-total">
             <div className="flex justify-between text-[#93a2ba]"><span>{fm.on.length} session{fm.on.length === 1 ? '' : 's'}{others ? ` (incl. ${others} for their other regular)` : ''}</span><span className="text-white">{gbp(fm.sessionsPence)}</span></div>
             {fm.creditPence !== 0 && <div className="flex justify-between text-[#93a2ba]"><span>{fm.creditPence > 0 ? 'Credit used' : 'Owed from before'}</span><span className={fm.creditPence > 0 ? 'text-[#8fdcb6]' : 'text-[#f3a7a2]'}>{fm.creditPence > 0 ? '−' : '+'}{gbp(Math.abs(fm.creditPence))}</span></div>}
             <div className="mt-1.5 flex justify-between border-t border-[#293b58] pt-1.5 font-semibold text-white"><span>{fm.state === 'paid' ? 'Paid' : `${label} to pay`}</span><span>{fm.state === 'paid' ? gbp(fm.sessionsPence - fm.creditPence) : gbp(fm.toPayPence)}</span></div>
             <p className="mt-0.5 text-[11px] text-[#5b6c86]">{fm.state === 'paid' ? 'Changes now are credited to next month.' : fm.state === 'failed' ? 'Their card failed. Send a pay link from Needs attention.' : fm.state === 'covered' ? 'Nothing comes off their card.' : m > thisMonth ? `Charged to their card on 1 ${label}.` : 'Due now: it goes on their set-up link or pay link.'}</p>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          )}
+          {fm.sessionsPence > 0 && <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             {dueSet.has(`${s.parent_id}|${m}`) ? <span className="text-[12px] font-semibold text-[#ecc98a]" data-testid="family-month-unsent">Changes not sent to the parent yet. They go at 6pm, or send now.</span> : <span />}
             <ActionButton tone="primary" body={{ action: 'family.send_month', parentId: s.parent_id, month: m }}>{`Email ${label} to the parent`}</ActionButton>
-          </div>
+          </div>}
         </div>
       </details>
     )

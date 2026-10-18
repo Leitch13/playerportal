@@ -72,6 +72,8 @@ export async function breakdownsDue(admin: SupabaseClient, orgId?: string): Prom
 export async function sendFamilyMonth(admin: SupabaseClient, orgId: string, parentId: string, month: string, userId: string | null): Promise<{ sentTo: string | null; reason?: string }> {
   const m = (await loadFamilyMonths(admin, orgId, [month], [parentId])).get(`${parentId}|${month}`)
   if (!m || (m.on.length === 0 && m.off.length === 0)) return { sentTo: null, reason: 'No sessions that month' }
+  // Not set up yet: their set-up link is the email that matters, not a month breakdown.
+  if (m.sessionsPence === 0 && m.setUpPence > 0 && m.state === 'due') return { sentTo: null, reason: "They haven't set up yet. Send their set-up link instead." }
   const parent = await parentBits(admin, parentId)
   if (!parent.email) return { sentTo: null, reason: 'This parent has no email address' }
   const bits = await orgBits(admin, orgId)

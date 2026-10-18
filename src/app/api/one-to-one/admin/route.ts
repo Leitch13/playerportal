@@ -4,6 +4,7 @@ import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, 
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { emailPriceChange } from '@/lib/one-to-one/price-change'
+import { coachSessionChange } from '@/lib/one-to-one/coach-notify'
 import { markBreakdownDue, sendFamilyMonth } from '@/lib/one-to-one/family-month-send'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { seatForNewSlot, seatForSession, seatClashMessage, sameWeeks, onSameWeeks, type SessionType } from '@/lib/one-to-one/seats'
@@ -511,6 +512,9 @@ export async function POST(req: NextRequest) {
           .in('id', ids).eq('organisation_id', orgId).eq('status', 'scheduled')
         if (error) throw error
         if (str(body.exceptionId)) await admin.from('coach_hour_exceptions').update({ status: 'resolved', resolved_by: userId, resolved_at: new Date().toISOString() }).eq('id', str(body.exceptionId)).eq('organisation_id', orgId)
+        // The covering coach is told, one email per session.
+        const { data: covered } = await admin.from('coaching_sessions').select('organisation_id, coach_id, parent_id, player_id, guest_child_name, venue_id, session_date, start_minutes').in('id', ids).eq('organisation_id', orgId)
+        for (const c of covered ?? []) await coachSessionChange(admin, 'cover', c as Parameters<typeof coachSessionChange>[2])
         return NextResponse.json({ ok: true })
       }
       case 'session.move': {
@@ -538,6 +542,9 @@ export async function POST(req: NextRequest) {
         if (e2) throw e2
         // Tell the family. Best-effort: the move stands even if the email fails.
         if (body.quiet === true) await markBreakdownDue(admin, orgId, s.parent_id as string | null, [s.session_date as string, date], userId)
+        // Coaches: the one who had it is told it moved; a different new coach is told it's theirs.
+        await coachSessionChange(admin, 'moved_out', s, { toDate: date, toMinutes: start })
+        if (coachId !== s.coach_id) await coachSessionChange(admin, 'moved_in', { ...s, coach_id: coachId, venue_id: venueId, session_date: date, start_minutes: start })
         if (body.quiet !== true && (date !== s.session_date || start !== s.start_minutes || coachId !== s.coach_id || venueId !== s.venue_id)) {
           const [{ data: org }, { data: parent }, { data: coach }, { data: venue }] = await Promise.all([
             admin.from('organisations').select('name').eq('id', orgId).single(),

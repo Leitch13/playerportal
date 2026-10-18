@@ -31,7 +31,9 @@ describe("a family's month: what's on, what's off and why, and the bill", () => 
     const m = buildFamilyMonth(nov, { status: 'paid_online', amount_pence: 16000, credit_applied_pence: 0, sessions_pence: 16000 }, 4000)
     expect([m.state, m.toPayPence]).toEqual(['paid', 0])
   })
-  it("a slot the parent hasn't set up isn't on their bill", () => {
-    expect(buildFamilyMonth(nov, null, 0, new Set(['s1'])).on.length).toBe(0)
+  it("a slot the parent hasn't set up shows its held dates but isn't on this bill", () => {
+    const m = buildFamilyMonth(nov, null, 0, new Set(['s1']))
+    expect(m.on.map((l) => l.tag)).toEqual(['held · not set up yet', 'held · not set up yet', 'held · not set up yet'])
+    expect([m.sessionsPence, m.toPayPence, m.setUpPence]).toEqual([0, 0, 12000])
   })
 })

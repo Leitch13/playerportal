@@ -84,6 +84,7 @@ export default function RosterClient({
   eligibleTargetCamps = [],
   sourceCampPrice = 0,
   callerIsAdmin = false,
+  missingDetailsCount = 0,
   // Flexible Camps (Phase 3E). Both default to whole-camp-shaped so
   // existing call sites remain byte-identical.
   isFlexibleCamp = false,
@@ -97,6 +98,8 @@ export default function RosterClient({
   eligibleTargetCamps?: EligibleTargetCamp[]
   sourceCampPrice?: number
   callerIsAdmin?: boolean
+  /** Families missing a backup contact or a date of birth. */
+  missingDetailsCount?: number
   isFlexibleCamp?: boolean
   perDayGroups?: CampPerDayGroup[]
 }) {
@@ -268,6 +271,35 @@ export default function RosterClient({
     setLinkingId(null)
   }
 
+  // ─── Ask families for missing details (No.1, 18 Oct 2026) ───
+  const [asking, setAsking] = useState<'idle' | 'confirm' | 'sending' | string>('idle')
+  async function askDetails() {
+    setAsking('sending')
+    try {
+      const res = await fetch(`/api/admin/camps/${campId}/ask-details`, { method: 'POST' })
+      const j = await res.json().catch(() => ({})) as { ok?: boolean; sent?: number; error?: string }
+      setAsking(j.ok ? `Sent to ${j.sent} famil${j.sent === 1 ? 'y' : 'ies'}.` : (j.error || 'Could not send.'))
+    } catch { setAsking('Could not send.') }
+  }
+
+  // ─── Change amount on an unpaid booking (WLFA, 17 Oct 2026) ───
+  const [amountFor, setAmountFor] = useState<string | null>(null)
+  const [amountVal, setAmountVal] = useState('')
+  const [amountWhy, setAmountWhy] = useState('')
+  const [amountErr, setAmountErr] = useState('')
+  const [amountSaving, setAmountSaving] = useState(false)
+  async function saveAmount(bookingId: string) {
+    setAmountSaving(true); setAmountErr('')
+    try {
+      const res = await fetch(`/api/admin/camps/${campId}/bookings/${bookingId}/amount`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: Number(amountVal), reason: amountWhy }) })
+      const json = await res.json().catch(() => ({})) as { ok?: boolean; error?: string }
+      if (!res.ok || !json.ok) { setAmountErr(json.error || 'Could not change it.'); setAmountSaving(false); return }
+      setAmountFor(null); setAmountVal(''); setAmountWhy('')
+      window.location.reload()
+    } catch { setAmountErr('Could not change it.') }
+    setAmountSaving(false)
+  }
+
   async function removeBooking(b: CampRosterBooking) {
     if (!confirm(`Remove ${b.child_name}'s unpaid booking? The seat is freed and any payment link they were sent stops working. This can't be undone.`)) return
     setRemovingId(b.id)
@@ -302,6 +334,16 @@ export default function RosterClient({
 
   return (
     <div className="space-y-3">
+      {callerIsAdmin && missingDetailsCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/[0.07] px-4 py-3" data-testid="camp-ask-details">
+          <span className="text-sm text-amber-200">{missingDetailsCount} {missingDetailsCount === 1 ? 'family is' : 'families are'} missing a backup contact or a date of birth.</span>
+          {asking === 'idle' && <button type="button" onClick={() => setAsking('confirm')} className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-black">Ask them for it</button>}
+          {asking === 'confirm' && <span className="flex items-center gap-2 text-xs text-amber-100">Email {missingDetailsCount} {missingDetailsCount === 1 ? 'family' : 'families'} a link? <button type="button" onClick={askDetails} className="rounded-md bg-amber-400 px-2.5 py-1 font-bold text-black">Yes, send</button><button type="button" onClick={() => setAsking('idle')} className="text-white/60">No</button></span>}
+          {asking === 'sending' && <span className="text-xs text-amber-100">Sending…</span>}
+          {!['idle', 'confirm', 'sending'].includes(asking) && <span className="text-xs font-semibold text-amber-100">{asking}</span>}
+        </div>
+      )}
+
       {/* ─── TOOLBAR ─── */}
       <div className="rounded-xl border border-white/[0.08] bg-[#0f1a2b] p-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between" data-testid="camp-roster-toolbar">
         <div className="flex-1 max-w-md">
@@ -450,6 +492,7 @@ export default function RosterClient({
                       <td className="px-6 py-3 text-white font-medium">
                         {b.child_name || '—'}
                         {/* Unpaid: red box with what's outstanding — src/lib/camp-payment-display.ts */}
+                        {b.child_age == null && <span data-testid="camp-roster-age-missing" className="ml-2 inline-block rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300 whitespace-nowrap">Age missing</span>}
                         {outstanding(b.payment_status, b.amount_paid) && <span data-testid="camp-roster-outstanding" className="ml-2 inline-block rounded-md border border-red-500/50 bg-red-500/15 px-2 py-0.5 text-[11px] font-bold text-red-300 whitespace-nowrap">{outstanding(b.payment_status, b.amount_paid)}</span>}
                       </td>
                       <td className="px-3 py-3 text-white/70 text-xs">{b.child_age != null ? `${b.child_age}` : '—'}</td>
@@ -629,6 +672,20 @@ export default function RosterClient({
                             >
                               {linkingId === b.id ? 'Sending…' : linkResult[b.id] === 'ok' ? 'Link sent ✓' : 'Send payment link'}
                             </button>
+                          )}
+                          {callerIsAdmin && b.payment_status === 'pending' && (
+                            amountFor === b.id ? (
+                              <span className="flex flex-wrap items-center gap-1.5" data-testid="camp-roster-amount-form">
+                                <span className="relative"><span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[11px] text-white/40">£</span>
+                                  <input inputMode="decimal" value={amountVal} onChange={(e) => setAmountVal(e.target.value.replace(/[^0-9.]/g, ''))} placeholder={Number(b.amount_paid || 0).toFixed(2)} aria-label="New amount" className="w-20 rounded-md border border-white/15 bg-black/30 py-1 pl-5 pr-2 text-[12px] text-white" /></span>
+                                <input value={amountWhy} onChange={(e) => setAmountWhy(e.target.value)} placeholder="Why? e.g. sibling discount" aria-label="Reason" className="w-44 rounded-md border border-white/15 bg-black/30 px-2 py-1 text-[12px] text-white" />
+                                <button type="button" disabled={amountSaving} onClick={() => saveAmount(b.id)} className="rounded-md bg-[#4ecde6] px-2 py-1 text-[11px] font-bold text-black disabled:opacity-50">{amountSaving ? 'Saving…' : 'Save'}</button>
+                                <button type="button" onClick={() => { setAmountFor(null); setAmountErr('') }} className="px-1 text-[11px] text-white/50">Cancel</button>
+                                {amountErr && <span className="basis-full text-[11px] text-red-300">{amountErr}</span>}
+                              </span>
+                            ) : (
+                              <button type="button" onClick={() => { setAmountFor(b.id); setAmountVal(Number(b.amount_paid || 0).toFixed(2)); setAmountWhy('') }} data-testid="camp-roster-change-amount" className="px-2 py-1 rounded-md text-[11px] font-semibold bg-white/[0.06] text-white/80 hover:bg-white/[0.1]">Change amount</button>
+                            )
                           )}
                           {callerIsAdmin && b.payment_status === 'pending' && (
                             <button

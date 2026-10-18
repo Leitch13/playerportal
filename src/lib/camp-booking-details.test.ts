@@ -42,4 +42,10 @@ describe('phone number', () => {
 describe('the register only flags a real medical note', () => {
   it('"Nothing to report" is not a note', () => { expect(hasMedicalNote(NOTHING_TO_REPORT)).toBe(false); expect(hasMedicalNote(' nothing to report ')).toBe(false); expect(hasMedicalNote(null)).toBe(false) })
   it('anything else is', () => { expect(hasMedicalNote('Nut allergy')).toBe(true) })
+  // No.1, 18 Oct 2026: parents typed "NA" and it showed in red.
+  it('NA, none, no and the like are not notes', () => {
+    for (const t of ['NA', 'N/A', 'n/a', 'na.', 'None', 'no', 'Nil', 'nothing', '-', 'No medical conditions', 'not applicable']) expect(hasMedicalNote(t)).toBe(false)
+    expect(hasMedicalNote('No nuts please')).toBe(true)
+    expect(hasMedicalNote('Asthma - inhaler in bag')).toBe(true)
+  })
 })
