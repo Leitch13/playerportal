@@ -16,6 +16,7 @@
  * Reads from camp_bookings directly. Forward-compatible with missing
  * `booking_source` column (Sprint 9 migration 081 may not be applied).
  */
+import { hasMedicalNote } from '@/lib/camp-booking-details'
 import { outstanding } from '@/lib/camp-payment-display'
 import { redirect } from 'next/navigation'
 import { sellsSingleDays } from '@/lib/flexible-camps'
@@ -237,7 +238,7 @@ export default async function CampPrintRegisterPage({
                     </thead>
                     <tbody>
                       {day.rows.map((r, i) => {
-                        const hasMedical = !!(r.medical_info && r.medical_info.trim())
+                        const hasMedical = hasMedicalNote(r.medical_info)
                         return (
                           <tr key={r.id}>
                             <td>{i + 1}</td>
@@ -279,7 +280,7 @@ export default async function CampPrintRegisterPage({
             </thead>
             <tbody>
               {rows.map((r, i) => {
-                const hasMedical = !!(r.medical_info && r.medical_info.trim())
+                const hasMedical = hasMedicalNote(r.medical_info)
                 return (
                   <tr key={r.id}>
                     <td>{i + 1}</td>

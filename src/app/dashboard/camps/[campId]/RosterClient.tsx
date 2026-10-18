@@ -480,7 +480,7 @@ export default function RosterClient({
                     b.parent_phone,
                     WA_TEMPLATES.parentToAcademyHi({ academyName, childName: b.child_name || undefined }),
                   )
-                  const hasMedical = !!(b.medical_info && b.medical_info.trim())
+                  const hasMedical = hasMedicalNote(b.medical_info)
                   const resent = resentMap[b.id]
                   return (
                     <tr

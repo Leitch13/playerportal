@@ -261,6 +261,9 @@ const FEATURES = [
   ['1-2-1s: coach emails wired in', 'src/lib/one-to-one/money.ts', ['await coachNewRegular(admin, slot)', "await coachSessionChange(admin, 'off', s"]],
   ['1-2-1s: coach told about one-off bookings', `${A}/api/stripe/one-to-one-webhooks/route.ts`, ["await coachSessionChange(admin, 'booked', s)"]],
   ['1-2-1s: coach told about cover and moves', `${A}/api/one-to-one/admin/route.ts`, ["coachSessionChange(admin, 'cover'", "coachSessionChange(admin, 'moved_out'"]],
+  ['Camps: register table uses the NA rule', `${D}/camps/[campId]/RosterClient.tsx`, ['const hasMedical = hasMedicalNote(b.medical_info)']],
+  ['Camps: printed register uses the NA rule', `${D}/camps/[campId]/print/page.tsx`, ['const hasMedical = hasMedicalNote(r.medical_info)']],
+  ['Classes: live register uses the NA rule', `${D}/attendance/register/[groupId]/LiveRegisterClient.tsx`, ['const hasMedical = hasMedicalNote(p.medical_info)']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

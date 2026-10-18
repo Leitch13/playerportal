@@ -24,6 +24,7 @@
  */
 'use client'
 
+import { hasMedicalNote } from '@/lib/camp-booking-details'
 import { useEffect, useMemo, useState } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
@@ -293,7 +294,7 @@ export default function LiveRegisterClient({
             {players.map((p) => {
               const state = attendance[p.id] || 'unmarked'
               const age = ageFromDob(p.date_of_birth)
-              const hasMedical = !!(p.medical_info && p.medical_info.trim())
+              const hasMedical = hasMedicalNote(p.medical_info)
               const emergencyName = p.emergency_contact_name
               const emergencyPhone = p.emergency_contact_phone
               const initials = `${p.first_name?.[0] || ''}${p.last_name?.[0] || ''}`.toUpperCase()
