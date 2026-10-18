@@ -17,7 +17,8 @@ export async function act(body: Record<string, unknown>, endpoint = '/api/one-to
 }
 
 /** Plain-English result for actions whose success is otherwise invisible. */
-function resultText(kind: 'roll' | undefined, r: Record<string, unknown>): string | null {
+function resultText(kind: 'roll' | 'sent' | undefined, r: Record<string, unknown>): string | null {
+  if (kind === 'sent') return typeof r.warning === 'string' && r.warning ? r.warning : `Sent ${Number(r.sent) || 0} link${Number(r.sent) === 1 ? '' : 's'}.`
   if (kind !== 'roll') return null
   const created = Number(r.created) || 0
   const m = typeof r.month === 'string' ? new Date(`${r.month.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' }) : 'that month'
@@ -38,7 +39,7 @@ export function ActionButton({
   /** Defaults to the academy route. A coach's page posts to its own. */
   endpoint?: string
   /** Show what the action did, for buttons that otherwise look like they did nothing. */
-  result?: 'roll'
+  result?: 'roll' | 'sent'
 }) {
   const router = useRouter()
   const [pending, start] = useTransition()
@@ -65,7 +66,8 @@ export function ActionButton({
       router.refresh()
     })
   }
-  const cls = `inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50`
+  // Bigger on a laptop or desktop (John, 17 Oct 2026); phone size unchanged.
+  const cls = `inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold whitespace-nowrap disabled:opacity-50 lg:h-10 lg:px-4 lg:text-sm`
   if (asking) {
     return (
       <span className="inline-flex max-w-xs flex-col items-start gap-1.5 rounded-lg border border-[#293b58] bg-black/20 p-2" role="alertdialog">

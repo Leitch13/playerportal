@@ -425,6 +425,18 @@ export async function POST(req: NextRequest) {
         await setUpWithCash(admin, orgId, str(body.id), userId)
         return NextResponse.json({ ok: true })
       }
+      // "Resend all": every family still waiting gets their set-up link again. The academy
+      // presses it (after a check); it is never sent by the app on its own.
+      case 'slot.setup_link_all': {
+        if (!(await paymentsReady(admin, orgId))) return bad(ACADEMY_NOT_READY_MESSAGE)
+        const { data: waiting } = await admin.from('regular_slots').select('id').eq('organisation_id', orgId).eq('status', 'pending')
+        let sent = 0
+        const failed: string[] = []
+        for (const w of waiting ?? []) {
+          try { await sendSetupCheckout(admin, orgId, w.id as string); sent++ } catch (e) { failed.push(e instanceof Error ? e.message : 'failed') }
+        }
+        return NextResponse.json({ ok: true, sent, failed: failed.length, warning: failed.length ? `${sent} sent. ${failed.length} couldn't be sent: ${[...new Set(failed)].join('; ')}` : null })
+      }
       case 'slot.setup_link': {
         if (!(await paymentsReady(admin, orgId))) return bad(ACADEMY_NOT_READY_MESSAGE)
         const r = await sendSetupCheckout(admin, orgId, str(body.id))

@@ -235,6 +235,11 @@ const FEATURES = [
   ['Classes: class page shows its prices, red when none', `${D}/groups/[id]/page.tsx`, ['data-testid="class-prices"', 'data-testid="class-prices-none"', 'data-testid="class-prices-button"']],
   ['Classes: list flags a class with no price', `${D}/groups/GroupCard.tsx`, ['data-testid="class-card-no-price"']],
   ['Classes: price page has no ready-made templates, own names', `${D}/groups/[id]/plans/ClassPlanManager.tsx`, ['+ Add a price', 'Name parents see *']],
+  // ── 1-2-1s Needs you: grouped, short rows, Show all, Resend all, bigger buttons (John, 17 Oct 2026)
+  ['1-2-1s: Needs you grouped with short rows', `${O}/page.tsx`, ['testId="needs-unpaid"', "action: 'slot.setup_link_all'", 'Release the slot']],
+  ['1-2-1s: Needs you shows the first few and Show all', `${O}/NeedsGroup.tsx`, ['data-testid="needs-show-all"', 'rows.slice(0, show)']],
+  ['1-2-1s: Resend all links', `${A}/api/one-to-one/admin/route.ts`, ["case 'slot.setup_link_all'"]],
+  ['1-2-1s: bigger buttons on a laptop', `${O}/ui.tsx`, ['lg:h-10 lg:px-4 lg:text-sm']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 

@@ -379,7 +379,8 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
       key: `pending:${s.id}`, kind: 'unpaid', date: s.starts_on,
       title: `${s.player?.first_name ?? 'Child'} ${s.player?.last_name ?? ''} · slot set up, parent hasn't confirmed`,
       detail: `${DAY[s.weekday]} ${hhmm(s.start_minutes)} with ${coachName(s.coach_id)} at ${venueName(s.venue_id)}. The time is held. Activates when the parent pays the set-up link.`,
-      ids: { slotId: s.id },
+      // The short row on Needs you: who, when, which coach, what a session costs.
+      ids: { slotId: s.id, child: `${s.player?.first_name ?? 'Child'} ${s.player?.last_name ?? ''}`.trim(), when: `${DAY[s.weekday]} ${hhmm(s.start_minutes)}`, coach: coachName(s.coach_id).split(' ')[0], price: String(s.price_pence) },
     })
   }
   items.sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'))

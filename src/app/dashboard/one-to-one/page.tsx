@@ -2,27 +2,25 @@ import Link from 'next/link'
 import { requireAdmin, needsAttention, getCoaches, getVenues, getSlots, getSessions, hhmm, fmtDate, type AttentionItem } from '@/lib/one-to-one/db'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { ActionButton } from './ui'
+import { NeedsGroup } from './NeedsGroup'
 
 export const dynamic = 'force-dynamic'
 
 // Needs attention — the home screen. If it would need a human, it's here.
 // Everything else is silent.
-const KIND: Record<AttentionItem['kind'], { label: string; chip: string; glyph: string }> = {
-  charge: { label: 'Payment', chip: 'bg-[#e0736d]/15 text-[#f3a7a2]', glyph: '£' },
-  cover: { label: 'Cover', chip: 'bg-[#e0736d]/15 text-[#f3a7a2]', glyph: '!' },
-  closure: { label: 'Venue closed', chip: 'bg-[#e0736d]/15 text-[#f3a7a2]', glyph: '×' },
-  unpaid: { label: 'Set-up', chip: 'bg-[#d8a95a]/15 text-[#ecc98a]', glyph: '…' },
-  pair: { label: '2-to-1', chip: 'bg-[#d8a95a]/15 text-[#ecc98a]', glyph: '2' },
-  hold: { label: 'Held', chip: 'bg-white/10 text-white/60', glyph: '·' },
-  request: { label: 'Request', chip: 'bg-[#4ecde6]/15 text-[#4ecde6]', glyph: '?' },
-}
 
 // Most urgent first: a session with no coach, then money, then housekeeping.
 const KIND_ORDER: AttentionItem['kind'][] = ['cover', 'closure', 'charge', 'unpaid', 'pair', 'request', 'hold']
 const GROUP_LABEL: Record<AttentionItem['kind'], string> = {
-  cover: 'A coach is out', closure: 'A venue is closed', charge: 'A card payment failed', unpaid: 'Set up, not paid yet',
-  pair: '2-to-1 with a seat free', request: 'A parent has asked for a time', hold: 'Held while someone pays',
+  cover: 'A coach is out', closure: 'A venue is closed', charge: 'Card payments failed', unpaid: 'Set up, not paid yet',
+  pair: '2-to-1 with a seat free', request: 'Parents asking for a time', hold: 'Held while someone pays',
 }
+// One plain line under each group, so the rows don't have to repeat it.
+const GROUP_SUB: Record<AttentionItem['kind'], string> = {
+  cover: 'These sessions need another coach.', closure: 'Move these sessions to another day or venue.', charge: 'Send a pay link, or mark it paid in cash.',
+  unpaid: '', pair: 'Pair them so both seats are filled.', request: "Offer them a time, then mark it done.", hold: 'Waiting for a parent to finish paying.',
+}
+const LINK_BTN = 'inline-flex items-center justify-center rounded-lg border border-[#293b58] bg-white/[0.06] px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white hover:bg-white/[0.1] lg:h-10 lg:px-4 lg:text-sm'
 
 export default async function NeedsAttentionPage() {
   const { admin, orgId } = await requireAdmin()
@@ -71,74 +69,97 @@ export default async function NeedsAttentionPage() {
       ) : (
         <section className="overflow-hidden rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b]">
           <header className="flex items-center justify-between border-b border-[#1d2c42] px-5 py-3.5">
-            <h2 className="text-sm font-semibold text-white">Needs you</h2>
-            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${items.length ? 'bg-[#e0736d]/15 text-[#f3a7a2]' : 'bg-[#67c79a]/15 text-[#8fdcb6]'}`}>{items.length ? `${items.length} open` : 'all clear'}</span>
+            <h2 className="text-base font-semibold text-white">Needs you</h2>
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${items.length ? 'bg-[#e0736d]/15 text-[#f3a7a2]' : 'bg-[#67c79a]/15 text-[#8fdcb6]'}`}>{items.length ? `${items.length} to do` : 'all clear'}</span>
           </header>
           {items.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-[#93a2ba]">Nothing needs you. Regulars roll on, free time is on sale.</p>
           ) : (
             <div data-testid="needs-you-groups">
-              {KIND_ORDER.filter((kind) => items.some((i) => i.kind === kind)).map((kind) => (
-              <div key={kind} className="border-b border-[#1d2c42] last:border-0">
-              <p className="flex items-center gap-2 bg-[#080e18]/60 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#93a2ba]">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] ${KIND[kind].chip}`}>{items.filter((i) => i.kind === kind).length}</span>
-                {GROUP_LABEL[kind]}
-              </p>
-            <ul className="divide-y divide-[#1d2c42]">
-              {items.filter((i) => i.kind === kind).map((it) => {
+              {KIND_ORDER.filter((kind) => items.some((i) => i.kind === kind)).map((kind) => {
+                const list = items.filter((i) => i.kind === kind)
+                const n = list.length
+                if (kind === 'unpaid') {
+                  return (
+                    <NeedsGroup
+                      key={kind}
+                      testId="needs-unpaid"
+                      title={`${n} ${n === 1 ? "family hasn't" : "families haven't"} paid to start`}
+                      sub="Their time is held until they pay the set-up link, or you mark them paid in cash."
+                      actions={n > 1 ? (
+                        <ActionButton tone="primary" result="sent" confirm={`Email all ${n} families their set-up link again?`} body={{ action: 'slot.setup_link_all' }}>{`Resend all ${n} links`}</ActionButton>
+                      ) : undefined}
+                      rows={list.map((it) => (
+                        <div key={it.key} className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between" data-testid="needs-unpaid-row">
+                          <div className="min-w-0 text-sm">
+                            <span className="font-semibold text-white">{it.ids.child as string}</span>
+                            <span className="text-[#93a2ba]"> · {it.ids.when as string} · {it.ids.coach as string}{it.ids.price ? ` · £${(Number(it.ids.price) / 100).toFixed(2).replace(/\.00$/, '')} a session` : ''}</span>
+                          </div>
+                          <div className="flex shrink-0 flex-wrap items-center gap-2">
+                            <ActionButton body={{ action: 'slot.setup_link', id: it.ids.slotId }}>Resend link</ActionButton>
+                            <ActionButton confirm="Mark this family's first month as paid in cash? Their place goes live and it records your name and the time." body={{ action: 'slot.cash_setup', id: it.ids.slotId }}>Paid in cash</ActionButton>
+                            <details className="relative">
+                              <summary aria-label="More" className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg border border-[#293b58] text-white/70 hover:text-white lg:h-10 lg:w-10">⋯</summary>
+                              <div className="absolute right-0 z-10 mt-1.5 rounded-lg border border-[#293b58] bg-[#0f1a2b] p-1.5 shadow-xl">
+                                <ActionButton tone="danger" confirm="Release this slot? The time goes back on sale." body={{ action: 'slot.status', id: it.ids.slotId, status: 'released' }}>Release the slot</ActionButton>
+                              </div>
+                            </details>
+                          </div>
+                        </div>
+                      ))}
+                    />
+                  )
+                }
                 return (
-                  <li key={it.key} className="flex flex-col gap-2.5 px-5 py-3.5 lg:flex-row lg:items-start lg:gap-5">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-white">{it.title}</div>
-                      <p className="mt-0.5 max-w-3xl text-xs leading-relaxed text-[#93a2ba]">{it.detail}</p>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap gap-1.5 lg:max-w-[22rem] lg:justify-end">
-                      {it.kind === 'cover' && (
-                        <>
-                          {(it.ids.sessionIds as string[]).length > 0 && coaches.filter((c) => c.id !== it.ids.coachId).slice(0, 3).map((c) => (
-                            <ActionButton key={c.id} tone="primary" body={{ action: 'session.cover', coachId: c.id, sessionIds: it.ids.sessionIds, exceptionId: it.ids.exceptionId }}>
-                              {c.full_name || 'Coach'} covers
-                            </ActionButton>
-                          ))}
-                          <Link href={`/dashboard/one-to-one/timetable?from=${it.date}`} className="inline-flex items-center rounded-lg border border-[#293b58] px-3 py-1.5 text-xs font-semibold text-white/80">Open the day</Link>
-                          <ActionButton tone="quiet" body={{ action: 'exception.resolve', id: it.ids.exceptionId }}>Mark sorted</ActionButton>
-                        </>
-                      )}
-                      {it.kind === 'closure' && (
-                        <Link href={`/dashboard/one-to-one/timetable?from=${it.date}`} className="inline-flex items-center rounded-lg border border-[#4ecde6] bg-[#4ecde6] px-3 py-1.5 text-xs font-semibold text-[#04141a]">Move the sessions</Link>
-                      )}
-                      {it.kind === 'request' && (
-                        <>
-                          <ActionButton tone="primary" body={{ action: 'request.status', id: it.ids.requestId, status: 'offered' }}>I&apos;ve offered a time</ActionButton>
-                          <ActionButton tone="quiet" body={{ action: 'request.status', id: it.ids.requestId, status: 'closed' }}>Close</ActionButton>
-                        </>
-                      )}
-                      {it.kind === 'pair' && (
-                        <Link href="/dashboard/one-to-one/regulars" className="inline-flex items-center rounded-lg border border-[#293b58] px-3 py-1.5 text-xs font-semibold text-white/80">Pair them</Link>
-                      )}
-                      {it.kind === 'unpaid' && (
-                        <>
-                          <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: it.ids.slotId }}>Resend the link</ActionButton>
-                          <ActionButton confirm="Mark this family's first month as paid in cash? Their place goes live and it records your name and the time." body={{ action: 'slot.cash_setup', id: it.ids.slotId }}>Paid in cash</ActionButton>
-                          <ActionButton tone="quiet" confirm="Release this slot? The time goes back on sale." body={{ action: 'slot.status', id: it.ids.slotId, status: 'released' }}>Release the slot</ActionButton>
-                        </>
-                      )}
-                      {it.kind === 'charge' && (
-                        <>
-                          <ActionButton tone="primary" body={{ action: 'charge.remind', id: it.ids.chargeId }}>Send pay link</ActionButton>
-                          <ActionButton body={{ action: 'charge.cash', id: it.ids.chargeId }} confirm="Mark this month as paid in cash? It records your name and the time.">Paid in cash</ActionButton>
-                          {(it.ids.slotIds as string[]).map((sid, i) => (
-                            <ActionButton key={sid} tone="danger" confirm="Release this slot? Future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: sid, status: 'released' }}>Release {(it.ids.slotLabels as string[] | undefined)?.[i] || 'slot'}</ActionButton>
-                          ))}
-                        </>
-                      )}
-                    </div>
-                  </li>
+                  <NeedsGroup
+                    key={kind}
+                    title={n > 1 ? `${GROUP_LABEL[kind]} · ${n}` : GROUP_LABEL[kind]}
+                    sub={GROUP_SUB[kind]}
+                    rows={list.map((it) => (
+                      <div key={it.key} className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-5">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-white">{it.title}</div>
+                          <p className="mt-0.5 max-w-3xl text-xs leading-relaxed text-[#93a2ba]">{it.detail}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+                          {it.kind === 'cover' && (
+                            <>
+                              {(it.ids.sessionIds as string[]).length > 0 && coaches.filter((c) => c.id !== it.ids.coachId).slice(0, 3).map((c) => (
+                                <ActionButton key={c.id} tone="primary" body={{ action: 'session.cover', coachId: c.id, sessionIds: it.ids.sessionIds, exceptionId: it.ids.exceptionId }}>
+                                  {c.full_name || 'Coach'} covers
+                                </ActionButton>
+                              ))}
+                              <Link href={`/dashboard/one-to-one/timetable?from=${it.date}`} className={LINK_BTN}>Open the day</Link>
+                              <ActionButton tone="quiet" body={{ action: 'exception.resolve', id: it.ids.exceptionId }}>Mark sorted</ActionButton>
+                            </>
+                          )}
+                          {it.kind === 'closure' && (
+                            <Link href={`/dashboard/one-to-one/timetable?from=${it.date}`} className={LINK_BTN}>Move the sessions</Link>
+                          )}
+                          {it.kind === 'request' && (
+                            <>
+                              <ActionButton tone="primary" body={{ action: 'request.status', id: it.ids.requestId, status: 'offered' }}>I&apos;ve offered a time</ActionButton>
+                              <ActionButton tone="quiet" body={{ action: 'request.status', id: it.ids.requestId, status: 'closed' }}>Close</ActionButton>
+                            </>
+                          )}
+                          {it.kind === 'pair' && (
+                            <Link href="/dashboard/one-to-one/regulars" className={LINK_BTN}>Pair them</Link>
+                          )}
+                          {it.kind === 'charge' && (
+                            <>
+                              <ActionButton tone="primary" body={{ action: 'charge.remind', id: it.ids.chargeId }}>Send pay link</ActionButton>
+                              <ActionButton body={{ action: 'charge.cash', id: it.ids.chargeId }} confirm="Mark this month as paid in cash? It records your name and the time.">Paid in cash</ActionButton>
+                              {(it.ids.slotIds as string[]).map((sid, i) => (
+                                <ActionButton key={sid} tone="danger" confirm="Release this slot? Future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: sid, status: 'released' }}>Release {(it.ids.slotLabels as string[] | undefined)?.[i] || 'slot'}</ActionButton>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  />
                 )
               })}
-            </ul>
-              </div>
-              ))}
             </div>
           )}
         </section>
