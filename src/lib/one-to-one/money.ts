@@ -28,7 +28,7 @@ export async function creditBalance(admin: SupabaseClient, orgId: string, parent
   return (data ?? []).reduce((a, r) => a + (r.amount_pence as number), 0)
 }
 
-async function orgBits(admin: SupabaseClient, orgId: string) {
+export async function orgBits(admin: SupabaseClient, orgId: string) {
   const [org, coaches, venues, settings] = await Promise.all([
     admin.from('organisations').select('name, slug').eq('id', orgId).single(), getCoaches(admin, orgId), getVenues(admin, orgId), getSettings(admin, orgId),
   ])
@@ -40,7 +40,7 @@ async function orgBits(admin: SupabaseClient, orgId: string) {
   }
 }
 
-async function parentBits(admin: SupabaseClient, parentId: string) {
+export async function parentBits(admin: SupabaseClient, parentId: string) {
   const { data } = await admin.from('profiles').select('email, full_name').eq('id', parentId).single()
   return { email: (data?.email as string | null) || null, name: (data?.full_name as string | null) || null }
 }
@@ -428,7 +428,8 @@ export async function completePayNow(admin: SupabaseClient, cs: Stripe.Checkout.
 
 // ─── 3. declines, cancellations, cash, refunds ───────────────────────────
 
-export async function declineByParent(admin: SupabaseClient, sessionId: string, parentId: string, now = new Date()) {
+/** `quiet`: the academy did it from Regulars → More; the parent gets one month breakdown instead of a note per date. */
+export async function declineByParent(admin: SupabaseClient, sessionId: string, parentId: string, now = new Date(), quiet = false) {
   const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', sessionId).eq('parent_id', parentId).single()
   if (!s) throw new CheckoutBlocked('Session not found', 404)
   if (s.status !== 'scheduled') throw new CheckoutBlocked('That session can\'t be declined now', 409)
@@ -440,12 +441,12 @@ export async function declineByParent(admin: SupabaseClient, sessionId: string, 
     await admin.from('coaching_credits').insert({ organisation_id: s.organisation_id, parent_id: parentId, amount_pence: effect.ledgerPence, reason: 'parent_decline', session_id: s.id, note: `${outcome.tier} · ${fmtDate(s.session_date)} ${hhmm(s.start_minutes)}` })
   }
   const parent = await parentBits(admin, parentId); const bits = await orgBits(admin, s.organisation_id)
-  if (parent.email) await sendDeclined({ academy: bits.name, to: parent.email, parentName: parent.name, date: s.session_date, startMinutes: s.start_minutes, message: effect.message }).catch(() => {})
+  if (parent.email && !quiet) await sendDeclined({ academy: bits.name, to: parent.email, parentName: parent.name, date: s.session_date, startMinutes: s.start_minutes, message: effect.message }).catch(() => {})
   return { tier: outcome.tier, message: effect.message, ledgerPence: effect.ledgerPence }
 }
 
 /** The academy cancels a session with no cover: always a full credit if it was paid. */
-export async function cancelByAcademy(admin: SupabaseClient, orgId: string, sessionId: string, reason: string | null) {
+export async function cancelByAcademy(admin: SupabaseClient, orgId: string, sessionId: string, reason: string | null, quiet = false) {
   const { data: s } = await admin.from('coaching_sessions').select('*').eq('id', sessionId).eq('organisation_id', orgId).single()
   if (!s) throw new CheckoutBlocked('Session not found', 404)
   if (s.status !== 'scheduled') return
@@ -464,7 +465,7 @@ export async function cancelByAcademy(admin: SupabaseClient, orgId: string, sess
   }
   const to = s.guest_email || (s.parent_id ? (await parentBits(admin, s.parent_id)).email : null)
   const bits = await orgBits(admin, orgId)
-  if (to) await sendAcademyCancelled({ academy: bits.name, to, date: s.session_date, startMinutes: s.start_minutes, creditedPence: wasCharged && s.parent_id ? s.price_pence : 0, refundedPence, reason }).catch(() => {})
+  if (to && !quiet) await sendAcademyCancelled({ academy: bits.name, to, date: s.session_date, startMinutes: s.start_minutes, creditedPence: wasCharged && s.parent_id ? s.price_pence : 0, refundedPence, reason }).catch(() => {})
 }
 
 /** Pause or release: the slot's future dates come off the timetable; paid ones are credited in full. */

@@ -1,6 +1,9 @@
 import SlotTypeFields from './SlotTypeFields'
 import { requireAdmin, getCoaches, getVenues, getSlots, getSettings, DAY, hhmm, gbp, fmtShort, type SlotRowDb } from '@/lib/one-to-one/db'
-import { todayLondon } from '@/lib/one-to-one/time'
+import { todayLondon, addDays } from '@/lib/one-to-one/time'
+import { loadFamilyMonths, breakdownsDue } from '@/lib/one-to-one/family-month-send'
+import { monthLabel } from '@/lib/one-to-one/money'
+import { lineWhen, type MonthLine } from '@/lib/one-to-one/family-month'
 import { academyPaymentsReady } from '@/lib/one-to-one/checkout'
 import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, SignedPoundsInput } from '../ui'
 import { inputCls } from '../styles'
@@ -26,6 +29,15 @@ export default async function RegularsPage() {
   // Credit on account per family: the sum of their ledger. Shown on every row, entered from any row.
   const { data: creditRows } = await admin.from('coaching_credits').select('parent_id, amount_pence').eq('organisation_id', orgId)
   const creditOf = (parentId: string) => (creditRows ?? []).filter((c) => c.parent_id === parentId).reduce((a, c) => a + c.amount_pence, 0)
+  // Each family's dates and bill for this month and next (Regulars → More). John, 18 Oct 2026.
+  const today = todayLondon()
+  const nextMonth = addDays(thisMonth, 32).slice(0, 7) + '-01'
+  const liveParents = [...new Set(slots.filter((x) => x.status !== 'released').map((x) => x.parent_id))]
+  const [famMonths, dueList] = await Promise.all([
+    liveParents.length ? loadFamilyMonths(admin, orgId, [thisMonth, nextMonth], liveParents) : Promise.resolve(new Map() as Awaited<ReturnType<typeof loadFamilyMonths>>),
+    breakdownsDue(admin, orgId),
+  ])
+  const dueSet = new Set(dueList.map((d) => `${d.parentId}|${d.month}`))
   const { data: players } = await admin.from('players_active').select('id, first_name, last_name, parent:profiles!players_parent_id_fkey(full_name)').eq('organisation_id', orgId).order('first_name')
   const cname = (id: string) => coaches.find((c) => c.id === id)?.full_name?.split(' ')[0] || 'Coach'
   const vname = (id: string) => venues.find((v) => v.id === id)?.name || ''
@@ -89,7 +101,7 @@ export default async function RegularsPage() {
     </div>
   )
   const editForm = (s: SlotRowDb) => s.status === 'released' ? null : (
-    <Disclosure label="Edit">
+    <Disclosure label="Change day, time or coach">
       <ActionForm action="slot.update" extra={{ id: s.id }} submitLabel="Save changes" className="w-full max-w-md rounded-xl border border-[#1d2c42] bg-[#080e18] p-3 text-left">
         <div className="grid grid-cols-2 gap-2">
           <Field label="Coach"><select name="coachId" defaultValue={s.coach_id} className={inputCls}>{coaches.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}</select></Field>
@@ -105,6 +117,61 @@ export default async function RegularsPage() {
       </ActionForm>
     </Disclosure>
   )
+
+  // One month for one family, under a regular's "Dates and changes".
+  const monthPanel = (s: SlotRowDb, m: string, open: boolean) => {
+    const fm = famMonths.get(`${s.parent_id}|${m}`)
+    const label = monthLabel(m).split(' ')[0]
+    if (!fm || (fm.on.length === 0 && fm.off.length === 0)) {
+      return <p key={m} className="py-2 text-xs text-[#5b6c86]">{label}: {m > thisMonth ? `dates are added on 20 ${monthLabel(thisMonth).split(' ')[0]}.` : 'no sessions this month.'}</p>
+    }
+    const ours = (l: MonthLine) => l.slotId === s.id || (!l.slotId && l.playerId === s.player_id)
+    const others = fm.on.filter((l) => !ours(l)).length
+    const row = 'flex flex-wrap items-center justify-between gap-2 border-b border-[#1d2c42] py-2.5 last:border-0'
+    return (
+      <details key={m} open={open} className="group mb-2" data-testid="family-month">
+        <summary className="flex cursor-pointer list-none items-center justify-between py-1.5 text-sm font-semibold text-white">
+          <span>{label}</span>
+          <span className="text-xs font-normal text-[#93a2ba]">{fm.state === 'paid' ? 'Paid' : fm.state === 'covered' ? 'Covered by credit' : `${fm.state === 'failed' ? 'Card failed · ' : ''}${gbp(fm.toPayPence)} to pay`}</span>
+        </summary>
+        <div className="mt-1">
+          {fm.on.filter(ours).map((l) => (
+            <div key={l.id} className={row} data-testid="family-month-line">
+              <span className="text-sm"><span className="font-semibold text-white">{lineWhen(l)}</span> <span className="text-[#93a2ba]">· {cname(l.coachId)} · {gbp(l.pricePence)}</span>{l.tag && <span className="ml-2 rounded-full bg-[#4ecde6]/[0.12] px-2 py-0.5 text-[11px] font-semibold text-[#4ecde6]">{l.tag}</span>}</span>
+              {l.date >= today && !l.tag?.startsWith('released') && (
+                <span className="flex flex-wrap items-start gap-1.5">
+                  <Disclosure label="Move" asButton>
+                    <ActionForm action="session.move" extra={{ sessionId: l.id, quiet: true }} submitLabel="Move it" className="mt-1.5 w-60 rounded-lg border border-[#1d2c42] bg-[#0f1a2b] p-2.5">
+                      <Field label="New date"><input type="date" name="date" defaultValue={l.date} required className={inputCls} /></Field>
+                      <Field label="Time"><input name="start" defaultValue={hhmm(l.startMinutes)} required className={inputCls + ' tabular-nums'} /></Field>
+                    </ActionForm>
+                  </Disclosure>
+                  <ActionButton confirm="They can't make this date? Same rules as when a parent does it: 7+ days' notice is free, under 7 days is half, under 48 hours is still charged." body={{ action: 'session.cant_make_it', sessionId: l.id }}>Can&apos;t make it</ActionButton>
+                  <ActionButton tone="danger" confirm="Cancel this session? It comes off their bill, or is credited in full if already paid. The time goes back on sale." body={{ action: 'session.academy_cancel', sessionId: l.id, quiet: true }}>Cancel</ActionButton>
+                </span>
+              )}
+            </div>
+          ))}
+          {fm.off.filter(ours).map((l) => (
+            <div key={l.id} className={row}>
+              <span className="text-sm text-[#5b6c86]"><s>{lineWhen(l)}</s></span>
+              <span className="rounded-full bg-[#d8a95a]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#ecc98a]">{l.why}</span>
+            </div>
+          ))}
+          <div className="mt-2 rounded-lg bg-white/[0.04] px-3 py-2.5 text-sm" data-testid="family-month-total">
+            <div className="flex justify-between text-[#93a2ba]"><span>{fm.on.length} session{fm.on.length === 1 ? '' : 's'}{others ? ` (incl. ${others} for their other regular)` : ''}</span><span className="text-white">{gbp(fm.sessionsPence)}</span></div>
+            {fm.creditPence !== 0 && <div className="flex justify-between text-[#93a2ba]"><span>{fm.creditPence > 0 ? 'Credit used' : 'Owed from before'}</span><span className={fm.creditPence > 0 ? 'text-[#8fdcb6]' : 'text-[#f3a7a2]'}>{fm.creditPence > 0 ? '−' : '+'}{gbp(Math.abs(fm.creditPence))}</span></div>}
+            <div className="mt-1.5 flex justify-between border-t border-[#293b58] pt-1.5 font-semibold text-white"><span>{fm.state === 'paid' ? 'Paid' : `${label} to pay`}</span><span>{fm.state === 'paid' ? gbp(fm.sessionsPence - fm.creditPence) : gbp(fm.toPayPence)}</span></div>
+            <p className="mt-0.5 text-[11px] text-[#5b6c86]">{fm.state === 'paid' ? 'Changes now are credited to next month.' : fm.state === 'failed' ? 'Their card failed. Send a pay link from Needs attention.' : fm.state === 'covered' ? 'Nothing comes off their card.' : m > thisMonth ? `Charged to their card on 1 ${label}.` : 'Due now: it goes on their set-up link or pay link.'}</p>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            {dueSet.has(`${s.parent_id}|${m}`) ? <span className="text-[12px] font-semibold text-[#ecc98a]" data-testid="family-month-unsent">Changes not sent to the parent yet. They go at 6pm, or send now.</span> : <span />}
+            <ActionButton tone="primary" body={{ action: 'family.send_month', parentId: s.parent_id, month: m }}>{`Email ${label} to the parent`}</ActionButton>
+          </div>
+        </div>
+      </details>
+    )
+  }
 
   const form = (
     <ActionForm action="slot.create" submitLabel="Create and email the pay link" className="mt-4">
@@ -193,11 +260,17 @@ export default async function RegularsPage() {
                               </div>
                               <div className="flex flex-col items-start gap-1.5 lg:items-end">
                                 {primary(s)}
-                                <Disclosure label="More">
-                                  <div className="flex flex-col items-start gap-3 rounded-xl border border-[#1d2c42] bg-[#080e18] p-3 lg:items-end">
-                                    {others(s)}
-                                    {editForm(s)}
-                                    {creditCell(s)}
+                                <Disclosure label="Dates and changes">
+                                  <div className="w-full rounded-xl border border-[#1d2c42] bg-[#080e18] p-3 text-left lg:w-[34rem]" data-testid="family-month-panel">
+                                    {[thisMonth, nextMonth].map((m, mi) => monthPanel(s, m, mi === 0))}
+                                    <div className="mt-3 flex flex-wrap items-start justify-between gap-2 border-t border-[#1d2c42] pt-3">
+                                      {editForm(s)}
+                                      <details className="relative">
+                                        <summary aria-label="More options" className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg border border-[#293b58] text-white/70 hover:text-white lg:h-10 lg:w-10">⋯</summary>
+                                        <div className="absolute right-0 z-10 mt-1.5 rounded-lg border border-[#293b58] bg-[#0f1a2b] p-2 shadow-xl">{others(s)}</div>
+                                      </details>
+                                    </div>
+                                    <div className="mt-3">{creditCell(s)}</div>
                                   </div>
                                 </Disclosure>
                               </div>

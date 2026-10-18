@@ -184,3 +184,48 @@ export async function sendPriceChanged(f: { academy: string; to: string; parentN
     `),
   })
 }
+
+/**
+ * A family's month, updated (John, 18 Oct 2026; mockup approved): every date still on,
+ * every date taken off and why, credit, and what is taken on the 1st — or that the
+ * month is already paid. The figures come from family-month.ts, which uses the same
+ * calculation as the 1st-of-month charge.
+ */
+export async function sendMonthBreakdown(f: {
+  academy: string; to: string; parentName: string | null; childNames: string; monthLabel: string
+  on: { when: string; coach: string; pricePence: number; tag?: string }[]
+  off: { when: string; why: string }[]
+  sessionsPence: number; creditPence: number; toPayPence: number; state: 'due' | 'paid' | 'failed' | 'covered'
+  chargeDate: string | null; wasPence: number | null; url: string
+}) {
+  const month = f.monthLabel.split(' ')[0]
+  const row = (l: string, r: string, extra = '') => `<tr><td style="padding:7px 0;border-top:1px solid #e6e9ee;${extra}">${l}</td><td style="padding:7px 0;border-top:1px solid #e6e9ee;text-align:right;${extra}">${r}</td></tr>`
+  const onRows = f.on.map((l) => row(`${esc(l.when)} · ${esc(l.coach)}${l.tag ? ` <span style="color:#8a6d1f">· ${esc(l.tag)}</span>` : ''}`, gbp(l.pricePence))).join('')
+  const offRows = f.off.map((l) => `<tr><td style="padding:7px 10px;background:#fbf3df;color:#7a5a12;border-top:1px solid #f1e3bb"><s>${esc(l.when)}</s> · ${esc(l.why)}</td></tr>`).join('')
+  const bottom = f.state === 'paid' ? `<tr><td style="padding:10px 0 4px;border-top:2px solid #141a22;font-weight:700">Already paid</td><td style="padding:10px 0 4px;border-top:2px solid #141a22;text-align:right;font-weight:700">${gbp(f.sessionsPence - f.creditPence)}</td></tr>`
+    : f.state === 'covered' ? `<tr><td style="padding:10px 0 4px;border-top:2px solid #141a22;font-weight:700">To pay</td><td style="padding:10px 0 4px;border-top:2px solid #141a22;text-align:right;font-weight:700">£0 · covered by credit</td></tr>`
+    : `<tr><td style="padding:10px 0 4px;border-top:2px solid #141a22;font-weight:700">${f.state === 'failed' ? 'Still to pay' : 'To pay'}</td><td style="padding:10px 0 4px;border-top:2px solid #141a22;text-align:right;font-weight:700;font-size:18px">${gbp(f.toPayPence)}</td></tr>`
+  const when = f.state === 'paid' ? 'Changes to a month you have already paid come back to you as credit, taken off next month.'
+    : f.state === 'failed' ? 'Your card payment for this month did not go through. Use the button below to pay.'
+    : f.state === 'covered' ? 'Nothing comes off your card this month.'
+    : f.chargeDate ? `Taken from your card on ${esc(f.chargeDate)}.` : 'Due now. The academy will send you a link to pay, or you can pay from your sessions page.'
+  return sendEmail({
+    to: f.to, fromName: f.academy,
+    subject: `${f.childNames}'s ${month} sessions, updated`,
+    html: shell(f.academy, `
+      <h1 style="font-size:22px;margin:12px 0 4px">${esc(f.childNames)}'s ${esc(month)} sessions, updated</h1>
+      <p style="margin:0 0 14px;color:#5b6674">Hi ${esc((f.parentName || '').split(' ')[0] || 'there')}, here's ${esc(month)} as it stands now.</p>
+      ${f.on.length ? `<p style="margin:0 0 4px;font-weight:600;font-size:14px">Sessions on</p><table style="width:100%;border-collapse:collapse;font-size:14px">${onRows}</table>` : ''}
+      ${f.off.length ? `<p style="margin:16px 0 4px;font-weight:600;font-size:14px">Taken off</p><table style="width:100%;border-collapse:collapse;font-size:14px">${offRows}</table>` : ''}
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:14px">
+        <tr><td style="padding:5px 0;color:#5b6674">${f.on.length} session${f.on.length === 1 ? '' : 's'}</td><td style="padding:5px 0;text-align:right">${gbp(f.sessionsPence)}</td></tr>
+        ${f.creditPence !== 0 ? `<tr><td style="padding:5px 0;color:#5b6674">${f.creditPence > 0 ? 'Credit used' : 'Owed from before'}</td><td style="padding:5px 0;text-align:right">${f.creditPence > 0 ? '−' : '+'}${gbp(Math.abs(f.creditPence))}</td></tr>` : ''}
+        ${bottom}
+      </table>
+      <p style="margin:4px 0 14px;font-size:13px;color:#5b6674">${when}</p>
+      ${f.wasPence !== null && f.wasPence !== f.toPayPence && f.state !== 'paid' ? `<p style="margin:0 0 14px;font-size:13px;color:#5b6674;background:#f3f5f7;padding:10px 12px;border-radius:8px">Was ${gbp(f.wasPence)} before the change.</p>` : ''}
+      <p style="margin:0 0 6px"><a href="${f.url}" style="display:inline-block;background:#eef1f4;color:#141a22;font-weight:600;padding:10px 14px;border-radius:8px;text-decoration:none">See your sessions</a></p>
+      <p style="font-size:13px;color:#5b6674">Can't make a date? Tap it on your sessions page at least 48 hours before.</p>
+    `),
+  })
+}

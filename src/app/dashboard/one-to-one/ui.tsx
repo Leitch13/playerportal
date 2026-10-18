@@ -228,11 +228,13 @@ export function VenueForm({ venue }: { venue?: { id: string; name: string; addre
   )
 }
 
-export function Disclosure({ label, children }: { label: string; children: React.ReactNode }) {
+export function Disclosure({ label, children, asButton = false }: { label: string; children: React.ReactNode; asButton?: boolean }) {
   const [open, setOpen] = useState(false)
   return (
     <div>
-      <button type="button" onClick={() => setOpen((o) => !o)} className="text-xs font-medium text-[#4ecde6] hover:underline">{open ? 'Close' : label}</button>
+      <button type="button" onClick={() => setOpen((o) => !o)} className={asButton
+        ? 'inline-flex items-center justify-center rounded-lg border border-[#293b58] bg-white/[0.06] px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white hover:bg-white/[0.1] lg:h-10 lg:px-4 lg:text-sm'
+        : 'text-xs font-medium text-[#4ecde6] hover:underline'}>{open ? 'Close' : label}</button>
       {open && <div className="mt-3">{children}</div>}
     </div>
   )

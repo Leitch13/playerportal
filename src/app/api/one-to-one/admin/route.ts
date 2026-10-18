@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/lib/one-to-one/db'
-import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions } from '@/lib/one-to-one/money'
+import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { emailPriceChange } from '@/lib/one-to-one/price-change'
+import { markBreakdownDue, sendFamilyMonth } from '@/lib/one-to-one/family-month-send'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { seatForNewSlot, seatForSession, seatClashMessage, sameWeeks, onSameWeeks, type SessionType } from '@/lib/one-to-one/seats'
 
@@ -391,6 +392,11 @@ export async function POST(req: NextRequest) {
         if (price !== cur.price_pence && (cur.status === 'active' || cur.status === 'paused')) {
           notice = await emailPriceChange(admin, orgId, { slotId: id, parentId: cur.parent_id, playerId: cur.player_id, weekday, start, sessionType: cur.session_type, oldPence: cur.price_pence, newPence: price, today })
         }
+        // Day, time, coach or venue changed: the family's month breakdown is due (sent by the
+        // academy's button or the evening run). A price change also emails straight away (above).
+        if (moved || coachId !== cur.coach_id || venueId !== cur.venue_id || dur !== cur.duration_minutes || price !== cur.price_pence) {
+          await markBreakdownDue(admin, orgId, cur.parent_id as string, [today, addDays(today, 31)], userId)
+        }
         return NextResponse.json({ ok: true, warning, notice })
       }
       // A slot added by mistake: gone completely, as if it never existed. Only while nothing
@@ -474,8 +480,27 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, url })
       }
       case 'session.academy_cancel': {
-        await cancelByAcademy(admin, orgId, str(body.sessionId), str(body.note) || null)
+        // From Regulars → More ("quiet"): the parent gets one month breakdown, not a note per date.
+        const quiet = body.quiet === true
+        const { data: cs } = await admin.from('coaching_sessions').select('parent_id, session_date').eq('id', str(body.sessionId)).eq('organisation_id', orgId).maybeSingle()
+        await cancelByAcademy(admin, orgId, str(body.sessionId), str(body.note) || null, quiet)
+        if (quiet && cs) await markBreakdownDue(admin, orgId, cs.parent_id as string | null, [cs.session_date as string], userId)
         return NextResponse.json({ ok: true })
+      }
+      // The academy marks a date the family can't make, from Regulars → More. Same rules as
+      // the parent doing it themselves (48 hours / 7 days), then one breakdown to the parent.
+      case 'session.cant_make_it': {
+        const { data: cs } = await admin.from('coaching_sessions').select('parent_id, session_date').eq('id', str(body.sessionId)).eq('organisation_id', orgId).maybeSingle()
+        if (!cs?.parent_id) return bad('That session has no family to release it for')
+        const r = await declineByParent(admin, str(body.sessionId), cs.parent_id as string, new Date(), true)
+        await markBreakdownDue(admin, orgId, cs.parent_id as string, [cs.session_date as string], userId)
+        return NextResponse.json({ ok: true, warning: r.message })
+      }
+      // "Email November to the parent": the family's month as it stands now.
+      case 'family.send_month': {
+        const r = await sendFamilyMonth(admin, orgId, str(body.parentId), str(body.month), userId)
+        if (!r.sentTo) return bad(r.reason || 'Not sent')
+        return NextResponse.json({ ok: true, notice: `Sent to ${r.sentTo}.` })
       }
 
       // ─── dated sessions: cover / move / cancel / attended / no-show (no money) ───
@@ -512,7 +537,8 @@ export async function POST(req: NextRequest) {
         const { error: e2 } = await admin.from('coaching_sessions').update({ status: 'cancelled', note: `moved to ${date} ${hhmm(start)}` }).eq('id', id)
         if (e2) throw e2
         // Tell the family. Best-effort: the move stands even if the email fails.
-        if (date !== s.session_date || start !== s.start_minutes || coachId !== s.coach_id || venueId !== s.venue_id) {
+        if (body.quiet === true) await markBreakdownDue(admin, orgId, s.parent_id as string | null, [s.session_date as string, date], userId)
+        if (body.quiet !== true && (date !== s.session_date || start !== s.start_minutes || coachId !== s.coach_id || venueId !== s.venue_id)) {
           const [{ data: org }, { data: parent }, { data: coach }, { data: venue }] = await Promise.all([
             admin.from('organisations').select('name').eq('id', orgId).single(),
             s.parent_id ? admin.from('profiles').select('email').eq('id', s.parent_id).maybeSingle() : Promise.resolve({ data: null }),

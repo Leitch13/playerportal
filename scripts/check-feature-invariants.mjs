@@ -240,6 +240,15 @@ const FEATURES = [
   ['1-2-1s: Needs you shows the first few and Show all', `${O}/NeedsGroup.tsx`, ['data-testid="needs-show-all"', 'rows.slice(0, show)']],
   ['1-2-1s: Resend all links', `${A}/api/one-to-one/admin/route.ts`, ["case 'slot.setup_link_all'"]],
   ['1-2-1s: bigger buttons on a laptop', `${O}/ui.tsx`, ['lg:h-10 lg:px-4 lg:text-sm']],
+  // ── Each family's month under Regulars, and the updated breakdown email (John, 18 Oct 2026)
+  ['1-2-1s: family month uses the real bill calculation', 'src/lib/one-to-one/family-month.ts', ['chargeBreakdown(unpaid.map(', 'export function offReason', "you couldn't make it · not charged"]],
+  ['1-2-1s: family month is tested', 'src/lib/one-to-one/family-month.test.ts', ["comes off the bill and says why"]],
+  ['1-2-1s: one breakdown per family, due changes sent', 'src/lib/one-to-one/family-month-send.ts', ['export async function sendFamilyMonth', 'export async function breakdownsDue', 'export async function markBreakdownDue']],
+  ['1-2-1s: breakdown email', 'src/lib/one-to-one/emails.ts', ['export async function sendMonthBreakdown', "sessions, updated`"]],
+  ['1-2-1s: dates and changes under each regular', `${O}/regulars/page.tsx`, ['data-testid="family-month-panel"', "action: 'session.cant_make_it'", "action: 'family.send_month'", 'data-testid="family-month-unsent"']],
+  ['1-2-1s: academy date actions', `${A}/api/one-to-one/admin/route.ts`, ["case 'session.cant_make_it'", "case 'family.send_month'", 'markBreakdownDue(admin, orgId']],
+  ['1-2-1s: 6pm run sends any breakdown still due', `${A}/api/cron/one-to-one-breakdowns/route.ts`, ['breakdownsDue(admin)']],
+  ['1-2-1s: the 6pm run is scheduled', 'vercel.json', ['"/api/cron/one-to-one-breakdowns"']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
 ]
 
