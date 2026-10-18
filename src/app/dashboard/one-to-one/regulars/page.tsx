@@ -145,7 +145,10 @@ export default async function RegularsPage() {
       return <p key={m} className="py-2 text-xs text-[#5b6c86]">{label}: {m > thisMonth ? `dates are added on 20 ${monthLabel(thisMonth).split(' ')[0]}.` : 'no sessions this month.'}</p>
     }
     const ours = (l: MonthLine) => l.slotId === s.id || (!l.slotId && l.playerId === s.player_id)
-    const others = fm.on.filter((l) => !ours(l)).length
+    // Only billed dates count towards the month; held dates (a regular not set up yet) are shown but not counted.
+    const billed = fm.on.filter((l) => !l.tag?.startsWith('held'))
+    const others = billed.filter((l) => !ours(l)).length
+    const heldOtherOnly = fm.setUpPence > 0 && s.status !== 'pending'
     const row = 'flex flex-wrap items-center justify-between gap-2 border-b border-[#1d2c42] py-2.5 last:border-0'
     return (
       <details key={m} open={open} className="group mb-2" data-testid="family-month">
@@ -178,11 +181,11 @@ export default async function RegularsPage() {
             </div>
           ))}
           {fm.setUpPence > 0 && (
-            <p className="mt-2 rounded-lg border border-[#d8a95a]/40 bg-[#d8a95a]/10 px-3 py-2 text-[13px] text-[#ecc98a]" data-testid="family-month-setup">Not set up yet: these dates are held. {gbp(fm.setUpPence)} goes on their set-up link when they pay it, or mark them paid in cash.</p>
+            <p className="mt-2 rounded-lg border border-[#d8a95a]/40 bg-[#d8a95a]/10 px-3 py-2 text-[13px] text-[#ecc98a]" data-testid="family-month-setup">{heldOtherOnly ? `Their other regular isn't set up yet: ${gbp(fm.setUpPence)} goes on its set-up link, not on this bill.` : `Not set up yet: these dates are held. ${gbp(fm.setUpPence)} goes on their set-up link when they pay it, or mark them paid in cash.`}</p>
           )}
           {(fm.sessionsPence > 0 || fm.state !== 'due') && (
           <div className="mt-2 rounded-lg bg-white/[0.04] px-3 py-2.5 text-sm" data-testid="family-month-total">
-            <div className="flex justify-between text-[#93a2ba]"><span>{fm.on.length} session{fm.on.length === 1 ? '' : 's'}{others ? ` (incl. ${others} for their other regular)` : ''}</span><span className="text-white">{gbp(fm.sessionsPence)}</span></div>
+            <div className="flex justify-between text-[#93a2ba]"><span>{billed.length} session{billed.length === 1 ? '' : 's'}{others ? ` (incl. ${others} for their other regular)` : ''}</span><span className="text-white">{gbp(fm.sessionsPence)}</span></div>
             {fm.creditPence !== 0 && <div className="flex justify-between text-[#93a2ba]"><span>{fm.creditPence > 0 ? 'Credit used' : 'Owed from before'}</span><span className={fm.creditPence > 0 ? 'text-[#8fdcb6]' : 'text-[#f3a7a2]'}>{fm.creditPence > 0 ? '−' : '+'}{gbp(Math.abs(fm.creditPence))}</span></div>}
             <div className="mt-1.5 flex justify-between border-t border-[#293b58] pt-1.5 font-semibold text-white"><span>{fm.state === 'paid' ? 'Paid' : `${label} to pay`}</span><span>{fm.state === 'paid' ? gbp(fm.sessionsPence - fm.creditPence) : gbp(fm.toPayPence)}</span></div>
             <p className="mt-0.5 text-[11px] text-[#5b6c86]">{fm.state === 'paid' ? 'Changes now are credited to next month.' : fm.state === 'failed' ? 'Their card failed. Send a pay link from Needs attention.' : fm.state === 'covered' ? 'Nothing comes off their card.' : m > thisMonth ? `Charged to their card on 1 ${label}.` : 'Due now: it goes on their set-up link or pay link.'}</p>

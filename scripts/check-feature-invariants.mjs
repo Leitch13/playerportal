@@ -144,7 +144,7 @@ const FEATURES = [
   ['Parent home: greeting with no surname, and a line about today', 'src/components/parent/ParentHub.tsx', ['greetingFor()', 'todayLine(nextSession)', 'parent-greeting', 'parent-next-session', '{props.welcomePack}', 'MembershipOverview activeSubs={activeSubs}']],
   ['Parent home: the welcome pack sits inside the home page', `${D}/page.tsx`, ['welcomePack={<WelcomePackCard userId={userId} />}']],
   ['How-to videos: the page itself', `${A}/help/parents/page.tsx`, ['<video']],
-  ['How-to videos for academies: the page', `${A}/help/academies/page.tsx`, ['<video', 'academy-who-has-paid', 'academy-one-to-ones', 'academy-camps', 'academy-class-and-plan', 'academy-first-ten-minutes', 'academy-refund', 'academy-who-owes', 'academy-class-start-date']],
+  ['How-to videos for academies: the page', `${A}/help/academies/page.tsx`, ['<video', 'academy-who-has-paid', 'academy-one-to-ones', 'academy-camps', 'academy-class-and-plan', 'academy-first-ten-minutes', 'academy-refund', 'academy-who-owes', 'academy-class-start-date', 'academy-class-prices', 'academy-camp-owed', 'academy-one-to-one-setup', 'academy-one-to-one-month']],
   ['How-to videos for academies: in the academy menu', 'src/components/Navigation.tsx', ["href: '/help/academies'", "href: '/help/parents'"]],
 
   // ── camp waiting list
@@ -253,6 +253,8 @@ const FEATURES = [
   ['Camps: "NA" and the like are not medical notes', 'src/lib/camp-booking-details.ts', ['const NOTHING = /^(n', '!NOTHING.test(t)']],
   ['1-2-1s: credit history and credit waiting', `${O}/regulars/page.tsx`, ['data-testid="credit-history"', 'data-testid="credit-waiting"', 'data-testid="family-month-setup"']],
   ['1-2-1s: held dates shown for a family not set up yet', 'src/lib/one-to-one/family-month.ts', ["tag: 'held · not set up yet'", 'setUpPence']],
+  ['1-2-1s: held dates never counted in the month', `${O}/regulars/page.tsx`, ["const billed = fm.on.filter((l) => !l.tag?.startsWith('held'))", '{billed.length} session']],
+  ['1-2-1s: held dates never in the month email', 'src/lib/one-to-one/family-month-send.ts', ["on: m.on.filter((l) => !l.tag?.startsWith('held'))"]],
   ['Camps: change amount on an unpaid booking, never £0', `${A}/api/admin/camps/[campId]/bookings/[bookingId]/amount/route.ts`, ['amount <= 0', "payment_status !== 'pending'", "action: 'camp_booking.amount_changed'"]],
   ['Camps: change amount on the register', `${D}/camps/[campId]/RosterClient.tsx`, ['data-testid="camp-roster-change-amount"', 'data-testid="camp-roster-age-missing"', 'data-testid="camp-ask-details"']],
   ['Camps: ask families for missing details', `${A}/api/admin/camps/[campId]/ask-details/route.ts`, ['missingDetails(svc, campId)', "action: 'camp.details_requested'"]],
@@ -269,7 +271,7 @@ const FEATURES = [
 
 const fail = []
 // The video files themselves.
-for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones', 'academy-refund', 'academy-who-owes', 'academy-class-start-date']) {
+for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones', 'academy-refund', 'academy-who-owes', 'academy-class-start-date', 'academy-class-prices', 'academy-camp-owed', 'academy-one-to-one-setup', 'academy-one-to-one-month']) {
   for (const ext of ['mp4', 'jpg']) if (!existsSync(`public/help/${f}.${ext}`)) fail.push(`How-to videos: public/help/${f}.${ext} is missing`)
 }
 for (const [feature, file, needles] of FEATURES) {

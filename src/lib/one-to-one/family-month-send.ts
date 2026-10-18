@@ -84,7 +84,8 @@ export async function sendFamilyMonth(admin: SupabaseClient, orgId: string, pare
   const prev = (lastSent ?? []).map((r) => r.details as { month?: string; to_pay?: number }).find((d) => d.month === month)
   await sendMonthBreakdown({
     academy: bits.name, to: parent.email, parentName: parent.name, childNames, monthLabel: monthLabel(month),
-    on: m.on.map((l) => ({ when: lineWhen(l), coach: bits.coach(l.coachId), pricePence: l.pricePence, tag: l.tag })),
+    // Held dates (a regular not set up yet) aren't on this bill, so they aren't in this email.
+    on: m.on.filter((l) => !l.tag?.startsWith('held')).map((l) => ({ when: lineWhen(l), coach: bits.coach(l.coachId), pricePence: l.pricePence, tag: l.tag })),
     off: m.off.map((l) => ({ when: lineWhen(l), why: l.why })),
     sessionsPence: m.sessionsPence, creditPence: m.creditPence, toPayPence: m.toPayPence, state: m.state,
     // A month that has already started isn't charged on its 1st any more: it's due now.

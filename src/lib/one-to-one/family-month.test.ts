@@ -36,4 +36,11 @@ describe("a family's month: what's on, what's off and why, and the bill", () => 
     expect(m.on.map((l) => l.tag)).toEqual(['held · not set up yet', 'held · not set up yet', 'held · not set up yet'])
     expect([m.sessionsPence, m.toPayPence, m.setUpPence]).toEqual([0, 0, 12000])
   })
+  it('a family with one live and one held regular: only the live dates are billed', () => {
+    const live = [r({ regular_slot_id: 'live', session_date: '2026-11-02' }), r({ regular_slot_id: 'live', session_date: '2026-11-09' })]
+    const held = [r({ regular_slot_id: 'held', session_date: '2026-11-04' })]
+    const m = buildFamilyMonth([...live, ...held], null, 0, new Set(['held']))
+    expect(m.on.filter((l) => !l.tag?.startsWith('held')).length).toBe(2)
+    expect([m.sessionsPence, m.toPayPence, m.setUpPence]).toEqual([8000, 8000, 4000])
+  })
 })

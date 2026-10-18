@@ -19,6 +19,10 @@ const CLIPS = [
   { id: 'who-owes', file: 'academy-who-owes', title: 'Who owes you money', blurb: 'The red box next to a child’s name shows what’s outstanding, on screen and on the printed register.' },
   { id: 'refund', file: 'academy-refund', title: 'Refund a payment', blurb: 'Find the family, pick why, tap Refund. The money goes back to their card and the parent is told.' },
   { id: 'camps', file: 'academy-camps', title: 'Camps and waiting lists', blurb: 'Set up a camp. When it fills, parents join the waiting list and you invite them when a place opens.' },
+  { id: 'class-prices', file: 'academy-class-prices', title: 'Give every class its price', blurb: 'A red box shows any class with no price. Add one under £ Prices with your own name.' },
+  { id: 'camp-owed', file: 'academy-camp-owed', title: 'Chase what’s owed on camps', blurb: 'The red amount next to unpaid children, changing an amount, asking for missing details, and a pay link that never runs out.' },
+  { id: 'one-to-one-setup', file: 'academy-one-to-one-setup', title: '1-2-1s: get families set up', blurb: 'Who hasn’t paid to start, resend every link at once, mark cash payers, and credit waiting to be used.' },
+  { id: 'one-to-one-month', file: 'academy-one-to-one-month', title: '1-2-1s: change a family’s month', blurb: 'Every date and the total in one place. Mark a date they can’t make, then email the parent their month.' },
   { id: 'one-to-ones', file: 'academy-one-to-ones', title: '1-2-1s and 2-to-1s', blurb: 'Regular slots, adding a pair in one go, resending a pay link, and the week’s timetable.' },
 ] as const
 
