@@ -93,6 +93,10 @@
     {
       "path": "/api/cron/one-to-one-charge",
       "schedule": "0 6 1,4,8 * *"
+    },
+    {
+      "path": "/api/cron/class-over-limit",
+      "schedule": "35 * * * *"
     }
   ],
   "regions": [

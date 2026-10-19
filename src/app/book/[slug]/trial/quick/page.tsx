@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import TrialForm from './TrialForm'
+import { loadClassPlaces, placesDb } from '@/lib/class-places'
 
 export default async function QuickTrialPage({
   params,
@@ -101,6 +102,22 @@ export default async function QuickTrialPage({
     redirect(`/book/${slug}#classes`)
   }
 
+  // Places per day: a class whose members already fill it has no trial places at all,
+  // so it isn't offered (unless the parent came from that class: the form says it's full).
+  const today = new Date().toISOString().slice(0, 10)
+  const places = await loadClassPlaces(placesDb(), org.id, groups.map((g) => g.id), today, new Date(Date.now() + 70 * 86400000).toISOString().slice(0, 10)).catch(() => new Map())
+  const placesFor = (id: string) => {
+    const p = places.get(id)
+    return p ? { capacity: p.capacity, members: p.members, trials: Object.fromEntries(Object.entries(p.trials).map(([d, l]) => [d, (l as unknown[]).length])) } : null
+  }
+  const offered = groups.filter((g) => g.id === preselectedClassId || !(places.get(g.id) && places.get(g.id)!.members >= places.get(g.id)!.capacity))
+  // Came from a full class's trial link: that class's waiting list is the only option.
+  if (preselectedClassId) {
+    const p = places.get(preselectedClassId)
+    if (p && p.members >= p.capacity) redirect(`/book/${slug}/class/${preselectedClassId}#waitlist`)
+  }
+  if (offered.length === 0) redirect(`/book/${slug}#classes`)
+
   const primaryColor = org.primary_color || '#4ecde6'
 
   return (
@@ -155,7 +172,7 @@ export default async function QuickTrialPage({
           // When the parent came from a specific class page (?class=...),
           // scope the trial booking to that class only. They're not browsing,
           // they've already chosen — showing all classes again is confusing.
-          groups={(groups || [])
+          groups={(offered || [])
             .filter((g) => !preselectedClassId || g.id === preselectedClassId)
             .map((g) => ({
               id: g.id,
@@ -164,6 +181,7 @@ export default async function QuickTrialPage({
               time: g.time_slot,
               location: g.location,
               ageGroup: g.age_group as string | null,
+              places: placesFor(g.id),
             }))}
           preselectedGroupId={preselectedClassId || null}
           primaryColor={primaryColor}

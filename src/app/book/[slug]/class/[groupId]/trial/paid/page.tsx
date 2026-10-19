@@ -4,7 +4,8 @@
 // via the existing Stripe paths — untouched. See
 // src/lib/supabase/public.ts.
 import { createPublicClient } from '@/lib/supabase/public'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { loadClassPlaces, placesDb } from '@/lib/class-places'
 import PaidTrialForm from './PaidTrialForm'
 
 export default async function PaidTrialPage({
@@ -32,6 +33,11 @@ export default async function PaidTrialPage({
     .single()
 
   if (!group) notFound()
+
+  // A class whose members fill it: the waiting list is the only option (src/lib/class-places.ts).
+  const today = new Date().toISOString().slice(0, 10)
+  const pl = (await loadClassPlaces(placesDb(), org.id, [groupId], today, today).catch(() => new Map())).get(groupId)
+  if (pl && pl.members >= pl.capacity) redirect(`/book/${slug}/class/${groupId}#waitlist`)
 
   const classType = (group.class_type as string) || 'group'
   const paidOnlyClass = ['1-2-1', '2-1', 'intensity'].includes(classType)

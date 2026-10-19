@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { sameTrial, TRIAL_ALREADY_BOOKED_MESSAGE } from '@/lib/trial-alerts'
+import { trialPlaceFree, placesDb, CLASS_FULL_TRIAL_MESSAGE } from '@/lib/class-places'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -105,6 +106,11 @@ export async function POST(request: NextRequest) {
       if ((sameDay || []).some((b) => sameTrial(b, wanted))) {
         return NextResponse.json({ error: TRIAL_ALREADY_BOOKED_MESSAGE, code: 'trial_already_booked' }, { status: 409 })
       }
+    }
+
+    // A trial takes a place on its day: no paying for a day that is already full (src/lib/class-places.ts).
+    if (sessionDate && !(await trialPlaceFree(placesDb(), groupId, sessionDate)).ok) {
+      return NextResponse.json({ error: CLASS_FULL_TRIAL_MESSAGE, code: 'class_full' }, { status: 409 })
     }
 
     // Resolve the platform fee rate from the academy's platform plan

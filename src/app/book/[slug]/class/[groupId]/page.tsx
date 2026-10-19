@@ -541,7 +541,7 @@ export default async function ClassBookingPage({
             /* Real Join Waitlist flow — checks auth, inserts a waitlist row,
                shows current position. Replaces the old "fake" link that
                just dropped people in signup with no waitlist outcome. */
-            <ClassWaitlistCTA groupId={groupId} slug={slug} primaryColor={primaryColor} />
+            <div id="waitlist"><ClassWaitlistCTA groupId={groupId} slug={slug} primaryColor={primaryColor} /></div>
           ) : (!plans || plans.length === 0) ? (
             <Link
               href={`/book/${slug}/class/${groupId}/quick-book`}
@@ -556,7 +556,8 @@ export default async function ClassBookingPage({
             </Link>
           ) : null}
 
-          {showTrialCta && (
+          {/* A full class: waiting list only, no trial on top (CFC INTRO, 19 Oct 2026: 7 for 6 places). */}
+          {showTrialCta && !isFull && (
             <Link
               href={hasPaidTrial ? `/book/${slug}/class/${groupId}/trial/paid` : `/book/${slug}/trial/quick?class=${groupId}`}
               className="block w-full text-center py-4 sm:py-5 rounded-2xl font-extrabold text-base sm:text-xl transition-all hover:scale-[1.02] active:scale-[0.98] hover:brightness-110"

@@ -10,6 +10,7 @@ import { pricesForClass } from '@/lib/class-prices'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ageOn, latestClassDate } from '@/lib/class-register'
 import { paidTrialPence } from '@/lib/trial-booking'
+import { loadClassPlaces, placesDb, overBy, overLine } from '@/lib/class-places'
 
 export default async function GroupDetailPage({
   params,
@@ -145,6 +146,14 @@ export default async function GroupDetailPage({
     trialGuests = ((trials || []) as { id: string; child_name: string; child_age: number | null; parent_name: string | null; parent_phone: string | null; preferred_date: string | null; notes: string | null }[])
       .map((t) => ({ id: t.id, childName: (t.child_name || '').replace(/\s+/g, ' ').trim(), childAge: t.child_age, parentName: t.parent_name, parentPhone: t.parent_phone, date: t.preferred_date, paid: paidTrialPence(t.notes) != null }))
   }
+  // Days in the next two weeks where members + trials go over the limit (src/lib/class-places.ts). Staff only.
+  let overDays: { date: string; line: string }[] = []
+  if (isAdmin) {
+    const from = new Date().toISOString().slice(0, 10), to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)
+    const pl = (await loadClassPlaces(placesDb(), group.organisation_id as string, [group.id as string], from, to).catch(() => new Map())).get(group.id as string)
+    if (pl) overDays = Object.entries(pl.trials as Record<string, { child: string }[]>).filter(([, t]) => overBy(pl.capacity, pl.members, t.length) > 0).sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, t]) => ({ date, line: overLine(pl.capacity, pl.members, t.map((x) => x.child)) }))
+  }
   // Red box next to each child: what's outstanding (src/lib/class-outstanding.ts). Staff only.
   const outstandingByPlayer = isAdmin
     ? await loadClassOutstanding(
@@ -203,6 +212,8 @@ export default async function GroupDetailPage({
           <span>/</span>
           <span className="text-white/80">{group.name}</span>
         </div>
+
+        <OverLimitDays days={overDays} />
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -424,6 +435,21 @@ export default async function GroupDetailPage({
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Red line per day over the limit: "Mon 19 Oct: 7 for 6 places (6 members + 1 trial: Kylan Bamford)". */
+function OverLimitDays({ days }: { days: { date: string; line: string }[] }) {
+  if (!days.length) return null
+  return (
+    <div className="rounded-xl border border-[#6b2433] bg-[#3a1620] px-4 py-3 text-sm text-[#ff6b6b]" data-testid="class-over-limit">
+      {days.map((d) => (
+        <p key={d.date} className="font-semibold">
+          {new Date(`${d.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })}: {d.line}
+        </p>
+      ))}
+      <p className="mt-1 text-[#ff6b6b]/80">The class filled after the trial was booked. Move the trial to another day or class, or keep them.</p>
     </div>
   )
 }

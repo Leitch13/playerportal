@@ -16,6 +16,8 @@ interface TrialFormProps {
     time: string | null
     location: string | null
     ageGroup: string | null
+    /** Places on each day: a trial takes one (src/lib/class-places.ts). */
+    places?: { capacity: number; members: number; trials: Record<string, number> } | null
   }[]
   primaryColor: string
   slug: string
@@ -58,7 +60,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
   // Parent picks from a dropdown of actual class dates instead of a free-form picker —
   // impossible to pick a date the class doesn't run.
   const DAYS_OF_WEEK = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-  const validDates: { iso: string; label: string }[] = []
+  const validDates: { iso: string; label: string; full: boolean }[] = []
   if (selectedGroup?.day) {
     const targetIdx = DAYS_OF_WEEK.indexOf(selectedGroup.day.toLowerCase())
     if (targetIdx >= 0) {
@@ -78,6 +80,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
           // clocks going forward and back was affected.
           iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
           label: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) + (selectedGroup.time ? ` · ${selectedGroup.time}` : ''),
+          full: false,
         })
       }
     }
@@ -158,6 +161,11 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
     return URL.createObjectURL(blob)
   }
 
+  // A day already full (members + trials booked that day) can't be picked.
+  const pl = selectedGroup?.places
+  if (pl) for (const d of validDates) d.full = pl.members + (pl.trials[d.iso] || 0) >= pl.capacity
+  const allDatesFull = validDates.length > 0 && validDates.every((d) => d.full)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!parentName || !parentEmail || !childName) {
@@ -172,8 +180,23 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       setError('Please tick to confirm you’ve read the Terms & Conditions.')
       return
     }
+    if (allDatesFull) {
+      setError('This class is full. Join its waiting list, or pick another class.')
+      return
+    }
     setLoading(true)
     setError('')
+
+    // The server says whether there's still a place that day (someone may have just taken it).
+    if (groupId && sessionDate) {
+      const check = await fetch('/api/trials/place-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId, date: sessionDate }) }).catch(() => null)
+      if (check && check.status === 409) {
+        const j = await check.json().catch(() => ({}))
+        setError(j.error || 'Sorry, that day is now full. Please pick another date.')
+        setLoading(false)
+        return
+      }
+    }
 
     const supabase = createClient()
 
@@ -243,7 +266,8 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
     })
 
     if (insertError) {
-      setError(insertError.message)
+      // The database refuses a trial for a full day (supabase/123_trial_needs_a_place.sql).
+      setError(/class_full/.test(insertError.message) ? 'Sorry, that day is now full. Please pick another date, or join the class waiting list.' : insertError.message)
       setLoading(false)
       return
     }
@@ -417,7 +441,12 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               {groups[0].day}{groups[0].time ? ` · ${groups[0].time}` : ''}{groups[0].location ? ` · ${groups[0].location}` : ''}
             </div>
           </div>
-          {validDates.length > 0 && (
+          {allDatesFull && (
+            <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200" data-testid="trial-class-full">
+              This class is full. <a href={`/book/${slug}/class/${groups[0].id}#waitlist`} className="underline font-semibold">Join the waiting list</a> and the academy will be in touch when a place opens, or <a href={`/book/${slug}#classes`} className="underline">see other classes</a>.
+            </p>
+          )}
+          {validDates.length > 0 && !allDatesFull && (
             <div>
               <label className="text-[10px] uppercase tracking-wider font-bold text-white/40 block mb-1.5">
                 Pick your date
@@ -431,7 +460,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               >
                 <option value="">Select a date…</option>
                 {validDates.map((d) => (
-                  <option key={d.iso} value={d.iso}>{d.label}</option>
+                  <option key={d.iso} value={d.iso} disabled={d.full}>{d.label}{d.full ? ' · full' : ''}</option>
                 ))}
               </select>
             </div>
@@ -460,7 +489,12 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               came from the main booking page (every ad link) booked a trial with no
               date, so no reminders went out and the academy had to chase a day
               (Jamie Allan, Kayleigh Childs + Tracy Anderson, 14 Oct 2026). */}
-          {validDates.length > 0 && (
+          {allDatesFull && (
+            <p className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200" data-testid="trial-class-full">
+              That class is full. <a href={`/book/${slug}/class/${groupId}#waitlist`} className="underline font-semibold">Join its waiting list</a>, or pick another class.
+            </p>
+          )}
+          {validDates.length > 0 && !allDatesFull && (
             <div className="mt-3" data-testid="trial-date-after-class">
               <label className="text-xs font-medium text-white/50 block mb-1.5">Pick your date</label>
               <select
@@ -472,7 +506,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               >
                 <option value="">Select a date…</option>
                 {validDates.map((d) => (
-                  <option key={d.iso} value={d.iso}>{d.label}</option>
+                  <option key={d.iso} value={d.iso} disabled={d.full}>{d.label}{d.full ? ' · full' : ''}</option>
                 ))}
               </select>
             </div>

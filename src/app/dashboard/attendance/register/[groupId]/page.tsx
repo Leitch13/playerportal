@@ -29,6 +29,7 @@ import LiveRegisterClient, {
   type LiveRegisterTrial,
 } from './LiveRegisterClient'
 import RegisterTabs from './Tabs'
+import { loadClassPlaces, placesDb, overBy, overLine } from '@/lib/class-places'
 
 function todayIso(): string {
   return new Date().toISOString().split('T')[0]
@@ -143,6 +144,11 @@ export default async function RegisterPage({
     status: (t as { status?: string }).status ?? 'pending',
   }))
 
+  // This day over the class limit? (members + trials, src/lib/class-places.ts)
+  const dayPlaces = orgId ? (await loadClassPlaces(placesDb(), orgId, [groupId], sessionDate, sessionDate).catch(() => new Map())).get(groupId) : null
+  const dayTrials = (dayPlaces?.trials[sessionDate] || []) as { child: string }[]
+  const overToday = dayPlaces && overBy(dayPlaces.capacity, dayPlaces.members, dayTrials.length) > 0 ? overLine(dayPlaces.capacity, dayPlaces.members, dayTrials.map((t) => t.child)) : null
+
   return (
     <div className="space-y-4 p-6 lg:p-8 bg-[#080e18] -m-6 lg:-m-8 min-h-screen text-white pb-24">
       {/* ─── Breadcrumb ─── */}
@@ -184,6 +190,12 @@ export default async function RegisterPage({
           </Link>
         </div>
       </div>
+
+      {overToday && (
+        <div className="rounded-xl border border-[#6b2433] bg-[#3a1620] px-4 py-3 text-sm font-semibold text-[#ff6b6b]" data-testid="register-over-limit">
+          {overToday}. The class filled after the trial was booked.
+        </div>
+      )}
 
       {/* ─── Live Register client ─── */}
       <LiveRegisterClient
