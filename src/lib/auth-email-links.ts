@@ -49,8 +49,9 @@ export async function sendAuthLink(rawEmail: string, kind: AuthLinkKind, appUrl:
   // No account with that email (or it can't sign in): say nothing, send nothing.
   if (error || !hashed || !data.user) return { sent: false, reason: 'no_account' }
 
-  const { data: prof } = await admin.from('profiles').select('full_name, organisation_id, organisations(name)').eq('id', data.user.id).maybeSingle()
-  const academy = (prof?.organisations as unknown as { name?: string } | null)?.name || null
+  const { data: prof } = await admin.from('profiles').select('full_name, organisation_id').eq('id', data.user.id).maybeSingle()
+  const { data: org } = prof?.organisation_id ? await admin.from('organisations').select('name').eq('id', prof.organisation_id).maybeSingle() : { data: null }
+  const academy = (org?.name as string | undefined) || null
   const firstName = ((prof?.full_name as string | null) || '').trim().split(/\s+/)[0] || null
   const mail = authLinkEmail({ kind, link: authLinkUrl(appUrl, hashed, kind), academyName: academy, firstName })
   const r = await sendEmail({ to: email, ...mail, fromName: academy || 'Player Portal' })
