@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -16,14 +15,9 @@ export default function ForgotPasswordPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const supabase = createClient()
-    const { error: rpError } = await supabase.auth.resetPasswordForEmail(email, {
-      // Route through /auth/confirm so the emailed code is exchanged for a
-      // session BEFORE the reset page loads. Landing straight on
-      // /auth/reset-password leaves updateUser() with no session ("Auth
-      // session missing"). Supabase appends the code to this redirect.
-      redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent('/auth/reset-password')}`,
-    })
+    // Player Portal sends the link itself so it works on any device (src/lib/auth-email-links.ts).
+    const res = await fetch('/api/auth/email-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, kind: 'reset' }) })
+    const rpError = res.ok ? null : { message: ((await res.json().catch(() => ({}))) as { error?: string }).error || 'Something went wrong. Please try again.' }
     if (rpError) {
       setError(rpError.message)
       setLoading(false)
@@ -35,10 +29,7 @@ export default function ForgotPasswordPage() {
 
   async function handleResend() {
     setResending(true)
-    const supabase = createClient()
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent('/auth/reset-password')}`,
-    })
+    await fetch('/api/auth/email-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, kind: 'reset' }) }).catch(() => {})
     setResending(false)
   }
 

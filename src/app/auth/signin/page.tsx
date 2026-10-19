@@ -74,15 +74,9 @@ function SignInForm() {
     }
     setMagicLoading(true)
     setError('')
-    const supabase = createClient()
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email,
-      // Land on /auth/confirm so the magic-link code is exchanged for a
-      // session before /dashboard renders; otherwise the first authenticated
-      // request has no session and bounces back to sign-in.
-      options: { emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent('/dashboard')}` },
-    })
+    // Player Portal sends the link itself so it works on any device (src/lib/auth-email-links.ts).
+    const res = await fetch('/api/auth/email-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, kind: 'signin' }) })
+    const otpError = res.ok ? null : { message: ((await res.json().catch(() => ({}))) as { error?: string }).error || 'Something went wrong. Please try again.' }
     if (otpError) {
       setError(otpError.message)
       setMagicLoading(false)

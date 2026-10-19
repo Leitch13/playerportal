@@ -2995,3 +2995,22 @@ export function refundedEmail(params: {
     `, undefined, params.academyName),
   }
 }
+
+/**
+ * Sign-in / reset-password link, sent by Player Portal itself (src/lib/auth-email-links.ts).
+ * The link works on any device and in any app (WLFA parent Steven Docherty, 19 Oct 2026).
+ */
+export function authLinkEmail(params: { kind: 'reset' | 'signin'; link: string; academyName?: string | null; firstName?: string | null }): { subject: string; html: string } {
+  const accent = '#4ecde6'
+  const reset = params.kind === 'reset'
+  const hi = params.firstName ? `Hi ${escapeHtml(params.firstName)},` : 'Hi,'
+  const content = `
+    <p style="margin:0 0 8px;color:#999;font-size:13px;font-weight:500">${hi}</p>
+    <h1 style="margin:0 0 12px;font-size:22px;color:#fff;font-weight:800">${reset ? 'Set a new password' : 'Your login link'}</h1>
+    <p style="margin:0 0 4px;font-size:15px;color:#e5e5e5">${reset ? 'Tap the button to choose a new password. You&apos;ll be signed in straight after.' : 'Tap the button to sign in. No password needed.'}</p>
+    ${ctaButton(reset ? 'Set my password' : 'Sign me in', params.link, accent)}
+    <p style="margin:0 0 6px;color:#8a98a8;font-size:13px;line-height:1.5">It works on this phone or any other device, and lasts for 1 hour. You can only use it once.</p>
+    <p style="margin:0;color:#8a98a8;font-size:13px;line-height:1.5">Didn&apos;t ask for this? Ignore this email and nothing will change.</p>
+  `
+  return { subject: reset ? 'Set your new password' : 'Your login link', html: baseLayout(content, accent, params.academyName || undefined) }
+}

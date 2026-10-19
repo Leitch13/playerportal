@@ -4,7 +4,7 @@
 // /auth/confirm and /auth/reset-password, and the middleware must use the
 // shared rule in src/lib/auth-routes.ts rather than an inlined copy.
 // Broke before — see the comment at the top of src/lib/auth-routes.ts.
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 
 const fail = []
 const routes = readFileSync('src/lib/auth-routes.ts', 'utf8')
@@ -16,10 +16,22 @@ if (!/signedInMayStayOnAuthRoute\(/.test(mw)) {
   fail.push('src/lib/supabase/middleware.ts no longer uses signedInMayStayOnAuthRoute() — the password-link rule must live in src/lib/auth-routes.ts')
 }
 
+// Forgot-password and email-login links must work on any device: Player Portal sends them
+// itself (src/lib/auth-email-links.ts). The login system's own browser-only emails failed when
+// opened on another phone or inside the Mail app (WLFA parent, 19 Oct 2026). Never go back.
+const walk = (d) => readdirSync(d).flatMap((f) => { const p = `${d}/${f}`; return statSync(p).isDirectory() ? walk(p) : [p] })
+for (const f of walk('src').filter((f) => /\.(ts|tsx)$/.test(f) && !/\.test\./.test(f))) {
+  const src = readFileSync(f, 'utf8')
+  if (/resetPasswordForEmail\(|signInWithOtp\(/.test(src)) fail.push(`${f} sends a browser-only login email (resetPasswordForEmail / signInWithOtp). Use /api/auth/email-link instead, so the link works on any device.`)
+}
+for (const [f, needle] of [['src/app/auth/forgot-password/page.tsx', "/api/auth/email-link"], ['src/app/auth/signin/page.tsx', "/api/auth/email-link"], ['src/lib/auth-email-links.ts', 'generateLink(']]) {
+  if (!readFileSync(f, 'utf8').includes(needle)) fail.push(`${f} no longer uses ${needle}`)
+}
+
 if (fail.length) {
   console.error('\n✖ Auth invariants broken — password reset / set-password links would stop working:\n')
   for (const f of fail) console.error('  • ' + f)
   console.error('')
   process.exit(1)
 }
-console.log('✓ auth invariants ok (password links reach the set-password page)')
+console.log('✓ auth invariants ok (password links reach the set-password page and work on any device)')
