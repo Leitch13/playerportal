@@ -4,7 +4,7 @@ import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, 
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { emailPriceChange } from '@/lib/one-to-one/price-change'
-import { coachSessionChange } from '@/lib/one-to-one/coach-notify'
+import { coachSessionChange, coachRegularMoved } from '@/lib/one-to-one/coach-notify'
 import { markBreakdownDue, sendFamilyMonth } from '@/lib/one-to-one/family-month-send'
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { seatForNewSlot, seatForSession, seatClashMessage, sameWeeks, onSameWeeks, type SessionType } from '@/lib/one-to-one/seats'
@@ -384,6 +384,8 @@ export async function POST(req: NextRequest) {
           if (error && live) stayed.push(`${fmtShort(f.session_date)} (${error.code === '23505' || error.code === '23P01' ? 'the coach is booked then' : error.message})`)
         }
         await rollAhead(admin, orgId, today)
+        // The coach (or both coaches) hear about it, as they do when one date moves.
+        await coachRegularMoved(admin, cur, { coach_id: coachId, venue_id: venueId, weekday, start_minutes: start }, (future ?? []).filter((f) => f.status === 'scheduled').map((f) => shift ? addDays(f.session_date, shift) : f.session_date).find((d) => d >= today) || today)
         const warning = stayed.length
           ? `Saved. ${stayed.length} date${stayed.length === 1 ? '' : 's'} stayed as ${stayed.length === 1 ? 'it was' : 'they were'}: ${stayed.join('; ')}. Move ${stayed.length === 1 ? 'it' : 'them'} by hand on the timetable if needed.`
           : null

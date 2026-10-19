@@ -260,6 +260,7 @@ const FEATURES = [
   ['Camps: ask families for missing details', `${A}/api/admin/camps/[campId]/ask-details/route.ts`, ['missingDetails(svc, campId)', "action: 'camp.details_requested'"]],
   ['Camps: family link takes a missing date of birth', `${A}/api/camps/backup-contact/route.ts`, ['validChildDob(body.dob)']],
   ['1-2-1s: coaches emailed about their sessions', 'src/lib/one-to-one/coach-notify.ts', ['export async function coachNewRegular', 'export async function coachSessionChange']],
+  ['1-2-1s: coach emailed when a whole regular moves', 'src/app/api/one-to-one/admin/route.ts', ['await coachRegularMoved(admin, cur,']],
   ['1-2-1s: coach emails wired in', 'src/lib/one-to-one/money.ts', ['await coachNewRegular(admin, slot)', "await coachSessionChange(admin, 'off', s"]],
   ['1-2-1s: coach told about one-off bookings', `${A}/api/stripe/one-to-one-webhooks/route.ts`, ["await coachSessionChange(admin, 'booked', s)"]],
   ['1-2-1s: coach told about cover and moves', `${A}/api/one-to-one/admin/route.ts`, ["coachSessionChange(admin, 'cover'", "coachSessionChange(admin, 'moved_out'"]],

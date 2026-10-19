@@ -51,3 +51,41 @@ export async function coachSessionChange(admin: SupabaseClient, kind: 'booked' |
     await sendCoachNotice({ academy: b.academy, to: b.to, coachName: b.coachName, parentPhone: kind === 'off' || kind === 'moved_out' ? null : b.phone, ...t })
   } catch (e) { console.error('[coach-notify]', kind, e) }
 }
+
+/**
+ * A whole regular changed day, time, coach or venue (Regulars → Change day, time or coach).
+ * Moving one date already tells the coach; moving the whole regular has to too (John, 19 Oct 2026).
+ * Only for a live regular: one still waiting on its set-up link hasn't been sent to the coach yet,
+ * and coachNewRegular tells them the final day and time when it goes live.
+ */
+type SlotBits = { organisation_id: string; coach_id: string; venue_id: string; weekday: number; start_minutes: number; parent_id: string; player_id: string; frequency: string; session_type: string; status: string }
+export async function coachRegularMoved(admin: SupabaseClient, was: SlotBits, now: Pick<SlotBits, 'coach_id' | 'venue_id' | 'weekday' | 'start_minutes'>, fromDate: string) {
+  if (was.status !== 'active' && was.status !== 'paused') return
+  if (was.coach_id === now.coach_id && was.venue_id === now.venue_id && was.weekday === now.weekday && was.start_minutes === now.start_minutes) return
+  try {
+    const child = await childName(admin, was.player_id)
+    const every = was.frequency === 'fortnightly' ? 'every other' : was.frequency === 'monthly' ? 'once a month on' : 'every'
+    const kind = was.session_type === 'two_to_one' ? '2-to-1' : '1-to-1'
+    const from = `From ${fmtDate(fromDate)}.`
+    const oldB = await bits(admin, was.organisation_id, was.coach_id, was.parent_id, was.venue_id)
+    const newB = now.coach_id === was.coach_id && now.venue_id === was.venue_id ? oldB : await bits(admin, was.organisation_id, now.coach_id, was.parent_id, now.venue_id)
+    const oldWhen = `${every} ${DAY[was.weekday]} at ${hhmm(was.start_minutes)}${oldB.venue ? `, ${oldB.venue}` : ''}`
+    const newWhen = `${every} ${DAY[now.weekday]} at ${hhmm(now.start_minutes)}${newB.venue ? `, ${newB.venue}` : ''}`
+    if (now.coach_id === was.coach_id) {
+      if (!oldB.to) return
+      await sendCoachNotice({ academy: oldB.academy, to: oldB.to, coachName: oldB.coachName, parentPhone: oldB.phone,
+        subject: `Regular moved: ${child}, now ${DAY[now.weekday]} ${hhmm(now.start_minutes)}`,
+        heading: `${child}'s regular has moved`,
+        lines: [`Was ${kind}, ${oldWhen}.`, `Now ${newWhen}.`, from] })
+      return
+    }
+    if (oldB.to) await sendCoachNotice({ academy: oldB.academy, to: oldB.to, coachName: oldB.coachName, parentPhone: null,
+      subject: `No longer with you: ${child}, ${DAY[was.weekday]} ${hhmm(was.start_minutes)}`,
+      heading: `${child}'s regular has moved to another coach`,
+      lines: [`${kind}, ${oldWhen}, is no longer with you.`, from] })
+    if (newB.to) await sendCoachNotice({ academy: newB.academy, to: newB.to, coachName: newB.coachName, parentPhone: newB.phone,
+      subject: `Now with you: ${child}, ${DAY[now.weekday]} ${hhmm(now.start_minutes)}`,
+      heading: `${child} is now a regular with you`,
+      lines: [`${kind}, ${newWhen}.`, from] })
+  } catch (e) { console.error('[coach-notify] regular moved', e) }
+}
