@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { toCSV } from '@/lib/csv'
+import { loadOneToOneMoney, STATUS_LABEL } from '@/lib/one-to-one/money-report'
+import { adminClient } from '@/lib/one-to-one/db'
 
 export async function GET(
   request: NextRequest,
@@ -96,6 +98,18 @@ export async function GET(
           p.status,
         ]
       })
+      break
+    }
+
+    // 1-2-1 money isn't in `payments` (No.1, 19 Oct 2026). Admin and org checked above.
+    case 'one-to-ones': {
+      const all = orgId ? await loadOneToOneMoney(adminClient(), orgId as string) : []
+      const data = all.filter((r) => (!from || r.date >= from) && (!to || r.date <= to))
+      headers = ['Date', 'Parent', 'Email', 'Child', 'What', 'Amount', 'Status']
+      rows = data.map((r) => [
+        new Date(`${r.date}T12:00:00Z`).toLocaleDateString('en-GB'), r.parentName, r.email || '', r.children, r.what,
+        `£${(r.amountPence / 100).toFixed(2)}`, STATUS_LABEL[r.status],
+      ])
       break
     }
 

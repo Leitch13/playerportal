@@ -6,6 +6,10 @@ import LineChart from '@/components/LineChart'
 import AttendanceHeatmap from '@/components/AttendanceHeatmap'
 import RevenueForecast from '@/components/RevenueForecast'
 import { oneToOneByMonth, type OneToOneCharge } from '@/lib/analytics-revenue'
+import { loadOneToOneMoney, loadOneToOneActivity, summarise } from '@/lib/one-to-one/money-report'
+import { adminClient } from '@/lib/one-to-one/db'
+import { todayLondon, monthStart, monthEnd } from '@/lib/one-to-one/time'
+import Link from 'next/link'
 
 export default async function AnalyticsPage() {
   const supabase = await createClient()
@@ -53,6 +57,14 @@ export default async function AnalyticsPage() {
   )
   for (const [key, pounds] of oneToOneMonths) revenueByMonth.set(key, (revenueByMonth.get(key) || 0) + pounds)
   const oneToOneRevenue = Math.round([...oneToOneMonths.values()].reduce((a, b) => a + b, 0))
+  // The 1-2-1 section below (No.1, 19 Oct 2026: Analytics showed one line about 1-2-1s).
+  const oneToOneToday = todayLondon()
+  const [oneToOneMoney, oneToOneActivity] = orgId
+    ? await Promise.all([loadOneToOneMoney(adminClient(), orgId as string), loadOneToOneActivity(adminClient(), orgId as string, monthStart(oneToOneToday), monthEnd(oneToOneToday), oneToOneToday)])
+    : [[], null]
+  const oneToOneSum = summarise(oneToOneMoney)
+  const oneToOneMonthName = new Date(`${oneToOneToday}T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' })
+  const showOneToOne = oneToOneMoney.length > 0 || (oneToOneActivity && (oneToOneActivity.regularsLive + oneToOneActivity.regularsWaiting + oneToOneActivity.sessionsThisMonth) > 0)
 
   const revenueData = Array.from(revenueByMonth.entries()).map(([label, value]) => ({
     label,
@@ -709,6 +721,36 @@ export default async function AnalyticsPage() {
           color={monthlyGrowth >= 0 ? '#059669' : '#ef4444'}
         />
       </div>
+
+      {/* 1-2-1s: money and sessions (src/lib/one-to-one/money-report.ts) */}
+      {showOneToOne && oneToOneActivity && (
+        <div className="bg-[#0f1a2b] rounded-2xl border border-[#1d2c42] p-5 space-y-4" data-testid="analytics-one-to-ones">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-base font-bold">1-2-1s</h2>
+            <Link href="/dashboard/payments" className="text-xs font-semibold text-[#4ecde6] hover:underline">Every 1-2-1 payment is on Payments →</Link>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <MetricCard label="Paid for 1-2-1s" value={`£${(oneToOneSum.paidPence / 100).toLocaleString('en-GB', { maximumFractionDigits: 2 })}`} sub="All time, card and cash" color="#059669" />
+            <MetricCard label="Waiting to be paid" value={`£${((oneToOneSum.waitingPence + oneToOneSum.failedPence) / 100).toLocaleString('en-GB', { maximumFractionDigits: 2 })}`} sub={`${oneToOneSum.waitingCount + oneToOneSum.failedCount} family months${oneToOneSum.failedCount ? ` · ${oneToOneSum.failedCount} card failed` : ''}`} color={oneToOneSum.waitingPence + oneToOneSum.failedPence > 0 ? '#ef4444' : '#059669'} />
+            <MetricCard label="Regulars" value={`${oneToOneActivity.regularsLive} live`} sub={`${oneToOneActivity.regularsWaiting} waiting on their set-up link`} color="#4ecde6" />
+            <MetricCard label="Sessions not marked" value={oneToOneActivity.notMarked.toString()} sub="Past sessions with no Coached or No show" color={oneToOneActivity.notMarked > 0 ? '#f59e0b' : '#059669'} />
+          </div>
+          {oneToOneActivity.perCoach.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-white/40 mb-2">Sessions in {oneToOneMonthName} by coach · {oneToOneActivity.sessionsThisMonth} in all</p>
+              <div className="space-y-1.5">
+                {oneToOneActivity.perCoach.map(([coach, n]) => (
+                  <div key={coach} className="flex items-center gap-3 text-sm">
+                    <span className="w-36 shrink-0 truncate">{coach}</span>
+                    <div className="h-2 flex-1 rounded-full bg-white/[0.05]"><div className="h-2 rounded-full bg-[#4ecde6]" style={{ width: `${Math.round((n / oneToOneActivity.perCoach[0][1]) * 100)}%` }} /></div>
+                    <span className="w-8 text-right tabular-nums text-white/70">{n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Retention, Churn & Revenue per player */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

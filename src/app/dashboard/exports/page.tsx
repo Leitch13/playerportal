@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ExportCard from './ExportCard'
+import { adminClient } from '@/lib/one-to-one/db'
 
 export default async function ExportsPage() {
   const supabase = await createClient()
@@ -19,10 +20,19 @@ export default async function ExportsPage() {
     supabase.from('trial_bookings').select('*', { count: 'exact', head: true }).eq('organisation_id', orgId),
   ])
 
+  // 1-2-1 money rows: family months plus paid one-off bookings (see /api/export/one-to-ones).
+  const admin = adminClient()
+  const [oneMonths, oneOffs] = orgId ? await Promise.all([
+    admin.from('coaching_charges').select('id', { count: 'exact', head: true }).eq('organisation_id', orgId),
+    admin.from('coaching_sessions').select('id', { count: 'exact', head: true }).eq('organisation_id', orgId).neq('source', 'regular').in('charge_state', ['paid_online', 'paid_cash', 'refunded']).is('charge_id', null),
+  ]) : [{ count: 0 }, { count: 0 }]
+  const oneToOneCount = (oneMonths.count || 0) + (oneOffs.count || 0)
+
   const exports = [
     { type: 'players', title: 'Players', description: 'All player data including name, DOB, groups', icon: '', count: players.count || 0, hasDateFilter: false },
     { type: 'attendance', title: 'Attendance', description: 'Attendance records with dates and statuses', icon: '', count: attendance.count || 0, hasDateFilter: true },
     { type: 'payments', title: 'Payments', description: 'Payment history with amounts and statuses', icon: '', count: payments.count || 0, hasDateFilter: true },
+    ...(oneToOneCount > 0 ? [{ type: 'one-to-ones', title: '1-2-1 Payments', description: 'Each family month and booked 1-2-1: child, amount, paid or waiting', icon: '', count: oneToOneCount, hasDateFilter: true }] : []),
     { type: 'parents', title: 'Parents', description: 'Parent profiles with contact details', icon: '', count: parents.count || 0, hasDateFilter: false },
     { type: 'enrolments', title: 'Enrolments', description: 'Current class enrolments', icon: '', count: enrolments.count || 0, hasDateFilter: false },
     { type: 'trials', title: 'Trial Bookings', description: 'Free trial booking requests', icon: '', count: trials.count || 0, hasDateFilter: true },

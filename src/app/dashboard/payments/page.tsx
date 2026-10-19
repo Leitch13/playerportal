@@ -45,6 +45,9 @@ import PayoutsBox from './PayoutsBox'
 import MembershipsList, { type MembershipRow } from './MembershipsList'
 import { getPayoutSnapshot } from '@/lib/payouts'
 import { recoverySummary } from '@/lib/refund-recovery'
+import { loadOneToOneMoney, summarise } from '@/lib/one-to-one/money-report'
+import { adminClient } from '@/lib/one-to-one/db'
+import OneToOnePayments from './OneToOnePayments'
 
 // Phase 1A — Membership & Billing safe reskin. Flag OFF (default) ⇒ the parent
 // page renders byte-identically to today. Flag ON ⇒ a tabbed, subscription-first
@@ -789,6 +792,7 @@ async function AdminPayments({
   // across every month (15 Oct 2026: finding the payment to refund meant
   // scrolling a month's list). Wins over the month window. ───
   const searching = q.length >= 2
+  let searchParentIds: string[] = []
   if (searching) {
     const like = `%${q.replace(/[%_,()]/g, ' ')}%`
     const [{ data: ps }, { data: kids }] = await Promise.all([
@@ -797,6 +801,8 @@ async function AdminPayments({
     ])
     const parentIds = (ps || []).map((r) => r.id as string)
     const playerIds = (kids || []).map((r) => r.id as string)
+    const { data: kidParents } = playerIds.length ? await supabase.from('players').select('parent_id').in('id', playerIds) : { data: [] }
+    searchParentIds = [...new Set([...parentIds, ...(kidParents || []).map((r) => r.parent_id as string).filter(Boolean)])]
     const ors = [
       parentIds.length ? `parent_id.in.(${parentIds.join(',')})` : '',
       playerIds.length ? `player_id.in.(${playerIds.join(',')})` : '',
@@ -818,6 +824,13 @@ async function AdminPayments({
   }
 
   const { data: payments } = await query
+
+  // ─── 1-2-1 money (coaching_charges + paid one-off sessions) — it isn't in
+  // `payments`, so it was invisible here (No.1, 19 Oct 2026). Same month and
+  // search as the list above. See src/lib/one-to-one/money-report.ts. ───
+  const oneToOneAll = await loadOneToOneMoney(adminClient(), orgId, searching ? { parentIds: searchParentIds } : {})
+  const oneToOneRows = searching ? oneToOneAll : oneToOneAll.filter((r) => !/^\d{4}-\d{2}$/.test(effectiveMonth) || r.date.slice(0, 7) === effectiveMonth)
+  const oneToOneWaiting = summarise(oneToOneAll)
 
   // ─── Month options for the picker: every month that has payments, newest
   // first, capped at 12 so the row stays one line. Built from allPayments
@@ -1437,6 +1450,9 @@ async function AdminPayments({
                 </div>
               </div>
             )}
+
+            {/* 1-2-1 money: family months and booked one-offs (src/lib/one-to-one/money-report.ts) */}
+            <OneToOnePayments rows={oneToOneRows} waitingPence={oneToOneWaiting.waitingPence} waitingCount={oneToOneWaiting.waitingCount} failedPence={oneToOneWaiting.failedPence} failedCount={oneToOneWaiting.failedCount} monthLabel={monthLabel} searching={searching ? q : null} />
           </div>
         </>
       )}
