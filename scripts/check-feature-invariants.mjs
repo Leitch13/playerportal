@@ -260,7 +260,7 @@ const FEATURES = [
   ['Camps: ask families for missing details', `${A}/api/admin/camps/[campId]/ask-details/route.ts`, ['missingDetails(svc, campId)', "action: 'camp.details_requested'"]],
   ['Camps: family link takes a missing date of birth', `${A}/api/camps/backup-contact/route.ts`, ['validChildDob(body.dob)']],
   ['1-2-1s: coaches emailed about their sessions', 'src/lib/one-to-one/coach-notify.ts', ['export async function coachNewRegular', 'export async function coachSessionChange']],
-  ['Classes: a full class shows only the waiting list', 'src/app/book/[slug]/class/[groupId]/page.tsx', ['{showTrialCta && !isFull && (', '<div id="waitlist">']],
+  ['Classes: a full class shows only the waiting list', 'src/app/book/[slug]/class/[groupId]/page.tsx', ['{showTrialCta && !isFull && (', '<div id="waitlist">', '{!isFull && <Link']],
   ['Classes: free-trial form checks places', 'src/app/book/[slug]/trial/quick/TrialForm.tsx', ["fetch('/api/trials/place-check'", 'disabled={d.full}']],
   ['Classes: full class trial links go to the waiting list', 'src/app/book/[slug]/trial/quick/page.tsx', ['redirect(`/book/${slug}/class/${preselectedClassId}#waitlist`)']],
   ['Classes: paid trial refused for a full day', `${A}/api/trial-bookings/paid/route.ts`, ['await trialPlaceFree(placesDb(), groupId, sessionDate)']],

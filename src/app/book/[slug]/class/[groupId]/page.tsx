@@ -504,7 +504,8 @@ export default async function ClassBookingPage({
                         is reachable on the primary parent journey. The picker
                         determines whether the dispatch lands on Stage 2
                         (immediate prorated) or Stage 3 (future setup mode). */}
-                    <Link
+                    {/* A full class: no Subscribe, only the waiting list below (CFC INTRO, 19 Oct 2026). */}
+                    {!isFull && <Link
                       href={`/book/${slug}/class/${groupId}/quick-book?plan=${plan.id}&billing=monthly`}
                       className="relative block w-full text-center py-4 sm:py-5 rounded-xl font-extrabold text-base sm:text-lg transition-all hover:scale-[1.03] active:scale-[0.97] hover:brightness-110 overflow-hidden"
                       style={{
@@ -516,7 +517,7 @@ export default async function ClassBookingPage({
                       }}
                     >
                       <span className="relative z-10">Subscribe Now &rarr;</span>
-                    </Link>
+                    </Link>}
                   </div>
                 )
               })}
