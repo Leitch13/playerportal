@@ -275,6 +275,10 @@ export async function sendMonthNotices(admin: SupabaseClient, billingMonth: stri
     if (!bitsCache.has(orgId)) bitsCache.set(orgId, await orgBits(admin, orgId))
     const bits = bitsCache.get(orgId)!
     const m = await monthForParent(admin, orgId, parentId, billingMonth)
+    // Nothing billable this month (a regular whose set-up link isn't paid yet: its dates are held,
+    // not charged). No notice: it would say "0 sessions, £0" (No.1, 20 Oct 2026, 30 families).
+    // Those families are on the academy's Needs you list for their set-up link instead.
+    if (m.breakdown.sessionIds.length === 0) { skipped++; continue }
     const r = await sendMonthNotice({
       academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(billingMonth),
       lines: m.sessions.filter((s) => s.status === 'scheduled').map((s) => ({ date: s.session_date, time: hhmm(s.start_minutes), coach: bits.coach(s.coach_id), venue: bits.venue(s.venue_id), pricePence: s.price_pence })),

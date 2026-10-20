@@ -270,6 +270,7 @@ const FEATURES = [
   ['Classes: red over-limit line on class page and register', `${D}/groups/[id]/page.tsx`, ['<OverLimitDays days={overDays} />']],
   ['Classes: red over-limit line on the live register', `${D}/attendance/register/[groupId]/page.tsx`, ['data-testid="register-over-limit"']],
   ['Classes: database refuses a public trial for a full day', 'supabase/123_trial_needs_a_place.sql', ['CREATE TRIGGER trial_booking_needs_a_place']],
+  ['1-2-1s: the 20th notice never tells a family "0 sessions, £0"', 'src/lib/one-to-one/money.ts', ['if (m.breakdown.sessionIds.length === 0) { skipped++; continue }']],
   ['1-2-1s: payments listed on the Payments page', `${D}/payments/page.tsx`, ['await loadOneToOneMoney(adminClient(), orgId', '<OneToOnePayments rows={oneToOneRows}']],
   ['1-2-1s: section on Analytics', `${D}/analytics/page.tsx`, ['loadOneToOneActivity(adminClient()', 'data-testid="analytics-one-to-ones"']],
   ['1-2-1s: payments in Exports', `${A}/api/export/[type]/route.ts`, ["case 'one-to-ones':"]],
