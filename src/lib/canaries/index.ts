@@ -921,6 +921,25 @@ async function canary17TrialNotAnnounced(sb: Supabase): Promise<Omit<CanaryResul
   return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
 }
 
+/**
+ * Canary 18 — a live membership whose "next payment" date is in the past.
+ * A monthly renewal moves it forward; one stuck in the past means our copy stopped following
+ * Stripe (21 Oct 2026: 200 of 277 were stuck, some since June, after Stripe moved the field;
+ * see src/lib/stripe-period.ts). Two days' grace for a payment still being retried.
+ */
+async function canary18StaleNextPayment(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const cutoff = new Date(Date.now() - 2 * 86400_000).toISOString()
+  const rows = await fetchAll<{ organisation_id: string; current_period_end: string }>((f, t) =>
+    sb.from('subscriptions').select('organisation_id, current_period_end').in('status', ['active', 'trialing'])
+      .not('current_period_end', 'is', null).lt('current_period_end', cutoff).range(f, t))
+  if (!rows.length) return { rowCount: 0, lines: [] }
+  const byOrg = new Map<string, number>()
+  for (const r of rows) byOrg.set(r.organisation_id, (byOrg.get(r.organisation_id) || 0) + 1)
+  const names = await orgNames(sb, [...byOrg.keys()])
+  const findings: CanaryFinding[] = [...byOrg].map(([o, n]) => ({ org: names.get(o) || o, what: `${n} live membership${n === 1 ? '' : 's'} show a "next payment" date in the past. Our copy has stopped following Stripe: re-sync the dates (node scripts/resync-period-dates.cjs, APPLY=1) and check the webhook still reads src/lib/stripe-period.ts.` }))
+  return { rowCount: rows.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -938,6 +957,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 15, name: 'paused membership Stripe will still charge', run: canary15PausedButCharging },
   { id: 16, name: 'one Stripe payment recorded twice', run: canary16DoubleRecordedPayments },
   { id: 17, name: 'trial booked and the academy not told', run: canary17TrialNotAnnounced },
+  { id: 18, name: 'next payment date stuck in the past', run: canary18StaleNextPayment },
 ]
 
 /**
