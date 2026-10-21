@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { subPeriod } from '@/lib/stripe-period'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
           cancel_at_period_end: true,
         })
       }
-      const cancelAtSec = (subscription.cancel_at as number | null) ?? subscription.current_period_end
+      const cancelAtSec = (subscription.cancel_at as number | null) ?? subPeriod(subscription).end ?? Math.floor(Date.now() / 1000)
       endDate = new Date(cancelAtSec * 1000).toLocaleDateString('en-GB', {
         day: 'numeric', month: 'long', year: 'numeric',
       })

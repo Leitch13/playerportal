@@ -1,4 +1,5 @@
 import { welcomePackLink } from '@/lib/welcome-pack-server'
+import { withPeriod, subPeriod } from '@/lib/stripe-period'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -801,7 +802,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     // 4. Save subscription to our DB
     if (createdSub) {
-      const sub = createdSub as Stripe.Subscription & { current_period_start?: number; current_period_end?: number }
+      const sub = withPeriod(createdSub as Stripe.Subscription)
       const { error: tonightSubErr } = await supabase.from('subscriptions').insert({
         parent_id: userId,
         player_id: playerId,
@@ -979,19 +980,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     let stripeSub: (Stripe.Subscription & { current_period_start: number; current_period_end: number }) | null = null
     if (session.subscription) {
-      stripeSub = await stripe.subscriptions.retrieve(
+      stripeSub = withPeriod(await stripe.subscriptions.retrieve(
         typeof session.subscription === 'string' ? session.subscription : session.subscription.id
-      ) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+      ))
     }
 
     // Checkout was given a trial_end at least 48h out (its minimum). Move the first
     // charge back to the academy's real date now; the Subscriptions API has no minimum.
     const firstChargeUnix = Number(session.metadata?.first_charge_unix || 0)
     if (stripeSub && firstChargeUnix > Math.floor(Date.now() / 1000) + 60 && stripeSub.trial_end && stripeSub.trial_end > firstChargeUnix) {
-      stripeSub = await stripe.subscriptions.update(stripeSub.id, {
+      stripeSub = withPeriod(await stripe.subscriptions.update(stripeSub.id, {
         trial_end: firstChargeUnix,
         proration_behavior: 'none',
-      }) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+      }))
       console.log('[webhook] migration trial_end moved back to the first-charge date', { sub: stripeSub.id, firstChargeUnix })
     }
 
@@ -1134,11 +1135,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 2. Create / update enrolment for subscription checkouts
   if (session.mode === 'subscription' && session.subscription && ctx.userId && ctx.planId) {
-    let stripeSub = await stripe.subscriptions.retrieve(
+    let stripeSub = withPeriod(await stripe.subscriptions.retrieve(
       typeof session.subscription === 'string'
         ? session.subscription
         : session.subscription.id
-    ) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+    ))
 
     // Sessions-bridge month-end fix-up. Checkout refuses a trial_end under
     // 48h away, so a signup on the 29th–31st was created with trial_end
@@ -1148,10 +1149,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const anchorUnix = Number(session.metadata.anchor_unix)
       const nowUnix = Math.floor(Date.now() / 1000)
       if (anchorUnix > nowUnix + 60 && stripeSub.trial_end && stripeSub.trial_end > anchorUnix) {
-        stripeSub = await stripe.subscriptions.update(stripeSub.id, {
+        stripeSub = withPeriod(await stripe.subscriptions.update(stripeSub.id, {
           trial_end: anchorUnix,
           proration_behavior: 'none',
-        }) as Stripe.Subscription & { current_period_start: number; current_period_end: number }
+        }))
         console.log('[webhook] sessions_bridge trial_end moved back to the 1st', { sub: stripeSub.id, anchorUnix })
       }
     }
@@ -2139,11 +2140,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return
   }
 
-  // Cast to access period fields that vary by Stripe API version
-  const sub = subscription as Stripe.Subscription & {
-    current_period_start: number
-    current_period_end: number
-  }
+  // Period dates moved onto the subscription items in newer Stripe API versions (src/lib/stripe-period.ts).
+  const sub = withPeriod(subscription as Stripe.Subscription)
 
   const { error: updSubErr } = await supabase
     .from('subscriptions')
@@ -2215,7 +2213,7 @@ async function sendPlatformSubscriptionActivatedEmail(
   if (subId) {
     try {
       const sub = await stripe.subscriptions.retrieve(subId)
-      const period = (sub as Stripe.Subscription & { current_period_end?: number }).current_period_end
+      const period = subPeriod(sub as Stripe.Subscription).end
       if (period) nextBillingDate = new Date(period * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     } catch { /* fall through with fallback label */ }
   }
@@ -2278,7 +2276,7 @@ async function sendPlatformPaymentFailedEmail(orgId: string, invoice: Stripe.Inv
 async function sendPlatformCancellationConfirmEmail(orgId: string, subscription: Stripe.Subscription) {
   const ctx = await resolvePlatformContext(orgId)
   const planInfo = await resolvePlatformPlanName(ctx.platformPlanId)
-  const endTs = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end
+  const endTs = subPeriod(subscription as Stripe.Subscription).end
     || (subscription as Stripe.Subscription & { canceled_at?: number }).canceled_at
   const endDate = endTs
     ? new Date(endTs * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
