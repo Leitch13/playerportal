@@ -123,9 +123,19 @@ async function prepareSetupCharge(admin: SupabaseClient, orgId: string, slot: { 
   return { chargeId, b, from, month }
 }
 
-export async function sendSetupCheckout(admin: SupabaseClient, orgId: string, slotId: string): Promise<{ url: string; amountPence: number }> {
+/**
+ * The set-up link a parent is emailed never runs out (No.1, 25 Oct 2026: Stripe pay pages die after
+ * 24 hours, so families opening the email on day 2 got "expired" and ~£2,230 sat unpaid). The email
+ * carries /pay/121/<slot id>; each time it's opened, openSetupCheckout() works out what is owed
+ * right now and makes a fresh Stripe page. Same as camps (/pay/camp/<booking id>, 17 Oct 2026).
+ */
+export const setupLinkUrl = (slotId: string) => `${appUrl()}/pay/121/${slotId}`
+
+/** Make a fresh Stripe page for a family's set-up (the previous one, if still open, is closed first). */
+export async function openSetupCheckout(admin: SupabaseClient, orgId: string, slotId: string): Promise<{ url: string; amountPence: number }> {
   const { data: slot } = await admin.from('regular_slots').select('*, player:players(first_name, last_name)').eq('id', slotId).eq('organisation_id', orgId).single()
   if (!slot) throw new CheckoutBlocked('Slot not found', 404)
+  if (slot.status !== 'pending') throw new CheckoutBlocked('This slot is already set up', 409)
   const parent = await parentBits(admin, slot.parent_id)
   if (!parent.email) throw new CheckoutBlocked('This parent has no email on their account', 400)
   const bits = await orgBits(admin, orgId)
@@ -162,16 +172,30 @@ export async function sendSetupCheckout(admin: SupabaseClient, orgId: string, sl
     })
   }
   if (chargeId) await admin.from('coaching_charges').update({ stripe_checkout_session_id: cs.id }).eq('id', chargeId)
-  // The emailed link opens the cancellation-policy step first, then Stripe (see agree.ts).
+  // The cancellation-policy step first, then Stripe (see agree.ts).
   const { data: orgRow } = await admin.from('organisations').select('slug').eq('id', orgId).single()
   const payUrl = orgRow?.slug ? `${appUrl()}/book/${orgRow.slug}/sessions/agree?cs=${cs.id}` : cs.url!
+  return { url: payUrl, amountPence: b.amountPence }
+}
 
+/** Email a family their set-up link: a permanent link, with what they owe right now. */
+export async function sendSetupCheckout(admin: SupabaseClient, orgId: string, slotId: string): Promise<{ url: string; amountPence: number }> {
+  const { data: slot } = await admin.from('regular_slots').select('*, player:players(first_name, last_name)').eq('id', slotId).eq('organisation_id', orgId).single()
+  if (!slot) throw new CheckoutBlocked('Slot not found', 404)
+  if (slot.status !== 'pending') throw new CheckoutBlocked('This slot is already set up', 409)
+  const parent = await parentBits(admin, slot.parent_id)
+  if (!parent.email) throw new CheckoutBlocked('This parent has no email on their account', 400)
+  const bits = await orgBits(admin, orgId)
+  // Works out (and saves) this month's amount; no Stripe page yet: that's made when the link is opened.
+  const { b } = await prepareSetupCharge(admin, orgId, slot)
+  const child = slot.player ? `${slot.player.first_name}` : 'Your child'
+  const url = setupLinkUrl(slot.id)
   await sendSetupLink({
     academy: bits.name, to: parent.email, parentName: parent.name, childName: child,
     slotLabel: `${DAY[slot.weekday]}s ${hhmm(slot.start_minutes)} at ${bits.venue(slot.venue_id)} with ${bits.coach(slot.coach_id)}`,
-    pricePence: slot.price_pence, sessionsThisMonth: b.sessionIds.length, amountPence: b.amountPence, creditPence: Math.max(0, b.creditAppliedPence), url: payUrl,
+    pricePence: slot.price_pence, sessionsThisMonth: b.sessionIds.length, amountPence: b.amountPence, creditPence: Math.max(0, b.creditAppliedPence), url,
   }).catch((e) => console.error('setup email failed', e))
-  return { url: payUrl, amountPence: b.amountPence }
+  return { url, amountPence: b.amountPence }
 }
 
 /**
@@ -373,7 +397,8 @@ export async function chargeParentMonth(admin: SupabaseClient, orgId: string, pa
   await admin.from('coaching_charges').update({ status: 'failed', attempt_count: attempts, last_attempt_at: new Date().toISOString(), next_attempt_on: next, failure_message: failure }).eq('id', charge.id)
   // From the second failure, hand the parent a normal payment page.
   if (attempts >= 2 && parent.email) {
-    const url = await payNowUrl(admin, orgId, charge.id).catch(() => null)
+    // A permanent link (a Stripe page made when it's opened), never a 24-hour Stripe page.
+    const url = payNowLinkUrl(charge.id as string)
     if (url) await sendPaymentFailed({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(month), amountPence: b.amountPence, attempts, url, lastTry: next ? `${next.slice(8)} ${monthLabel(month)}` : null }).catch(() => {})
   }
   return 'failed'
@@ -397,9 +422,15 @@ async function settleCharge(admin: SupabaseClient, charge: { id: string; organis
 }
 
 /** A normal Checkout for a failed month. Webhook marks it paid. */
+/** The emailed "pay now" link for a month that didn't go through: permanent, opens a fresh Stripe page. */
+export const payNowLinkUrl = (chargeId: string) => `${appUrl()}/pay/121/charge/${chargeId}`
+
 export async function payNowUrl(admin: SupabaseClient, orgId: string, chargeId: string): Promise<string> {
   const { data: charge } = await admin.from('coaching_charges').select('*').eq('id', chargeId).eq('organisation_id', orgId).single()
   if (!charge || charge.amount_pence <= 0) throw new CheckoutBlocked('Nothing to pay', 400)
+  if (['paid_online', 'paid_cash', 'waived', 'refunded'].includes(charge.status)) throw new CheckoutBlocked('This month is already paid', 409)
+  // Only one open payment page per month: close the last one so a parent can't pay twice.
+  if (charge.stripe_checkout_session_id) await expireIfOpen(charge.stripe_checkout_session_id as string)
   const parent = await parentBits(admin, charge.parent_id)
   const bits = await orgBits(admin, orgId)
   const { rate, stripeAccountId } = await platformFeeRate(admin, orgId)

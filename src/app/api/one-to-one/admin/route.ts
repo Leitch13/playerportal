@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/lib/one-to-one/db'
-import { sendSetupCheckout, markCash, refundCharge, payNowUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent } from '@/lib/one-to-one/money'
+import { sendSetupCheckout, markCash, refundCharge, payNowLinkUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { emailPriceChange } from '@/lib/one-to-one/price-change'
@@ -475,7 +475,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true })
       }
       case 'charge.remind': {
-        const url = await payNowUrl(admin, orgId, str(body.id))
+        const url = payNowLinkUrl(str(body.id))
         const { data: c } = await admin.from('coaching_charges').select('parent_id, billing_month, amount_pence, attempt_count, parent:profiles!coaching_charges_parent_id_fkey(email, full_name)').eq('id', str(body.id)).single()
         const { data: o } = await admin.from('organisations').select('name').eq('id', orgId).single()
         const parent = c?.parent as unknown as { email: string | null; full_name: string | null } | null
