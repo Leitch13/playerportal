@@ -366,10 +366,17 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
     const theirs = slots.filter((s) => s.parent_id === c.parent_id && s.status !== 'released')
     const kids = [...new Set(theirs.map((s) => s.player?.first_name).filter(Boolean))]
     const dueAgain = c.next_attempt_on && c.next_attempt_on > today
+    // A family with no card pays the academy directly (money.ts CASH_DUE): not a declined card.
+    const cashFamily = (c.failure_message || '').startsWith('Cash or bank transfer due')
+    const monthName = new Date(c.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long' })
     items.push({
       key: `charge:${c.id}`, kind: 'charge', date: c.billing_month,
-      title: `${kids.join(' & ') || parent?.full_name || 'A parent'} · ${new Date(c.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long' })} unpaid, ${gbp(c.amount_pence)}`,
-      detail: `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. Card declined ${c.attempt_count} time${c.attempt_count === 1 ? '' : 's'}${c.failure_message ? `: ${c.failure_message.replace(/\.$/, '')}` : ''}. ${dueAgain ? `Retrying on the ${c.next_attempt_on!.slice(8)}. ` : 'No more automatic retries. '}Send the pay link, mark cash, or release the slot.`,
+      title: cashFamily
+        ? `${kids.join(' & ') || parent?.full_name || 'A parent'} · ${monthName} cash or bank transfer due, ${gbp(c.amount_pence)}`
+        : `${kids.join(' & ') || parent?.full_name || 'A parent'} · ${monthName} unpaid, ${gbp(c.amount_pence)}`,
+      detail: cashFamily
+        ? `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. No card saved: they pay you directly. Mark it paid when the money arrives, or send them the pay link.`
+        : `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. Card declined ${c.attempt_count} time${c.attempt_count === 1 ? '' : 's'}${c.failure_message ? `: ${c.failure_message.replace(/\.$/, '')}` : ''}. ${dueAgain ? `Retrying on the ${c.next_attempt_on!.slice(8)}. ` : 'No more automatic retries. '}Send the pay link, mark cash, or release the slot.`,
       ids: { chargeId: c.id, parentId: c.parent_id, slotIds: theirs.map((s) => s.id), slotLabels: theirs.map((s) => `${s.player?.first_name ?? 'Child'} ${DAY[s.weekday]} ${hhmm(s.start_minutes)}`) },
     })
   }
@@ -380,7 +387,7 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
       title: `${s.player?.first_name ?? 'Child'} ${s.player?.last_name ?? ''} · slot set up, parent hasn't confirmed`,
       detail: `${DAY[s.weekday]} ${hhmm(s.start_minutes)} with ${coachName(s.coach_id)} at ${venueName(s.venue_id)}. The time is held. Activates when the parent pays the set-up link.`,
       // The short row on Needs you: who, when, which coach, what a session costs.
-      ids: { slotId: s.id, child: `${s.player?.first_name ?? 'Child'} ${s.player?.last_name ?? ''}`.trim(), when: `${DAY[s.weekday]} ${hhmm(s.start_minutes)}`, coach: coachName(s.coach_id).split(' ')[0], price: String(s.price_pence) },
+      ids: { slotId: s.id, parentId: s.parent_id, child: `${s.player?.first_name ?? 'Child'} ${s.player?.last_name ?? ''}`.trim(), when: `${DAY[s.weekday]} ${hhmm(s.start_minutes)}`, coach: coachName(s.coach_id).split(' ')[0], price: String(s.price_pence) },
     })
   }
   items.sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'))

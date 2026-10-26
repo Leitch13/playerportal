@@ -66,61 +66,90 @@ export async function expireIfOpen(checkoutId: string): Promise<void> {
 }
 
 /**
- * The money side of setting up a regular, shared by the card link and "paid in cash".
- * Returns the charge row id for this month (null when the month was already paid and
- * this slot's dates were added to the next bill instead) and the breakdown.
+ * Everything a family owes up to the end of this month: every unpaid date on EVERY slot they have
+ * at this academy (waiting or live), from whenever it started, minus credit on account.
+ *
+ * Until 26 Oct 2026 a set-up bill only counted the month the slot STARTED and only that one slot,
+ * so No.1 families who started in late September were never billed for October (the 1st had
+ * skipped them while they weren't set up), and a family's second slot was left off (£1,055 found).
+ * Credit added after a bill was made was also never taken off. One family, one bill, worked out
+ * fresh every time the link is sent or opened.
  */
-async function prepareSetupCharge(admin: SupabaseClient, orgId: string, slot: { id: string; parent_id: string; starts_on: string }): Promise<{ chargeId: string | null; b: ReturnType<typeof chargeBreakdown>; from: string; month: string }> {
-  const from = slot.starts_on, to = monthEnd(from), month = monthStart(from)
-  const { data: existing } = await admin.from('coaching_charges').select('*').eq('parent_id', slot.parent_id).eq('billing_month', month).maybeSingle()
+export async function familyOwedUpToNow(admin: SupabaseClient, orgId: string, parentId: string, today = todayLondon()) {
+  const { data: rows } = await admin.from('coaching_sessions').select('id, price_pence, status, decline_tier, session_date')
+    .eq('organisation_id', orgId).eq('parent_id', parentId).in('source', BILLED_SOURCES).eq('charge_state', 'unpaid')
+    .lte('session_date', monthEnd(today)).order('session_date')
+  const credit = await creditBalance(admin, orgId, parentId)
+  return chargeBreakdown((rows ?? []).map((r) => ({ id: r.id as string, pricePence: r.price_pence as number, status: r.status as string, declineTier: r.decline_tier as string | null })), credit)
+}
+
+/**
+ * The money side of setting up (card link and "paid in cash or bank transfer"), for a whole family.
+ * Returns the bill row (this month's charge row, holding every date owed up to now) and the breakdown,
+ * or chargeId null when this month is already paid (a sibling's slot was live): then this family's
+ * new dates go on the next bill as an amount owed and the link only saves the card.
+ */
+export async function prepareSetupCharge(admin: SupabaseClient, orgId: string, slot: { id: string; parent_id: string; starts_on: string }, today = todayLondon()): Promise<{ chargeId: string | null; b: ReturnType<typeof chargeBreakdown>; from: string; month: string }> {
+  const month = monthStart(today), from = slot.starts_on
+  const { data: existing } = await admin.from('coaching_charges').select('*').eq('organisation_id', orgId).eq('parent_id', slot.parent_id).eq('billing_month', month).maybeSingle()
   const settled = !!existing && ['paid_online', 'paid_cash', 'waived', 'refunded'].includes(existing.status as string)
 
-  // This slot's sessions this month.
-  const { data: own } = await admin.from('coaching_sessions').select('id, price_pence, status, decline_tier, session_date, charge_state')
-    .eq('regular_slot_id', slot.id).gte('session_date', from).lte('session_date', to)
-  let chargeId: string | null = null
-  let b: ReturnType<typeof chargeBreakdown>
-  const credit = await creditBalance(admin, orgId, slot.parent_id)
-
   if (settled) {
-    // The family's month is already paid (a sibling, or a slot added mid-month). Never
-    // reopen it: until 15 Oct 2026 this overwrote a paid month back to "Due" and swapped
-    // its session list. This slot's sessions this month go on the next bill as an amount
-    // owed, and the link only saves the card.
-    const unpaid = (own ?? []).filter((r) => r.charge_state === 'unpaid' && isChargeable({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier }))
+    // This month is already paid. Never reopen it (until 15 Oct 2026 this overwrote a paid month
+    // back to "Due"). This family's other unpaid dates up to now go on the next bill as owed.
+    const { data: own } = await admin.from('coaching_sessions').select('id, price_pence, status, decline_tier')
+      .eq('organisation_id', orgId).eq('parent_id', slot.parent_id).in('source', BILLED_SOURCES).eq('charge_state', 'unpaid').lte('session_date', monthEnd(today))
+    const unpaid = (own ?? []).filter((r) => isChargeable({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier }))
     const owed = unpaid.reduce((a, r) => a + (r.price_pence as number), 0)
     if (unpaid.length) {
       await admin.from('coaching_sessions').update({ charge_state: 'charged' }).in('id', unpaid.map((r) => r.id))
-      if (owed > 0) await admin.from('coaching_credits').insert({ organisation_id: orgId, parent_id: slot.parent_id, amount_pence: -owed, reason: 'admin_adjust', note: `${unpaid.length} session${unpaid.length === 1 ? '' : 's'} in ${monthLabel(month)} added to the next bill (month already paid)` })
+      if (owed > 0) await admin.from('coaching_credits').insert({ organisation_id: orgId, parent_id: slot.parent_id, amount_pence: -owed, reason: 'admin_adjust', note: `${unpaid.length} session${unpaid.length === 1 ? '' : 's'} up to ${monthLabel(month)} added to the next bill (month already paid)` })
     }
-    b = chargeBreakdown([], 0)
-  } else {
-    // One link covers everything the family owes this month (this slot plus any other
-    // live slot's unpaid dates, e.g. a sibling's failed month), so two links can't both be
-    // paid for the same month. Other slots still waiting for their own link stay out.
-    const { data: others } = await admin.from('coaching_sessions').select('id, price_pence, status, decline_tier, regular_slot_id')
-      .eq('organisation_id', orgId).eq('parent_id', slot.parent_id).in('source', BILLED_SOURCES).eq('charge_state', 'unpaid')
-      .gte('session_date', month).lte('session_date', monthEnd(month)).neq('regular_slot_id', slot.id)
-    const { data: pendingSlots } = await admin.from('regular_slots').select('id').eq('organisation_id', orgId).eq('parent_id', slot.parent_id).eq('status', 'pending')
-    const pendingIds = new Set((pendingSlots ?? []).map((r) => r.id as string))
-    const sessions: ChargeableSession[] = [
-      ...(own ?? []).filter((r) => r.charge_state === 'unpaid'),
-      ...(others ?? []).filter((r) => !r.regular_slot_id || !pendingIds.has(r.regular_slot_id as string)),
-    ].map((r) => ({ id: r.id, pricePence: r.price_pence, status: r.status, declineTier: r.decline_tier }))
-    b = chargeBreakdown(sessions, credit)
-    // An older link for this month may still be open: cancel it so only one can be paid.
-    if (existing?.stripe_checkout_session_id) await expireIfOpen(existing.stripe_checkout_session_id as string)
-    const { data: charge, error } = await admin.from('coaching_charges').upsert({
-      organisation_id: orgId, parent_id: slot.parent_id, billing_month: month,
-      ...chargeRow(b),
-      status: existing?.status === 'failed' ? 'failed' : 'pending', attempt_count: existing?.attempt_count ?? 0,
-      breakdown: b.sessionIds.map((id) => ({ session_id: id })),
-    }, { onConflict: 'parent_id,billing_month' }).select('id').single()
-    if (error) throw new Error(error.message)
-    chargeId = charge.id as string
+    return { chargeId: null, b: chargeBreakdown([], 0), from, month }
   }
 
-  return { chargeId, b, from, month }
+  // Older unpaid bills for this family (an earlier month's set-up or a failed month) are folded into
+  // this one: close their payment pages so only this bill can be paid, then remove them.
+  const { data: older } = await admin.from('coaching_charges').select('id, stripe_checkout_session_id, status')
+    .eq('organisation_id', orgId).eq('parent_id', slot.parent_id).in('status', ['pending', 'failed']).lte('billing_month', month)
+  for (const o of older ?? []) if (o.stripe_checkout_session_id) await expireIfOpen(o.stripe_checkout_session_id as string)
+  const b = await familyOwedUpToNow(admin, orgId, slot.parent_id, today)
+  const { data: charge, error } = await admin.from('coaching_charges').upsert({
+    organisation_id: orgId, parent_id: slot.parent_id, billing_month: month,
+    ...chargeRow(b),
+    status: 'pending', attempt_count: 0, next_attempt_on: null, failure_message: null, stripe_checkout_session_id: null,
+    breakdown: b.sessionIds.map((id) => ({ session_id: id })),
+  }, { onConflict: 'parent_id,billing_month' }).select('id').single()
+  if (error) throw new Error(error.message)
+  const stale = (older ?? []).filter((o) => o.id !== charge.id).map((o) => o.id as string)
+  if (stale.length) await admin.from('coaching_charges').delete().in('id', stale).in('status', ['pending', 'failed'])
+  return { chargeId: charge.id as string, b, from, month }
+}
+
+/** Every slot the family is still waiting to set up at this academy (one link sets them all up). */
+async function familyPendingSlots(admin: SupabaseClient, orgId: string, parentId: string) {
+  const { data } = await admin.from('regular_slots').select('*, player:players(first_name, last_name)')
+    .eq('organisation_id', orgId).eq('parent_id', parentId).eq('status', 'pending').order('starts_on')
+  return (data ?? []) as (Record<string, unknown> & { id: string; parent_id: string; starts_on: string; weekday: number; start_minutes: number; coach_id: string; venue_id: string; price_pence: number; player: { first_name: string; last_name: string | null } | null })[]
+}
+
+/** The family's waiting slots go live together (the bill they paid covered all of them). */
+async function activateFamilySlots(admin: SupabaseClient, orgId: string, parentId: string) {
+  const { data: wentLive } = await admin.from('regular_slots').update({ status: 'active' })
+    .eq('organisation_id', orgId).eq('parent_id', parentId).eq('status', 'pending').select('*')
+  for (const s of wentLive ?? []) await coachNewRegular(admin, s)
+}
+
+/**
+ * A payment arrived for a bill that was already settled (paid by card on a retry, or in cash, while an
+ * old payment page was still open) or no longer exists. Give it straight back, transfer and fee
+ * reversed, and write it down. Never throws.
+ */
+async function refundDuplicate(admin: SupabaseClient, orgId: string | null, paymentIntent: string, why: string) {
+  try {
+    await stripe.refunds.create({ payment_intent: paymentIntent, reverse_transfer: true, refund_application_fee: true, reason: 'duplicate' })
+    if (orgId) await admin.from('audit_log').insert({ organisation_id: orgId, action: 'one_to_one.duplicate_refunded', entity_type: 'payment_intent', details: { payment_intent: paymentIntent, why } }).then(() => {}, () => {})
+  } catch (e) { console.error('refundDuplicate', paymentIntent, e) }
 }
 
 /**
@@ -131,21 +160,27 @@ async function prepareSetupCharge(admin: SupabaseClient, orgId: string, slot: { 
  */
 export const setupLinkUrl = (slotId: string) => `${appUrl()}/pay/121/${slotId}`
 
-/** Make a fresh Stripe page for a family's set-up (the previous one, if still open, is closed first). */
+/** "Ethan" / "Ethan and Ava": the children on a family's waiting slots. */
+const childList = (slots: { player: { first_name: string } | null }[]) => {
+  const names = [...new Set(slots.map((s) => s.player?.first_name || 'Your child'))]
+  return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0] || 'Your child'
+}
+
+/** Make a fresh Stripe page for a family's set-up (any older page is closed first). */
 export async function openSetupCheckout(admin: SupabaseClient, orgId: string, slotId: string): Promise<{ url: string; amountPence: number }> {
   const { data: slot } = await admin.from('regular_slots').select('*, player:players(first_name, last_name)').eq('id', slotId).eq('organisation_id', orgId).single()
   if (!slot) throw new CheckoutBlocked('Slot not found', 404)
-  if (slot.status !== 'pending') throw new CheckoutBlocked('This slot is already set up', 409)
+  const waiting = await familyPendingSlots(admin, orgId, slot.parent_id)
+  if (!waiting.length) throw new CheckoutBlocked('This slot is already set up', 409)
   const parent = await parentBits(admin, slot.parent_id)
   if (!parent.email) throw new CheckoutBlocked('This parent has no email on their account', 400)
   const bits = await orgBits(admin, orgId)
   const { rate, stripeAccountId } = await platformFeeRate(admin, orgId)
 
-  const { chargeId, b, from } = await prepareSetupCharge(admin, orgId, slot)
+  const { chargeId, b, month } = await prepareSetupCharge(admin, orgId, waiting[0])
 
-  const child = slot.player ? `${slot.player.first_name}` : 'Your child'
-  const label = `${child} · ${DAY[slot.weekday]}s ${hhmm(slot.start_minutes)} with ${bits.coach(slot.coach_id)}`
-  const metadata = { pp_module: ONE_TO_ONE_MODULE, kind: 'setup', regular_slot_id: slot.id, charge_id: chargeId ?? '', organisation_id: orgId, parent_id: slot.parent_id }
+  const label = `${childList(waiting)} · 1-2-1 sessions with ${bits.name}`
+  const metadata = { pp_module: ONE_TO_ONE_MODULE, kind: 'setup', regular_slot_id: waiting[0].id, charge_id: chargeId ?? '', organisation_id: orgId, parent_id: slot.parent_id }
   const success = `${appUrl()}/dashboard/sessions?setup=done`
   const cancel = `${appUrl()}/dashboard/sessions?setup=cancelled`
 
@@ -154,8 +189,8 @@ export async function openSetupCheckout(admin: SupabaseClient, orgId: string, sl
     cs = await stripe.checkout.sessions.create({
       mode: 'payment', customer_email: parent.email, customer_creation: 'always',
       line_items: [{ quantity: 1, price_data: { currency: 'gbp', unit_amount: b.amountPence, product_data: {
-        name: `${label} · ${fmtDate(from).split(' ').slice(2).join(' ')} onwards`,
-        description: `${b.sessionIds.length} session${b.sessionIds.length === 1 ? '' : 's'} this month${b.creditAppliedPence > 0 ? `, £${(b.creditAppliedPence / 100).toFixed(2)} credit applied` : ''} · then charged on the 1st · ${bits.name}`,
+        name: `${label} · up to the end of ${monthLabel(month)}`,
+        description: `${b.sessionIds.length} session${b.sessionIds.length === 1 ? '' : 's'}${b.creditAppliedPence > 0 ? `, £${(b.creditAppliedPence / 100).toFixed(2)} credit applied` : ''} · then charged on the 1st · ${bits.name}`,
       } } }],
       payment_intent_data: {
         on_behalf_of: stripeAccountId, transfer_data: { destination: stripeAccountId },
@@ -178,31 +213,32 @@ export async function openSetupCheckout(admin: SupabaseClient, orgId: string, sl
   return { url: payUrl, amountPence: b.amountPence }
 }
 
-/** Email a family their set-up link: a permanent link, with what they owe right now. */
+/** Email a family their set-up link: one email per family, a permanent link, with what they owe up to now. */
 export async function sendSetupCheckout(admin: SupabaseClient, orgId: string, slotId: string): Promise<{ url: string; amountPence: number }> {
-  const { data: slot } = await admin.from('regular_slots').select('*, player:players(first_name, last_name)').eq('id', slotId).eq('organisation_id', orgId).single()
+  const { data: slot } = await admin.from('regular_slots').select('parent_id').eq('id', slotId).eq('organisation_id', orgId).single()
   if (!slot) throw new CheckoutBlocked('Slot not found', 404)
-  if (slot.status !== 'pending') throw new CheckoutBlocked('This slot is already set up', 409)
+  const waiting = await familyPendingSlots(admin, orgId, slot.parent_id)
+  if (!waiting.length) throw new CheckoutBlocked('This slot is already set up', 409)
   const parent = await parentBits(admin, slot.parent_id)
   if (!parent.email) throw new CheckoutBlocked('This parent has no email on their account', 400)
   const bits = await orgBits(admin, orgId)
-  // Works out (and saves) this month's amount; no Stripe page yet: that's made when the link is opened.
-  const { b } = await prepareSetupCharge(admin, orgId, slot)
-  const child = slot.player ? `${slot.player.first_name}` : 'Your child'
-  const url = setupLinkUrl(slot.id)
+  // Works out (and saves) what's owed up to now; no Stripe page yet: that's made when the link is opened.
+  const { b, month } = await prepareSetupCharge(admin, orgId, waiting[0])
+  const url = setupLinkUrl(waiting[0].id)
   await sendSetupLink({
-    academy: bits.name, to: parent.email, parentName: parent.name, childName: child,
-    slotLabel: `${DAY[slot.weekday]}s ${hhmm(slot.start_minutes)} at ${bits.venue(slot.venue_id)} with ${bits.coach(slot.coach_id)}`,
-    pricePence: slot.price_pence, sessionsThisMonth: b.sessionIds.length, amountPence: b.amountPence, creditPence: Math.max(0, b.creditAppliedPence), url,
+    academy: bits.name, to: parent.email, parentName: parent.name, childName: childList(waiting),
+    slotLabel: waiting.map((w) => `${w.player?.first_name ? w.player.first_name + ': ' : ''}${DAY[w.weekday]}s ${hhmm(w.start_minutes)} at ${bits.venue(w.venue_id)} with ${bits.coach(w.coach_id)}`).join('; '),
+    pricePence: waiting[0].price_pence, sessionsThisMonth: b.sessionIds.length, amountPence: b.amountPence, creditPence: Math.max(0, b.creditAppliedPence), url,
+    dueLabel: `Up to the end of ${monthLabel(month).split(' ')[0]}`,
   }).catch((e) => console.error('setup email failed', e))
   return { url, amountPence: b.amountPence }
 }
 
 /**
- * A family who pays the academy in cash: the academy marks the set-up month as paid in
- * cash instead of sending a card link. The slot goes live; each later month is charged
- * on the 1st, finds no card, and shows on Needs attention where "Paid in cash" settles
- * it. Until 15 Oct 2026 a cash family could never be set up (only "Resend link").
+ * "Paid in cash or bank transfer": the family paid the academy outside the app. Everything they owe
+ * up to the end of this month is marked paid (recording who and when), and all their waiting slots go
+ * live, so the next month starts clean. Later months: charged on the 1st if a card is saved, otherwise
+ * they show on Needs you as "cash due" (never a "payment failed" email).
  */
 export async function setUpWithCash(admin: SupabaseClient, orgId: string, slotId: string, byUserId: string): Promise<void> {
   const settings = await getSettings(admin, orgId)
@@ -211,16 +247,11 @@ export async function setUpWithCash(admin: SupabaseClient, orgId: string, slotId
   if (!slot) throw new CheckoutBlocked('Slot not found', 404)
   if (slot.status !== 'pending') throw new CheckoutBlocked('This slot is already set up', 409)
   const { chargeId } = await prepareSetupCharge(admin, orgId, slot)
-  if (chargeId) {
-    const { data: open } = await admin.from('coaching_charges').select('stripe_checkout_session_id').eq('id', chargeId).single()
-    if (open?.stripe_checkout_session_id) await expireIfOpen(open.stripe_checkout_session_id as string)
-    await markCash(admin, orgId, chargeId, byUserId)
-  }
-  await admin.from('regular_slots').update({ status: 'active' }).eq('id', slotId).eq('status', 'pending')
-  await coachNewRegular(admin, slot)
+  if (chargeId) await markCash(admin, orgId, chargeId, byUserId)
+  await activateFamilySlots(admin, orgId, slot.parent_id)
 }
 
-/** Webhook: the set-up Checkout completed. Slot goes active, card is remembered, month is paid. */
+/** Webhook: the set-up Checkout completed. The family's slots go live, card is remembered, the bill is paid. */
 export async function completeSetup(admin: SupabaseClient, cs: Stripe.Checkout.Session) {
   const slotId = cs.metadata?.regular_slot_id, chargeId = cs.metadata?.charge_id || null
   if (!slotId) return
@@ -235,15 +266,18 @@ export async function completeSetup(admin: SupabaseClient, cs: Stripe.Checkout.S
     paymentMethod = typeof si.payment_method === 'string' ? si.payment_method : si.payment_method?.id || null
   }
   const { data: slot } = await admin.from('regular_slots').select('*').eq('id', slotId).single()
-  if (!slot) return
+  if (!slot) { if (paymentIntent) await refundDuplicate(admin, cs.metadata?.organisation_id || null, paymentIntent, 'set-up paid for a slot that no longer exists'); return }
   // The card belongs to the parent: every slot of theirs at this academy can use it.
   await admin.from('regular_slots').update({ stripe_customer_id: customer || null, stripe_payment_method_id: paymentMethod })
     .eq('organisation_id', slot.organisation_id).eq('parent_id', slot.parent_id)
-  const { data: wentLive } = await admin.from('regular_slots').update({ status: 'active' }).eq('id', slotId).eq('status', 'pending').select('id')
-  if (wentLive?.length) await coachNewRegular(admin, slot)
-  // No charge id = the month was already paid; the link only saved the card.
-  const { data: charge } = chargeId ? await admin.from('coaching_charges').select('*').eq('id', chargeId).single() : { data: null }
-  if (charge && (charge.status === 'pending' || charge.status === 'failed')) {
+  const { data: charge } = chargeId ? await admin.from('coaching_charges').select('*').eq('id', chargeId).maybeSingle() : { data: null }
+  if (paymentIntent && (!charge || !['pending', 'failed'].includes(charge.status as string))) {
+    // Paid an old page for a bill that was settled another way or replaced: give it back.
+    await refundDuplicate(admin, slot.organisation_id as string, paymentIntent, charge ? `bill already ${charge.status}` : 'bill was replaced by a newer one')
+  }
+  // The bill covered every waiting slot this family has: they all go live together.
+  await activateFamilySlots(admin, slot.organisation_id as string, slot.parent_id as string)
+  if (charge && (charge.status === 'pending' || charge.status === 'failed') && (paymentIntent || charge.amount_pence <= 0)) {
     await settleCharge(admin, charge, { how: charge.amount_pence > 0 ? 'paid_online' : 'waived', paymentIntent })
     const parent = await parentBits(admin, slot.parent_id)
     const bits = await orgBits(admin, slot.organisation_id)
@@ -335,6 +369,9 @@ export async function runMonthlyCharges(admin: SupabaseClient, billingMonth: str
   return out
 }
 
+/** failure_message for a month owed by a family with no card (they pay cash or bank transfer). */
+export const CASH_DUE = 'Cash or bank transfer due (no card saved)'
+
 export async function chargeParentMonth(admin: SupabaseClient, orgId: string, parentId: string, month: string, today = todayLondon()): Promise<'charged' | 'waived' | 'failed' | 'skipped'> {
   const { data: existing } = await admin.from('coaching_charges').select('*').eq('parent_id', parentId).eq('billing_month', month).maybeSingle()
   if (existing && ['paid_online', 'paid_cash', 'waived', 'refunded'].includes(existing.status)) return 'skipped'
@@ -354,6 +391,9 @@ export async function chargeParentMonth(admin: SupabaseClient, orgId: string, pa
 
   const parent = await parentBits(admin, parentId)
   const bits = await orgBits(admin, orgId)
+  // A payment page for this month may still be open (set-up or pay-now): close it before taking the
+  // money another way, so the parent can't pay twice (audit 26 Oct 2026).
+  if (existing?.stripe_checkout_session_id) await expireIfOpen(existing.stripe_checkout_session_id as string)
 
   if (b.amountPence === 0) {
     await settleCharge(admin, charge, { how: 'waived', paymentIntent: null })
@@ -392,6 +432,12 @@ export async function chargeParentMonth(admin: SupabaseClient, orgId: string, pa
     return 'charged'
   }
 
+  // No card saved: the family pays the academy in cash or by bank transfer. Not a failed card:
+  // no retries and no "payment failed" email; Needs you shows "cash due" (CASH_DUE).
+  if (failure === 'No card saved') {
+    await admin.from('coaching_charges').update({ status: 'failed', attempt_count: 1, last_attempt_at: new Date().toISOString(), next_attempt_on: null, failure_message: CASH_DUE }).eq('id', charge.id)
+    return 'failed'
+  }
   const attempts = (charge.attempt_count ?? 0) + 1
   const next = nextAttemptOn(month, attempts)
   await admin.from('coaching_charges').update({ status: 'failed', attempt_count: attempts, last_attempt_at: new Date().toISOString(), next_attempt_on: next, failure_message: failure }).eq('id', charge.id)
@@ -431,6 +477,9 @@ export async function payNowUrl(admin: SupabaseClient, orgId: string, chargeId: 
   if (['paid_online', 'paid_cash', 'waived', 'refunded'].includes(charge.status)) throw new CheckoutBlocked('This month is already paid', 409)
   // Only one open payment page per month: close the last one so a parent can't pay twice.
   if (charge.stripe_checkout_session_id) await expireIfOpen(charge.stripe_checkout_session_id as string)
+  // Work out what's owed today (a date cancelled or credited since the card failed comes off).
+  await refreshMonthCharge(admin, orgId, charge)
+  if (charge.amount_pence <= 0) { await settleCharge(admin, charge, { how: 'waived', paymentIntent: null }); throw new CheckoutBlocked('Nothing to pay for this month any more', 400) }
   const parent = await parentBits(admin, charge.parent_id)
   const bits = await orgBits(admin, orgId)
   const { rate, stripeAccountId } = await platformFeeRate(admin, orgId)
@@ -445,13 +494,34 @@ export async function payNowUrl(admin: SupabaseClient, orgId: string, chargeId: 
   return cs.url!
 }
 
+/**
+ * Re-work a failed MONTHLY bill from today's dates and credit (in place, mutating `charge`). A set-up
+ * bill (it holds dates from earlier months) is left alone: it is re-worked when its link is opened.
+ */
+async function refreshMonthCharge(admin: SupabaseClient, orgId: string, charge: Record<string, unknown> & { id: string; parent_id: string; billing_month: string; status: string }) {
+  if (charge.status !== 'failed') return
+  const ids = ((charge.breakdown as { session_id: string }[]) || []).map((x) => x.session_id)
+  if (ids.length) {
+    const { data: rows } = await admin.from('coaching_sessions').select('session_date').in('id', ids)
+    if ((rows ?? []).some((r) => (r.session_date as string) < monthStart(charge.billing_month))) return
+  }
+  const m = await monthForParent(admin, orgId, charge.parent_id, charge.billing_month)
+  const fresh = { ...chargeRow(m.breakdown), breakdown: m.breakdown.sessionIds.map((id) => ({ session_id: id })) }
+  await admin.from('coaching_charges').update(fresh).eq('id', charge.id)
+  Object.assign(charge, fresh)
+}
+
 /** Webhook: a pay-now Checkout completed. */
 export async function completePayNow(admin: SupabaseClient, cs: Stripe.Checkout.Session) {
   const chargeId = cs.metadata?.charge_id
   if (!chargeId) return
   const { data: charge } = await admin.from('coaching_charges').select('*').eq('id', chargeId).single()
-  if (!charge || ['paid_online', 'paid_cash'].includes(charge.status)) return
   const piId = typeof cs.payment_intent === 'string' ? cs.payment_intent : cs.payment_intent?.id || null
+  if (!charge || ['paid_online', 'paid_cash', 'waived', 'refunded'].includes(charge.status)) {
+    // Paid by card on a retry, or in cash, while this page was open: give the second payment back.
+    if (piId) await refundDuplicate(admin, charge?.organisation_id ?? cs.metadata?.organisation_id ?? null, piId, charge ? `month already ${charge.status}` : 'bill no longer exists')
+    return
+  }
   await settleCharge(admin, charge, { how: 'paid_online', paymentIntent: piId })
   // Refresh the saved card from this payment for next month.
   if (piId) {
@@ -555,6 +625,9 @@ export async function markCash(admin: SupabaseClient, orgId: string, chargeId: s
   const { data: charge } = await admin.from('coaching_charges').select('*').eq('id', chargeId).eq('organisation_id', orgId).single()
   if (!charge) throw new CheckoutBlocked('Charge not found', 404)
   if (['paid_online', 'paid_cash', 'refunded'].includes(charge.status)) throw new CheckoutBlocked('Already settled', 409)
+  // Close any open payment page first, so the parent can't also pay online.
+  if (charge.stripe_checkout_session_id) await expireIfOpen(charge.stripe_checkout_session_id as string)
+  await refreshMonthCharge(admin, orgId, charge)
   await settleCharge(admin, charge, { how: 'paid_cash', paymentIntent: null, by: byUserId })
 }
 

@@ -80,14 +80,16 @@ export default async function NeedsAttentionPage() {
                 const list = items.filter((i) => i.kind === kind)
                 const n = list.length
                 if (kind === 'unpaid') {
+                  // One link per family covers all their slots, so count families, not slots.
+                  const fams = new Set(list.map((i) => String(i.ids.parentId))).size
                   return (
                     <NeedsGroup
                       key={kind}
                       testId="needs-unpaid"
-                      title={`${n} ${n === 1 ? "family hasn't" : "families haven't"} paid to start`}
+                      title={`${fams} ${fams === 1 ? "family hasn't" : "families haven't"} paid to start`}
                       sub="Their time is held until they pay the set-up link, or you mark them paid in cash."
-                      actions={n > 1 ? (
-                        <ActionButton tone="primary" result="sent" confirm={`Email all ${n} families their set-up link again?`} body={{ action: 'slot.setup_link_all' }}>{`Resend all ${n} links`}</ActionButton>
+                      actions={fams > 1 ? (
+                        <ActionButton tone="primary" result="sent" confirm={`Email all ${fams} families their set-up link again? Each link shows everything they owe up to the end of this month.`} body={{ action: 'slot.setup_link_all' }}>{`Resend all ${fams} links`}</ActionButton>
                       ) : undefined}
                       rows={list.map((it) => (
                         <div key={it.key} className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between" data-testid="needs-unpaid-row">
@@ -97,7 +99,7 @@ export default async function NeedsAttentionPage() {
                           </div>
                           <div className="flex shrink-0 flex-wrap items-center gap-2">
                             <ActionButton body={{ action: 'slot.setup_link', id: it.ids.slotId }}>Resend link</ActionButton>
-                            <ActionButton confirm="Mark this family's first month as paid in cash? Their place goes live and it records your name and the time." body={{ action: 'slot.cash_setup', id: it.ids.slotId }}>Paid in cash</ActionButton>
+                            <ActionButton confirm="Mark everything this family owes up to the end of this month as paid in cash or by bank transfer? Their sessions go live, the next month starts clean, and it records your name and the time." body={{ action: 'slot.cash_setup', id: it.ids.slotId }}>Paid in cash or bank transfer</ActionButton>
                             <details className="relative">
                               <summary aria-label="More" className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg border border-[#293b58] text-white/70 hover:text-white lg:h-10 lg:w-10">⋯</summary>
                               <div className="absolute right-0 z-10 mt-1.5 rounded-lg border border-[#293b58] bg-[#0f1a2b] p-1.5 shadow-xl">

@@ -438,11 +438,13 @@ export async function POST(req: NextRequest) {
       // presses it (after a check); it is never sent by the app on its own.
       case 'slot.setup_link_all': {
         if (!(await paymentsReady(admin, orgId))) return bad(ACADEMY_NOT_READY_MESSAGE)
-        const { data: waiting } = await admin.from('regular_slots').select('id').eq('organisation_id', orgId).eq('status', 'pending')
+        const { data: waiting } = await admin.from('regular_slots').select('id, parent_id').eq('organisation_id', orgId).eq('status', 'pending').order('starts_on')
         let sent = 0
         const failed: string[] = []
-        for (const w of waiting ?? []) {
-          try { await sendSetupCheckout(admin, orgId, w.id as string); sent++ } catch (e) { failed.push(e instanceof Error ? e.message : 'failed') }
+        // One email per family: their link covers every slot they're waiting on (money.ts).
+        const firstPerFamily = [...new Map((waiting ?? []).map((w) => [w.parent_id as string, w.id as string])).values()]
+        for (const id of firstPerFamily) {
+          try { await sendSetupCheckout(admin, orgId, id); sent++ } catch (e) { failed.push(e instanceof Error ? e.message : 'failed') }
         }
         return NextResponse.json({ ok: true, sent, failed: failed.length, warning: failed.length ? `${sent} sent. ${failed.length} couldn't be sent: ${[...new Set(failed)].join('; ')}` : null })
       }

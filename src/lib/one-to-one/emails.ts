@@ -56,15 +56,15 @@ export async function sendSessionReminder(f: Omit<SessionEmailFacts, 'pricePence
 
 // ─── regulars' money (phase 4) ──────────────────────────────────────────
 
-export async function sendSetupLink(f: { academy: string; to: string; parentName: string | null; childName: string; slotLabel: string; pricePence: number; sessionsThisMonth: number; amountPence: number; creditPence: number; url: string }) {
+export async function sendSetupLink(f: { academy: string; to: string; parentName: string | null; childName: string; slotLabel: string; pricePence: number; sessionsThisMonth: number; amountPence: number; creditPence: number; url: string; dueLabel?: string }) {
   return sendEmail({
     to: f.to, fromName: f.academy,
-    subject: `${f.childName}'s slot: ${f.slotLabel.split(' at ')[0]}`,
+    subject: f.slotLabel.includes(';') ? `${f.childName}'s 1-2-1 sessions: your set-up link` : `${f.childName}'s slot: ${f.slotLabel.split(' at ')[0]}`,
     html: shell(f.academy, `
       <h1 style="font-size:22px;margin:12px 0 4px">${esc(f.childName)}'s regular slot</h1>
-      <p style="margin:0 0 12px;color:#5b6674">Hi ${esc(f.parentName || 'there')}, ${esc(f.academy)} has set up ${esc(f.childName)}'s slot: <b style="color:#141a22">${esc(f.slotLabel)}, ${gbp(f.pricePence)} a session.</b> It rolls on month to month until you tell the academy otherwise.</p>
+      <p style="margin:0 0 12px;color:#5b6674">Hi ${esc(f.parentName || 'there')}, ${esc(f.academy)} has set up ${esc(f.childName)}'s ${f.slotLabel.includes(';') ? 'slots' : 'slot'}: <b style="color:#141a22">${esc(f.slotLabel)}${f.slotLabel.includes(';') ? '.' : `, ${gbp(f.pricePence)} a session.`}</b> It rolls on month to month until you tell the academy otherwise.</p>
       <table style="border-collapse:collapse;width:100%;font-size:15px">
-        <tr><td style="padding:6px 0;color:#5b6674">This month</td><td style="padding:6px 0;font-weight:600">${f.sessionsThisMonth} session${f.sessionsThisMonth === 1 ? '' : 's'}${f.creditPence > 0 ? `, ${gbp(f.creditPence)} credit applied` : ''} · ${gbp(f.amountPence)}</td></tr>
+        <tr><td style="padding:6px 0;color:#5b6674">${esc(f.dueLabel || 'This month')}</td><td style="padding:6px 0;font-weight:600">${f.sessionsThisMonth} session${f.sessionsThisMonth === 1 ? '' : 's'}${f.creditPence > 0 ? `, ${gbp(f.creditPence)} credit applied` : ''} · ${gbp(f.amountPence)}</td></tr>
         <tr><td style="padding:6px 0;color:#5b6674">After that</td><td style="padding:6px 0;font-weight:600">Charged on the 1st for the sessions in the month</td></tr>
         <tr><td style="padding:6px 0;color:#5b6674">Can't make one?</td><td style="padding:6px 0;font-weight:600">7+ days' notice is a full credit. You'll see the full cancellation policy and accept it before you pay.</td></tr>
       </table>
