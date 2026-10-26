@@ -1100,6 +1100,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         if (!confirmed) console.error('[webhook:paid_trial] parent confirmation not sent', { trialId })
       }
     }
+    // A paid trial is a payment: it goes on the academy's Payments page (src/lib/trial-payment-record.ts).
+    const { recordPaidTrialPayment } = await import('@/lib/trial-payment-record')
+    await recordPaidTrialPayment(supabase, {
+      orgId: m.supabase_org_id, sessionId: session.id,
+      paymentIntent: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
+      amountPence: session.amount_total ?? 0, paidAt: new Date().toISOString(),
+      parentEmail: m.parent_email || null, parentName: m.parent_name || null, childName,
+      classId: m.supabase_class_id || null, sessionDate: m.session_date || null,
+    })
     return
   }
 

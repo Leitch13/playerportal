@@ -288,6 +288,7 @@ const FEATURES = [
   ['Nobody uses services free: academy told who is on a register and not paying', 'src/lib/not-paying-alert.ts', ['export async function notPayingFor(', 'pending_migration: \'never signed up to pay\'']],
   ['Nobody uses services free: the morning email runs', `${A}/api/cron/not-paying/route.ts`, ['alertAcademiesNotPaying(db, today, sendEmail)']],
   ['Nobody uses services free: morning email scheduled', 'vercel.json', ['/api/cron/not-paying']],
+  ['Trials: a paid trial is recorded on Payments', `${A}/api/stripe/webhooks/route.ts`, ['await recordPaidTrialPayment(supabase, {']],
   ['1-2-1s: payments listed on the Payments page', `${D}/payments/page.tsx`, ['await loadOneToOneMoney(adminClient(), orgId', '<OneToOnePayments rows={oneToOneRows}']],
   ['1-2-1s: section on Analytics', `${D}/analytics/page.tsx`, ['loadOneToOneActivity(adminClient()', 'data-testid="analytics-one-to-ones"']],
   ['1-2-1s: payments in Exports', `${A}/api/export/[type]/route.ts`, ["case 'one-to-ones':"]],
