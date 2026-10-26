@@ -215,7 +215,7 @@ const FEATURES = [
   ['Camps: pay page checkout route', `${A}/api/camp-bookings/[id]/checkout/route.ts`, ['openCampCheckout(svc, c, origin)']],
   ['Camps: the rule is written down', 'BILLING_RULES.md', ["There's no way that people can book camps and not pay. The academy has to be told that they are not paying.", 'Never assume a rule']],
   // ── Class registers: red "£X outstanding" box next to the child (John, 15 Oct 2026, "like ClassForKids")
-  ['Classes: the outstanding rule', 'src/lib/class-outstanding.ts', ["const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']", "const FAILED_SUB = ['past_due', 'unpaid', 'incomplete']", "return 'No membership'", 'export async function loadClassOutstanding']],
+  ['Classes: the outstanding rule', 'src/lib/class-outstanding.ts', ["const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']", "const FAILED_SUB = ['past_due', 'unpaid', 'incomplete', 'pending_migration']", "return 'No membership'", 'export async function loadClassOutstanding']],
   ['Classes: the outstanding rule is tested', 'src/lib/class-outstanding.test.ts', ["toBe('£36.00 outstanding')", "toBe('No membership')"]],
   ['Classes: red box on the class page register', `${D}/groups/[id]/ClassRegister.tsx`, ['data-testid="register-outstanding"']],
   ['Classes: class page loads what is outstanding', `${D}/groups/[id]/page.tsx`, ['loadClassOutstanding(', 'outstanding: outstandingByPlayer.get(p.id)']],
@@ -284,6 +284,7 @@ const FEATURES = [
   ['1-2-1s: cash families never get payment-failed emails', 'src/lib/one-to-one/money.ts', ["if (failure === 'No card saved') {"]],
   ['1-2-1s: pay now works out today\'s amount', 'src/lib/one-to-one/money.ts', ['await refreshMonthCharge(admin, orgId, charge)']],
   ['1-2-1s: Resend all sends one email per family', `${A}/api/one-to-one/admin/route.ts`, ['const firstPerFamily = ']],
+  ['Classes: a child invited but never confirmed shows red on the register', 'src/lib/class-outstanding.ts', ["const FAILED_SUB = ['past_due', 'unpaid', 'incomplete', 'pending_migration']"]],
   ['1-2-1s: payments listed on the Payments page', `${D}/payments/page.tsx`, ['await loadOneToOneMoney(adminClient(), orgId', '<OneToOnePayments rows={oneToOneRows}']],
   ['1-2-1s: section on Analytics', `${D}/analytics/page.tsx`, ['loadOneToOneActivity(adminClient()', 'data-testid="analytics-one-to-ones"']],
   ['1-2-1s: payments in Exports', `${A}/api/export/[type]/route.ts`, ["case 'one-to-ones':"]],

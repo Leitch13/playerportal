@@ -22,8 +22,9 @@ export interface OutstandingInput {
 }
 
 const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']
-const FAILED_SUB = ['past_due', 'unpaid', 'incomplete']
-const HAS_MEMBERSHIP = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete', 'pending_migration', 'paused', 'scheduled']
+// Not paying: card failed, never finished, or invited and never confirmed (PFC/Jamie/G&G, 26 Oct 2026: 28 kids).
+const FAILED_SUB = ['past_due', 'unpaid', 'incomplete', 'pending_migration']
+const HAS_MEMBERSHIP = ['active', 'trialing', 'past_due', 'unpaid', 'incomplete', 'paused', 'scheduled']
 
 export function classOutstanding(i: OutstandingInput): string | null {
   const fromPayments = i.payments

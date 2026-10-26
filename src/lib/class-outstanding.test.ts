@@ -20,4 +20,7 @@ describe('class register red outstanding box', () => {
     expect(classOutstanding({ payments: [], subs: [{ status: 'active', planAmount: 36 }] })).toBeNull()
     expect(classOutstanding({ payments: [{ status: 'paid', amount: 36, amount_paid: 36 }], subs: [{ status: 'active', planAmount: 36 }] })).toBeNull()
   })
+  it('invited but never confirmed is not paying: red with the monthly amount (PFC, 26 Oct 2026)', () => {
+    expect(classOutstanding({ payments: [], subs: [{ status: 'pending_migration', planAmount: 40 }] })).toBe('£40.00 outstanding')
+  })
 })
