@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 import Link from 'next/link'
 import { postJson } from '@/lib/post-json'
 
@@ -67,6 +68,7 @@ export default function PaidTrialForm({
   const [readTerms, setReadTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [discountCode, setDiscountCode] = useState<AppliedCode | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -89,6 +91,7 @@ export default function PaidTrialForm({
       parentEmail,
       parentPhone,
       sessionDate,
+      promoCode: discountCode?.code ?? null,
     })
     const url = res.data.url
     if (res.ok && typeof url === 'string' && url) {
@@ -185,6 +188,8 @@ export default function PaidTrialForm({
         </span>
       </label>
 
+      <DiscountCodeBox groupId={groupId} context="trial" onChange={setDiscountCode} accent={primaryColor} />
+
       {error && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
           {error}
@@ -201,7 +206,7 @@ export default function PaidTrialForm({
           boxShadow: !loading ? `0 10px 30px ${primaryColor}40` : 'none',
         }}
       >
-        {loading ? 'Redirecting to payment…' : `Pay £${trialPrice.toFixed(2)} & Book Trial`}
+        {loading ? 'Redirecting to payment…' : `Pay £${(discountCode ? Math.max(0, discountCode.discount_type === 'percentage' ? trialPrice * (1 - discountCode.discount_value / 100) : trialPrice - discountCode.discount_value / 100) : trialPrice).toFixed(2)} & Book Trial`}
       </button>
 
       <p className="text-[11px] sm:text-xs text-white/40 text-center px-2">

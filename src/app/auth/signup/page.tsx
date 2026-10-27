@@ -1,5 +1,6 @@
 'use client'
 
+import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -73,6 +74,7 @@ function SignUp() {
   const [everyPlan, setEveryPlan] = useState<PlanForClass[]>([])
   const [chosenClassId, setChosenClassId] = useState('')
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
+  const [discountCode, setDiscountCode] = useState<AppliedCode | null>(null)
   const [subscribing, setSubscribing] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -449,7 +451,7 @@ function SignUp() {
     if (!selectedPlanId || !addedChildId || !classForThisPayment) return
     setSubscribing(true)
     try {
-      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: classForThisPayment, firstBillingDate: billedFrom || null }) })
+      const res = await fetch('/api/stripe/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ planId: selectedPlanId, playerId: addedChildId, billingOption, classId: classForThisPayment, firstBillingDate: billedFrom || null, promoCode: billingOption === 'monthly' ? discountCode?.code ?? null : null }) })
       const data = await res.json()
       if (data.url) window.location.href = data.url
       else { setError(data.error || 'Failed to start subscription'); setSubscribing(false) }
@@ -668,6 +670,7 @@ function SignUp() {
                       )}
                     </div>
                   )}
+                  {billingOption === 'monthly' && selectedPlanId && <DiscountCodeBox planId={selectedPlanId} context="subscription" onChange={setDiscountCode} accent={primaryColor} />}
                   <button onClick={handleSubscribe} disabled={!selectedPlanId || !classForThisPayment || subscribing} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: billingOption === 'quarterly' ? '#22c55e' : primaryColor, color: billingOption === 'quarterly' ? 'white' : '#0a0a0a' }}>
                     {subscribing ? <><Spinner size={20} />Setting up payment...</> : billingOption === 'quarterly' ? 'Pay 3 Months & Save 10% \u2192' : 'Subscribe & Pay \u2192'}
                   </button>

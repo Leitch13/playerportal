@@ -22,6 +22,8 @@ export async function POST(request: NextRequest) {
     context?: PromoContext
     slug?: string
     orgId?: string
+    planId?: string
+    groupId?: string
     amountPence?: number
   }
 
@@ -45,6 +47,15 @@ export async function POST(request: NextRequest) {
       .eq('slug', body.slug)
       .maybeSingle()
     organisationId = (org?.id as string | undefined) || null
+  }
+  // A membership or trial page knows its plan or class, not always the academy (27 Oct 2026).
+  if (!organisationId && body.planId) {
+    const { data: p } = await admin.from('subscription_plans').select('organisation_id').eq('id', body.planId).maybeSingle()
+    organisationId = (p?.organisation_id as string | undefined) || null
+  }
+  if (!organisationId && body.groupId) {
+    const { data: g } = await admin.from('training_groups').select('organisation_id').eq('id', body.groupId).maybeSingle()
+    organisationId = (g?.organisation_id as string | undefined) || null
   }
   if (!organisationId) return NextResponse.json({ valid: false, reason: 'Unknown academy' })
 

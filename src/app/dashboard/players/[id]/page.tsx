@@ -1,4 +1,5 @@
 import { plansForClasses } from '@/lib/plans-for-class'
+import GiveDiscount from './GiveDiscount'
 import { redirect } from 'next/navigation'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
@@ -719,6 +720,14 @@ export default async function PlayerDetailPage({
                     found" footer is REPLACED by the aggregate panel above.
                     Footer no longer rendered to avoid duplicate signal. */}
               </div>
+            )}
+            {role === 'admin' && (
+              <GiveDiscount
+                childName={player.first_name}
+                memberships={subsToRender
+                  .filter((s) => s.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(s.status || ''))
+                  .map((s) => ({ id: s.id, name: s.plan?.name || 'Membership', amount: Number(s.plan?.amount || 0) }))}
+              />
             )}
           </Card>
         )

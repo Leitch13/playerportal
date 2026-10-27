@@ -1,5 +1,6 @@
 'use client'
 
+import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 import { useState } from 'react'
 
 export default function SubscribeButton({
@@ -29,6 +30,7 @@ export default function SubscribeButton({
 }) {
   const [loading, setLoading] = useState(false)
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
+  const [code, setCode] = useState<AppliedCode | null>(null)
 
   const monthly = Number(amount)
   const quarterlyTotal = monthly * 3
@@ -41,7 +43,7 @@ export default function SubscribeButton({
       const res = await fetch('/api/stripe/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, playerId, billingOption, classId }),
+        body: JSON.stringify({ planId, playerId, billingOption, classId, promoCode: billingOption === 'monthly' ? code?.code ?? null : null }),
       })
 
       const data = await res.json()
@@ -97,6 +99,8 @@ export default function SubscribeButton({
           </span>
         </div>
       )}
+
+      {billingOption === 'monthly' && <DiscountCodeBox planId={planId} context="subscription" onChange={setCode} />}
 
       {/* Subscribe button */}
       <button

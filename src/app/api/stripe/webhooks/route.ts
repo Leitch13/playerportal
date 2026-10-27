@@ -7,6 +7,7 @@ import { shouldProcessEvent, markEventSuccess, markEventError } from '@/lib/stri
 import { settleRepayments, takeRepaymentFromDraftInvoice } from '@/lib/refund-recovery'
 import { refundKind } from '@/lib/refund-kind'
 import { effectiveStatus } from '@/lib/membership-pause'
+import { redeemCodeOnSubscription } from '@/lib/discounts'
 
 export const dynamic = 'force-dynamic'
 
@@ -996,6 +997,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       console.log('[webhook] migration trial_end moved back to the first-charge date', { sub: stripeSub.id, firstChargeUnix })
     }
 
+    // A discount code the parent typed on the invite page goes on the subscription now (src/lib/discounts.ts).
+    if (stripeSub && session.metadata?.promo_code_id) {
+      try { await redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id, stripeSub.id) }
+      catch (e) { console.error('[webhook] discount code not applied', { sub: stripeSub.id, err: e instanceof Error ? e.message : e }) }
+    }
+
     const { error: migSubErr } = await supabase
       .from('subscriptions')
       .update({
@@ -1088,6 +1095,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }).select('id').single()
     if (trialBookingErr) throw new Error(`trial_bookings.insert failed: ${trialBookingErr.message}`)
     trialId = trialId || ((newBooking as { id: string } | null)?.id ?? null)
+    // A discount code used on the trial counts once, on the first delivery only.
+    if (newBooking && m.promo_code_id) {
+      const { error: promoIncErr } = await supabase.rpc('increment_promo_use', { p_promo_id: m.promo_code_id })
+      if (promoIncErr) console.error('[webhook:trial_promo_increment] failed:', promoIncErr.message)
+    }
     // Tell the academy and confirm to the parent. A paid trial did neither until
     // 10 Oct 2026 (see src/lib/trial-alerts.ts). Neither can fail the webhook:
     // the money is taken and the booking is saved; canary 17 reports a missed alert.
@@ -1164,6 +1176,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         }))
         console.log('[webhook] sessions_bridge trial_end moved back to the 1st', { sub: stripeSub.id, anchorUnix })
       }
+    }
+
+    // A discount code the parent typed at sign-up comes off the monthly payments from the 1st.
+    if (session.metadata?.promo_code_id) {
+      try { await redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id, stripeSub.id) }
+      catch (e) { console.error('[webhook] discount code not applied', { sub: stripeSub.id, err: e instanceof Error ? e.message : e }) }
     }
 
     // Upsert enrolment via subscriptions table

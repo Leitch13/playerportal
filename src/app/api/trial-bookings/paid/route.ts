@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
+import { MIN_CHARGE_PENCE } from '@/lib/discounts'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
@@ -34,6 +36,7 @@ export async function POST(request: NextRequest) {
       parentEmail,
       parentPhone,
       sessionDate,
+      promoCode,
     } = await request.json()
 
     if (!groupId) {
@@ -126,7 +129,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const amountPence = Math.round(trialPrice * 100)
+    // A discount code (27 Oct 2026): comes off the trial price. A paid trial can't be made free
+    // by a code (Stripe can't take £0); the academy offers free trials for that.
+    let amountPence = Math.round(trialPrice * 100)
+    let promoId: string | null = null
+    const code = String(promoCode || '').toUpperCase().trim()
+    if (code) {
+      const service = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const { data: promoRow } = await service.from('promo_codes')
+        .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, applies_to, active')
+        .eq('organisation_id', org.id).eq('code', code).maybeSingle()
+      const check = evaluatePromo(promoRow as PromoRow | null, 'trial')
+      if (!check.valid) return NextResponse.json({ error: check.reason || 'That code can\'t be used' }, { status: 400 })
+      const discounted = applyPromoPence(amountPence, promoRow as PromoRow)
+      if (discounted < MIN_CHARGE_PENCE) return NextResponse.json({ error: 'That code can\'t make a paid trial free. Ask the academy about a free trial.' }, { status: 400 })
+      amountPence = discounted
+      promoId = (promoRow as PromoRow).id
+    }
     const feeAmount = PLATFORM_FEE_RATE > 0 ? Math.round(amountPence * PLATFORM_FEE_RATE) : 0
     const origin = request.headers.get('origin') || 'https://theplayerportal.net'
 
@@ -167,6 +186,7 @@ export async function POST(request: NextRequest) {
         parent_email: parentEmail,
         parent_phone: parentPhone || '',
         session_date: sessionDate || '',
+        ...(promoId ? { promo_code_id: promoId } : {}),
         terms_accepted_at: new Date().toISOString(),
         terms_version_hash: termsVersionHash,
       },
@@ -186,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       url: session.url,
-      amount: trialPrice,
+      amount: amountPence / 100,
     })
   } catch (err) {
     console.error('Paid trial checkout error:', err)

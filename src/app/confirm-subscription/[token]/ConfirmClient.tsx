@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { postJson } from '@/lib/post-json'
+import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 
 interface Props {
   token: string
@@ -18,6 +19,7 @@ interface Props {
   logoUrl: string | null
   quarterlyEnabled: boolean
   quarterlyDiscountPercent: number
+  academySlug?: string
 }
 
 export default function ConfirmClient({
@@ -34,10 +36,12 @@ export default function ConfirmClient({
   logoUrl,
   quarterlyEnabled,
   quarterlyDiscountPercent,
+  academySlug,
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [billing, setBilling] = useState<'monthly' | 'quarterly'>('monthly')
+  const [code, setCode] = useState<AppliedCode | null>(null)
 
   const discountFraction = Math.max(0, Math.min(50, quarterlyDiscountPercent)) / 100
   const quarterlyTotal = planAmount * 3 * (1 - discountFraction)
@@ -47,7 +51,7 @@ export default function ConfirmClient({
   async function handleConfirm() {
     setLoading(true)
     setError(null)
-    const res = await postJson('/api/migration/confirm-checkout', { token, billingOption: billing })
+    const res = await postJson('/api/migration/confirm-checkout', { token, billingOption: billing, promoCode: billing === 'monthly' ? code?.code ?? null : null })
     const url = res.data.url
     if (!res.ok || typeof url !== 'string' || !url) {
       setError((typeof res.data.error === 'string' && res.data.error) || res.error || 'Something went wrong. Please try again.')
@@ -149,6 +153,12 @@ export default function ConfirmClient({
               Cancel anytime — no lock-in
             </li>
           </ul>
+
+          {billing === 'monthly' && (
+            <div className="mb-4">
+              <DiscountCodeBox slug={academySlug} context="subscription" onChange={setCode} accent={primaryColor} />
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-300">

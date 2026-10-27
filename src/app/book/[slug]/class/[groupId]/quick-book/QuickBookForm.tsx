@@ -1,5 +1,6 @@
 'use client'
 
+import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -118,6 +119,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
   const [childLeague, setChildLeague] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plans.length === 1 ? plans[0].id : null)
   const [billingOption, setBillingOption] = useState<'monthly' | 'quarterly'>('monthly')
+  const [discountCode, setDiscountCode] = useState<AppliedCode | null>(null)
   // URL preselection: when the parent clicks "Subscribe Now" on the class
   // detail page, they arrive with ?plan=<id>&billing=monthly|quarterly.
   // Read window.location.search inside useEffect (client-only) so we don't
@@ -319,6 +321,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
         // signup — the subscribe route + webhook decide what to do with it
         // based on the feature flag.
         activatesOn: startDate || defaultStartIso,
+        promoCode: billingOption === 'monthly' ? discountCode?.code ?? null : null,
       })
       const data = res.data
       const url = data.url
@@ -555,6 +558,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
             .
           </p>
         )}
+        {billingOption === 'monthly' && selectedPlan && <div className="mb-4"><DiscountCodeBox orgId={orgId} context="subscription" onChange={setDiscountCode} accent={primaryColor} /></div>}
         <button type="button" onClick={handleBookAndPay} disabled={!canSubmit || loading} className="w-full py-5 rounded-2xl font-extrabold text-xl transition-all hover:scale-[1.02] active:scale-[0.99] disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-3 shadow-lg" style={{ backgroundColor: canSubmit ? primaryColor : 'rgba(255,255,255,0.06)', color: canSubmit ? '#0a0a0a' : 'rgba(255,255,255,0.3)', boxShadow: canSubmit ? `0 8px 30px ${primaryColor}40` : 'none' }}>
           {loading ? <><Spinner size={22} />Setting up your booking...</> : <>Book &amp; Pay {displayPrice} &rarr;</>}
         </button>

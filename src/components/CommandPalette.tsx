@@ -35,7 +35,7 @@ const pagesByRole: Record<UserRole, NavPage[]> = {
     { label: 'Docs', href: '/dashboard/documents', icon: 'doc' },
     { label: 'Plans', href: '/dashboard/training-plans', icon: 'target' },
     { label: 'Payments', href: '/dashboard/payments', icon: 'card' },
-    { label: 'Promos', href: '/dashboard/promo-codes', icon: 'tag' },
+    { label: 'Discounts', href: '/dashboard/discounts', icon: 'tag' },
     { label: 'Referrals', href: '/dashboard/referrals', icon: 'gift' },
     { label: 'Reports', href: '/dashboard/reports', icon: 'chart' },
     { label: 'Messages', href: '/dashboard/messages', icon: 'chat' },

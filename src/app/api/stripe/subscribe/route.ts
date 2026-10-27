@@ -13,6 +13,7 @@ import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-r
 import { recordSignupRefusal, type SignupRefusalContext } from '@/lib/signup-refusals'
 import { classForPayment, CLASS_REQUIRED_MESSAGE } from '@/lib/class-for-payment'
 import { SIBLING_QUALIFYING_STATUSES } from '@/lib/billing/sibling'
+import { evaluatePromo, type PromoRow } from '@/lib/promo'
 import {
   firstOfNextMonthUnix,
   isStartTodayOrEarlier,
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
     //   Stage 2 (behind BILLING_FLOW_STARTDATE_ENABLED flag) uses it for the new immediate_prorated
     //   billing branch. Cap matches the picker UI: today through today+28 days. Bad input → defaults
     //   to today (the picker's safe default).
-    const { planId, playerId, billingOption, classId: classIdSent, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput, activatesOn: activatesOnInput } = await request.json()
+    const { planId, playerId, billingOption, classId: classIdSent, firstSessionDate: firstSessionDateInput, firstBillingDate: firstBillingDateInput, activatesOn: activatesOnInput, promoCode: promoCodeInput } = await request.json()
     if (!planId) {
       return NextResponse.json({ error: 'Please choose a plan before continuing.' }, { status: 400 })
     }
@@ -538,6 +539,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // A discount code the parent typed (27 Oct 2026). Checked here so a bad code is refused before
+    // any Stripe page opens; it comes off the monthly payments from the 1st, put on the subscription
+    // by the webhook when the parent finishes (src/lib/discounts.ts). Monthly only.
+    let promoCodeId: string | null = null
+    const promoCode = String(promoCodeInput || '').toUpperCase().trim()
+    if (promoCode && billingOption !== 'quarterly') {
+      const { data: promoRow } = await serviceDb.from('promo_codes')
+        .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, applies_to, active')
+        .eq('organisation_id', plan.organisation_id).eq('code', promoCode).maybeSingle()
+      const check = evaluatePromo(promoRow as PromoRow | null, 'subscription')
+      if (!check.valid) return NextResponse.json({ error: check.reason || 'That code can\'t be used' }, { status: 400 })
+      promoCodeId = (promoRow as PromoRow).id
+    }
+
     // Resolve the platform fee rate from the academy's platform plan.
     // Service-role: platform_plans is an internal config table; the fee
     // rate is needed for every checkout regardless of caller identity.
@@ -840,6 +855,7 @@ export async function POST(request: NextRequest) {
           ...(classId ? { supabase_class_id: classId } : {}),
           ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+          ...(promoCodeId ? { promo_code_id: promoCodeId } : {}),
         },
       })
 
@@ -888,6 +904,7 @@ export async function POST(request: NextRequest) {
         ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
         ...(classId ? { supabase_class_id: classId } : {}),
         ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+        ...(promoCodeId ? { promo_code_id: promoCodeId } : {}),
         activates_on: activatesOnIso,
       },
       subscription_data: {
@@ -899,6 +916,7 @@ export async function POST(request: NextRequest) {
           ...(firstSessionDate ? { first_session_date: firstSessionDate.toISOString().split('T')[0] } : {}),
           ...(classId ? { supabase_class_id: classId } : {}),
           ...(siblingCouponId ? { sibling_discount_applied: 'true' } : {}),
+          ...(promoCodeId ? { promo_code_id: promoCodeId } : {}),
           activates_on: activatesOnIso,
         },
         trial_end: trialEnd,

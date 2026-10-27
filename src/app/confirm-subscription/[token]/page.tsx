@@ -88,6 +88,7 @@ export default async function ConfirmSubscriptionPage({
       sessionsPerWeek={plan.sessions_per_week}
       academyName={org.name}
       primaryColor={org.primary_color || '#4ecde6'}
+      academySlug={org.slug}
       logoUrl={org.logo_url || null}
       quarterlyEnabled={isQuarterlyEnabledForOrg(org.id, org.quarterly_billing_enabled)}
       quarterlyDiscountPercent={Number(org.quarterly_discount_percent ?? 10)}

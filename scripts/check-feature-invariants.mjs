@@ -134,7 +134,7 @@ const FEATURES = [
   ['Class required: the rule', 'src/lib/class-for-payment.ts', ['export function classForPayment', 'export function classesForPlan', 'CLASS_REQUIRED_MESSAGE']],
   ['Class required: the payment route refuses a payment with no class', `${A}/api/stripe/subscribe/route.ts`, ['classForPayment(', "'class_required'", 'CLASS_REQUIRED_MESSAGE', '!alreadyInClass']],
   ['Class required: the Membership page asks which class', `${D}/payments/AvailableUpgrades.tsx`, ['classesForPlan(', 'upgrade-class-select', 'classId={chosen?.id}', 'upgrade-today']],
-  ['Class required: the Subscribe button sends the class', `${D}/payments/SubscribeButton.tsx`, ['billingOption, classId }']],
+  ['Class required: the Subscribe button sends the class', `${D}/payments/SubscribeButton.tsx`, ['billingOption, classId, promoCode']],
   ['Class required: the Membership page is given the classes', `${D}/payments/page.tsx`, ['classes={joinableClasses}']],
   ['Class required: the sign-up page asks which class', `${A}/auth/signup/page.tsx`, ['classesForPlan(', 'signup-class-select', 'classId: classForThisPayment']],
   ['How-to videos: linked on the sign-up page', `${A}/auth/signup/page.tsx`, ['how-to-videos-link', '/help/parents']],
@@ -301,6 +301,19 @@ const FEATURES = [
   ['Camps: printed register uses the NA rule', `${D}/camps/[campId]/print/page.tsx`, ['const hasMedical = hasMedicalNote(r.medical_info)']],
   ['Classes: live register uses the NA rule', `${D}/attendance/register/[groupId]/LiveRegisterClient.tsx`, ['const hasMedical = hasMedicalNote(p.medical_info)']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
+  ['Discounts: page in the menu', 'src/components/Navigation.tsx', ["{ href: '/dashboard/discounts', label: 'Discounts', icon: 'tag' }"]],
+  ['Discounts: codes, automatic discounts and children on one page', `${D}/discounts/page.tsx`, ['<PromoCodeManager orgId={orgId} />', 'Children with a discount', 'Sibling discount']],
+  ['Discounts: give one child money off', `${D}/players/[id]/page.tsx`, ['<GiveDiscount']],
+  ['Discounts: child discount keeps the sibling discount', 'src/lib/discounts.ts', ['existing.map((id) => ({ discount: id }))', "hasCouponFor(sub, 'promo_code_id', promo.id)"]],
+  ['Discounts: code box on sign-up', 'src/app/auth/signup/page.tsx', ['<DiscountCodeBox planId={selectedPlanId}', 'promoCode: billingOption']],
+  ['Discounts: code box on quick book', 'src/app/book/[slug]/class/[groupId]/quick-book/QuickBookForm.tsx', ['<DiscountCodeBox orgId={orgId}', 'promoCode: billingOption']],
+  ['Discounts: code box on Membership', `${D}/payments/SubscribeButton.tsx`, ['<DiscountCodeBox planId={planId}']],
+  ['Discounts: code box on the invite page', 'src/app/confirm-subscription/[token]/ConfirmClient.tsx', ['<DiscountCodeBox slug={academySlug}', 'promoCode: billing']],
+  ['Discounts: code box on paid trials', 'src/app/book/[slug]/class/[groupId]/trial/paid/PaidTrialForm.tsx', ['<DiscountCodeBox groupId={groupId} context="trial"', 'promoCode: discountCode']],
+  ['Discounts: sign-up checks the code', `${A}/api/stripe/subscribe/route.ts`, ["evaluatePromo(promoRow as PromoRow | null, 'subscription')", 'promo_code_id: promoCodeId']],
+  ['Discounts: invites check the code and get the sibling discount', `${A}/api/migration/confirm-checkout/route.ts`, ['await siblingCouponFor(admin, stripe, org.id', "evaluatePromo(promoRow as PromoRow | null, 'subscription')", 'siblingCouponId: sibling?.couponId']],
+  ['Discounts: trials check the code', `${A}/api/trial-bookings/paid/route.ts`, ["evaluatePromo(promoRow as PromoRow | null, 'trial')", 'MIN_CHARGE_PENCE']],
+  ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 
 const fail = []

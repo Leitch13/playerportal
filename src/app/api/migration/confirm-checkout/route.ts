@@ -6,6 +6,8 @@ import { QUARTERLY_UNAVAILABLE_MESSAGE } from '@/lib/quarterly-billing'
 import { feePercentFromRate } from '@/lib/stripe-fee'
 import { sessionsBridgeCheckout } from '@/lib/billing/first-charge'
 import { clampTrialEndForCheckout } from '@/lib/billing/anchor'
+import { siblingCouponFor } from '@/lib/billing/sibling'
+import { evaluatePromo, type PromoRow } from '@/lib/promo'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -221,6 +223,26 @@ export async function POST(request: NextRequest) {
     migration: 'true',
   }
 
+  // Discounts (27 Oct 2026, same as the booking page): the sibling discount when another child of
+  // this parent already pays here, and a code the parent typed. A code comes off the monthly
+  // payments from the 1st: the webhook puts it on the subscription (src/lib/discounts.ts).
+  const sibling = await siblingCouponFor(admin, stripe, org.id, sub.parent_id as string)
+  let promoId: string | null = null
+  const promoCode = String(body.promoCode || '').toUpperCase().trim()
+  if (promoCode) {
+    const { data: promoRow } = await admin.from('promo_codes')
+      .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, applies_to, active')
+      .eq('organisation_id', org.id).eq('code', promoCode).maybeSingle()
+    const check = evaluatePromo(promoRow as PromoRow | null, 'subscription')
+    if (!check.valid) return NextResponse.json({ error: check.reason || 'That code can\'t be used' }, { status: 400 })
+    promoId = (promoRow as PromoRow).id
+  }
+  const monthlyMetadata: Record<string, string> = {
+    ...baseMetadata,
+    ...(promoId ? { promo_code_id: promoId } : {}),
+    ...(sibling ? { sibling_discount_applied: 'true' } : {}),
+  }
+
   if (migrationBillingStart) {
     // Admin set a deferred first-charge date (member already prepaid
     // elsewhere): £0 today, first charge on that date via trial_end.
@@ -235,9 +257,10 @@ export async function POST(request: NextRequest) {
       // the future"), which failed every confirm in the last two days before the
       // first-charge date (Pro Football Coaching, 29 Sep 2026). Ask for 48h, and the
       // webhook moves it back to first_charge_unix the moment the parent confirms.
-      metadata: { ...baseMetadata, first_charge_unix: String(migrationBillingStart) },
+      metadata: { ...monthlyMetadata, first_charge_unix: String(migrationBillingStart) },
+      ...(sibling ? { discounts: [{ coupon: sibling.couponId }] } : {}),
       subscription_data: {
-        metadata: { ...baseMetadata, first_charge_unix: String(migrationBillingStart) },
+        metadata: { ...monthlyMetadata, first_charge_unix: String(migrationBillingStart) },
         trial_end: clampTrialEndForCheckout(migrationBillingStart),
         ...(connectedAccountId
           ? {
@@ -278,7 +301,8 @@ export async function POST(request: NextRequest) {
     platformFeeRate: PLATFORM_FEE_RATE,
     successUrl: `${origin}/confirm-subscription/${token}/success`,
     cancelUrl: `${origin}/confirm-subscription/${token}`,
-    metadata: baseMetadata,
+    metadata: monthlyMetadata,
+    siblingCouponId: sibling?.couponId ?? null,
   })
   const session = await stripe.checkout.sessions.create(params)
   return NextResponse.json({ url: session.url })

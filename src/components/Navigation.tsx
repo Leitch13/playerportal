@@ -283,6 +283,7 @@ const navGroups: Record<UserRole, NavGroup[]> = {
     { title: 'Finance', items: [
       { href: '/dashboard/plans', label: 'Plans & Pricing', icon: 'tag' },
       { href: '/dashboard/payments', label: 'Payments', icon: 'credit-card' },
+      { href: '/dashboard/discounts', label: 'Discounts', icon: 'tag' },
       { href: '/dashboard/shop/manage', label: 'Shop', icon: 'shopping-bag', feature: 'shop' },
       { href: '/dashboard/referrals', label: 'Referrals', icon: 'gift', feature: 'referrals' },
     ]},

@@ -68,7 +68,7 @@ export default function PromoCodeManager({
         </button>
         <button
           onClick={async () => {
-            if (!confirm('Delete this promo code permanently? This cannot be undone.')) return
+            if (!confirm('Delete this code? Parents can no longer use it.')) return
             setLoading(true)
             const supabase = createClient()
             const { error } = await supabase.from('promo_codes').delete().eq('id', toggleCodeId)
@@ -114,7 +114,7 @@ export default function PromoCodeManager({
     if (error) {
       alert(error.message)
     } else {
-      setSuccess('Promo code created!')
+      setSuccess('Code created. Parents can use it now.')
       setCode('')
       setDescription('')
       setDiscountType('percentage')
@@ -141,12 +141,12 @@ export default function PromoCodeManager({
           onClick={() => setOpen(true)}
           className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90"
         >
-          + Create Promo Code
+          + New code
         </button>
       ) : (
         <div className="bg-white text-gray-900 rounded-xl border border-[#1d2c42] p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">New Promo Code</h2>
+            <h2 className="text-lg font-semibold">New discount code</h2>
             <button onClick={() => setOpen(false)} className="text-[#93a2ba] hover:text-[#eef2f9] text-sm">
               Cancel
             </button>
@@ -248,32 +248,32 @@ export default function PromoCodeManager({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Applies To</label>
+                <label className="block text-sm font-medium mb-1">Works on</label>
                 <select
                   value={appliesTo}
                   onChange={(e) => setAppliesTo(e.target.value as typeof appliesTo)}
                   className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="all">All</option>
-                  <option value="subscription">Subscription</option>
-                  <option value="one_off">One-off Payment</option>
-                  <option value="trial">Trial</option>
+                  <option value="all">Everything</option>
+                  <option value="subscription">Memberships</option>
+                  <option value="trial">Trials</option>
+                  <option value="one_off">Camps</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Discount lasts</label>
+                <label className="block text-sm font-medium mb-1">For memberships, it lasts</label>
                 <select
                   value={duration}
                   onChange={(e) => setDuration(e.target.value as typeof duration)}
                   className="w-full border border-[#1d2c42] rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="once">First payment only</option>
-                  <option value="repeating_3">3 months</option>
-                  <option value="repeating_6">6 months</option>
-                  <option value="forever">Forever</option>
+                  <option value="once">First monthly payment</option>
+                  <option value="repeating_3">3 monthly payments</option>
+                  <option value="repeating_6">6 monthly payments</option>
+                  <option value="forever">Every payment, for good</option>
                 </select>
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function PromoCodeManager({
               disabled={loading}
               className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Promo Code'}
+              {loading ? 'Creating...' : 'Create code'}
             </button>
           </form>
         </div>
