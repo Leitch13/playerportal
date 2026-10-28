@@ -46,6 +46,10 @@ export default async function TrialsPage() {
   ])
 
   const allTrials = trials || []
+  // Classes a trial can be moved to (Move on each trial).
+  const { data: classRows } = await supabase.from('training_groups').select('id, name, day_of_week, time_slot, class_type').eq('organisation_id', orgId).order('name')
+  const moveClasses = ((classRows || []) as { id: string; name: string; day_of_week: string | null; time_slot: string | null; class_type: string | null }[])
+    .filter((c) => c.class_type !== '1-2-1').map((c) => ({ id: c.id, name: c.name, dayOfWeek: c.day_of_week, timeSlot: c.time_slot }))
   // When each family was last emailed their joining link ("Link sent 13 Oct" on the row).
   const { data: joinSends } = await supabase.from('audit_log').select('entity_id, created_at').eq('organisation_id', orgId).eq('action', TRIAL_JOIN_SENT_ACTION).order('created_at', { ascending: true })
   const joinSentAt = new Map<string, string>((joinSends || []).map((r) => [r.entity_id as string, r.created_at as string]))
@@ -81,7 +85,7 @@ export default async function TrialsPage() {
 
       {/* The trials themselves come first. On a phone they used to sit under a screen and a half of
           statistics; the numbers now follow the list. */}
-      <TrialManager academyName={academyName} academySlug={academySlug} trials={allTrials.map(t => ({
+      <TrialManager academyName={academyName} academySlug={academySlug} classes={moveClasses} trials={allTrials.map(t => ({
         id: t.id,
         parentName: t.parent_name,
         parentEmail: t.parent_email,
@@ -90,6 +94,7 @@ export default async function TrialsPage() {
         childName: t.child_name,
         childAge: t.child_age,
         groupName: (t.group as unknown as { name: string } | null)?.name || null,
+        groupId: t.training_group_id ?? null,
         preferredDate: t.preferred_date,
         notes: t.notes,
         status: t.status,

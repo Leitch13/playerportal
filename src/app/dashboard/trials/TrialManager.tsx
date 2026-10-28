@@ -14,6 +14,7 @@ import {
 } from '@/lib/trial-derive'
 // Phase 2.4 step 5 — DB-only admin actions for the follow-up cohort.
 import TrialJoinActions from './TrialJoinActions'
+import MoveTrial, { type MoveClass } from './MoveTrial'
 import { trialJoinPath } from '@/lib/trial-join'
 // Sprint 6 — per-row WhatsApp deep-link.
 import WhatsAppButton from '@/components/WhatsAppButton'
@@ -29,6 +30,7 @@ interface Trial {
   childName: string
   childAge: number | null
   groupName: string | null
+  groupId?: string | null
   preferredDate: string | null
   notes: string | null
   status: string
@@ -83,10 +85,12 @@ export default function TrialManager({
   trials,
   academyName = 'the academy',
   academySlug = '',
+  classes = [],
 }: {
   trials: Trial[]
   academyName?: string
   academySlug?: string
+  classes?: MoveClass[]
 }) {
   const router = useRouter()
   const [filter, setFilter] = useState<string>('all')
@@ -254,6 +258,10 @@ export default function TrialManager({
                                 {card ? 'Did not come' : 'No Show'}
                               </button>
                             </>
+                          )}
+                          {/* Move to another date or class (28 Oct 2026): a paid trial keeps its payment. */}
+                          {['pending', 'confirmed', 'cancelled', 'no_show'].includes(t.status) && !t.converted && (
+                            <MoveTrial trialId={t.id} childName={t.childName} groupId={t.groupId ?? null} classes={classes} card={card} />
                           )}
                           {['pending', 'confirmed'].includes(t.status) && (
                             <button

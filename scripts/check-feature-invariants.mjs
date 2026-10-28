@@ -301,6 +301,8 @@ const FEATURES = [
   ['Camps: printed register uses the NA rule', `${D}/camps/[campId]/print/page.tsx`, ['const hasMedical = hasMedicalNote(r.medical_info)']],
   ['Classes: live register uses the NA rule', `${D}/attendance/register/[groupId]/LiveRegisterClient.tsx`, ['const hasMedical = hasMedicalNote(p.medical_info)']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
+  ['Trials: Move to another date or class', `${D}/trials/TrialManager.tsx`, ['<MoveTrial trialId={t.id}']],
+  ['Trials: a move checks the day, a free place, and emails the family', `${A}/api/admin/trials/[id]/move/route.ts`, ['moveProblem(t, g.day_of_week', 'await trialPlaceFree(db, groupId, date)', 'reminder_48h_sent: false']],
   ['Discounts: page in the menu', 'src/components/Navigation.tsx', ["{ href: '/dashboard/discounts', label: 'Discounts', icon: 'tag' }"]],
   ['Discounts: codes, automatic discounts and children on one page', `${D}/discounts/page.tsx`, ['<PromoCodeManager orgId={orgId} />', 'Children with a discount', 'Sibling discount']],
   ['Discounts: give one child money off', `${D}/players/[id]/page.tsx`, ['<GiveDiscount']],
