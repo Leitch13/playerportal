@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'How-to videos for academies',
-  description: 'Short videos for academy owners: your first ten minutes, adding a class and a plan, who has paid, camps and waiting lists, and 1-2-1s.',
+  description: 'Short videos for academy owners: your first ten minutes, adding a class and a plan, who has paid, camps and waiting lists, 1-2-1s and discounts.',
 }
 
 const CLIPS = [
@@ -24,6 +24,14 @@ const CLIPS = [
   { id: 'one-to-one-setup', file: 'academy-one-to-one-setup', title: '1-2-1s: get families set up', blurb: 'Who hasn’t paid to start, resend every link at once, mark cash payers, and credit waiting to be used.' },
   { id: 'one-to-one-month', file: 'academy-one-to-one-month', title: '1-2-1s: change a family’s month', blurb: 'Every date and the total in one place. Mark a date they can’t make, then email the parent their month.' },
   { id: 'one-to-ones', file: 'academy-one-to-ones', title: '1-2-1s and 2-to-1s', blurb: 'Regular slots, adding a pair in one go, resending a pay link, and the week’s timetable.' },
+  { id: 'one-to-one-first', file: 'academy-one-to-one-first', title: '1-2-1s: the 1st of the month', blurb: 'Who hasn’t paid this month, sending them a pay link, and marking it paid when they pay you directly.' },
+  { id: 'one-to-one-stop', file: 'academy-one-to-one-stop', title: '1-2-1s: stop a keeper', blurb: 'Release frees the time and takes their future sessions off. Delete is only for a slot added by mistake.' },
+  { id: 'one-to-one-change', file: 'academy-one-to-one-change', title: '1-2-1s: change day, time or price', blurb: 'Their future sessions move with the slot. Anything already paid stays paid.' },
+  { id: 'one-to-one-credit', file: 'academy-one-to-one-credit', title: '1-2-1s: credit', blurb: 'The green credit pill, cancelling a paid date, and adding or taking off credit by hand.' },
+  { id: 'one-to-one-pause', file: 'academy-one-to-one-pause', title: '1-2-1s: pause and resume', blurb: 'Injured or on holiday? Pause keeps their slot and stops the bills until you press Resume.' },
+  { id: 'one-to-one-coaches', file: 'academy-one-to-one-coaches', title: '1-2-1s: coaches, days off and cover', blurb: 'Venues, coach hours, flagging a day off, and covering the sessions it affects.' },
+  { id: 'class-signups', file: 'academy-class-signups', title: 'Who’s signed up to your classes', blurb: 'Red names haven’t confirmed. Find everyone not paying and send them a payment link.' },
+  { id: 'discounts', file: 'academy-discounts', title: 'Discounts', blurb: 'Sibling and quarterly discounts, codes parents type in, and money off for one child.' },
 ] as const
 
 export default function AcademyHelpPage() {
