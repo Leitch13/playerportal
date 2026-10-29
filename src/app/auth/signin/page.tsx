@@ -18,6 +18,8 @@ function SignInForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [mode, setMode] = useState<'password' | 'magic'>('password')
   const [showAcademySearch, setShowAcademySearch] = useState(false)
+  // Wrong password: offer the emailed login link right there (many parents never set a password).
+  const [noMatch, setNoMatch] = useState(false)
 
   // Per-academy branding when user lands from an academy-specific link
   const [orgName, setOrgName] = useState<string | null>(null)
@@ -52,12 +54,14 @@ function SignInForm() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setNoMatch(false)
     const supabase = createClient()
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
     if (authError) {
+      setNoMatch(authError.message === 'Invalid login credentials')
       setError(
         authError.message === 'Invalid login credentials'
-          ? "Hmm, that email and password don't match. Try again, or use the email link option."
+          ? "That email and password don't match. Never set a password? No problem: we'll email you a login link."
           : authError.message
       )
       setLoading(false)
@@ -238,6 +242,11 @@ function SignInForm() {
               {error && (
                 <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
                   {error}
+                  {noMatch && email && (
+                    <button type="button" onClick={(e) => { setMode('magic'); void handleMagicLinkSubmit(e as unknown as React.FormEvent) }} disabled={magicLoading} className="mt-2 block w-full rounded-lg bg-white px-3 py-2 text-sm font-bold text-black" data-testid="signin-email-link-instead">
+                      {magicLoading ? 'Sending link…' : `Email a login link to ${email}`}
+                    </button>
+                  )}
                 </div>
               )}
               <button

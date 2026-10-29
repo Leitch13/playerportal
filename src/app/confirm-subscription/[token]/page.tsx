@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { redirect } from 'next/navigation'
+import EmailLoginLink from '@/components/EmailLoginLink'
 import ConfirmClient from './ConfirmClient'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 
@@ -31,6 +31,7 @@ export default async function ConfirmSubscriptionPage({
     .from('subscriptions')
     .select(`
       id, status, invite_token, invite_confirmed_at, migration_billing_starts_at,
+      parent:profiles!subscriptions_parent_id_fkey(email),
       player:players(id, first_name, last_name, enrolments(status, training_groups(day_of_week))),
       plan:subscription_plans(id, name, amount, sessions_per_week),
       org:organisations(id, name, slug, primary_color, logo_url, quarterly_billing_enabled, quarterly_discount_percent)
@@ -42,13 +43,11 @@ export default async function ConfirmSubscriptionPage({
     return <ErrorScreen message="This invitation link is invalid or has expired." />
   }
 
-  if (sub.invite_confirmed_at) {
-    return <AlreadyConfirmedScreen />
-  }
-
-  if (sub.status !== 'pending_migration') {
-    // Subscription was already activated — send them to their dashboard
-    redirect('/dashboard')
+  // Already done: never bounce to /dashboard (a parent with no password lands on sign-in and goes
+  // round in circles, No.1 GK 29 Oct 2026). Offer the emailed login link instead.
+  const parentEmail = ((sub.parent as unknown as { email: string | null } | null)?.email) || ''
+  if (sub.invite_confirmed_at || sub.status !== 'pending_migration') {
+    return <AlreadyConfirmedScreen email={parentEmail} />
   }
 
   const player = (sub.player as unknown as { id: string; first_name: string; last_name: string | null } | null)
@@ -108,21 +107,16 @@ function ErrorScreen({ message }: { message: string }) {
   )
 }
 
-function AlreadyConfirmedScreen() {
+function AlreadyConfirmedScreen({ email }: { email: string }) {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-[#141414] border border-[#1e1e1e] rounded-2xl p-8 text-center">
         <div className="text-5xl mb-4">✅</div>
         <h1 className="text-xl font-bold text-white mb-2">Already confirmed</h1>
         <p className="text-sm text-white/60 mb-6">
-          This subscription has already been activated. You can manage it from your dashboard.
+          You&apos;ve already done this, nothing more to do. To open your account, we&apos;ll email you a login link.
         </p>
-        <a
-          href="/dashboard"
-          className="inline-block px-6 py-3 rounded-full bg-[#4ecde6] text-[#0a0a0a] font-bold text-sm"
-        >
-          Go to Dashboard
-        </a>
+        <EmailLoginLink email={email} />
       </div>
     </div>
   )

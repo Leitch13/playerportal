@@ -315,6 +315,10 @@ const FEATURES = [
   ['Discounts: sign-up checks the code', `${A}/api/stripe/subscribe/route.ts`, ["evaluatePromo(promoRow as PromoRow | null, 'subscription')", 'promo_code_id: promoCodeId']],
   ['Discounts: invites check the code and get the sibling discount', `${A}/api/migration/confirm-checkout/route.ts`, ['await siblingCouponFor(admin, stripe, org.id', "evaluatePromo(promoRow as PromoRow | null, 'subscription')", 'siblingCouponId: sibling?.couponId']],
   ['Discounts: trials check the code', `${A}/api/trial-bookings/paid/route.ts`, ["evaluatePromo(promoRow as PromoRow | null, 'trial')", 'MIN_CHARGE_PENCE']],
+  ['Invites: after confirming, the parent is emailed a login link (no password loop)', 'src/app/confirm-subscription/[token]/success/page.tsx', ['<EmailLoginLink email={parent?.email', 'auto onceKey={token}']],
+  ['Invites: an already-confirmed link offers the login link, never a bounce to sign-in', 'src/app/confirm-subscription/[token]/page.tsx', ['<AlreadyConfirmedScreen email={parentEmail} />', '<EmailLoginLink email={email} />']],
+  ['Sign in: a wrong password offers the emailed login link', 'src/app/auth/signin/page.tsx', ['data-testid="signin-email-link-instead"']],
+  ['Login link box sends the any-device link', 'src/components/EmailLoginLink.tsx', ["fetch('/api/auth/email-link'", "kind: 'signin'"]],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 

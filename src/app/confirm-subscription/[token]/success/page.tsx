@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
-import Link from 'next/link'
+import EmailLoginLink from '@/components/EmailLoginLink'
 
 export const dynamic = 'force-dynamic'
 
 /**
  * Success screen shown after Stripe Checkout completes a migration.
  * We don't depend on the webhook having run yet — this is a friendly holding
- * page that surfaces the parent's next step (sign in / set password).
+ * page that emails the parent a login link (they have no password yet).
  */
 export default async function MigrationSuccessPage({
   params,
@@ -86,16 +86,8 @@ export default async function MigrationSuccessPage({
           </div>
 
           <div className="pt-3">
-            <Link
-              href={`/auth/signin?email=${encodeURIComponent(parent?.email || '')}`}
-              className="block w-full py-3 rounded-full font-bold text-sm text-center transition-transform hover:scale-[1.02]"
-              style={{ backgroundColor: primary, color: '#0a0a0a' }}
-            >
-              Sign in to your dashboard →
-            </Link>
-            <p className="text-[11px] text-white/30 text-center mt-3">
-              First time signing in? You&apos;ll be asked to set a password.
-            </p>
+            {/* No password yet (imported parents never had one): email the login link straight away. */}
+            <EmailLoginLink email={parent?.email || ''} auto onceKey={token} color={primary} />
           </div>
         </div>
       </div>
