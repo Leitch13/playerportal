@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
     } else {
       setSuccess(true)
       setTimeout(() => {
-        window.location.href = '/auth/signin?message=Password+updated.+Sign+in+with+your+new+password.'
+        window.location.href = '/dashboard' // already signed in by the link: straight in, no second sign-in
       }, 1800)
     }
   }
@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
             {success ? 'All done!' : linkValid === false ? 'Link expired' : 'Set a new password'}
           </h1>
           <p className="text-sm text-white/40">
-            {success ? 'Redirecting you to sign in…' : linkValid === false ? 'Let’s get you a fresh one' : 'Pick something only you would know'}
+            {success ? 'Taking you to your account…' : linkValid === false ? 'Let’s get you a fresh one' : 'Pick something only you would know'}
           </p>
         </div>
 

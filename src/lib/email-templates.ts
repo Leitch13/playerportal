@@ -3010,6 +3010,7 @@ export function authLinkEmail(params: { kind: 'reset' | 'signin'; link: string; 
     <p style="margin:0 0 4px;font-size:15px;color:#e5e5e5">${reset ? 'Tap the button to choose a new password. You&apos;ll be signed in straight after.' : 'Tap the button to sign in. No password needed.'}</p>
     ${ctaButton(reset ? 'Set my password' : 'Sign me in', params.link, accent)}
     <p style="margin:0 0 6px;color:#8a98a8;font-size:13px;line-height:1.5">It works on this phone or any other device, and lasts for 1 hour. You can only use it once.</p>
+    <p style="margin:0 0 6px;color:#8a98a8;font-size:13px;line-height:1.5">Asked more than once? Only the newest email works.</p>
     <p style="margin:0;color:#8a98a8;font-size:13px;line-height:1.5">Didn&apos;t ask for this? Ignore this email and nothing will change.</p>
   `
   return { subject: reset ? 'Set your new password' : 'Your login link', html: baseLayout(content, accent, params.academyName || undefined) }

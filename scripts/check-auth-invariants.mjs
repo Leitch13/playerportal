@@ -28,6 +28,14 @@ for (const [f, needle] of [['src/app/auth/forgot-password/page.tsx', "/api/auth/
   if (!readFileSync(f, 'utf8').includes(needle)) fail.push(`${f} no longer uses ${needle}`)
 }
 
+// Opening an emailed link must not use it up: Hotmail/Outlook scanners open links first and the
+// parent's own tap then said "expired" (No.1 GK, 29 Oct 2026). GET shows a button; POST signs in.
+const confirmRoute = readFileSync('src/app/auth/confirm/route.ts', 'utf8')
+if (!confirmRoute.includes('if (tokenHash && type) return continuePage(') || !/export async function POST/.test(confirmRoute)) {
+  fail.push('src/app/auth/confirm/route.ts uses up the one-time link when it is merely opened. Opening must show the button page; only the POST may call verifyOtp.')
+}
+if (/export async function GET[\s\S]*verifyOtp[\s\S]*export async function POST/.test(confirmRoute)) fail.push('src/app/auth/confirm/route.ts calls verifyOtp on GET')
+
 if (fail.length) {
   console.error('\n✖ Auth invariants broken — password reset / set-password links would stop working:\n')
   for (const f of fail) console.error('  • ' + f)

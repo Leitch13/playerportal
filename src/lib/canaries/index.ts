@@ -735,10 +735,16 @@ async function canary13PasswordLinks(sb: Supabase): Promise<Omit<CanaryResult, '
   const hashed = data?.properties?.hashed_token as string | undefined
   if (error || !hashed) throw new Error(`could not make a test link for ${email}: ${error?.message ?? 'no token'}`)
 
-  const confirm = await fetch(
-    `${app}/auth/confirm?token_hash=${encodeURIComponent(hashed)}&type=recovery&next=${encodeURIComponent('/auth/reset-password')}`,
-    { redirect: 'manual' },
-  )
+  // Opening the link must not use it up (email scanners open links first): it shows a button page.
+  const opened = await fetch(`${app}/auth/confirm?token_hash=${encodeURIComponent(hashed)}&type=recovery&next=${encodeURIComponent('/auth/reset-password')}`, { redirect: 'manual' })
+  if (opened.status !== 200 || !(await opened.text()).includes('name="token_hash"')) {
+    return broken(`opening the link did not show the "Set my password" button (HTTP ${opened.status}, ${opened.headers.get('location') || 'no redirect'})`)
+  }
+  const confirm = await fetch(`${app}/auth/confirm`, {
+    method: 'POST', redirect: 'manual',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token_hash: hashed, type: 'recovery', next: '/auth/reset-password' }).toString(),
+  })
   const toReset = confirm.headers.get('location') || ''
   if (!/\/auth\/reset-password/.test(toReset)) {
     return broken(`the link sent the user to "${toReset || `HTTP ${confirm.status}`}" instead of the set-password page`)

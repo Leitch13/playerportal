@@ -31,6 +31,7 @@ function SignInForm() {
     const msgParam = searchParams.get('message')
     if (emailParam) setEmail(emailParam)
     if (msgParam) setMessage(msgParam)
+    if (searchParams.get('mode') === 'link') setMode('magic')
 
     const orgSlug = searchParams.get('org')
     if (orgSlug) {
