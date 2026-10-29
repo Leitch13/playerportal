@@ -20,7 +20,7 @@ import { chargeBreakdown, declineEffect, isChargeable, nextAttemptOn, type Charg
 import { declineOutcome } from './policy'
 import { getCoaches, getSettings, getVenues, hhmm, fmtDate, DAY, rollAhead } from './db'
 import { monthEnd, monthStart, todayLondon } from './time'
-import { sendSetupLink, sendMonthNotice, sendMonthReceipt, sendPaymentFailed, sendDeclined, sendAcademyCancelled } from './emails'
+import { sendSetupLink, sendMonthNotice, sendMonthReceipt, sendPaymentFailed, sendMonthDue, sendDeclined, sendAcademyCancelled } from './emails'
 
 // ─── helpers ────────────────────────────────────────────────────────────
 
@@ -317,6 +317,12 @@ export async function monthForParent(admin: SupabaseClient, orgId: string, paren
   return { sessions, breakdown: chargeBreakdown(chargeable, credit) }
 }
 
+/** Is a card saved for this family at this academy (on any of their slots)? */
+export async function hasSavedCard(admin: SupabaseClient, orgId: string, parentId: string): Promise<boolean> {
+  const { data } = await admin.from('regular_slots').select('id').eq('organisation_id', orgId).eq('parent_id', parentId).not('stripe_payment_method_id', 'is', null).not('stripe_customer_id', 'is', null).limit(1).maybeSingle()
+  return !!data
+}
+
 /** The 20th: tell every regular's parent what next month looks like. No reply needed. */
 export async function sendMonthNotices(admin: SupabaseClient, billingMonth: string): Promise<{ sent: number; skipped: number }> {
   const from = monthStart(billingMonth), to = monthEnd(billingMonth)
@@ -340,7 +346,7 @@ export async function sendMonthNotices(admin: SupabaseClient, billingMonth: stri
     const r = await sendMonthNotice({
       academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(billingMonth),
       lines: m.sessions.filter((s) => s.status === 'scheduled').map((s) => ({ date: s.session_date, time: hhmm(s.start_minutes), coach: bits.coach(s.coach_id), venue: bits.venue(s.venue_id), pricePence: s.price_pence })),
-      creditPence: m.breakdown.creditAppliedPence, amountPence: m.breakdown.amountPence, chargeDate: `1 ${monthLabel(billingMonth)}`,
+      creditPence: m.breakdown.creditAppliedPence, amountPence: m.breakdown.amountPence, chargeDate: `1 ${monthLabel(billingMonth)}`, hasCard: await hasSavedCard(admin, orgId, parentId),
       url: `${appUrl()}/dashboard/sessions`,
     }).catch(() => ({ success: false }))
     if ((r as { success?: boolean }).success) sent++; else skipped++
@@ -435,14 +441,17 @@ export async function chargeParentMonth(admin: SupabaseClient, orgId: string, pa
   // No card saved: the family pays the academy in cash or by bank transfer. Not a failed card:
   // no retries and no "payment failed" email; Needs you shows "cash due" (CASH_DUE).
   if (failure === 'No card saved') {
+    const first = (charge.attempt_count ?? 0) === 0
     await admin.from('coaching_charges').update({ status: 'failed', attempt_count: 1, last_attempt_at: new Date().toISOString(), next_attempt_on: null, failure_message: CASH_DUE }).eq('id', charge.id)
+    // Everyone is asked to pay (John, 29 Oct 2026): email their permanent pay link, once. Paying saves the card.
+    if (first && parent.email) await sendMonthDue({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(month), count: b.sessionIds.length, sessionsPence: b.sessionsPence, creditPence: b.creditAppliedPence, amountPence: b.amountPence, url: payNowLinkUrl(charge.id as string) }).catch(() => {})
     return 'failed'
   }
   const attempts = (charge.attempt_count ?? 0) + 1
   const next = nextAttemptOn(month, attempts)
   await admin.from('coaching_charges').update({ status: 'failed', attempt_count: attempts, last_attempt_at: new Date().toISOString(), next_attempt_on: next, failure_message: failure }).eq('id', charge.id)
-  // From the second failure, hand the parent a normal payment page.
-  if (attempts >= 2 && parent.email) {
+  // Every failure hands the parent a normal payment page (was from the second only; John, 29 Oct 2026).
+  if (attempts >= 1 && parent.email) {
     // A permanent link (a Stripe page made when it's opened), never a 24-hour Stripe page.
     const url = payNowLinkUrl(charge.id as string)
     if (url) await sendPaymentFailed({ academy: bits.name, to: parent.email, parentName: parent.name, monthLabel: monthLabel(month), amountPence: b.amountPence, attempts, url, lastTry: next ? `${next.slice(8)} ${monthLabel(month)}` : null }).catch(() => {})

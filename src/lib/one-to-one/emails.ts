@@ -74,7 +74,7 @@ export async function sendSetupLink(f: { academy: string; to: string; parentName
   })
 }
 
-export async function sendMonthNotice(f: { academy: string; to: string; parentName: string | null; monthLabel: string; lines: { date: string; time: string; coach: string; venue: string; pricePence: number }[]; creditPence: number; amountPence: number; chargeDate: string; url: string }) {
+export async function sendMonthNotice(f: { academy: string; to: string; parentName: string | null; monthLabel: string; lines: { date: string; time: string; coach: string; venue: string; pricePence: number }[]; creditPence: number; amountPence: number; chargeDate: string; url: string; hasCard?: boolean }) {
   const rows = f.lines.map((l) => `<tr><td style="padding:5px 0;color:#5b6674">${esc(fmtDate(l.date))}</td><td style="padding:5px 0;font-weight:600">${esc(l.time)} · ${esc(l.venue)} · ${esc(l.coach)}</td></tr>`).join('')
   const total = f.lines.reduce((a, l) => a + l.pricePence, 0)
   return sendEmail({
@@ -82,7 +82,7 @@ export async function sendMonthNotice(f: { academy: string; to: string; parentNa
     subject: `${f.monthLabel.split(' ')[0]}: ${f.lines.length} session${f.lines.length === 1 ? '' : 's'}, ${gbp(f.amountPence)} on the 1st`,
     html: shell(f.academy, `
       <h1 style="font-size:22px;margin:12px 0 4px">${esc(f.monthLabel.split(' ')[0])}'s sessions</h1>
-      <p style="margin:0 0 12px;color:#5b6674">Hi ${esc(f.parentName || 'there')}, same slot, same coach. Here's what's booked and what comes off your card on ${esc(f.chargeDate)}. Nothing to do.</p>
+      <p style="margin:0 0 12px;color:#5b6674">Hi ${esc(f.parentName || 'there')}, same slot, same coach. Here's what's booked${f.hasCard === false ? `, and what's due on ${esc(f.chargeDate)}. We'll email you a link to pay that day.` : ` and what comes off your card on ${esc(f.chargeDate)}. Nothing to do.`}</p>
       <table style="border-collapse:collapse;width:100%;font-size:14px">${rows}
         <tr><td style="padding:8px 0 4px;color:#5b6674;border-top:1px solid #e1e5ea">${f.lines.length} session${f.lines.length === 1 ? '' : 's'}</td><td style="padding:8px 0 4px;font-weight:600;border-top:1px solid #e1e5ea">${gbp(total)}</td></tr>
         ${f.creditPence !== 0 ? `<tr><td style="padding:4px 0;color:#5b6674">${f.creditPence > 0 ? 'Credit on account' : 'Owed from last month'}</td><td style="padding:4px 0;font-weight:600">${f.creditPence > 0 ? '−' : '+'}${gbp(Math.abs(f.creditPence))}</td></tr>` : ''}
@@ -107,6 +107,29 @@ export async function sendMonthReceipt(f: { academy: string; to: string; parentN
         <tr><td style="padding:6px 0;color:#5b6674">Charged</td><td style="padding:6px 0;font-weight:700">${gbp(f.amountPence)}</td></tr>
       </table>
       <p style="font-size:13px;color:#5b6674">Your card statement shows ${esc(f.academy)}.</p>
+    `),
+  })
+}
+
+/**
+ * The 1st, no card saved: ask the family to pay, with their permanent link (John, 29 Oct 2026:
+ * "everyone should be asked to pay regardless"). Paying saves the card, so later months are automatic.
+ */
+export async function sendMonthDue(f: { academy: string; to: string; parentName: string | null; monthLabel: string; count: number; sessionsPence: number; creditPence: number; amountPence: number; url: string }) {
+  const month = f.monthLabel.split(' ')[0]
+  return sendEmail({
+    to: f.to, fromName: f.academy,
+    subject: `${month}: ${f.count} session${f.count === 1 ? '' : 's'}, ${gbp(f.amountPence)} to pay`,
+    html: shell(f.academy, `
+      <h1 style="font-size:22px;margin:12px 0 4px">${esc(month)}'s sessions: ${gbp(f.amountPence)}</h1>
+      <p style="margin:0 0 12px;color:#5b6674">Hi ${esc((f.parentName || '').split(' ')[0] || 'there')}, here's ${esc(month)}. Tap the button to pay by card. It takes a minute.</p>
+      <table style="border-collapse:collapse;width:100%;font-size:15px">
+        <tr><td style="padding:6px 0;color:#5b6674">${f.count} session${f.count === 1 ? '' : 's'}</td><td style="padding:6px 0;font-weight:600">${gbp(f.sessionsPence)}</td></tr>
+        ${f.creditPence !== 0 ? `<tr><td style="padding:6px 0;color:#5b6674">${f.creditPence > 0 ? 'Credit used' : 'Owed from last month'}</td><td style="padding:6px 0;font-weight:600">${f.creditPence > 0 ? '−' : '+'}${gbp(Math.abs(f.creditPence))}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#5b6674"><b>To pay</b></td><td style="padding:6px 0;font-weight:700">${gbp(f.amountPence)}</td></tr>
+      </table>
+      <p style="margin:16px 0 6px"><a href="${f.url}" style="display:inline-block;background:#0b8299;color:#fff;font-weight:600;padding:12px 18px;border-radius:8px;text-decoration:none">Pay ${gbp(f.amountPence)} now</a></p>
+      <p style="font-size:13px;color:#5b6674">Your card is saved when you pay, so from next month it's taken on the 1st and you won't need to do this again. Already paid the academy another way? Ignore this, they'll mark it paid.</p>
     `),
   })
 }
@@ -197,6 +220,8 @@ export async function sendMonthBreakdown(f: {
   off: { when: string; why: string }[]
   sessionsPence: number; creditPence: number; toPayPence: number; state: 'due' | 'paid' | 'failed' | 'covered'
   chargeDate: string | null; wasPence: number | null; url: string
+  /** The month's own pay link when there's money to pay now; hasCard false = no card saved (they pay by link). */
+  payUrl?: string | null; hasCard?: boolean
 }) {
   const month = f.monthLabel.split(' ')[0]
   const row = (l: string, r: string, extra = '') => `<tr><td style="padding:7px 0;border-top:1px solid #e6e9ee;${extra}">${l}</td><td style="padding:7px 0;border-top:1px solid #e6e9ee;text-align:right;${extra}">${r}</td></tr>`
@@ -208,7 +233,9 @@ export async function sendMonthBreakdown(f: {
   const when = f.state === 'paid' ? 'Changes to a month you have already paid come back to you as credit, taken off next month.'
     : f.state === 'failed' ? 'Your card payment for this month did not go through. Use the button below to pay.'
     : f.state === 'covered' ? 'Nothing comes off your card this month.'
-    : f.chargeDate ? `Taken from your card on ${esc(f.chargeDate)}.` : 'Due now. The academy will send you a link to pay, or you can pay from your sessions page.'
+    : f.payUrl ? 'Due now. Pay with the button below.'
+    : f.chargeDate ? (f.hasCard === false ? `Due on ${esc(f.chargeDate)}. We'll email you a link to pay that day.` : `Taken from your card on ${esc(f.chargeDate)}.`)
+    : 'Due now. The academy will send you a link to pay, or you can pay from your sessions page.'
   return sendEmail({
     to: f.to, fromName: f.academy,
     subject: `${f.childNames}'s ${month} sessions, updated`,
@@ -224,6 +251,7 @@ export async function sendMonthBreakdown(f: {
       </table>
       <p style="margin:4px 0 14px;font-size:13px;color:#5b6674">${when}</p>
       ${f.wasPence !== null && f.wasPence !== f.toPayPence && f.state !== 'paid' ? `<p style="margin:0 0 14px;font-size:13px;color:#5b6674;background:#f3f5f7;padding:10px 12px;border-radius:8px">Was ${gbp(f.wasPence)} before the change.</p>` : ''}
+      ${f.payUrl && f.toPayPence > 0 && f.state !== 'paid' && f.state !== 'covered' ? `<p style="margin:0 0 10px"><a href="${f.payUrl}" style="display:inline-block;background:#0b8299;color:#fff;font-weight:600;padding:12px 18px;border-radius:8px;text-decoration:none">Pay ${gbp(f.toPayPence)} now</a></p>` : ''}
       <p style="margin:0 0 6px"><a href="${f.url}" style="display:inline-block;background:#eef1f4;color:#141a22;font-weight:600;padding:10px 14px;border-radius:8px;text-decoration:none">See your sessions</a></p>
       <p style="font-size:13px;color:#5b6674">Can't make a date? Tap it on your sessions page at least 48 hours before.</p>
     `),

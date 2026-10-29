@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const expired: string[] = []
 vi.mock('@/lib/stripe', () => ({ stripe: { checkout: { sessions: { retrieve: async (id: string) => ({ id, status: 'open' }), expire: async (id: string) => { expired.push(id) } } } } }))
 const emailsSent: string[] = []
-vi.mock('./emails', () => ({ sendPaymentFailed: async () => { emailsSent.push('payment failed') }, sendMonthReceipt: async () => { emailsSent.push('receipt') } }))
+vi.mock('./emails', () => ({ sendPaymentFailed: async () => { emailsSent.push('payment failed') }, sendMonthReceipt: async () => { emailsSent.push('receipt') }, sendMonthDue: async () => { emailsSent.push('month due') } }))
 vi.mock('./coach-notify', () => ({ coachNewRegular: async () => {}, coachSessionChange: async () => {} }))
 vi.mock('./db', () => ({ getCoaches: async () => [], getVenues: async () => [], getSettings: async () => ({ cash_allowed: true }), hhmm: () => '', fmtDate: (d: string) => d, DAY: {}, rollAhead: async () => {} }))
 vi.mock('./checkout', () => ({ ONE_TO_ONE_MODULE: 'one_to_one', platformFeeRate: async () => ({ rate: 0, stripeAccountId: 'acct' }), CheckoutBlocked: class extends Error {} }))
@@ -141,7 +141,7 @@ describe('the 1st of the month for a family with no card (pays cash or bank tran
     db.organisations = [{ id: ORG, name: 'No.1', slug: 'no1' }]
     for (const s of db.coaching_sessions) if ((s.session_date as string) < '2026-11-01') s.charge_state = 'charged'
   })
-  it('shows as cash due: no retries and never a "payment failed" email', async () => {
+  it('shows as cash due: asked to pay once with their link, no retries, never a "payment failed" email', async () => {
     expect(await chargeParentMonth(admin, ORG, DAD, '2026-11-01', '2026-11-01')).toBe('failed')
     const bill = db.coaching_charges[0]
     expect(bill.failure_message).toBe(CASH_DUE)
@@ -149,5 +149,7 @@ describe('the 1st of the month for a family with no card (pays cash or bank tran
     expect(await chargeParentMonth(admin, ORG, DAD, '2026-11-01', '2026-11-04')).toBe('skipped')
     expect(await chargeParentMonth(admin, ORG, DAD, '2026-11-01', '2026-11-08')).toBe('skipped')
     expect(emailsSent).not.toContain('payment failed')
+    // John, 29 Oct 2026: "everyone should be asked to pay regardless". One email, on the 1st only.
+    expect(emailsSent.filter((e) => e === 'month due')).toHaveLength(1)
   })
 })

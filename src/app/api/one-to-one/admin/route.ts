@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/lib/one-to-one/db'
-import { sendSetupCheckout, markCash, refundCharge, payNowLinkUrl, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent } from '@/lib/one-to-one/money'
+import { sendSetupCheckout, markCash, refundCharge, payNowLinkUrl, CASH_DUE, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
-import { sendPaymentFailed, sendSessionMoved } from '@/lib/one-to-one/emails'
+import { sendPaymentFailed, sendMonthDue, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { emailPriceChange } from '@/lib/one-to-one/price-change'
 import { coachSessionChange, coachRegularMoved } from '@/lib/one-to-one/coach-notify'
 import { markBreakdownDue, sendFamilyMonth } from '@/lib/one-to-one/family-month-send'
@@ -478,10 +478,15 @@ export async function POST(req: NextRequest) {
       }
       case 'charge.remind': {
         const url = payNowLinkUrl(str(body.id))
-        const { data: c } = await admin.from('coaching_charges').select('parent_id, billing_month, amount_pence, attempt_count, parent:profiles!coaching_charges_parent_id_fkey(email, full_name)').eq('id', str(body.id)).single()
+        const { data: c } = await admin.from('coaching_charges').select('parent_id, billing_month, amount_pence, attempt_count, sessions_pence, credit_applied_pence, breakdown, failure_message, parent:profiles!coaching_charges_parent_id_fkey(email, full_name)').eq('id', str(body.id)).single()
         const { data: o } = await admin.from('organisations').select('name').eq('id', orgId).single()
         const parent = c?.parent as unknown as { email: string | null; full_name: string | null } | null
-        if (parent?.email) await sendPaymentFailed({ academy: (o?.name as string) || 'Your academy', to: parent.email, parentName: parent.full_name, monthLabel: new Date(c!.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long', year: 'numeric' }), amountPence: c!.amount_pence, attempts: c!.attempt_count, url, lastTry: null })
+        const monthName = new Date(c!.billing_month + 'T12:00:00Z').toLocaleString('en-GB', { month: 'long', year: 'numeric' })
+        // A card that was declined gets "didn't go through"; a family with no card just gets asked to pay.
+        if (parent?.email) {
+          if (c!.failure_message && c!.failure_message !== CASH_DUE) await sendPaymentFailed({ academy: (o?.name as string) || 'Your academy', to: parent.email, parentName: parent.full_name, monthLabel: monthName, amountPence: c!.amount_pence, attempts: c!.attempt_count, url, lastTry: null })
+          else await sendMonthDue({ academy: (o?.name as string) || 'Your academy', to: parent.email, parentName: parent.full_name, monthLabel: monthName, count: ((c!.breakdown as unknown[]) || []).length, sessionsPence: c!.sessions_pence ?? c!.amount_pence, creditPence: c!.credit_applied_pence ?? 0, amountPence: c!.amount_pence, url })
+        }
         return NextResponse.json({ ok: true, url })
       }
       case 'session.academy_cancel': {

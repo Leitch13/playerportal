@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildFamilyMonth, lineWhen, type FamilyMonth, type FamilySessionRow, type FamilyCharge } from './family-month'
 import { monthStart, monthEnd, todayLondon } from './time'
-import { orgBits, parentBits, monthLabel } from './money'
+import { orgBits, parentBits, monthLabel, payNowLinkUrl, hasSavedCard } from './money'
 import { sendMonthBreakdown } from './emails'
 
 /**
@@ -82,6 +82,9 @@ export async function sendFamilyMonth(admin: SupabaseClient, orgId: string, pare
   const childNames = (kids ?? []).map((k) => k.first_name as string).join(' and ') || 'Your child'
   const { data: lastSent } = await admin.from('audit_log').select('details').eq('organisation_id', orgId).eq('action', SENT).eq('entity_id', parentId).order('created_at', { ascending: false }).limit(20)
   const prev = (lastSent ?? []).map((r) => r.details as { month?: string; to_pay?: number }).find((d) => d.month === month)
+  // Money to pay now on this month's bill: the email carries its own pay link (John, 29 Oct 2026).
+  const { data: bill } = await admin.from('coaching_charges').select('id, status, amount_pence').eq('organisation_id', orgId).eq('parent_id', parentId).eq('billing_month', month).maybeSingle()
+  const payUrl = bill && ['pending', 'failed'].includes(bill.status as string) && (bill.amount_pence as number) > 0 ? payNowLinkUrl(bill.id as string) : null
   await sendMonthBreakdown({
     academy: bits.name, to: parent.email, parentName: parent.name, childNames, monthLabel: monthLabel(month),
     // Held dates (a regular not set up yet) aren't on this bill, so they aren't in this email.
@@ -91,6 +94,7 @@ export async function sendFamilyMonth(admin: SupabaseClient, orgId: string, pare
     // A month that has already started isn't charged on its 1st any more: it's due now.
     chargeDate: month > todayLondon().slice(0, 7) + '-01' ? `${new Date(month + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })} 1 ${monthLabel(month).split(' ')[0]}` : null,
     wasPence: typeof prev?.to_pay === 'number' ? prev.to_pay : null, url: `${appUrl()}/dashboard/sessions`,
+    payUrl, hasCard: await hasSavedCard(admin, orgId, parentId),
   })
   await admin.from('audit_log').insert({ organisation_id: orgId, user_id: userId, action: SENT, entity_type: 'parent', entity_id: parentId, details: { parent_id: parentId, month, to_pay: m.toPayPence, state: m.state } })
   return { sentTo: parent.email }
