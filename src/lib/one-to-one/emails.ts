@@ -233,7 +233,7 @@ export async function sendMonthBreakdown(f: {
   const when = f.state === 'paid' ? 'Changes to a month you have already paid come back to you as credit, taken off next month.'
     : f.state === 'failed' ? 'Your card payment for this month did not go through. Use the button below to pay.'
     : f.state === 'covered' ? 'Nothing comes off your card this month.'
-    : f.payUrl ? 'Due now. Pay with the button below.'
+    : f.payUrl ? (f.chargeDate ? `Due on ${esc(f.chargeDate)}. Pay now with the button below, or we'll email you a link that day.` : 'Due now. Pay with the button below.')
     : f.chargeDate ? (f.hasCard === false ? `Due on ${esc(f.chargeDate)}. We'll email you a link to pay that day.` : `Taken from your card on ${esc(f.chargeDate)}.`)
     : 'Due now. The academy will send you a link to pay, or you can pay from your sessions page.'
   return sendEmail({

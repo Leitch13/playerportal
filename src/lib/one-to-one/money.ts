@@ -323,6 +323,28 @@ export async function hasSavedCard(admin: SupabaseClient, orgId: string, parentI
   return !!data
 }
 
+/**
+ * Next month's bill, made early for a family with no card so the month breakdown can carry a
+ * "Pay now" button before the 1st (John, 29 Oct 2026). Kept up to date each time it's used; on the
+ * 1st, chargeParentMonth() picks it up as normal (paid already = nothing happens; not paid = the
+ * pay email). Never for the current or a past month, never for a family with a card, never when
+ * nothing is owed. Returns the bill's id, or null.
+ */
+export async function ensureNextMonthBill(admin: SupabaseClient, orgId: string, parentId: string, month: string, today = todayLondon()): Promise<string | null> {
+  if (month <= monthStart(today)) return null
+  if (await hasSavedCard(admin, orgId, parentId)) return null
+  const { data: existing } = await admin.from('coaching_charges').select('id, status, attempt_count').eq('organisation_id', orgId).eq('parent_id', parentId).eq('billing_month', month).maybeSingle()
+  if (existing && existing.status !== 'pending') return existing.status === 'failed' ? (existing.id as string) : null
+  const m = await monthForParent(admin, orgId, parentId, month)
+  if (!m.breakdown.sessionIds.length || m.breakdown.amountPence <= 0) return null
+  const { data: bill, error } = await admin.from('coaching_charges').upsert({
+    organisation_id: orgId, parent_id: parentId, billing_month: month, ...chargeRow(m.breakdown),
+    breakdown: m.breakdown.sessionIds.map((id) => ({ session_id: id })), status: 'pending', attempt_count: existing?.attempt_count ?? 0,
+  }, { onConflict: 'parent_id,billing_month' }).select('id').single()
+  if (error) throw new Error(error.message)
+  return bill.id as string
+}
+
 /** The 20th: tell every regular's parent what next month looks like. No reply needed. */
 export async function sendMonthNotices(admin: SupabaseClient, billingMonth: string): Promise<{ sent: number; skipped: number }> {
   const from = monthStart(billingMonth), to = monthEnd(billingMonth)
@@ -497,7 +519,8 @@ export async function payNowUrl(admin: SupabaseClient, orgId: string, chargeId: 
     mode: 'payment', customer_email: parent.email || undefined, customer_creation: 'always',
     line_items: [{ quantity: 1, price_data: { currency: 'gbp', unit_amount: charge.amount_pence, product_data: { name: `1-2-1 sessions · ${monthLabel(charge.billing_month)}`, description: bits.name } } }],
     payment_intent_data: { on_behalf_of: stripeAccountId, transfer_data: { destination: stripeAccountId }, ...(rate > 0 ? { application_fee_amount: Math.round(charge.amount_pence * rate) } : {}), setup_future_usage: 'off_session', metadata },
-    success_url: `${appUrl()}/dashboard/sessions?paid=1`, cancel_url: `${appUrl()}/dashboard/sessions`, metadata,
+    // Back to the same no-login link (a parent paying from an email may never have logged in).
+    success_url: `${payNowLinkUrl(charge.id)}?paid=1`, cancel_url: `${payNowLinkUrl(charge.id)}?cancelled=1`, metadata,
   })
   await admin.from('coaching_charges').update({ stripe_checkout_session_id: cs.id }).eq('id', charge.id)
   return cs.url!
@@ -508,7 +531,9 @@ export async function payNowUrl(admin: SupabaseClient, orgId: string, chargeId: 
  * bill (it holds dates from earlier months) is left alone: it is re-worked when its link is opened.
  */
 async function refreshMonthCharge(admin: SupabaseClient, orgId: string, charge: Record<string, unknown> & { id: string; parent_id: string; billing_month: string; status: string }) {
-  if (charge.status !== 'failed') return
+  // A failed month, or next month's bill made early so the family can pay before the 1st (ensureNextMonthBill).
+  const earlyBill = charge.status === 'pending' && charge.billing_month > monthStart(todayLondon())
+  if (charge.status !== 'failed' && !earlyBill) return
   const ids = ((charge.breakdown as { session_id: string }[]) || []).map((x) => x.session_id)
   if (ids.length) {
     const { data: rows } = await admin.from('coaching_sessions').select('session_date').in('id', ids)

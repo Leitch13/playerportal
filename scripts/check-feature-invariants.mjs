@@ -323,6 +323,8 @@ const FEATURES = [
   ['1-2-1s: on the 1st every family with money due is asked to pay (no card = emailed their pay link)', 'src/lib/one-to-one/money.ts', ['if (first && parent.email) await sendMonthDue(', 'url: payNowLinkUrl(charge.id as string)', 'if (attempts >= 1 && parent.email) {']],
   ['1-2-1s: Send pay link never says "card declined" to a family with no card', 'src/app/api/one-to-one/admin/route.ts', ['c!.failure_message !== CASH_DUE', 'else await sendMonthDue(']],
   ['1-2-1s: the month breakdown carries a Pay now link when money is due', 'src/lib/one-to-one/family-month-send.ts', ['payUrl, hasCard: await hasSavedCard(']],
+  ['1-2-1s: no-card families can pay next month early from the breakdown email', 'src/lib/one-to-one/family-month-send.ts', ['await ensureNextMonthBill(admin, orgId, parentId, month)']],
+  ['1-2-1s: after paying from an email link the parent lands on a thank-you page, never a login', 'src/app/pay/121/charge/[chargeId]/page.tsx', ['if (sp.paid) return <PayMessage']],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 

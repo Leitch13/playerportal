@@ -12,7 +12,7 @@ vi.mock('./coach-notify', () => ({ coachNewRegular: async () => {}, coachSession
 vi.mock('./db', () => ({ getCoaches: async () => [], getVenues: async () => [], getSettings: async () => ({ cash_allowed: true }), hhmm: () => '', fmtDate: (d: string) => d, DAY: {}, rollAhead: async () => {} }))
 vi.mock('./checkout', () => ({ ONE_TO_ONE_MODULE: 'one_to_one', platformFeeRate: async () => ({ rate: 0, stripeAccountId: 'acct' }), CheckoutBlocked: class extends Error {} }))
 
-import { prepareSetupCharge, familyOwedUpToNow, chargeParentMonth, CASH_DUE } from './money'
+import { prepareSetupCharge, familyOwedUpToNow, chargeParentMonth, ensureNextMonthBill, CASH_DUE } from './money'
 
 type Row = Record<string, unknown>
 let db: Record<string, Row[]>
@@ -33,7 +33,8 @@ function table(name: string) {
     lte: (k: string, v: string) => { filters.push((r) => String(r[k]) <= v); return q },
     gte: (k: string, v: string) => { filters.push((r) => String(r[k]) >= v); return q },
     lt: (k: string, v: string) => { filters.push((r) => String(r[k]) < v); return q },
-    not: () => q, order: () => q, limit: () => q,
+    not: (k: string, op2: string, v: unknown) => { if (op2 === 'is' && v === null) filters.push((r) => r[k] != null); return q },
+    order: () => q, limit: () => q,
     update: (p: Row) => { op = 'update'; payload = p; return q },
     delete: () => { op = 'delete'; return q },
     insert: (p: Row | Row[]) => { op = 'insert'; payload = p; return q },
@@ -150,6 +151,38 @@ describe('the 1st of the month for a family with no card (pays cash or bank tran
     expect(await chargeParentMonth(admin, ORG, DAD, '2026-11-01', '2026-11-08')).toBe('skipped')
     expect(emailsSent).not.toContain('payment failed')
     // John, 29 Oct 2026: "everyone should be asked to pay regardless". One email, on the 1st only.
+    expect(emailsSent.filter((e) => e === 'month due')).toHaveLength(1)
+  })
+})
+
+// John, 29 Oct 2026: a family with no card can pay next month from the breakdown email, before the 1st.
+describe('paying next month early (no card)', () => {
+  beforeEach(() => {
+    db.regular_slots = [{ ...slotA, status: 'active' }]
+    db.coaching_charges = []
+    db.coaching_credits = []
+    db.profiles = [{ id: DAD, email: 'k@example.com', full_name: 'Kenneth' }]
+    db.organisations = [{ id: ORG, name: 'No.1', slug: 'no1' }]
+    for (const s of db.coaching_sessions) if ((s.session_date as string) < '2026-11-01') s.charge_state = 'charged'
+  })
+  it('makes next month\'s bill once, never for this month or a family with a card', async () => {
+    expect(await ensureNextMonthBill(admin, ORG, DAD, '2026-10-01', '2026-10-29')).toBeNull()
+    const id = await ensureNextMonthBill(admin, ORG, DAD, '2026-11-01', '2026-10-29')
+    expect(id).toBeTruthy()
+    expect(await ensureNextMonthBill(admin, ORG, DAD, '2026-11-01', '2026-10-29')).toBe(id)
+    expect(db.coaching_charges.filter((c) => c.billing_month === '2026-11-01')).toHaveLength(1)
+    expect(db.coaching_charges[0].status).toBe('pending')
+    db.coaching_charges = []
+    db.regular_slots = [{ ...slotA, status: 'active', stripe_customer_id: 'cus', stripe_payment_method_id: 'pm' }]
+    expect(await ensureNextMonthBill(admin, ORG, DAD, '2026-11-01', '2026-10-29')).toBeNull()
+  })
+  it('paid early: the 1st does nothing. Not paid: the 1st sends the pay email once', async () => {
+    await ensureNextMonthBill(admin, ORG, DAD, '2026-11-01', '2026-10-29')
+    db.coaching_charges[0].status = 'paid_online'
+    expect(await chargeParentMonth(admin, ORG, DAD, '2026-11-01', '2026-11-01')).toBe('skipped')
+    expect(emailsSent).toHaveLength(0)
+    db.coaching_charges[0].status = 'pending'
+    expect(await chargeParentMonth(admin, ORG, DAD, '2026-11-01', '2026-11-01')).toBe('failed')
     expect(emailsSent.filter((e) => e === 'month due')).toHaveLength(1)
   })
 })

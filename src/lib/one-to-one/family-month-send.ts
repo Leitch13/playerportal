@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildFamilyMonth, lineWhen, type FamilyMonth, type FamilySessionRow, type FamilyCharge } from './family-month'
 import { monthStart, monthEnd, todayLondon } from './time'
-import { orgBits, parentBits, monthLabel, payNowLinkUrl, hasSavedCard } from './money'
+import { orgBits, parentBits, monthLabel, payNowLinkUrl, hasSavedCard, ensureNextMonthBill } from './money'
 import { sendMonthBreakdown } from './emails'
 
 /**
@@ -70,6 +70,8 @@ export async function breakdownsDue(admin: SupabaseClient, orgId?: string): Prom
 
 /** Email one family their month. Returns who it went to, or why it couldn't go. */
 export async function sendFamilyMonth(admin: SupabaseClient, orgId: string, parentId: string, month: string, userId: string | null): Promise<{ sentTo: string | null; reason?: string }> {
+  // No card and next month is owed: make (or refresh) its bill now so the email can carry a Pay now button.
+  await ensureNextMonthBill(admin, orgId, parentId, month).catch(() => null)
   const m = (await loadFamilyMonths(admin, orgId, [month], [parentId])).get(`${parentId}|${month}`)
   if (!m || (m.on.length === 0 && m.off.length === 0)) return { sentTo: null, reason: 'No sessions that month' }
   // Not set up yet: their set-up link is the email that matters, not a month breakdown.
