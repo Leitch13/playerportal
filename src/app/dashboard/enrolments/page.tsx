@@ -440,7 +440,7 @@ export default async function EnrolmentsPage({
                   <h2 className="mb-2.5 text-xs font-bold uppercase tracking-[0.06em] text-[#4ecde6]">
                     {day}
                     <span className="ml-2 font-medium normal-case tracking-normal text-[#93a2ba]">
-                      {classes.reduce((a, [k, l]) => a + (classSize[k] || l.length), 0)} children · {classes.length} class{classes.length === 1 ? '' : 'es'}
+                      {(() => { const n = classes.reduce((a, [k, l]) => a + (classSize[k] || l.length), 0); return `${n} ${n === 1 ? 'child' : 'children'}` })()} · {classes.length} class{classes.length === 1 ? '' : 'es'}
                     </span>
                   </h2>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
