@@ -31,6 +31,9 @@ export const dynamic = 'force-dynamic'
 const PARENT_CHASE_DAYS = [3, 7, 14]
 const ACADEMY_ESCALATE_DAY = 21
 const MAX_SENDS_PER_RUN = 120
+// Switched on 29 Oct 2026 (John: parents reminded on day 3, 7 and 14; first run No.1 GK's 20 on 30 Oct).
+// The academy list (day 21+) stays OFF until John decides how often academies get it.
+const ACADEMY_DIGEST_ON = false
 
 function daysSince(iso: string | null): number | null {
   if (!iso) return null
@@ -132,12 +135,15 @@ export async function GET(request: NextRequest) {
         fromName: academy,
         replyTo: org?.contact_email || undefined,
       })
-      if (res.success && !('skipped' in res && res.skipped)) parentReminders++
-      else failures.push(`${parent.email}: send failed`)
+      if (res.success && !('skipped' in res && res.skipped)) {
+        parentReminders++
+        // Proof it ran, per family (the cron was built in September and never scheduled; nobody could tell).
+        await sb.from('audit_log').insert({ organisation_id: s.organisation_id, action: 'invite.reminder_sent', entity_type: 'subscription', entity_id: s.id, details: { day: age } }).then(() => {}, () => {})
+      } else failures.push(`${parent.email}: send failed`)
     }
 
     // ── Escalation: tell the ACADEMY, not John ──
-    for (const [orgId, list] of escalate) {
+    for (const [orgId, list] of ACADEMY_DIGEST_ON ? escalate : new Map<string, { name: string; amount: number }[]>()) {
       const org = orgs.get(orgId) as { name?: string; contact_email?: string } | undefined
       const to = org?.contact_email
       if (!to || academyDigests >= 20) continue

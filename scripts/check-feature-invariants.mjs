@@ -7,7 +7,7 @@
 //
 // One line per thing a person would miss. To retire a feature on purpose,
 // remove its line here in the same change, so it is a decision and not an accident.
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 
 const A = 'src/app', D = `${A}/dashboard`, O = `${D}/one-to-one`
 const FEATURES = [
@@ -342,6 +342,17 @@ for (const [feature, file, needles] of FEATURES) {
 const wl = `${A}/book/[slug]/camps/[campId]/CampWaitlistForm.tsx`
 if (existsSync(wl) && /<form(\s+\w+=|>\s*$)/m.test(readFileSync(wl, 'utf8'))) fail.push(`Camp waiting list: ${wl} must not render its own <form> (it is nested inside the booking form)`)
 
+// Every scheduled job must actually be on the timer (29 Oct 2026: invite-chase was built in September and
+// never added to vercel.json, so unconfirmed invites were never chased). A cron route that is deliberately
+// off goes in NOT_SCHEDULED with the reason; anything else missing from vercel.json fails the build.
+const NOT_SCHEDULED = { 'cert-expiry': 'built, never switched on: John to decide', 'monthly-highlights': 'built, never switched on: John to decide' }
+{
+  const scheduled = new Set(JSON.parse(readFileSync('vercel.json', 'utf8')).crons.map((c) => c.path))
+  for (const d of readdirSync('src/app/api/cron')) {
+    if (!existsSync(`src/app/api/cron/${d}/route.ts`)) continue
+    if (!scheduled.has(`/api/cron/${d}`) && !(d in NOT_SCHEDULED)) fail.push(`Scheduled jobs: src/app/api/cron/${d} is not in vercel.json, so it never runs. Add it, or list it in NOT_SCHEDULED with the reason.`)
+  }
+}
 if (fail.length) {
   console.error('\n✖ A feature academies use has gone missing. If that was deliberate, remove its line from scripts/check-feature-invariants.mjs in the same change:\n')
   for (const f of fail) console.error('  • ' + f)
