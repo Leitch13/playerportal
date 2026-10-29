@@ -38,7 +38,7 @@ type EnrolmentRow = {
   trial_expires_at?: string | null
   activates_on?: string | null
   player: { first_name: string; last_name: string; age_group?: string } | null
-  group: { name: string; day_of_week?: string; time_slot?: string; class_type?: string | null } | null
+  group: { name: string; day_of_week?: string; time_slot?: string; location?: string | null; class_type?: string | null } | null
 }
 
 export default async function EnrolmentsPage({
@@ -74,7 +74,7 @@ export default async function EnrolmentsPage({
         id, status, enrolled_at, player_id, group_id,
         is_trial, trial_expires_at, activates_on,
         player:players(first_name, last_name, age_group),
-        group:training_groups(name, day_of_week, time_slot, class_type)
+        group:training_groups(name, day_of_week, time_slot, location, class_type)
       `)
       .eq('organisation_id', orgId)
       .order('enrolled_at', { ascending: false }),
@@ -238,14 +238,29 @@ export default async function EnrolmentsPage({
   const byGroup: Record<string, EnrolmentRow[]> = {}
   const classSize: Record<string, number> = {}
   const notPayingIds = new Set(notPayingActive.map(e => e.id))
+  // One box per actual class (group_id), never per class NAME: academies reuse names across days and
+  // venues (No.1 GK has five "10-12 year olds Academy class"), which added them together as "37 of 20".
   for (const e of active) {
-    const k = e.group?.name || 'Unassigned'
+    const k = e.group_id || 'Unassigned'
     classSize[k] = (classSize[k] || 0) + 1
     if (onlyNotPaying && !notPayingIds.has(e.id)) continue
     if (!byGroup[k]) byGroup[k] = []
     byGroup[k].push(e)
   }
-  const groupedActive = Object.entries(byGroup).sort((a, b) => (classSize[b[0]] || 0) - (classSize[a[0]] || 0))
+  const WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+  const dayOf = (list: EnrolmentRow[]) => (list[0]?.group?.day_of_week || '').trim()
+  const dayRank = (d: string) => { const i = WEEK.indexOf(d.toLowerCase()); return i < 0 ? 99 : i }
+  const groupedActive = Object.entries(byGroup).sort((a, b) =>
+    dayRank(dayOf(a[1])) - dayRank(dayOf(b[1]))
+    || String(a[1][0]?.group?.time_slot || '').localeCompare(String(b[1][0]?.group?.time_slot || ''))
+    || (classSize[b[0]] || 0) - (classSize[a[0]] || 0))
+  // Classes under their day, Monday first (a class with no set day goes last).
+  const activeByDay: { day: string; classes: typeof groupedActive }[] = []
+  for (const entry of groupedActive) {
+    const day = dayOf(entry[1]) || 'No set day'
+    const last = activeByDay[activeByDay.length - 1]
+    if (last && last.day === day) last.classes.push(entry); else activeByDay.push({ day, classes: [entry] })
+  }
   const classCount = Object.keys(classSize).length
 
   // Helpers used by Pending + Trial rows
@@ -419,20 +434,30 @@ export default async function EnrolmentsPage({
                   Everyone in a class is paying.
                 </div>
               ) : (
+                <div className="space-y-5">
+                {activeByDay.map(({ day, classes }) => (
+                <section key={day} data-testid="enrolments-day">
+                  <h2 className="mb-2.5 text-xs font-bold uppercase tracking-[0.06em] text-[#4ecde6]">
+                    {day}
+                    <span className="ml-2 font-medium normal-case tracking-normal text-[#93a2ba]">
+                      {classes.reduce((a, [k, l]) => a + (classSize[k] || l.length), 0)} children · {classes.length} class{classes.length === 1 ? '' : 'es'}
+                    </span>
+                  </h2>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {groupedActive.map(([className, list]) => {
+                  {classes.map(([classKey, list]) => {
+                    const className = list[0]?.group?.name?.trim() || 'Unassigned'
                     const cap = (groups || []).find(g => g.id === list[0]?.group_id) as
                       | { max_capacity?: number | null } | undefined
                     const capacity = Number(cap?.max_capacity) || null
-                    const size = classSize[className] || list.length
+                    const size = classSize[classKey] || list.length
                     const fillPct = capacity ? Math.min(100, Math.round((size / capacity) * 100)) : null
                     return (
-                      <div key={className} className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4">
+                      <div key={classKey} className="rounded-[15px] border border-[#1d2c42] bg-[#0f1a2b] p-4" data-testid="enrolments-class">
                         <div className="mb-3 flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <h3 className="truncate text-[15px] font-semibold text-white">{className}</h3>
-                            {list[0]?.group && (list[0].group.day_of_week || list[0].group.time_slot) && (
-                              <div className="mt-0.5 text-xs text-[#93a2ba]">{list[0].group.day_of_week}{list[0].group.time_slot ? ` · ${list[0].group.time_slot}` : ''}</div>
+                            {list[0]?.group && (list[0].group.time_slot || list[0].group.location) && (
+                              <div className="mt-0.5 truncate text-xs text-[#93a2ba]">{[list[0].group.time_slot, String(list[0].group.location || '').split(',')[0].trim()].filter(Boolean).join(' · ')}</div>
                             )}
                           </div>
                           <div className="shrink-0 text-right">
@@ -509,6 +534,9 @@ export default async function EnrolmentsPage({
                       </div>
                     )
                   })}
+                </div>
+                </section>
+                ))}
                 </div>
               )}
               {!onlyNotPaying && notPayingActive.length > 0 && (

@@ -319,6 +319,7 @@ const FEATURES = [
   ['Invites: an already-confirmed link offers the login link, never a bounce to sign-in', 'src/app/confirm-subscription/[token]/page.tsx', ['<AlreadyConfirmedScreen email={parentEmail} />', '<EmailLoginLink email={email} />']],
   ['Sign in: a wrong password offers the emailed login link', 'src/app/auth/signin/page.tsx', ['data-testid="signin-email-link-instead"']],
   ['Login link box sends the any-device link', 'src/components/EmailLoginLink.tsx', ["fetch('/api/auth/email-link'", "kind: 'signin'"]],
+  ['Enrolments: one box per actual class under its day, never classes added together by name', 'src/app/dashboard/enrolments/page.tsx', ["const k = e.group_id || 'Unassigned'", 'data-testid="enrolments-day"', 'classSize[classKey]']],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 
