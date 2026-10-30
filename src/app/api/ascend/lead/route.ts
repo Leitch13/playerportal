@@ -129,6 +129,25 @@ export async function POST(request: NextRequest) {
   // Build the list + deliver the goods — both best-effort.
   await addToAscendAudience(email, name)
 
+  // Offers Bank (/start ad) leads also go into GoHighLevel, whose "1. ASCEND new lead"
+  // workflow sends the book-a-call email and the day 1 / day 3 chasers (John, 30 Oct 2026).
+  // Stage is "<players> players a week · <phone> · WhatsApp OK/no". Best-effort.
+  const ghlHook = process.env.GHL_ASCEND_LEAD_WEBHOOK
+  if (source === 'offers-bank' && ghlHook) {
+    const [players = '', phone = '', whatsapp = ''] = stage.split(' · ')
+    await fetch(ghlHook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: name, email, phone,
+        players_a_week: players.replace(/ players a week$/, ''),
+        whatsapp_ok: /OK/i.test(whatsapp) ? 'yes' : 'no',
+        source: 'start-page', offer: 'offers-bank',
+      }),
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => {})
+  }
+
   const calcUrl = 'https://www.theplayerportal.net/ascend#calculator'
   const pricingGuideUrl = 'https://www.theplayerportal.net/ascend/pricing-calculator-guide.pdf'
   const guideUrl = 'https://www.theplayerportal.net/ascend/what-specific-content-to-post.pdf'
