@@ -78,10 +78,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: emailProblem }, { status: 400, headers: CORS })
   }
 
-  const to =
-    process.env.ADMIN_NOTIFICATION_EMAIL ||
-    process.env.RESEND_FROM_EMAIL ||
-    'john.leitch@playitloveit.com'
+  // Ad leads go to John's Gmail only (30 Oct 2026); other admin alerts keep ADMIN_NOTIFICATION_EMAIL
+  const to = process.env.ASCEND_LEAD_ALERT_EMAIL || 'johnleitch970@gmail.com'
 
   const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] || c))
   const row = (label: string, value: string) =>
