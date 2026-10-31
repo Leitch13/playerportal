@@ -78,6 +78,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: emailProblem }, { status: 400, headers: CORS })
   }
 
+  // Offers Bank (/start ad) leads are handled by GoHighLevel only (John, 31 Oct 2026: "stop using
+  // Resend, we pay for GoHighLevel"): its "1. ASCEND new lead" workflow emails them the 9 offers video,
+  // alerts John and chases on day 2 and day 5. Our own emails below run only if GoHighLevel doesn't
+  // take the lead, so a lead is never lost. Stage is "<players> players a week · <phone> · WhatsApp OK/no".
+  const ghlHook = process.env.GHL_ASCEND_LEAD_WEBHOOK
+  if (source === 'offers-bank' && ghlHook) {
+    const [players = '', phone = '', whatsapp = ''] = stage.split(' · ')
+    const ghl = await fetch(ghlHook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: name, email, phone,
+        players_a_week: players.replace(/ players a week$/, ''),
+        whatsapp_ok: /OK/i.test(whatsapp) ? 'yes' : 'no',
+        source: 'start-page', offer: 'offers-bank',
+      }),
+      signal: AbortSignal.timeout(8000),
+    }).catch(() => null)
+    if (ghl?.ok) return NextResponse.json({ ok: true }, { headers: CORS })
+  }
+
   // Ad leads go to John's Gmail only (30 Oct 2026); other admin alerts keep ADMIN_NOTIFICATION_EMAIL
   const to = process.env.ASCEND_LEAD_ALERT_EMAIL || 'johnleitch970@gmail.com'
 
@@ -85,7 +106,7 @@ export async function POST(request: NextRequest) {
   const row = (label: string, value: string) =>
     value ? `<tr><td style="padding:6px 0;color:#888;width:150px;">${label}</td><td style="color:#111;">${esc(value)}</td></tr>` : ''
 
-  const DELIVERABLE = { calculator: 'calculator guide', 'content-guide': 'content guide', 'offers-bank': 'Offers Bank PDF' } as const
+  const DELIVERABLE = { calculator: 'calculator guide', 'content-guide': 'content guide', 'offers-bank': '9 offers video' } as const
 
   const alertHtml = `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;">
@@ -129,29 +150,10 @@ export async function POST(request: NextRequest) {
   // Build the list + deliver the goods — both best-effort.
   await addToAscendAudience(email, name)
 
-  // Offers Bank (/start ad) leads also go into GoHighLevel, whose "1. ASCEND new lead"
-  // workflow sends the book-a-call email and the day 1 / day 3 chasers (John, 30 Oct 2026).
-  // Stage is "<players> players a week · <phone> · WhatsApp OK/no". Best-effort.
-  const ghlHook = process.env.GHL_ASCEND_LEAD_WEBHOOK
-  if (source === 'offers-bank' && ghlHook) {
-    const [players = '', phone = '', whatsapp = ''] = stage.split(' · ')
-    await fetch(ghlHook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        first_name: name, email, phone,
-        players_a_week: players.replace(/ players a week$/, ''),
-        whatsapp_ok: /OK/i.test(whatsapp) ? 'yes' : 'no',
-        source: 'start-page', offer: 'offers-bank',
-      }),
-      signal: AbortSignal.timeout(5000),
-    }).catch(() => {})
-  }
-
   const calcUrl = 'https://www.theplayerportal.net/ascend#calculator'
   const pricingGuideUrl = 'https://www.theplayerportal.net/ascend/pricing-calculator-guide.pdf'
   const guideUrl = 'https://www.theplayerportal.net/ascend/what-specific-content-to-post.pdf'
-  const offersUrl = 'https://www.theplayerportal.net/ascend/offers-bank.pdf'
+  const offersUrl = 'https://johnleitchmentor.com/the-9-offers'
   const mentorshipUrl = 'https://ascend-mentorship-site.vercel.app'
   const first = esc(name.split(' ')[0])
 
@@ -203,8 +205,8 @@ export async function POST(request: NextRequest) {
     <h1 style="margin:10px 0 0;font-size:20px;font-weight:800;color:#fff;">The Offers Bank, ${first} 👇</h1>
   </div>
   <div style="padding:24px;background:#fff;border:1px solid #e6e9ee;border-top:0;border-radius:0 0 12px 12px;font-size:15px;line-height:1.6;">
-    <p style="margin:0 0 16px;">Here are the <strong>nine offers</strong> I ran building a football academy to 350 players a week — what each one is, what happened when I ran it, and the mistake that kills it:</p>
-    <p style="margin:0 0 20px;"><a href="${offersUrl}" style="display:inline-block;background:#F2B441;color:#10161C;font-weight:800;padding:13px 26px;border-radius:999px;text-decoration:none;">Open the Offers Bank →</a></p>
+    <p style="margin:0 0 16px;">Here&rsquo;s the video of the <strong>nine offers</strong> I ran building a football academy to 350 players a week — what each one is, what happened when I ran it, and the mistake that kills it:</p>
+    <p style="margin:0 0 20px;"><a href="${offersUrl}" style="display:inline-block;background:#F2B441;color:#10161C;font-weight:800;padding:13px 26px;border-radius:999px;text-decoration:none;">Watch the 9 offers →</a></p>
     <p style="margin:0 0 14px;">Before you pick one: do you actually know what an hour of your coaching pays you right now? Most coaches don&rsquo;t, and the best offer in the world can&rsquo;t fix a price that&rsquo;s wrong. <a href="${calcUrl}" style="color:#0B6E7C;">The free calculator</a> tells you in two minutes — no email needed.</p>
     <p style="margin:0;">Do one thing for me: <strong>reply and tell me which offer you&rsquo;re going to run and what&rsquo;s stopping you.</strong> I read every reply and I&rsquo;ll tell you the first thing I&rsquo;d fix.</p>
     <p style="margin:18px 0 0;">— John Leitch</p>
