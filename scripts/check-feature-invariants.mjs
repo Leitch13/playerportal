@@ -171,6 +171,8 @@ const FEATURES = [
   // ── 2 Nov 2026 (John: "build"): the three missing academy buttons
   ['Never confirmed: months owed worked out (this month excluded)', 'src/lib/never-confirmed.ts', ['export function backMonths(', 'ym(d) < thisMonth', "like('notes', 'back-months:%')", 'Pay ${gbp} now', 'Set up monthly payment']],
   ['Never confirmed: child page red box + button', `${A}/dashboard/players/[id]/page.tsx`, ['data-testid="never-confirmed"', 'kind="owed"']],
+  ['Never confirmed: register box shows the same figure as the button', `${A}/dashboard/groups/[id]/page.tsx`, ['outstanding: owedByPlayer.get(p.id) ?']],
+  ['Never confirmed: daily academy email uses the same figure', 'src/lib/not-paying-alert.ts', ['loadNeverConfirmed(', 'back.amount']],
   ['Never confirmed: register + Enrolments button', `${A}/dashboard/enrolments/page.tsx`, ['kind="owed" amount={owedByPlayer.get(e.player_id)!.amount}']],
   ['Never confirmed: register button', `${A}/dashboard/groups/[id]/ClassRegister.tsx`, ['kind="owed" amount={c.owedAmount}']],
   ['Send login link: child page and parent page', `${A}/dashboard/players/[id]/page.tsx`, ['<SendLoginLinkButton parentId=']],
@@ -245,7 +247,7 @@ const FEATURES = [
   ['Classes: the outstanding rule', 'src/lib/class-outstanding.ts', ["const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']", "const FAILED_SUB = ['past_due', 'unpaid', 'incomplete', 'pending_migration']", "return 'No membership'", 'export async function loadClassOutstanding']],
   ['Classes: the outstanding rule is tested', 'src/lib/class-outstanding.test.ts', ["toBe('£36.00 outstanding')", "toBe('No membership')"]],
   ['Classes: red box on the class page register', `${D}/groups/[id]/ClassRegister.tsx`, ['data-testid="register-outstanding"']],
-  ['Classes: class page loads what is outstanding', `${D}/groups/[id]/page.tsx`, ['loadClassOutstanding(', 'outstanding: outstandingByPlayer.get(p.id)']],
+  ['Classes: class page loads what is outstanding', `${D}/groups/[id]/page.tsx`, ['loadClassOutstanding(', 'outstandingByPlayer.get(p.id) ?? null']],
   ['Classes: red box on the live register', `${D}/attendance/register/[groupId]/LiveRegisterClient.tsx`, ['data-testid="live-register-outstanding"']],
   ['Classes: live register loads what is outstanding', `${D}/attendance/register/[groupId]/page.tsx`, ['loadClassOutstanding(']],
   ['Classes: red box on the printed register', `${D}/attendance/register/[groupId]/blank/page.tsx`, ['data-testid="print-register-outstanding"', 'loadClassOutstanding(']],

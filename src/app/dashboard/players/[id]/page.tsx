@@ -172,7 +172,7 @@ export default async function PlayerDetailPage({
   const requestMorePlans = allRequestPlans.filter((p) => !requestPaymentPlans.includes(p))
   // Coming on an invite never confirmed: the months owed (src/lib/never-confirmed.ts). Admins only.
   const owedBack = role === 'admin' && orgId
-    ? (await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, [id]).catch(() => new Map())).get(id) ?? null
+    ? (await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, [id], undefined, { sync: true }).catch(() => new Map())).get(id) ?? null
     : null
   const hasActiveOrPendingSub = (playerSubscriptions || []).some((s) =>
     ['active', 'trialing', 'past_due', 'pending_migration'].includes(

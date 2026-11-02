@@ -172,7 +172,7 @@ export default async function EnrolmentsPage({
           .in('status', ['active', 'trialing', 'past_due', 'pending_migration']),
       ])
       chasePlans = (planRows || []) as typeof chasePlans
-      owedByPlayer = await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, ids).catch(() => new Map())
+      owedByPlayer = await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, ids, undefined, { sync: true }).catch(() => new Map())
       for (const r of (subRows || []) as Array<{ player_id: string | null; status: string; invite_sent_at: string | null; created_at: string }>) {
         if (!r.player_id) continue
         if (r.status === 'pending_migration') pendingSentByPlayer.set(r.player_id, r.invite_sent_at || r.created_at)

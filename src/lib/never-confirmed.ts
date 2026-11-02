@@ -39,8 +39,16 @@ export interface NeverConfirmed { subId: string; playerId: string; parentId: str
 
 const NOTE = (subId: string) => `back-months:${subId}`
 
-/** Children (optionally only these) coming to an active class on an invite never confirmed, with what's owed. Monthly plans only. */
-export async function loadNeverConfirmed(db: SupabaseClient, orgId: string, playerIds?: string[], today = new Date().toISOString().slice(0, 10)): Promise<Map<string, NeverConfirmed>> {
+const MONTHS_IN = (notes: unknown) => String(notes || '').match(/\d{4}-\d{2}/g) ?? []
+const OPEN_BILL = ['unpaid', 'partial', 'overdue']
+
+/**
+ * Children (optionally only these) coming to an active class on an invite never confirmed, with what's owed.
+ * Monthly plans only. Months already paid on an earlier bill don't count again. One figure everywhere: the
+ * red box, the button, the email, the bill and the academy's daily "not paying" email all use `amount`.
+ * With `sync`, an unpaid bill is brought up to that figure (a new month started before it was paid).
+ */
+export async function loadNeverConfirmed(db: SupabaseClient, orgId: string, playerIds?: string[], today = new Date().toISOString().slice(0, 10), opts: { sync?: boolean } = {}): Promise<Map<string, NeverConfirmed>> {
   const out = new Map<string, NeverConfirmed>()
   if (playerIds && !playerIds.length) return out
   let q = db.from('subscriptions').select('id, player_id, parent_id, invite_sent_at, migration_billing_starts_at, created_at, plan:subscription_plans(name, amount, interval)')
@@ -51,21 +59,31 @@ export async function loadNeverConfirmed(db: SupabaseClient, orgId: string, play
   const ids = [...new Set(subs.map((s) => s.player_id as string))]
   const [{ data: enr }, { data: bills }] = await Promise.all([
     db.from('enrolments').select('player_id').in('player_id', ids).eq('status', 'active'),
-    db.from('payments').select('id, notes, status').eq('organisation_id', orgId).in('player_id', ids).like('notes', 'back-months:%'),
+    db.from('payments').select('id, notes, status, amount, amount_paid').eq('organisation_id', orgId).in('player_id', ids).like('notes', 'back-months:%'),
   ])
   const attending = new Set((enr ?? []).map((e) => e.player_id as string))
   for (const s of subs) {
     const plan = s.plan as unknown as { name: string; amount: number; interval: string | null } | null
     if (!attending.has(s.player_id as string) || !plan || (plan.interval && plan.interval !== 'month')) continue
-    const months = backMonths(s.migration_billing_starts_at as string | null, (s.invite_sent_at || s.created_at) as string | null, today)
+    const mine = (bills ?? []).filter((b) => String(b.notes || '').startsWith(NOTE(s.id as string)))
+    const paid = new Set(mine.filter((b) => !OPEN_BILL.includes(b.status as string)).flatMap((b) => MONTHS_IN(b.notes)))
+    const months = backMonths(s.migration_billing_starts_at as string | null, (s.invite_sent_at || s.created_at) as string | null, today).filter((m) => !paid.has(m))
     if (!months.length) continue
-    const bill = (bills ?? []).find((b) => String(b.notes || '').startsWith(NOTE(s.id as string)))
-    if (bill && ['paid', 'waived', 'refunded'].includes(bill.status as string)) continue
+    const amount = Math.round(months.length * Number(plan.amount) * 100) / 100
+    const open = mine.find((b) => OPEN_BILL.includes(b.status as string)) ?? null
+    if (opts.sync && open && Number(open.amount) !== amount && !(Number(open.amount_paid) > 0)) {
+      const sent = String(open.notes || '').match(/ · emailed .*$/)?.[0] ?? ''
+      await db.from('payments').update({ amount, description: billDescription(null, plan.name, months), notes: `${NOTE(s.id as string)} ${months.join(',')}${sent}` }).eq('id', open.id)
+    }
     const prev = out.get(s.player_id as string)
-    const row: NeverConfirmed = { subId: s.id as string, playerId: s.player_id as string, parentId: (s.parent_id as string | null) ?? null, months, label: monthsLabel(months), amount: Math.round(months.length * Number(plan.amount) * 100) / 100, planName: plan.name, billId: (bill?.id as string | undefined) ?? null, billSent: !!bill }
+    const row: NeverConfirmed = { subId: s.id as string, playerId: s.player_id as string, parentId: (s.parent_id as string | null) ?? null, months, label: monthsLabel(months), amount, planName: plan.name, billId: (open?.id as string | undefined) ?? null, billSent: / · emailed /.test(String(open?.notes || '')) }
     if (!prev || row.amount > prev.amount) out.set(s.player_id as string, row)
   }
   return out
+}
+
+function billDescription(child: string | null, planName: string, months: string[]) {
+  return `${child ? `${child}: ` : ''}${planName}, ${monthsLabel(months)} (${months.length} month${months.length === 1 ? '' : 's'} not paid)`
 }
 
 /**
@@ -87,11 +105,12 @@ export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, play
 
   let billId = owed.billId
   const child = (player?.first_name as string | undefined) || 'your child'
-  if (!billId) {
+  // The bill always carries the same figure the academy saw on the button.
+  const bill = { amount: owed.amount, description: billDescription(child, owed.planName, owed.months), notes: `${NOTE(owed.subId)} ${owed.months.join(',')}` }
+  if (billId) await db.from('payments').update(bill).eq('id', billId)
+  else {
     const { data: made, error } = await db.from('payments').insert({
-      organisation_id: orgId, parent_id: owed.parentId, player_id: playerId, amount: owed.amount, amount_paid: 0, status: 'unpaid',
-      description: `${child}: ${owed.planName}, ${owed.label} (${owed.months.length} month${owed.months.length === 1 ? '' : 's'} not paid)`,
-      due_date: new Date().toISOString().slice(0, 10), notes: `${NOTE(owed.subId)} ${owed.months.join(',')}`,
+      organisation_id: orgId, parent_id: owed.parentId, player_id: playerId, amount_paid: 0, status: 'unpaid', due_date: new Date().toISOString().slice(0, 10), ...bill,
     }).select('id').single()
     if (error || !made) return { ok: false, error: 'Could not make the bill. Please try again.', status: 500 }
     billId = made.id as string

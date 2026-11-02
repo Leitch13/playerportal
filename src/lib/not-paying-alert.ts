@@ -13,6 +13,8 @@
  */
 
 import { familyOwedUpToNow } from './one-to-one/money'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { loadNeverConfirmed, type NeverConfirmed } from './never-confirmed'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any
@@ -39,9 +41,12 @@ export async function notPayingFor(db: Db, orgId: string, today: string): Promis
     ? await db.from('enrolments').select('player_id').in('player_id', playerIds).in('status', ['active', 'pending'])
     : { data: [] }
   const enrolled = new Set(((enrols ?? []) as { player_id: string }[]).map((e) => e.player_id))
+  // Never confirmed: the months owed, the same figure as the red box and the academy's button (src/lib/never-confirmed.ts).
+  const owedBack = await loadNeverConfirmed(db as unknown as SupabaseClient, orgId, undefined, today, { sync: true }).catch(() => new Map<string, NeverConfirmed>())
   for (const s of (subs ?? []) as { id: string; status: string; player_id: string | null; players: { first_name: string; last_name: string | null } | null; subscription_plans: { name: string; amount: number | string } | null }[]) {
     if (!s.player_id || !enrolled.has(s.player_id)) continue
-    out.push({ key: `sub:${s.id}`, child: `${s.players?.first_name ?? 'Child'} ${s.players?.last_name ?? ''}`.trim(), what: s.subscription_plans?.name ?? 'Class membership', amount: Number(s.subscription_plans?.amount ?? 0), why: NOT_PAYING_SUB[s.status] })
+    const back = s.status === 'pending_migration' ? owedBack.get(s.player_id) : undefined
+    out.push({ key: `sub:${s.id}`, child: `${s.players?.first_name ?? 'Child'} ${s.players?.last_name ?? ''}`.trim(), what: s.subscription_plans?.name ?? 'Class membership', amount: back?.subId === s.id ? back.amount : Number(s.subscription_plans?.amount ?? 0), why: back?.subId === s.id ? `${NOT_PAYING_SUB[s.status]}: ${back.label} owed` : NOT_PAYING_SUB[s.status] })
   }
   // Camps: unpaid bookings for camps that haven't finished.
   const { data: camps } = await db.from('camp_bookings').select('id, child_name, amount_paid, camp:camps(name, end_date, start_date)')

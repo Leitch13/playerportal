@@ -167,7 +167,7 @@ export default async function GroupDetailPage({
     : new Map<string, string | null>()
   // Coming on an invite never confirmed: the months owed, in red with one button (src/lib/never-confirmed.ts).
   const owedByPlayer = role === 'admin'
-    ? await loadNeverConfirmed(createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), group.organisation_id as string, enrolments.filter((e) => e.player).map((e) => e.player!.id)).catch(() => new Map())
+    ? await loadNeverConfirmed(createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), group.organisation_id as string, enrolments.filter((e) => e.player).map((e) => e.player!.id), undefined, { sync: true }).catch(() => new Map())
     : new Map()
   const { data: orgPlans } = isAdmin
     ? await supabase.from('subscription_plans').select('id, name, amount, training_group_id, class_type, active').eq('organisation_id', group.organisation_id)
@@ -193,7 +193,8 @@ export default async function GroupDetailPage({
       parentEmail: contact?.email || null,
       membership: membershipPill(subStatusesByPlayer.get(p.id) || []),
       isTrial: e.is_trial === true,
-      outstanding: outstandingByPlayer.get(p.id) ?? (owedByPlayer.get(p.id) ? `£${owedByPlayer.get(p.id)!.amount.toFixed(2)} owed` : null),
+      // The months owed win over the one-month figure, so the box, the button, the email and the bill all say the same amount.
+      outstanding: owedByPlayer.get(p.id) ? `£${owedByPlayer.get(p.id)!.amount.toFixed(2)} outstanding` : outstandingByPlayer.get(p.id) ?? null,
       failingSubIds: failingSubsByPlayer.get(p.id) || [],
       chase: role === 'admin' ? chaseKind(subStatusesByPlayer.get(p.id) || []) : null,
       owedAmount: owedByPlayer.get(p.id)?.amount ?? null,
