@@ -168,6 +168,16 @@ const FEATURES = [
   ['Chase: Enrolments not-paying list sends a link for a failed card', `${A}/dashboard/enrolments/page.tsx`, ['<ChaseMembershipButton playerId={e.player_id} kind="card" compact />']],
   ['Chase: a failed membership has a pay link that never runs out', 'src/lib/membership-pay-link.ts', ["status: 'open'", 'hosted_invoice_url', "save_default_payment_method: 'on_subscription'", '/pay/membership/']],
   ['1-2-1 Send pay link emails today\'s amount', `${A}/api/one-to-one/admin/route.ts`, ['// The email says today\'s amount', 'await refreshFamilyBills(admin, orgId, owner.parent_id']],
+  // ── 2 Nov 2026 (John: "build"): the three missing academy buttons
+  ['Never confirmed: months owed worked out (this month excluded)', 'src/lib/never-confirmed.ts', ['export function backMonths(', 'ym(d) < thisMonth', "like('notes', 'back-months:%')", 'Pay ${gbp} now', 'Set up monthly payment']],
+  ['Never confirmed: child page red box + button', `${A}/dashboard/players/[id]/page.tsx`, ['data-testid="never-confirmed"', 'kind="owed"']],
+  ['Never confirmed: register + Enrolments button', `${A}/dashboard/enrolments/page.tsx`, ['kind="owed" amount={owedByPlayer.get(e.player_id)!.amount}']],
+  ['Never confirmed: register button', `${A}/dashboard/groups/[id]/ClassRegister.tsx`, ['kind="owed" amount={c.owedAmount}']],
+  ['Send login link: child page and parent page', `${A}/dashboard/players/[id]/page.tsx`, ['<SendLoginLinkButton parentId=']],
+  ['Send login link: parent page', `${A}/dashboard/parents/[id]/page.tsx`, ['<SendLoginLinkButton parentId=']],
+  ['Send login link: route uses the any-device link', `${A}/api/admin/parents/[parentId]/login-link/route.ts`, ["sendAuthLink(email, 'signin'", "parent.organisation_id !== orgId"]],
+  ['Walked away before paying: academy told', `${A}/api/stripe/webhooks/route.ts`, ["type: 'checkout_walked_away'", "md.type === 'paid_trial' || (!!md.supabase_plan_id"]],
+  ['Walked away before paying: Send link to finish booking', `${A}/dashboard/leads/LeadsPipeline.tsx`, ["lead.source === 'abandoned_checkout' && lead.email && <FinishBookingButton", '/finish-link']],
   ['Chase: the pay link page', `${A}/pay/membership/[id]/page.tsx`, ['openMembershipBill(', '/api/memberships/${id}/pay']],
 
   // ── 1-2-1s

@@ -52,6 +52,7 @@ import {
 import AttendanceBanner from './AttendanceBanner'
 import RefundButton from '../../payments/invoice/[id]/RefundButton'
 import { canRefund, refundKind } from '@/lib/refund-kind'
+import SendLoginLinkButton from '../../players/[id]/SendLoginLinkButton'
 
 export default async function ParentDetailPage({
   params,
@@ -359,6 +360,7 @@ export default async function ParentDetailPage({
                 <div className="sm:col-span-2"><span className="text-white/40">Alt contact:</span> {parentProfile.secondary_contact_name}{parentProfile.secondary_contact_phone ? ` · ${parentProfile.secondary_contact_phone}` : ''}</div>
               )}
               {parentProfile.notes && <div className="sm:col-span-2 italic"><span className="text-white/40 not-italic">Notes:</span> {parentProfile.notes}</div>}
+              {isAdmin && parentProfile.email && <div className="sm:col-span-2 pt-1"><SendLoginLinkButton parentId={parentProfile.id as string} /></div>}
             </div>
           )}
         </div>

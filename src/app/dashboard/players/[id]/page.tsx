@@ -28,6 +28,9 @@ import RestorePlayerButton from './RestorePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
 import RequestPaymentButton from './RequestPaymentButton'
 import ChaseMembershipButton from './ChaseMembershipButton'
+import SendLoginLinkButton from './SendLoginLinkButton'
+import { loadNeverConfirmed } from '@/lib/never-confirmed'
+import { createClient as createServiceDb } from '@supabase/supabase-js'
 import { chaseKind } from '@/lib/membership-pay-link'
 // Sprint 8b v1 — Move Class action surfaced per active enrolment row.
 import MoveClassAction from './MoveClassAction'
@@ -167,6 +170,10 @@ export default async function PlayerDetailPage({
     .map((e) => ({ id: e.group_id, class_type: e.group?.class_type ?? null }))
   const requestPaymentPlans = plansForClasses(allRequestPlans, requestClasses)
   const requestMorePlans = allRequestPlans.filter((p) => !requestPaymentPlans.includes(p))
+  // Coming on an invite never confirmed: the months owed (src/lib/never-confirmed.ts). Admins only.
+  const owedBack = role === 'admin' && orgId
+    ? (await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, [id]).catch(() => new Map())).get(id) ?? null
+    : null
   const hasActiveOrPendingSub = (playerSubscriptions || []).some((s) =>
     ['active', 'trialing', 'past_due', 'pending_migration'].includes(
       String((s as { status: string | null }).status)
@@ -476,6 +483,7 @@ export default async function PlayerDetailPage({
               <p className="text-white/60">{parent?.email}</p>
               {parent?.phone && <p className="text-white/60">{parent.phone}</p>}
               {parent?.address && <p className="text-white/60">{parent.address}</p>}
+              {role === 'admin' && player.parent_id && <div className="mt-2"><SendLoginLinkButton parentId={player.parent_id as string} /></div>}
             </div>
             {(player.emergency_contact_name || parent?.secondary_contact_name) && (
               <div className="pt-2 border-t border-white/[0.08]">
@@ -501,6 +509,14 @@ export default async function PlayerDetailPage({
       {/* Invite not confirmed → Resend invite; card failed → Send payment link (John, 2 Nov 2026). */}
       {role === 'admin' && (() => {
         const kind = chaseKind((playerSubscriptions || []).map((x) => x.status as string | null))
+        if (owedBack && kind !== 'card') return (
+          <div className="flex flex-wrap items-center justify-end gap-3" data-testid="never-confirmed">
+            <span className="rounded-md border border-red-500/50 bg-red-500/15 px-2 py-1 text-xs font-bold text-red-300">
+              £{owedBack.amount.toFixed(2)} owed for {owedBack.label}: coming, invite never confirmed{owedBack.billSent ? ' (bill sent)' : ''}
+            </span>
+            <ChaseMembershipButton playerId={id} kind="owed" amount={owedBack.amount} />
+          </div>
+        )
         return kind ? <div className="flex justify-end"><ChaseMembershipButton playerId={id} kind={kind} /></div> : null
       })()}
 

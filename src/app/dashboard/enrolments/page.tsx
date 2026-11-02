@@ -28,6 +28,8 @@ import EnrolmentsActionBand from '@/components/enrolments/EnrolmentsActionBand'
 // The same Request payment button the player page has, in its compact form.
 import RequestPaymentButton from '../players/[id]/RequestPaymentButton'
 import ChaseMembershipButton from '../players/[id]/ChaseMembershipButton'
+import { loadNeverConfirmed, type NeverConfirmed } from '@/lib/never-confirmed'
+import { createClient as createServiceDb } from '@supabase/supabase-js'
 
 type EnrolmentRow = {
   id: string
@@ -155,6 +157,7 @@ export default async function EnrolmentsPage({
   const pendingSentByPlayer = new Map<string, string>()
   const blockedByPlayer = new Set<string>()
   const failedCardByPlayer = new Set<string>()
+  let owedByPlayer = new Map<string, NeverConfirmed>()
   let canChase = false
   if (onlyNotPaying && notPayingActive.length > 0) {
     const { data: role } = await supabase.rpc('get_my_role')
@@ -169,6 +172,7 @@ export default async function EnrolmentsPage({
           .in('status', ['active', 'trialing', 'past_due', 'pending_migration']),
       ])
       chasePlans = (planRows || []) as typeof chasePlans
+      owedByPlayer = await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, ids).catch(() => new Map())
       for (const r of (subRows || []) as Array<{ player_id: string | null; status: string; invite_sent_at: string | null; created_at: string }>) {
         if (!r.player_id) continue
         if (r.status === 'pending_migration') pendingSentByPlayer.set(r.player_id, r.invite_sent_at || r.created_at)
@@ -492,7 +496,9 @@ export default async function EnrolmentsPage({
                                       {fullName}
                                     </Link>
                                     <div className="text-xs text-[#93a2ba]">
-                                      {pendingSent
+                                      {owedByPlayer.get(e.player_id)
+                                        ? <span className="font-semibold text-red-300">£{owedByPlayer.get(e.player_id)!.amount.toFixed(2)} owed for {owedByPlayer.get(e.player_id)!.label}: invite sent {pendingSent ? fmtShort(pendingSent) : ''}, never confirmed</span>
+                                        : pendingSent
                                         ? `Payment link sent ${fmtShort(pendingSent)}, not paid yet`
                                         : failedCardByPlayer.has(e.player_id)
                                           ? 'Card payment failed'
@@ -502,7 +508,9 @@ export default async function EnrolmentsPage({
                                     </div>
                                   </div>
                                   {canChase && (
-                                    pendingSent ? (
+                                    owedByPlayer.get(e.player_id) ? (
+                                      <ChaseMembershipButton playerId={e.player_id} kind="owed" amount={owedByPlayer.get(e.player_id)!.amount} compact />
+                                    ) : pendingSent ? (
                                       <RequestPaymentButton playerId={e.player_id} playerFirstName={e.player?.first_name || 'this player'} plans={chasePlans} compact pendingSentAt={pendingSent} />
                                     ) : failedCardByPlayer.has(e.player_id) ? (
                                       <ChaseMembershipButton playerId={e.player_id} kind="card" compact />

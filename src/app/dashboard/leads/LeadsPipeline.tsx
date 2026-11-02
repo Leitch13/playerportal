@@ -71,6 +71,7 @@ const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual', facebook: 'Facebook', website: 'Website',
   phone: 'Phone', walk_in: 'Walk-in', referral: 'Referral',
   camp_waitlist: 'Camp waiting list',
+  abandoned_checkout: 'Didn\'t finish paying',
 }
 
 const LOST_REASONS = [
@@ -1078,6 +1079,7 @@ function LeadDetailPanel({
                 <span className="text-white/40 w-16 inline-block">Source</span> {SOURCE_LABELS[lead.source] || lead.source}
               </p>
             </div>
+            {lead.source === 'abandoned_checkout' && lead.email && <FinishBookingButton leadId={lead.id} />}
           </section>
 
           {/* Child Info */}
@@ -1236,6 +1238,29 @@ function LeadDetailPanel({
           animation: slideIn 0.2s ease-out;
         }
       `}</style>
+    </div>
+  )
+}
+
+/** A family who started paying and walked away: email them the booking page to finish (John, 2 Nov 2026). */
+function FinishBookingButton({ leadId }: { leadId: string }) {
+  const router = useRouter()
+  const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [error, setError] = useState('')
+  async function send() {
+    setState('sending'); setError('')
+    const res = await fetch(`/api/admin/leads/${leadId}/finish-link`, { method: 'POST' }).catch(() => null)
+    const data = res ? await res.json().catch(() => ({})) : {}
+    if (!res?.ok) { setError(data.error || 'Could not send. Please try again.'); setState('idle'); return }
+    setState('sent'); router.refresh()
+  }
+  return (
+    <div className="mt-3">
+      <button type="button" onClick={send} disabled={state !== 'idle'} data-testid="lead-finish-booking"
+        className="rounded-lg bg-[#e0736d] px-3.5 py-2 text-sm font-semibold text-[#1a0505] hover:brightness-105 disabled:opacity-60">
+        {state === 'sending' ? 'Sending…' : state === 'sent' ? 'Link sent' : 'Send link to finish booking'}
+      </button>
+      {error && <p className="mt-1 text-xs text-[#e0736d]">{error}</p>}
     </div>
   )
 }

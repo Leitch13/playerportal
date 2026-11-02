@@ -302,6 +302,24 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
     if ((activeSubs || 0) > 0) return
   }
 
+  // The academy is always told (John, 2 Nov 2026: a parent who started paying for a trial or a
+  // membership and walked away used to become a silent lead nobody saw). Once per expired page.
+  // Only a parent's own trial or membership sign-up: not invite confirmations (Resend invite covers
+  // those), 1-2-1 or invoice pages, or pages Player Portal closed itself.
+  const md = session.metadata || {}
+  const signUp = md.type === 'paid_trial' || (!!md.supabase_plan_id && !!md.supabase_user_id && md.migration !== 'true' && !md.pp_module && !md.payment_id)
+  const { notifyOrgAdmins } = await import('@/lib/notify-admins')
+  const what = md.type === 'paid_trial' ? 'a paid trial' : 'a membership'
+  const who = [childName, firstName && firstName !== 'Prospect' ? `(${[firstName, lastName].filter(Boolean).join(' ')})` : null].filter(Boolean).join(' ') || emailLc
+  if (signUp) await notifyOrgAdmins({
+    orgId,
+    type: 'checkout_walked_away',
+    title: `Didn't finish paying: ${childName || firstName || emailLc}`,
+    body: `${who} started paying for ${what}${session.amount_total ? ` (£${(session.amount_total / 100).toFixed(2)})` : ''} but didn't finish, so nothing was taken and nothing is booked. They're on Leads: press "Send link to finish booking", or call them (${emailLc}).`,
+    link: '/dashboard/leads',
+    email: true,
+  })
+
   // Dedup against an existing open lead.
   const { data: existingLead } = await supabase
     .from('leads')
