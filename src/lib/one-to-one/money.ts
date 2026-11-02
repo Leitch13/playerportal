@@ -545,6 +545,25 @@ async function refreshMonthCharge(admin: SupabaseClient, orgId: string, charge: 
   Object.assign(charge, fresh)
 }
 
+/**
+ * A date or credit changed: re-work this family's unpaid bills now, so the Regulars box, the month
+ * email and the pay link all show the same amount. Until 2 Nov 2026 only the pay link re-worked it:
+ * No.1 took a date off a failed November and the box and the email still said £160 (it was £120).
+ * A payment page left open at the old amount is closed so it can't be paid; a bill credit now
+ * covers in full is settled as covered.
+ */
+export async function refreshFamilyBills(admin: SupabaseClient, orgId: string, parentId: string | null) {
+  if (!parentId) return
+  const { data } = await admin.from('coaching_charges').select('*').eq('organisation_id', orgId).eq('parent_id', parentId).in('status', ['failed', 'pending'])
+  for (const charge of data ?? []) {
+    const before = charge.amount_pence as number
+    await refreshMonthCharge(admin, orgId, charge)
+    if (charge.amount_pence === before) continue
+    if (charge.stripe_checkout_session_id) await expireIfOpen(charge.stripe_checkout_session_id as string)
+    if ((charge.amount_pence as number) <= 0 && charge.status === 'failed') await settleCharge(admin, charge, { how: 'waived', paymentIntent: null })
+  }
+}
+
 /** Webhook: a pay-now Checkout completed. */
 export async function completePayNow(admin: SupabaseClient, cs: Stripe.Checkout.Session) {
   const chargeId = cs.metadata?.charge_id
@@ -582,6 +601,7 @@ export async function declineByParent(admin: SupabaseClient, sessionId: string, 
   if (effect.ledgerPence !== 0) {
     await admin.from('coaching_credits').insert({ organisation_id: s.organisation_id, parent_id: parentId, amount_pence: effect.ledgerPence, reason: 'parent_decline', session_id: s.id, note: `${outcome.tier} · ${fmtDate(s.session_date)} ${hhmm(s.start_minutes)}` })
   }
+  await refreshFamilyBills(admin, s.organisation_id, parentId)
   const parent = await parentBits(admin, parentId); const bits = await orgBits(admin, s.organisation_id)
   await coachSessionChange(admin, 'off', s, { why: "the family can't make it" })
   if (parent.email && !quiet) await sendDeclined({ academy: bits.name, to: parent.email, parentName: parent.name, date: s.session_date, startMinutes: s.start_minutes, message: effect.message }).catch(() => {})
@@ -606,6 +626,7 @@ export async function cancelByAcademy(admin: SupabaseClient, orgId: string, sess
     await admin.from('coaching_sessions').update({ charge_state: 'waived' }).eq('id', s.id)
     refundedPence = s.price_pence
   }
+  await refreshFamilyBills(admin, orgId, s.parent_id)
   const to = s.guest_email || (s.parent_id ? (await parentBits(admin, s.parent_id)).email : null)
   const bits = await orgBits(admin, orgId)
   await coachSessionChange(admin, 'off', s, { why: reason || 'cancelled by the academy' })
@@ -628,6 +649,8 @@ export async function takeOffSlotSessions(admin: SupabaseClient, orgId: string, 
       await admin.from('coaching_credits').insert({ organisation_id: orgId, parent_id: f.parent_id, amount_pence: f.price_pence, reason: 'academy_cancel', session_id: f.id, note: `slot ${status}` })
     }
   }
+  const { data: slot } = await admin.from('regular_slots').select('parent_id').eq('id', id).maybeSingle()
+  await refreshFamilyBills(admin, orgId, (slot?.parent_id as string | null) ?? null)
 }
 
 /** Resume a paused slot: its dates come back, and any in a month already paid go on the next bill. */
@@ -653,6 +676,8 @@ export async function resumeSlotSessions(admin: SupabaseClient, orgId: string, i
     await admin.from('coaching_sessions').update({ charge_state: 'charged' }).in('id', rows.map((r) => r.id))
     if (owed > 0) await admin.from('coaching_credits').insert({ organisation_id: orgId, parent_id: parentId, amount_pence: -owed, reason: 'admin_adjust', note: `resumed: ${rows.length} session${rows.length === 1 ? '' : 's'} back in a month already paid` })
   }
+  const { data: slot } = await admin.from('regular_slots').select('parent_id').eq('id', id).maybeSingle()
+  await refreshFamilyBills(admin, orgId, (slot?.parent_id as string | null) ?? null)
 }
 
 export async function markCash(admin: SupabaseClient, orgId: string, chargeId: string, byUserId: string) {

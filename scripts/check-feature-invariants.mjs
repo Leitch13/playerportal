@@ -158,6 +158,10 @@ const FEATURES = [
   ['Camp waiting list: shown on Leads', `${D}/leads/LeadsPipeline.tsx`, ['camp_waitlist']],
 
   // ── 1-2-1s
+  // An unpaid bill follows the dates the moment they change (2 Nov 2026: £160 shown for a £120 month).
+  ['1-2-1s: an unpaid bill is re-worked when a date comes off or a credit is added', 'src/lib/one-to-one/money.ts', ['export async function refreshFamilyBills(', 'await refreshFamilyBills(admin, s.organisation_id, parentId)', 'await refreshFamilyBills(admin, orgId, s.parent_id)']],
+  ['1-2-1s: the month email and the changes list re-work the bill first', 'src/lib/one-to-one/family-month-send.ts', ['await refreshFamilyBills(admin, orgId, parentId)\n  const months', 'await refreshFamilyBills(admin, orgId, parentId)\n  const m = ']],
+  ['1-2-1s: credits and moves re-work the bill', `${A}/api/one-to-one/admin/route.ts`, ['await refreshFamilyBills(admin, orgId, parentId)', "else await refreshFamilyBills(admin, orgId, s.parent_id as string | null)"]],
   ['1-2-1s: home says who has not paid a set-up link', `${O}/page.tsx`, ['notSetUp', 'Not paid yet']],
   ['1-2-1s: Needs you grouped by type', `${O}/page.tsx`, ['needs-you-groups', 'KIND_ORDER']],
   ['1-2-1s: a refusal names the coach and the keepers', 'src/lib/one-to-one/seats.ts', ['export function seatClashMessage']],

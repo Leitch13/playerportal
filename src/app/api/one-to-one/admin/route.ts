@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { NotAdmin, requireAdmin, rollMonth, rollAhead, fmtShort, DAY } from '@/lib/one-to-one/db'
-import { sendSetupCheckout, markCash, refundCharge, payNowLinkUrl, CASH_DUE, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent } from '@/lib/one-to-one/money'
+import { sendSetupCheckout, markCash, refundCharge, payNowLinkUrl, CASH_DUE, cancelByAcademy, deleteMistakenSlot, setUpWithCash, expireIfOpen, takeOffSlotSessions, resumeSlotSessions, declineByParent, refreshFamilyBills } from '@/lib/one-to-one/money'
 import { CheckoutBlocked, paymentsReady, ACADEMY_NOT_READY_MESSAGE } from '@/lib/one-to-one/checkout'
 import { sendPaymentFailed, sendMonthDue, sendSessionMoved } from '@/lib/one-to-one/emails'
 import { emailPriceChange } from '@/lib/one-to-one/price-change'
@@ -470,6 +470,8 @@ export async function POST(req: NextRequest) {
         if (!parent) return bad('That parent is not in your academy')
         const { error } = await admin.from('coaching_credits').insert({ organisation_id: orgId, parent_id: parentId, amount_pence: pence, reason: 'admin_adjust', note, created_by: userId })
         if (error) throw error
+        // An unpaid month takes the new credit (or amount owed) straight away.
+        await refreshFamilyBills(admin, orgId, parentId)
         return NextResponse.json({ ok: true })
       }
       case 'charge.refund': {
@@ -551,6 +553,7 @@ export async function POST(req: NextRequest) {
         if (e2) throw e2
         // Tell the family. Best-effort: the move stands even if the email fails.
         if (body.quiet === true) await markBreakdownDue(admin, orgId, s.parent_id as string | null, [s.session_date as string, date], userId)
+        else await refreshFamilyBills(admin, orgId, s.parent_id as string | null) // moved into another month: its bill follows
         // Coaches: the one who had it is told it moved; a different new coach is told it's theirs.
         await coachSessionChange(admin, 'moved_out', s, { toDate: date, toMinutes: start })
         if (coachId !== s.coach_id) await coachSessionChange(admin, 'moved_in', { ...s, coach_id: coachId, venue_id: venueId, session_date: date, start_minutes: start })

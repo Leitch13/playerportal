@@ -946,6 +946,36 @@ async function canary18StaleNextPayment(sb: Supabase): Promise<Omit<CanaryResult
   return { rowCount: rows.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
 }
 
+/**
+ * Canary 19 — an unpaid 1-2-1 month bill that no longer matches its dates.
+ * When a date comes off (or a credit goes on) an unpaid month, the bill is re-worked at once
+ * (refreshFamilyBills). One that still differs is what the academy and the parent's email see,
+ * so they'd be told the wrong amount (2 Nov 2026: £160 shown for a £120 month). Set-up bills
+ * (dates from earlier months) are left alone, as the code leaves them.
+ */
+async function canary19StaleOneToOneBill(sb: Supabase): Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> {
+  const { monthForParent } = await import('@/lib/one-to-one/money')
+  const thisMonth = new Date().toISOString().slice(0, 7) + '-01'
+  const bills = await fetchAll<{ organisation_id: string; parent_id: string; status: string; billing_month: string; amount_pence: number; breakdown: { session_id: string }[] | null }>((f, t) =>
+    sb.from('coaching_charges').select('organisation_id, parent_id, status, billing_month, amount_pence, breakdown').in('status', ['failed', 'pending']).range(f, t))
+  const problems: { org: string; what: string }[] = []
+  for (const b of bills) {
+    if (b.status === 'pending' && b.billing_month <= thisMonth) continue
+    const ids = (b.breakdown ?? []).map((x) => x.session_id)
+    if (ids.length) {
+      const { data: rows, error } = await sb.from('coaching_sessions').select('session_date').in('id', ids)
+      if (error) throw new Error(error.message)
+      if ((rows ?? []).some((r: { session_date: string }) => r.session_date < b.billing_month)) continue
+    }
+    const m = await monthForParent(sb, b.organisation_id, b.parent_id, b.billing_month)
+    if (m.breakdown.amountPence !== b.amount_pence) problems.push({ org: b.organisation_id, what: `${b.billing_month.slice(0, 7)} 1-2-1 bill says £${(b.amount_pence / 100).toFixed(2)} but its dates come to £${(m.breakdown.amountPence / 100).toFixed(2)}. The academy and the parent see the wrong amount: check refreshFamilyBills runs on every date change.` })
+  }
+  if (!problems.length) return { rowCount: 0, lines: [] }
+  const names = await orgNames(sb, [...new Set(problems.map((p) => p.org))])
+  const findings: CanaryFinding[] = problems.map((p) => ({ org: names.get(p.org) || p.org, what: p.what }))
+  return { rowCount: findings.length, lines: findings.map((f) => `${f.org}: ${f.what}`), findings }
+}
+
 const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<CanaryResult, 'id' | 'name' | 'status'>> }[] = [
   { id: 1, name: 'term/billing anchor mismatch', run: canary1TermAnchorMismatch },
   { id: 2, name: 'stuck-pending enrolments', run: canary2StuckPending },
@@ -964,6 +994,7 @@ const TIER1: { id: number; name: string; run: (sb: Supabase) => Promise<Omit<Can
   { id: 16, name: 'one Stripe payment recorded twice', run: canary16DoubleRecordedPayments },
   { id: 17, name: 'trial booked and the academy not told', run: canary17TrialNotAnnounced },
   { id: 18, name: 'next payment date stuck in the past', run: canary18StaleNextPayment },
+  { id: 19, name: '1-2-1 bill out of step with its dates', run: canary19StaleOneToOneBill },
 ]
 
 /**

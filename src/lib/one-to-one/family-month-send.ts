@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildFamilyMonth, lineWhen, type FamilyMonth, type FamilySessionRow, type FamilyCharge } from './family-month'
 import { monthStart, monthEnd, todayLondon } from './time'
-import { orgBits, parentBits, monthLabel, payNowLinkUrl, hasSavedCard, ensureNextMonthBill } from './money'
+import { orgBits, parentBits, monthLabel, payNowLinkUrl, hasSavedCard, ensureNextMonthBill, refreshFamilyBills } from './money'
 import { sendMonthBreakdown } from './emails'
 
 /**
@@ -44,6 +44,8 @@ export async function loadFamilyMonths(admin: SupabaseClient, orgId: string, mon
 
 export async function markBreakdownDue(admin: SupabaseClient, orgId: string, parentId: string | null, dates: string[], userId: string | null): Promise<void> {
   if (!parentId) return
+  // The bill follows the dates straight away, so the Regulars box shows the new amount now.
+  await refreshFamilyBills(admin, orgId, parentId)
   const months = [...new Set(dates.filter(Boolean).map((d) => monthStart(d)))]
   for (const m of months) {
     await admin.from('audit_log').insert({ organisation_id: orgId, user_id: userId, action: DUE, entity_type: 'parent', entity_id: parentId, details: { parent_id: parentId, month: m } }).then(() => {}, () => {})
@@ -72,6 +74,8 @@ export async function breakdownsDue(admin: SupabaseClient, orgId?: string): Prom
 export async function sendFamilyMonth(admin: SupabaseClient, orgId: string, parentId: string, month: string, userId: string | null): Promise<{ sentTo: string | null; reason?: string }> {
   // No card and next month is owed: make (or refresh) its bill now so the email can carry a Pay now button.
   await ensureNextMonthBill(admin, orgId, parentId, month).catch(() => null)
+  // Never email an out-of-date amount (2 Nov 2026: a parent was emailed £160 for a £120 month).
+  await refreshFamilyBills(admin, orgId, parentId)
   const m = (await loadFamilyMonths(admin, orgId, [month], [parentId])).get(`${parentId}|${month}`)
   if (!m || (m.on.length === 0 && m.off.length === 0)) return { sentTo: null, reason: 'No sessions that month' }
   // Not set up yet: their set-up link is the email that matters, not a month breakdown.
