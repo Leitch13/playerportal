@@ -30,6 +30,8 @@ import RequestPaymentButton from './RequestPaymentButton'
 import ChaseMembershipButton from './ChaseMembershipButton'
 import SendLoginLinkButton from './SendLoginLinkButton'
 import { loadNeverConfirmed } from '@/lib/never-confirmed'
+import { emailsNotReaching, reachLine } from '@/lib/email-not-reaching'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import { createClient as createServiceDb } from '@supabase/supabase-js'
 import { chaseKind } from '@/lib/membership-pay-link'
 // Sprint 8b v1 — Move Class action surfaced per active enrolment row.
@@ -173,6 +175,11 @@ export default async function PlayerDetailPage({
   // Coming on an invite never confirmed: the months owed (src/lib/never-confirmed.ts). Admins only.
   const owedBack = role === 'admin' && orgId
     ? (await loadNeverConfirmed(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), orgId, [id], undefined, { sync: true }).catch(() => new Map())).get(id) ?? null
+    : null
+  // Emails not reaching this family (bounced / blocked): shown in red with WhatsApp (src/lib/email-not-reaching.ts).
+  const parentEmail = ((player.parent as { email?: string | null } | null)?.email) || null
+  const notReaching = role === 'admin' && parentEmail
+    ? (await emailsNotReaching(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), [parentEmail]).catch(() => new Map())).get(parentEmail.trim().toLowerCase()) ?? null
     : null
   const hasActiveOrPendingSub = (playerSubscriptions || []).some((s) =>
     ['active', 'trialing', 'past_due', 'pending_migration'].includes(
@@ -483,6 +490,12 @@ export default async function PlayerDetailPage({
               <p className="text-white/60">{parent?.email}</p>
               {parent?.phone && <p className="text-white/60">{parent.phone}</p>}
               {parent?.address && <p className="text-white/60">{parent.address}</p>}
+              {notReaching && (
+                <div className="mt-2 rounded-md border border-red-500/50 bg-red-500/15 px-2 py-1.5 text-xs font-semibold text-red-300" data-testid="email-not-reaching">
+                  {reachLine(notReaching)}
+                  {parent?.phone && <span className="ml-2 inline-block align-middle"><WhatsAppButton phone={parent.phone} label="WhatsApp" /></span>}
+                </div>
+              )}
               {role === 'admin' && player.parent_id && <div className="mt-2"><SendLoginLinkButton parentId={player.parent_id as string} /></div>}
             </div>
             {(player.emergency_contact_name || parent?.secondary_contact_name) && (

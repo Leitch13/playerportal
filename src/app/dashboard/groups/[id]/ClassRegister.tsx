@@ -51,6 +51,8 @@ export interface RegisterChild {
   chase?: ChaseKind
   /** Coming on an invite never confirmed: what's owed for the months before this one (src/lib/never-confirmed.ts). */
   owedAmount?: number | null
+  /** Emails to this family bounced or are blocked (src/lib/email-not-reaching.ts): WhatsApp or call. */
+  emailNotReaching?: boolean
   otherActiveClasses: number
 }
 
@@ -191,6 +193,7 @@ export default function ClassRegister({
           if (hasMedicalNote(c.medical)) flags.push({ text: 'Medical note', cls: 'text-amber-300' })
           if (c.membership.tone !== 'ok' && !c.outstanding) flags.push({ text: c.membership.label, cls: c.membership.tone === 'bad' ? 'text-red-300' : 'text-amber-300/90' })
           if (c.isTrial) flags.push({ text: 'On a trial', cls: 'text-[#9fe3f1]' })
+          if (c.emailNotReaching) flags.push({ text: 'Emails not reaching them: WhatsApp', cls: 'text-red-300' })
           return (
             <li key={c.playerId} className="border-t border-white/[0.05] first:border-t-0">
               <div className="flex items-center gap-3 px-4 py-2 sm:px-5">

@@ -377,7 +377,7 @@ export async function needsAttention(admin: SupabaseClient, orgId: string): Prom
       detail: cashFamily
         ? `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. No card saved: they pay you directly. Mark it paid when the money arrives, or send them the pay link.`
         : `${parent?.full_name || ''}${parent?.email ? ` (${parent.email})` : ''}. Card declined ${c.attempt_count} time${c.attempt_count === 1 ? '' : 's'}${c.failure_message ? `: ${c.failure_message.replace(/\.$/, '')}` : ''}. ${dueAgain ? `Retrying on the ${c.next_attempt_on!.slice(8)}. ` : 'No more automatic retries. '}Send the pay link, mark cash, or release the slot.`,
-      ids: { chargeId: c.id, parentId: c.parent_id, slotIds: theirs.map((s) => s.id), slotLabels: theirs.map((s) => `${s.player?.first_name ?? 'Child'} ${DAY[s.weekday]} ${hhmm(s.start_minutes)}`) },
+      ids: { chargeId: c.id, parentId: c.parent_id, email: parent?.email ?? '', slotIds: theirs.map((s) => s.id), slotLabels: theirs.map((s) => `${s.player?.first_name ?? 'Child'} ${DAY[s.weekday]} ${hhmm(s.start_minutes)}`) },
     })
   }
   const pending = slots.filter((s) => s.status === 'pending')

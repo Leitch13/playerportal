@@ -29,6 +29,7 @@ import { useState, useMemo } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import Link from 'next/link'
 import { buildWhatsappUrl, WA_TEMPLATES } from '@/lib/whatsapp'
+import WhatsAppItButton from '@/components/WhatsAppItButton'
 
 export interface CampRosterBooking {
   id: string
@@ -673,6 +674,7 @@ export default function RosterClient({
                               {linkingId === b.id ? 'Sending…' : linkResult[b.id] === 'ok' ? 'Link sent ✓' : 'Send payment link'}
                             </button>
                           )}
+                          {callerIsAdmin && b.payment_status === 'pending' && <WhatsAppItButton kind="camp" id={b.id} compact />}
                           {callerIsAdmin && b.payment_status === 'pending' && (
                             amountFor === b.id ? (
                               <span className="flex flex-wrap items-center gap-1.5" data-testid="camp-roster-amount-form">

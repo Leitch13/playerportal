@@ -105,6 +105,10 @@
     {
       "path": "/api/cron/invite-chase",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/email-delivery",
+      "schedule": "50 * * * *"
     }
   ],
   "regions": [

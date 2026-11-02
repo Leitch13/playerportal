@@ -72,11 +72,11 @@ export async function loadNeverConfirmed(db: SupabaseClient, orgId: string, play
     const amount = Math.round(months.length * Number(plan.amount) * 100) / 100
     const open = mine.find((b) => OPEN_BILL.includes(b.status as string)) ?? null
     if (opts.sync && open && Number(open.amount) !== amount && !(Number(open.amount_paid) > 0)) {
-      const sent = String(open.notes || '').match(/ · emailed .*$/)?.[0] ?? ''
+      const sent = String(open.notes || '').match(/ · (emailed|whatsapp) .*$/)?.[0] ?? ''
       await db.from('payments').update({ amount, description: billDescription(null, plan.name, months), notes: `${NOTE(s.id as string)} ${months.join(',')}${sent}` }).eq('id', open.id)
     }
     const prev = out.get(s.player_id as string)
-    const row: NeverConfirmed = { subId: s.id as string, playerId: s.player_id as string, parentId: (s.parent_id as string | null) ?? null, months, label: monthsLabel(months), amount, planName: plan.name, billId: (open?.id as string | undefined) ?? null, billSent: / · emailed /.test(String(open?.notes || '')) }
+    const row: NeverConfirmed = { subId: s.id as string, playerId: s.player_id as string, parentId: (s.parent_id as string | null) ?? null, months, label: monthsLabel(months), amount, planName: plan.name, billId: (open?.id as string | undefined) ?? null, billSent: / · (emailed|whatsapp) /.test(String(open?.notes || '')) }
     if (!prev || row.amount > prev.amount) out.set(s.player_id as string, row)
   }
   return out
@@ -91,18 +91,16 @@ function billDescription(child: string | null, planName: string, months: string[
  * in one email. Charges nothing by itself: the parent pays the bill from /pay/<id> and sets up the
  * monthly payment from their invite link.
  */
-export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, playerId: string, appUrl: string): Promise<{ ok: true; amount: number; label: string; to: string } | { ok: false; error: string; status: number }> {
+/** The bill for the months owed, made once and kept at today's figure, and the parent's two links. Sends nothing. */
+export async function prepareBackMonthsBill(db: SupabaseClient, orgId: string, playerId: string, appUrl: string) {
   const owed = (await loadNeverConfirmed(db, orgId, [playerId])).get(playerId)
-  if (!owed) return { ok: false, error: 'Nothing is owed from before this month for this child.', status: 404 }
+  if (!owed) return { ok: false as const, error: 'Nothing is owed from before this month for this child.', status: 404 }
   const [{ data: sub }, { data: player }, { data: org }] = await Promise.all([
     db.from('subscriptions').select('invite_token').eq('id', owed.subId).single(),
     db.from('players').select('first_name').eq('id', playerId).single(),
     db.from('organisations').select('name, contact_email, contact_phone').eq('id', orgId).single(),
   ])
-  const { data: parent } = owed.parentId ? await db.from('profiles').select('full_name, email').eq('id', owed.parentId).maybeSingle() : { data: null }
-  const to = String(parent?.email || '').trim()
-  if (!to || to.endsWith('@theplayerportal.net')) return { ok: false, error: 'There is no email on file for this parent.', status: 400 }
-
+  const { data: parent } = owed.parentId ? await db.from('profiles').select('full_name, email, phone').eq('id', owed.parentId).maybeSingle() : { data: null }
   let billId = owed.billId
   const child = (player?.first_name as string | undefined) || 'your child'
   // The bill always carries the same figure the academy saw on the button.
@@ -112,12 +110,28 @@ export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, play
     const { data: made, error } = await db.from('payments').insert({
       organisation_id: orgId, parent_id: owed.parentId, player_id: playerId, amount_paid: 0, status: 'unpaid', due_date: new Date().toISOString().slice(0, 10), ...bill,
     }).select('id').single()
-    if (error || !made) return { ok: false, error: 'Could not make the bill. Please try again.', status: 500 }
+    if (error || !made) return { ok: false as const, error: 'Could not make the bill. Please try again.', status: 500 }
     billId = made.id as string
   }
   const base = appUrl.replace(/\/$/, '')
-  const payUrl = `${base}/pay/${billId}`
-  const setupUrl = sub?.invite_token ? `${base}/confirm-subscription/${sub.invite_token}` : null
+  return {
+    ok: true as const, owed, billId, child, org, parent,
+    payUrl: `${base}/pay/${billId}`,
+    setupUrl: sub?.invite_token ? `${base}/confirm-subscription/${sub.invite_token}` : null,
+    /** Record how it went to the parent, so the page shows "(bill sent)". */
+    markSent: async (how: 'emailed' | 'whatsapp') => {
+      await db.from('payments').update({ notes: `${NOTE(owed.subId)} ${owed.months.join(',')} · ${how} ${new Date().toISOString().slice(0, 10)}` }).eq('id', billId)
+      if (sub?.invite_token) await db.from('subscriptions').update({ invite_sent_at: new Date().toISOString() }).eq('id', owed.subId)
+    },
+  }
+}
+
+export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, playerId: string, appUrl: string): Promise<{ ok: true; amount: number; label: string; to: string } | { ok: false; error: string; status: number }> {
+  const b = await prepareBackMonthsBill(db, orgId, playerId, appUrl)
+  if (!b.ok) return b
+  const { owed, child, org, parent, payUrl, setupUrl } = b
+  const to = String(parent?.email || '').trim()
+  if (!to || to.endsWith('@theplayerportal.net')) return { ok: false, error: 'There is no email on file for this parent.', status: 400 }
   const academy = (org?.name as string | undefined) || 'Your academy'
   const first = String(parent?.full_name || '').trim().split(/\s+/)[0] || 'there'
   const gbp = `£${owed.amount.toFixed(2)}`
@@ -137,7 +151,6 @@ export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, play
 </div>`,
   })
   if (!mail.success) return { ok: false, error: `The email to ${to} didn't send. Check the address is right, then try again.`, status: 502 }
-  await db.from('payments').update({ notes: `${NOTE(owed.subId)} ${owed.months.join(',')} · emailed ${new Date().toISOString().slice(0, 10)}` }).eq('id', billId)
-  if (setupUrl) await db.from('subscriptions').update({ invite_sent_at: new Date().toISOString() }).eq('id', owed.subId)
+  await b.markSent('emailed')
   return { ok: true, amount: owed.amount, label: owed.label, to }
 }

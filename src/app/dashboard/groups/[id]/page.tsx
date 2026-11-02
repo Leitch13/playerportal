@@ -7,6 +7,7 @@ import ClassRegister, { type RegisterChild, type RegisterTrialGuest } from './Cl
 import { membershipPill } from '@/lib/needs-a-look'
 import { chaseKind } from '@/lib/membership-pay-link'
 import { loadNeverConfirmed } from '@/lib/never-confirmed'
+import { emailsNotReaching } from '@/lib/email-not-reaching'
 import { loadClassOutstanding } from '@/lib/class-outstanding'
 import { pricesForClass } from '@/lib/class-prices'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -169,6 +170,9 @@ export default async function GroupDetailPage({
   const owedByPlayer = role === 'admin'
     ? await loadNeverConfirmed(createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), group.organisation_id as string, enrolments.filter((e) => e.player).map((e) => e.player!.id), undefined, { sync: true }).catch(() => new Map())
     : new Map()
+  const notReachingEmails = role === 'admin'
+    ? await emailsNotReaching(createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), [...parentContactById.values()].map((c) => c?.email)).catch(() => new Map())
+    : new Map()
   const { data: orgPlans } = isAdmin
     ? await supabase.from('subscription_plans').select('id, name, amount, training_group_id, class_type, active').eq('organisation_id', group.organisation_id)
     : { data: [] }
@@ -198,6 +202,7 @@ export default async function GroupDetailPage({
       failingSubIds: failingSubsByPlayer.get(p.id) || [],
       chase: role === 'admin' ? chaseKind(subStatusesByPlayer.get(p.id) || []) : null,
       owedAmount: owedByPlayer.get(p.id)?.amount ?? null,
+      emailNotReaching: !!contact?.email && notReachingEmails.has(String(contact.email).trim().toLowerCase()),
       otherActiveClasses: otherActiveCountById.get(p.id) || 0,
     }
   })

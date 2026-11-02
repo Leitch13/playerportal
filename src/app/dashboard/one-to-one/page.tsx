@@ -3,6 +3,8 @@ import { requireAdmin, needsAttention, getCoaches, getVenues, getSlots, getSessi
 import { addDays, todayLondon } from '@/lib/one-to-one/time'
 import { ActionButton } from './ui'
 import { NeedsGroup } from './NeedsGroup'
+import WhatsAppItButton from '@/components/WhatsAppItButton'
+import { emailsNotReaching, reachLine } from '@/lib/email-not-reaching'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +34,8 @@ export default async function NeedsAttentionPage() {
   const paused = slots.filter((s) => s.status === 'paused').length
   const thisWeek = week.filter((s) => s.status === 'scheduled')
   const adhoc = thisWeek.filter((s) => s.source === 'adhoc').length
+  // Families whose emails aren't arriving (bounced / blocked): the pay link has to go by WhatsApp (src/lib/email-not-reaching.ts).
+  const notReaching = await emailsNotReaching(admin, items.filter((i) => i.kind === 'charge').map((i) => i.ids.email as string | null)).catch(() => new Map())
   const cover = items.filter((i) => i.kind === 'cover' || i.kind === 'closure').length
   const unpaid = items.filter((i) => i.kind === 'charge').length
   // A regular whose parent hasn't paid the set-up link has paid nothing yet, so the
@@ -99,6 +103,7 @@ export default async function NeedsAttentionPage() {
                           </div>
                           <div className="flex shrink-0 flex-wrap items-center gap-2">
                             <ActionButton body={{ action: 'slot.setup_link', id: it.ids.slotId }}>Resend link</ActionButton>
+                            <WhatsAppItButton kind="setup" id={it.ids.slotId as string} compact />
                             <ActionButton confirm="Mark everything this family owes up to the end of this month as paid in cash or by bank transfer? Their sessions go live, the next month starts clean, and it records your name and the time." body={{ action: 'slot.cash_setup', id: it.ids.slotId }}>Paid in cash or bank transfer</ActionButton>
                             <details className="relative">
                               <summary aria-label="More" className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg border border-[#293b58] text-white/70 hover:text-white lg:h-10 lg:w-10">⋯</summary>
@@ -122,6 +127,9 @@ export default async function NeedsAttentionPage() {
                         <div className="min-w-0">
                           <div className="text-sm font-semibold text-white">{it.title}</div>
                           <p className="mt-0.5 max-w-3xl text-xs leading-relaxed text-[#93a2ba]">{it.detail}</p>
+                          {it.kind === 'charge' && notReaching.get(String(it.ids.email || '').trim().toLowerCase()) && (
+                            <p className="mt-1 text-xs font-semibold text-red-300" data-testid="email-not-reaching">{reachLine(notReaching.get(String(it.ids.email || '').trim().toLowerCase())!)} Use WhatsApp it.</p>
+                          )}
                         </div>
                         <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
                           {it.kind === 'cover' && (
@@ -150,6 +158,7 @@ export default async function NeedsAttentionPage() {
                           {it.kind === 'charge' && (
                             <>
                               <ActionButton tone="primary" body={{ action: 'charge.remind', id: it.ids.chargeId }}>Send pay link</ActionButton>
+                              <WhatsAppItButton kind="charge" id={it.ids.chargeId as string} compact />
                               <ActionButton body={{ action: 'charge.cash', id: it.ids.chargeId }} confirm="Mark this month as paid in cash? It records your name and the time.">Paid in cash</ActionButton>
                               {(it.ids.slotIds as string[]).map((sid, i) => (
                                 <ActionButton key={sid} tone="danger" confirm="Release this slot? Future sessions come off and the time goes on sale." body={{ action: 'slot.status', id: sid, status: 'released' }}>Release {(it.ids.slotLabels as string[] | undefined)?.[i] || 'slot'}</ActionButton>

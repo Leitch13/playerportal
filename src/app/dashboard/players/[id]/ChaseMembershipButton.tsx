@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ChaseKind } from '@/lib/membership-pay-link'
+import WhatsAppItButton from '@/components/WhatsAppItButton'
 
 // The academy chasing a child's class membership (John, 2 Nov 2026: "build the buttons").
 //   • invite → "Resend invite": the parent's own confirm link again (request-payment, resend).
@@ -41,6 +42,7 @@ export default function ChaseMembershipButton({ playerId, kind, compact = false,
   }
 
   return (
+    <span className="inline-flex flex-wrap items-start justify-end gap-1.5">
     <span className="inline-flex flex-col items-end gap-1">
       <button
         type="button"
@@ -54,6 +56,8 @@ export default function ChaseMembershipButton({ playerId, kind, compact = false,
         {state === 'sending' ? 'Sending…' : state === 'sent' ? done : label}
       </button>
       {error && <span className="max-w-[240px] text-right text-[11px] leading-snug text-[#e0736d]">{error}</span>}
+    </span>
+    <WhatsAppItButton kind={kind} id={playerId} compact={compact} />
     </span>
   )
 }

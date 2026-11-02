@@ -7,6 +7,7 @@ import { lineWhen, type MonthLine } from '@/lib/one-to-one/family-month'
 import { academyPaymentsReady } from '@/lib/one-to-one/checkout'
 import { ActionButton, ActionForm, Disclosure, Field, PoundsInput, SignedPoundsInput } from '../ui'
 import { inputCls } from '../styles'
+import WhatsAppItButton from '@/components/WhatsAppItButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -109,7 +110,7 @@ export default async function RegularsPage() {
   }
   // The one action that moves things on, shown on the row. Everything else sits under "More".
   const primary = (s: SlotRowDb) => s.status === 'pending'
-    ? <ActionButton tone="primary" body={{ action: 'slot.setup_link', id: s.id }}>Resend link</ActionButton>
+    ? <span className="inline-flex flex-wrap gap-1.5"><ActionButton tone="primary" body={{ action: 'slot.setup_link', id: s.id }}>Resend link</ActionButton><WhatsAppItButton kind="setup" id={s.id as string} compact /></span>
     : s.status === 'paused' ? <ActionButton tone="primary" body={{ action: 'slot.status', id: s.id, status: 'active' }}>Resume</ActionButton>
     : null
   const others = (s: SlotRowDb) => (

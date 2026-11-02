@@ -180,6 +180,16 @@ const FEATURES = [
   ['Send login link: route uses the any-device link', `${A}/api/admin/parents/[parentId]/login-link/route.ts`, ["sendAuthLink(email, 'signin'", "parent.organisation_id !== orgId"]],
   ['Walked away before paying: academy told', `${A}/api/stripe/webhooks/route.ts`, ["type: 'checkout_walked_away'", "md.type === 'paid_trial' || (!!md.supabase_plan_id"]],
   ['Walked away before paying: Send link to finish booking', `${A}/dashboard/leads/LeadsPipeline.tsx`, ["lead.source === 'abandoned_checkout' && lead.email && <FinishBookingButton", '/finish-link']],
+  // ── WhatsApp it + emails not reaching (2 Nov 2026, John: "if an email doesn't work … is there another way?")
+  ['WhatsApp it: one endpoint builds every family link', `${A}/api/admin/whatsapp-link/route.ts`, ["kind === 'invite'", "kind === 'card'", "kind === 'charge'", "kind === 'setup'", "kind === 'camp'", 'buildWhatsappUrl(phone, text)']],
+  ['WhatsApp it: next to every class chase button', `${A}/dashboard/players/[id]/ChaseMembershipButton.tsx`, ['<WhatsAppItButton kind={kind} id={playerId}']],
+  ['WhatsApp it: 1-2-1 Needs you', `${A}/dashboard/one-to-one/page.tsx`, ['<WhatsAppItButton kind="charge"', '<WhatsAppItButton kind="setup"', 'emailsNotReaching(']],
+  ['WhatsApp it: 1-2-1 regulars', `${A}/dashboard/one-to-one/regulars/page.tsx`, ['<WhatsAppItButton kind="setup"']],
+  ['WhatsApp it: camps', `${A}/dashboard/camps/[campId]/RosterClient.tsx`, ['<WhatsAppItButton kind="camp"']],
+  ['Emails not reaching: hourly check of what Resend did', 'src/lib/email-not-reaching.ts', ["const BAD = ['bounced', 'complained', 'suppressed', 'failed']", 'DELIVERED_AGAIN', 'export async function emailsNotReaching(']],
+  ['Emails not reaching: shown on the child page, parent page and register', `${A}/dashboard/players/[id]/page.tsx`, ['data-testid="email-not-reaching"']],
+  ['Emails not reaching: parent page', `${A}/dashboard/parents/[id]/page.tsx`, ['data-testid="email-not-reaching"']],
+  ['Emails not reaching: register', `${A}/dashboard/groups/[id]/ClassRegister.tsx`, ["'Emails not reaching them: WhatsApp'"]],
   ['Chase: the pay link page', `${A}/pay/membership/[id]/page.tsx`, ['openMembershipBill(', '/api/memberships/${id}/pay']],
 
   // ── 1-2-1s

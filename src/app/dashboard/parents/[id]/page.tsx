@@ -53,6 +53,8 @@ import AttendanceBanner from './AttendanceBanner'
 import RefundButton from '../../payments/invoice/[id]/RefundButton'
 import { canRefund, refundKind } from '@/lib/refund-kind'
 import SendLoginLinkButton from '../../players/[id]/SendLoginLinkButton'
+import { emailsNotReaching, reachLine } from '@/lib/email-not-reaching'
+import { createClient as createServiceDb } from '@supabase/supabase-js'
 
 export default async function ParentDetailPage({
   params,
@@ -83,6 +85,10 @@ export default async function ParentDetailPage({
     .maybeSingle()
 
   if (!parentProfile) notFound()
+  // Emails not reaching this family (bounced / blocked): shown in red (src/lib/email-not-reaching.ts).
+  const notReaching = isAdmin && parentProfile.email
+    ? (await emailsNotReaching(createServiceDb(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), [parentProfile.email as string]).catch(() => new Map())).get(String(parentProfile.email).trim().toLowerCase()) ?? null
+    : null
 
   // ── 2. Children belonging to this parent + their enrolments + groups ──
   // Phase 2.8 adds `enrolled_at` so the attendance-risk derive can
@@ -360,6 +366,7 @@ export default async function ParentDetailPage({
                 <div className="sm:col-span-2"><span className="text-white/40">Alt contact:</span> {parentProfile.secondary_contact_name}{parentProfile.secondary_contact_phone ? ` · ${parentProfile.secondary_contact_phone}` : ''}</div>
               )}
               {parentProfile.notes && <div className="sm:col-span-2 italic"><span className="text-white/40 not-italic">Notes:</span> {parentProfile.notes}</div>}
+              {notReaching && <div className="sm:col-span-2 rounded-md border border-red-500/50 bg-red-500/15 px-2 py-1.5 font-semibold text-red-300" data-testid="email-not-reaching">{reachLine(notReaching)}</div>}
               {isAdmin && parentProfile.email && <div className="sm:col-span-2 pt-1"><SendLoginLinkButton parentId={parentProfile.id as string} /></div>}
             </div>
           )}
