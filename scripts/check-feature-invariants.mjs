@@ -157,6 +157,10 @@ const FEATURES = [
   ['Camp waiting list: count on the camp card', `${D}/camps/page.tsx`, ['camp-waiting-count']],
   ['Camp waiting list: shown on Leads', `${D}/leads/LeadsPipeline.tsx`, ['camp_waitlist']],
 
+  // ── ASCEND dashboard link (2 Nov 2026): trials, joins and monthly numbers for the member's own academy only
+  ['ASCEND link: the feed answers only the academy owner, with a shared secret', `${A}/api/ascend/academy-feed/route.ts`, ['timingSafeEqual(', 'owners.has(owner)', 'matchFamilies(', 'moneyMonths(']],
+  ['ASCEND link: families are matched by hash, never listed', 'src/lib/ascend-feed.ts', ['export function contactHashes(', "sha('e:' + e)", "sha('p:' + d.slice(-9))", 'if (!asked.has(h)) continue']],
+
   // ── 1-2-1s
   // An unpaid bill follows the dates the moment they change (2 Nov 2026: £160 shown for a £120 month).
   ['1-2-1s: an unpaid bill is re-worked when a date comes off or a credit is added', 'src/lib/one-to-one/money.ts', ['export async function refreshFamilyBills(', 'await refreshFamilyBills(admin, s.organisation_id, parentId)', 'await refreshFamilyBills(admin, orgId, s.parent_id)']],
