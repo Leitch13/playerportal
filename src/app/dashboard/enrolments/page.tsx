@@ -27,6 +27,7 @@ import { loadPaymentStatusByPlayer, type PaymentVerdict } from '@/lib/enrolment-
 import EnrolmentsActionBand from '@/components/enrolments/EnrolmentsActionBand'
 // The same Request payment button the player page has, in its compact form.
 import RequestPaymentButton from '../players/[id]/RequestPaymentButton'
+import ChaseMembershipButton from '../players/[id]/ChaseMembershipButton'
 
 type EnrolmentRow = {
   id: string
@@ -153,6 +154,7 @@ export default async function EnrolmentsPage({
   let chasePlans: Array<{ id: string; name: string; amount: number | null; training_group_id: string | null; class_type: string | null }> = []
   const pendingSentByPlayer = new Map<string, string>()
   const blockedByPlayer = new Set<string>()
+  const failedCardByPlayer = new Set<string>()
   let canChase = false
   if (onlyNotPaying && notPayingActive.length > 0) {
     const { data: role } = await supabase.rpc('get_my_role')
@@ -172,7 +174,11 @@ export default async function EnrolmentsPage({
         if (r.status === 'pending_migration') pendingSentByPlayer.set(r.player_id, r.invite_sent_at || r.created_at)
         // A live membership row that isn't billing: the route would refuse a new
         // request ("already has a subscription"), so no button; it needs Payments.
-        else blockedByPlayer.add(r.player_id)
+        else {
+          blockedByPlayer.add(r.player_id)
+          // Card failed: the academy can send a link to pay it (src/lib/membership-pay-link.ts).
+          if (r.status === 'past_due') failedCardByPlayer.add(r.player_id)
+        }
       }
     }
   }
@@ -488,7 +494,9 @@ export default async function EnrolmentsPage({
                                     <div className="text-xs text-[#93a2ba]">
                                       {pendingSent
                                         ? `Payment link sent ${fmtShort(pendingSent)}, not paid yet`
-                                        : blocked
+                                        : failedCardByPlayer.has(e.player_id)
+                                          ? 'Card payment failed'
+                                          : blocked
                                           ? 'Has a membership that isn\'t billing'
                                           : 'No membership set up'}
                                     </div>
@@ -496,6 +504,8 @@ export default async function EnrolmentsPage({
                                   {canChase && (
                                     pendingSent ? (
                                       <RequestPaymentButton playerId={e.player_id} playerFirstName={e.player?.first_name || 'this player'} plans={chasePlans} compact pendingSentAt={pendingSent} />
+                                    ) : failedCardByPlayer.has(e.player_id) ? (
+                                      <ChaseMembershipButton playerId={e.player_id} kind="card" compact />
                                     ) : blocked ? (
                                       <Link href="/dashboard/payments" className="text-xs font-semibold text-[#93a2ba] hover:text-white">Sort in Payments</Link>
                                     ) : chasePlans.length > 0 ? (

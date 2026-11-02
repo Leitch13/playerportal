@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 // Sprint 8a — per-row kebab with View / Message parent / Remove from class.
 import ClassRegister, { type RegisterChild, type RegisterTrialGuest } from './ClassRegister'
 import { membershipPill } from '@/lib/needs-a-look'
+import { chaseKind } from '@/lib/membership-pay-link'
 import { loadClassOutstanding } from '@/lib/class-outstanding'
 import { pricesForClass } from '@/lib/class-prices'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -189,6 +190,7 @@ export default async function GroupDetailPage({
       isTrial: e.is_trial === true,
       outstanding: outstandingByPlayer.get(p.id) ?? null,
       failingSubIds: failingSubsByPlayer.get(p.id) || [],
+      chase: role === 'admin' ? chaseKind(subStatusesByPlayer.get(p.id) || []) : null,
       otherActiveClasses: otherActiveCountById.get(p.id) || 0,
     }
   })

@@ -23,6 +23,8 @@ import ClassRosterRow from './ClassRosterRow'
 import { sortRoster, agesPresent, onlyAge, type RosterSort } from '@/lib/roster-sort'
 import { hasMedicalNote } from '@/lib/camp-booking-details'
 import { nextMark, countMarks, weekdayOf, registerCsv, type Mark } from '@/lib/class-register'
+import ChaseMembershipButton from '../../players/[id]/ChaseMembershipButton'
+import type { ChaseKind } from '@/lib/membership-pay-link'
 
 export interface RegisterChild {
   enrolmentId: string
@@ -45,6 +47,8 @@ export interface RegisterChild {
   outstanding?: string | null
   /** Stripe ids of this child's memberships whose payment failed or was never finished. */
   failingSubIds?: string[]
+  /** Admin only: Resend invite (not confirmed) or Send payment link (card failed). */
+  chase?: ChaseKind
   otherActiveClasses: number
 }
 
@@ -224,6 +228,7 @@ export default function ClassRegister({
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-white/[0.06] pt-2">
                     <Link href={`/dashboard/players/${c.playerId}`} className="rounded-lg border border-[#1d2c42] px-2.5 py-1 text-xs font-semibold text-white/75 hover:text-white">Open profile</Link>
                     {c.parentId && <Link href={`/dashboard/messages?recipients=${encodeURIComponent(c.parentId)}`} className="rounded-lg border border-[#1d2c42] px-2.5 py-1 text-xs font-semibold text-white/75 hover:text-white">Message parent</Link>}
+                    {c.chase && <ChaseMembershipButton playerId={c.playerId} kind={c.chase} compact />}
                     <span className="ml-auto flex items-center gap-1 text-[11px] text-white/40">Move or remove
                       <ClassRosterRow menuOnly enrolmentId={c.enrolmentId} playerId={c.playerId} playerFirstName={c.firstName} playerLastName={c.lastName} playerPhotoUrl={null}
                         parentId={c.parentId} parentName={c.parentName} className={className} otherActiveClasses={c.otherActiveClasses} groupId={groupId} organisationId={organisationId}

@@ -27,6 +27,8 @@ import ArchivePlayerModal from './ArchivePlayerModal'
 import RestorePlayerButton from './RestorePlayerButton'
 import AddToGroupButton from './AddToGroupButton'
 import RequestPaymentButton from './RequestPaymentButton'
+import ChaseMembershipButton from './ChaseMembershipButton'
+import { chaseKind } from '@/lib/membership-pay-link'
 // Sprint 8b v1 — Move Class action surfaced per active enrolment row.
 import MoveClassAction from './MoveClassAction'
 // Sprint 12 — pure derive layer (no I/O, no Stripe call).
@@ -495,6 +497,12 @@ export default async function PlayerDetailPage({
           </div>
         </Card>
       </div>
+
+      {/* Invite not confirmed → Resend invite; card failed → Send payment link (John, 2 Nov 2026). */}
+      {role === 'admin' && (() => {
+        const kind = chaseKind((playerSubscriptions || []).map((x) => x.status as string | null))
+        return kind ? <div className="flex justify-end"><ChaseMembershipButton playerId={id} kind={kind} /></div> : null
+      })()}
 
       {role === 'admin' && !hasActiveOrPendingSub && requestPaymentPlans.length > 0 && (
         <div className="flex justify-end">

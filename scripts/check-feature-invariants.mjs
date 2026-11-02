@@ -160,6 +160,14 @@ const FEATURES = [
   // ── ASCEND dashboard link (2 Nov 2026): trials, joins and monthly numbers for the member's own academy only
   ['ASCEND link: the feed answers only the academy owner, with a shared secret', `${A}/api/ascend/academy-feed/route.ts`, ['timingSafeEqual(', 'owners.has(owner)', 'matchFamilies(', 'moneyMonths(']],
   ['ASCEND link: families are matched by hash, never listed', 'src/lib/ascend-feed.ts', ['export function contactHashes(', "sha('e:' + e)", "sha('p:' + d.slice(-9))", 'if (!asked.has(h)) continue']],
+  // ── Chase buttons (2 Nov 2026, John: "build the buttons why are they not there?"): the academy can always chase
+  //    an unconfirmed invite (Resend invite) or a failed card (Send payment link) on the child page, the register and Enrolments.
+  ['Chase: child page shows Resend invite / Send payment link', `${A}/dashboard/players/[id]/page.tsx`, ['<ChaseMembershipButton playerId={id} kind={kind} />', 'chaseKind(']],
+  ['Chase: class register shows the button', `${A}/dashboard/groups/[id]/ClassRegister.tsx`, ['<ChaseMembershipButton playerId={c.playerId} kind={c.chase} compact />']],
+  ['Chase: class register works out what to chase', `${A}/dashboard/groups/[id]/page.tsx`, ["chase: role === 'admin' ? chaseKind("]],
+  ['Chase: Enrolments not-paying list sends a link for a failed card', `${A}/dashboard/enrolments/page.tsx`, ['<ChaseMembershipButton playerId={e.player_id} kind="card" compact />']],
+  ['Chase: a failed membership has a pay link that never runs out', 'src/lib/membership-pay-link.ts', ["status: 'open'", 'hosted_invoice_url', "save_default_payment_method: 'on_subscription'", '/pay/membership/']],
+  ['Chase: the pay link page', `${A}/pay/membership/[id]/page.tsx`, ['openMembershipBill(', '/api/memberships/${id}/pay']],
 
   // ── 1-2-1s
   // An unpaid bill follows the dates the moment they change (2 Nov 2026: £160 shown for a £120 month).
