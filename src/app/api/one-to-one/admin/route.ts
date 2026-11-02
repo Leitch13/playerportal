@@ -480,6 +480,10 @@ export async function POST(req: NextRequest) {
       }
       case 'charge.remind': {
         const url = payNowLinkUrl(str(body.id))
+        // The email says today's amount: a date taken off since the bill was made comes off first (Meehan, 2 Nov 2026).
+        const { data: owner } = await admin.from('coaching_charges').select('parent_id').eq('id', str(body.id)).eq('organisation_id', orgId).maybeSingle()
+        if (!owner) return bad('That bill is not in your academy')
+        await refreshFamilyBills(admin, orgId, owner.parent_id as string | null)
         const { data: c } = await admin.from('coaching_charges').select('parent_id, billing_month, amount_pence, attempt_count, sessions_pence, credit_applied_pence, breakdown, failure_message, parent:profiles!coaching_charges_parent_id_fkey(email, full_name)').eq('id', str(body.id)).single()
         const { data: o } = await admin.from('organisations').select('name').eq('id', orgId).single()
         const parent = c?.parent as unknown as { email: string | null; full_name: string | null } | null
