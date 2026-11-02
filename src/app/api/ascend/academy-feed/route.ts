@@ -60,5 +60,8 @@ export async function POST(request: NextRequest) {
     (pays ?? []).map((p) => ({ amount: Number(p.amount), at: String(p.created_at) })),
     (subs ?? []).map((s) => ({ status: s.status, created_at: String(s.created_at), ended_at: (s.canceled_at || s.cancelled_at || null) as string | null })),
   )
-  return NextResponse.json({ academy: org.name, mrr, live: live.length, months, matches })
+  // Cards that didn't go through: what's waiting to be collected (the academy sends a pay link from Player Portal).
+  const failingSubs = (subs ?? []).filter((s) => ['past_due', 'unpaid'].includes(s.status))
+  const failing = { count: failingSubs.length, amount: Math.round(failingSubs.reduce((a, s) => a + Number(plan.get(s.plan_id)?.amount || 0), 0) * 100) / 100 }
+  return NextResponse.json({ academy: org.name, mrr, live: live.length, failing, months, matches })
 }
