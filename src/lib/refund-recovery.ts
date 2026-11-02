@@ -110,6 +110,22 @@ function invoiceDestination(invoice: Stripe.Invoice): string | null {
   return d ? (typeof d === 'string' ? d : d.id) : null
 }
 
+/**
+ * The webhook delivers invoices in the endpoint's newer API shape, which has no
+ * transfer_data or application_fee_amount, so the academy was never found and nothing
+ * was ever taken back (found 2 Nov 2026: WLFA, G&G, No.1 all still owed). Read the
+ * invoice again in this app's API version, where both are present; failing that, the
+ * academy comes from the subscription's transfer_data.
+ */
+export async function invoiceForRepayment(invoice: Stripe.Invoice): Promise<Stripe.Invoice> {
+  const full = invoice.id ? await stripe.invoices.retrieve(invoice.id) : invoice
+  if (invoiceDestination(full)) return full
+  const subId = invoiceSubscription(full) ?? invoiceSubscription(invoice)
+  if (!subId) return full
+  const sub = await stripe.subscriptions.retrieve(subId)
+  return sub.transfer_data?.destination ? { ...full, transfer_data: { amount: null, destination: sub.transfer_data.destination } } : full
+}
+
 /** Player Portal's normal fee on this invoice: the one already on it, or the subscription's percent. */
 async function normalFee(invoice: Stripe.Invoice): Promise<number> {
   if (typeof invoice.application_fee_amount === 'number') return invoice.application_fee_amount
@@ -127,8 +143,10 @@ async function normalFee(invoice: Stripe.Invoice): Promise<number> {
  * repeated event does nothing), then the draft is changed; if Stripe refuses, the
  * reservation is removed and the invoice is charged exactly as normal.
  */
-export async function takeRepaymentFromDraftInvoice(admin: SupabaseClient, invoice: Stripe.Invoice): Promise<{ orgId: string; takenPence: number } | null> {
-  if (invoice.status !== 'draft' || invoice.billing_reason !== 'subscription_cycle') return null
+export async function takeRepaymentFromDraftInvoice(admin: SupabaseClient, delivered: Stripe.Invoice): Promise<{ orgId: string; takenPence: number } | null> {
+  if (delivered.status !== 'draft' || delivered.billing_reason !== 'subscription_cycle') return null
+  const invoice = await invoiceForRepayment(delivered)
+  if (invoice.status !== 'draft') return null
   const dest = invoiceDestination(invoice)
   const due = invoice.amount_due ?? 0
   if (!dest || due <= 0) return null

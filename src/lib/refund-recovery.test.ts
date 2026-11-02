@@ -32,3 +32,23 @@ describe('isEmptyBalanceError', () => {
     expect(isEmptyBalanceError(null)).toBe(false)
   })
 })
+
+describe('invoiceForRepayment', () => {
+  // 2 Nov 2026: the webhook's invoice has no transfer_data, so no academy was ever found.
+  it('reads the academy from the invoice in the app\'s API version', async () => {
+    const { stripe } = await import('@/lib/stripe') as unknown as { stripe: Record<string, unknown> }
+    stripe.invoices = { retrieve: vi.fn(async () => ({ id: 'in_1', status: 'draft', transfer_data: { destination: 'acct_gg' }, application_fee_amount: 133 })) }
+    const { invoiceForRepayment } = await import('./refund-recovery')
+    const got = await invoiceForRepayment({ id: 'in_1', status: 'draft' } as never)
+    expect(got.transfer_data?.destination).toBe('acct_gg')
+    expect(got.application_fee_amount).toBe(133)
+  })
+  it('falls back to the subscription\'s academy', async () => {
+    const { stripe } = await import('@/lib/stripe') as unknown as { stripe: Record<string, unknown> }
+    stripe.invoices = { retrieve: vi.fn(async () => ({ id: 'in_2', status: 'draft', parent: { subscription_details: { subscription: 'sub_1' } } })) }
+    stripe.subscriptions = { retrieve: vi.fn(async () => ({ id: 'sub_1', transfer_data: { destination: 'acct_no1' } })) }
+    const { invoiceForRepayment } = await import('./refund-recovery')
+    const got = await invoiceForRepayment({ id: 'in_2' } as never)
+    expect(got.transfer_data?.destination).toBe('acct_no1')
+  })
+})
