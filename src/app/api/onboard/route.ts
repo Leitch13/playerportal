@@ -182,11 +182,13 @@ export async function POST(request: NextRequest) {
         platform_subscription_status: 'trial',
         platform_trial_ends_at: trialEndsAt.toISOString(),
         // Academies are live (public-bookable) during their 14-day platform
-        // trial. The webhook still flips this to true on platform-plan
-        // payment, but new trial academies no longer have to pay to publish.
-        // Existing webhook behaviour on cancellation (keep is_published=true
-        // — webhooks/route.ts:1982 comment) is unchanged.
-        is_published: true,
+        // trial, from the moment the owner confirms their email
+        // (src/lib/academy-email-check.ts puts this to true). Until then the
+        // booking page shows "coming soon", so a made-up address never gets a
+        // public page (John, 2 Nov 2026). Existing webhook behaviour on
+        // cancellation (keep is_published=true — webhooks/route.ts:1982
+        // comment) is unchanged.
+        is_published: false,
         terms_accepted_at: acceptedAt,
         dpa_accepted_at: acceptedAt,
         terms_version: TERMS_VERSION,
@@ -306,7 +308,7 @@ async function notifyNewAcademy(info: {
     body: JSON.stringify({
       from: `Player Portal <${from}>`,
       to,
-      subject: `🎉 New academy: ${info.academyName}`,
+      subject: `🎉 New academy: ${info.academyName} (email not confirmed yet)`,
       html,
     }),
   })

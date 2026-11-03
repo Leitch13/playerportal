@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { orgIsClaimableByFirstAdmin } from '@/lib/onboard-claim'
+import { PENDING, sendEmailCheck } from '@/lib/academy-email-check'
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,7 +67,10 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true, // Signs in straight away; the academy itself waits for the email check below
+      // Server-only flag: the dashboard shows "check your inbox" until they press
+      // the button we email them (src/lib/academy-email-check.ts).
+      app_metadata: { academy_email_check: PENDING },
       user_metadata: {
         full_name: fullName,
         org_slug: orgSlug,
@@ -111,19 +115,11 @@ export async function POST(request: NextRequest) {
         .eq('id', userId)
     }
 
-    // Send welcome email to new admin (fire and forget)
+    // Email the confirm button. The welcome email goes when they press it.
     try {
-      const { sendEmail } = await import('@/lib/email')
-      const { adminWelcomeEmail } = await import('@/lib/email-templates')
       const { data: orgData } = await supabase.from('organisations').select('name').eq('slug', orgSlug).single()
-      const template = adminWelcomeEmail({
-        adminName: fullName.split(' ')[0],
-        academyName: orgData?.name || orgSlug,
-        academySlug: orgSlug,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'}/dashboard`,
-      })
-      await sendEmail({ to: email, ...template })
-    } catch { /* email optional */ }
+      await sendEmailCheck(email, String(fullName).split(' ')[0], orgData?.name || orgSlug, userId)
+    } catch { /* they can press "Send it again" on the dashboard */ }
 
     return NextResponse.json({ userId })
   } catch (err: unknown) {

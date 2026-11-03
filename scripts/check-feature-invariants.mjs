@@ -194,6 +194,12 @@ const FEATURES = [
   ['Emails not reaching: hourly check of what Resend did', 'src/lib/email-not-reaching.ts', ["const BAD = ['bounced', 'complained', 'suppressed', 'failed']", 'DELIVERED_AGAIN', 'export async function emailsNotReaching(']],
   ['Emails not reaching: shown on the child page, parent page and register', `${A}/dashboard/players/[id]/page.tsx`, ['data-testid="email-not-reaching"']],
   ['Emails not reaching: parent page', `${A}/dashboard/parents/[id]/page.tsx`, ['data-testid="email-not-reaching"']],
+  // ── New academies confirm their email (2 Nov 2026, John: fake "A" academies from a made-up address)
+  ['Academy email check: signup marks the owner pending and emails the button', `${A}/api/onboard/signup/route.ts`, ['app_metadata: { academy_email_check: PENDING }', 'sendEmailCheck(email']],
+  ['Academy email check: booking page private until confirmed', `${A}/api/onboard/route.ts`, ['is_published: false,']],
+  ['Academy email check: dashboard shows "check your inbox" until confirmed', `${A}/dashboard/layout.tsx`, ["role === 'admin' && !profile?.is_super_admin && emailCheckPending(user)", '<ConfirmAcademyEmailLock']],
+  ['Academy email check: confirm publishes the academy', 'src/lib/academy-email-check.ts', ["update({ is_published: true })", 'academy_email_check: CONFIRMED']],
+  ['Academy email check: link opens a button page, only the press confirms', `${A}/onboard/confirm-email/page.tsx`, ['data-testid="confirm-academy-email"', "method: 'POST'"]],
   ['Emails not reaching: register', `${A}/dashboard/groups/[id]/ClassRegister.tsx`, ["'Emails not reaching them: WhatsApp'"]],
   ['Chase: the pay link page', `${A}/pay/membership/[id]/page.tsx`, ['openMembershipBill(', '/api/memberships/${id}/pay']],
 

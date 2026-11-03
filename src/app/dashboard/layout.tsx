@@ -7,6 +7,8 @@ import ResendVerificationButton from '@/components/ResendVerificationButton'
 import PushNotificationPrompt from '@/components/PushNotificationPrompt'
 import GlobalSearch from '@/components/GlobalSearch'
 import TrialExpiredLock from '@/components/TrialExpiredLock'
+import ConfirmAcademyEmailLock from '@/components/ConfirmAcademyEmailLock'
+import { emailCheckPending } from '@/lib/academy-email-check'
 import { getOrgFeatures, featuresToArray } from '@/lib/features'
 import { adminClient as oneToOneAdmin } from '@/lib/one-to-one/db'
 import type { UserRole } from '@/lib/types'
@@ -146,6 +148,16 @@ export default async function DashboardLayout({
       oneToOneInUse = (v.count || 0) > 0
     }
   } catch { /* sidebar item stays hidden */ }
+
+  // A new academy owner who hasn't confirmed their email yet sees "check your inbox"
+  // instead of the dashboard (src/lib/academy-email-check.ts). Older academies have no flag.
+  if (role === 'admin' && !profile?.is_super_admin && emailCheckPending(user)) {
+    return (
+      <ThemeProvider initialTheme={theme}>
+        <ConfirmAcademyEmailLock email={user.email || ''} orgName={orgBrand?.name || 'your academy'} />
+      </ThemeProvider>
+    )
+  }
 
   // No valid platform access (trial expired or plan lapsed) → lock the admin
   // dashboard behind the plan-chooser screen.
