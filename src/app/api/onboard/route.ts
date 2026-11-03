@@ -4,6 +4,12 @@ import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { checkSignupIp } from '@/lib/ip-reputation'
 
+
+// New-academy and blocked-signup alerts go to John's own inbox (John, 3 Nov 2026:
+// "redirect new signups to my johnleitch970@gmail"). Every other admin alert still
+// uses ADMIN_NOTIFICATION_EMAIL.
+const SIGNUP_ALERTS_TO = 'johnleitch970@gmail.com'
+
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get('x-forwarded-for') || 'unknown'
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
       try {
         const { sendEmail } = await import('@/lib/email')
         await sendEmail({
-          to: process.env.ADMIN_NOTIFICATION_EMAIL || 'john@theplayerportal.net',
+          to: SIGNUP_ALERTS_TO,
           subject: `Blocked signup: "${String(name)}" from a ${ipVerdict.reason} (${ipVerdict.country || '?'})`,
           html: `<p>An academy signup was refused at the door.</p>
 <ul>
@@ -243,18 +249,11 @@ async function notifyNewAcademy(info: {
   referrerName: string | null
 }) {
   const apiKey = process.env.RESEND_API_KEY
-  const to = process.env.ADMIN_NOTIFICATION_EMAIL
+  const to = SIGNUP_ALERTS_TO
   const from = process.env.RESEND_FROM_EMAIL || 'onboarding@theplayerportal.net'
 
   if (!apiKey) {
     console.warn('RESEND_API_KEY not set — skipping admin notification')
-    return
-  }
-  if (!to) {
-    // No ADMIN_NOTIFICATION_EMAIL configured. We intentionally don't fall
-    // back to a hard-coded address — that's how a personal inbox ends up
-    // receiving prod traffic when the env var goes missing during a deploy.
-    console.warn('ADMIN_NOTIFICATION_EMAIL not set — skipping new-academy notification')
     return
   }
 
