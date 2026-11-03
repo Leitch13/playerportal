@@ -26,6 +26,7 @@ import PlayersTable, { type PlayersTableRow } from './PlayersTable'
 import {
   deriveAge,
   deriveActiveClassNames,
+  classLabels,
   deriveReviewDue,
   deriveRowStatus,
   deriveSubStatus,
@@ -88,7 +89,7 @@ export default async function PlayersPage({
       date_of_birth, created_at, organisation_id,
       archived_at, archive_reason,
       parent:profiles!players_parent_id_fkey(full_name, email, phone),
-      enrolments(status, is_trial, trial_expires_at, activates_on, enrolled_at, group:training_groups(name))
+      enrolments(status, is_trial, trial_expires_at, activates_on, enrolled_at, group:training_groups(id, name))
     `)
     .eq('organisation_id', orgId)
     .order('first_name')
@@ -224,6 +225,10 @@ export default async function PlayersPage({
   }
 
   // ── 5. Reduce to flat row contract for the client table ──
+  // Classes that share a name get their day and time added, so each is its own sheet (src/lib/players-derive.ts).
+  const { data: labelGroups } = await supabase.from('training_groups').select('id, name, day_of_week, time_slot, location').eq('organisation_id', orgId)
+  const labels = classLabels((labelGroups || []) as Array<{ id: string; name: string; day_of_week: string | null; time_slot: string | null; location: string | null }>)
+
   const tableRows: PlayersTableRow[] = players.map(p => {
     const subs = subsByPlayer.get(p.id) || null
     const att = attendanceSummary.get(p.id)
@@ -255,7 +260,7 @@ export default async function PlayersPage({
       parent_name: p.parent?.full_name || null,
       parent_email: p.parent?.email || null,
       age: deriveAge(p.date_of_birth),
-      className: deriveActiveClassNames(p.enrolments),
+      className: deriveActiveClassNames(p.enrolments, labels),
       attendancePct: att?.pct ?? null,
       lastAttendanceDays: att ? daysSinceIso(att.lastDateIso) : null,
       subStatus: deriveSubStatus(subs),
@@ -341,8 +346,8 @@ export default async function PlayersPage({
         ) : (
           <PlayersTable
             rows={tableRows}
-            classes={((groups || []) as Array<{ name: string; day_of_week?: string | null; time_slot?: string | null; location?: string | null; max_capacity?: number | null }>).map(g => ({
-              name: g.name,
+            classes={((groups || []) as Array<{ id: string; name: string; day_of_week?: string | null; time_slot?: string | null; location?: string | null; max_capacity?: number | null }>).map(g => ({
+              name: labels.get(g.id) || g.name,
               when: [g.day_of_week, g.time_slot, g.location].filter(Boolean).join(' · '),
               capacity: g.max_capacity ?? null,
             }))}

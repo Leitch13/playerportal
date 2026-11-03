@@ -153,12 +153,38 @@ export function deriveReviewDue(latestReviewDateIso: string | null, nowMs: numbe
  * existing column's behaviour).
  */
 export function deriveActiveClassNames(
-  enrolments: Array<{ status: string | null; group: { name: string } | null }> | null | undefined,
+  enrolments: Array<{ status: string | null; group: { id?: string; name: string } | null }> | null | undefined,
+  labels?: Map<string, string>,
 ): string {
   if (!enrolments) return ''
   return enrolments
     .filter(e => (e.status || '') === 'active')
-    .map(e => e.group?.name)
+    .map(e => (e.group?.id && labels?.get(e.group.id)) || e.group?.name)
     .filter(Boolean)
     .join(', ')
+}
+
+/**
+ * One label per class, unique within the academy. Two classes can share a name (No.1 GK has
+ * "Pitreavie Academy | 13-15 y/o class" at 17:00 and at 18:00), and anything that groups by name
+ * merged them into one sheet (John, 3 Nov 2026; the Enrolments page had the same fault, fixed
+ * 29 Oct). A shared name gets the day and time added: "… · Friday 17:00–18:00".
+ */
+export function classLabels(groups: Array<{ id: string; name: string; day_of_week?: string | null; time_slot?: string | null; location?: string | null }>): Map<string, string> {
+  const count = new Map<string, number>()
+  for (const g of groups) count.set(g.name, (count.get(g.name) || 0) + 1)
+  const out = new Map<string, string>()
+  for (const g of groups) {
+    if ((count.get(g.name) || 0) < 2) { out.set(g.id, g.name); continue }
+    const when = [g.day_of_week, g.time_slot].filter(Boolean).join(' ')
+    out.set(g.id, when ? `${g.name} · ${when}` : `${g.name} · ${g.location || g.id.slice(0, 4)}`)
+  }
+  // Still the same (same name, day and time): add the venue, then a short id, so no two ever match.
+  const seen = new Map<string, number>()
+  for (const v of out.values()) seen.set(v, (seen.get(v) || 0) + 1)
+  for (const g of groups) {
+    const v = out.get(g.id)!
+    if ((seen.get(v) || 0) > 1) out.set(g.id, `${v} · ${g.location || ''} ${g.id.slice(0, 4)}`.replace(/ +/g, ' ').trim())
+  }
+  return out
 }

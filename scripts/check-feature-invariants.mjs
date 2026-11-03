@@ -16,6 +16,8 @@ const FEATURES = [
   ['Payments: change-plan picker', `${D}/payments/SubscriptionActions.tsx`, ['plan-switcher', 'plan-change-preview']],
   ['Parents: family cards', `${D}/parents/ParentsTable.tsx`, ['parents-cards']],
   ['Players: class sheets', `${D}/players/PlayersTable.tsx`, ['players-squads']],
+  // Two classes with the same name are two sheets, not one (No.1 GK, 3 Nov 2026).
+  ['Players: same-named classes kept apart', `${D}/players/page.tsx`, ['classLabels(', 'deriveActiveClassNames(p.enrolments, labels)', 'group:training_groups(id, name)']],
   ['Players: who has paid on each class sheet', `${D}/players/PlayersTable.tsx`, ['data-testid="squad-pay"', 'function squadPay(']],
   ['Plans & Pricing: plans by type', `${D}/plans/PlanManager.tsx`, ['plans-type-list']],
   ['Classes: quick filters', `${D}/groups/page.tsx`, ['classes-quick-filters']],
