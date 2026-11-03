@@ -34,7 +34,7 @@ export default async function ConfirmSubscriptionPage({
       parent:profiles!subscriptions_parent_id_fkey(email),
       player:players(id, first_name, last_name, enrolments(status, training_groups(day_of_week))),
       plan:subscription_plans(id, name, amount, sessions_per_week),
-      org:organisations(id, name, slug, primary_color, logo_url, quarterly_billing_enabled, quarterly_discount_percent)
+      org:organisations(id, name, slug, primary_color, logo_url, quarterly_billing_enabled, quarterly_discount_percent, contact_email, contact_phone)
     `)
     .eq('invite_token', token)
     .maybeSingle()
@@ -46,6 +46,15 @@ export default async function ConfirmSubscriptionPage({
   // Already done: never bounce to /dashboard (a parent with no password lands on sign-in and goes
   // round in circles, No.1 GK 29 Oct 2026). Offer the emailed login link instead.
   const parentEmail = ((sub.parent as unknown as { email: string | null } | null)?.email) || ''
+  // The academy removed the child and withdrew this invite (src/lib/never-confirmed.ts removeInvitedChild).
+  // Say so, and if the months the child came are still owed, offer that bill's pay link.
+  if (!sub.invite_confirmed_at && (sub.status === 'canceled' || sub.status === 'cancelled')) {
+    const { openBackMonthsBill } = await import('@/lib/never-confirmed')
+    const bill = await openBackMonthsBill(admin, sub.id as string)
+    const o = sub.org as unknown as { name: string; contact_email?: string | null; contact_phone?: string | null } | null
+    const p = sub.player as unknown as { first_name: string } | null
+    return <WithdrawnScreen academy={o?.name || 'The academy'} child={p?.first_name || 'Your child'} contact={[o?.contact_email, o?.contact_phone].filter(Boolean).join(' · ')} bill={bill} />
+  }
   if (sub.invite_confirmed_at || sub.status !== 'pending_migration') {
     return <AlreadyConfirmedScreen email={parentEmail} />
   }
@@ -117,6 +126,26 @@ function AlreadyConfirmedScreen({ email }: { email: string }) {
           You&apos;ve already done this, nothing more to do. To open your account, we&apos;ll email you a login link.
         </p>
         <EmailLoginLink email={email} />
+      </div>
+    </div>
+  )
+}
+
+function WithdrawnScreen({ academy, child, contact, bill }: { academy: string; child: string; contact: string; bill: { id: string; amount: number; description: string } | null }) {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-[#141414] border border-[#1e1e1e] rounded-2xl p-8 text-center" data-testid="invite-withdrawn">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#4ecde6]">{academy}</p>
+        <h1 className="mt-2 text-xl font-bold text-white">This invite has been withdrawn</h1>
+        <p className="mt-2 text-sm text-white/60">{child}&apos;s place is no longer being held. To come back, contact the academy.</p>
+        {bill && bill.amount > 0 && (
+          <div className="mt-5 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-left">
+            <p className="text-sm font-semibold text-white">£{bill.amount.toFixed(2)} still to pay</p>
+            <p className="mt-0.5 text-xs text-white/60">{bill.description}</p>
+            <a href={`/pay/${bill.id}`} className="mt-3 inline-block rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-black">Pay £{bill.amount.toFixed(2)} now</a>
+          </div>
+        )}
+        {contact && <p className="mt-5 text-xs text-white/40">{contact}</p>}
       </div>
     </div>
   )

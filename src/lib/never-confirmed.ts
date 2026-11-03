@@ -119,17 +119,25 @@ export async function prepareBackMonthsBill(db: SupabaseClient, orgId: string, p
     payUrl: `${base}/pay/${billId}`,
     setupUrl: sub?.invite_token ? `${base}/confirm-subscription/${sub.invite_token}` : null,
     /** Record how it went to the parent, so the page shows "(bill sent)". */
-    markSent: async (how: 'emailed' | 'whatsapp') => {
+    markSent: async (how: 'emailed' | 'whatsapp', withInvite = true) => {
       await db.from('payments').update({ notes: `${NOTE(owed.subId)} ${owed.months.join(',')} · ${how} ${new Date().toISOString().slice(0, 10)}` }).eq('id', billId)
-      if (sub?.invite_token) await db.from('subscriptions').update({ invite_sent_at: new Date().toISOString() }).eq('id', owed.subId)
+      if (withInvite && sub?.invite_token) await db.from('subscriptions').update({ invite_sent_at: new Date().toISOString() }).eq('id', owed.subId)
     },
   }
 }
 
-export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, playerId: string, appUrl: string): Promise<{ ok: true; amount: number; label: string; to: string } | { ok: false; error: string; status: number }> {
+type BillSent = { ok: true; amount: number; label: string; to: string } | { ok: false; error: string; status: number }
+
+export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, playerId: string, appUrl: string): Promise<BillSent> {
   const b = await prepareBackMonthsBill(db, orgId, playerId, appUrl)
   if (!b.ok) return b
-  const { owed, child, org, parent, payUrl, setupUrl } = b
+  return emailBackMonthsBill(b, true)
+}
+
+/** The bill email. withInvite=false (the child was removed): only what's owed and Pay now, no monthly payment link. */
+async function emailBackMonthsBill(b: Extract<Awaited<ReturnType<typeof prepareBackMonthsBill>>, { ok: true }>, withInvite: boolean): Promise<BillSent> {
+  const { owed, child, org, parent, payUrl } = b
+  const setupUrl = withInvite ? b.setupUrl : null
   const to = String(parent?.email || '').trim()
   if (!to || to.endsWith('@theplayerportal.net')) return { ok: false, error: 'There is no email on file for this parent.', status: 400 }
   const academy = (org?.name as string | undefined) || 'Your academy'
@@ -142,8 +150,8 @@ export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, play
     html: `
 <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#111;line-height:1.5">
   <p>Hi ${esc(first)},</p>
-  <p>${esc(child)} has been coming to ${esc(academy)}, but the monthly payment was never set up, so <strong>${esc(owed.label)}</strong> hasn't been paid: <strong>${gbp}</strong> (${owed.months.length} × £${(owed.amount / owed.months.length).toFixed(2)}, ${esc(owed.planName)}).</p>
-  <p><strong>1. Pay what's owed</strong></p>
+  <p>${esc(child)} ${withInvite ? 'has been coming' : 'came'} to ${esc(academy)}, but the monthly payment was never set up, so <strong>${esc(owed.label)}</strong> hasn't been paid: <strong>${gbp}</strong> (${owed.months.length} × £${(owed.amount / owed.months.length).toFixed(2)}, ${esc(owed.planName)}).</p>
+  ${withInvite ? `<p><strong>1. Pay what's owed</strong></p>` : ''}
   ${btn(payUrl, `Pay ${gbp} now`, true)}
   ${setupUrl ? `<p><strong>2. Set up the monthly payment</strong> so it comes off automatically from now on.</p>${btn(setupUrl, 'Set up monthly payment', false)}` : ''}
   <p style="color:#555;font-size:14px">Already paid us another way? Reply to this email and we'll sort it${org?.contact_phone ? `, or call ${esc(org.contact_phone as string)}` : ''}.</p>
@@ -151,6 +159,50 @@ export async function sendBackMonthsBill(db: SupabaseClient, orgId: string, play
 </div>`,
   })
   if (!mail.success) return { ok: false, error: `The email to ${to} didn't send. Check the address is right, then try again.`, status: 502 }
-  await b.markSent('emailed')
+  await b.markSent('emailed', withInvite)
   return { ok: true, amount: owed.amount, label: owed.label, to }
+}
+
+/**
+ * Remove from class a child who was invited and never confirmed (John, 3 Nov 2026: "how do the
+ * guys remove a player who hasn't been coming, that was invited?"). Before, Remove only cancelled
+ * the class place: the invite stayed live, the 3/7/14-day reminders kept going, the parent could
+ * still set up a monthly payment for a class the child had left, and the months owed vanished
+ * from view because they only count while the child is in a class.
+ *
+ * In order: the bill for the months owed is made while the child is still in the class (so it
+ * stays on Payments as unpaid with its pay link), emailed if the academy ticked it, the class
+ * place is cancelled, and if the child is in no other class the invite is withdrawn (status
+ * canceled: reminders stop, the link shows "withdrawn" and the pay link, confirming is refused).
+ * Charges nothing. The same for every academy.
+ */
+export async function removeInvitedChild(db: SupabaseClient, orgId: string, playerId: string, enrolmentId: string, opts: { sendBill: boolean; appUrl: string }): Promise<
+  | { ok: true; owed: number; label: string; billSentTo: string | null; billError: string | null; withdrawn: number; groupId: string | null; wasActive: boolean }
+  | { ok: false; error: string; status: number }
+> {
+  const { data: enr } = await db.from('enrolments').select('id, player_id, group_id, status').eq('id', enrolmentId).maybeSingle()
+  if (!enr || enr.player_id !== playerId) return { ok: false, error: 'That class place was not found.', status: 404 }
+  const bill = await prepareBackMonthsBill(db, orgId, playerId, opts.appUrl)
+  let billSentTo: string | null = null, billError: string | null = null
+  if (bill.ok && opts.sendBill) {
+    const sent = await emailBackMonthsBill(bill, false)
+    if (sent.ok) billSentTo = sent.to
+    else billError = sent.error
+  }
+  const { error: cancelErr } = await db.from('enrolments').update({ status: 'cancelled' }).eq('id', enrolmentId)
+  if (cancelErr) return { ok: false, error: 'Could not remove them from the class. Please try again.', status: 500 }
+  const { count } = await db.from('enrolments').select('id', { count: 'exact', head: true }).eq('player_id', playerId).in('status', ['active', 'pending'])
+  let withdrawn = 0
+  if (!count) {
+    const { data: gone } = await db.from('subscriptions').update({ status: 'canceled', canceled_at: new Date().toISOString() })
+      .eq('organisation_id', orgId).eq('player_id', playerId).eq('status', 'pending_migration').is('invite_confirmed_at', null).select('id')
+    withdrawn = gone?.length ?? 0
+  }
+  return { ok: true, owed: bill.ok ? bill.owed.amount : 0, label: bill.ok ? bill.owed.label : '', billSentTo, billError, withdrawn, groupId: (enr.group_id as string | null) ?? null, wasActive: enr.status === 'active' }
+}
+
+/** The withdrawn invite's open bill for the months owed, if there is one: for the parent's old link. */
+export async function openBackMonthsBill(db: SupabaseClient, subId: string): Promise<{ id: string; amount: number; description: string } | null> {
+  const { data } = await db.from('payments').select('id, amount, amount_paid, description, status').like('notes', `${NOTE(subId)}%`).in('status', OPEN_BILL).limit(1).maybeSingle()
+  return data ? { id: data.id as string, amount: Number(data.amount) - Number(data.amount_paid || 0), description: String(data.description || '') } : null
 }

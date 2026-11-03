@@ -54,6 +54,11 @@ export interface ClassRosterRowProps {
   failingSubIds?: string[]
   /** What the child owes, shown in the Remove pop-up. */
   outstanding?: string | null
+  /** Invited and never confirmed (admins only): Remove also withdraws the invite and keeps what's owed. */
+  invitePending?: boolean
+  /** The months owed on that invite (src/lib/never-confirmed.ts), e.g. 114 and "Aug–Oct 2026". */
+  owedAmount?: number | null
+  owedLabel?: string | null
 }
 
 export default function ClassRosterRow({
@@ -71,6 +76,9 @@ export default function ClassRosterRow({
   menuOnly = false,
   failingSubIds = [],
   outstanding = null,
+  invitePending = false,
+  owedAmount = null,
+  owedLabel = null,
 }: ClassRosterRowProps) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -91,10 +99,44 @@ export default function ClassRosterRow({
   }, [menuOpen])
 
   const [cancelMembership, setCancelMembership] = useState(true)
+  const owes = invitePending && (owedAmount ?? 0) > 0
+  const [sendBill, setSendBill] = useState(true)
+  const owedGbp = `£${(owedAmount ?? 0).toFixed(2)}`
+
+  // Invited, never confirmed: one server step keeps what's owed as a bill (emailed if ticked), takes
+  // them off the class and withdraws the invite (src/lib/never-confirmed.ts removeInvitedChild).
+  async function removeInvited() {
+    const res = await fetch(`/api/admin/players/${playerId}/remove-invited`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enrolmentId, sendBill: owes && sendBill }),
+    }).catch(() => null)
+    const data = res ? await res.json().catch(() => ({})) : {}
+    if (!res || !res.ok) {
+      setError((data as { error?: string }).error || 'Could not remove them. Please try again.')
+      setRemoving(false)
+      return
+    }
+    const r = data as { billError?: string | null; groupId?: string | null; wasActive?: boolean }
+    if (r.wasActive && r.groupId) {
+      fetch('/api/waitlist/promote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group_id: r.groupId }) }).catch(() => {})
+    }
+    if (r.billError) {
+      setError(`Removed and the invite withdrawn, but the bill email didn't send: ${r.billError} The ${owedGbp} bill is on Payments with its pay link.`)
+      setRemoving(false)
+      router.refresh()
+      return
+    }
+    setConfirmOpen(false)
+    setMenuOpen(false)
+    setRemoving(false)
+    router.refresh()
+  }
 
   async function handleRemove() {
     setRemoving(true)
     setError(null)
+    if (invitePending) return removeInvited()
     const supabase = createClient()
 
     // Mirror the existing EnrolmentStatusToggle pattern exactly: read the
@@ -321,12 +363,29 @@ export default function ClassRosterRow({
             </div>
 
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-3 text-xs text-white/60 space-y-1">
+              {invitePending ? (
+                <>
+                  <p data-testid="roster-remove-invite-note">
+                    <span className="text-white/80 font-semibold">Invite:</span>{' '}
+                    {otherActiveClasses > 0
+                      ? `kept, because ${playerFirstName} is still in another class.`
+                      : 'withdrawn. The reminder emails stop, and the parent\'s link no longer sets up a monthly payment. Nothing is charged.'}
+                  </p>
+                  {owes && (
+                    <p data-testid="roster-remove-still-owed">
+                      <span className="text-red-300 font-semibold">Still owed:</span>{' '}
+                      {owedGbp}{owedLabel ? ` for ${owedLabel}` : ''}, when {playerFirstName} was coming. This stays on Payments as unpaid with its pay link.
+                    </p>
+                  )}
+                </>
+              ) : (
               <p>
                 <span className="text-white/80 font-semibold">Subscription:</span>{' '}
                 {failingSubIds.length > 0 && cancelMembership
                   ? 'Cancelled in Stripe as well (ticked below).'
                   : 'Not affected — the parent will continue to be billed as before. Manage their subscription separately if needed.'}
               </p>
+              )}
               {otherActiveClasses > 0 && (
                 <p>
                   <span className="text-white/80 font-semibold">Other classes:</span>{' '}
@@ -335,7 +394,17 @@ export default function ClassRosterRow({
               )}
             </div>
 
-            {failingSubIds.length > 0 && (
+            {owes && (
+              <label className="flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-3 cursor-pointer" data-testid="roster-remove-send-bill">
+                <input type="checkbox" checked={sendBill} onChange={(e) => setSendBill(e.target.checked)} className="mt-0.5 accent-red-500" />
+                <span className="text-sm text-white">
+                  Email the parent the {owedGbp} bill
+                  <span className="mt-0.5 block text-xs text-white/65">One email: what&apos;s owed and a Pay now button. No monthly payment link.</span>
+                </span>
+              </label>
+            )}
+
+            {failingSubIds.length > 0 && !invitePending && (
               <label className="flex items-start gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-3 cursor-pointer" data-testid="roster-remove-cancel-membership">
                 <input type="checkbox" checked={cancelMembership} onChange={(e) => setCancelMembership(e.target.checked)} className="mt-0.5 accent-red-500" />
                 <span className="text-sm text-white">
@@ -361,7 +430,7 @@ export default function ClassRosterRow({
                 data-testid="roster-remove-confirm-button"
                 className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl bg-red-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
               >
-                {removing ? 'Removing…' : failingSubIds.length > 0 && cancelMembership ? 'Remove and cancel membership' : 'Remove from class'}
+                {removing ? 'Removing…' : owes && sendBill ? 'Remove and send bill' : failingSubIds.length > 0 && cancelMembership && !invitePending ? 'Remove and cancel membership' : 'Remove from class'}
               </button>
               <button
                 type="button"

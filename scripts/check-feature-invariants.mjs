@@ -171,6 +171,11 @@ const FEATURES = [
   // ── 2 Nov 2026 (John: "build"): the three missing academy buttons
   ['Never confirmed: months owed worked out (this month excluded)', 'src/lib/never-confirmed.ts', ['export function backMonths(', 'ym(d) < thisMonth', "like('notes', 'back-months:%')", 'Pay ${gbp} now', 'Set up monthly payment']],
   ['Never confirmed: child page red box + button', `${A}/dashboard/players/[id]/page.tsx`, ['data-testid="never-confirmed"', 'kind="owed"']],
+  // Remove from class on an invited, never-confirmed child withdraws the invite and keeps what's owed (John, 3 Nov 2026).
+  ['Never confirmed: Remove keeps the bill and withdraws the invite', 'src/lib/never-confirmed.ts', ['export async function removeInvitedChild(', "update({ status: 'canceled'", "eq('status', 'pending_migration').is('invite_confirmed_at', null)", 'emailBackMonthsBill(bill, false)']],
+  ['Never confirmed: Remove pop-up says invite withdrawn + still owed', `${D}/groups/[id]/ClassRosterRow.tsx`, ['roster-remove-invite-note', 'roster-remove-still-owed', 'roster-remove-send-bill', '/remove-invited`']],
+  ['Never confirmed: register passes the invite to Remove', `${D}/groups/[id]/ClassRegister.tsx`, ["invitePending={canCancelMembership && c.chase === 'invite'}"]],
+  ['Never confirmed: withdrawn invite link says so + pay link', `${A}/confirm-subscription/[token]/page.tsx`, ['data-testid="invite-withdrawn"', 'openBackMonthsBill(']],
   ['Never confirmed: register box shows the same figure as the button', `${A}/dashboard/groups/[id]/page.tsx`, ['outstanding: owedByPlayer.get(p.id) ?']],
   ['Never confirmed: daily academy email uses the same figure', 'src/lib/not-paying-alert.ts', ['loadNeverConfirmed(', 'back.amount']],
   ['Never confirmed: register + Enrolments button', `${A}/dashboard/enrolments/page.tsx`, ['kind="owed" amount={owedByPlayer.get(e.player_id)!.amount}']],

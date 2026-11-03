@@ -51,6 +51,8 @@ export interface RegisterChild {
   chase?: ChaseKind
   /** Coming on an invite never confirmed: what's owed for the months before this one (src/lib/never-confirmed.ts). */
   owedAmount?: number | null
+  /** "Aug–Oct 2026": the months owedAmount covers. */
+  owedLabel?: string | null
   /** Emails to this family bounced or are blocked (src/lib/email-not-reaching.ts): WhatsApp or call. */
   emailNotReaching?: boolean
   otherActiveClasses: number
@@ -237,7 +239,8 @@ export default function ClassRegister({
                     <span className="ml-auto flex items-center gap-1 text-[11px] text-white/40">Move or remove
                       <ClassRosterRow menuOnly enrolmentId={c.enrolmentId} playerId={c.playerId} playerFirstName={c.firstName} playerLastName={c.lastName} playerPhotoUrl={null}
                         parentId={c.parentId} parentName={c.parentName} className={className} otherActiveClasses={c.otherActiveClasses} groupId={groupId} organisationId={organisationId}
-                        failingSubIds={canCancelMembership ? c.failingSubIds || [] : []} outstanding={c.outstanding || null} />
+                        failingSubIds={canCancelMembership ? c.failingSubIds || [] : []} outstanding={c.outstanding || null}
+                        invitePending={canCancelMembership && c.chase === 'invite'} owedAmount={c.owedAmount ?? null} owedLabel={c.owedLabel ?? null} />
                     </span>
                   </div>
                 </div>

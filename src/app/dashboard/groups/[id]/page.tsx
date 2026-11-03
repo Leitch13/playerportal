@@ -202,6 +202,7 @@ export default async function GroupDetailPage({
       failingSubIds: failingSubsByPlayer.get(p.id) || [],
       chase: role === 'admin' ? chaseKind(subStatusesByPlayer.get(p.id) || []) : null,
       owedAmount: owedByPlayer.get(p.id)?.amount ?? null,
+      owedLabel: owedByPlayer.get(p.id)?.label ?? null,
       emailNotReaching: !!contact?.email && notReachingEmails.has(String(contact.email).trim().toLowerCase()),
       otherActiveClasses: otherActiveCountById.get(p.id) || 0,
     }
