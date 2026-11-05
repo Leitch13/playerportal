@@ -227,7 +227,6 @@ export default async function PublicBookingPage({
   // through several hardcoded strings. The class page / trial form shows the
   // actual price (if any) at booking time — the CTAs just invite the trial.
   const trialWord = 'Trial'
-  const trialCtaShort = 'Book Trial'
 
   // Does this academy actually offer a FREE trial on any class? Only classes
   // with no trial price (and not a paid-only type) qualify. If none do, every
@@ -385,6 +384,8 @@ export default async function PublicBookingPage({
   const programmeName = programmeOnly && typeof sp.programme === 'string' ? programmeTitle(sp.programme) : null
 
   const primaryColor = org.primary_color || '#4ecde6'
+  // Dark text on a light brand colour (Lewis Black's is white), white text on a dark one.
+  const textOnBrand = isLightColour(primaryColor) ? '#0a0a0a' : '#ffffff'
 
   // ── Grouped classes view (busy academies only) ──
   // Above this many classes, one full-size card per bookable slot makes the
@@ -618,48 +619,40 @@ export default async function PublicBookingPage({
           </section>
         )}
 
-        {/* Trial CTA Banner — neutral copy, never implies free/no-payment */}
+        {/* Trial CTA — neutral copy, never implies free/no-payment. A plain card in the
+            academy's own colour (was a green gradient + emoji + "NEW" badge; John, 5 Nov 2026). */}
         {!useTidy && (<>
         <section>
           <Link
             href={trialHref}
-            className="group block relative overflow-hidden rounded-2xl border-2 p-4 sm:p-6 transition-all hover:scale-[1.01] hover:shadow-xl"
-            style={{ borderColor: '#10b981', background: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' }}
+            className="group flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-2xl border border-[#262626] bg-[#141414] p-5 sm:p-6 transition-colors hover:border-[#3a3a3a]"
           >
-            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[80px] bg-emerald-400/20" />
-            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-white">
-              <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-sm text-2xl sm:text-3xl shrink-0">
-                &#9889;
-              </div>
-              <div className="flex-1 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white">New</span>
-                </div>
-                <h3 className="text-base sm:text-xl font-extrabold">Book a {trialWord} Session</h3>
-                <p className="text-white/70 text-xs sm:text-sm mt-0.5">{trialSubtitle}</p>
-              </div>
-              <div className="shrink-0 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white text-emerald-900 font-bold text-sm transition-transform group-hover:scale-105">
-                {trialCtaShort} &rarr;
-              </div>
+            <div className="flex-1">
+              <h3 className="text-base sm:text-lg font-bold tracking-tight text-white">Not sure yet? Try a session first.</h3>
+              <p className="mt-1 text-sm text-gray-400">{trialSubtitle}</p>
             </div>
+            <span
+              className="shrink-0 self-start sm:self-auto rounded-xl px-5 py-2.5 text-sm font-semibold transition-opacity group-hover:opacity-90"
+              style={{ backgroundColor: primaryColor, color: textOnBrand }}
+            >
+              Book a {trialWord.toLowerCase()}
+            </span>
           </Link>
         </section>
 
-        {/* How It Works */}
+        {/* How it works — three plain steps (was emoji cards with number circles). */}
         <section>
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-white">How It Works</h2>
-          <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Three simple steps to get started</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-4 sm:mb-5">How it works</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-[#262626]">
             {[
-              { step: 1, title: `Book a ${trialWord}`, desc: 'Try a session with no commitment', icon: '&#128197;' },
-              { step: 2, title: 'Join a Class', desc: 'Pick the sessions that suit your schedule', icon: '&#9917;' },
-              { step: 3, title: 'Track Progress', desc: 'Watch your child develop with regular coach reports', icon: '&#128200;' },
-            ].map((item) => (
-              <div key={item.step} className="rounded-2xl border border-[#1e1e1e] bg-[#141414] p-4 sm:p-6 text-center">
-                <div className="mx-auto mb-3 sm:mb-4 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full text-sm font-extrabold text-[#0a0a0a]" style={{ backgroundColor: primaryColor }}>{item.step}</div>
-                <div className="text-xl sm:text-2xl mb-2 sm:mb-3" dangerouslySetInnerHTML={{ __html: item.icon }} />
-                <h3 className="font-bold text-sm sm:text-base text-white mb-1">{item.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-400">{item.desc}</p>
+              { step: 1, title: `Book a ${trialWord.toLowerCase()}`, desc: 'Come along to one session. No commitment.' },
+              { step: 2, title: 'Join a class', desc: 'Pick the day and time that suits you.' },
+              { step: 3, title: 'Watch them progress', desc: 'Coach reports after sessions, all in one app.' },
+            ].map((item, i) => (
+              <div key={item.step} className={`py-4 sm:py-5 sm:pr-5 ${i > 0 ? 'border-t sm:border-t-0 sm:border-l border-[#262626] sm:pl-5' : ''}`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500 mb-2">Step {item.step}</p>
+                <h3 className="font-semibold text-[15px] text-white mb-1">{item.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -852,7 +845,7 @@ export default async function PublicBookingPage({
                     {event.start_time && <div><span className="inline-block mr-1.5">&#128336;</span>{event.start_time}{event.end_time && ` — ${event.end_time}`}</div>}
                     {event.location && <div><span className="inline-block mr-1.5">&#128205;</span>{event.location}</div>}
                   </div>
-                  <Link href={`/auth/signup?org=${slug}`} className="mt-4 block w-full text-center py-2 rounded-lg font-medium text-white transition-opacity hover:opacity-90" style={{ backgroundColor: primaryColor }}>Book Now</Link>
+                  <Link href={`/auth/signup?org=${slug}`} className="mt-4 block w-full text-center py-2 rounded-lg font-medium transition-opacity hover:opacity-90" style={{ backgroundColor: primaryColor, color: textOnBrand }}>Book Now</Link>
                 </div>
               ))}
             </div>
@@ -979,7 +972,7 @@ export default async function PublicBookingPage({
           <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-white">Ready to get started?</h2>
           <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Sign up today and book your child&apos;s first class</p>
           <div className="flex flex-wrap gap-3 justify-center items-center">
-            <Link href={`/auth/signup?org=${slug}`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base text-white transition-transform hover:scale-105" style={{ backgroundColor: primaryColor }}>Sign Up Free</Link>
+            <Link href={`/auth/signup?org=${slug}`} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base transition-transform hover:scale-105" style={{ backgroundColor: primaryColor, color: textOnBrand }}>Sign Up Free</Link>
             <Link href={trialHref} className="px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base border-2 transition-transform hover:scale-105" style={{ borderColor: primaryColor, color: primaryColor }}>Book a {trialWord}</Link>
             <EnquiryButton orgId={org.id} academyName={org.name} primaryColor={primaryColor} />
           </div>
@@ -1020,4 +1013,14 @@ function resolveBookingFaqs(raw: unknown): { q: string; a: string }[] {
     .filter((f): f is { q: string; a: string } => !!f && typeof f === 'object' && typeof (f as { q?: unknown }).q === 'string' && typeof (f as { a?: unknown }).a === 'string')
     .map((f) => ({ q: f.q.trim(), a: f.a.trim() }))
     .filter((f) => f.q && f.a)
+}
+
+/** True for a light hex colour (white, pale cyan), so text on it should be dark. */
+function isLightColour(hex: string): boolean {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+  const n = parseInt(full.slice(0, 6), 16)
+  if (Number.isNaN(n)) return false
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6
 }
