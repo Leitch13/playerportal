@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { deriveTrialSource, SOURCE_LABELS, type CanonicalSource } from '@/lib/trial-source-derive'
 import { fbTrackSingle } from '@/lib/meta-pixel'
@@ -41,6 +41,8 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
   const [childAge, setChildAge] = useState('')
   const [phone, setPhone] = useState('')
   const [honeypot, setHoneypot] = useState('')
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const lastPayload = useRef<string | null>(null)
   const [notes, setNotes] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -211,10 +213,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
 
     // Saved on the server after the door checks (src/app/api/trials/book, src/lib/booking-guard.ts).
     // Before 5 Nov 2026 this wrote straight from the browser and fake "A / a@gmail.com" trials got through.
-    const bookRes = await fetch('/api/trials/book', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const payload = JSON.stringify({
         orgId,
         groupId: groupId || null,
         parentName,
@@ -229,8 +228,9 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
         trialSource: sourceDerived.trial_source,
         sourceDetail: sourceDerived.source_detail,
         referrerUrl: sourceDerived.referrer_url,
-      }),
-    }).catch(() => null)
+      })
+    lastPayload.current = payload
+    const bookRes = await fetch('/api/trials/book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload }).catch(() => null)
     if (!bookRes || !bookRes.ok) {
       const j = bookRes ? await bookRes.json().catch(() => ({})) : {}
       setError((j as { error?: string }).error || 'We couldn’t save your booking. Please check your connection and try again.')
@@ -238,77 +238,55 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       return
     }
 
-    // The confirmation email and the lead row are made by /api/trials/book on the server.
-
-    // P1.1 — Notify the academy (bell notification + email to org owner).
-    // Fire-and-forget; flag-gated server-side by TRIAL_ACADEMY_NOTIFY_ENABLED.
-    // Server resolves the trial via (organisation_id, parent_email,
-    // child_name) tuple within a 60s recency window — avoids the
-    // SELECT-after-INSERT RLS trap that anon clients hit.
-    fetch('/api/trials/notify-academy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        organisation_id: orgId,
-        parent_email: parentEmail,
-        child_name: childName,
-      }),
-    }).catch(() => {})
-
+    // Nothing is booked yet: the parent was emailed a confirm link. Tapping it books
+    // the trial and tells the academy (/api/trials/confirm, src/lib/trial-email-confirm.ts).
     setSuccess(true)
     fbTrackSingle(metaPixelId, 'Lead', { content_name: 'trial_booking_quick' })
     setLoading(false)
   }
 
+  async function resend() {
+    if (!lastPayload.current || resendState === 'sending') return
+    setResendState('sending')
+    const r = await fetch('/api/trials/book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: lastPayload.current }).catch(() => null)
+    if (r && r.ok) setResendState('sent')
+    else {
+      const j = r ? await r.json().catch(() => ({})) : {}
+      setResendState('idle')
+      setError((j as { error?: string }).error || 'We couldn’t send it again. Please try in a minute.')
+    }
+  }
+
   if (success) {
     return (
-      <div className="bg-white/[0.04] backdrop-blur rounded-2xl border border-white/[0.08] p-8 text-center">
-        <div className="text-5xl mb-4">&#127881;</div>
-        <h2 className="text-2xl font-extrabold mb-2">You&apos;re booked!</h2>
-        <p className="text-white/60 mb-6">
-          We&apos;ll be in touch at{' '}
-          <strong className="text-white/80">{parentEmail}</strong> to confirm{' '}
-          {childName}&apos;s trial session.
+      <div className="bg-white/[0.04] backdrop-blur rounded-2xl border border-white/[0.08] p-8 text-center" data-testid="trial-check-email">
+        <div className="text-5xl mb-4">&#9993;&#65039;</div>
+        <h2 className="text-2xl font-extrabold mb-2">Check your email</h2>
+        <p className="text-white/70 mb-2">
+          We&apos;ve sent a link to <strong className="text-white">{parentEmail}</strong>.
         </p>
-
-        {/* Calendar Links */}
-        <div className="mb-6">
-          <p className="text-xs text-white/40 mb-3 uppercase tracking-wider font-medium">Add to Calendar</p>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <a
-              href={toGoogleCalendarUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1] transition-colors"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.675 3 3 3.675 3 4.5v15c0 .825.675 1.5 1.5 1.5h15c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zm0 16.5h-15V8.25h15v11.25z" />
-              </svg>
-              Google Calendar
-            </a>
-            <a
-              href={toIcsDownload()}
-              download="trial-session.ics"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1] transition-colors"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              Apple Calendar
-            </a>
-          </div>
+        <p className="text-white/60 mb-6">
+          Tap <strong className="text-white/80">Confirm my trial</strong> in that email to book {childName}&apos;s place. It isn&apos;t booked until you do.
+        </p>
+        <p className="text-white/40 text-sm mb-4">Not there after a minute? Check your spam or junk folder.</p>
+        {error && <p className="text-red-300 text-sm mb-3">{error}</p>}
+        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+          <button
+            type="button"
+            onClick={resend}
+            disabled={resendState !== 'idle'}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1] disabled:opacity-60"
+          >
+            {resendState === 'sending' ? 'Sending…' : resendState === 'sent' ? 'Sent again ✓' : 'Send it again'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setSuccess(false); setResendState('idle'); setError('') }}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:text-white"
+          >
+            Wrong email? Change it
+          </button>
         </div>
-
-        <Link
-          href={`/book/${slug}`}
-          className="inline-block px-6 py-2.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02]"
-          style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}
-        >
-          View All Classes &rarr;
-        </Link>
       </div>
     )
   }

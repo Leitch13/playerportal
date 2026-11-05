@@ -4,10 +4,12 @@ import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { checkSignupIp } from '@/lib/ip-reputation'
 import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
+import { AWAITING_ACTION, newToken, confirmUrl, type PendingTrial } from '@/lib/trial-email-confirm'
 
 /**
- * Every free trial from a booking page is saved here, on the server, after the
- * door checks. Before 5 Nov 2026 the form saved straight from the browser and a
+ * Every free trial from a booking page comes here first. After the door checks
+ * the parent is emailed a confirm link; the trial is only booked (and the academy
+ * told) when they tap it: /api/trials/confirm. Before 5 Nov 2026 the form saved straight from the browser and a
  * fake "A / a@gmail.com" trial reached Pro Football Coaching (the same pattern
  * hit Talent on 7 Sep and WLFA on 7 Oct). See src/lib/booking-guard.ts.
  *
@@ -17,7 +19,7 @@ import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
 
 const ALERTS_TO = 'johnleitch970@gmail.com'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const PER_IP_PER_HOUR = 3
+const PER_IP_PER_HOUR = 5
 
 const db = () =>
   createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -105,7 +107,7 @@ export async function POST(request: NextRequest) {
   }
 
   const sb = db()
-  const { data: org } = await sb.from('organisations').select('id,name,is_published,terms_text').eq('id', orgId).maybeSingle()
+  const { data: org } = await sb.from('organisations').select('id,name,slug,primary_color,is_published,terms_text').eq('id', orgId).maybeSingle()
   if (!org || !org.is_published) return NextResponse.json({ error: 'This academy isn’t taking bookings.' }, { status: 404 })
   let className: string | undefined
   if (groupId) {
@@ -134,11 +136,12 @@ export async function POST(request: NextRequest) {
   }
 
   // 4. Several bookings from one connection in an hour (survives server restarts).
+  //    Counts confirm emails sent, so "Send it again" a couple of times is fine.
   if (ip !== 'unknown') {
     const { count } = await sb
       .from('audit_log')
       .select('id', { count: 'exact', head: true })
-      .eq('action', 'trial.booked')
+      .eq('action', AWAITING_ACTION)
       .eq('ip_address', ip)
       .gte('created_at', new Date(Date.now() - 3600000).toISOString())
     if ((count ?? 0) >= PER_IP_PER_HOUR) {
@@ -148,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 5. The same child booked onto the same class trial already.
+  // 5. The same child already has this class trial.
   if (groupId) {
     const { data: existing } = await sb
       .from('trial_bookings')
@@ -169,79 +172,61 @@ export async function POST(request: NextRequest) {
   for (let i = 0; i < txt.length; i++) h = ((h << 5) + h) ^ txt.charCodeAt(i)
   const versionHash = (h >>> 0).toString(16) + '-' + txt.length
 
-  const { data: row, error } = await sb
-    .from('trial_bookings')
-    .insert({
-      organisation_id: orgId,
-      training_group_id: groupId,
-      parent_name: body.parentName,
-      parent_email: body.email,
-      parent_phone: body.phone,
-      child_name: body.childName,
-      child_age: childAge,
-      preferred_date: sessionDate || null,
-      notes: s(raw.notes, 2000) || null,
-      terms_accepted_at: new Date().toISOString(),
-      terms_version_hash: versionHash,
-      trial_source: s(raw.trialSource, 60) || null,
-      source_detail: s(raw.sourceDetail, 300) || null,
-      referrer_url: s(raw.referrerUrl, 500) || null,
-    })
-    .select('id')
-    .single()
-
-  if (error) {
-    // The database refuses a trial for a full day (supabase/123_trial_needs_a_place.sql).
-    const msg = /class_full/.test(error.message)
-      ? 'Sorry, that day is now full. Please pick another date, or join the class waiting list.'
-      : 'We couldn’t save your booking. Please try again.'
-    if (!/class_full/.test(error.message)) console.error('[trials/book] insert failed', error.message)
-    return NextResponse.json({ error: msg }, { status: /class_full/.test(error.message) ? 409 : 500 })
+  // Nothing is booked yet: the parent gets a link, and only tapping it books the
+  // trial and tells the academy (src/lib/trial-email-confirm.ts).
+  const trial: PendingTrial = {
+    orgId,
+    orgName,
+    slug: String(org.slug),
+    groupId,
+    className: className ?? null,
+    parentName: body.parentName,
+    email: body.email,
+    phone: body.phone,
+    childName: body.childName,
+    childAge,
+    sessionDate: sessionDate || null,
+    notes: s(raw.notes, 2000) || null,
+    termsVersionHash: versionHash,
+    termsAcceptedAt: new Date().toISOString(),
+    trialSource: s(raw.trialSource, 60) || null,
+    sourceDetail: s(raw.sourceDetail, 300) || null,
+    referrerUrl: s(raw.referrerUrl, 500) || null,
+    ip: ip === 'unknown' ? null : ip,
+  }
+  const { token, hash } = newToken()
+  const { error: saveErr } = await sb.from('audit_log').insert({
+    organisation_id: null, // never on the academy's Audit page; the academy hears only once it's confirmed
+    action: AWAITING_ACTION,
+    entity_type: 'trial_booking',
+    ip_address: trial.ip,
+    details: { token_hash: hash, trial, country: verdict.country ?? null, isp: verdict.isp ?? null },
+  })
+  if (saveErr) {
+    console.error('[trials/book] could not save waiting booking', saveErr.message)
+    return NextResponse.json({ error: 'We couldn’t take your booking just now. Please try again.' }, { status: 500 })
   }
 
-  try {
-    await sb.from('audit_log').insert({
-      organisation_id: orgId,
-      action: 'trial.booked',
-      entity_type: 'trial_booking',
-      entity_id: row.id,
-      ip_address: ip === 'unknown' ? null : ip,
-      details: { country: verdict.country ?? null, isp: verdict.isp ?? null },
-    })
-  } catch { /* the booking stands */ }
-
-  // The parent's confirmation and the lead row, from what was saved — never from
-  // what the browser says (the old public email endpoint would mail anyone anything).
-  try {
-    const { sendEmail } = await import('@/lib/email')
-    const { trialConfirmationEmail } = await import('@/lib/email-templates')
-    await sendEmail({ to: body.email, ...trialConfirmationEmail({ parentName: body.parentName, childName: body.childName, academyName: orgName, className, date: sessionDate || undefined }) })
-  } catch (e) {
-    console.error('[trials/book] confirmation email failed', e)
-  }
-  try {
-    const [firstName, ...rest] = body.parentName.split(/\s+/)
-    const since = new Date(Date.now() - 7 * 86400000).toISOString()
-    const { data: dupe } = await sb.from('leads').select('id').eq('organisation_id', orgId).gte('created_at', since)
-      .not('status', 'in', '(enrolled,lost)').ilike('email', body.email).limit(1)
-    if (!dupe || dupe.length === 0) {
-      await sb.from('leads').insert({
-        organisation_id: orgId,
-        first_name: firstName,
-        last_name: rest.join(' ') || null,
-        email: body.email,
-        phone: body.phone,
-        child_name: body.childName,
-        child_age: childAge,
-        interested_in: className || null,
-        source: 'website',
-        status: 'trial_booked',
-        notes: s(raw.notes, 2000) || null,
-      })
-    }
-  } catch (e) {
-    console.error('[trials/book] lead row failed', e)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.theplayerportal.net'
+  const { sendEmail } = await import('@/lib/email')
+  const { trialConfirmLinkEmail } = await import('@/lib/email-templates')
+  const sent = await sendEmail({
+    to: body.email,
+    fromName: orgName,
+    ...trialConfirmLinkEmail({
+      parentName: body.parentName,
+      childName: body.childName,
+      academyName: orgName,
+      className,
+      date: sessionDate ? new Date(sessionDate + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : null,
+      url: confirmUrl(appUrl, String(org.slug), token),
+      accentColor: (org.primary_color as string | null) || undefined,
+    }),
+  })
+  if (!sent.success) {
+    console.error('[trials/book] confirm email failed', sent.error)
+    return NextResponse.json({ error: `We couldn’t send an email to ${body.email}. Please check it’s right and try again.` }, { status: 502 })
   }
 
-  return NextResponse.json({ ok: true, id: row.id })
+  return NextResponse.json({ ok: true, awaitingEmail: true })
 }

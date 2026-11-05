@@ -143,6 +143,34 @@ export function trialConfirmationEmail(params: {
   }
 }
 
+/** Free trial: one tap to confirm before it counts (5 Nov 2026, see src/lib/trial-email-confirm.ts). */
+export function trialConfirmLinkEmail(params: {
+  parentName: string
+  childName: string
+  academyName: string
+  className?: string | null
+  date?: string | null
+  url: string
+  accentColor?: string
+}) {
+  const accent = params.accentColor || '#4ecde6'
+  const e = (x: string | null | undefined) => escapeHtml(String(x ?? ''))
+  return {
+    subject: `Confirm ${params.childName}'s free trial at ${params.academyName}`,
+    html: baseLayout(`
+      <h2 style="margin:0 0 8px;color:#ffffff;font-size:22px">One tap to confirm</h2>
+      <p style="color:#aaa;margin:0 0 20px">Hi ${e(params.parentName)},</p>
+      <p style="color:#aaa;line-height:1.6">Thanks for booking a free trial for <strong>${e(params.childName)}</strong> at <strong>${e(params.academyName)}</strong>. Please confirm it's you and we'll hold the place.</p>
+      ${params.className || params.date ? `<div style="background:#1a1a1a;border-radius:12px;padding:16px;margin:20px 0">
+        ${params.className ? `<p style="margin:0;font-size:14px;color:#aaa"><strong>Class:</strong> ${e(params.className)}</p>` : ''}
+        ${params.date ? `<p style="margin:8px 0 0;font-size:14px;color:#aaa"><strong>Date:</strong> ${e(params.date)}</p>` : ''}
+      </div>` : ''}
+      ${ctaButton('Confirm my trial', params.url, accent)}
+      <p style="color:#666;font-size:13px;line-height:1.6">The trial isn't booked until you confirm. The link works for 7 days. If you didn't book this, ignore this email and nothing happens.</p>
+    `, accent, params.academyName),
+  }
+}
+
 /** A paid trial: what was booked, when, and what was paid. Sent the moment the payment lands. */
 export function paidTrialConfirmationEmail(params: {
   parentName: string
