@@ -2139,7 +2139,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       const priceProductId = typeof firstItem?.price?.product === 'string'
         ? firstItem.price.product
         : (firstItem?.price?.product as Stripe.Product | null | undefined)?.id ?? null
-      if (priceProductId) {
+      // A plan set on the PRICE wins over the product's: one product can carry
+      // several prices (Jamie Allan's £450 sits on the same product as G&G's
+      // £35), and reading only the product flipped Jamie back to the shared
+      // plan on every invoice (2-5 Nov 2026).
+      const pricePlanId = (firstItem?.price?.metadata as Record<string, string> | undefined)?.platform_plan_id || null
+      if (pricePlanId) {
+        resolvedPlanId = pricePlanId
+      } else if (priceProductId) {
         const product = await stripe.products.retrieve(priceProductId)
         const metaPlanId = product.metadata?.platform_plan_id || null
         const metaPlanSlug = product.metadata?.platform_plan_slug || null
