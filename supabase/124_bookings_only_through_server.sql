@@ -23,6 +23,7 @@ DROP POLICY IF EXISTS "trial_bookings_insert_authenticated" ON public.trial_book
 
 DROP POLICY IF EXISTS "camp_bookings_insert_anon_published" ON public.camp_bookings;
 DROP POLICY IF EXISTS "camp_bookings_insert_authenticated_published" ON public.camp_bookings;
+DROP POLICY IF EXISTS "Public book camps" ON public.camp_bookings;
 
 -- Staff can still add a trial for their own academy from the dashboard.
 DROP POLICY IF EXISTS "trial_bookings_insert_staff" ON public.trial_bookings;
