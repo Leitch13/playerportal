@@ -238,38 +238,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       return
     }
 
-    // Send confirmation email (fire and forget)
-    fetch('/api/email/trial-confirmation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        parentName,
-        parentEmail,
-        childName,
-        academyName,
-        className: selectedGroup?.name,
-      }),
-    }).catch(() => {})
-
-    // Auto-create a lead in the pipeline (fire and forget)
-    const [firstName, ...lastParts] = parentName.trim().split(/\s+/)
-    fetch('/api/leads/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        organisation_id: orgId,
-        first_name: firstName,
-        last_name: lastParts.join(' ') || null,
-        email: parentEmail,
-        phone: phone || null,
-        child_name: childName,
-        child_age: childAge ? parseInt(childAge) : null,
-        interested_in: selectedGroup?.name || null,
-        source: 'website',
-        status: 'trial_booked',
-        notes: notes || null,
-      }),
-    }).catch(() => {})
+    // The confirmation email and the lead row are made by /api/trials/book on the server.
 
     // P1.1 — Notify the academy (bell notification + email to org owner).
     // Fire-and-forget; flag-gated server-side by TRIAL_ACADEMY_NOTIFY_ENABLED.

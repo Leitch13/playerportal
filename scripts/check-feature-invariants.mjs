@@ -33,6 +33,8 @@ const FEATURES = [
   // Booking door check (5 Nov 2026: fake "A / a@gmail.com" trial at Pro Football Coaching). See src/lib/booking-guard.ts.
   ['Bookings: free trials are saved by the server after the door check', `${A}/api/trials/book/route.ts`, ['checkBookingDetails(body)', 'checkLeadEmail(body.email', 'checkSignupIp(ip)', "action: 'trial.refused'", "action: 'trial.booked'"]],
   ['Bookings: the free trial form books through the server, phone required, never straight into the database', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ["fetch('/api/trials/book'", 'website: honeypot', '!phone.trim()']],
+  ['Bookings: the trial confirmation and lead are made on the server from what was saved', `${A}/api/trials/book/route.ts`, ['trialConfirmationEmail({ parentName: body.parentName', "status: 'trial_booked'"]],
+  ['Bookings: the public Enquire endpoint runs the door check', `${A}/api/leads/create/route.ts`, ['checkBookingDetails({', 'checkLeadEmail(em', 'checkSignupIp(ip)', "source !== 'website' || status !== 'new'"]],
   ['Bookings: paid trials run the door check', `${A}/api/trial-bookings/paid/route.ts`, ['checkBookingDetails({', 'checkLeadEmail(String(parentEmail)']],
   ['Bookings: whole-camp checkout runs the door check', `${A}/api/stripe/camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],
   ['Bookings: by-the-day camp checkout runs the door check', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],

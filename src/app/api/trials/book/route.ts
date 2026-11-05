@@ -107,9 +107,11 @@ export async function POST(request: NextRequest) {
   const sb = db()
   const { data: org } = await sb.from('organisations').select('id,name,is_published,terms_text').eq('id', orgId).maybeSingle()
   if (!org || !org.is_published) return NextResponse.json({ error: 'This academy isn’t taking bookings.' }, { status: 404 })
+  let className: string | undefined
   if (groupId) {
-    const { data: g } = await sb.from('training_groups').select('id').eq('id', groupId).eq('organisation_id', orgId).maybeSingle()
+    const { data: g } = await sb.from('training_groups').select('id,name').eq('id', groupId).eq('organisation_id', orgId).maybeSingle()
     if (!g) return NextResponse.json({ error: 'That class isn’t available. Please pick another.' }, { status: 400 })
+    className = (g.name as string | null) || undefined
   }
   const orgName = String(org.name || 'an academy')
 
@@ -207,6 +209,39 @@ export async function POST(request: NextRequest) {
       details: { country: verdict.country ?? null, isp: verdict.isp ?? null },
     })
   } catch { /* the booking stands */ }
+
+  // The parent's confirmation and the lead row, from what was saved — never from
+  // what the browser says (the old public email endpoint would mail anyone anything).
+  try {
+    const { sendEmail } = await import('@/lib/email')
+    const { trialConfirmationEmail } = await import('@/lib/email-templates')
+    await sendEmail({ to: body.email, ...trialConfirmationEmail({ parentName: body.parentName, childName: body.childName, academyName: orgName, className, date: sessionDate || undefined }) })
+  } catch (e) {
+    console.error('[trials/book] confirmation email failed', e)
+  }
+  try {
+    const [firstName, ...rest] = body.parentName.split(/\s+/)
+    const since = new Date(Date.now() - 7 * 86400000).toISOString()
+    const { data: dupe } = await sb.from('leads').select('id').eq('organisation_id', orgId).gte('created_at', since)
+      .not('status', 'in', '(enrolled,lost)').ilike('email', body.email).limit(1)
+    if (!dupe || dupe.length === 0) {
+      await sb.from('leads').insert({
+        organisation_id: orgId,
+        first_name: firstName,
+        last_name: rest.join(' ') || null,
+        email: body.email,
+        phone: body.phone,
+        child_name: body.childName,
+        child_age: childAge,
+        interested_in: className || null,
+        source: 'website',
+        status: 'trial_booked',
+        notes: s(raw.notes, 2000) || null,
+      })
+    }
+  } catch (e) {
+    console.error('[trials/book] lead row failed', e)
+  }
 
   return NextResponse.json({ ok: true, id: row.id })
 }

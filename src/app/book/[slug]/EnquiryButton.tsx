@@ -57,7 +57,8 @@ export default function EnquiryButton({ orgId, academyName, primaryColor = '#4ec
 
     setLoading(false)
     if (!res.ok) {
-      setError('Sorry, something went wrong. Please try again or book a trial directly.')
+      const j = await res.json().catch(() => ({}))
+      setError((j as { error?: string }).error || 'Sorry, something went wrong. Please try again or book a trial directly.')
       return
     }
     setSuccess(true)

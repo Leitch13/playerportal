@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit } from '@/lib/rate-limit'
+import { checkLeadEmail } from '@/lib/lead-email-checks'
+import { checkSignupIp } from '@/lib/ip-reputation'
+import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,12 +65,45 @@ export async function POST(request: NextRequest) {
   // Verify organisation exists (prevents random UUIDs being used to spam-create leads)
   const { data: org, error: orgErr } = await supabase
     .from('organisations')
-    .select('id')
+    .select('id, is_published')
     .eq('id', organisation_id)
     .single()
 
-  if (orgErr || !org) {
+  if (orgErr || !org || !org.is_published) {
     return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
+  }
+
+  // ── Door check (5 Nov 2026, after fake "A / a@gmail.com" bookings) ──
+  // This endpoint is public (the booking page's Enquire button), so it gets the
+  // same checks as trials: a real name, an email that can receive mail and/or a
+  // real phone, no VPN/datacentre, a few per connection per hour.
+  {
+    const ip = clientIpOf(request.headers)
+    if (!rateLimit(`lead-create:${ip}`, 5, 3600000).success) {
+      return NextResponse.json({ error: 'Too many enquiries from this connection. Please try again later.' }, { status: 429 })
+    }
+    if (source !== 'website' || status !== 'new') {
+      return NextResponse.json({ error: 'Invalid source' }, { status: 400 })
+    }
+    const fullName = [first_name, body.last_name as string | undefined].filter(Boolean).join(' ')
+    const em = String(body.email || '').trim()
+    const ph = String(body.phone || '').trim()
+    if (!em && !ph) return NextResponse.json({ error: 'Please enter an email or phone number.' }, { status: 400 })
+    const problem = checkBookingDetails({
+      parentName: fullName,
+      childName: String(body.child_name || '').trim() || 'Child',
+      email: em || 'placeholder.ok@example.com',
+      phone: ph || '07700 900123',
+    })
+    if (problem) return NextResponse.json({ error: problem }, { status: 400 })
+    if (em) {
+      const emailProblem = await checkLeadEmail(em, 'the academy’s reply')
+      if (emailProblem) return NextResponse.json({ error: emailProblem }, { status: 400 })
+    }
+    const verdict = await checkSignupIp(ip)
+    if (verdict.block) {
+      return NextResponse.json({ error: 'It looks like you’re using a VPN or a hosting network. Please turn it off and try again.' }, { status: 400 })
+    }
   }
 
   // De-dupe: if a lead with this email or phone already exists in the last 7 days
@@ -119,7 +156,7 @@ export async function POST(request: NextRequest) {
   // while interest is hot. Skipped for 'manual' (an admin typing in a lead
   // doesn't need to be alerted about their own entry). Best-effort: never block
   // or fail the lead creation on a notification error.
-  if (source !== 'manual') {
+  if ((source as string) !== 'manual') {
     try {
       const [{ data: orgInfo }, { data: admins }] = await Promise.all([
         supabase.from('organisations').select('name, contact_email').eq('id', organisation_id).maybeSingle(),
