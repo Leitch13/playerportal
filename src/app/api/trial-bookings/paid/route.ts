@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { sameTrial, TRIAL_ALREADY_BOOKED_MESSAGE } from '@/lib/trial-alerts'
+import { checkBookingDetails } from '@/lib/booking-guard'
+import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { trialPlaceFree, placesDb, CLASS_FULL_TRIAL_MESSAGE } from '@/lib/class-places'
 
 // Parent-facing money route: give it real headroom instead of the platform
@@ -45,6 +47,16 @@ export async function POST(request: NextRequest) {
     if (!parentEmail) {
       return NextResponse.json({ error: 'Missing parent email' }, { status: 400 })
     }
+    // Same door check as free trials (src/lib/booking-guard.ts, 5 Nov 2026).
+    const detailProblem = checkBookingDetails({
+      parentName: String(parentName || ''),
+      childName: `${String(childFirstName || '')} ${String(childLastName || '')}`.trim(),
+      email: String(parentEmail),
+      phone: String(parentPhone || ''),
+    })
+    if (detailProblem) return NextResponse.json({ error: detailProblem }, { status: 400 })
+    const emailProblem = await checkLeadEmail(String(parentEmail).trim(), 'your booking confirmation')
+    if (emailProblem) return NextResponse.json({ error: emailProblem }, { status: 400 })
 
     // Look up the class + academy + trial price + connected stripe account
     const { data: group } = await supabase

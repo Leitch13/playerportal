@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { deriveTrialSource, SOURCE_LABELS, type CanonicalSource } from '@/lib/trial-source-derive'
 import { fbTrackSingle } from '@/lib/meta-pixel'
 
@@ -41,6 +40,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
   const [showMore, setShowMore] = useState(false)
   const [childAge, setChildAge] = useState('')
   const [phone, setPhone] = useState('')
+  const [honeypot, setHoneypot] = useState('')
   const [notes, setNotes] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -168,8 +168,8 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!parentName || !parentEmail || !childName) {
-      setError('Please fill in all required fields.')
+    if (!parentName || !parentEmail || !childName || !phone.trim()) {
+      setError('Please fill in all required fields, including a phone number.')
       return
     }
     if (validDates.length > 0 && !sessionDate) {
@@ -198,44 +198,6 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       }
     }
 
-    const supabase = createClient()
-
-    // Compute a tiny djb2 hash of the academy's current terms_text so we can prove
-    // which version they accepted if the academy updates their T&Cs later.
-    let versionHash: string | null = null
-    try {
-      const { data: orgRow } = await supabase
-        .from('organisations')
-        .select('terms_text')
-        .eq('id', orgId)
-        .single()
-      const txt = (orgRow?.terms_text as string | null) || ''
-      let h = 5381
-      for (let i = 0; i < txt.length; i++) h = ((h << 5) + h) ^ txt.charCodeAt(i)
-      versionHash = (h >>> 0).toString(16) + '-' + txt.length
-    } catch { /* non-fatal */ }
-
-    // Stop the same parent+child booking the same class trial repeatedly.
-    // Without this, one parent could spam-create bookings (and the admin
-    // notifications + emails attached to each).
-    if (groupId && parentEmail) {
-      const { data: existing } = await supabase
-        .from('trial_bookings')
-        .select('id')
-        .eq('organisation_id', orgId)
-        .eq('training_group_id', groupId)
-        .ilike('parent_email', parentEmail.trim())
-        .ilike('child_name', (childName || '').trim())
-        .in('status', ['confirmed', 'pending', 'attended'])
-        .limit(1)
-        .maybeSingle()
-      if (existing) {
-        setError("You've already booked this trial — check your email for the confirmation.")
-        setLoading(false)
-        return
-      }
-    }
-
     // Sprint 5 — derive source via the shared priority chain.
     // Highest-trust signal wins: parent dropdown → URL UTM → Referer → 'unknown'.
     const sourceDerived = deriveTrialSource({
@@ -247,27 +209,31 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
       academyHostHints: ['theplayerportal.net', 'playitloveit.com', 'playerportal.app'],
     })
 
-    const { error: insertError } = await supabase.from('trial_bookings').insert({
-      organisation_id: orgId,
-      training_group_id: groupId || null,
-      parent_name: parentName,
-      parent_email: parentEmail,
-      parent_phone: phone || null,
-      child_name: childName,
-      child_age: childAge ? parseInt(childAge) : null,
-      preferred_date: sessionDate || null,
-      notes: notes || null,
-      terms_accepted_at: new Date().toISOString(),
-      terms_version_hash: versionHash,
-      // Sprint 5 — three additive columns. Schema migration 080.
-      trial_source: sourceDerived.trial_source,
-      source_detail: sourceDerived.source_detail,
-      referrer_url: sourceDerived.referrer_url,
-    })
-
-    if (insertError) {
-      // The database refuses a trial for a full day (supabase/123_trial_needs_a_place.sql).
-      setError(/class_full/.test(insertError.message) ? 'Sorry, that day is now full. Please pick another date, or join the class waiting list.' : insertError.message)
+    // Saved on the server after the door checks (src/app/api/trials/book, src/lib/booking-guard.ts).
+    // Before 5 Nov 2026 this wrote straight from the browser and fake "A / a@gmail.com" trials got through.
+    const bookRes = await fetch('/api/trials/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orgId,
+        groupId: groupId || null,
+        parentName,
+        parentEmail,
+        phone,
+        childName,
+        childAge: childAge || null,
+        sessionDate: sessionDate || null,
+        notes: notes || null,
+        agreedToTerms,
+        website: honeypot,
+        trialSource: sourceDerived.trial_source,
+        sourceDetail: sourceDerived.source_detail,
+        referrerUrl: sourceDerived.referrer_url,
+      }),
+    }).catch(() => null)
+    if (!bookRes || !bookRes.ok) {
+      const j = bookRes ? await bookRes.json().catch(() => ({})) : {}
+      setError((j as { error?: string }).error || 'We couldn’t save your booking. Please check your connection and try again.')
       setLoading(false)
       return
     }
@@ -541,15 +507,21 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-white/50 block mb-1.5">Phone Number</label>
+            <label className="text-xs font-medium text-white/50 block mb-1.5">Mobile Number *</label>
             <input
               type="tel"
+              required
+              autoComplete="tel"
               className={inputClass}
               style={{ ['--tw-ring-color' as string]: primaryColor }}
               placeholder="07xxx xxx xxx"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+          </div>
+          {/* Left empty by people; scripts that fill every box fill this too. */}
+          <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+            <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} /></label>
           </div>
           <div>
             <label className="text-xs font-medium text-white/50 block mb-1.5">Notes / Message</label>

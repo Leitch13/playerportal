@@ -120,8 +120,8 @@ export default function PaidTrialForm({
           <input type="email" required value={parentEmail} onChange={(e) => setParentEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
         </div>
         <div>
-          <label className={fieldLabel}>Phone (optional)</label>
-          <input type="tel" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} className={inputCls} placeholder="+44 7700 900000" />
+          <label className={fieldLabel}>Mobile number</label>
+          <input type="tel" required autoComplete="tel" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} className={inputCls} placeholder="+44 7700 900000" />
         </div>
       </div>
 

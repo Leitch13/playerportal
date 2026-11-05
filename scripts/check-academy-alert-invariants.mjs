@@ -37,6 +37,8 @@ const CREATES = [
 const LEDGER = {
   // ── trials
   'src/app/book/[slug]/trial/quick/TrialForm.tsx': { alert: [[`${A}/trials/notify-academy/route.ts`, 'alertAcademyOfTrial('], ['src/app/book/[slug]/trial/quick/TrialForm.tsx', '/api/trials/notify-academy']] },
+  // Free trials are saved here after the door check (5 Nov 2026); the form then calls notify-academy as before.
+  [`${A}/trials/book/route.ts`]: { alert: [[`${A}/trials/notify-academy/route.ts`, 'alertAcademyOfTrial('], ['src/app/book/[slug]/trial/quick/TrialForm.tsx', "fetch('/api/trials/book'"], ['src/app/book/[slug]/trial/quick/TrialForm.tsx', '/api/trials/notify-academy']] },
   [`${A}/trial-bookings/paid/route.ts`]: { alert: [[WH, "await import('@/lib/trial-alerts')"], [WH, 'alertAcademyOfTrial(supabase, trialId)'], [WH, 'confirmPaidTrialToParent(supabase, trialId)'], [`${A}/trial-bookings/paid/route.ts`, 'TRIAL_ALREADY_BOOKED_MESSAGE']] },
   // ── the class webhook: memberships, camps, one-off requests and paid trials all land here
   [WH]: { alert: [[WH, 'alertAcademyOfTrial(supabase, trialId)'], [WH, 'newSignupAdminEmail('], [WH, 'Academy admin notification'], [WH, 'notifyOrgAdmins(']] },

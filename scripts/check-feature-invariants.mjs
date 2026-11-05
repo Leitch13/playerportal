@@ -30,6 +30,12 @@ const FEATURES = [
   ['Camps: the camp page reads each booking\'s backup contact', `${D}/camps/[campId]/page.tsx`, ['latestBackups(', 'CAMP_BACKUP_ACTION', 'backup_phone: backups.get(b.id)']],
   ['Camps: a booked family can add a backup contact from a link', `${A}/api/camps/backup-contact/route.ts`, ['backupContactProblem(', "source: 'link'", 'parentPhone: booking.parent_phone']],
   ['Camps: the add-a-backup page', `${A}/book/[slug]/camps/backup/[bookingId]/page.tsx`, ['camp-backup-page', '<BackupContactForm']],
+  // Booking door check (5 Nov 2026: fake "A / a@gmail.com" trial at Pro Football Coaching). See src/lib/booking-guard.ts.
+  ['Bookings: free trials are saved by the server after the door check', `${A}/api/trials/book/route.ts`, ['checkBookingDetails(body)', 'checkLeadEmail(body.email', 'checkSignupIp(ip)', "action: 'trial.refused'", "action: 'trial.booked'"]],
+  ['Bookings: the free trial form books through the server, phone required, never straight into the database', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ["fetch('/api/trials/book'", 'website: honeypot', '!phone.trim()']],
+  ['Bookings: paid trials run the door check', `${A}/api/trial-bookings/paid/route.ts`, ['checkBookingDetails({', 'checkLeadEmail(String(parentEmail)']],
+  ['Bookings: whole-camp checkout runs the door check', `${A}/api/stripe/camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],
+  ['Bookings: by-the-day camp checkout runs the door check', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
   ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],
   ['Welcome packs: the academy can email a pack to parents who have not opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-email', "action: 'email', packId: p.packId", 'window.confirm(`Email', 'welcome-pack-emailed']],

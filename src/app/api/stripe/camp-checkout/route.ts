@@ -8,6 +8,8 @@ import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-r
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
+import { checkBookingDetails } from '@/lib/booking-guard'
+import { checkLeadEmail } from '@/lib/lead-email-checks'
 
 // Parent-facing money route: give it real headroom instead of the platform
 // default. A timeout here surfaces to the parent as a mislabelled network
@@ -57,6 +59,13 @@ export async function POST(request: NextRequest) {
 
     if (!campId || !parentName || !parentEmail || !childName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+    // Same door check as trials (src/lib/booking-guard.ts, 5 Nov 2026: fake "a / a@gmail.com" bookings).
+    {
+      const detailProblem = checkBookingDetails({ parentName: String(parentName), childName: String(childName), email: String(parentEmail), phone: String(parentPhone || '') })
+      if (detailProblem) return NextResponse.json({ error: detailProblem }, { status: 400 })
+      const emailProblem = await checkLeadEmail(String(parentEmail).trim(), 'your booking confirmation')
+      if (emailProblem) return NextResponse.json({ error: emailProblem }, { status: 400 })
     }
 
     const supabase = getServiceClient()
