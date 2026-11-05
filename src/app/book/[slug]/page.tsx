@@ -674,8 +674,8 @@ export default async function PublicBookingPage({
           </>) : useTidy ? (
             <h2 id="classes" className="scroll-mt-24 text-xl sm:text-2xl font-bold mb-5 text-white">Classes</h2>
           ) : (<>
-          <h2 id="classes" className="scroll-mt-24 text-2xl sm:text-3xl font-bold text-center mb-2 text-white">Weekly Classes</h2>
-          <p className="text-center text-sm sm:text-base text-gray-400 mb-6 sm:mb-8">Our regular training schedule</p>
+          <h2 id="classes" className={`scroll-mt-24 font-bold mb-2 text-white ${useGroupedView ? 'text-2xl sm:text-[28px] tracking-tight' : 'text-2xl sm:text-3xl text-center'}`}>{useGroupedView ? 'Weekly classes' : 'Weekly Classes'}</h2>
+          <p className={`text-sm sm:text-base text-gray-400 mb-6 sm:mb-8 ${useGroupedView ? '' : 'text-center'}`}>Our regular training schedule</p>
           </>)}
           {useTidy ? (
             <TidyClassList groups={programmeGroups} primaryColor={primaryColor} slug={slug} />

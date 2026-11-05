@@ -86,21 +86,31 @@ function shortLocation(loc: string | null): string | null {
   return loc.split(',')[0].trim()
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+/** "Mini Ballers (18mths - 3yrs)" → ["Mini Ballers", "18mths - 3yrs"]: the age goes on its own line. */
+function splitName(name: string): [string, string | null] {
+  const m = name.match(/^(.*?)\s*[(（]([^)）]*\d[^)）]*)[)）]\s*$/)
+  return m && m[1].trim().length >= 3 ? [m[1].trim(), m[2].trim()] : [name, null]
 }
 
-function Chip({ active, onClick, children, primaryColor }: { active: boolean; onClick: () => void; children: React.ReactNode; primaryColor: string }) {
+function sectionAges(ranges: ([number, number] | null)[]): string | null {
+  const r = ranges.filter((x): x is [number, number] => !!x)
+  if (!r.length) return null
+  const lo = Math.min(...r.map((x) => x[0])), hi = Math.max(...r.map((x) => x[1]))
+  if (hi >= 99) return `${lo}+ years`
+  if (lo <= 0) return `Up to ${hi} years`
+  return lo === hi ? `${lo} years` : `${lo}–${hi} years`
+}
+
+function Select({ label, value, onChange, options, all }: { label: string; value: string; onChange: (v: string) => void; options: { v: string; t: string }[]; all: string }) {
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className="shrink-0 px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold border transition-colors whitespace-nowrap"
-      style={active ? { backgroundColor: primaryColor, color: '#0a0a0a', borderColor: primaryColor } : { backgroundColor: '#141414', color: '#b5b8bd', borderColor: '#2a2a2a' }}
-    >
-      {children}
-    </button>
+    <label className="relative flex items-center gap-2 rounded-xl border border-[#2e2e2e] bg-[#141414] pl-3 pr-8 py-2 text-[13.5px] text-gray-200 focus-within:border-[#4a4a4a]">
+      <span className="text-gray-500 text-xs">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="appearance-none bg-transparent outline-none text-gray-100 pr-1 cursor-pointer">
+        <option value="All" className="bg-[#141414]">{all}</option>
+        {options.map((o) => <option key={o.v} value={o.v} className="bg-[#141414]">{o.t}</option>)}
+      </select>
+      <span aria-hidden className="pointer-events-none absolute right-3 text-[10px] text-gray-500">▼</span>
+    </label>
   )
 }
 
@@ -164,98 +174,90 @@ export default function GroupedClassList({
   const totalSlots = groups.reduce((n, g) => n + g.slots.length, 0)
   const shownSlots = visible.reduce((n, g) => n + g.visibleSlots.length, 0)
 
-  const row = (label: string, items: string[], value: string, set: (v: string) => void, fmt: (v: string) => string = (v) => v) =>
-    items.length > 1 && (
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="shrink-0 w-14 text-[10px] font-bold uppercase tracking-wider text-gray-500">{label}</span>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mb-1 [scrollbar-width:none]">
-          <Chip active={value === 'All'} onClick={() => set('All')} primaryColor={primaryColor}>All</Chip>
-          {items.map((v) => <Chip key={v} active={value === v} onClick={() => set(v)} primaryColor={primaryColor}>{fmt(v)}</Chip>)}
-        </div>
-      </div>
-    )
+  const clear = () => { setDay('All'); setAge('All'); setVenue('All'); setType('All') }
 
   return (
     <div>
-      {/* Filters — sticky so a parent can refine without scrolling back up */}
-      <div className="sticky z-10 -mx-4 px-4 sm:mx-0 sm:px-4 py-3 mb-5 rounded-none sm:rounded-2xl border-y sm:border border-[#1e1e1e] bg-[#0b0b0b]/95 backdrop-blur" style={{ top: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="grid gap-2">
-          {row('Age', agesPresent.map((b) => b.label), age, setAge)}
-          {row('Day', daysPresent, day, setDay, shortDay)}
-          {row('Venue', venuesPresent, venue, setVenue)}
-          {row('Type', typesPresent, type, setType)}
-        </div>
-        <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
-          <span>{filtering ? `${shownSlots} of ${totalSlots} sessions` : `${totalSlots} weekly sessions across ${groups.length} programmes`}</span>
-          {filtering && (
-            <button type="button" className="font-semibold underline underline-offset-2" style={{ color: primaryColor }} onClick={() => { setDay('All'); setAge('All'); setVenue('All'); setType('All') }}>
-              Clear filters
-            </button>
-          )}
-        </div>
+      {/* Filters: dropdowns, so a busy academy's filters stay one tidy line (were four rows of pills). */}
+      <div className="flex flex-wrap items-center gap-2.5 pb-5 mb-7 border-b border-[#262626]">
+        {agesPresent.length > 1 && <Select label="Age" value={age} onChange={setAge} all="All ages" options={agesPresent.map((b) => ({ v: b.label, t: b.label === 'Under 5' ? 'Under 5' : `${b.label} years` }))} />}
+        {daysPresent.length > 1 && <Select label="Day" value={day} onChange={setDay} all="Any day" options={daysPresent.map((d) => ({ v: d, t: d }))} />}
+        {venuesPresent.length > 1 && <Select label="Venue" value={venue} onChange={setVenue} all="All venues" options={venuesPresent.map((v) => ({ v, t: v }))} />}
+        {typesPresent.length > 1 && <Select label="Type" value={type} onChange={setType} all="All classes" options={typesPresent.map((t) => ({ v: t, t }))} />}
+        <span className="ml-auto text-[13px] text-gray-500">
+          {filtering ? <>{shownSlots} of {totalSlots} classes · <button type="button" className="font-semibold underline underline-offset-2" style={{ color: primaryColor }} onClick={clear}>Clear</button></> : `${totalSlots} classes a week`}
+        </span>
       </div>
 
       {sections.length === 0 && (
-        <p className="text-center text-sm text-gray-500 py-8">Nothing matches those filters — try clearing one.</p>
+        <p className="text-center text-sm text-gray-500 py-8">Nothing matches those filters. <button type="button" className="underline" onClick={clear}>Clear them</button></p>
       )}
 
-      <div className="space-y-9">
-        {sections.map((sec) => (
-          <div key={sec.type}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sec.color }} />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white/80">{sec.type}</h3>
-              <span className="text-xs text-gray-500">{sec.items.length}</span>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
-              {sec.items.map((g) => (
-                <div
-                  key={g.key}
-                  className="rounded-2xl border bg-[#141414] p-4 flex flex-col gap-3 min-w-0 overflow-hidden"
-                  style={{ borderColor: g.isFeatured ? `${primaryColor}70` : '#1f1f1f' }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-[15px] sm:text-base text-white leading-snug">{g.name}</h4>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                        {g.ageGroups.map((a) => (
-                          <span key={a} className="px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-white/10 text-white/70">{a}</span>
+      <div className="space-y-10 sm:space-y-12">
+        {sections.map((sec) => {
+          const ages = sectionAges(sec.items.map((g) => g.range))
+          const n = sec.items.reduce((a, g) => a + g.visibleSlots.length, 0)
+          return (
+            <section key={sec.type}>
+              <div className="flex items-baseline gap-3 mb-3.5">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">{sec.type}</h3>
+                {ages && <span className="text-sm font-medium" style={{ color: primaryColor }}>{ages}</span>}
+                <span className="ml-auto text-[13px] text-gray-500">{n} {n === 1 ? 'class' : 'classes'}</span>
+              </div>
+              <div className="rounded-2xl border border-[#262626] bg-[#111] overflow-hidden divide-y divide-[#222]">
+                {sec.items.map((g) => {
+                  const [title, ageText] = splitName(g.name)
+                  const ageLine = ageText || g.ageGroups.join(', ') || null
+                  return (
+                    <div key={g.key} className="grid gap-3 px-4 sm:px-5 py-4 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,2.7fr)] sm:items-center">
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-[15px] text-white leading-snug">{title}</h4>
+                        {ageLine && <p className="text-[13px] text-gray-400 mt-0.5">{ageLine}</p>}
+                        {g.term?.parent_message && <p className="text-xs text-gray-500 mt-1">{g.term.parent_message}</p>}
+                      </div>
+                      <div className="space-y-2 min-w-0">
+                        {g.visibleSlots.map((s, i) => (
+                          <div key={s.id} className="flex items-center gap-3 min-w-0">
+                            <p className="flex-1 min-w-0 text-[13.5px] text-gray-100">
+                              <span className="font-medium">{shortDay(s.day)} {s.time}</span>
+                              {shortLocation(s.location) && <span className="text-gray-400"> · {shortLocation(s.location)}</span>}
+                              {s.isFull ? (
+                                <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 whitespace-nowrap">Full</span>
+                              ) : s.spotsLeft <= 3 ? (
+                                <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/10 text-orange-400 whitespace-nowrap">{s.spotsLeft} left</span>
+                              ) : null}
+                            </p>
+                            <span className={`shrink-0 w-[4.5rem] text-right text-[15px] font-semibold text-white ${i > 0 ? 'invisible' : ''}`}>
+                              {g.priceLabel ? <>{g.priceLabel.replace(/\/(mo|session)$/, '')}<span className="text-xs font-medium text-gray-400">/{g.priceLabel.endsWith('/session') ? 'session' : 'mo'}</span></> : null}
+                            </span>
+                            <Link
+                              href={`/book/${slug}/class/${s.id}`}
+                              className="shrink-0 rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-opacity hover:opacity-90"
+                              style={s.isFull ? { backgroundColor: '#1f1f1f', color: '#d1d5db' } : { backgroundColor: primaryColor, color: textOn(primaryColor) }}
+                              title={s.isFull ? `${g.name}, ${s.day ?? 'TBA'} ${s.time ?? ''}: full, join the waiting list` : `${g.name}, ${s.day ?? 'TBA'} ${s.time ?? ''}: ${s.spotsLeft} of ${s.capacity} places left`}
+                            >
+                              {s.isFull ? 'Waitlist' : 'Book'}
+                            </Link>
+                          </div>
                         ))}
-                        {g.term && (
-                          <span className="text-[11px] text-gray-500">{fmtDate(g.term.start_date)} – {fmtDate(g.term.end_date)}</span>
-                        )}
                       </div>
                     </div>
-                    {g.priceLabel && <span className="shrink-0 text-[15px] sm:text-base font-extrabold text-white whitespace-nowrap">{g.priceLabel}</span>}
-                  </div>
-                  {g.shortDesc && <p className="text-xs text-gray-400 line-clamp-1" title={g.shortDesc}>{g.shortDesc}</p>}
-                  {g.term?.parent_message && <p className="text-[11px] text-gray-500 -mt-1">{g.term.parent_message}</p>}
-                  <div className="flex flex-wrap gap-2 mt-auto">
-                    {g.visibleSlots.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/book/${slug}/class/${s.id}`}
-                        className="group inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs sm:text-[13px] transition-colors whitespace-nowrap max-w-full"
-                        style={s.isFull ? { backgroundColor: '#151515', borderColor: '#242424', color: '#6b7280' } : { backgroundColor: '#1b1b1b', borderColor: '#2e2e2e', color: '#e5e7eb' }}
-                        title={s.isFull ? `${g.name} — ${s.day ?? 'TBA'} ${s.time ?? ''} — full, join the waitlist` : `${g.name} — ${s.day ?? 'TBA'} ${s.time ?? ''} — ${s.spotsLeft} of ${s.capacity} spots left`}
-                      >
-                        <span className="font-bold text-white group-hover:underline" style={s.isFull ? { color: '#9ca3af' } : undefined}>{shortDay(s.day)}</span>
-                        {s.time && <span>{s.time}</span>}
-                        {shortLocation(s.location) && venue === 'All' && <span className="text-gray-500 truncate min-w-0">· {shortLocation(s.location)}</span>}
-                        {s.isFull ? (
-                          <span className="ml-1 shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400">Waitlist</span>
-                        ) : s.spotsLeft <= 3 ? (
-                          <span className="ml-1 shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/10 text-orange-400">{s.spotsLeft} left</span>
-                        ) : null}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+                  )
+                })}
+              </div>
+            </section>
+          )
+        })}
       </div>
     </div>
   )
+}
+
+/** Dark text on a light brand colour, white on a dark one. */
+function textOn(hex: string): string {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+  const n = parseInt(full.slice(0, 6), 16)
+  if (Number.isNaN(n)) return '#0a0a0a'
+  return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 > 0.6 ? '#0a0a0a' : '#ffffff'
 }
