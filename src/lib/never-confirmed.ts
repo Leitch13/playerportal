@@ -206,3 +206,64 @@ export async function openBackMonthsBill(db: SupabaseClient, subId: string): Pro
   const { data } = await db.from('payments').select('id, amount, amount_paid, description, status').like('notes', `${NOTE(subId)}%`).in('status', OPEN_BILL).limit(1).maybeSingle()
   return data ? { id: data.id as string, amount: Number(data.amount) - Number(data.amount_paid || 0), description: String(data.description || '') } : null
 }
+
+/**
+ * "Paid another way" (John, 5 Nov 2026, No.1: parents paying Cammy by bank transfer instead of setting
+ * up the card). For a child on an invite never confirmed: every month owed up to and including this one
+ * is recorded as paid (one payments row, `back-months:<sub> <months>`, so the owed box counts them as
+ * paid), and the invite's first card charge moves to the 1st of next month. That is the existing
+ * "already paid the academy elsewhere" rule (BILLING_RULES.md, the one allowed exception): if the parent
+ * confirms later they pay nothing today and the plan from that 1st, so this month is never charged twice.
+ * Charges and emails nothing. The same for every academy.
+ */
+export function paidAnotherWayMonths(owedMonths: string[], today: string): string[] {
+  const thisMonth = today.slice(0, 7)
+  return [...new Set([...owedMonths, thisMonth])].sort()
+}
+
+export function nextMonthStart(today: string): string {
+  const d = new Date(today.slice(0, 7) + '-01T00:00:00Z')
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)).toISOString()
+}
+
+type PaidAnotherWayPlan = { ok: true; subId: string; months: string[]; label: string; amount: number; planName: string; openBillId: string | null } | { ok: false; error: string; status: number }
+
+/** What "Paid another way" would record for this child today. Changes nothing. */
+export async function previewPaidAnotherWay(db: SupabaseClient, orgId: string, playerId: string, today = new Date().toISOString().slice(0, 10)): Promise<PaidAnotherWayPlan> {
+  const { data: subs } = await db.from('subscriptions').select('id, migration_billing_starts_at, plan:subscription_plans(name, amount, interval)')
+    .eq('organisation_id', orgId).eq('player_id', playerId).eq('status', 'pending_migration').is('invite_confirmed_at', null)
+  const sub = (subs ?? [])[0]
+  if (!sub) return { ok: false, error: 'This child has no invite waiting to be confirmed.', status: 404 }
+  const plan = sub.plan as unknown as { name: string; amount: number; interval: string | null } | null
+  if (!plan || (plan.interval && plan.interval !== 'month')) return { ok: false, error: 'Only monthly memberships can be marked like this.', status: 400 }
+  const starts = sub.migration_billing_starts_at as string | null
+  if (starts && starts.slice(0, 7) > today.slice(0, 7)) return { ok: false, error: `Already marked as paid. Their card payments start ${monthsLabel([starts.slice(0, 7)])}.`, status: 409 }
+  const owed = (await loadNeverConfirmed(db, orgId, [playerId], today)).get(playerId)
+  const mine = owed && owed.subId === sub.id ? owed : null
+  const months = paidAnotherWayMonths(mine ? mine.months : [], today)
+  const amount = Math.round(months.length * Number(plan.amount) * 100) / 100
+  return { ok: true, subId: sub.id as string, months, label: monthsLabel(months), amount, planName: plan.name, openBillId: mine ? mine.billId : null }
+}
+
+export async function markPaidAnotherWay(db: SupabaseClient, orgId: string, playerId: string, how: 'bank' | 'cash', today = new Date().toISOString().slice(0, 10)): Promise<
+  | { ok: true; amount: number; label: string; billingFrom: string }
+  | { ok: false; error: string; status: number }
+> {
+  const p = await previewPaidAnotherWay(db, orgId, playerId, today)
+  if (!p.ok) return p
+  const { data: sub } = await db.from('subscriptions').select('parent_id').eq('id', p.subId).single()
+  const { data: player } = await db.from('players').select('first_name').eq('id', playerId).maybeSingle()
+  const row = {
+    amount: p.amount, amount_paid: p.amount, status: 'paid', paid_date: today,
+    description: `${player?.first_name ? `${player.first_name}: ` : ''}${p.planName}, ${p.label} (paid by ${how === 'bank' ? 'bank transfer' : 'cash'})`,
+    notes: `${NOTE(p.subId)} ${p.months.join(',')} · paid another way (${how}) ${today}`,
+  }
+  // An open bill for the months owed becomes this payment, so the parent's old pay link shows it paid.
+  const { error } = p.openBillId
+    ? await db.from('payments').update(row).eq('id', p.openBillId)
+    : await db.from('payments').insert({ organisation_id: orgId, parent_id: (sub?.parent_id as string | null) ?? null, player_id: playerId, due_date: today, ...row })
+  if (error) return { ok: false, error: 'Could not record the payment. Please try again.', status: 500 }
+  const billingFrom = nextMonthStart(today)
+  await db.from('subscriptions').update({ migration_billing_starts_at: billingFrom }).eq('id', p.subId)
+  return { ok: true, amount: p.amount, label: p.label, billingFrom }
+}

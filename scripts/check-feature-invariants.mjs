@@ -161,6 +161,12 @@ const FEATURES = [
 
   // ── ASCEND dashboard link (2 Nov 2026): trials, joins and monthly numbers for the member's own academy only
   ['ASCEND link: the feed answers only the academy owner, with a shared secret', `${A}/api/ascend/academy-feed/route.ts`, ['timingSafeEqual(', 'owners.has(owner)', 'matchFamilies(', 'moneyMonths(']],
+  ['Paid another way: bank/cash for an unconfirmed invite marks the months paid and moves the first card charge (Cammy, 5 Nov 2026)', 'src/lib/never-confirmed.ts', ['export async function markPaidAnotherWay(', 'paid another way (', 'migration_billing_starts_at: billingFrom']],
+  ['Paid another way: the button sits next to every invite/owed chase button', 'src/app/dashboard/players/[id]/ChaseMembershipButton.tsx', ["(kind === 'owed' || kind === 'invite') && <PaidAnotherWayButton"]],
+  ['Register red box: an invite prepaid to a later month is not outstanding', 'src/lib/class-outstanding.ts', ['const prepaid = ', '!prepaid(s)']],
+  ['Open my account after confirming an invite: no email needed (WhatsApp families, 5 Nov 2026)', 'src/app/confirm-subscription/[token]/success/page.tsx', ['<OpenAccountButton token={token}']],
+  ['Open my account: only within a day, never-signed-in, once', 'src/app/api/invite/open-account/route.ts', ['WINDOW_MS', 'last_sign_in_at', "const USED = 'invite.open_account'"]],
+  ['Exports: players and enrolments carry the class day, time and venue', 'src/app/api/export/[type]/route.ts', ["'Class', 'Day', 'Time', 'Venue'"]],
   ['ASCEND link: families are matched by hash, never listed', 'src/lib/ascend-feed.ts', ['export function contactHashes(', "sha('e:' + e)", "sha('p:' + d.slice(-9))", 'if (!asked.has(h)) continue']],
   // ── Chase buttons (2 Nov 2026, John: "build the buttons why are they not there?"): the academy can always chase
   //    an unconfirmed invite (Resend invite) or a failed card (Send payment link) on the child page, the register and Enrolments.

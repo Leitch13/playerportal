@@ -34,7 +34,7 @@ const NOT_PAYING_SUB: Record<string, string> = {
 export async function notPayingFor(db: Db, orgId: string, today: string): Promise<NotPaying[]> {
   const out: NotPaying[] = []
   // Classes: memberships that aren't paying, for children still enrolled.
-  const { data: subs } = await db.from('subscriptions').select('id, status, player_id, players(first_name, last_name), subscription_plans(name, amount)')
+  const { data: subs } = await db.from('subscriptions').select('id, status, player_id, migration_billing_starts_at, players(first_name, last_name), subscription_plans(name, amount)')
     .eq('organisation_id', orgId).in('status', Object.keys(NOT_PAYING_SUB))
   const playerIds = [...new Set(((subs ?? []) as { player_id: string | null }[]).map((s) => s.player_id).filter(Boolean))] as string[]
   const { data: enrols } = playerIds.length
@@ -43,8 +43,10 @@ export async function notPayingFor(db: Db, orgId: string, today: string): Promis
   const enrolled = new Set(((enrols ?? []) as { player_id: string }[]).map((e) => e.player_id))
   // Never confirmed: the months owed, the same figure as the red box and the academy's button (src/lib/never-confirmed.ts).
   const owedBack = await loadNeverConfirmed(db as unknown as SupabaseClient, orgId, undefined, today, { sync: true }).catch(() => new Map<string, NeverConfirmed>())
-  for (const s of (subs ?? []) as { id: string; status: string; player_id: string | null; players: { first_name: string; last_name: string | null } | null; subscription_plans: { name: string; amount: number | string } | null }[]) {
+  for (const s of (subs ?? []) as { id: string; status: string; player_id: string | null; migration_billing_starts_at?: string | null; players: { first_name: string; last_name: string | null } | null; subscription_plans: { name: string; amount: number | string } | null }[]) {
     if (!s.player_id || !enrolled.has(s.player_id)) continue
+    // Paid up to a later month another way (prepaid import, or "Paid another way"): not owing yet.
+    if (s.status === 'pending_migration' && s.migration_billing_starts_at && s.migration_billing_starts_at.slice(0, 7) > today.slice(0, 7)) continue
     const back = s.status === 'pending_migration' ? owedBack.get(s.player_id) : undefined
     out.push({ key: `sub:${s.id}`, child: `${s.players?.first_name ?? 'Child'} ${s.players?.last_name ?? ''}`.trim(), what: s.subscription_plans?.name ?? 'Class membership', amount: back?.subId === s.id ? back.amount : Number(s.subscription_plans?.amount ?? 0), why: back?.subId === s.id ? `${NOT_PAYING_SUB[s.status]}: ${back.label} owed` : NOT_PAYING_SUB[s.status] })
   }

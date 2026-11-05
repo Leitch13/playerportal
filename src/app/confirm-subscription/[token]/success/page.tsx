@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import EmailLoginLink from '@/components/EmailLoginLink'
+import OpenAccountButton from './OpenAccountButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,8 +86,10 @@ export default async function MigrationSuccessPage({
             </div>
           </div>
 
-          <div className="pt-3">
-            {/* No password yet (imported parents never had one): email the login link straight away. */}
+          <div className="pt-3 space-y-4">
+            {/* Straight in, no email needed: WhatsApp invites reach families whose email doesn't (5 Nov 2026). */}
+            <OpenAccountButton token={token} color={primary} />
+            {/* No password yet (imported parents never had one): the emailed login link as well. */}
             <EmailLoginLink email={parent?.email || ''} auto onceKey={token} color={primary} />
           </div>
         </div>

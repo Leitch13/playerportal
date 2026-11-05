@@ -17,8 +17,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 export interface OutstandingInput {
   payments: { status: string | null; amount: number | string | null; amount_paid: number | string | null }[]
-  subs: { status: string | null; planAmount: number | string | null }[]
+  subs: { status: string | null; planAmount: number | string | null; billingStartsAt?: string | null }[]
   isTrial?: boolean
+  /** YYYY-MM-DD; defaults to today. */
+  today?: string
 }
 
 const OWING_PAYMENT = ['unpaid', 'partial', 'overdue']
@@ -31,12 +33,16 @@ export function classOutstanding(i: OutstandingInput): string | null {
     .filter((p) => OWING_PAYMENT.includes(p.status || ''))
     .reduce((s, p) => s + Math.max(0, Number(p.amount || 0) - Number(p.amount_paid || 0)), 0)
   if (fromPayments > 0) return `£${fromPayments.toFixed(2)} outstanding`
-  const failed = i.subs.filter((s) => FAILED_SUB.includes(s.status || ''))
+  // An invite whose first card payment is set for a later month has been paid up to then another
+  // way (imported prepaid, or the academy pressed "Paid another way"): nothing outstanding yet.
+  const thisMonth = (i.today ?? new Date().toISOString().slice(0, 10)).slice(0, 7)
+  const prepaid = (s: OutstandingInput['subs'][number]) => s.status === 'pending_migration' && !!s.billingStartsAt && s.billingStartsAt.slice(0, 7) > thisMonth
+  const failed = i.subs.filter((s) => FAILED_SUB.includes(s.status || '') && !prepaid(s))
   if (failed.length) {
     const owed = failed.reduce((s, x) => s + Number(x.planAmount || 0), 0)
     return owed > 0 ? `£${owed.toFixed(2)} outstanding` : 'Payment outstanding'
   }
-  if (!i.isTrial && !i.subs.some((s) => HAS_MEMBERSHIP.includes(s.status || ''))) return 'No membership'
+  if (!i.isTrial && !i.subs.some((s) => HAS_MEMBERSHIP.includes(s.status || '') || prepaid(s))) return 'No membership'
   return null
 }
 
@@ -46,12 +52,12 @@ export async function loadClassOutstanding(admin: SupabaseClient, orgId: string,
   if (playerIds.length === 0) return out
   const [{ data: pays }, { data: subs }] = await Promise.all([
     admin.from('payments').select('player_id, status, amount, amount_paid').eq('organisation_id', orgId).in('player_id', playerIds).in('status', OWING_PAYMENT),
-    admin.from('subscriptions').select('player_id, status, plan:subscription_plans(amount)').eq('organisation_id', orgId).in('player_id', playerIds),
+    admin.from('subscriptions').select('player_id, status, migration_billing_starts_at, plan:subscription_plans(amount)').eq('organisation_id', orgId).in('player_id', playerIds),
   ])
   for (const id of playerIds) {
     out.set(id, classOutstanding({
       payments: (pays || []).filter((p) => p.player_id === id),
-      subs: (subs || []).filter((s) => s.player_id === id).map((s) => ({ status: s.status as string | null, planAmount: (s.plan as unknown as { amount?: number | null } | null)?.amount ?? null })),
+      subs: (subs || []).filter((s) => s.player_id === id).map((s) => ({ status: s.status as string | null, planAmount: (s.plan as unknown as { amount?: number | null } | null)?.amount ?? null, billingStartsAt: (s.migration_billing_starts_at as string | null) ?? null })),
       isTrial: trialIds.has(id),
     }))
   }

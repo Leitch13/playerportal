@@ -26,24 +26,24 @@ export async function GET(
 
   switch (type) {
     case 'players': {
+      // One row per child per class they're in now, with the class's day, time and venue, so two
+      // classes with the same name (No.1's Pitreavie 17:00 and 18:00) can be told apart (5 Nov 2026).
       const { data } = await supabase
         .from('players')
-        .select('full_name, first_name, last_name, date_of_birth, medical_info, created_at, enrolments(group:training_groups(name))')
+        .select('full_name, first_name, last_name, date_of_birth, medical_info, created_at, enrolments(status, group:training_groups(name, day_of_week, time_slot, location))')
         .eq('organisation_id', orgId)
         .order('created_at', { ascending: false })
 
-      headers = ['Name', 'Date of Birth', 'Medical Info', 'Group', 'Joined']
-      rows = (data || []).map(p => {
-        const name = (p as Record<string, unknown>).full_name as string ||
-          `${(p as Record<string, unknown>).first_name || ''} ${(p as Record<string, unknown>).last_name || ''}`.trim()
-        const enrols = (p as Record<string, unknown>).enrolments as Array<{ group: { name: string } | null }> | null
-        return [
-          name,
-          (p as Record<string, unknown>).date_of_birth as string || '',
-          (p as Record<string, unknown>).medical_info as string || '',
-          enrols?.[0]?.group?.name || '',
-          new Date((p as Record<string, unknown>).created_at as string).toLocaleDateString('en-GB'),
-        ]
+      headers = ['Name', 'Date of Birth', 'Medical Info', 'Class', 'Day', 'Time', 'Venue', 'Joined']
+      rows = (data || []).flatMap(p => {
+        const r = p as Record<string, unknown>
+        const name = r.full_name as string || `${r.first_name || ''} ${r.last_name || ''}`.trim()
+        const base = [name, r.date_of_birth as string || '', r.medical_info as string || '']
+        const joined = new Date(r.created_at as string).toLocaleDateString('en-GB')
+        const enrols = (r.enrolments as Array<{ status: string | null; group: { name: string; day_of_week: string | null; time_slot: string | null; location: string | null } | null }> | null) || []
+        const live = enrols.filter((e) => e.group && ['active', 'pending'].includes(e.status || 'active'))
+        if (!live.length) return [[...base, '', '', '', '', joined]]
+        return live.map((e) => [...base, e.group!.name, e.group!.day_of_week || '', e.group!.time_slot || '', e.group!.location || '', joined])
       })
       break
     }
@@ -134,16 +134,19 @@ export async function GET(
     case 'enrolments': {
       const { data } = await supabase
         .from('enrolments')
-        .select('created_at, status, player:players(full_name, first_name, last_name), group:training_groups(name)')
+        .select('created_at, status, player:players(full_name, first_name, last_name), group:training_groups(name, day_of_week, time_slot, location)')
 
-      headers = ['Player', 'Group', 'Status', 'Enrolled Date']
+      headers = ['Player', 'Class', 'Day', 'Time', 'Venue', 'Status', 'Enrolled Date']
       rows = (data || []).map(e => {
         const player = e.player as unknown as { full_name?: string; first_name?: string; last_name?: string } | null
-        const group = e.group as unknown as { name: string } | null
+        const group = e.group as unknown as { name: string; day_of_week: string | null; time_slot: string | null; location: string | null } | null
         const name = player?.full_name || `${player?.first_name || ''} ${player?.last_name || ''}`.trim()
         return [
           name,
           group?.name || '',
+          group?.day_of_week || '',
+          group?.time_slot || '',
+          group?.location || '',
           e.status || 'active',
           new Date(e.created_at).toLocaleDateString('en-GB'),
         ]

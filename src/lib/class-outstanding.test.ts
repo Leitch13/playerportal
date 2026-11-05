@@ -24,3 +24,15 @@ describe('class register red outstanding box', () => {
     expect(classOutstanding({ payments: [], subs: [{ status: 'pending_migration', planAmount: 40 }] })).toBe('£40.00 outstanding')
   })
 })
+
+describe('invite paid up to a later month another way (5 Nov 2026)', () => {
+  it('shows nothing while the first card payment is a later month', () => {
+    expect(classOutstanding({ payments: [], subs: [{ status: 'pending_migration', planAmount: 40, billingStartsAt: '2026-12-01T00:00:00Z' }], today: '2026-11-05' })).toBeNull()
+  })
+  it('owes again once that month comes', () => {
+    expect(classOutstanding({ payments: [], subs: [{ status: 'pending_migration', planAmount: 40, billingStartsAt: '2026-12-01T00:00:00Z' }], today: '2026-12-02' })).toBe('£40.00 outstanding')
+  })
+  it('still owes when the first payment date has passed', () => {
+    expect(classOutstanding({ payments: [], subs: [{ status: 'pending_migration', planAmount: 40, billingStartsAt: '2026-11-01T00:00:00Z' }], today: '2026-11-05' })).toBe('£40.00 outstanding')
+  })
+})
