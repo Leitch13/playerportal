@@ -25,7 +25,7 @@ const STATS = [
 const STEPS = [
   { title: 'Tell us about your academy', body: 'The form takes 60 seconds. Name, academy, how many players. That’s it.' },
   { title: 'We build your page within 24 hours', body: 'Your name, your colours, example classes — exactly what parents would see. It lands in your inbox, free.' },
-  { title: 'Love it? Go live.', body: 'We migrate your members for free. 14-day free trial, then one plan: £35/month + 3.5% per transaction — you keep 96.5p of every pound. Cancel anytime.' },
+  { title: 'Love it? Go live.', body: 'We migrate your members for free. 14-day free trial, then one plan: £35/month + 3.8% per transaction — you keep 96.2p of every pound. Cancel anytime.' },
 ]
 
 const FAQS = [
@@ -35,7 +35,7 @@ const FAQS = [
   },
   {
     q: 'What does it cost?',
-    a: 'The demo page costs nothing, whether you sign up or not. If you go live: £35/month + 3.5% per transaction, all-in. That covers card processing too. No booking fees for parents, no player limits, no tiers.',
+    a: 'The demo page costs nothing, whether you sign up or not. If you go live: £35/month + 3.8% per transaction, all-in. That covers card processing too. No booking fees for parents, no player limits, no tiers.',
   },
   {
     q: 'Do I have to move my members over myself?',

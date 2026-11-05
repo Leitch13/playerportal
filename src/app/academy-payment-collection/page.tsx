@@ -150,7 +150,7 @@ export default function Page() {
             {
               stat: 'Unlimited',
               label: 'players every tier',
-              sub: 'One plan at £35/month with unlimited players — no member caps, no tiers. A single 3.5% transaction fee includes card processing; you keep 96.5p of every pound collected.',
+              sub: 'One plan at £35/month with unlimited players — no member caps, no tiers. A single 3.8% transaction fee includes card processing; you keep 96.2p of every pound collected.',
             },
           ]}
         />
@@ -198,7 +198,7 @@ export default function Page() {
             },
             {
               q: 'What fees does Player Portal take from each payment?',
-              a: 'Player Portal is one flat £35/month subscription plus a single 3.5% transaction fee — and that 3.5% includes card processing, so there are no separate Stripe fees and no per-booking surcharge. You keep 96.5p of every pound collected.',
+              a: 'Player Portal is one flat £35/month subscription plus a single 3.8% transaction fee — and that 3.8% includes card processing, so there are no separate Stripe fees and no per-booking surcharge. You keep 96.2p of every pound collected.',
             },
             {
               q: 'What happens when a parent\'s card fails?',

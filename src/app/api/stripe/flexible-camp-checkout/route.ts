@@ -614,7 +614,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 13. Platform fee resolution ────────────────────────────────
-    let PLATFORM_FEE_RATE = 0.035
+    let PLATFORM_FEE_RATE = 0.038
     if (payoutOrg.platform_plan_id) {
       const { data: platformPlan } = await supabase
         .from('platform_plans')

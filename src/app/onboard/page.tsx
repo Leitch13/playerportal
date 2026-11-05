@@ -575,7 +575,7 @@ export default function OnboardPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h2 className="text-2xl font-extrabold text-white mb-1">One plan. Everything included.</h2>
-                <p className="text-white/50 text-sm">£35/month + 3.5% per transaction — you keep 96.5% of every payment. 14 days free — no card needed.</p>
+                <p className="text-white/50 text-sm">£35/month + 3.8% per transaction — you keep 96.2% of every payment. 14 days free — no card needed.</p>
               </div>
 
               {/* Plan Cards */}

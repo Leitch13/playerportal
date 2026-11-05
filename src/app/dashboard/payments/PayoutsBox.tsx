@@ -108,7 +108,7 @@ export default function PayoutsBox({ snapshot }: { snapshot: PayoutSnapshot | nu
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-white/60">Player Portal, 3.5% incl. card fees</dt>
+              <dt className="text-white/60">Player Portal, 3.8% incl. card fees</dt>
               <dd className="text-white/80 tabular-nums">&minus;{gbp(month.platformFeePence)}</dd>
             </div>
             {month.refundedPence > 0 && (

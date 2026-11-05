@@ -22,7 +22,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // ─────────────────────────────────────────────────────────────────────────
 
 /** Default platform take when an org has no explicit platform plan. */
-const DEFAULT_PLATFORM_FEE_RATE = 0.035
+const DEFAULT_PLATFORM_FEE_RATE = 0.038
 
 export interface InvoiceCheckoutResult {
   ok: boolean

@@ -118,7 +118,7 @@ export default function TrialExpiredLock({
                 )}
                 {(plan.description || single) && (
                   <p className="text-xs sm:text-sm text-white/50 mb-4 flex-1">
-                    {plan.description || 'Everything included. 3.5% per transaction, no other fees. Cancel any time.'}
+                    {plan.description || 'Everything included. 3.8% per transaction, no other fees. Cancel any time.'}
                   </p>
                 )}
                 <button

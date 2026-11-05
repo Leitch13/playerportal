@@ -42,12 +42,12 @@ export const academyPaymentsReady = cache((orgId: string) => paymentsReady(admin
 export const ACADEMY_NOT_READY_MESSAGE =
   'No pay link was sent: your academy is not connected to Stripe yet. Finish Stripe in Settings, then press Resend link.'
 
-/** The academy's platform fee rate, default 3.5%, same lookup camps use. */
+/** The academy's platform fee rate, default 3.8%, same lookup camps use. */
 export async function platformFeeRate(admin: SupabaseClient, orgId: string): Promise<{ rate: number; stripeAccountId: string }> {
   const { data: org } = await admin.from('organisations').select('stripe_account_id, platform_plan_id').eq('id', orgId).single()
   if (!org?.stripe_account_id) throw new CheckoutBlocked('This academy is still finishing their payment setup. Sessions can\'t be paid for just yet.')
   if (!(await isConnectChargeReady(org.stripe_account_id))) throw new CheckoutBlocked(CONNECT_NOT_READY_MESSAGE)
-  let rate = 0.035
+  let rate = 0.038
   if (org.platform_plan_id) {
     const { data: plan } = await admin.from('platform_plans').select('transaction_fee_percent').eq('id', org.platform_plan_id).single()
     if (plan && plan.transaction_fee_percent != null) rate = Number(plan.transaction_fee_percent) / 100

@@ -42,7 +42,7 @@ export async function checkCampLink(svc: SupabaseClient, bookingId: string): Pro
 /** A fresh Stripe payment for what's owed. Any older open one is closed first, so only one is ever live. */
 export async function openCampCheckout(svc: SupabaseClient, c: Extract<CampLinkCheck, { ok: true }>, origin: string): Promise<string> {
   const { booking, camp, org, amountPence } = c
-  let feeRate = 0.035
+  let feeRate = 0.038
   if (org.platform_plan_id) {
     const { data: plan } = await svc.from('platform_plans').select('transaction_fee_percent').eq('id', org.platform_plan_id).single()
     if (plan) feeRate = Number(plan.transaction_fee_percent) / 100

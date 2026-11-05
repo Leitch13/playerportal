@@ -433,8 +433,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: CONNECT_NOT_READY_MESSAGE }, { status: 503 })
     }
 
-    // Resolve the platform fee rate from the academy's plan tier (default 3.5%)
-    let PLATFORM_FEE_RATE = 0.035
+    // Resolve the platform fee rate from the academy's plan tier (default 3.8%)
+    let PLATFORM_FEE_RATE = 0.038
     if (payoutOrg.platform_plan_id) {
       const { data: platformPlan } = await supabase
         .from('platform_plans')

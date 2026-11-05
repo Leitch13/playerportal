@@ -15,7 +15,7 @@
  *
  * Routing and fee mirror /api/stripe/camp-checkout exactly: on_behalf_of +
  * transfer_data to the academy's connected account, application fee from
- * the academy's platform plan (default 3.5%). Any previous open session for
+ * the academy's platform plan (default 3.8%). Any previous open session for
  * this booking is expired first so there is only ever one live link.
  */
 import { NextRequest, NextResponse } from 'next/server'

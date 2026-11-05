@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Platform fee rate
-  let PLATFORM_FEE_RATE = 0.035
+  let PLATFORM_FEE_RATE = 0.038
   if (org.platform_plan_id) {
     const { data: platformPlan } = await admin
       .from('platform_plans')

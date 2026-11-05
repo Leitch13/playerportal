@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 
-// ONE plan since 2026-08: £35/mo + 3.5% all-in. The calculator shows what an
+// ONE plan since 2026-08: £35/mo + 3.8% all-in. The calculator shows what an
 // academy pays and — more importantly — what they keep.
 const MONTHLY = 35
-const FEE_PCT = 3.5
+const FEE_PCT = 3.8
 const PRESETS = [500, 2000, 5000, 10000, 20000]
 
 export default function PricingCalculator() {
@@ -25,7 +25,7 @@ export default function PricingCalculator() {
           <span className="gradient-text">&pound;{volume.toLocaleString()}</span>/month in payments
         </h3>
         <p className="text-sm text-white/40 mt-1">
-          One plan &mdash; &pound;35/month + 3.5% per transaction, card processing included.
+          One plan &mdash; &pound;35/month + 3.8% per transaction, card processing included.
         </p>
       </div>
 
@@ -68,14 +68,14 @@ export default function PricingCalculator() {
           <p className="text-xs text-white/40 mt-1">per month &middot; everything included</p>
         </div>
         <div className="rounded-2xl p-5 text-center bg-white/[0.02] border border-white/10">
-          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-2">Fees (3.5%)</p>
+          <p className="text-[11px] uppercase tracking-wider text-white/40 font-semibold mb-2">Fees (3.8%)</p>
           <p className="text-3xl font-extrabold text-white tabular-nums">&pound;{fees.toFixed(0)}</p>
           <p className="text-xs text-white/40 mt-1">all-in &middot; card processing included</p>
         </div>
         <div className="relative rounded-2xl p-5 text-center bg-gradient-to-b from-[#4ecde6]/[0.15] to-[#4ecde6]/[0.05] border-2 border-[#4ecde6]/50 shadow-lg shadow-[#4ecde6]/10">
           <p className="text-[11px] uppercase tracking-wider text-[#4ecde6] font-semibold mb-2">You keep</p>
           <p className="text-3xl font-extrabold text-white tabular-nums">&pound;{keep.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-          <p className="text-xs text-white/40 mt-1">96.5p of every pound collected</p>
+          <p className="text-xs text-white/40 mt-1">96.2p of every pound collected</p>
         </div>
       </div>
 

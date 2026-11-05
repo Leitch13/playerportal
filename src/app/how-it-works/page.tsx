@@ -114,7 +114,7 @@ const plans = [
     name: 'Player Portal',
     price: '\u00a335',
     period: '/mo',
-    fee: '3.5% per transaction \u2014 all-in. You keep 96.5p of every pound; card processing included.',
+    fee: '3.8% per transaction \u2014 all-in. You keep 96.2p of every pound; card processing included.',
     desc: 'One plan. Everything included \u2014 no tiers, no feature gates, no player limits.',
     cta: 'Start Free Trial',
     featured: true,

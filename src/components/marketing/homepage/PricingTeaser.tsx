@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 // Kept in sync with platform_plans (DB) and src/app/onboard/page.tsx PLATFORM_PLANS.
-// ONE plan since 2026-08: £35/mo + 3.5% all-in, everything included.
+// ONE plan since 2026-08: £35/mo + 3.8% all-in, everything included.
 const FEATURES = [
   'Unlimited players, classes & coaches',
   'Bookings, payments & attendance',
@@ -45,7 +45,7 @@ export default function PricingTeaser() {
               <span className="text-[#93a2ad] text-lg">/mo</span>
             </div>
             <p className="mt-3 text-base font-semibold text-[#0d1b2b]">
-              + 3.5% per transaction — you keep 96.5p of every pound.
+              + 3.8% per transaction — you keep 96.2p of every pound.
             </p>
             <p className="mt-1 text-sm text-[#5a6b7c]">
               That covers card processing too. No booking fees for parents. No surprises.

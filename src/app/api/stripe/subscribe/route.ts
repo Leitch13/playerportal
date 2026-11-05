@@ -556,7 +556,7 @@ export async function POST(request: NextRequest) {
     // Resolve the platform fee rate from the academy's platform plan.
     // Service-role: platform_plans is an internal config table; the fee
     // rate is needed for every checkout regardless of caller identity.
-    let PLATFORM_FEE_RATE = 0.035 // default to Starter rate (3.5%)
+    let PLATFORM_FEE_RATE = 0.038 // default: the one plan (3.8%)
     if (planOrg?.platform_plan_id) {
       const { data: platformPlan } = await serviceDb
         .from('platform_plans')
