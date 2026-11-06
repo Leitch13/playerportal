@@ -9,6 +9,8 @@ import GlobalSearch from '@/components/GlobalSearch'
 import TrialExpiredLock from '@/components/TrialExpiredLock'
 import ConfirmAcademyEmailLock from '@/components/ConfirmAcademyEmailLock'
 import { emailCheckPending } from '@/lib/academy-email-check'
+import { approvalPending, notApproved } from '@/lib/academy-approval'
+import AcademyApprovalLock from '@/components/AcademyApprovalLock'
 import { getOrgFeatures, featuresToArray } from '@/lib/features'
 import { adminClient as oneToOneAdmin } from '@/lib/one-to-one/db'
 import type { UserRole } from '@/lib/types'
@@ -155,6 +157,15 @@ export default async function DashboardLayout({
     return (
       <ThemeProvider initialTheme={theme}>
         <ConfirmAcademyEmailLock email={user.email || ''} orgName={orgBrand?.name || 'your academy'} />
+      </ThemeProvider>
+    )
+  }
+
+  // Then John approves every new academy by hand (src/lib/academy-approval.ts).
+  if (role === 'admin' && !profile?.is_super_admin && (approvalPending(user) || notApproved(user))) {
+    return (
+      <ThemeProvider initialTheme={theme}>
+        <AcademyApprovalLock orgName={orgBrand?.name || 'your academy'} declined={notApproved(user)} />
       </ThemeProvider>
     )
   }

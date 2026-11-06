@@ -25,7 +25,7 @@ function ConfirmEmail() {
     <main className="flex min-h-screen items-center justify-center bg-[#080e18] px-4 text-white">
       <div className="w-full max-w-md rounded-2xl border border-[#1d2c42] bg-[#0f1a2b] p-8 text-center">
         <h1 className="text-xl font-bold">Confirm your email</h1>
-        <p className="mt-2 text-sm text-[#93a2ba]">One tap and your dashboard and booking page open.</p>
+        <p className="mt-2 text-sm text-[#93a2ba]">One tap to confirm this email is yours.</p>
         <button
           type="button"
           onClick={confirm}
@@ -33,7 +33,7 @@ function ConfirmEmail() {
           data-testid="confirm-academy-email"
           className="mt-6 w-full rounded-lg bg-[#4ecde6] px-4 py-3 font-bold text-[#04141a] transition hover:brightness-105 disabled:opacity-60"
         >
-          {state === 'working' ? 'Confirming…' : state === 'done' ? 'Confirmed. Opening your dashboard…' : 'Confirm my email'}
+          {state === 'working' ? 'Confirming…' : state === 'done' ? 'Confirmed. Taking you to your account…' : 'Confirm my email'}
         </button>
         {error && <p className="mt-3 text-sm text-[#e0736d]">{error}</p>}
       </div>

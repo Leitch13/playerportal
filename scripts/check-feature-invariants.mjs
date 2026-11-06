@@ -213,7 +213,7 @@ const FEATURES = [
   ['Emails not reaching: shown on the child page, parent page and register', `${A}/dashboard/players/[id]/page.tsx`, ['data-testid="email-not-reaching"']],
   ['Emails not reaching: parent page', `${A}/dashboard/parents/[id]/page.tsx`, ['data-testid="email-not-reaching"']],
   // ── New academies confirm their email (2 Nov 2026, John: fake "A" academies from a made-up address)
-  ['Academy email check: signup marks the owner pending and emails the button', `${A}/api/onboard/signup/route.ts`, ['app_metadata: { academy_email_check: PENDING }', 'sendEmailCheck(email']],
+  ['Academy email check: signup marks the owner pending and emails the button', `${A}/api/onboard/signup/route.ts`, ['app_metadata: { academy_email_check: PENDING, academy_approval: APPROVAL_PENDING }', 'sendEmailCheck(email']],
   ['Academy email check: booking page private until confirmed', `${A}/api/onboard/route.ts`, ['is_published: false,']],
   ['Academy email check: dashboard shows "check your inbox" until confirmed', `${A}/dashboard/layout.tsx`, ["role === 'admin' && !profile?.is_super_admin && emailCheckPending(user)", '<ConfirmAcademyEmailLock']],
   ['Academy email check: confirm publishes the academy', 'src/lib/academy-email-check.ts', ["update({ is_published: true })", 'academy_email_check: CONFIRMED']],
@@ -411,6 +411,10 @@ const FEATURES = [
   ['Security: 1-2-1 webhook ignores events from academies\' own Stripe accounts', `${A}/api/stripe/one-to-one-webhooks/route.ts`, ["if (event.account) return NextResponse.json({ received: true, ignored: 'connected_account_event' })"]],
   ['Security: dashboard, login and pay pages cannot be framed by another site', 'next.config.ts', ['frame-ancestors \'self\'', '"/dashboard/:path*"', '"/pay/:path*"']],
   ['Security: parents only touch their own rows on the smaller tables', 'supabase/127_parents_only_their_own.sql', ['CREATE POLICY event_bookings_parent_insert', 'CREATE POLICY conversation_participants_add', 'DROP POLICY IF EXISTS waitlist_update ON public.waitlist;']],
+  ['New academies wait for John to approve them (email to his Gmail, Approve / Don\'t approve page)', 'src/lib/academy-approval.ts', ["export const APPROVER_EMAIL = 'johnleitch970@gmail.com'", 'export async function decideAcademy(']],
+  ['New academies are created waiting for approval', `${A}/api/onboard/signup/route.ts`, ['academy_approval: APPROVAL_PENDING']],
+  ['Confirming email asks John to approve instead of opening the academy', 'src/lib/academy-email-check.ts', ['if (approvalPending(user)) {', 'await askJohnToApprove(']],
+  ['Dashboard stays locked until John approves', `${A}/dashboard/layout.tsx`, ['(approvalPending(user) || notApproved(user))']],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 

@@ -83,6 +83,20 @@ export async function confirmAcademyEmail(db: SupabaseClient, userId: string): P
   const { data: org } = profile?.organisation_id
     ? await db.from('organisations').select('id, name, slug, contact_phone, location').eq('id', profile.organisation_id).maybeSingle()
     : { data: null }
+  // New academies (6 Nov 2026) also wait for John's approval: nothing opens yet,
+  // John is emailed Approve / Don't approve (src/lib/academy-approval.ts).
+  const { approvalPending, askJohnToApprove } = await import('@/lib/academy-approval')
+  if (approvalPending(user)) {
+    if (org) {
+      try {
+        await askJohnToApprove(userId, { name: String(profile?.full_name || ''), email: user.email || '' }, {
+          id: org.id as string, name: org.name as string, slug: org.slug as string,
+          contact_phone: org.contact_phone as string | null, location: org.location as string | null,
+        })
+      } catch { /* the lock screen still shows; John also has the signup alert */ }
+    }
+    return { ok: true, already: false }
+  }
   if (org) await db.from('organisations').update({ is_published: true }).eq('id', org.id)
   try {
     const { sendEmail } = await import('@/lib/email')

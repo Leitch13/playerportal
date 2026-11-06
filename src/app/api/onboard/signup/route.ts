@@ -4,6 +4,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { orgIsClaimableByFirstAdmin, claimTokenOk } from '@/lib/onboard-claim'
 import { PENDING, sendEmailCheck } from '@/lib/academy-email-check'
+import { APPROVAL_PENDING } from '@/lib/academy-approval'
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +71,8 @@ export async function POST(request: NextRequest) {
       email_confirm: true, // Signs in straight away; the academy itself waits for the email check below
       // Server-only flag: the dashboard shows "check your inbox" until they press
       // the button we email them (src/lib/academy-email-check.ts).
-      app_metadata: { academy_email_check: PENDING },
+      // ...and then John approves them by hand (src/lib/academy-approval.ts).
+      app_metadata: { academy_email_check: PENDING, academy_approval: APPROVAL_PENDING },
       user_metadata: {
         full_name: fullName,
         org_slug: orgSlug,

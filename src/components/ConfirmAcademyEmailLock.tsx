@@ -24,7 +24,7 @@ export default function ConfirmAcademyEmailLock({ email, orgName }: { email: str
         <h1 className="text-xl font-bold">Check your inbox</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#93a2ba]">
           We&apos;ve emailed <strong className="text-white">{email}</strong> a button to confirm it&apos;s yours.
-          Press it and {orgName} opens straight away: your dashboard, and your booking page for parents.
+          Press it and we&apos;ll check {orgName} and open it for you, usually the same day.
         </p>
         <button
           type="button"
