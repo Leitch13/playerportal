@@ -1,31 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 import { welcomeEmail } from '@/lib/email-templates'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
-  // Sprint 13 (M2) — trusted server-side callers can skip the per-IP
-  // rate-limit by presenting the existing INTERNAL_API_SECRET header
-  // (same pattern used by /api/email/migration-invite-batch). Client-side
-  // callers (signup, quick-book) still hit the rate-limit ceiling below.
-  const secret = request.headers.get('x-internal-secret')
-  const internalAllowed = !!secret && secret === (process.env.INTERNAL_API_SECRET || '___unset___')
-
-  if (!internalAllowed) {
-    const ip = request.headers.get('x-forwarded-for') || 'unknown'
-    const { success } = rateLimit(`welcome-email:${ip}`, 5, 3600000) // 5 per hour
-    if (!success) {
-      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
-    }
+  // Security audit 6 Nov 2026: this used to email any address with any academy
+  // name and parent name taken from the request, with no login, so it could be
+  // used to send phishing from our domain. Now it only ever welcomes the person
+  // who is signed in (they have just created their account), to the address on
+  // their account, for the academy their account belongs to.
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  if (!rateLimit(`welcome-email:${ip}`, 5, 3600000).success) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
+  const authed = await createServerClient()
+  const { data: { user } } = await authed.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { parentName, parentEmail, academyName, academySlug } = await request.json()
-
-  if (!parentEmail || !parentName) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const db = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })
+  const { data: me } = await db.from('profiles').select('email, full_name, organisation_id, role, created_at').eq('id', user.id).maybeSingle()
+  // Only new parent accounts (made in the last hour) get the welcome.
+  if (!me?.email || me.role !== 'parent' || Date.now() - new Date(me.created_at as string).getTime() > 3600000) {
+    return NextResponse.json({ ok: true, skipped: true })
   }
-
+  const clean = (v: unknown) => String(v ?? '').replace(/[<>&"']/g, '').slice(0, 120)
+  const parentEmail = me.email as string
+  const parentName = clean(me.full_name) || 'there'
+  let academyName = 'Player Portal'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theplayerportal.net'
 
   // Enrich with academy branding/contact if we can find the org (best effort).
@@ -35,47 +40,38 @@ export async function POST(request: NextRequest) {
   let academyLogoUrl: string | undefined
   let academyContactEmail: string | undefined
   let adminAlertRecipients: string[] = []
-  if (academySlug) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (supabaseUrl && serviceKey) {
-      try {
-        const supabase = createClient(supabaseUrl, serviceKey, {
-          auth: { autoRefreshToken: false, persistSession: false },
-        })
-        const { data: org } = await supabase
-          .from('organisations')
-          .select('id, logo_url, contact_email')
-          .ilike('slug', academySlug)
-          .single()
-        academyLogoUrl = (org?.logo_url as string | undefined) || undefined
-        academyContactEmail = (org?.contact_email as string | undefined) || undefined
-
-        if (org?.id) {
-          const { data: admins } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('organisation_id', org.id)
-            .eq('role', 'admin')
-          // Lower-case + dedupe; include the org's customer-facing contact_email
-          // so a shared inbox still gets the alert even if no admin profile uses it.
-          const set = new Set<string>()
-          for (const a of admins || []) {
-            const e = (a.email as string | null)?.trim().toLowerCase()
-            if (e) set.add(e)
-          }
-          if (academyContactEmail) set.add(academyContactEmail.trim().toLowerCase())
-          adminAlertRecipients = Array.from(set)
+  if (me.organisation_id) {
+    try {
+      const { data: org } = await db
+        .from('organisations')
+        .select('id, name, logo_url, contact_email')
+        .eq('id', me.organisation_id)
+        .single()
+      academyName = clean(org?.name) || academyName
+      academyLogoUrl = (org?.logo_url as string | undefined) || undefined
+      academyContactEmail = (org?.contact_email as string | undefined) || undefined
+      if (org?.id) {
+        const { data: admins } = await db
+          .from('profiles')
+          .select('email')
+          .eq('organisation_id', org.id)
+          .eq('role', 'admin')
+        const set = new Set<string>()
+        for (const a of admins || []) {
+          const e = (a.email as string | null)?.trim().toLowerCase()
+          if (e) set.add(e)
         }
-      } catch {
-        // best effort — fall back to plain template
+        if (academyContactEmail) set.add(academyContactEmail.trim().toLowerCase())
+        adminAlertRecipients = Array.from(set)
       }
+    } catch {
+      // best effort — fall back to plain template
     }
   }
 
   const template = welcomeEmail({
     parentName,
-    academyName: academyName || 'Player Portal',
+    academyName,
     dashboardUrl: `${appUrl}/dashboard`,
     academyLogoUrl,
     academyContactEmail,
@@ -84,7 +80,7 @@ export async function POST(request: NextRequest) {
   const result = await sendEmail({
     to: parentEmail,
     ...template,
-    fromName: academyName || undefined,
+    fromName: academyName,
     replyTo: academyContactEmail,
   })
 

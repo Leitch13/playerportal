@@ -112,7 +112,29 @@ export async function POST(request: NextRequest) {
   let sent = 0
   let failed = 0
 
+  // Security audit 6 Nov 2026: the address always comes from the parent on file
+  // for a real invite in THIS academy, never from the request. Unknown tokens
+  // are skipped, so the route can't be used to email anyone else.
+  const tokens = invitations.map((i) => String(i?.token || '')).filter(Boolean)
+  const { data: realSubs } = await admin
+    .from('subscriptions')
+    .select('invite_token, parent:profiles!subscriptions_parent_id_fkey(email)')
+    .eq('organisation_id', orgId)
+    .in('invite_token', tokens.length ? tokens : ['-'])
+  const emailForToken = new Map<string, string>()
+  for (const s of (realSubs || []) as unknown as { invite_token: string; parent: { email: string | null } | null }[]) {
+    const e = s.parent?.email?.trim()
+    if (s.invite_token && e) emailForToken.set(s.invite_token, e)
+  }
+
   for (const inv of invitations) {
+    const onFile = emailForToken.get(String(inv?.token || ''))
+    if (!onFile) {
+      failed++
+      results.push({ email: inv?.email, token: inv?.token, sent: false, error: 'No invite for this academy with that token' })
+      continue
+    }
+    inv.email = onFile
     try {
       const confirmUrl = `${origin}/confirm-subscription/${inv.token}`
       const priceText = inv.planAmount > 0 ? `£${inv.planAmount.toFixed(2)}/month` : 'your subscription'
@@ -123,7 +145,7 @@ export async function POST(request: NextRequest) {
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;">
     <div style="padding:24px 32px;background:${primary};color:#0a0a0a;">
-      <h1 style="margin:0;font-size:20px;font-weight:800;">${academyName}</h1>
+      <h1 style="margin:0;font-size:20px;font-weight:800;">${escapeHtml(academyName)}</h1>
     </div>
     <div style="padding:32px;color:#1a1a1a;line-height:1.6;">
       <h2 style="font-size:22px;margin:0 0 16px;font-weight:700;color:#111;">Hi ${escapeHtml(inv.parentName)},</h2>

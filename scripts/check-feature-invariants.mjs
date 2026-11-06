@@ -398,12 +398,17 @@ const FEATURES = [
   ['Security: camp checkout takes the academy from the camp, never the request', `${A}/api/stripe/camp-checkout/route.ts`, ['if (organisationId !== camp.organisation_id) {']],
   ['Security: parent booking/cancel/checkout write with the server key (parents cannot write those rows)', `${A}/api/enrolments/book/route.ts`, ["await serverDb().rpc('enrol_if_capacity_available'"]],
   ['Security: parent cancel mirrors the membership with the server key', `${A}/api/stripe/cancel/route.ts`, ["await ownerDb.from('subscriptions').update({"]],
+  ['Security: the welcome email only goes to the signed-in new parent, academy from their account', `${A}/api/email/welcome/route.ts`, ["const { data: { user } } = await authed.auth.getUser()", "if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })"]],
+  ['Security: invite emails only go to the parent on file for a real invite in that academy', `${A}/api/email/migration-invite-batch/route.ts`, ["const onFile = emailForToken.get(", ".eq('organisation_id', orgId)"]],
+  ['Security: certificate reminders only go to staff in the sender\'s own academy', `${A}/api/send-cert-reminder/route.ts`, ["coach.organisation_id !== profile.organisation_id"]],
+  ['Security: offering a waiting-list place needs the server secret or staff of that academy', `${A}/api/waitlist/promote/route.ts`, ["const staffHere =", "if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })"]],
+  ['Security: after login, never redirect off the site (backslash trick)', `${A}/auth/confirm/route.ts`, ["raw.includes('\\\\')", "if (u.origin !== 'https://theplayerportal.net') return '/dashboard'"]],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 
 const fail = []
 // Removed on purpose (security audit 6 Nov 2026): let any parent give themselves 25% off forever.
-for (const gone of [`${A}/api/stripe/apply-discount/route.ts`]) if (existsSync(gone)) fail.push(`Security: ${gone} must stay deleted`)
+for (const gone of [`${A}/api/stripe/apply-discount/route.ts`, `${A}/api/email/send/route.ts`, `${A}/api/email/enrolment/route.ts`]) if (existsSync(gone)) fail.push(`Security: ${gone} must stay deleted`)
 // The video files themselves.
 for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones', 'academy-refund', 'academy-who-owes', 'academy-class-start-date', 'academy-class-prices', 'academy-camp-owed', 'academy-one-to-one-setup', 'academy-one-to-one-month']) {
   for (const ext of ['mp4', 'jpg']) if (!existsSync(`public/help/${f}.${ext}`)) fail.push(`How-to videos: public/help/${f}.${ext} is missing`)

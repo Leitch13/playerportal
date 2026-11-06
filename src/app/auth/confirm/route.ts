@@ -35,6 +35,13 @@ export const dynamic = 'force-dynamic'
 // this is an open-redirect guard on a pre-auth endpoint.
 function safeNext(raw: string | null): string {
   if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/dashboard'
+  // Browsers treat a backslash as a slash, so "/\evil.com" would leave the site
+  // (security audit 6 Nov 2026). Allow plain path characters only.
+  if (!/^\/[A-Za-z0-9\-._~!$&'()*+,;=:@%/?#]*$/.test(raw) || raw.includes('\\')) return '/dashboard'
+  try {
+    const u = new URL(raw, 'https://theplayerportal.net')
+    if (u.origin !== 'https://theplayerportal.net') return '/dashboard'
+  } catch { return '/dashboard' }
   return raw
 }
 

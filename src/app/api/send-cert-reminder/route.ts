@@ -21,10 +21,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { email, name } = await request.json()
-  if (!email) {
-    return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+  // Security audit 6 Nov 2026: only to a member of staff in the caller's own
+  // academy, using the address on file (was: any address from the request).
+  const { coachId } = await request.json()
+  if (!coachId || !profile.organisation_id) {
+    return NextResponse.json({ error: 'Missing coach' }, { status: 400 })
   }
+  const { data: coach } = await supabase
+    .from('profiles')
+    .select('email, full_name, role, organisation_id')
+    .eq('id', coachId)
+    .maybeSingle()
+  if (!coach?.email || coach.organisation_id !== profile.organisation_id || !['admin', 'coach'].includes(coach.role as string)) {
+    return NextResponse.json({ error: 'Coach not found' }, { status: 404 })
+  }
+  const email = coach.email as string
+  const name = String(coach.full_name || '').replace(/[<>&"']/g, '')
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://playerportal.app'
 

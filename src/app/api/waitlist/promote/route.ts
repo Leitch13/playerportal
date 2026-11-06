@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { timingSafeEqual } from 'crypto'
 import { sendEmail } from '@/lib/email'
 import { waitlistSpotAvailableEmail } from '@/lib/email-templates'
 import { WAITLIST_TOKEN_ON, generateWaitlistToken, withToken } from '@/lib/waitlist-token'
@@ -29,6 +31,24 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+
+    // Security audit 6 Nov 2026: anyone could call this (class ids are on the
+    // public booking pages) and offer places to a whole waiting list. Now only
+    // the server (internal secret) or staff of the class's own academy.
+    const secret = process.env.INTERNAL_API_SECRET || ''
+    const given = request.headers.get('x-internal-secret') || ''
+    const viaServer = secret.length > 0 && given.length === secret.length && timingSafeEqual(Buffer.from(given), Buffer.from(secret))
+    if (!viaServer) {
+      const authed = await createServerClient()
+      const { data: { user } } = await authed.auth.getUser()
+      if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const [{ data: me }, { data: cls }] = await Promise.all([
+        supabase.from('profiles').select('role, organisation_id, is_super_admin').eq('id', user.id).maybeSingle(),
+        supabase.from('training_groups').select('organisation_id').eq('id', group_id).maybeSingle(),
+      ])
+      const staffHere = !!me && !!cls && ['admin', 'coach'].includes(me.role as string) && me.organisation_id === cls.organisation_id
+      if (!staffHere && !me?.is_super_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     // Find the next waiting entry for this group
     const { data: nextEntry, error: fetchError } = await supabase
