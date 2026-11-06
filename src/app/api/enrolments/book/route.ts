@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { notifyOrgAdmins } from '@/lib/notify-admins'
 
 /**
@@ -200,8 +201,10 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({ error: `${player.first_name} is already enrolled in this class.` }, { status: 409 })
       }
-      // Re-activate previously-cancelled enrolment
-      await supabase
+      // Re-activate previously-cancelled enrolment. Server key: parents no
+      // longer write enrolment rows directly (125); this route checked the
+      // child is theirs and the membership is paid above.
+      await serverDb()
         .from('enrolments')
         .update({ status: 'active' })
         .eq('id', existing.id)
@@ -225,7 +228,7 @@ export async function POST(request: NextRequest) {
     // a subscription gate but no capacity gate, so an authenticated
     // parent could book into a full class via the schedule page).
     const todayIso = new Date().toISOString().split('T')[0]
-    const { data: enrolRes, error: enrolError } = await supabase.rpc('enrol_if_capacity_available', {
+    const { data: enrolRes, error: enrolError } = await serverDb().rpc('enrol_if_capacity_available', {
       p_player_id: playerId,
       p_group_id: groupId,
       p_org_id: group.organisation_id,
@@ -277,4 +280,10 @@ export async function POST(request: NextRequest) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
+}
+
+function serverDb() {
+  return createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 }

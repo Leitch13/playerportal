@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Mirror state in our DB so the dashboard reflects reality.
-    await supabase.from('subscriptions').update({
+    // Server key: parents can read but not write subscription rows (125).
+    await ownerDb.from('subscriptions').update({
       cancel_at_period_end: true,
       ...(orphaned ? { status: 'canceled', canceled_at: new Date().toISOString() } : {}),
       updated_at: new Date().toISOString(),

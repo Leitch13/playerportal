@@ -595,7 +595,7 @@ export async function POST(request: NextRequest) {
         if (msg.includes('No such customer')) {
           // Stale ID (most likely test-mode) — drop it and recreate.
           customerId = null
-          await supabase
+          await serviceDb
             .from('profiles')
             .update({ stripe_customer_id: null })
             .eq('id', user.id)
@@ -613,7 +613,7 @@ export async function POST(request: NextRequest) {
       })
       customerId = customer.id
 
-      await supabase
+      await serviceDb
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id)

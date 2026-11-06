@@ -80,6 +80,12 @@ export async function POST(request: NextRequest) {
     if (campError || !camp) {
       return NextResponse.json({ error: 'Camp not found' }, { status: 404 })
     }
+    // The academy always comes from the camp itself, never from the request
+    // (security audit 6 Nov 2026: another academy's 100% code could book this
+    // camp at £0, filed under the wrong academy). flexible-camp-checkout already does this.
+    if (organisationId !== camp.organisation_id) {
+      return NextResponse.json({ error: 'Camp not found' }, { status: 404 })
+    }
 
     // Refuse to take payment for an unpublished camp. Front-end pages already
     // hide unpublished camps, but the checkout API is a separate surface — a

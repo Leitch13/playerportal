@@ -393,10 +393,17 @@ const FEATURES = [
   ['1-2-1s: the month breakdown carries a Pay now link when money is due', 'src/lib/one-to-one/family-month-send.ts', ['payUrl, hasCard: await hasSavedCard(']],
   ['1-2-1s: no-card families can pay next month early from the breakdown email', 'src/lib/one-to-one/family-month-send.ts', ['await ensureNextMonthBill(admin, orgId, parentId, month)']],
   ['1-2-1s: after paying from an email link the parent lands on a thank-you page, never a login', 'src/app/pay/121/charge/[chargeId]/page.tsx', ['if (sp.paid) return <PayMessage']],
+  ['Security (6 Nov 2026): database locks roles, academy, plan, fee, membership status and discount codes to the server', 'supabase/125_server_only_money_and_roles.sql', ['CREATE TRIGGER guard_profile_columns', 'CREATE TRIGGER guard_organisation_columns', 'DROP POLICY IF EXISTS "Org members manage org subscriptions"', 'CREATE POLICY promo_codes_admin_manage', "RETURN jsonb_build_object('ok', false, 'error', 'not_allowed')"]],
+  ['Security: add-a-child never moves or demotes another academy\'s or a staff member\'s account', `${A}/api/admin/players/route.ts`, ["prior.organisation_id !== orgId", "picked.organisation_id !== orgId"]],
+  ['Security: camp checkout takes the academy from the camp, never the request', `${A}/api/stripe/camp-checkout/route.ts`, ['if (organisationId !== camp.organisation_id) {']],
+  ['Security: parent booking/cancel/checkout write with the server key (parents cannot write those rows)', `${A}/api/enrolments/book/route.ts`, ["await serverDb().rpc('enrol_if_capacity_available'"]],
+  ['Security: parent cancel mirrors the membership with the server key', `${A}/api/stripe/cancel/route.ts`, ["await ownerDb.from('subscriptions').update({"]],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 
 const fail = []
+// Removed on purpose (security audit 6 Nov 2026): let any parent give themselves 25% off forever.
+for (const gone of [`${A}/api/stripe/apply-discount/route.ts`]) if (existsSync(gone)) fail.push(`Security: ${gone} must stay deleted`)
 // The video files themselves.
 for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones', 'academy-refund', 'academy-who-owes', 'academy-class-start-date', 'academy-class-prices', 'academy-camp-owed', 'academy-one-to-one-setup', 'academy-one-to-one-month']) {
   for (const ext of ['mp4', 'jpg']) if (!existsSync(`public/help/${f}.${ext}`)) fail.push(`How-to videos: public/help/${f}.${ext} is missing`)

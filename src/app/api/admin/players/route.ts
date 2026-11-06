@@ -67,6 +67,11 @@ export async function POST(req: NextRequest) {
     if (!resolvedParentId) {
       return NextResponse.json({ error: 'Please pick a parent from the list.' }, { status: 400 })
     }
+    // The parent must be one of this academy's own families (security audit 6 Nov 2026).
+    const { data: picked } = await admin.from('profiles').select('organisation_id').eq('id', resolvedParentId).maybeSingle()
+    if (!picked || picked.organisation_id !== orgId) {
+      return NextResponse.json({ error: 'Please pick a parent from the list.' }, { status: 400 })
+    }
   } else if (mode === 'new') {
     const parentName = (body.parentName as string | undefined)?.trim() || ''
     const parentEmail = (body.parentEmail as string | undefined)?.trim().toLowerCase() || ''
@@ -116,6 +121,20 @@ export async function POST(req: NextRequest) {
 
     if (!resolvedParentId) {
       return NextResponse.json({ error: 'Failed to resolve parent account.' }, { status: 500 })
+    }
+
+    // An existing account is only relinked if it is a parent with no academy or
+    // already in this one. Never move or demote someone else's account
+    // (security audit 6 Nov 2026: an academy could take over another academy's
+    // admin login by adding a child with that admin's email).
+    if (createErr) {
+      const { data: prior } = await admin.from('profiles').select('role, organisation_id').eq('id', resolvedParentId).maybeSingle()
+      if (prior && ((prior.organisation_id && prior.organisation_id !== orgId) || (prior.role && prior.role !== 'parent'))) {
+        return NextResponse.json(
+          { error: 'That email already has a Player Portal account with another academy or as staff. Use a different email for this parent.' },
+          { status: 409 }
+        )
+      }
     }
 
     // 2. Ensure the profile row exists with the correct org + role + name. The

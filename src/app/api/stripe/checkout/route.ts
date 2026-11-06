@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createInvoiceCheckoutSession } from '@/lib/invoice-checkout'
 
 // Parent-facing money route: give it real headroom instead of the platform
@@ -57,8 +58,8 @@ export async function POST(request: NextRequest) {
       })
       customerId = customer.id
 
-      // Save Stripe customer ID to profile
-      await supabase
+      // Save Stripe customer ID to profile (server key: only the server sets it, 125)
+      await createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } })
         .from('profiles')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id)
