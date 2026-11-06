@@ -60,6 +60,20 @@ export async function POST(request: NextRequest) {
     if (!subscriptionId) {
       return NextResponse.json({ error: 'Missing subscriptionId' }, { status: 400 })
     }
+    // The membership must be the caller's own, in their own academy
+    // (security audit 6 Nov 2026: any Stripe id could be discounted).
+    {
+      const { data: myOrg } = await supabase.rpc('get_my_org')
+      const { data: mine } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('stripe_subscription_id', subscriptionId)
+        .eq('parent_id', user.id)
+        .eq('organisation_id', myOrg)
+        .limit(1)
+        .maybeSingle()
+      if (!mine) return NextResponse.json({ error: 'Membership not found' }, { status: 404 })
+    }
 
     // ─── Stripe lookup with mode-mismatch safe-fail (Phase 5 finding) ───
     let subscription: Stripe.Subscription

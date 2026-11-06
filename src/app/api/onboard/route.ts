@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { claimTokenFor } from '@/lib/onboard-claim'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
@@ -131,11 +132,15 @@ export async function POST(request: NextRequest) {
 
     // Look up the platform plan by slug (default to 'pro' if not provided)
     let platformPlanId: string | null = null
-    const planSlug = platformPlan || 'pro'
+    // One plan for every academy (John, 5 Nov 2026: £35 + 3.8%). The page's
+    // choice is ignored: an academy could otherwise sign up on an inactive plan
+    // with a lower fee (security audit 6 Nov 2026).
+    void platformPlan
     const { data: planRow } = await supabase
       .from('platform_plans')
       .select('id')
-      .eq('slug', planSlug)
+      .eq('slug', 'pro')
+      .eq('is_active', true)
       .single()
 
     if (planRow) {
@@ -234,7 +239,7 @@ export async function POST(request: NextRequest) {
       referrerName,
     }).catch((err) => console.error('Admin notification failed:', err))
 
-    return NextResponse.json({ orgId: org.id })
+    return NextResponse.json({ orgId: org.id, claimToken: claimTokenFor(org.id as string) })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: message }, { status: 500 })

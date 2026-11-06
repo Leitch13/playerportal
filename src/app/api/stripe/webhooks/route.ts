@@ -2563,6 +2563,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Invalid signature: ${message}` }, { status: 400 })
   }
 
+  // Every payment we take is on the platform account (no direct charges), so a
+  // payment event from an academy's own Stripe account is never ours. Without
+  // this, an academy owner could fire a 1p checkout in their own Stripe carrying
+  // another family's payment id in metadata (security audit 6 Nov 2026).
+  // account.updated is the one event that is about an academy's account.
+  if (event.account && event.type !== 'account.updated') {
+    console.warn(`[webhook] ignored ${event.type} ${event.id} from connected account ${event.account}`)
+    return NextResponse.json({ received: true, ignored: 'connected_account_event' })
+  }
+
   // ─── IDEMPOTENCY: short-circuit on already-processed event ───
   const handlerName = handlerFor(event.type)
   const decision = await shouldProcessEvent(supabase, event, handlerName)

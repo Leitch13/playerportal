@@ -303,6 +303,7 @@ export default function OnboardPage() {
           password,
           fullName,
           orgSlug: slug,
+          claimToken: data.claimToken,
         }),
       })
 

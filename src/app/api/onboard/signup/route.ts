@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
-import { orgIsClaimableByFirstAdmin } from '@/lib/onboard-claim'
+import { orgIsClaimableByFirstAdmin, claimTokenOk } from '@/lib/onboard-claim'
 import { PENDING, sendEmailCheck } from '@/lib/academy-email-check'
 
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
     }
 
-    const { email, password, fullName, orgSlug } = await request.json()
+    const { email, password, fullName, orgSlug, claimToken } = await request.json()
 
     const emailProblem = await checkLeadEmail(String(email || ''), 'your account')
     if (emailProblem) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       .select('id', { count: 'exact', head: true })
       .eq('organisation_id', org.id)
       .eq('role', 'admin')
-    if (!orgIsClaimableByFirstAdmin(adminCount ?? 0)) {
+    if (!orgIsClaimableByFirstAdmin(adminCount ?? 0) || !claimTokenOk(org.id as string, claimToken)) {
       return NextResponse.json(
         { error: 'This academy already has an owner. Ask them to add you from Settings → Staff.' },
         { status: 409 }

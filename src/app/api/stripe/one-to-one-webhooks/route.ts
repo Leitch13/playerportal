@@ -34,6 +34,9 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Bad signature' }, { status: 400 })
   }
+  // 1-2-1 money is taken on the platform account; ignore anything from an
+  // academy's own Stripe account (security audit 6 Nov 2026).
+  if (event.account) return NextResponse.json({ received: true, ignored: 'connected_account_event' })
 
   const admin = adminClient()
   // Stripe delivers the same event to BOTH endpoints (the class endpoint also

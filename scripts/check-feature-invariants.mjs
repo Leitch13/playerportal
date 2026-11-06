@@ -403,12 +403,22 @@ const FEATURES = [
   ['Security: certificate reminders only go to staff in the sender\'s own academy', `${A}/api/send-cert-reminder/route.ts`, ["coach.organisation_id !== profile.organisation_id"]],
   ['Security: offering a waiting-list place needs the server secret or staff of that academy', `${A}/api/waitlist/promote/route.ts`, ["const staffHere =", "if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })"]],
   ['Security: after login, never redirect off the site (backslash trick)', `${A}/auth/confirm/route.ts`, ["raw.includes('\\\\')", "if (u.origin !== 'https://theplayerportal.net') return '/dashboard'"]],
+  ['Security: daily watch emails John about new admins, payout/plan/£35 changes and refused-booking bursts', `${A}/api/cron/security-watch/route.ts`, ['diffSnapshots(before, snap, names)', 'busyRefusers(db, since)']],
+  ['Security: onboarding gives every academy the one live plan and needs the claim token for the first admin', `${A}/api/onboard/signup/route.ts`, ['claimTokenOk(org.id as string, claimToken)']],
+  ['Security: onboarding ignores the plan the page sends', `${A}/api/onboard/route.ts`, [".eq('slug', 'pro')", ".eq('is_active', true)"]],
+  ['Security: keep-my-membership discount only on the caller\'s own membership', `${A}/api/stripe/retain/route.ts`, [".eq('parent_id', user.id)"]],
+  ['Security: webhooks ignore payment events from academies\' own Stripe accounts', `${A}/api/stripe/webhooks/route.ts`, ["if (event.account && event.type !== 'account.updated') {"]],
+  ['Security: 1-2-1 webhook ignores events from academies\' own Stripe accounts', `${A}/api/stripe/one-to-one-webhooks/route.ts`, ["if (event.account) return NextResponse.json({ received: true, ignored: 'connected_account_event' })"]],
+  ['Security: dashboard, login and pay pages cannot be framed by another site', 'next.config.ts', ['frame-ancestors \'self\'', '"/dashboard/:path*"', '"/pay/:path*"']],
+  ['Security: parents only touch their own rows on the smaller tables', 'supabase/127_parents_only_their_own.sql', ['CREATE POLICY event_bookings_parent_insert', 'CREATE POLICY conversation_participants_add', 'DROP POLICY IF EXISTS waitlist_update ON public.waitlist;']],
   ['Discounts: webhook puts the code on the membership', `${A}/api/stripe/webhooks/route.ts`, ['redeemCodeOnSubscription(supabase, stripe, session.metadata.promo_code_id', "rpc('increment_promo_use', { p_promo_id: m.promo_code_id })"]],
 ]
 
 const fail = []
 // Removed on purpose (security audit 6 Nov 2026): let any parent give themselves 25% off forever.
-for (const gone of [`${A}/api/stripe/apply-discount/route.ts`, `${A}/api/email/send/route.ts`, `${A}/api/email/enrolment/route.ts`]) if (existsSync(gone)) fail.push(`Security: ${gone} must stay deleted`)
+// Scheduled jobs check this password; never deploy without it (security audit 6 Nov 2026).
+if (process.env.VERCEL && !process.env.CRON_SECRET) fail.push('Security: CRON_SECRET is not set for this deploy, so scheduled jobs would be unprotected')
+for (const gone of [`${A}/api/stripe/apply-discount/route.ts`, `${A}/api/email/send/route.ts`, `${A}/api/email/enrolment/route.ts`, `${A}/api/stripe/webhook-test/route.ts`]) if (existsSync(gone)) fail.push(`Security: ${gone} must stay deleted`)
 // The video files themselves.
 for (const f of ['booking', 'cant-make-it', 'confirming-your-place', 'parent-page', 'academy-first-ten-minutes', 'academy-class-and-plan', 'academy-who-has-paid', 'academy-camps', 'academy-one-to-ones', 'academy-refund', 'academy-who-owes', 'academy-class-start-date', 'academy-class-prices', 'academy-camp-owed', 'academy-one-to-one-setup', 'academy-one-to-one-month']) {
   for (const ext of ['mp4', 'jpg']) if (!existsSync(`public/help/${f}.${ext}`)) fail.push(`How-to videos: public/help/${f}.${ext} is missing`)

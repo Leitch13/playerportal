@@ -109,6 +109,10 @@
     {
       "path": "/api/cron/email-delivery",
       "schedule": "50 * * * *"
+    },
+    {
+      "path": "/api/cron/security-watch",
+      "schedule": "20 7 * * *"
     }
   ],
   "regions": [
