@@ -153,7 +153,7 @@ export default function ClassRegister({
   const tel = (n: string) => <a href={`tel:${n.replace(/\s+/g, '')}`} className="font-semibold text-[#4ecde6] underline-offset-2 hover:underline">{n}</a>
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#1d2c42] bg-[#0f1a2b]" data-testid="class-register">
+    <div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b]" data-testid="class-register">
       {/* The date, and what the register says for it */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3 sm:px-5">
         <div className="flex items-center gap-2">

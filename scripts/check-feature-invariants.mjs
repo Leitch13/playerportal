@@ -33,6 +33,8 @@ const FEATURES = [
   // Banner video on the booking page (9 Nov 2026, John's go). Migration 128 hero_video_url.
   ['Booking page: optional banner video over the hero photo, skipped on data saver / reduced motion', 'src/components/BookingPageHero.tsx', ['function HeroVideo(', 'conn.saveData === true', 'prefers-reduced-motion: reduce', 'orgHeroVideo && <HeroVideo src={orgHeroVideo} />']],
   ['Booking page: passes the banner video to the hero', `${A}/book/[slug]/page.tsx`, ['orgHeroVideo={']],
+  // 9 Nov 2026: the register box had overflow-hidden, which hid the Move or remove (⋮) menu on small classes (Jamie, Rhys Blaney).
+  ['Class register: the Move or remove menu is not cut off by the register box', `${D}/groups/[id]/ClassRegister.tsx`, ['<div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b]" data-testid="class-register">']],
   ['Settings: academies can upload a banner video', `${D}/settings/SettingsForm.tsx`, ['folder="hero-videos"', 'hero_video_url: form.hero_video_url', 'maxMB={20}']],
   // Booking door check (5 Nov 2026: fake "A / a@gmail.com" trial at Pro Football Coaching). See src/lib/booking-guard.ts.
   ['Bookings: free trials pass the door check, then the parent is emailed a confirm link', `${A}/api/trials/book/route.ts`, ['checkBookingDetails(body)', 'checkLeadEmail(body.email', 'checkSignupIp(ip)', "action: 'trial.refused'", 'action: AWAITING_ACTION', 'trialConfirmLinkEmail({', 'if (!sent.success)']],
