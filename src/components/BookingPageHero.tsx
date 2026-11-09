@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 /**
@@ -19,6 +19,7 @@ export default function BookingPageHero({
   orgLogo,
   orgHeroImage,
   orgHeroImageMobile,
+  orgHeroVideo,
   primaryColor,
   trialHref,
   totalPlayers,
@@ -32,6 +33,8 @@ export default function BookingPageHero({
   orgHeroImage?: string | null
   /** Optional portrait crop shown under the sm breakpoint instead of orgHeroImage. */
   orgHeroImageMobile?: string | null
+  /** Optional banner video: plays muted on a loop over the hero photo (migration 128). */
+  orgHeroVideo?: string | null
   primaryColor: string
   /** Where "Book Your Trial" goes. The page passes the class list when the
    *  academy prices every trial, so the hero never sends anyone to a page
@@ -53,6 +56,8 @@ export default function BookingPageHero({
   // everyone but the academy's own admin and every academy showed the
   // fresh-launch copy to actual parents.
   const showTrust = totalPlayers >= 10 || totalSessions >= 20
+  // A photo or a video: either one is the hero, so no brand orbs/grid/tint.
+  const hasBackdrop = !!(orgHeroImage || orgHeroVideo)
   const isFreshLaunch = totalPlayers === 0 && totalSessions === 0
 
   // Animated counters
@@ -87,7 +92,7 @@ export default function BookingPageHero({
       // With a photo, the photo is the hero: neutral dark base, no brand tint.
       // Without one, the original cinematic gradient + brand glow carries it.
       style={{
-        background: orgHeroImage
+        background: hasBackdrop
           ? '#060606'
           : `linear-gradient(160deg, #060606 0%, #0a0a0a 35%, ${primaryColor}40 100%)`,
       }}
@@ -97,18 +102,17 @@ export default function BookingPageHero({
           an academy's own photo came out as a murky wash of their brand colour
           (green at WLFA, red at RZ Sports). Now the photo shows, with only a
           neutral bottom scrim so the title and buttons stay legible on any image. */}
-      {orgHeroImage && (
+      {hasBackdrop && (
         <>
-          {/* Phones get the portrait crop when one is set; the wide image
-              stays on sm+ untouched. Without a crop, one backdrop as before. */}
-          {orgHeroImageMobile ? (
+          {orgHeroImage && (orgHeroImageMobile ? (
             <>
               <div className="absolute inset-0 bg-cover bg-center sm:hidden" style={{ backgroundImage: `url(${orgHeroImageMobile})` }} />
               <div className="absolute inset-0 bg-cover bg-center hidden sm:block" style={{ backgroundImage: `url(${orgHeroImage})` }} />
             </>
           ) : (
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${orgHeroImage})` }} />
-          )}
+          ))}
+          {orgHeroVideo && <HeroVideo src={orgHeroVideo} />}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{ background: 'linear-gradient(180deg, rgba(6,6,6,0.35) 0%, rgba(6,6,6,0.45) 40%, rgba(6,6,6,0.94) 100%)' }}
@@ -117,7 +121,7 @@ export default function BookingPageHero({
       )}
 
       {/* Floating brand-colour orbs — only when there is no photo to fight with */}
-      {!orgHeroImage && (
+      {!hasBackdrop && (
         <>
           <div
             className="absolute -top-20 left-[20%] w-[400px] h-[400px] rounded-full blur-[120px] opacity-30 pointer-events-none animate-float-1"
@@ -131,7 +135,7 @@ export default function BookingPageHero({
       )}
 
       {/* Grid pattern */}
-      {!orgHeroImage && (
+      {!hasBackdrop && (
         <div
           className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{
@@ -142,7 +146,7 @@ export default function BookingPageHero({
       )}
 
       {/* Radial brand vignette — no-photo look only */}
-      {!orgHeroImage && (
+      {!hasBackdrop && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: `radial-gradient(ellipse at 50% 110%, ${primaryColor}30 0%, transparent 60%)` }}
@@ -280,5 +284,48 @@ export default function BookingPageHero({
         .animate-slide-up { animation: slide-up 0.7s ease-out both; }
       `}</style>
     </div>
+  )
+}
+
+/**
+ * Banner video (9 Nov 2026). Sits over the hero photo and fades in only once it
+ * is actually playing, so the photo is what parents see first and what they keep
+ * when the clip can't play. Skipped entirely on data saver, 2G and for anyone
+ * who asks their phone for reduced motion. Muted is set on the element itself:
+ * iOS only autoplays a video whose muted attribute is really there.
+ */
+function HeroVideo({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  const [allowed, setAllowed] = useState(false)
+  const [playing, setPlaying] = useState(false)
+
+  useEffect(() => {
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
+    const slow = !!conn && (conn.saveData === true || conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g')
+    setAllowed(!reduced && !slow)
+  }, [])
+
+  useEffect(() => {
+    const v = ref.current
+    if (!allowed || !v) return
+    v.muted = true
+    v.play().catch(() => { /* blocked: the photo stays */ })
+  }, [allowed])
+
+  if (!allowed) return null
+  return (
+    <video
+      ref={ref}
+      src={src}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      aria-hidden="true"
+      onPlaying={() => setPlaying(true)}
+      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${playing ? 'opacity-100' : 'opacity-0'}`}
+    />
   )
 }

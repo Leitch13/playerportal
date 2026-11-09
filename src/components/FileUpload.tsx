@@ -10,6 +10,7 @@ export default function FileUpload({
   onUpload,
   currentUrl,
   label,
+  maxMB = 10,
 }: {
   bucketName?: string
   folder: string
@@ -17,6 +18,8 @@ export default function FileUpload({
   onUpload: (url: string) => void
   currentUrl?: string
   label?: string
+  /** Largest file accepted, in MB. Default 10 (images, PDFs); the banner video allows 20. */
+  maxMB?: number
 }) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -38,6 +41,8 @@ export default function FileUpload({
     }
   }
 
+  const isVideo = (url: string) => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url)
+
   const isImage = (url: string) => {
     const lower = url.toLowerCase()
     return (
@@ -51,8 +56,8 @@ export default function FileUpload({
   }
 
   async function handleFile(file: File) {
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File too large (max 10MB)')
+    if (file.size > maxMB * 1024 * 1024) {
+      setError(`File too large (max ${maxMB}MB)`)
       return
     }
 
@@ -131,7 +136,7 @@ export default function FileUpload({
       if (file) handleFile(file)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bucketName, folder]
+    [bucketName, folder, maxMB]
   )
 
   function handleRemove() {
@@ -191,7 +196,7 @@ export default function FileUpload({
               {fileName || getFileNameFromUrl(preview)}
             </a>
             <span className="text-[10px] text-white/30">
-              {isPdf(preview) ? 'PDF document' : 'Image'}
+              {isPdf(preview) ? 'PDF document' : isVideo(preview) ? 'Video' : 'Image'}
             </span>
           </div>
           <button
@@ -282,7 +287,7 @@ export default function FileUpload({
               Drag &amp; drop or{' '}
               <span className="text-[#4ecde6]">browse</span>
             </span>
-            <span className="text-[10px] text-white/25">Max 10MB</span>
+            <span className="text-[10px] text-white/25">Max {maxMB}MB</span>
           </>
         )}
       </div>

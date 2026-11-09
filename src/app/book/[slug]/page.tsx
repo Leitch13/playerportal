@@ -593,6 +593,7 @@ export default async function PublicBookingPage({
         orgLogo={org.logo_url as string | null}
         orgHeroImage={org.hero_image_url as string | null}
         orgHeroImageMobile={(org as { hero_image_mobile_url?: string | null }).hero_image_mobile_url ?? null}
+        orgHeroVideo={(org as { hero_video_url?: string | null }).hero_video_url ?? null}
         primaryColor={primaryColor as string}
         trialHref={trialHref}
         totalPlayers={Math.max(parentCount || 0, anonVisiblePlayers)}

@@ -30,6 +30,10 @@ const FEATURES = [
   ['Camps: the camp page reads each booking\'s backup contact', `${D}/camps/[campId]/page.tsx`, ['latestBackups(', 'CAMP_BACKUP_ACTION', 'backup_phone: backups.get(b.id)']],
   ['Camps: a booked family can add a backup contact from a link', `${A}/api/camps/backup-contact/route.ts`, ['backupContactProblem(', "source: 'link'", 'parentPhone: booking.parent_phone']],
   ['Camps: the add-a-backup page', `${A}/book/[slug]/camps/backup/[bookingId]/page.tsx`, ['camp-backup-page', '<BackupContactForm']],
+  // Banner video on the booking page (9 Nov 2026, John's go). Migration 128 hero_video_url.
+  ['Booking page: optional banner video over the hero photo, skipped on data saver / reduced motion', 'src/components/BookingPageHero.tsx', ['function HeroVideo(', 'conn.saveData === true', 'prefers-reduced-motion: reduce', 'orgHeroVideo && <HeroVideo src={orgHeroVideo} />']],
+  ['Booking page: passes the banner video to the hero', `${A}/book/[slug]/page.tsx`, ['orgHeroVideo={']],
+  ['Settings: academies can upload a banner video', `${D}/settings/SettingsForm.tsx`, ['folder="hero-videos"', 'hero_video_url: form.hero_video_url', 'maxMB={20}']],
   // Booking door check (5 Nov 2026: fake "A / a@gmail.com" trial at Pro Football Coaching). See src/lib/booking-guard.ts.
   ['Bookings: free trials pass the door check, then the parent is emailed a confirm link', `${A}/api/trials/book/route.ts`, ['checkBookingDetails(body)', 'checkLeadEmail(body.email', 'checkSignupIp(ip)', "action: 'trial.refused'", 'action: AWAITING_ACTION', 'trialConfirmLinkEmail({', 'if (!sent.success)']],
   ['Bookings: a free trial is only booked when the parent presses Confirm (POST, never on opening the link)', `${A}/api/trials/confirm/route.ts`, ['findPending(sb, token)', 'linkExpired(pending.createdAt)', "state: 'already'", 'await alertAcademyOfTrial(sb, row.id as string)', 'trialConfirmationEmail({']],

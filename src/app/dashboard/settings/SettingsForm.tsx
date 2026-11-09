@@ -23,6 +23,7 @@ interface OrgData {
   logo_url: string
   hero_image_url: string
   hero_image_mobile_url: string
+  hero_video_url: string
   /** null = standard FAQs, [] = hidden, array = the academy's own */
   booking_faqs: { q: string; a: string }[] | null
   google_review_url: string
@@ -69,7 +70,7 @@ export default function SettingsForm({
   const [form, setForm] = useState<OrgData>(org || {
     id: '', name: '', slug: '', description: '', contact_email: '',
     contact_phone: '', location: '', primary_color: '#4ecde6',
-    logo_url: '', hero_image_url: '', hero_image_mobile_url: '', booking_faqs: null, google_review_url: '', meta_pixel_id: null,
+    logo_url: '', hero_image_url: '', hero_image_mobile_url: '', hero_video_url: '', booking_faqs: null, google_review_url: '', meta_pixel_id: null,
     sibling_discount_enabled: false, sibling_discount_percent: 10,
     quarterly_billing_enabled: true, quarterly_discount_percent: 10,
     retention_offer_enabled: true, retention_offer_percent: 50, retention_offer_months: 1,
@@ -322,6 +323,33 @@ export default function SettingsForm({
                   </button>
                 )}
               </div>
+              {/* Banner video (9 Nov 2026, John's go). Optional short clip that
+                  plays silently on a loop behind the academy name. The hero
+                  photo stays underneath: it shows first, and stays when the
+                  video can't play (data saver, slow signal, reduced motion). */}
+              <div>
+                <label className="text-xs font-medium text-white/70 block mb-1.5">Banner video <span className="text-white/35 font-normal">(optional)</span></label>
+                <FileUpload
+                  bucketName="branding"
+                  folder="hero-videos"
+                  accept="video/mp4,video/quicktime,video/webm"
+                  maxMB={20}
+                  currentUrl={form.hero_video_url}
+                  onUpload={(url) => setForm({ ...form, hero_video_url: url })}
+                />
+                <p className="text-[11px] text-white/30 mt-1.5">
+                  A 10&ndash;20 second clip of a session. It plays silently on a loop behind your academy name. Parents on slow signal or data saver see your hero image instead, so keep one set. Remember to hit Save Branding.
+                </p>
+                {form.hero_video_url && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, hero_video_url: '' })}
+                    className="text-[11px] text-white/40 hover:text-white/70 mt-1.5 underline"
+                  >
+                    Remove video
+                  </button>
+                )}
+              </div>
               {/* Booking-page FAQs. Were five hard-coded questions identical for
                   every academy; Jay Rosa asked to remove or replace them
                   (10 Sep 2026). null = the standard five, [] = section hidden,
@@ -376,7 +404,7 @@ export default function SettingsForm({
                 <p className="text-[11px] text-white/30 mt-1.5">Remember to hit Save Branding.</p>
               </div>
               <button
-                onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url, hero_image_mobile_url: form.hero_image_mobile_url, booking_faqs: form.booking_faqs === null ? null : form.booking_faqs.map(f => ({ q: f.q.trim(), a: f.a.trim() })).filter(f => f.q && f.a) })}
+                onClick={() => handleSave({ primary_color: form.primary_color, logo_url: form.logo_url, hero_image_url: form.hero_image_url, hero_image_mobile_url: form.hero_image_mobile_url, hero_video_url: form.hero_video_url, booking_faqs: form.booking_faqs === null ? null : form.booking_faqs.map(f => ({ q: f.q.trim(), a: f.a.trim() })).filter(f => f.q && f.a) })}
                 disabled={saving}
                 className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all"
               >
