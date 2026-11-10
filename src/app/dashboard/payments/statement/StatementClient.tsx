@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import type { UnconfirmedMembership } from '@/lib/parent-unconfirmed'
 
 type Payment = {
   id: string
@@ -17,6 +18,7 @@ type Payment = {
 
 type Props = {
   payments: Payment[]
+  unconfirmed?: UnconfirmedMembership[]
   parentName: string
   parentEmail: string
   orgName: string
@@ -28,6 +30,7 @@ type Props = {
 
 export default function StatementClient({
   payments,
+  unconfirmed = [],
   parentName,
   parentEmail,
   orgName,
@@ -58,7 +61,8 @@ export default function StatementClient({
   )
   const totalDue = billable.reduce((sum, p) => sum + p.amount, 0)
   const totalPaid = billable.reduce((sum, p) => sum + p.amount_paid, 0)
-  const outstanding = totalDue - totalPaid
+  const unconfirmedDue = unconfirmed.reduce((sum, m) => sum + m.todayAmount, 0)
+  const outstanding = totalDue - totalPaid + unconfirmedDue
   const paidCount = filteredPayments.filter((p) => p.status === 'paid').length
   const overdueCount = filteredPayments.filter((p) => p.status === 'overdue').length
 
@@ -228,6 +232,24 @@ export default function StatementClient({
             </div>
           </div>
         </div>
+
+        {/* Memberships not set up yet: owed, with the button to pay (src/lib/parent-unconfirmed.ts) */}
+        {unconfirmed.length > 0 && (
+          <div className="px-8 pb-6 space-y-3" data-testid="statement-unconfirmed">
+            {unconfirmed.map((m) => (
+              <div key={m.subId} className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm">
+                <div className="font-semibold text-amber-900">{m.childFirstName}&rsquo;s membership isn&rsquo;t set up yet, so nothing has been paid for it</div>
+                <div className="mt-0.5 text-amber-800">
+                  {m.todayAmount > 0 ? <>&pound;{m.todayAmount.toFixed(2)} due now ({m.todayLabel}), then </> : <>{m.todayLabel}, then </>}
+                  &pound;{m.monthly.toFixed(2)} a month from {m.monthlyFrom}.
+                </div>
+                <Link href={m.href} className="no-print mt-2 inline-block rounded-lg bg-amber-500 px-4 py-2 font-semibold text-white hover:bg-amber-600">
+                  Set up {m.childFirstName}&rsquo;s membership &rarr;
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Next payment due */}
         {nextPayment && (

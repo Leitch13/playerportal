@@ -28,6 +28,7 @@ import EngagementScore from '@/components/EngagementScore'
 import ReviewPrompt from '@/components/ReviewPrompt'
 import SmartInsights from '@/components/SmartInsights'
 import RevenueForecast from '@/components/RevenueForecast'
+import { loadUnconfirmedMemberships, unconfirmedDueToday } from '@/lib/parent-unconfirmed'
 import PlayersNeedingAttention, { type AttentionPlayer } from '@/components/PlayersNeedingAttention'
 import BirthdaysThisWeek, { type BirthdayPlayer } from '@/components/BirthdaysThisWeek'
 // Phase 2.9 — Dashboard Action Queue (presentation only). Consumes the
@@ -110,7 +111,9 @@ async function loadParentHub(
     .select('amount, amount_paid, status')
     .eq('parent_id', userId)
     .in('status', ['unpaid', 'partial', 'overdue'])
-  const outstanding = calcParentOutstanding(unpaid || [])
+  // A membership waiting to be confirmed is owed too (src/lib/parent-unconfirmed.ts, Tim Shek 10 Nov 2026).
+  const unconfirmed = await loadUnconfirmedMemberships(supabase, userId)
+  const outstanding = calcParentOutstanding(unpaid || []) + unconfirmedDueToday(unconfirmed)
 
   const { data: reviewsData } = await supabase
     .from('progress_reviews')
@@ -245,7 +248,8 @@ async function loadParentHub(
     messages,
     announcements,
     actions: actionSignals({ outstanding, newReviewCount: reportSignalCount, unreadCount: unreadCount || 0, anyPastDue }),
-    isNewFamily: slots.length === 0,
+    isNewFamily: slots.length === 0 && unconfirmed.length === 0,
+    unconfirmed,
   }
 }
 

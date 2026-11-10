@@ -43,6 +43,8 @@ import MembershipTabs from './MembershipTabs'
 import { isQuarterlyEnabledForOrg } from '@/lib/quarterly-billing'
 import PayoutsBox from './PayoutsBox'
 import MembershipsList, { type MembershipRow } from './MembershipsList'
+import UnconfirmedMembershipCards from '@/components/parent/UnconfirmedMembershipCards'
+import { loadUnconfirmedMemberships, unconfirmedDueToday } from '@/lib/parent-unconfirmed'
 import { getPayoutSnapshot } from '@/lib/payouts'
 import { recoverySummary } from '@/lib/refund-recovery'
 import { loadOneToOneMoney, summarise } from '@/lib/one-to-one/money-report'
@@ -274,7 +276,9 @@ async function ParentPayments({
   )
   const totalDue = billablePayments.reduce((sum, p) => sum + Number(p.amount), 0)
   const totalPaid = billablePayments.reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
-  const outstanding = totalDue - totalPaid
+  // A membership waiting to be confirmed is owed too (src/lib/parent-unconfirmed.ts).
+  const unconfirmed = await loadUnconfirmedMemberships(supabase, userId)
+  const outstanding = totalDue - totalPaid + unconfirmedDueToday(unconfirmed)
   const overdueCount = (payments || []).filter((p) => p.status === 'overdue').length
 
   const monthlyTotal = activeSubs.reduce((sum, s) => {
@@ -413,6 +417,7 @@ async function ParentPayments({
     ]
     const banners = (
       <>
+        <UnconfirmedMembershipCards items={unconfirmed} />
         {success && (
           <div className="rounded-lg border border-[#4ecde6]/30 bg-[#4ecde6]/10 px-4 py-3 text-sm font-medium text-[#4ecde6]">Payment successful! Your balance will update shortly.</div>
         )}
@@ -595,6 +600,7 @@ async function ParentPayments({
           are reused unchanged through deep links + the existing components.
           ═══════════════════════════════════════════════════════════ */}
 
+      <UnconfirmedMembershipCards items={unconfirmed} />
       <OutstandingInvoices rows={outstandingRows} />
 
       <MembershipOverview activeSubs={activeSubsWithTerm as Parameters<typeof MembershipOverview>[0]['activeSubs']} outstanding={outstanding} />

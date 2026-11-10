@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import StatementClient from './StatementClient'
+import { loadUnconfirmedMemberships } from '@/lib/parent-unconfirmed'
 
 export default async function StatementPage() {
   const supabase = await createClient()
@@ -53,10 +54,14 @@ export default async function StatementPage() {
     }
   })
 
+  // A membership waiting to be confirmed is owed: never show "£0.00 outstanding" over it.
+  const unconfirmed = await loadUnconfirmedMemberships(supabase, user.id)
+
   return (
     <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen">
       <StatementClient
         payments={formattedPayments}
+        unconfirmed={unconfirmed}
         parentName={profile.full_name || 'Parent'}
         parentEmail={profile.email || user.email || ''}
         orgName={org?.name || 'Academy'}

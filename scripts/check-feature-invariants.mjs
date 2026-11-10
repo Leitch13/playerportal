@@ -35,6 +35,13 @@ const FEATURES = [
   ['Booking page: passes the banner video to the hero', `${A}/book/[slug]/page.tsx`, ['orgHeroVideo={']],
   // 9 Nov 2026: the register box had overflow-hidden, which hid the Move or remove (⋮) menu on small classes (Jamie, Rhys Blaney).
   ['Class register: the Move or remove menu is not cut off by the register box', `${D}/groups/[id]/ClassRegister.tsx`, ['<div className="rounded-2xl border border-[#1d2c42] bg-[#0f1a2b]" data-testid="class-register">']],
+  // 10 Nov 2026 (No.1 GK, Tim Shek): the Statement said "£0.00 outstanding" while his membership was never set up. See src/lib/parent-unconfirmed.ts.
+  ['Parents: a membership not set up yet is shown as owed, with the button to pay (Payments)', `${D}/payments/page.tsx`, ['loadUnconfirmedMemberships(supabase, userId)', '+ unconfirmedDueToday(unconfirmed)', '<UnconfirmedMembershipCards items={unconfirmed} />']],
+  ['Parents: a membership not set up yet is shown as owed (Statement)', `${D}/payments/statement/StatementClient.tsx`, ['+ unconfirmedDue', 'data-testid="statement-unconfirmed"']],
+  ['Parents: a membership not set up yet is passed to the Statement', `${D}/payments/statement/page.tsx`, ['loadUnconfirmedMemberships(supabase, user.id)', 'unconfirmed={unconfirmed}']],
+  ['Parents: a membership not set up yet is on the parent home (owed + passed to the hub)', `${D}/page.tsx`, ['loadUnconfirmedMemberships(supabase, userId)', '+ unconfirmedDueToday(unconfirmed)', 'unconfirmed.length === 0', '    unconfirmed,\n']],
+  ['Parents: the parent home shows the not-set-up card', 'src/components/parent/ParentHub.tsx', ['<UnconfirmedMembershipCards items={props.unconfirmed || []} />']],
+  ['Parents: the not-set-up rule uses the one billing rule and links to the confirm page', 'src/lib/parent-unconfirmed.ts', ['firstChargeFor(', ".eq('status', 'pending_migration')", '`/confirm-subscription/${row.invite_token}`']],
   ['Settings: academies can upload a banner video', `${D}/settings/SettingsForm.tsx`, ['folder="hero-videos"', 'hero_video_url: form.hero_video_url', 'maxMB={20}']],
   // Booking door check (5 Nov 2026: fake "A / a@gmail.com" trial at Pro Football Coaching). See src/lib/booking-guard.ts.
   ['Bookings: free trials pass the door check, then the parent is emailed a confirm link', `${A}/api/trials/book/route.ts`, ['checkBookingDetails(body)', 'checkLeadEmail(body.email', 'checkSignupIp(ip)', "action: 'trial.refused'", 'action: AWAITING_ACTION', 'trialConfirmLinkEmail({', 'if (!sent.success)']],

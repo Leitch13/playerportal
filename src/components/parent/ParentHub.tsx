@@ -12,6 +12,8 @@
 // children + schedule + progress on the left — no dead space.
 // ============================================================================
 
+import UnconfirmedMembershipCards from './UnconfirmedMembershipCards'
+import type { UnconfirmedMembership } from '@/lib/parent-unconfirmed'
 import Link from 'next/link'
 import MembershipOverview from '@/app/dashboard/payments/MembershipOverview'
 import type { ActionSignal } from '@/lib/parent-hub-metrics'
@@ -51,6 +53,8 @@ export interface ParentHubProps {
   announcements: HubAnnouncement[]
   actions: ActionSignal[]
   isNewFamily: boolean
+  /** Memberships not set up yet (src/lib/parent-unconfirmed.ts): shown first, they're money owed. */
+  unconfirmed?: UnconfirmedMembership[]
   /** The welcome pack card (src/components/WelcomePackCard.tsx), shown under the next session. */
   welcomePack?: React.ReactNode
 }
@@ -191,12 +195,14 @@ export default function ParentHub(props: ParentHubProps) {
 
         {props.welcomePack}
 
+        <UnconfirmedMembershipCards items={props.unconfirmed || []} />
+
         {/* ── Money at a glance ── */}
         <section className="overflow-hidden rounded-3xl border border-[#243652] bg-[#0b1524]/70" data-testid="parent-glance">
           <div className="grid grid-cols-3 divide-x divide-white/[0.07]">
             <Stat label="Children" value={String(childCount)} />
             <Stat label="Monthly" value={formatGBP(monthlySpend)} sub="a month" />
-            <Stat label="Outstanding" value={formatGBP(outstanding)} sub={outstanding > 0 ? 'see Membership' : 'all paid'} />
+            <Stat label="Outstanding" value={formatGBP(outstanding)} sub={outstanding > 0 ? 'to pay' : 'all paid'} />
           </div>
         </section>
 
