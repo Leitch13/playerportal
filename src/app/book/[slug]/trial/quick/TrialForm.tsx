@@ -1,5 +1,6 @@
 'use client'
 
+import { trialDatesFrom } from '@/lib/class-start'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { deriveTrialSource, SOURCE_LABELS, type CanonicalSource } from '@/lib/trial-source-derive'
@@ -13,6 +14,8 @@ interface TrialFormProps {
     name: string
     day: string | null
     time: string | null
+    /** The class's term start: a term not started yet offers trials from its first session. */
+    termStart?: string | null
     location: string | null
     ageGroup: string | null
     /** Places on each day: a trial takes one (src/lib/class-places.ts). */
@@ -66,7 +69,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
   if (selectedGroup?.day) {
     const targetIdx = DAYS_OF_WEEK.indexOf(selectedGroup.day.toLowerCase())
     if (targetIdx >= 0) {
-      const today = new Date()
+      const today = trialDatesFrom(new Date(), selectedGroup.termStart)
       const todayIdx = today.getDay()
       let daysAhead = (targetIdx - todayIdx + 7) % 7
       if (daysAhead === 0) daysAhead = 7 // skip today, give them next week

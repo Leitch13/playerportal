@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { earliestStart, termNotStarted } from '@/lib/class-start'
+import { earliestStart, termNotStarted, latestStartIso, NEW_TERM_BOOK_AHEAD_DAYS } from '@/lib/class-start'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
@@ -162,8 +162,10 @@ export async function POST(request: NextRequest) {
       if (!isNaN(parsed.getTime())) {
         const todayMidnight = new Date()
         todayMidnight.setUTCHours(0, 0, 0, 0)
-        const maxMs = todayMidnight.getTime() + 28 * 86400000
-        // Floor to today if earlier than today; cap at today+28d.
+        // Widest window here (a term not started yet); once the class is known
+        // below, a running class is held to 28 days — src/lib/class-start.ts.
+        const maxMs = todayMidnight.getTime() + NEW_TERM_BOOK_AHEAD_DAYS * 86400000
+        // Floor to today if earlier than today; cap at the widest window.
         const ms = parsed.getTime()
         if (ms < todayMidnight.getTime()) activatesOnDate = todayMidnight
         else if (ms > maxMs) activatesOnDate = new Date(maxMs)
@@ -408,16 +410,22 @@ export async function POST(request: NextRequest) {
     // day, never before (CFCoaching, 17 Oct 2026; src/lib/class-start.ts). The
     // picker only offers those dates; a page with no picker, or an earlier date
     // sent anyway, is moved to that first day so nobody pays for sessions that
-    // don't exist. More than 28 days away: places can't be booked yet.
-    if (!migrationTrialEnd) {
+    // don't exist. A term not started yet can be booked up to 60 days ahead; a
+    // running class up to 28 (John, 13 Nov 2026). Further away: not bookable yet.
+    {
       const { data: termRow } = await serviceDb.from('training_groups').select('day_of_week, term:terms(start_date)').eq('id', classId).maybeSingle()
       const termStart = (termRow?.term as unknown as { start_date?: string | null } | null)?.start_date ?? null
       const todayIsoUtc = new Date().toISOString().slice(0, 10)
-      if (termNotStarted(todayIsoUtc, termStart)) {
+      const latest = latestStartIso(todayIsoUtc, migrationTrialEnd ? null : termStart)
+      // A running class (or a migration) keeps the 28-day limit it always had.
+      if (activatesOnIso > latest) {
+        activatesOnDate = new Date(latest + 'T00:00:00Z')
+        activatesOnIso = latest
+      }
+      if (!migrationTrialEnd && termNotStarted(todayIsoUtc, termStart)) {
         const first = earliestStart(todayIsoUtc, termStart, (termRow?.day_of_week as string | null) ?? null)
-        const latest = new Date(Date.now() + 28 * 86400000).toISOString().slice(0, 10)
         if (first > latest) {
-          const tooEarly = `This class starts on ${new Date(first + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}. Places can be booked up to 28 days before.`
+          const tooEarly = `This class starts on ${new Date(first + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}. Places can be booked up to ${NEW_TERM_BOOK_AHEAD_DAYS} days before.`
           await recordSignupRefusal(refusalCtx, 'class_term_not_open_yet', tooEarly, 400, { term_start: termStart })
           return NextResponse.json({ error: tooEarly }, { status: 400 })
         }

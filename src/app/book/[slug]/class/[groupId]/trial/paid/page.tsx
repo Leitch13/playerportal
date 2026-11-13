@@ -26,7 +26,7 @@ export default async function PaidTrialPage({
 
   const { data: group } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, trial_price, price_per_session, age_group, class_type')
+    .select('id, name, day_of_week, time_slot, location, trial_price, price_per_session, age_group, class_type, term:terms(start_date)')
     .eq('id', groupId)
     .eq('organisation_id', org.id)
     .eq('is_published', true) // migration 103 — unpublished => no row => notFound()
@@ -102,6 +102,7 @@ export default async function PaidTrialPage({
           primaryColor={primaryColor}
           dayOfWeek={(group.day_of_week as string | null) || null}
           timeSlot={(group.time_slot as string | null) || null}
+          termStart={((group as { term?: { start_date?: string | null } | null }).term?.start_date) ?? null}
         />
       </div>
     </div>

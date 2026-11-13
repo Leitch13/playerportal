@@ -58,7 +58,7 @@ export default async function QuickTrialPage({
 
   const { data: allGroups } = await supabase
     .from('training_groups')
-    .select('id, name, day_of_week, time_slot, location, age_group, class_type, trial_price, price_per_session')
+    .select('id, name, day_of_week, time_slot, location, age_group, class_type, trial_price, price_per_session, term:terms(start_date)')
     .eq('organisation_id', org.id)
     .eq('is_published', true) // migration 103 — hide unpublished classes
     .order('name')
@@ -105,7 +105,7 @@ export default async function QuickTrialPage({
   // Places per day: a class whose members already fill it has no trial places at all,
   // so it isn't offered (unless the parent came from that class: the form says it's full).
   const today = new Date().toISOString().slice(0, 10)
-  const places = await loadClassPlaces(placesDb(), org.id, groups.map((g) => g.id), today, new Date(Date.now() + 70 * 86400000).toISOString().slice(0, 10)).catch(() => new Map())
+  const places = await loadClassPlaces(placesDb(), org.id, groups.map((g) => g.id), today, new Date(Date.now() + 130 * 86400000).toISOString().slice(0, 10)).catch(() => new Map())
   const placesFor = (id: string) => {
     const p = places.get(id)
     return p ? { capacity: p.capacity, members: p.members, trials: Object.fromEntries(Object.entries(p.trials).map(([d, l]) => [d, (l as unknown[]).length])) } : null
@@ -179,6 +179,7 @@ export default async function QuickTrialPage({
               name: g.name,
               day: g.day_of_week,
               time: g.time_slot,
+              termStart: ((g as { term?: { start_date?: string | null } | null }).term?.start_date) ?? null,
               location: g.location,
               ageGroup: g.age_group as string | null,
               places: placesFor(g.id),

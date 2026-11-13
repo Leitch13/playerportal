@@ -4,6 +4,7 @@ import { useState } from 'react'
 import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 import Link from 'next/link'
 import { postJson } from '@/lib/post-json'
+import { trialDatesFrom } from '@/lib/class-start'
 
 /**
  * Form for booking a paid one-off trial session.
@@ -19,6 +20,7 @@ export default function PaidTrialForm({
   primaryColor,
   dayOfWeek,
   timeSlot,
+  termStart = null,
 }: {
   slug: string
   groupId: string
@@ -28,6 +30,8 @@ export default function PaidTrialForm({
   primaryColor: string
   dayOfWeek?: string | null
   timeSlot?: string | null
+  /** The class's term start: a term not started yet offers trials from its first session. */
+  termStart?: string | null
 }) {
   // Build the next 6 valid session dates from the class's day_of_week.
   // Parent picks from a dropdown of actual class dates instead of a free-form
@@ -37,7 +41,7 @@ export default function PaidTrialForm({
   if (dayOfWeek) {
     const targetIdx = DAYS_OF_WEEK.indexOf(dayOfWeek.toLowerCase())
     if (targetIdx >= 0) {
-      const today = new Date()
+      const today = trialDatesFrom(new Date(), termStart)
       const todayIdx = today.getDay()
       let daysAhead = (targetIdx - todayIdx + 7) % 7
       if (daysAhead === 0) daysAhead = 7 // skip today, give them next week

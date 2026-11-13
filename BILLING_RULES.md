@@ -5,8 +5,9 @@ John Leitch, 10 September 2026, after the sixth regression in three months:
 > **The same billing, the same code, for every academy. Do not change this. Ever.**
 
 ## The rule
-1. A parent joins, picks a start date (today or an upcoming class date within 28 days),
-   and **pays now** for the sessions from that date to the end of that month:
+1. A parent joins, picks a start date (today or an upcoming class date within 28 days;
+   within 60 days for a class in a term that hasn't started yet — John, 13 Nov 2026,
+   `src/lib/class-start.ts`), and **pays now** for the sessions from that date to the end of that month:
    sessions left × (monthly ÷ 4), capped at one month. Weeks left if the class has no set day.
    Nothing today if nothing is left. Then the full plan on the 1st, and every 1st after.
    Code: `src/lib/billing/sessions.ts` `firstChargeFor()`.

@@ -4,7 +4,7 @@
  * Start-date picker for the signup flow — the same for every academy.
  *
  * Lists today (if it is a class day) and the upcoming class dates within the
- * next 28 days. The parent picks one, pays NOW for the sessions from that
+ * next 28 days (60 for a term that hasn't started yet — src/lib/class-start.ts). The parent picks one, pays NOW for the sessions from that
  * date to the end of that month, and the plan bills on the 1st. If the class
  * has no set day, a plain date input is offered instead.
  *
@@ -15,8 +15,8 @@
 
 import { useEffect, useMemo } from 'react'
 import { firstOfNextMonthLabel, firstOfNextMonthUnix } from '@/lib/billing/anchor'
-import { isoDate, latestAllowedStartDate } from '@/lib/billing/next-session'
-import { earliestStart, termNotStarted } from '@/lib/class-start'
+import { isoDate } from '@/lib/billing/next-session'
+import { earliestStart, termNotStarted, latestStartIso, bookAheadDays } from '@/lib/class-start'
 import { firstChargeFor, firstChargeLabel, generateSessionDates } from '@/lib/billing/sessions'
 
 interface Props {
@@ -42,18 +42,18 @@ function formatLabel(iso: string): string {
 export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, monthlyAmount, primaryColor, termStartIso = null }: Props) {
   const today = useMemo(() => new Date(), [])
   const todayIso = useMemo(() => isoDate(today), [today])
-  const maxIso = useMemo(() => isoDate(latestAllowedStartDate(today)), [today])
+  const maxIso = useMemo(() => latestStartIso(todayIso, termStartIso), [todayIso, termStartIso])
 
   // Earliest start: today, or the term's first class day when the term starts later.
   const startFromIso = useMemo(() => earliestStart(todayIso, termStartIso, classDayOfWeek), [todayIso, termStartIso, classDayOfWeek])
   const waitingForTerm = termNotStarted(todayIso, termStartIso)
-  // Class dates in [earliest start, today+28]. Empty when the class has no set day.
+  // Class dates in [earliest start, latest start]. Empty when the class has no set day.
   const sessionDateOptions = useMemo(() => {
     if (!classDayOfWeek) return [] as string[]
-    const end = new Date(todayIso + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() + 29)
+    const end = new Date(maxIso + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() + 1)
     return generateSessionDates(startFromIso, end.toISOString().slice(0, 10), classDayOfWeek)
-  }, [todayIso, startFromIso, classDayOfWeek])
-  // The term starts more than 28 days away: nothing can be booked yet.
+  }, [maxIso, startFromIso, classDayOfWeek])
+  // The term starts further away than the booking window: nothing can be booked yet.
   const tooEarly = startFromIso > maxIso
   const dayKnown = sessionDateOptions.length > 0
 
@@ -97,7 +97,7 @@ export function StartDatePicker({ value, onChange, classDayOfWeek, classLabel, m
       <label className="block text-xs text-white/50 mb-2">When does it start?</label>
       {waitingForTerm && (
         <div className="text-[11px] text-white/70 mb-2" data-testid="start-term-note">
-          {classLabel} starts on {formatLabel(startFromIso)}.{tooEarly ? ` Places can be booked from ${formatLabel(isoDate(new Date(new Date(startFromIso + 'T00:00:00Z').getTime() - 28 * 86400000)))}.` : ''}
+          {classLabel} starts on {formatLabel(startFromIso)}.{tooEarly ? ` Places can be booked from ${formatLabel(isoDate(new Date(new Date(startFromIso + 'T00:00:00Z').getTime() - bookAheadDays(todayIso, termStartIso) * 86400000)))}.` : ''}
         </div>
       )}
 

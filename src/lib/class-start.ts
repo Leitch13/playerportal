@@ -32,3 +32,41 @@ export function earliestStart(todayIso: string, termStartIso: string | null | un
 export function termNotStarted(todayIso: string, termStartIso: string | null | undefined): boolean {
   return !!termStartIso && termStartIso > todayIso
 }
+
+/**
+ * How far ahead a parent can book. John, 13 Nov 2026 (Caolan's full classes, a
+ * new group starting 3 January): "Can you move it to now?" — a term that hasn't
+ * started yet can be booked up to 60 days before; a running class stays at 28.
+ * Same for every academy. The parent still pays the sessions left in the start
+ * month at checkout (BILLING_RULES.md rule 1) — only how far ahead changes.
+ */
+export const BOOK_AHEAD_DAYS = 28
+export const NEW_TERM_BOOK_AHEAD_DAYS = 60
+
+/** Days ahead a start can be booked for this class. */
+export function bookAheadDays(todayIso: string, termStartIso: string | null | undefined): number {
+  return termNotStarted(todayIso, termStartIso) ? NEW_TERM_BOOK_AHEAD_DAYS : BOOK_AHEAD_DAYS
+}
+
+/** The latest start date a parent can pick (YYYY-MM-DD). */
+export function latestStartIso(todayIso: string, termStartIso: string | null | undefined): string {
+  const d = new Date(todayIso + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + bookAheadDays(todayIso, termStartIso))
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Where a trial date list starts counting from. The trial forms list the next
+ * class days after this date, so a class in a term that hasn't started yet
+ * offers trials from its first session, never before (13 Nov 2026: the forms
+ * offered six weeks of dates before Caolan's 3 January group existed).
+ * Local dates, to match how the forms build their lists.
+ */
+export function trialDatesFrom(now: Date, termStartIso: string | null | undefined): Date {
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  if (!termStartIso || !termNotStarted(todayIso, termStartIso)) return now
+  const [y, m, d] = termStartIso.slice(0, 10).split('-').map(Number)
+  // The day before the term starts: the forms skip their base day, so the
+  // first date offered is the first class day on or after the term start.
+  return new Date(y, m - 1, d - 1)
+}

@@ -307,6 +307,10 @@ const FEATURES = [
   // ── A class whose term hasn't started starts on the term (CFCoaching, 17 Oct 2026)
   ['Sign-up: earliest start is the term start', 'src/lib/class-start.ts', ['export function earliestStart', 'export function termNotStarted']],
   ['Sign-up: earliest start is tested', 'src/lib/class-start.test.ts', ["toBe('2026-11-02')"]],
+  ['Sign-up: a new term can be booked 60 days ahead, a running class 28', 'src/lib/class-start.ts', ['NEW_TERM_BOOK_AHEAD_DAYS = 60', 'BOOK_AHEAD_DAYS = 28', 'export function latestStartIso']],
+  ['Sign-up: the server uses the same booking window', 'src/app/api/stripe/subscribe/route.ts', ['latestStartIso(']],
+  ['Sign-up: the start picker uses the same booking window', 'src/components/billing/StartDatePicker.tsx', ['latestStartIso(']],
+  ['Trials: dates start from the term start', 'src/lib/class-start.ts', ['export function trialDatesFrom']],
   ['Sign-up: picker only offers dates from the term', 'src/components/billing/StartDatePicker.tsx', ['earliestStart(todayIso, termStartIso, classDayOfWeek)', 'generateSessionDates(startFromIso', 'data-testid="start-term-note"']],
   ['Sign-up: booking page passes the term', `${A}/book/[slug]/class/[groupId]/quick-book/page.tsx`, ['term:terms(start_date)', 'termStartIso=']],
   ['Sign-up: server moves an early start to the term', `${A}/api/stripe/subscribe/route.ts`, ['termNotStarted(todayIsoUtc, termStart)', "'class_term_not_open_yet'", 'activatesOnIso = first']],
