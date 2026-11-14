@@ -21,9 +21,29 @@ export type IpVerdict = {
   reason?: string
   country?: string
   isp?: string
+  /** ip-api said datacentre/hosting (set whenever it did, even if also a proxy). */
+  hosting?: boolean
 }
 
 const PRIVATE = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fc00:|fe80:|unknown$)/i
+
+/**
+ * Parent bookings (free trials, enquiries) block only datacentre/hosting
+ * networks, never the "proxy" flag alone. 13 Nov 2026: a real mum in Dungannon
+ * on Fibrus home broadband (Northern Ireland, shared addresses) was flagged
+ * "proxy" by ip-api and turned away twice from Pro Football Coaching. Free
+ * trials still need the email confirm tap, so fakes are still stopped.
+ * New academy sign-ups keep the strict check (checkSignupIp).
+ */
+export async function checkParentIp(ip: string | null | undefined): Promise<IpVerdict> {
+  const v = await checkSignupIp(ip)
+  return isParentBlock(v) ? v : { block: false, country: v.country, isp: v.isp }
+}
+
+/** A parent is only blocked on a datacentre/hosting network. */
+export function isParentBlock(v: IpVerdict): boolean {
+  return v.block && v.hosting === true
+}
 
 export async function checkSignupIp(ip: string | null | undefined): Promise<IpVerdict> {
   if (!ip || PRIVATE.test(ip)) return { block: false }
@@ -46,6 +66,7 @@ export async function checkSignupIp(ip: string | null | undefined): Promise<IpVe
         reason: j.proxy ? 'proxy/VPN' : 'hosting/datacentre',
         country: j.country,
         isp: j.isp,
+        hosting: !!j.hosting,
       }
     }
     return { block: false, country: j.country, isp: j.isp }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
-import { checkSignupIp } from '@/lib/ip-reputation'
+import { checkParentIp } from '@/lib/ip-reputation'
 import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
 
 export const dynamic = 'force-dynamic'
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       const emailProblem = await checkLeadEmail(em, 'the academy’s reply')
       if (emailProblem) return NextResponse.json({ error: emailProblem }, { status: 400 })
     }
-    const verdict = await checkSignupIp(ip)
+    const verdict = await checkParentIp(ip)
     if (verdict.block) {
       return NextResponse.json({ error: 'It looks like you’re using a VPN or a hosting network. Please turn it off and try again.' }, { status: 400 })
     }

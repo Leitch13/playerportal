@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
-import { checkSignupIp } from '@/lib/ip-reputation'
+import { checkParentIp } from '@/lib/ip-reputation'
 import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
 import { AWAITING_ACTION, newToken, confirmUrl, type PendingTrial } from '@/lib/trial-email-confirm'
 
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
   if (emailProblem) return refuse(sb, orgId, orgName, ip, 'email can’t receive mail', emailProblem, body)
 
   // 3. VPN / datacentre connections (fails open on lookup trouble).
-  const verdict = await checkSignupIp(ip)
+  const verdict = await checkParentIp(ip)
   if (verdict.block) {
     return refuse(
       sb, orgId, orgName, ip, `booked through a ${verdict.reason}`,
