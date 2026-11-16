@@ -35,6 +35,8 @@ export type PendingTrial = {
   childName: string
   childAge: number | null
   sessionDate: string | null
+  /** The second free session, for academies that offer 2 (src/lib/free-trials.ts). Absent on older links. */
+  secondSessionDate?: string | null
   notes: string | null
   termsVersionHash: string
   termsAcceptedAt: string

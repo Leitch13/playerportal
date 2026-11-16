@@ -28,6 +28,8 @@ interface OrgData {
   booking_faqs: { q: string; a: string }[] | null
   google_review_url: string
   meta_pixel_id: string | null
+  /** Free trial sessions per child per class: 1 or 2 (migration 129, src/lib/free-trials.ts). Undefined before 129 is applied. */
+  free_trial_sessions?: number
   sibling_discount_enabled: boolean
   sibling_discount_percent: number
   quarterly_billing_enabled: boolean
@@ -220,8 +222,18 @@ export default function SettingsForm({
                 <input className={inputClass} value={form.meta_pixel_id || ''} onChange={e => setForm({...form, meta_pixel_id: e.target.value.trim() || null})} placeholder="e.g. 123456789012345" />
                 <p className="text-[10px] text-white/30 mt-1">Running Facebook or Instagram ads? Paste your Pixel ID from Meta Events Manager and your booking page will report page views, trial bookings and checkouts to YOUR ad account automatically. Consent-gated for GDPR.</p>
               </div>
+              {org?.free_trial_sessions !== undefined && (
+                <div data-testid="settings-free-trials">
+                  <label className="text-xs font-medium text-white/70 block mb-1.5">Free trial sessions</label>
+                  <select className={inputClass} value={form.free_trial_sessions === 2 ? 2 : 1} onChange={e => setForm({...form, free_trial_sessions: Number(e.target.value)})}>
+                    <option value={1}>1 free session per child, per class</option>
+                    <option value={2}>2 free sessions per child, per class</option>
+                  </select>
+                  <p className="text-[10px] text-white/30 mt-1">With 2, the trial form asks parents for a second date and both go on the register as trials. Paid trials aren&apos;t affected.</p>
+                </div>
+              )}
               <button
-                onClick={() => handleSave({ name: form.name, description: form.description, contact_email: form.contact_email, contact_phone: form.contact_phone, location: form.location, google_review_url: form.google_review_url, meta_pixel_id: form.meta_pixel_id })}
+                onClick={() => handleSave({ name: form.name, description: form.description, contact_email: form.contact_email, contact_phone: form.contact_phone, location: form.location, google_review_url: form.google_review_url, meta_pixel_id: form.meta_pixel_id, ...(org?.free_trial_sessions !== undefined ? { free_trial_sessions: form.free_trial_sessions === 2 ? 2 : 1 } : {}) })}
                 disabled={saving}
                 className="px-6 py-2.5 rounded-xl font-semibold text-sm bg-accent text-white hover:opacity-90 disabled:opacity-50 transition-all"
               >

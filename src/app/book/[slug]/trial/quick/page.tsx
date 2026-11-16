@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import TrialForm from './TrialForm'
+import { freeTrialsFor } from '@/lib/free-trials'
 import { loadClassPlaces, placesDb } from '@/lib/class-places'
 
 export default async function QuickTrialPage({
@@ -55,6 +56,9 @@ export default async function QuickTrialPage({
       </div>
     )
   }
+
+  // 1 or 2 free sessions per child per class (src/lib/free-trials.ts).
+  const freeTrials = await freeTrialsFor(supabase as unknown as Parameters<typeof freeTrialsFor>[0], org.id)
 
   const { data: allGroups } = await supabase
     .from('training_groups')
@@ -169,6 +173,7 @@ export default async function QuickTrialPage({
         <TrialForm
           metaPixelId={(org as { meta_pixel_id?: string | null }).meta_pixel_id ?? null}
           orgId={org.id}
+          freeTrials={freeTrials}
           // When the parent came from a specific class page (?class=...),
           // scope the trial booking to that class only. They're not browsing,
           // they've already chosen — showing all classes again is confusing.

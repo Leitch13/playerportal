@@ -45,7 +45,12 @@ const FEATURES = [
   ['Settings: academies can upload a banner video', `${D}/settings/SettingsForm.tsx`, ['folder="hero-videos"', 'hero_video_url: form.hero_video_url', 'maxMB={20}']],
   // Booking door check (5 Nov 2026: fake "A / a@gmail.com" trial at Pro Football Coaching). See src/lib/booking-guard.ts.
   ['Bookings: free trials pass the door check, then the parent is emailed a confirm link', `${A}/api/trials/book/route.ts`, ['checkBookingDetails(body)', 'checkLeadEmail(body.email', 'checkParentIp(ip)', "action: 'trial.refused'", 'action: AWAITING_ACTION', 'trialConfirmLinkEmail({', 'if (!sent.success)']],
-  ['Bookings: a free trial is only booked when the parent presses Confirm (POST, never on opening the link)', `${A}/api/trials/confirm/route.ts`, ['findPending(sb, token)', 'linkExpired(pending.createdAt)', "state: 'already'", 'await alertAcademyOfTrial(sb, row.id as string)', 'trialConfirmationEmail({']],
+  // Free trial sessions (16 Nov 2026, John: "a"): 1 or 2 per child per class, one setting for every academy.
+  ['Free trials: the academy setting decides 1 or 2, default 1', 'src/lib/free-trials.ts', ["return Number(v) === 2 ? 2 : 1", 'existing + requested <= allowed']],
+  ['Free trials: the booking route checks the count against the setting', `${A}/api/trials/book/route.ts`, ['await freeTrialsFor(sb, orgId)', 'canBook(count ?? 0, secondDate ? 2 : 1, allowed)']],
+  ['Free trials: confirming books the second session only when allowed', `${A}/api/trials/confirm/route.ts`, ['await freeTrialsFor(sb, t.orgId)', 'insert(trialRow(t.secondSessionDate))']],
+  ['Free trials: the form offers a second date only for academies on 2', 'src/app/book/[slug]/trial/quick/TrialForm.tsx', ["freeTrials === 2 && !!groupId", 'secondSessionDate: (offerSecond && secondDate) || null']],
+  ['Bookings: a free trial is only booked when the parent presses Confirm (POST, never on opening the link)', `${A}/api/trials/confirm/route.ts`, ['findPending(sb, token)', 'linkExpired(pending.createdAt)', "state: 'already'", 'await alertAcademyOfTrial(sb, row.id as string)', 'await alertAcademyOfTrial(sb, secondId)', 'trialConfirmationEmail({']],
   ['Bookings: the confirm page only shows a button; opening it changes nothing', `${A}/book/[slug]/trial/confirm/[token]/page.tsx`, ['<ConfirmTrialButton', 'findPending(sb, token)']],
   ['Bookings: the trial form says check your email, with Send it again', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ['trial-check-email', 'Send it again', 'Wrong email? Change it']],
   ['Bookings: the free trial form books through the server, phone required, never straight into the database', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ["fetch('/api/trials/book'", 'website: honeypot', '!phone.trim()']],
@@ -250,7 +255,7 @@ const FEATURES = [
   ['1-2-1s: alternating fortnightly slots', 'src/lib/one-to-one/seats.ts', ['export function sameWeeks', 'export function onSameWeeks']],
   ['1-2-1s: the admin route checks the weeks', `${A}/api/one-to-one/admin/route.ts`, ['onSameWeeks(']],
   // ── A trial booked from the class dropdown always asks for a date (Jamie's ads, 15 Oct 2026)
-  ['Trials: picking a class from the dropdown shows Pick your date', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ['data-testid="trial-date-after-class"', "setSessionDate('') }}", "Please pick a date for the trial."]],
+  ['Trials: picking a class from the dropdown shows Pick your date', `${A}/book/[slug]/trial/quick/TrialForm.tsx`, ['data-testid="trial-date-after-class"', "setSessionDate(''); setSecondDate('') }}", "Please pick a date for the trial."]],
   // ── 1-2-1 audit fixes (15 Oct 2026)
   ['1-2-1s: regulars not yet rolled are never sold to the public', 'src/lib/one-to-one/db.ts', ['const notYetRolled', '...notYetRolled']],
   ['1-2-1s: blocks and resolved flags still take the coach out', 'src/lib/one-to-one/availability.ts', ['Blocks and flags ALWAYS take the coach out']],

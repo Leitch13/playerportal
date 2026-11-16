@@ -5,6 +5,7 @@ import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { checkParentIp } from '@/lib/ip-reputation'
 import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
 import { AWAITING_ACTION, newToken, confirmUrl, type PendingTrial } from '@/lib/trial-email-confirm'
+import { freeTrialsFor, secondDateOk, canBook, trialDatesLabel } from '@/lib/free-trials'
 
 /**
  * Every free trial from a booking page comes here first. After the door checks
@@ -98,6 +99,11 @@ export async function POST(request: NextRequest) {
   if (sessionDate && !/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
     return NextResponse.json({ error: 'Please pick a date for the trial.' }, { status: 400 })
   }
+  // A second free session (academies that offer 2: src/lib/free-trials.ts).
+  const secondDate = s(raw.secondSessionDate, 10) || null
+  if (secondDate && !secondDateOk(sessionDate || null, secondDate)) {
+    return NextResponse.json({ error: 'Please pick a second date after the first one.' }, { status: 400 })
+  }
   if (raw.agreedToTerms !== true) {
     return NextResponse.json({ error: 'Please tick to confirm you’ve read the Terms & Conditions.' }, { status: 400 })
   }
@@ -151,19 +157,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 5. The same child already has this class trial.
+  // 5. Free sessions this academy offers per child per class (1, or 2 if it chose 2).
+  const allowed = await freeTrialsFor(sb, orgId)
+  if (secondDate && (allowed < 2 || !groupId)) {
+    return NextResponse.json({ error: 'This academy offers one free trial session. Please pick one date.' }, { status: 400 })
+  }
   if (groupId) {
-    const { data: existing } = await sb
+    const { count } = await sb
       .from('trial_bookings')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .eq('organisation_id', orgId)
       .eq('training_group_id', groupId)
       .ilike('parent_email', body.email)
       .ilike('child_name', body.childName)
       .in('status', ['confirmed', 'pending', 'attended'])
-      .limit(1)
-      .maybeSingle()
-    if (existing) return NextResponse.json({ error: "You've already booked this trial — check your email for the confirmation." }, { status: 409 })
+    if (!canBook(count ?? 0, secondDate ? 2 : 1, allowed)) {
+      return NextResponse.json({
+        error: (count ?? 0) > 0 && allowed === 2 && secondDate
+          ? 'You already have a free session booked for this class, so you can book one more. Please pick just one date.'
+          : "You've already booked this trial — check your email for the confirmation.",
+      }, { status: 409 })
+    }
   }
 
   // Which version of the academy's terms they accepted (same hash the form used to make).
@@ -186,6 +200,7 @@ export async function POST(request: NextRequest) {
     childName: body.childName,
     childAge,
     sessionDate: sessionDate || null,
+    secondSessionDate: secondDate,
     notes: s(raw.notes, 2000) || null,
     termsVersionHash: versionHash,
     termsAcceptedAt: new Date().toISOString(),
@@ -218,7 +233,7 @@ export async function POST(request: NextRequest) {
       childName: body.childName,
       academyName: orgName,
       className,
-      date: sessionDate ? new Date(sessionDate + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : null,
+      date: trialDatesLabel(sessionDate || null, secondDate),
       url: confirmUrl(appUrl, String(org.slug), token),
       accentColor: (org.primary_color as string | null) || undefined,
     }),

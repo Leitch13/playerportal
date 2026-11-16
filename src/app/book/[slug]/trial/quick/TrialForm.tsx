@@ -8,6 +8,8 @@ import { fbTrackSingle } from '@/lib/meta-pixel'
 
 interface TrialFormProps {
   orgId: string
+  /** Free sessions per child per class: 1, or 2 if the academy chose 2 (src/lib/free-trials.ts). */
+  freeTrials?: 1 | 2
   metaPixelId?: string | null
   groups: {
     id: string
@@ -34,12 +36,13 @@ interface TrialFormProps {
   referer?: string | null
 }
 
-export default function TrialForm({ orgId, metaPixelId = null, groups, primaryColor, slug, academyName, preselectedGroupId, utmSource, utmMedium, utmCampaign, referer }: TrialFormProps) {
+export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, groups, primaryColor, slug, academyName, preselectedGroupId, utmSource, utmMedium, utmCampaign, referer }: TrialFormProps) {
   const [parentName, setParentName] = useState('')
   const [parentEmail, setParentEmail] = useState('')
   const [childName, setChildName] = useState('')
   const [groupId, setGroupId] = useState(preselectedGroupId || '')
   const [sessionDate, setSessionDate] = useState('')
+  const [secondDate, setSecondDate] = useState('')
   const [showMore, setShowMore] = useState(false)
   const [childAge, setChildAge] = useState('')
   const [phone, setPhone] = useState('')
@@ -170,6 +173,28 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
   const pl = selectedGroup?.places
   if (pl) for (const d of validDates) d.full = pl.members + (pl.trials[d.iso] || 0) >= pl.capacity
   const allDatesFull = validDates.length > 0 && validDates.every((d) => d.full)
+  // Academies offering 2 free sessions: the second is any later date from the same list.
+  const offerSecond = freeTrials === 2 && !!groupId && validDates.length > 1
+  const secondDates = offerSecond && sessionDate ? validDates.filter((d) => d.iso > sessionDate) : []
+  // A function, so it reads inputClass (declared further down) only when rendered.
+  const secondPicker = () => offerSecond && !allDatesFull ? (
+    <div className="mt-3" data-testid="trial-second-date">
+      <label className="text-xs font-medium text-white/50 block mb-1.5">Pick your second free session <span className="text-white/30">(optional)</span></label>
+      <select
+        className={inputClass}
+        style={{ ['--tw-ring-color' as string]: primaryColor }}
+        value={secondDate}
+        onChange={(e) => setSecondDate(e.target.value)}
+        disabled={!sessionDate}
+      >
+        <option value="">{sessionDate ? 'Select a second date…' : 'Pick your first date above'}</option>
+        {secondDates.map((d) => (
+          <option key={d.iso} value={d.iso} disabled={d.full}>{d.label}{d.full ? ' · full' : ''}</option>
+        ))}
+      </select>
+      <p className="text-[11px] text-white/40 mt-1">Your first 2 sessions are free.</p>
+    </div>
+  ) : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -225,6 +250,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
         childName,
         childAge: childAge || null,
         sessionDate: sessionDate || null,
+        secondSessionDate: (offerSecond && secondDate) || null,
         notes: notes || null,
         agreedToTerms,
         website: honeypot,
@@ -371,7 +397,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
                 className={inputClass}
                 style={{ ['--tw-ring-color' as string]: primaryColor }}
                 value={sessionDate}
-                onChange={(e) => setSessionDate(e.target.value)}
+                onChange={(e) => { setSessionDate(e.target.value); setSecondDate('') }}
                 required
               >
                 <option value="">Select a date…</option>
@@ -381,6 +407,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               </select>
             </div>
           )}
+          {secondPicker()}
         </div>
       ) : (
         <div>
@@ -389,7 +416,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
             className={inputClass}
             style={{ ['--tw-ring-color' as string]: primaryColor }}
             value={groupId}
-            onChange={(e) => { setGroupId(e.target.value); setSessionDate('') }}
+            onChange={(e) => { setGroupId(e.target.value); setSessionDate(''); setSecondDate('') }}
           >
             <option value="">Any available class</option>
             {groups.map((g) => (
@@ -417,7 +444,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
                 className={inputClass}
                 style={{ ['--tw-ring-color' as string]: primaryColor }}
                 value={sessionDate}
-                onChange={(e) => setSessionDate(e.target.value)}
+                onChange={(e) => { setSessionDate(e.target.value); setSecondDate('') }}
                 required
               >
                 <option value="">Select a date…</option>
@@ -427,6 +454,7 @@ export default function TrialForm({ orgId, metaPixelId = null, groups, primaryCo
               </select>
             </div>
           )}
+          {secondPicker()}
         </div>
       )}
 

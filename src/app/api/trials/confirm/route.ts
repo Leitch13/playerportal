@@ -4,6 +4,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { clientIpOf } from '@/lib/booking-guard'
 import { alertAcademyOfTrial } from '@/lib/trial-alerts'
 import { CONFIRMED_ACTION, findPending, linkExpired, datePassed } from '@/lib/trial-email-confirm'
+import { freeTrialsFor, canBook, trialDatesLabel } from '@/lib/free-trials'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,9 +40,12 @@ export async function POST(request: NextRequest) {
   const t = pending.trial
   if (datePassed(t.sessionDate)) return NextResponse.json({ state: 'date_passed' })
 
-  // Same parent, child and class already booked (e.g. they booked twice and tapped both emails).
+  // Same parent, child and class already has its free sessions (e.g. they booked twice and
+  // tapped both emails). Academies offering 2 let a child come back for the second.
+  const allowed = await freeTrialsFor(sb, t.orgId)
+  let wantSecond = !!(t.secondSessionDate && t.groupId && allowed >= 2)
   if (t.groupId) {
-    const { data: existing } = await sb
+    const { data: existingRows } = await sb
       .from('trial_bookings')
       .select('id')
       .eq('organisation_id', t.orgId)
@@ -49,17 +53,17 @@ export async function POST(request: NextRequest) {
       .ilike('parent_email', t.email)
       .ilike('child_name', t.childName)
       .in('status', ['confirmed', 'pending', 'attended'])
-      .limit(1)
-      .maybeSingle()
-    if (existing) {
-      await markConfirmed(sb, pending.hash, existing.id as string, t.orgId)
-      return NextResponse.json({ state: 'already', trialId: existing.id })
+      .order('created_at', { ascending: true })
+    const have = existingRows?.length ?? 0
+    if (!canBook(have, 1, allowed)) {
+      const firstId = existingRows![0].id as string
+      await markConfirmed(sb, pending.hash, firstId, t.orgId)
+      return NextResponse.json({ state: 'already', trialId: firstId })
     }
+    if (wantSecond && !canBook(have, 2, allowed)) wantSecond = false
   }
 
-  const { data: row, error } = await sb
-    .from('trial_bookings')
-    .insert({
+  const trialRow = (date: string | null) => ({
       organisation_id: t.orgId,
       training_group_id: t.groupId,
       parent_name: t.parentName,
@@ -67,14 +71,18 @@ export async function POST(request: NextRequest) {
       parent_phone: t.phone,
       child_name: t.childName,
       child_age: t.childAge,
-      preferred_date: t.sessionDate,
+      preferred_date: date,
       notes: t.notes,
       terms_accepted_at: t.termsAcceptedAt,
       terms_version_hash: t.termsVersionHash,
       trial_source: t.trialSource,
       source_detail: t.sourceDetail,
       referrer_url: t.referrerUrl,
-    })
+  })
+
+  const { data: row, error } = await sb
+    .from('trial_bookings')
+    .insert(trialRow(t.sessionDate))
     .select('id')
     .single()
 
@@ -98,11 +106,36 @@ export async function POST(request: NextRequest) {
     })
   } catch { /* the booking stands */ }
 
-  // The academy is told now, not before (John's rule: the academy is always told).
+  // The second free session (academies offering 2). A full day only loses the second one;
+  // the first stands and the parent's email lists just the date that was booked.
+  let secondBooked: string | null = null
+  let secondId: string | null = null
+  if (wantSecond && t.secondSessionDate && !datePassed(t.secondSessionDate)) {
+    const { data: row2, error: err2 } = await sb.from('trial_bookings').insert(trialRow(t.secondSessionDate)).select('id').single()
+    if (err2) console.error('[trials/confirm] second session not booked', err2.message)
+    else { secondBooked = t.secondSessionDate; secondId = row2.id as string }
+  }
+  if (secondId) {
+    try {
+      await sb.from('audit_log').insert({
+        organisation_id: t.orgId, action: 'trial.booked', entity_type: 'trial_booking', entity_id: secondId,
+        ip_address: t.ip, details: { confirmed_by_email: true, second_free_session: true, first_trial_id: row.id },
+      })
+    } catch { /* the booking stands */ }
+  }
+
+  // The academy is told now, not before (John's rule: the academy is always told), for each session.
   try {
     await alertAcademyOfTrial(sb, row.id as string)
   } catch (e) {
     console.error('[trials/confirm] academy alert failed', e)
+  }
+  if (secondId) {
+    try {
+      await alertAcademyOfTrial(sb, secondId)
+    } catch (e) {
+      console.error('[trials/confirm] academy alert (second session) failed', e)
+    }
   }
 
   // The parent's "you're booked" email.
@@ -112,7 +145,7 @@ export async function POST(request: NextRequest) {
     await sendEmail({
       to: t.email,
       fromName: t.orgName,
-      ...trialConfirmationEmail({ parentName: t.parentName, childName: t.childName, academyName: t.orgName, className: t.className ?? undefined, date: t.sessionDate ?? undefined }),
+      ...trialConfirmationEmail({ parentName: t.parentName, childName: t.childName, academyName: t.orgName, className: t.className ?? undefined, date: (secondBooked ? trialDatesLabel(t.sessionDate, secondBooked) : t.sessionDate) ?? undefined }),
     })
   } catch (e) {
     console.error('[trials/confirm] booked email failed', e)

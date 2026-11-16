@@ -66,3 +66,10 @@ doesn't apply to one product.
 3. A confirmation email is only ever sent for a paid booking. Unpaid bookings get a payment link.
 
 Enforced by `scripts/check-feature-invariants.mjs` (build fails if any of this is removed).
+
+## Free trial sessions (John, 16 Nov 2026)
+
+Every academy has one setting, `organisations.free_trial_sessions`: **1** (the default, as before) or **2**.
+With 2, the free-trial form asks for a second date and both sessions are booked as trials when the parent
+confirms by email. A child never gets more free sessions in a class than the setting allows (checked when
+booking and again when confirming). Paid trials are not affected. Code: `src/lib/free-trials.ts` (+ test).
