@@ -43,7 +43,9 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ]
 
-const SIZE_OPTIONS = ['YS', 'YM', 'YL', 'AS', 'AM', 'AL', 'AXL']
+// Kids' ages first (how most academies sell kit), then adult sizes. YS–AXL kept
+// so products saved with them still show their sizes ticked.
+const SIZE_OPTIONS = ['3–4', '5–6', '7–8', '9–10', '11–12', '13', 'S', 'M', 'L', 'XL', 'YS', 'YM', 'YL', 'AS', 'AM', 'AL', 'AXL']
 
 const STATUS_FLOW = ['pending', 'paid', 'ordered', 'shipped', 'delivered', 'cancelled'] as const
 
@@ -459,7 +461,7 @@ export default function ManageShopClient({
                     >
                       <div>
                         <p className="text-sm font-medium text-white">
-                          {order.merchandise?.name || 'Item'}
+                          {order.quantity > 1 ? `${order.quantity} × ` : ''}{order.merchandise?.name || 'Item'}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {order.size && (

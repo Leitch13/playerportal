@@ -58,6 +58,10 @@ const FEATURES = [
   ['Bookings: paid trials run the door check', `${A}/api/trial-bookings/paid/route.ts`, ['checkBookingDetails({', 'checkLeadEmail(String(parentEmail)']],
   ['Bookings: whole-camp checkout runs the door check', `${A}/api/stripe/camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],
   ['Bookings: by-the-day camp checkout runs the door check', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],
+  // Kit shop (17 Nov 2026, John: 'improve it and make it stand out'): one basket, prices set on the server, academy told.
+  ['Shop: parents fill a basket and order everything at once', `${D}/shop/ShopClient.tsx`, ["fetch('/api/shop/order'", 'View basket', 'Add to basket', 'Place order']],
+  ['Shop: kids\' age sizes for the academy to pick', `${D}/shop/manage/ManageShopClient.tsx`, ["'5–6', '7–8', '9–10'"]],
+  ['Shop: the order price comes from the shop, not the browser, and the academy is told', `${A}/api/shop/order/route.ts`, ['Number(m.price) * qty', "type: 'shop_order'", 'email: true']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
   ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],
   ['Welcome packs: the academy can email a pack to parents who have not opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-email', "action: 'email', packId: p.packId", 'window.confirm(`Email', 'welcome-pack-emailed']],

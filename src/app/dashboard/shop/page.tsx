@@ -1,30 +1,11 @@
 import { redirect } from 'next/navigation'
-import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { createClient } from '@/lib/supabase/server'
 import { requireFeature } from '@/lib/features'
-import ShopItem from './ShopItem'
-import ShopCategoryFilter from './ShopCategoryFilter'
+import ShopClient, { type ShopProduct, type ShopOrder } from './ShopClient'
 
 export const metadata = { title: 'Academy Shop' }
 
-interface MerchRow {
-  id: string
-  name: string
-  description: string | null
-  category: string
-  price: number
-  image_url: string | null
-  sizes: string[]
-  in_stock: boolean
-  sort_order: number
-}
-
-export default async function ShopPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ category?: string }>
-}) {
-  const params = await searchParams
+export default async function ShopPage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -37,172 +18,46 @@ export default async function ShopPage({
 
   // The shop is the parent buying THEIR academy's kit — brand it as the
   // academy, not as Player Portal. Same treatment as the public booking page.
-  const { data: org } = await supabase
-    .from('organisations')
-    .select('name, logo_url, primary_color')
-    .eq('id', orgId)
-    .single()
+  const [{ data: org }, { data: children }, { data: merchandise }, { data: recentOrders }] = await Promise.all([
+    supabase.from('organisations').select('name, logo_url, primary_color').eq('id', orgId).single(),
+    supabase.from('players').select('id, first_name, last_name').eq('parent_id', user.id).order('first_name'),
+    supabase
+      .from('merchandise')
+      .select('id, name, description, category, price, image_url, sizes, in_stock')
+      .eq('organisation_id', orgId)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('merchandise_orders')
+      .select('id, status, total_price, quantity, size, created_at, merchandise:merchandise(name), player:players(first_name)')
+      .eq('profile_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(8),
+  ])
+
   const accent = (org?.primary_color as string | null) || '#4ecde6'
   const academyName = (org?.name as string | null) || 'Academy'
 
-  // Fetch children for selector
-  const { data: children } = await supabase
-    .from('players')
-    .select('id, first_name, last_name')
-    .eq('parent_id', user.id)
-
-  // Fetch merchandise
-  let query = supabase
-    .from('merchandise')
-    .select('*')
-    .eq('organisation_id', orgId)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: false })
-
-  const categoryFilter = params.category
-  if (categoryFilter && categoryFilter !== 'all') {
-    const categoryMap: Record<string, string[]> = {
-      kit: ['kit'],
-      training: ['training_top'],
-      equipment: ['shorts', 'socks', 'ball', 'bag', 'bundle', 'other'],
-    }
-    const cats = categoryMap[categoryFilter]
-    if (cats) {
-      query = query.in('category', cats)
-    }
-  }
-
-  const { data: merchandise } = await query
-
-  const items = (merchandise || []) as MerchRow[]
-  const playerList = (children || []).map((c) => ({
-    id: c.id,
-    first_name: c.first_name,
-    last_name: c.last_name,
+  const products = ((merchandise || []) as ShopProduct[]).map((m) => ({ ...m, sizes: m.sizes || [] }))
+  const orders: ShopOrder[] = (recentOrders || []).map((o) => ({
+    id: o.id as string,
+    status: o.status as string,
+    total_price: Number(o.total_price),
+    quantity: (o.quantity as number | null) ?? 1,
+    size: (o.size as string | null) ?? null,
+    created_at: o.created_at as string,
+    name: (o.merchandise as unknown as { name: string } | null)?.name || 'Item',
+    child: (o.player as unknown as { first_name: string } | null)?.first_name || null,
   }))
 
-  // Fetch user's recent orders
-  const { data: recentOrders } = await supabase
-    .from('merchandise_orders')
-    .select('id, status, total_price, created_at, merchandise:merchandise(name), size')
-    .eq('profile_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(5)
-
   return (
-    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
-      {/* ─── Academy-branded hero band ─── */}
-      <div
-        className="relative mb-6 overflow-hidden rounded-2xl border border-white/[0.08] p-6 sm:p-8"
-        style={{
-          background: `linear-gradient(120deg, ${accent}26 0%, ${accent}0d 45%, rgba(255,255,255,0.02) 100%)`,
-        }}
-      >
-        <div
-          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-25"
-          style={{ background: `radial-gradient(closest-side, ${accent}, transparent 70%)` }}
-        />
-        <div className="relative flex items-center gap-4">
-          {org?.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={org.logo_url as string}
-              alt={academyName}
-              className="h-14 w-14 rounded-xl border border-white/15 bg-white/10 object-cover sm:h-16 sm:w-16"
-            />
-          ) : (
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-xl text-xl font-black text-black sm:h-16 sm:w-16"
-              style={{ background: accent }}
-            >
-              {academyName.charAt(0)}
-            </div>
-          )}
-          <div>
-            <p
-              className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
-              style={{ color: accent }}
-            >
-              Official club shop
-            </p>
-            <h1 className="mt-0.5 text-2xl font-extrabold leading-tight text-white sm:text-3xl">
-              {academyName}
-            </h1>
-            <p className="mt-1 text-xs text-white/45 sm:text-sm">
-              Kit, training wear &amp; equipment — ordered through your academy
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Category tabs */}
-      <ShopCategoryFilter active={categoryFilter || 'all'} accent={accent} />
-
-      <div
-        className="my-6 h-px"
-        style={{ background: `linear-gradient(to right, transparent, ${accent}66, transparent)` }}
-      />
-
-      {/* Product grid */}
-      {items.length === 0 ? (
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
-          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['tag']}</svg></span>
-          <p className="text-white/60 font-medium">No items available yet</p>
-          <p className="text-sm text-white/30 mt-1">
-            Your academy hasn&apos;t added any merchandise. Check back soon!
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((item) => (
-            <ShopItem key={item.id} item={item} players={playerList} accent={accent} />
-          ))}
-        </div>
-      )}
-
-      {/* Recent orders */}
-      {recentOrders && recentOrders.length > 0 && (
-        <>
-          <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent my-8" />
-          <h2 className="text-lg font-semibold text-white mb-4">Your Recent Orders</h2>
-          <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden">
-            <div className="divide-y divide-white/[0.06]">
-              {recentOrders.map((order) => {
-                const merchData = order.merchandise as unknown as { name: string } | null
-                const statusColors: Record<string, string> = {
-                  pending: 'text-amber-400 bg-amber-400/10',
-                  paid: 'text-blue-400 bg-blue-400/10',
-                  ordered: 'text-purple-400 bg-purple-400/10',
-                  shipped: 'text-[#4ecde6] bg-[#4ecde6]/10',
-                  delivered: 'text-emerald-400 bg-emerald-400/10',
-                  cancelled: 'text-red-400 bg-red-400/10',
-                }
-                return (
-                  <div key={order.id} className="flex items-center justify-between px-5 py-3">
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {merchData?.name || 'Item'}
-                        {order.size && <span className="text-white/40 ml-1.5">({order.size})</span>}
-                      </p>
-                      <p className="text-xs text-white/30 mt-0.5">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold" style={{ color: accent }}>
-                        &pound;{Number(order.total_price).toFixed(2)}
-                      </span>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${statusColors[order.status] || 'text-white/40 bg-white/5'}`}>
-                        {order.status}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+    <ShopClient
+      academyName={academyName}
+      logoUrl={(org?.logo_url as string | null) || null}
+      accent={accent}
+      products={products}
+      childList={(children || []).map((c) => ({ id: c.id, first_name: c.first_name, last_name: c.last_name }))}
+      orders={orders}
+    />
   )
 }

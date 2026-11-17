@@ -32,6 +32,7 @@ const CREATES = [
   ['a 1-2-1 session', /from\('coaching_sessions'\)\s*\.insert\(/],
   ['a lead or camp waiting-list request', /from\('leads'\)\s*\.insert\(/],
   ['a card payment page', /checkout\.sessions\.create\(/],
+  ['a kit order', /from\('merchandise_orders'\)\s*\.insert\(/],
 ]
 
 const LEDGER = {
@@ -58,6 +59,8 @@ const LEDGER = {
   [`${A}/waitlist/accept/route.ts`]: { alert: [[`${A}/waitlist/accept/route.ts`, "type: 'waitlist_accepted'"]] },
   [`${A}/stripe/change-plan/route.ts`]: { alert: [[`${A}/stripe/change-plan/route.ts`, "type: 'plan_changed'"]] },
   [`${A}/camps/waitlist/route.ts`]: { alert: [[`${A}/camps/waitlist/route.ts`, "type: 'camp_waitlist_joined'"]] },
+  // ── kit shop (17 Nov 2026): orders used to land silently
+  [`${A}/shop/order/route.ts`]: { alert: [[`${A}/shop/order/route.ts`, "type: 'shop_order'"]] },
   // ── 1-2-1s
   'src/lib/one-to-one/checkout.ts': { alert: [[OTO, "type: 'one_to_one_booked'"]] },
   // ── the academy's own actions: they did it, so nobody needs telling
