@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import FileUpload from '@/components/FileUpload'
 
 interface Product {
   id: string
@@ -271,15 +272,19 @@ export default function ManageShopClient({
                     className={inputClasses}
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-white/50 font-medium mb-1 block">Image URL</label>
-                  <input
-                    type="url"
-                    value={formImageUrl}
-                    onChange={(e) => setFormImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className={inputClasses}
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-white/50 font-medium mb-1 block">Product photo</label>
+                  {/* Upload from phone or laptop; replaces the old paste-a-web-address box (19 Nov 2026). */}
+                  <FileUpload
+                    key={editingId || 'new'}
+                    bucketName="coaching"
+                    folder="shop-products"
+                    accept="image/*"
+                    currentUrl={formImageUrl || undefined}
+                    onUpload={(url) => setFormImageUrl(url)}
+                    label="Upload a photo of this product"
                   />
+                  <p className="text-[11px] text-white/40 mt-1">No photo? The shop shows a kit picture in your academy colours.</p>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="text-xs text-white/50 font-medium mb-1 block">Description</label>

@@ -61,6 +61,8 @@ const FEATURES = [
   // Kit shop (17 Nov 2026, John: 'improve it and make it stand out'): one basket, prices set on the server, academy told.
   ['Shop: parents fill a basket and order everything at once', `${D}/shop/ShopClient.tsx`, ["fetch('/api/shop/order'", 'View basket', 'Add to basket', 'Place order']],
   ['Shop: kids\' age sizes for the academy to pick', `${D}/shop/manage/ManageShopClient.tsx`, ["'5–6', '7–8', '9–10'"]],
+  // 19 Nov 2026, John: product photos uploaded from the phone or laptop, not a pasted web address.
+  ['Shop: academy uploads a product photo', `${D}/shop/manage/ManageShopClient.tsx`, ['<FileUpload', 'folder="shop-products"', 'Upload a photo of this product']],
   ['Shop: the order price comes from the shop, not the browser, and the academy is told', `${A}/api/shop/order/route.ts`, ['Number(m.price) * qty', "type: 'shop_order'", 'email: true']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
   ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],
