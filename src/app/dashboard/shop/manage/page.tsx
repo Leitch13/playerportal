@@ -19,6 +19,8 @@ export default async function ManageShopPage() {
   const { data: orgId } = await supabase.rpc('get_my_org')
   if (!orgId) redirect('/dashboard')
 
+  const { data: org } = await supabase.from('organisations').select('name, primary_color').eq('id', orgId).single()
+
   // Fetch products
   const { data: products } = await supabase
     .from('merchandise')
@@ -32,7 +34,8 @@ export default async function ManageShopPage() {
     .from('merchandise_orders')
     .select(`
       id, size, quantity, total_price, player_name_on_shirt, player_number, status, notes, created_at,
-      merchandise:merchandise(name, category),
+      merchandise_id,
+      merchandise:merchandise(name, category, image_url),
       profile:profiles(full_name),
       player:players(first_name, last_name)
     `)
@@ -47,6 +50,11 @@ export default async function ManageShopPage() {
 
   const pendingCount = (orders || []).filter((o) => o.status === 'pending').length
   const activeOrderCount = (orders || []).filter((o) => ['paid', 'ordered'].includes(o.status)).length
+  // Money taken this calendar month (paid or further along), UK time.
+  const monthKey = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' }).slice(0, 7)
+  const monthRevenue = (orders || [])
+    .filter((o) => paidStatuses.includes(o.status) && new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'Europe/London' }).slice(0, 7) === monthKey)
+    .reduce((sum, o) => sum + Number(o.total_price), 0)
 
   return (
     <ManageShopClient
@@ -56,6 +64,9 @@ export default async function ManageShopPage() {
       totalRevenue={totalRevenue}
       pendingCount={pendingCount}
       activeOrderCount={activeOrderCount}
+      monthRevenue={monthRevenue}
+      academyName={(org?.name as string | null) || 'Your academy'}
+      accent={(org?.primary_color as string | null) || '#4ecde6'}
     />
   )
 }

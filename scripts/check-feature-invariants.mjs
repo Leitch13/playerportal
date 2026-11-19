@@ -62,7 +62,12 @@ const FEATURES = [
   ['Shop: parents fill a basket and order everything at once', `${D}/shop/ShopClient.tsx`, ["fetch('/api/shop/order'", 'View basket', 'Add to basket', 'Place order']],
   ['Shop: kids\' age sizes for the academy to pick', `${D}/shop/manage/ManageShopClient.tsx`, ["'5–6', '7–8', '9–10'"]],
   // 19 Nov 2026, John: product photos uploaded from the phone or laptop, not a pasted web address.
-  ['Shop: academy uploads a product photo', `${D}/shop/manage/ManageShopClient.tsx`, ['<FileUpload', 'folder="shop-products"', 'Upload a photo of this product']],
+  ['Shop: academy uploads a product photo', `${D}/shop/manage/ManageShopClient.tsx`, ['<PhotoTile', 'folder="shop-products"', 'Upload a photo of this product']],
+  // 19 Nov 2026, John: "make it look unreal": live parent preview, one-tap starters, orders board.
+  ['Shop: academy sees the parent card update live while editing', `${D}/shop/manage/ManageShopClient.tsx`, ['What parents see', '<ParentCard p={preview}', 'Updates as you type']],
+  ['Shop: one-tap starter products', `${D}/shop/manage/ManageShopClient.tsx`, ['const STARTERS', 'Stock your shop in a minute']],
+  ['Shop: orders board New → Paid → Ordered → Ready → Collected', `${D}/shop/manage/ManageShopClient.tsx`, ["label: 'Ready to collect'", "label: 'Collected'", 'updateOrderStatus(o.id, col.next!)']],
+  ['Shop: parent and academy share one product picture', `${D}/shop/ShopArt.tsx`, ['export function ProductImage', 'export function KitArt']],
   ['Shop: the order price comes from the shop, not the browser, and the academy is told', `${A}/api/shop/order/route.ts`, ['Number(m.price) * qty', "type: 'shop_order'", 'email: true']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.
   ['Welcome packs: the academy adds a pack and sees who has opened it', `${D}/welcome-packs/WelcomePackManager.tsx`, ['welcome-pack-form', 'uploadToSignedUrl(', 'welcome-pack-coverage', 'Not opened yet:', 'welcome-pack-remove']],

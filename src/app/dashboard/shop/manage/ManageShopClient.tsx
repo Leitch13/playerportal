@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { PALETTE_ICON_PATHS } from '@/components/ui/PaletteIcon'
+// Manage Shop, rebuilt 19 Nov 2026 (John: "make it look unreal").
+// Live parent-card preview while editing, a big photo tile, one-tap starter products,
+// size groups, a product gallery and an orders board. Same tables and columns as before.
+
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import FileUpload from '@/components/FileUpload'
+import { ProductImage } from '../ShopArt'
 
 interface Product {
   id: string
@@ -20,6 +23,7 @@ interface Product {
 
 interface Order {
   id: string
+  merchandise_id: string | null
   size: string | null
   quantity: number
   total_price: number
@@ -28,14 +32,14 @@ interface Order {
   status: string
   notes: string | null
   created_at: string
-  merchandise: { name: string; category: string } | null
+  merchandise: { name: string; category: string; image_url: string | null } | null
   profile: { full_name: string } | null
   player: { first_name: string; last_name: string } | null
 }
 
 const CATEGORIES = [
-  { value: 'kit', label: 'Kit' },
-  { value: 'training_top', label: 'Training Top' },
+  { value: 'kit', label: 'Match kit' },
+  { value: 'training_top', label: 'Training top' },
   { value: 'shorts', label: 'Shorts' },
   { value: 'socks', label: 'Socks' },
   { value: 'ball', label: 'Ball' },
@@ -44,11 +48,120 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ]
 
-// Kids' ages first (how most academies sell kit), then adult sizes. YS–AXL kept
-// so products saved with them still show their sizes ticked.
-const SIZE_OPTIONS = ['3–4', '5–6', '7–8', '9–10', '11–12', '13', 'S', 'M', 'L', 'XL', 'YS', 'YM', 'YL', 'AS', 'AM', 'AL', 'AXL']
+// Size groups. Kids' ages first (how most academies sell kit).
+const KIDS = ['3–4', '5–6', '7–8', '9–10', '11–12', '13']
+const SIZE_GROUPS: { key: string; label: string; sizes: string[] }[] = [
+  { key: 'kids', label: 'Kids (age)', sizes: KIDS },
+  { key: 'youth', label: 'Youth', sizes: ['YS', 'YM', 'YL'] },
+  { key: 'adult', label: 'Adult', sizes: ['S', 'M', 'L', 'XL', 'XXL'] },
+  { key: 'gloves', label: 'Glove sizes', sizes: ['4', '5', '6', '7', '8', '9', '10'] },
+]
+const KNOWN_SIZES = SIZE_GROUPS.flatMap((g) => g.sizes)
 
-const STATUS_FLOW = ['pending', 'paid', 'ordered', 'shipped', 'delivered', 'cancelled'] as const
+// One tap fills the form; the academy checks it and presses Add.
+const STARTERS: { name: string; category: string; price: number; sizes: string[]; description: string }[] = [
+  { name: 'Training top', category: 'training_top', price: 25, sizes: [...KIDS, 'S', 'M', 'L', 'XL'], description: 'Academy training top with badge.' },
+  { name: 'Match kit', category: 'kit', price: 35, sizes: [...KIDS, 'S', 'M', 'L', 'XL'], description: 'Shirt and shorts. Add a name and number.' },
+  { name: 'Shorts', category: 'shorts', price: 15, sizes: [...KIDS, 'S', 'M', 'L'], description: 'Academy training shorts.' },
+  { name: 'Socks', category: 'socks', price: 8, sizes: ['YS', 'YM', 'YL', 'S', 'M', 'L'], description: 'Academy socks.' },
+  { name: 'Goalkeeper gloves', category: 'other', price: 20, sizes: ['4', '5', '6', '7', '8', '9', '10'], description: 'Match goalkeeper gloves.' },
+  { name: 'Kit bundle', category: 'bundle', price: 55, sizes: [...KIDS, 'S', 'M', 'L', 'XL'], description: 'Training top, shorts and socks together.' },
+]
+
+// The board: one column per step. Database values stay the same.
+const BOARD: { status: string; label: string; next?: string; nextLabel?: string; tone: string }[] = [
+  { status: 'pending', label: 'New', next: 'paid', nextLabel: 'Mark paid', tone: '#f5b942' },
+  { status: 'paid', label: 'Paid', next: 'ordered', nextLabel: 'Ordered from supplier', tone: '#4f8cff' },
+  { status: 'ordered', label: 'Ordered from supplier', next: 'shipped', nextLabel: 'Ready to collect', tone: '#a77bff' },
+  { status: 'shipped', label: 'Ready to collect', next: 'delivered', nextLabel: 'Collected', tone: '#4ecde6' },
+  { status: 'delivered', label: 'Collected', tone: '#34d399' },
+]
+const PREV: Record<string, string> = { paid: 'pending', ordered: 'paid', shipped: 'ordered', delivered: 'shipped' }
+
+const money = (n: number) => `£${n.toFixed(2).replace(/\.00$/, '')}`
+const isPersonal = (c: string) => c === 'kit' || c === 'training_top'
+const when = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
+/** Big square photo tile: tap to upload from phone or laptop; Change / Remove once set. */
+function PhotoTile({ folder, value, onChange }: { folder: string; value: string; onChange: (url: string) => void }) {
+  const input = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [drag, setDrag] = useState(false)
+
+  async function upload(file: File) {
+    if (!file.type.startsWith('image/')) return setError('Choose a photo (JPG, PNG or WebP).')
+    if (file.size > 10 * 1024 * 1024) return setError('That photo is over 10MB. Try a smaller one.')
+    setBusy(true); setError('')
+    const supabase = createClient()
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { data, error: err } = await supabase.storage.from('coaching').upload(path, file, { cacheControl: '3600', upsert: false })
+    setBusy(false)
+    if (err || !data) return setError('Upload failed. Please try again.')
+    onChange(supabase.storage.from('coaching').getPublicUrl(data.path).data.publicUrl)
+  }
+
+  return (
+    <div>
+      <input ref={input} type="file" accept="image/*" className="hidden" aria-label="Upload a photo of this product"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = '' }} />
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) upload(f) }}
+        className={`relative aspect-square w-full overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${drag ? 'border-[#4ecde6] bg-[#4ecde6]/10' : value ? 'border-transparent' : 'border-white/15 bg-white/[0.03] hover:border-white/30'}`}
+      >
+        {value ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="Product photo" className="h-full w-full object-cover" />
+            <div className="absolute inset-x-0 bottom-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
+              <button type="button" onClick={() => input.current?.click()} className="flex-1 rounded-lg bg-white px-3 py-2 text-xs font-bold text-black">Change</button>
+              <button type="button" onClick={() => onChange('')} className="rounded-lg bg-black/60 px-3 py-2 text-xs font-bold text-white">Remove</button>
+            </div>
+          </>
+        ) : (
+          <button type="button" onClick={() => input.current?.click()} className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#4ecde6]/15 text-[#4ecde6]">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" /><circle cx="12" cy="13" r="3.5" /></svg>
+            </span>
+            <span className="text-sm font-bold text-white">{busy ? 'Uploading…' : 'Tap to add a photo'}</span>
+            <span className="text-xs text-white/45">Upload a photo of this product · or drag one here</span>
+          </button>
+        )}
+        {busy && value && <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-bold">Uploading…</div>}
+      </div>
+      {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+    </div>
+  )
+}
+
+/** The parent shop card, exactly as parents see it. */
+function ParentCard({ p, accent }: { p: { name: string; category: string; image_url: string | null; price: number; in_stock: boolean }; accent: string }) {
+  return (
+    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-[#1b2a40] bg-[#0d1726] text-left shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
+      <div className="relative overflow-hidden">
+        <ProductImage product={p} accent={accent} />
+        {isPersonal(p.category) && p.in_stock && (
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold text-[#070c15]">Add name + no.</span>
+        )}
+        {!p.in_stock && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+            <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white/80">Out of stock</span>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 items-end justify-between gap-2 p-3 sm:p-4">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-white sm:text-base">{p.name || 'Product name'}</p>
+          <p className="mt-0.5 text-sm font-extrabold" style={{ color: accent }}>{money(Number(p.price) || 0)}</p>
+        </div>
+        {p.in_stock && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-lg font-bold leading-none text-[#070c15]">+</span>}
+      </div>
+    </div>
+  )
+}
 
 export default function ManageShopClient({
   products: initialProducts,
@@ -56,7 +169,9 @@ export default function ManageShopClient({
   orgId,
   totalRevenue,
   pendingCount,
-  activeOrderCount,
+  monthRevenue,
+  academyName,
+  accent,
 }: {
   products: Product[]
   orders: Order[]
@@ -64,12 +179,14 @@ export default function ManageShopClient({
   totalRevenue: number
   pendingCount: number
   activeOrderCount: number
+  monthRevenue: number
+  academyName: string
+  accent: string
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<'products' | 'orders'>('products')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [showCancelled, setShowCancelled] = useState(false)
 
-  // Product form state
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formName, setFormName] = useState('')
@@ -80,62 +197,66 @@ export default function ManageShopClient({
   const [formSizes, setFormSizes] = useState<string[]>([])
   const [formInStock, setFormInStock] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
+  const [formError, setFormError] = useState('')
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const formTop = useRef<HTMLDivElement>(null)
 
-  function resetForm() {
-    setEditingId(null)
-    setFormName('')
-    setFormCategory('kit')
-    setFormPrice('')
-    setFormDescription('')
-    setFormImageUrl('')
-    setFormSizes([])
-    setFormInStock(true)
-    setShowForm(false)
-  }
+  const live = initialOrders.filter((o) => o.status !== 'cancelled')
+  const orderedCount = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const o of live) if (o.merchandise_id) m.set(o.merchandise_id, (m.get(o.merchandise_id) || 0) + (o.quantity || 1))
+    return m
+  }, [live])
+  const bestSeller = useMemo(() => {
+    let best: Product | null = null; let n = 0
+    for (const p of initialProducts) { const c = orderedCount.get(p.id) || 0; if (c > n) { n = c; best = p } }
+    return best ? { product: best as Product, count: n } : null
+  }, [initialProducts, orderedCount])
 
-  function editProduct(p: Product) {
-    setEditingId(p.id)
-    setFormName(p.name)
-    setFormCategory(p.category)
-    setFormPrice(String(p.price))
-    setFormDescription(p.description || '')
-    setFormImageUrl(p.image_url || '')
-    setFormSizes(p.sizes)
-    setFormInStock(p.in_stock)
+  function openForm(fill?: Partial<Product>, id: string | null = null) {
+    setEditingId(id)
+    setFormName(fill?.name || '')
+    setFormCategory(fill?.category || 'kit')
+    setFormPrice(fill?.price != null ? String(fill.price) : '')
+    setFormDescription(fill?.description || '')
+    setFormImageUrl(fill?.image_url || '')
+    setFormSizes(fill?.sizes || [])
+    setFormInStock(fill?.in_stock ?? true)
+    setFormError('')
     setShowForm(true)
+    setTab('products')
+    setTimeout(() => formTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
+  const closeForm = () => { setShowForm(false); setEditingId(null) }
 
-  function toggleSize(size: string) {
-    setFormSizes((prev) =>
-      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
-    )
+  const toggleSize = (size: string) => setFormSizes((prev) => (prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]))
+  function toggleGroup(sizes: string[]) {
+    const all = sizes.every((s) => formSizes.includes(s))
+    setFormSizes((prev) => (all ? prev.filter((s) => !sizes.includes(s)) : [...prev, ...sizes.filter((s) => !prev.includes(s))]))
   }
 
   async function saveProduct() {
-    if (!formName || !formPrice) return
+    if (!formName.trim()) return setFormError('Give the product a name.')
+    const price = parseFloat(formPrice)
+    if (!(price >= 0)) return setFormError('Add a price.')
     setSaving(true)
     const supabase = createClient()
-
     const payload = {
       organisation_id: orgId,
-      name: formName,
+      name: formName.trim(),
       category: formCategory,
-      price: parseFloat(formPrice),
-      description: formDescription || null,
+      price,
+      description: formDescription.trim() || null,
       image_url: formImageUrl || null,
       sizes: formSizes,
       in_stock: formInStock,
     }
-
-    if (editingId) {
-      await supabase.from('merchandise').update(payload).eq('id', editingId)
-    } else {
-      await supabase.from('merchandise').insert(payload)
-    }
-
+    const { error } = editingId
+      ? await supabase.from('merchandise').update(payload).eq('id', editingId)
+      : await supabase.from('merchandise').insert(payload)
     setSaving(false)
-    resetForm()
+    if (error) return setFormError('Could not save. Please try again.')
+    closeForm()
     router.refresh()
   }
 
@@ -143,390 +264,343 @@ export default function ManageShopClient({
     if (!confirm('Delete this product? Existing orders will not be affected.')) return
     const supabase = createClient()
     await supabase.from('merchandise').delete().eq('id', id)
+    if (editingId === id) closeForm()
+    router.refresh()
+  }
+
+  async function setStock(p: Product, inStock: boolean) {
+    setBusyId(p.id)
+    await createClient().from('merchandise').update({ in_stock: inStock }).eq('id', p.id)
+    setBusyId(null)
     router.refresh()
   }
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
-    setUpdatingOrder(orderId)
-    const supabase = createClient()
-    await supabase.from('merchandise_orders').update({ status: newStatus }).eq('id', orderId)
-    setUpdatingOrder(null)
+    if (newStatus === 'cancelled' && !confirm('Cancel this order?')) return
+    setBusyId(orderId)
+    await createClient().from('merchandise_orders').update({ status: newStatus }).eq('id', orderId)
+    setBusyId(null)
     router.refresh()
   }
 
-  const filteredOrders =
-    statusFilter === 'all'
-      ? initialOrders
-      : initialOrders.filter((o) => o.status === statusFilter)
+  const preview = { name: formName, category: formCategory, image_url: formImageUrl || null, price: parseFloat(formPrice) || 0, in_stock: formInStock }
+  const otherSizes = formSizes.filter((s) => !KNOWN_SIZES.includes(s))
+  const input = 'w-full rounded-xl border border-white/[0.1] bg-white/[0.05] px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:border-[#4ecde6]/60 focus:outline-none focus:ring-1 focus:ring-[#4ecde6]/30'
+  const label = 'mb-1.5 block text-xs font-semibold uppercase tracking-wider text-white/45'
 
-  const statusColors: Record<string, string> = {
-    pending: 'text-amber-400 bg-amber-400/10',
-    paid: 'text-blue-400 bg-blue-400/10',
-    ordered: 'text-purple-400 bg-purple-400/10',
-    shipped: 'text-[#4ecde6] bg-[#4ecde6]/10',
-    delivered: 'text-emerald-400 bg-emerald-400/10',
-    cancelled: 'text-red-400 bg-red-400/10',
-  }
-
-  const inputClasses =
-    'w-full bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#4ecde6]/50 focus:ring-1 focus:ring-[#4ecde6]/30'
+  const starters = (compact = false) => (
+    <div className={`grid gap-2.5 ${compact ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'}`}>
+      {STARTERS.map((s) => (
+        <button key={s.name} type="button" onClick={() => openForm({ ...s, in_stock: true })}
+          className="group flex flex-col items-center gap-1.5 rounded-2xl border border-white/[0.08] bg-[#0d1726] p-2.5 text-center transition-all hover:-translate-y-0.5 hover:border-[#4ecde6]/40">
+          <div className="w-full overflow-hidden rounded-xl"><ProductImage product={{ name: s.name, category: s.category, image_url: null }} accent={accent} size="thumb" /></div>
+          <span className="text-xs font-bold leading-tight text-white">{s.name}</span>
+          {!compact && <span className="text-[11px] text-white/45">{money(s.price)}</span>}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
-    <div className="bg-[#080e18] -m-6 lg:-m-8 p-6 lg:p-8 min-h-screen text-white">
+    <div className="-m-6 min-h-screen bg-[#080e18] p-4 text-white sm:p-6 lg:-m-8 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Manage Shop</h1>
-          <p className="text-sm text-white/40 mt-1">Products, orders &amp; revenue</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: accent }}>{academyName}</p>
+          <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">Kit shop</h1>
+          <p className="mt-1 text-sm text-white/45">Add kit, see orders come in, and move each one through to collected.</p>
+        </div>
+        <div className="flex gap-2">
+          <a href="/dashboard/shop" className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/[0.06]">See it as a parent</a>
+          <button onClick={() => openForm()} className="rounded-xl bg-[#4ecde6] px-4 py-2.5 text-sm font-bold text-black hover:bg-[#4ecde6]/90">+ Add product</button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <p className="text-xs text-white/40 font-medium">Total Revenue</p>
-          <p className="text-2xl font-bold text-[#4ecde6] mt-1">&pound;{totalRevenue.toFixed(2)}</p>
+      {/* Numbers */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#4ecde6]/[0.12] to-transparent p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Taken this month</p>
+          <p className="mt-1 text-2xl font-black tabular-nums text-white sm:text-3xl">{money(monthRevenue)}</p>
+          <p className="mt-1 text-xs text-white/40">{money(totalRevenue)} since the shop opened</p>
         </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <p className="text-xs text-white/40 font-medium">Pending Orders</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">{pendingCount}</p>
-        </div>
-        <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
-          <p className="text-xs text-white/40 font-medium">Active Orders</p>
-          <p className="text-2xl font-bold text-purple-400 mt-1">{activeOrderCount}</p>
+        <button onClick={() => setTab('orders')} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left hover:border-amber-400/40">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Orders waiting</p>
+          <p className={`mt-1 text-2xl font-black tabular-nums sm:text-3xl ${pendingCount ? 'text-amber-300' : 'text-white'}`}>{pendingCount}</p>
+          <p className="mt-1 text-xs text-white/40">{pendingCount ? 'New orders to collect payment for →' : 'Nothing waiting'}</p>
+        </button>
+        <div className="col-span-2 flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:col-span-1">
+          {bestSeller ? (
+            <>
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl"><ProductImage product={bestSeller.product} accent={accent} size="thumb" /></div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Best seller</p>
+                <p className="truncate text-base font-bold text-white">{bestSeller.product.name}</p>
+                <p className="text-xs text-white/40">{bestSeller.count} ordered</p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/45">Best seller</p>
+              <p className="mt-1 text-sm text-white/50">Shows here once orders come in.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-[#4ecde6]/40 to-transparent mb-6" />
-
-      {/* Tab switcher */}
-      <div className="flex gap-2 mb-6">
+      {/* Tabs */}
+      <div className="mb-6 inline-flex rounded-full border border-white/[0.08] bg-white/[0.03] p-1">
         {(['products', 'orders'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-all capitalize ${
-              tab === t
-                ? 'bg-[#4ecde6] text-black'
-                : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.1] hover:text-white'
-            }`}
-          >
-            {t}
+          <button key={t} onClick={() => setTab(t)}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition-all ${tab === t ? 'bg-[#4ecde6] text-black' : 'text-white/55 hover:text-white'}`}>
+            {t === 'products' ? `Products · ${initialProducts.length}` : `Orders · ${live.length}`}
           </button>
         ))}
       </div>
 
-      {/* PRODUCTS TAB */}
+      {/* ───────── PRODUCTS ───────── */}
       {tab === 'products' && (
         <div>
-          <button
-            onClick={() => {
-              resetForm()
-              setShowForm(true)
-            }}
-            className="mb-4 px-5 py-2.5 rounded-xl bg-[#4ecde6] text-black font-semibold text-sm hover:bg-[#4ecde6]/90 transition-all"
-          >
-            + Add Product
-          </button>
-
-          {/* Add/Edit form */}
           {showForm && (
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-6 mb-6">
-              <h3 className="text-base font-semibold text-white mb-4">
-                {editingId ? 'Edit Product' : 'New Product'}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-white/50 font-medium mb-1 block">Name *</label>
-                  <input
-                    type="text"
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder="Academy Training Top"
-                    className={inputClasses}
-                  />
+            <div ref={formTop} className="mb-8 scroll-mt-6 rounded-3xl border border-white/[0.08] bg-[#0b1422] p-4 sm:p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-black">{editingId ? 'Edit product' : 'New product'}</h2>
+                <button onClick={closeForm} className="text-sm text-white/50 hover:text-white">Close</button>
+              </div>
+              {!editingId && (
+                <div className="mb-6">
+                  <p className={label}>Start from</p>
+                  {starters(true)}
                 </div>
-                <div>
-                  <label className="text-xs text-white/50 font-medium mb-1 block">Category *</label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    className={inputClasses}
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value} className="bg-[#142236]">
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-white/50 font-medium mb-1 block">Price (&pound;) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formPrice}
-                    onChange={(e) => setFormPrice(e.target.value)}
-                    placeholder="29.99"
-                    className={inputClasses}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-white/50 font-medium mb-1 block">Product photo</label>
-                  {/* Upload from phone or laptop; replaces the old paste-a-web-address box (19 Nov 2026). */}
-                  <FileUpload
-                    key={editingId || 'new'}
-                    bucketName="coaching"
-                    folder="shop-products"
-                    accept="image/*"
-                    currentUrl={formImageUrl || undefined}
-                    onUpload={(url) => setFormImageUrl(url)}
-                    label="Upload a photo of this product"
-                  />
-                  <p className="text-[11px] text-white/40 mt-1">No photo? The shop shows a kit picture in your academy colours.</p>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-white/50 font-medium mb-1 block">Description</label>
-                  <textarea
-                    value={formDescription}
-                    onChange={(e) => setFormDescription(e.target.value)}
-                    placeholder="Product description..."
-                    rows={2}
-                    className={inputClasses}
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-white/50 font-medium mb-2 block">Sizes</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {SIZE_OPTIONS.map((size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => toggleSize(size)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          formSizes.includes(size)
-                            ? 'bg-[#4ecde6] text-black'
-                            : 'bg-white/[0.08] text-white/60 hover:bg-white/[0.12]'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+              )}
+              <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="space-y-5">
+                  <div className="grid gap-5 sm:grid-cols-[200px_minmax(0,1fr)]">
+                    <div className="max-w-[200px] sm:max-w-none">
+                      <p className={label}>Photo</p>
+                      <PhotoTile folder="shop-products" value={formImageUrl} onChange={setFormImageUrl} />
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className={label} htmlFor="shop-name">Name</label>
+                        <input id="shop-name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Academy training top" className={input} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className={label} htmlFor="shop-price">Price (£)</label>
+                          <input id="shop-price" type="number" inputMode="decimal" min="0" step="0.01" value={formPrice} onChange={(e) => setFormPrice(e.target.value)} placeholder="25" className={input} />
+                        </div>
+                        <div>
+                          <label className={label} htmlFor="shop-cat">Type</label>
+                          <select id="shop-cat" value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className={input}>
+                            {CATEGORIES.map((c) => <option key={c.value} value={c.value} className="bg-[#0b1422]">{c.label}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className={label} htmlFor="shop-desc">Description</label>
+                        <textarea id="shop-desc" value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} placeholder="What's included, material, fit…" className={`${input} resize-none`} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className={label}>Sizes parents can pick</p>
+                    <div className="space-y-2.5">
+                      {SIZE_GROUPS.map((g) => {
+                        const all = g.sizes.every((s) => formSizes.includes(s))
+                        return (
+                          <div key={g.key} className="flex flex-wrap items-center gap-1.5">
+                            <button type="button" onClick={() => toggleGroup(g.sizes)}
+                              className={`mr-1 w-28 rounded-lg px-2.5 py-1.5 text-left text-xs font-bold ${all ? 'bg-[#4ecde6]/20 text-[#4ecde6]' : 'bg-white/[0.04] text-white/60 hover:text-white'}`}>
+                              {g.label} {all ? '✓' : '· all'}
+                            </button>
+                            {g.sizes.map((s) => (
+                              <button key={s} type="button" onClick={() => toggleSize(s)}
+                                className={`min-w-[2.6rem] rounded-lg border px-2.5 py-1.5 text-xs font-bold transition-all ${formSizes.includes(s) ? 'border-[#4ecde6] bg-[#4ecde6]/15 text-white' : 'border-white/10 text-white/50 hover:border-white/30'}`}>
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )
+                      })}
+                      {otherSizes.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="mr-1 w-28 px-2.5 text-xs font-bold text-white/40">Also on this product</span>
+                          {otherSizes.map((s) => (
+                            <button key={s} type="button" onClick={() => toggleSize(s)} className="min-w-[2.6rem] rounded-lg border border-[#4ecde6] bg-[#4ecde6]/15 px-2.5 py-1.5 text-xs font-bold">{s} ✕</button>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[11px] text-white/35">No sizes ticked = one size (balls, bags).</p>
+                    </div>
+                  </div>
+
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <button type="button" role="switch" aria-checked={formInStock} onClick={() => setFormInStock(!formInStock)}
+                      className={`relative h-6 w-11 rounded-full transition-colors ${formInStock ? 'bg-emerald-400' : 'bg-white/15'}`}>
+                      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${formInStock ? 'left-[22px]' : 'left-0.5'}`} />
+                    </button>
+                    <span className="text-sm font-semibold">{formInStock ? 'In stock: parents can order' : 'Out of stock: shown but can’t be ordered'}</span>
+                  </label>
+
+                  {formError && <p className="text-sm text-red-300">{formError}</p>}
+                  <div className="flex gap-2">
+                    <button onClick={saveProduct} disabled={saving} className="rounded-xl bg-[#4ecde6] px-6 py-3 text-sm font-black text-black disabled:opacity-50">
+                      {saving ? 'Saving…' : editingId ? 'Save changes' : 'Add to shop'}
+                    </button>
+                    <button onClick={closeForm} className="rounded-xl border border-white/10 px-5 py-3 text-sm font-semibold text-white/70">Cancel</button>
+                    {editingId && <button onClick={() => deleteProduct(editingId)} className="ml-auto rounded-xl px-4 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/10">Delete</button>}
                   </div>
                 </div>
-                <div className="sm:col-span-2 flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formInStock}
-                      onChange={(e) => setFormInStock(e.target.checked)}
-                      className="rounded border-white/20 bg-white/10 text-[#4ecde6] focus:ring-[#4ecde6]/30"
-                    />
-                    <span className="text-sm text-white/60">In Stock</span>
-                  </label>
+
+                {/* Live preview */}
+                <div className="lg:sticky lg:top-6 lg:self-start">
+                  <p className={label}>What parents see</p>
+                  <div className="rounded-3xl p-4" style={{ background: `radial-gradient(circle at 50% 0%, ${accent}22, transparent 70%)` }}>
+                    <div className="mx-auto max-w-[240px]"><ParentCard p={preview} accent={accent} /></div>
+                    {formSizes.length > 0 && (
+                      <div className="mx-auto mt-3 flex max-w-[240px] flex-wrap justify-center gap-1">
+                        {formSizes.slice(0, 10).map((s) => <span key={s} className="rounded-md border border-white/10 px-1.5 py-0.5 text-[10px] font-bold text-white/60">{s}</span>)}
+                        {formSizes.length > 10 && <span className="px-1 text-[10px] text-white/40">+{formSizes.length - 10}</span>}
+                      </div>
+                    )}
+                    <p className="mt-3 text-center text-[11px] text-white/40">Updates as you type</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-3 mt-5">
-                <button
-                  onClick={saveProduct}
-                  disabled={saving || !formName || !formPrice}
-                  className="px-5 py-2 rounded-xl bg-[#4ecde6] text-black font-semibold text-sm hover:bg-[#4ecde6]/90 transition-all disabled:opacity-40"
-                >
-                  {saving ? 'Saving...' : editingId ? 'Update Product' : 'Add Product'}
-                </button>
-                <button
-                  onClick={resetForm}
-                  className="px-5 py-2 rounded-xl bg-white/[0.06] text-white/50 font-medium text-sm hover:bg-white/[0.1]"
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           )}
 
-          {/* Product list */}
-          {initialProducts.length === 0 ? (
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
-              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['tag']}</svg></span>
-              <p className="text-white/60 font-medium">No products yet</p>
-              <p className="text-sm text-white/30 mt-1">Add your first item to start selling.</p>
+          {initialProducts.length === 0 && !showForm ? (
+            <div className="rounded-3xl border border-white/[0.08] bg-[#0b1422] p-6 sm:p-8">
+              <h2 className="text-xl font-black">Stock your shop in a minute</h2>
+              <p className="mt-1 mb-6 text-sm text-white/50">Tap a product to start. The name, type, price and sizes fill in for you. Change anything, add your photo, then add it to the shop.</p>
+              {starters()}
             </div>
           ) : (
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden">
-              <div className="divide-y divide-white/[0.06]">
-                {initialProducts.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between px-5 py-4">
-                    <div className="flex items-center gap-4 min-w-0">
-                      {p.image_url ? (
-                        <img
-                          src={p.image_url}
-                          alt={p.name}
-                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-white/[0.06] flex items-center justify-center flex-shrink-0">
-                          <span className="text-lg opacity-50"></span>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              {initialProducts.map((p) => {
+                const n = orderedCount.get(p.id) || 0
+                return (
+                  <div key={p.id} className={`group overflow-hidden rounded-2xl border bg-[#0d1726] transition-all ${editingId === p.id ? 'border-[#4ecde6]' : 'border-[#1b2a40] hover:border-white/20'}`}>
+                    <button onClick={() => openForm(p, p.id)} className="relative block w-full overflow-hidden text-left" aria-label={`Edit ${p.name}`}>
+                      <ProductImage product={p} accent={accent} />
+                      {n > 0 && <span className="absolute right-2.5 top-2.5 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-bold text-white">{n} ordered</span>}
+                      {!p.in_stock && <div className="absolute inset-0 flex items-center justify-center bg-black/55"><span className="rounded-full bg-black/70 px-3 py-1 text-xs font-bold text-white/80">Out of stock</span></div>}
+                    </button>
+                    <div className="p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-white sm:text-base">{p.name}</p>
+                          <p className="text-sm font-extrabold" style={{ color: accent }}>{money(Number(p.price))}</p>
                         </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{p.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-white/40 capitalize">{p.category.replace('_', ' ')}</span>
-                          {p.sizes.length > 0 && (
-                            <span className="text-[10px] text-white/30">
-                              {p.sizes.join(', ')}
-                            </span>
-                          )}
-                          {!p.in_stock && (
-                            <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded-full font-medium">
-                              Out of stock
-                            </span>
-                          )}
-                        </div>
+                        <button role="switch" aria-checked={p.in_stock} aria-label={p.in_stock ? 'In stock' : 'Out of stock'} disabled={busyId === p.id}
+                          onClick={() => setStock(p, !p.in_stock)} title={p.in_stock ? 'In stock' : 'Out of stock'}
+                          className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors ${p.in_stock ? 'bg-emerald-400' : 'bg-white/15'}`}>
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${p.in_stock ? 'left-[18px]' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+                      <p className="mt-1 truncate text-[11px] text-white/40">{p.sizes.length ? p.sizes.join(' · ') : 'One size'}</p>
+                      <div className="mt-3 flex gap-2">
+                        <button onClick={() => openForm(p, p.id)} className="flex-1 rounded-lg bg-white/[0.06] py-1.5 text-xs font-bold text-white/80 hover:bg-white/[0.1]">Edit</button>
+                        <button onClick={() => deleteProduct(p.id)} className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-red-300/80 hover:bg-red-500/10">Delete</button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="text-sm font-semibold text-[#4ecde6]">
-                        &pound;{Number(p.price).toFixed(2)}
-                      </span>
-                      <button
-                        onClick={() => editProduct(p)}
-                        className="text-xs text-white/40 hover:text-white px-2 py-1 rounded hover:bg-white/[0.06] transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteProduct(p.id)}
-                        className="text-xs text-red-400/60 hover:text-red-400 px-2 py-1 rounded hover:bg-red-400/[0.06] transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
                   </div>
-                ))}
-              </div>
+                )
+              })}
+              <button onClick={() => openForm()} className="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/10 text-white/50 hover:border-[#4ecde6]/50 hover:text-white">
+                <span className="text-3xl leading-none">+</span><span className="text-sm font-bold">Add product</span>
+              </button>
             </div>
           )}
         </div>
       )}
 
-      {/* ORDERS TAB */}
+      {/* ───────── ORDERS BOARD ───────── */}
       {tab === 'orders' && (
         <div>
-          {/* Status filter */}
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
-            {['all', ...STATUS_FLOW].map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all capitalize ${
-                  statusFilter === s
-                    ? 'bg-[#4ecde6] text-black'
-                    : 'bg-white/[0.06] text-white/50 hover:bg-white/[0.1]'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-
-          {filteredOrders.length === 0 ? (
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl p-12 text-center">
-              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.04]"><svg className="h-6 w-6 text-white/25" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>{PALETTE_ICON_PATHS['doc']}</svg></span>
-              <p className="text-white/60 font-medium">No orders found</p>
+          {live.length === 0 ? (
+            <div className="rounded-3xl border border-white/[0.08] bg-[#0b1422] p-8 text-center">
+              <p className="text-lg font-black">No orders yet</p>
+              <p className="mt-1 text-sm text-white/50">When a parent orders, it lands in New and you get an alert.</p>
             </div>
           ) : (
-            <div className="bg-white/[0.05] backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden">
-              {/* Desktop table header */}
-              <div className="hidden md:grid grid-cols-[1fr_1fr_1fr_80px_100px_120px] gap-3 px-5 py-3 text-[10px] text-white/30 uppercase tracking-wider font-semibold border-b border-white/[0.06]">
-                <span>Product</span>
-                <span>Customer</span>
-                <span>Player</span>
-                <span>Total</span>
-                <span>Status</span>
-                <span>Actions</span>
-              </div>
-              <div className="divide-y divide-white/[0.06]">
-                {filteredOrders.map((order) => {
-                  const nextStatuses: Record<string, string[]> = {
-                    pending: ['paid', 'cancelled'],
-                    paid: ['ordered', 'cancelled'],
-                    ordered: ['shipped'],
-                    shipped: ['delivered'],
-                    delivered: [],
-                    cancelled: [],
-                  }
-                  const actions = nextStatuses[order.status] || []
-
+            <div className="overflow-x-auto pb-2">
+              <div className="grid grid-cols-1 gap-3 sm:min-w-[1100px] sm:grid-cols-5">
+                {BOARD.map((col) => {
+                  const list = live.filter((o) => o.status === col.status)
+                  const total = list.reduce((a, o) => a + Number(o.total_price), 0)
                   return (
-                    <div
-                      key={order.id}
-                      className="md:grid md:grid-cols-[1fr_1fr_1fr_80px_100px_120px] gap-3 px-5 py-3 items-center"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          {order.quantity > 1 ? `${order.quantity} × ` : ''}{order.merchandise?.name || 'Item'}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {order.size && (
-                            <span className="text-xs text-white/40">Size: {order.size}</span>
-                          )}
-                          {order.player_name_on_shirt && (
-                            <span className="text-xs text-white/30">
-                              &quot;{order.player_name_on_shirt}&quot;
-                              {order.player_number && ` #${order.player_number}`}
-                            </span>
-                          )}
-                        </div>
+                    <div key={col.status} className={`rounded-2xl border border-white/[0.06] bg-white/[0.02] p-2.5 ${list.length ? '' : 'hidden sm:block'}`}>
+                      <div className="mb-2.5 flex items-center justify-between px-1">
+                        <span className="flex items-center gap-2 text-sm font-bold"><i className="h-2 w-2 rounded-full" style={{ background: col.tone }} />{col.label}</span>
+                        <span className="text-xs tabular-nums text-white/40">{list.length}{list.length ? ` · ${money(total)}` : ''}</span>
                       </div>
-                      <div>
-                        <p className="text-sm text-white/70">{order.profile?.full_name || 'Unknown'}</p>
-                        <p className="text-[10px] text-white/30">
-                          {new Date(order.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-white/70">
-                          {order.player
-                            ? `${order.player.first_name} ${order.player.last_name}`
-                            : '-'}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm font-semibold text-[#4ecde6]">
-                          &pound;{Number(order.total_price).toFixed(2)}
-                        </span>
-                      </div>
-                      <div>
-                        <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
-                            statusColors[order.status] || 'text-white/40 bg-white/5'
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                      </div>
-                      <div className="flex gap-1.5 mt-2 md:mt-0">
-                        {actions.map((next) => (
-                          <button
-                            key={next}
-                            onClick={() => updateOrderStatus(order.id, next)}
-                            disabled={updatingOrder === order.id}
-                            className={`text-[10px] font-medium px-2 py-1 rounded-lg transition-all capitalize ${
-                              next === 'cancelled'
-                                ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
-                                : 'text-white/60 bg-white/[0.06] hover:bg-white/[0.1] hover:text-white'
-                            } disabled:opacity-40`}
-                          >
-                            {updatingOrder === order.id ? '...' : next}
-                          </button>
-                        ))}
+                      <div className="space-y-2">
+                        {list.map((o) => {
+                          const child = o.player ? `${o.player.first_name} ${o.player.last_name || ''}`.trim() : 'Child'
+                          return (
+                            <div key={o.id} className="rounded-xl border border-white/[0.08] bg-[#0d1726] p-3">
+                              <div className="flex gap-2.5">
+                                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                                  <ProductImage product={{ name: o.merchandise?.name || 'Item', category: o.merchandise?.category || 'other', image_url: o.merchandise?.image_url || null }} accent={accent} size="thumb" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-bold text-white">{child}</p>
+                                  <p className="truncate text-xs text-white/55">{(o.quantity || 1) > 1 ? `${o.quantity} × ` : ''}{o.merchandise?.name || 'Item'}</p>
+                                </div>
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {o.size && <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold">Size {o.size}</span>}
+                                {o.player_name_on_shirt && <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold">“{o.player_name_on_shirt}”</span>}
+                                {o.player_number && <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold">#{o.player_number}</span>}
+                              </div>
+                              <div className="mt-2 flex items-center justify-between text-[11px] text-white/40">
+                                <span className="truncate">{o.profile?.full_name || 'Parent'} · {when(o.created_at)}</span>
+                                <span className="font-bold tabular-nums text-white">{money(Number(o.total_price))}</span>
+                              </div>
+                              {o.notes && <p className="mt-1.5 text-[11px] text-white/50">“{o.notes}”</p>}
+                              <div className="mt-2.5 flex gap-1.5">
+                                {col.next && (
+                                  <button disabled={busyId === o.id} onClick={() => updateOrderStatus(o.id, col.next!)}
+                                    className="flex-1 rounded-lg py-1.5 text-xs font-black text-black disabled:opacity-50" style={{ background: BOARD.find((b) => b.status === col.next)?.tone }}>
+                                    {busyId === o.id ? '…' : `${col.nextLabel} →`}
+                                  </button>
+                                )}
+                                {PREV[o.status] && (
+                                  <button disabled={busyId === o.id} onClick={() => updateOrderStatus(o.id, PREV[o.status])} title="Move back a step" className="rounded-lg bg-white/[0.06] px-2 py-1.5 text-xs font-bold text-white/60">←</button>
+                                )}
+                                {o.status !== 'delivered' && (
+                                  <button disabled={busyId === o.id} onClick={() => updateOrderStatus(o.id, 'cancelled')} title="Cancel order" className="rounded-lg px-2 py-1.5 text-xs font-bold text-red-300/70 hover:bg-red-500/10">✕</button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {list.length === 0 && <p className="px-1 py-4 text-center text-xs text-white/25">Nothing here</p>}
                       </div>
                     </div>
                   )
                 })}
               </div>
+            </div>
+          )}
+          {initialOrders.some((o) => o.status === 'cancelled') && (
+            <div className="mt-4">
+              <button onClick={() => setShowCancelled(!showCancelled)} className="text-xs font-semibold text-white/40 hover:text-white/70">
+                {showCancelled ? 'Hide' : 'Show'} cancelled orders ({initialOrders.filter((o) => o.status === 'cancelled').length})
+              </button>
+              {showCancelled && (
+                <div className="mt-2 divide-y divide-white/[0.05] rounded-xl border border-white/[0.06]">
+                  {initialOrders.filter((o) => o.status === 'cancelled').map((o) => (
+                    <div key={o.id} className="flex items-center justify-between px-3 py-2 text-xs text-white/50">
+                      <span>{o.player?.first_name || 'Child'} · {o.merchandise?.name || 'Item'} · {when(o.created_at)}</span>
+                      <button onClick={() => updateOrderStatus(o.id, 'pending')} className="font-bold text-white/70 hover:text-white">Restore</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
