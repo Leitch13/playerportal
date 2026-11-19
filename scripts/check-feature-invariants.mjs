@@ -67,6 +67,9 @@ const FEATURES = [
   ['Shop: academy sees the parent card update live while editing', `${D}/shop/manage/ManageShopClient.tsx`, ['What parents see', '<ParentCard p={preview}', 'Updates as you type']],
   ['Shop: one-tap starter products', `${D}/shop/manage/ManageShopClient.tsx`, ['const STARTERS', 'Stock your shop in a minute']],
   ['Shop: orders board New → Paid → Ordered → Ready → Collected', `${D}/shop/manage/ManageShopClient.tsx`, ["label: 'Ready to collect'", "label: 'Collected'", 'updateOrderStatus(o.id, col.next!)']],
+  // 19 Nov 2026, John: shop header = the academy's own photo, not a drawn shirt.
+  ['Shop: parent shop header shows the academy photo', `${D}/shop/ShopClient.tsx`, ['src={heroUrl}', 'heroUrl = null']],
+  ['Shop: academy uploads its shop header photo', `${D}/shop/manage/ManageShopClient.tsx`, ['Shop header photo', 'folder="shop-hero"', "update({ shop_hero_url: url || null })"]],
   ['Shop: parent and academy share one product picture', `${D}/shop/ShopArt.tsx`, ['export function ProductImage', 'export function KitArt']],
   ['Shop: the order price comes from the shop, not the browser, and the academy is told', `${A}/api/shop/order/route.ts`, ['Number(m.price) * qty', "type: 'shop_order'", 'email: true']],
   // Welcome packs: the PDF an academy gives a new family, per class (13 Oct 2026). See src/lib/welcome-pack.ts.

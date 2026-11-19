@@ -35,6 +35,10 @@ export default async function ShopPage() {
       .limit(8),
   ])
 
+  // Shop header photo (19 Nov 2026). Read on its own so the shop still opens if it can't be read.
+  const { data: hero } = await supabase.from('organisations').select('shop_hero_url').eq('id', orgId).maybeSingle()
+  const heroUrl = ((hero as { shop_hero_url?: string | null } | null)?.shop_hero_url) || null
+
   const accent = (org?.primary_color as string | null) || '#4ecde6'
   const academyName = (org?.name as string | null) || 'Academy'
 
@@ -54,6 +58,7 @@ export default async function ShopPage() {
     <ShopClient
       academyName={academyName}
       logoUrl={(org?.logo_url as string | null) || null}
+      heroUrl={heroUrl}
       accent={accent}
       products={products}
       childList={(children || []).map((c) => ({ id: c.id, first_name: c.first_name, last_name: c.last_name }))}

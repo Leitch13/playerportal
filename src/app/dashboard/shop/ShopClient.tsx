@@ -88,6 +88,7 @@ const CHECK = 'M5 13l4 4L19 7'
 export default function ShopClient({
   academyName,
   logoUrl,
+  heroUrl = null,
   accent,
   products,
   childList,
@@ -95,6 +96,7 @@ export default function ShopClient({
 }: {
   academyName: string
   logoUrl: string | null
+  heroUrl?: string | null
   accent: string
   products: ShopProduct[]
   childList: ShopChild[]
@@ -208,12 +210,20 @@ export default function ShopClient({
       style={{ ['--shop-accent' as string]: accent }}
     >
       {/* ─── Hero ─── */}
-      <div className="relative mb-6 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d1726] p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full opacity-40" style={{ background: `radial-gradient(closest-side, ${accent}, transparent)` }} />
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full opacity-15" style={{ background: `radial-gradient(closest-side, ${accent}, transparent)` }} />
-        <div className="pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 sm:block">
-          <KitArt category="kit" accent={accent} className="h-40 w-40 rotate-6 opacity-90 drop-shadow-[0_24px_40px_rgba(0,0,0,0.5)]" />
-        </div>
+      <div className={`relative mb-6 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d1726] p-6 sm:p-8 ${heroUrl ? 'flex min-h-[220px] items-end sm:min-h-[300px]' : ''}`}>
+        {heroUrl ? (
+          <>
+            {/* The academy's own shop header photo (Manage Shop → Shop header photo). */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={heroUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#070c15] via-[#070c15]/70 to-[#070c15]/10" />
+          </>
+        ) : (
+          <>
+            <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full opacity-40" style={{ background: `radial-gradient(closest-side, ${accent}, transparent)` }} />
+            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full opacity-15" style={{ background: `radial-gradient(closest-side, ${accent}, transparent)` }} />
+          </>
+        )}
         <div className="relative flex items-center gap-4">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element

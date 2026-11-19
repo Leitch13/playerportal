@@ -83,7 +83,7 @@ const isPersonal = (c: string) => c === 'kit' || c === 'training_top'
 const when = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
 /** Big square photo tile: tap to upload from phone or laptop; Change / Remove once set. */
-function PhotoTile({ folder, value, onChange }: { folder: string; value: string; onChange: (url: string) => void }) {
+function PhotoTile({ folder, value, onChange, wide = false }: { folder: string; value: string; onChange: (url: string) => void; wide?: boolean }) {
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -110,7 +110,7 @@ function PhotoTile({ folder, value, onChange }: { folder: string; value: string;
         onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) upload(f) }}
-        className={`relative aspect-square w-full overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${drag ? 'border-[#4ecde6] bg-[#4ecde6]/10' : value ? 'border-transparent' : 'border-white/15 bg-white/[0.03] hover:border-white/30'}`}
+        className={`relative ${wide ? 'aspect-[16/7]' : 'aspect-square'} w-full overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${drag ? 'border-[#4ecde6] bg-[#4ecde6]/10' : value ? 'border-transparent' : 'border-white/15 bg-white/[0.03] hover:border-white/30'}`}
       >
         {value ? (
           <>
@@ -127,7 +127,7 @@ function PhotoTile({ folder, value, onChange }: { folder: string; value: string;
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" /><circle cx="12" cy="13" r="3.5" /></svg>
             </span>
             <span className="text-sm font-bold text-white">{busy ? 'Uploading…' : 'Tap to add a photo'}</span>
-            <span className="text-xs text-white/45">Upload a photo of this product · or drag one here</span>
+            <span className="text-xs text-white/45">{wide ? 'A wide team or kit photo works best · or drag one here' : 'Upload a photo of this product · or drag one here'}</span>
           </button>
         )}
         {busy && value && <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-bold">Uploading…</div>}
@@ -172,6 +172,8 @@ export default function ManageShopClient({
   monthRevenue,
   academyName,
   accent,
+  logoUrl,
+  heroUrl: initialHero,
 }: {
   products: Product[]
   orders: Order[]
@@ -182,6 +184,8 @@ export default function ManageShopClient({
   monthRevenue: number
   academyName: string
   accent: string
+  logoUrl: string | null
+  heroUrl: string | null
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<'products' | 'orders'>('products')
@@ -200,6 +204,15 @@ export default function ManageShopClient({
   const [formError, setFormError] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const formTop = useRef<HTMLDivElement>(null)
+  const [heroUrl, setHeroUrl] = useState(initialHero || '')
+  const [heroMsg, setHeroMsg] = useState('')
+
+  async function saveHero(url: string) {
+    setHeroUrl(url); setHeroMsg('')
+    const { error } = await createClient().from('organisations').update({ shop_hero_url: url || null }).eq('id', orgId)
+    setHeroMsg(error ? 'Could not save the header photo. Please try again.' : url ? 'Saved. Parents see it now.' : 'Removed.')
+    if (!error) router.refresh()
+  }
 
   const live = initialOrders.filter((o) => o.status !== 'cancelled')
   const orderedCount = useMemo(() => {
@@ -344,6 +357,42 @@ export default function ManageShopClient({
               <p className="mt-1 text-sm text-white/50">Shows here once orders come in.</p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Shop header photo */}
+      <div className="mb-6 grid gap-4 rounded-3xl border border-white/[0.08] bg-[#0b1422] p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div>
+          <p className="text-sm font-black">Shop header photo</p>
+          <p className="mb-3 mt-0.5 text-xs text-white/45">The big picture at the top of your parents&apos; shop. A team photo or your kit laid out works best.</p>
+          <PhotoTile folder="shop-hero" value={heroUrl} onChange={saveHero} wide />
+          {heroMsg && <p className={`mt-2 text-xs ${heroMsg.startsWith('Could') ? 'text-red-300' : 'text-emerald-300'}`}>{heroMsg}</p>}
+        </div>
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/45">What parents see</p>
+          <div className={`relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d1726] p-4 ${heroUrl ? 'flex min-h-[170px] items-end' : ''}`}>
+            {heroUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#070c15] via-[#070c15]/70 to-[#070c15]/10" />
+              </>
+            ) : (
+              <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full opacity-40" style={{ background: `radial-gradient(closest-side, ${accent}, transparent)` }} />
+            )}
+            <div className="relative flex items-center gap-3">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="" className="h-11 w-11 shrink-0 rounded-xl border border-white/15 bg-white object-contain p-0.5" />
+              ) : (
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-black text-black" style={{ background: accent }}>{academyName.charAt(0)}</div>
+              )}
+              <div className="min-w-0">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.2em]" style={{ color: accent }}>Official kit shop</p>
+                <p className="truncate text-lg font-black leading-tight">{academyName}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

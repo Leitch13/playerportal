@@ -19,7 +19,9 @@ export default async function ManageShopPage() {
   const { data: orgId } = await supabase.rpc('get_my_org')
   if (!orgId) redirect('/dashboard')
 
-  const { data: org } = await supabase.from('organisations').select('name, primary_color').eq('id', orgId).single()
+  const { data: org } = await supabase.from('organisations').select('name, primary_color, logo_url').eq('id', orgId).single()
+  // Shop header photo, read on its own so this page still opens if it can't be read.
+  const { data: hero } = await supabase.from('organisations').select('shop_hero_url').eq('id', orgId).maybeSingle()
 
   // Fetch products
   const { data: products } = await supabase
@@ -67,6 +69,8 @@ export default async function ManageShopPage() {
       monthRevenue={monthRevenue}
       academyName={(org?.name as string | null) || 'Your academy'}
       accent={(org?.primary_color as string | null) || '#4ecde6'}
+      logoUrl={(org?.logo_url as string | null) || null}
+      heroUrl={((hero as { shop_hero_url?: string | null } | null)?.shop_hero_url) || null}
     />
   )
 }
