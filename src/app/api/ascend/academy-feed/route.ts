@@ -63,5 +63,23 @@ export async function POST(request: NextRequest) {
   // Cards that didn't go through: what's waiting to be collected (the academy sends a pay link from Player Portal).
   const failingSubs = (subs ?? []).filter((s) => ['past_due', 'unpaid'].includes(s.status))
   const failing = { count: failingSubs.length, amount: Math.round(failingSubs.reduce((a, s) => a + Number(plan.get(s.plan_id)?.amount || 0), 0) * 100) / 100 }
-  return NextResponse.json({ academy: org.name, mrr, live: live.length, failing, months, matches })
+  // Every trial booked in the last 45 days, so the dashboard can list families who booked straight on
+  // Player Portal and never filled in a form. Only this academy's own bookings, only to its owner.
+  const { data: recent } = await db.from('trial_bookings')
+    .select('id, parent_name, parent_email, parent_phone, child_name, child_age, preferred_date, created_at, status, converted, trial_source, training_group_id')
+    .eq('organisation_id', org.id).gte('created_at', new Date(Date.now() - 45 * 86400e3).toISOString())
+    .order('created_at', { ascending: false }).limit(300)
+  const groupIds = [...new Set((recent ?? []).map((t) => t.training_group_id).filter(Boolean))] as string[]
+  const { data: groups } = groupIds.length
+    ? await db.from('training_groups').select('id, name, day_of_week, time_slot').in('id', groupIds)
+    : { data: [] as { id: string; name: string | null; day_of_week: string | null; time_slot: string | null }[] }
+  const groupName = new Map((groups ?? []).map((g) => [g.id, [g.name, g.day_of_week, g.time_slot].filter(Boolean).join(' · ')]))
+  const groupTime = new Map((groups ?? []).map((g) => [g.id, (String(g.time_slot || '').match(/\b(\d{1,2}):(\d{2})/) || [])[0] || null]))
+  const bookings = (recent ?? []).map((t) => ({
+    id: t.id, parent_name: t.parent_name, email: t.parent_email, phone: t.parent_phone, child_name: t.child_name, child_age: t.child_age,
+    date: t.preferred_date, booked_at: t.created_at, status: t.status, joined: !!t.converted, source: t.trial_source,
+    class: t.training_group_id ? groupName.get(t.training_group_id) || null : null,
+    time: t.training_group_id ? groupTime.get(t.training_group_id) || null : null,
+  }))
+  return NextResponse.json({ academy: org.name, mrr, live: live.length, failing, months, matches, bookings })
 }
