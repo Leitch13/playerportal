@@ -27,6 +27,11 @@ const NO_FRAME_PATHS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Homepage (20 Nov 2026): the Player Portal page John approved on johnleitchmentor.com/player-portal,
+  // served as a static page from public/home. The old React homepage components stay for /start and the SEO pages.
+  async rewrites() {
+    return { beforeFiles: [{ source: "/", destination: "/home/index.html" }], afterFiles: [], fallback: [] };
+  },
   async headers() {
     return [
       { source: "/:path*", headers: everywhere },
