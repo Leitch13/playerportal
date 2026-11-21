@@ -367,6 +367,36 @@ footer{padding:44px 0 calc(90px + env(safe-area-inset-bottom))}
 .fgrid a:hover{color:var(--cyan)}
 .fsmall{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
 @media (max-width:760px){.fgrid{grid-template-columns:1fr 1fr}.fgrid > div:first-child{grid-column:1/-1}}
+
+/* ===== Motion pass (21 Nov): scroll-linked, calm, no glow blobs ===== */
+.stage .dash,.stage .phone,.stage .chip{will-change:translate}
+.hero .hero-grid > div:first-child{will-change:translate,opacity}
+.show-view{transform-origin:50% 0;will-change:transform}
+h2 .w{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.06em}
+h2 .w>span{display:inline-block;transform:translateY(105%);transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+h2.go .w>span{transform:none}
+.ba .before li{position:relative;transition:color .4s}
+.ba .before li span{position:relative}
+.ba .before li span::after{content:"";position:absolute;left:0;top:55%;height:2px;width:100%;background:var(--bad);transform:scaleX(0);transform-origin:0 50%;transition:transform .5s cubic-bezier(.6,0,.2,1)}
+.ba.go .before li span::after{transform:scaleX(1)}
+.ba.go .before li{color:var(--muted)}
+.ba .after li{opacity:0;transform:translateX(-14px);transition:opacity .5s,transform .5s cubic-bezier(.2,.8,.2,1)}
+.ba.go .after li{opacity:1;transform:none}
+.does-list{position:relative}
+.does-list::before{content:"";position:absolute;left:-18px;top:0;width:2px;height:100%;background:var(--line)}
+.does-list::after{content:"";position:absolute;left:-18px;top:0;width:2px;height:100%;background:var(--cyan);transform:scaleY(var(--p,0));transform-origin:0 0;box-shadow:0 0 12px rgba(51,227,227,.6)}
+.does-list li{opacity:.4;transition:opacity .5s}
+.does-list li b{transition:color .5s}
+.does-list li.lit{opacity:1}.does-list li.lit b{color:var(--cyan)}
+.res2 li{opacity:0;transform:translateX(30px);transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.res2.go li{opacity:1;transform:none}
+.res2 .big b{transition:transform 1s cubic-bezier(.2,.8,.2,1)}
+.res2 .big{transform:scale(.9);opacity:0;transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity .8s}
+.res2.go .big{transform:none;opacity:1}
+.pcard.in{animation:settle 1.2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes settle{0%{transform:translateY(50px) scale(.95);box-shadow:0 0 0 rgba(51,227,227,0)}60%{transform:translateY(-6px) scale(1.01);box-shadow:0 30px 90px -30px rgba(51,227,227,.55)}100%{transform:none;box-shadow:0 30px 80px -40px rgba(51,227,227,.35)}}
+@media (max-width:860px){.does-list::before,.does-list::after{left:-10px}}
+@media (prefers-reduced-motion:reduce){h2 .w>span,.ba .after li,.res2 li,.res2 .big{transform:none!important;opacity:1!important;transition:none}.does-list li{opacity:1}.pcard.in{animation:none}}
 </style>
 </head>
 <body>
@@ -632,5 +662,56 @@ footer{padding:44px 0 calc(90px + env(safe-area-inset-bottom))}
 (function () { var m = document.getElementById('mbar'); if (!m) return; var h = document.querySelector('.hero'); function f() { m.classList.toggle('on', scrollY > (h ? h.offsetHeight * .8 : 600)) } addEventListener('scroll', f, { passive: true }); f() })()
 </script>
 
+<script>
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+  // Headings rise word by word
+  document.querySelectorAll('section h2').forEach(function (h) {
+    var i = 0
+    h.innerHTML = h.innerHTML.split(/(\s+|<br>)/).map(function (t) { if (!t.trim() || t === '<br>') return t; return '<span class="w"><span style="transition-delay:' + (i++ * 60) + 'ms">' + t + '</span></span>' }).join('')
+  })
+  // Before/after, results: staggered once in view
+  document.querySelectorAll('.ba .before li').forEach(function (li, k) { li.innerHTML = '<span>' + li.innerHTML + '</span>'; li.querySelector('span').style.setProperty('--d', k); li.querySelector('span').className = 'x'; })
+  var st = document.createElement('style'); var css = ''
+  for (var k = 0; k < 6; k++) { css += '.ba .before li:nth-child(' + (k + 1) + ') span::after{transition-delay:' + (300 + k * 220) + 'ms}.ba .before li:nth-child(' + (k + 1) + '){transition-delay:' + (300 + k * 220) + 'ms}.ba .after li:nth-child(' + (k + 1) + '){transition-delay:' + (1500 + k * 180) + 'ms}.res2 li:nth-child(' + (k + 1) + '){transition-delay:' + (400 + k * 150) + 'ms}' }
+  st.textContent = css; document.head.appendChild(st)
+  var targets = [].slice.call(document.querySelectorAll('section h2, .ba, .res2'))
+  if (reduce) { targets.forEach(function (t) { t.classList.add('go') }) }
+  else {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('go'); io.unobserve(e.target) } }) }, { threshold: .3 })
+    targets.forEach(function (t) { io.observe(t) })
+  }
+  if (reduce) { document.querySelectorAll('.does-list li').forEach(function (l) { l.classList.add('lit') }); return }
+  // Scroll-linked: hero layers, screens, feature rail
+  var hero = document.querySelector('.hero'), copy = hero && hero.querySelector('.hero-grid > div'),
+      dash = document.querySelector('.stage .dash'), phone = document.querySelector('.stage .phone'),
+      ca = document.querySelector('.stage .chip.a'), cb = document.querySelector('.stage .chip.b'),
+      view = document.querySelector('.show-view'), list = document.querySelector('.does-list'),
+      items = list ? [].slice.call(list.children) : [], small = innerWidth < 760, ticking = false
+  function frame() {
+    ticking = false
+    var y = scrollY, H = innerHeight
+    if (hero && y < hero.offsetHeight * 1.2) {
+      var k = small ? .5 : 1
+      if (dash) dash.style.translate = (y * .08 * k) + 'px ' + (-y * .18 * k) + 'px'
+      if (phone) phone.style.translate = (-y * .05 * k) + 'px ' + (y * .22 * k) + 'px'
+      if (ca) ca.style.translate = '0 ' + (-y * .35 * k) + 'px'
+      if (cb) cb.style.translate = '0 ' + (y * .3 * k) + 'px'
+      if (copy) { copy.style.translate = '0 ' + (y * .12 * k) + 'px'; copy.style.opacity = Math.max(0, 1 - y / (hero.offsetHeight * .9)) }
+    }
+    if (view) {
+      var r = view.getBoundingClientRect(), p = Math.min(1, Math.max(0, (H - r.top) / (H * .8)))
+      view.style.transform = 'perspective(1400px) rotateX(' + ((1 - p) * 14).toFixed(2) + 'deg) scale(' + (.9 + p * .1).toFixed(3) + ')'
+    }
+    if (list) {
+      var lr = list.getBoundingClientRect(), mid = H * .6, lp = Math.min(1, Math.max(0, (mid - lr.top) / lr.height))
+      list.style.setProperty('--p', lp.toFixed(3))
+      items.forEach(function (li) { var b = li.getBoundingClientRect(); li.classList.toggle('lit', b.top < mid) })
+    }
+  }
+  addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(frame) } }, { passive: true })
+  addEventListener('resize', frame); frame()
+})()
+</script>
 </body>
 </html>
