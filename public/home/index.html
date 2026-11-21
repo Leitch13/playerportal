@@ -465,13 +465,49 @@ html,body{overflow-x:clip}
 .brand img{display:block;height:48px;width:auto}.fgrid .brand img{height:60px}@media (max-width:760px){.brand img{height:38px}}
 .logos ul{max-width:780px;margin:0 auto}.logos a.lg{display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;color:inherit}.logos a.lg:hover .tile{transform:translateY(-3px);border-color:var(--cyan)}.logos a.lg:hover span{color:#fff}
 .fgrid{grid-template-columns:1.4fr 1fr}
+
+.more-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:40px}
+.mc{grid-column:span 2;border-radius:22px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));padding:clamp(20px,2.4vw,28px);display:flex;flex-direction:column;gap:10px;transition:border-color .3s,transform .4s cubic-bezier(.2,.8,.2,1)}
+.mc:hover{border-color:rgba(56,182,255,.45);transform:translateY(-4px)}
+.mc.big{grid-column:span 3}
+.mc small{font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan)}
+.mc h3{font-family:var(--body);font-weight:800;font-size:clamp(22px,2.2vw,28px);line-height:1.1;letter-spacing:-.02em;color:#fff;margin:0}
+.mc.big h3{font-size:clamp(26px,2.8vw,36px)}
+.mc p{margin:0;color:var(--ink2);font-size:16px;line-height:1.55}
+.mc .vis{margin-top:auto;padding-top:18px;position:relative}
+.shirt{display:flex;align-items:flex-end;gap:18px}
+.shirt svg{width:min(240px,50%);height:auto;flex:none;filter:drop-shadow(0 24px 30px rgba(0,0,0,.6));transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.mc.big:hover .shirt svg{transform:rotate(-4deg) scale(1.04)}
+.order{flex:1;display:grid;gap:8px}
+.order div{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:13.5px;color:var(--ink2)}
+.order b{color:#fff}
+.order .toast{justify-content:flex-start;align-items:center;background:rgba(8,19,31,.95);border-color:rgba(56,182,255,.4);color:#fff;opacity:0;transform:translateY(16px);transition:opacity .6s .7s,transform .6s .7s cubic-bezier(.2,.8,.2,1)}
+.toast i{width:9px;height:9px;border-radius:50%;background:var(--good);flex:none;box-shadow:0 0 10px var(--good)}
+.mc.in .toast{opacity:1;transform:none}
+.calc{display:grid;gap:8px}
+.calc .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:14.5px;color:var(--ink2)}
+.calc .row b{color:#fff;font-size:16px}
+.calc .row.now{border-color:rgba(56,182,255,.45);background:rgba(56,182,255,.08)}
+.calc .row.now b{color:var(--cyan);font-size:20px}
+.calc .row.then b{color:var(--good)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:10px;max-width:340px}
+.cal span{aspect-ratio:1;border-radius:7px;background:rgba(255,255,255,.05);font-size:11px;display:grid;place-items:center;color:var(--muted)}
+.cal span.s{background:rgba(255,255,255,.14);color:#fff}
+.cal span.left{background:var(--cyan);color:var(--deep);font-weight:800}
+.cal span.join{outline:2px solid var(--good);outline-offset:-2px;color:#fff}
+.calkey{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:12px}
+.calkey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.mi{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:rgba(56,182,255,.1);border:1px solid rgba(56,182,255,.3);color:var(--cyan);margin-bottom:4px}
+.mi svg{width:22px;height:22px}
+@media (max-width:960px){.mc,.mc.big{grid-column:span 3}}
+@media (max-width:640px){.more-grid{grid-template-columns:1fr}.mc,.mc.big{grid-column:auto;min-height:0}}
 </style>
 </head>
 <body>
 
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><img src="/home/pp-logo.webp" alt="The Player Portal" width="480" height="134"></a>
-  <nav><a href="#see">See it</a><a href="#billing">Billing day</a><a href="#own">Their pages</a><a href="#does">What it does</a><a href="#results">Results</a><a href="#price">Price</a><a href="#faq">FAQ</a></nav>
+  <nav><a href="#see">See it</a><a href="#billing">Billing day</a><a href="#more">Features</a><a href="#own">Their pages</a><a href="#does">What it does</a><a href="#results">Results</a><a href="#price">Price</a><a href="#faq">FAQ</a></nav>
   <a class="btn cy" href="/onboard">Try it free</a>
 </div></header>
 
@@ -489,8 +525,8 @@ html,body{overflow-x:clip}
 </div>
 
 <div class="tick" aria-hidden="true"><div class="tick-in">
-  <span>Booking page</span><span>Paid on the 1st</span><span>Free trials</span><span>Joining links</span><span>Holiday camps</span><span>Waitlists</span><span>1-2-1 sessions</span><span>Registers</span><span>Welcome packs</span><span>Parent app</span><span>Failed card retries</span><span>Your dashboard</span>
-  <span>Booking page</span><span>Paid on the 1st</span><span>Free trials</span><span>Joining links</span><span>Holiday camps</span><span>Waitlists</span><span>1-2-1 sessions</span><span>Registers</span><span>Welcome packs</span><span>Parent app</span><span>Failed card retries</span><span>Your dashboard</span>
+  <span>Kit shop</span><span>Pay for sessions left</span><span>Booking page</span><span>Paid on the 1st</span><span>Free trials</span><span>Joining links</span><span>Holiday camps</span><span>Waitlists</span><span>1-2-1 sessions</span><span>Registers</span><span>Welcome packs</span><span>Parent app</span><span>Failed card retries</span><span>Your dashboard</span>
+  <span>Kit shop</span><span>Pay for sessions left</span><span>Booking page</span><span>Paid on the 1st</span><span>Free trials</span><span>Joining links</span><span>Holiday camps</span><span>Waitlists</span><span>1-2-1 sessions</span><span>Registers</span><span>Welcome packs</span><span>Parent app</span><span>Failed card retries</span><span>Your dashboard</span>
 </div></div>
 
 <div class="wrap logos"><p>Academies running on Player Portal</p><ul><li><a class="lg" href="/book/jamie-allan-football-academy" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/jamie-allan-football-academy.png" alt="Jamie Allan Football Academy logo" loading="lazy"></div><span>Jamie Allan Football Academy</span></a></li><li><a class="lg" href="/book/profootballcoachingni" target="_blank" rel="noopener"><div class="tile light"><img src="/home/logos/profootballcoachingni.jpg" alt="Pro Football Coaching logo" loading="lazy"></div><span>Pro Football Coaching</span></a></li><li><a class="lg" href="/book/no1-goalkeeping-academy" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/no1-goalkeeping-academy.png" alt="No.1 Goalkeeping Academy logo" loading="lazy"></div><span>No.1 Goalkeeping Academy</span></a></li><li><a class="lg" href="/book/gold-and-gray-soccer-academy-aberdeen" target="_blank" rel="noopener"><div class="tile light"><img src="/home/logos/gold-and-gray-soccer-academy-aberdeen.jpg" alt="Gold and Gray Soccer Academy logo" loading="lazy"></div><span>Gold and Gray Soccer Academy</span></a></li><li><a class="lg" href="/book/talent-football-academy-ltd" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/talent-football-academy-ltd.png" alt="Talent Football Academy logo" loading="lazy"></div><span>Talent Football Academy</span></a></li><li><a class="lg" href="/book/cfcoaching" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/cfcoaching.png" alt="CFCoaching logo" loading="lazy"></div><span>CFCoaching</span></a></li><li><a class="lg" href="/book/lewis-black-football-academy" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/lewis-black-football-academy.png" alt="Lewis Black Football Academy logo" loading="lazy"></div><span>Lewis Black Football Academy</span></a></li><li><a class="lg" href="/book/the-keepers-academy" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/the-keepers-academy.png" alt="The Keepers Academy logo" loading="lazy"></div><span>The Keepers Academy</span></a></li><li><a class="lg" href="/book/23-academy" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/23-academy.png" alt="23 Academy logo" loading="lazy"></div><span>23 Academy</span></a></li><li><a class="lg" href="/book/rosasports" target="_blank" rel="noopener"><div class="tile"><img src="/home/logos/rosa-sports.png" alt="Rosa Sports logo" loading="lazy"></div><span>Rosa Sports</span></a></li></ul></div>
@@ -511,6 +547,35 @@ html,body{overflow-x:clip}
     <div class="pin-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
   </div>
 </div></div></section>
+
+<section id="more"><div class="wrap">
+  <p class="eyebrow">More than a booking system</p>
+  <h2>Not just another class-booking app.</h2>
+  <p class="lede">Most booking software stops once the class is booked. Player Portal runs the rest of your academy too.</p>
+  <div class="more-grid">
+    <div class="mc big rv">
+      <small>Your own kit shop</small>
+      <h3>Sell your kit. Name and number on the back.</h3>
+      <p>Parents pick the size and put their child's name and number on the shirt, in your academy's colours. You're told about every order.</p>
+      <div class="vis"><div class="shirt"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M62 22 L38 30 L8 62 L32 88 L48 76 L48 186 L152 186 L152 76 L168 88 L192 62 L162 30 L138 22 C132 38 118 46 100 46 C82 46 68 38 62 22Z" fill="#38B6FF"/><path d="M62 22 C68 38 82 46 100 46 C118 46 132 38 138 22" fill="none" stroke="#0b2540" stroke-width="7"/><path d="M8 62 L32 88 M192 62 L168 88" stroke="#0b2540" stroke-width="7"/><text x="100" y="104" text-anchor="middle" font-family="Bebas Neue,Impact,sans-serif" font-size="26" fill="#fff" letter-spacing="2">MILNE</text><text x="100" y="168" text-anchor="middle" font-family="Bebas Neue,Impact,sans-serif" font-size="70" fill="#fff">9</text></svg><div class="order"><div><span>Training top · Age 9–10</span><b>£25</b></div><div><span>Name and number</span><b>MILNE 9</b></div><div class="toast"><i></i>New kit order: Oscar, £25</div></div></div></div>
+    </div>
+    <div class="mc big rv">
+      <small>Fair billing, worked out for you</small>
+      <h3>Join mid-month? Pay for the sessions left.</h3>
+      <p>A family joining on the 18th pays only for the sessions left this month, then the monthly price from the 1st. No awkward maths.</p>
+      <div class="vis"><div class="calkey"><span><i style="background:transparent;outline:2px solid var(--good);outline-offset:-2px"></i>Joins</span><span><i style="background:var(--cyan)"></i>Sessions they pay for now</span></div><div class="cal" aria-hidden="true"><span class="">1</span><span class="s">2</span><span class="">3</span><span class="">4</span><span class="">5</span><span class="">6</span><span class="">7</span><span class="">8</span><span class="s">9</span><span class="">10</span><span class="">11</span><span class="">12</span><span class="">13</span><span class="">14</span><span class="">15</span><span class="s">16</span><span class="">17</span><span class="join">18</span><span class="">19</span><span class="">20</span><span class="">21</span><span class="">22</span><span class="left">23</span><span class="">24</span><span class="">25</span><span class="">26</span><span class="">27</span><span class="">28</span><span class="">29</span><span class="left">30</span></div><div class="calc">
+        <div class="row now"><span>Today: 2 sessions left × £10</span><b>£20</b></div>
+        <div class="row then"><span>From 1 December, every month</span><b>£40</b></div>
+      </div></div>
+    </div>
+    <div class="mc rv"><div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></div><small>Trial to member</small><h3>One link turns a trial into a member.</h3><p>Send it after the trial. The sign-up opens already filled in, and the trial marks itself joined when they pay.</p></div>
+    <div class="mc rv"><div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div><small>Free trials, your way</small><h3>One free session or two.</h3><p>Choose how many free sessions a new child gets. Families book them online and get a reminder.</p></div>
+    <div class="mc rv"><div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg></div><small>Welcome packs</small><h3>Every new family gets your welcome pack.</h3><p>Upload a PDF for each class. It goes out to new families on its own, and you can see who opened it.</p></div>
+    <div class="mc rv"><div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div><small>1-2-1 sessions</small><h3>1-2-1s booked and paid online.</h3><p>Coach timetables, online booking and payment, run alongside your group classes.</p></div>
+    <div class="mc rv"><div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8z"/></svg></div><small>Links for your ads</small><h3>One link per programme.</h3><p>Running an ad for Mini Ballers? Give it a link that shows only those classes, so parents land on the right thing.</p></div>
+    <div class="mc rv"><div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 10l5-3v10l-5-3z"/></svg></div><small>Your page, your look</small><h3>A video banner on your booking page.</h3><p>Your logo, your colours and a muted training clip playing behind your name. Parents see your academy first.</p></div>
+  </div>
+</div></section>
 
 <section id="see"><div class="wrap">
   <p class="eyebrow">See it working</p>
