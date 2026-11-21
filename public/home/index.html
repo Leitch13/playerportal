@@ -5,27 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Player Portal: the booking and billing system John Leitch built for football academies. Parents book and pay online, members pay on the 1st, nobody chases anyone.">
 <meta property="og:title" content="Player Portal by John Leitch">
-<meta property="og:site_name" content="Player Portal">
-<meta property="og:locale" content="en_GB">
 <meta property="og:description" content="Parents book and pay online. Members pay on the 1st. Nobody chases anyone.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.theplayerportal.net">
 <link rel="canonical" href="https://www.theplayerportal.net">
-<meta property="og:image" content="https://www.theplayerportal.net/home/pp-dashboard.jpg">
+<meta property="og:image" content="https://www.theplayerportal.net/home/john-pitch-wide.webp">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://www.theplayerportal.net/home/pp-dashboard.jpg">
-<meta name="theme-color" content="#041214">
+<meta name="twitter:image" content="https://www.theplayerportal.net/home/john-pitch-wide.webp">
+<meta name="theme-color" content="#050c16">
 <link rel="icon" href="/favicon.ico">
 <title>Player Portal by John Leitch</title>
+<link rel="preload" as="image" href="/home/john-pitch-wide.webp" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@600&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap">
 <style>
 :root{
   color-scheme:dark;
-  --bg:#041214;--bg2:#06191C;--card:rgba(255,255,255,.045);--line:rgba(120,240,240,.14);
-  --ink:#EAF6F6;--ink2:#B4CACB;--muted:#7E9799;
-  --cyan:#33E3E3;--cyan2:#0E9E9E;--deep:#062322;--gold:#F5B83D;--good:#34D399;--bad:#F87171;
+  --bg:#050c16;--bg2:#08131f;--card:rgba(255,255,255,.045);--line:rgba(120,190,255,.14);
+  --ink:#EEF4FA;--ink2:#B4C3D2;--muted:#7E8FA3;
+  --cyan:#38B6FF;--cyan2:#1E8FD6;--deep:#041426;--gold:#F5B83D;--good:#34D399;--bad:#F87171;
   --display:'Bebas Neue',Impact,'Arial Narrow',sans-serif;--body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--mono:'Space Mono',ui-monospace,Menlo,monospace;
 }
 *{box-sizing:border-box}
@@ -33,10 +32,10 @@ html,body{margin:0}
 html{scroll-behavior:smooth;scroll-padding-top:80px}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
-  radial-gradient(48vw 36vw at 85% 0%,rgba(51,227,227,.18),transparent 60%),
+  radial-gradient(48vw 36vw at 85% 0%,rgba(56,182,255,.18),transparent 60%),
   radial-gradient(40vw 34vw at 0% 30%,rgba(14,158,158,.16),transparent 62%),
   radial-gradient(44vw 36vw at 70% 100%,rgba(245,184,61,.08),transparent 62%),
-  linear-gradient(180deg,#041214,#05161A 50%,#041214)}
+  linear-gradient(180deg,#050c16,#06101c 50%,#050c16)}
 .wrap{max-width:1140px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
 a{color:var(--cyan)}
 a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:8px}
@@ -45,7 +44,7 @@ h1,h2{font-family:var(--display);font-weight:400;text-transform:uppercase;letter
 h1{font-size:clamp(56px,7.6vw,104px)}
 h2{font-size:clamp(44px,6.4vw,84px);margin-bottom:18px}
 h3{font-size:19px;line-height:1.25;font-weight:700}
-.c{background:linear-gradient(90deg,var(--cyan),#9FFFFF,var(--cyan));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+.c{background:linear-gradient(90deg,var(--cyan),#9ED8FF,var(--cyan));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
 @keyframes shine{to{background-position:-200% 0}}
 p{margin:0 0 14px}
 .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 16px;font-weight:700}
@@ -53,14 +52,14 @@ p{margin:0 0 14px}
 section{padding-block:clamp(72px,10vw,128px);position:relative}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:700;text-decoration:none;padding:16px 26px;border-radius:14px;font-size:16.5px;border:0;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s}
 .btn:hover{transform:translateY(-2px)}
-.btn.cy{background:linear-gradient(135deg,var(--cyan),#9FFFFF);color:var(--deep);box-shadow:0 14px 40px -14px rgba(51,227,227,.7)}
+.btn.cy{background:linear-gradient(135deg,var(--cyan),#9ED8FF);color:var(--deep);box-shadow:0 14px 40px -14px rgba(56,182,255,.7)}
 .btn.ln{background:rgba(255,255,255,.04);color:var(--ink);border:1px solid rgba(255,255,255,.18)}
 .btn.ln:hover{border-color:var(--cyan)}
 .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:30px}
 .fine{font-size:13.5px;color:var(--muted)}
 
 /* header */
-header.top{position:sticky;top:0;z-index:30;background:rgba(4,18,20,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:0;z-index:30;background:rgba(5,12,22,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;align-items:center;gap:18px;height:68px}
 .brand{font-family:var(--display);font-size:26px;letter-spacing:.06em;color:#fff;text-decoration:none;white-space:nowrap}
 .brand span{color:var(--cyan)}
@@ -75,12 +74,12 @@ header .btn{padding:10px 16px;font-size:14px;margin-left:8px}
 .hero-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(28px,5vw,60px);align-items:center}
 .hero h1{margin:10px 0 22px}
 .stage{position:relative;height:clamp(420px,46vw,560px);perspective:1400px}
-.stage .dash{position:absolute;right:-4%;top:4%;width:108%;max-width:680px;border-radius:18px;border:1px solid var(--line);box-shadow:0 50px 100px -40px rgba(0,0,0,.9),0 0 80px -30px rgba(51,227,227,.5);transform:rotateY(-14deg) rotateX(6deg);transition:transform .6s cubic-bezier(.2,.8,.2,1);overflow:hidden;background:#0a1d20}
+.stage .dash{position:absolute;right:-4%;top:4%;width:108%;max-width:680px;border-radius:18px;border:1px solid var(--line);box-shadow:0 50px 100px -40px rgba(0,0,0,.9),0 0 80px -30px rgba(56,182,255,.5);transform:rotateY(-14deg) rotateX(6deg);transition:transform .6s cubic-bezier(.2,.8,.2,1);overflow:hidden;background:#0a1d20}
 .stage .dash img{display:block;width:100%}
-.stage .phone{position:absolute;left:-2%;bottom:-2%;width:clamp(160px,18vw,230px);border-radius:30px;padding:8px;background:#0b0f10;border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 80px -30px rgba(0,0,0,.95),0 0 60px -20px rgba(51,227,227,.55);animation:float 7s ease-in-out infinite}
+.stage .phone{position:absolute;left:-2%;bottom:-2%;width:clamp(160px,18vw,230px);border-radius:30px;padding:8px;background:#0b0f10;border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 80px -30px rgba(0,0,0,.95),0 0 60px -20px rgba(56,182,255,.55);animation:float 7s ease-in-out infinite}
 .stage .phone img{display:block;width:100%;border-radius:23px}
 @keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(-1deg)}}
-.stage .chip{position:absolute;padding:10px 14px;border-radius:14px;background:rgba(6,25,28,.9);border:1px solid var(--line);backdrop-filter:blur(8px);font-size:13px;color:var(--ink2);box-shadow:0 20px 40px -20px rgba(0,0,0,.9);animation:float2 6s ease-in-out infinite}
+.stage .chip{position:absolute;padding:10px 14px;border-radius:14px;background:rgba(8,19,31,.9);border:1px solid var(--line);backdrop-filter:blur(8px);font-size:13px;color:var(--ink2);box-shadow:0 20px 40px -20px rgba(0,0,0,.9);animation:float2 6s ease-in-out infinite}
 .stage .chip b{display:block;font-family:var(--display);font-weight:400;font-size:30px;line-height:1;color:#fff}
 .stage .chip.a{right:2%;bottom:14%}.stage .chip.b{left:38%;top:0;animation-delay:-3s}
 .stage .chip.a b{color:var(--good)}
@@ -93,7 +92,7 @@ header .btn{padding:10px 16px;font-size:14px;margin-left:8px}
 @media (max-width:520px){.stats{grid-template-columns:1fr}}
 
 /* ticker */
-.tick{margin-top:clamp(36px,5vw,56px);overflow:hidden;border-block:1px solid var(--line);background:rgba(51,227,227,.04);padding:16px 0}
+.tick{margin-top:clamp(36px,5vw,56px);overflow:hidden;border-block:1px solid var(--line);background:rgba(56,182,255,.04);padding:16px 0}
 .tick-in{display:flex;gap:44px;width:max-content;animation:tick 40s linear infinite}
 .tick span{font-family:var(--display);font-size:26px;letter-spacing:.04em;color:var(--ink2);white-space:nowrap}
 .tick span::before{content:"●";color:var(--cyan);font-size:12px;vertical-align:middle;margin-right:16px}
@@ -102,7 +101,7 @@ header .btn{padding:10px 16px;font-size:14px;margin-left:8px}
 /* screens */
 .shots{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;margin-top:40px}
 .shot{margin:0;border-radius:22px;background:var(--card);border:1px solid var(--line);padding:12px;transition:transform .5s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .5s;transform-style:preserve-3d}
-.shot:hover{border-color:rgba(51,227,227,.45);box-shadow:0 40px 80px -40px rgba(0,0,0,.9),0 0 60px -30px rgba(51,227,227,.6)}
+.shot:hover{border-color:rgba(56,182,255,.45);box-shadow:0 40px 80px -40px rgba(0,0,0,.9),0 0 60px -30px rgba(56,182,255,.6)}
 .shot img{display:block;width:100%;border-radius:14px}
 .shot figcaption{padding:14px 6px 4px;color:var(--ink2);font-size:15px}
 .shot figcaption b{color:#fff;display:block;font-size:17px;margin-bottom:2px}
@@ -113,8 +112,8 @@ header .btn{padding:10px 16px;font-size:14px;margin-left:8px}
 /* features */
 .feats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:40px}
 .feat{padding:24px 22px;border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.015));border:1px solid var(--line);transition:transform .3s,border-color .3s}
-.feat:hover{transform:translateY(-4px);border-color:rgba(51,227,227,.45)}
-.feat i{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:rgba(51,227,227,.12);color:var(--cyan);margin-bottom:14px;font-style:normal}
+.feat:hover{transform:translateY(-4px);border-color:rgba(56,182,255,.45)}
+.feat i{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:rgba(56,182,255,.12);color:var(--cyan);margin-bottom:14px;font-style:normal}
 .feat i svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .feat h3{color:#fff;margin-bottom:6px}
 .feat p{margin:0;color:var(--ink2);font-size:15px}
@@ -131,7 +130,7 @@ header .btn{padding:10px 16px;font-size:14px;margin-left:8px}
 
 /* results */
 .results{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
-.res{padding:24px 22px;border-radius:20px;background:linear-gradient(160deg,rgba(51,227,227,.10),rgba(255,255,255,.02));border:1px solid var(--line)}
+.res{padding:24px 22px;border-radius:20px;background:linear-gradient(160deg,rgba(56,182,255,.10),rgba(255,255,255,.02));border:1px solid var(--line)}
 .res b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(44px,5vw,60px);line-height:1;color:#fff}
 .res b em{font-style:normal;color:var(--cyan)}
 .res p{margin:8px 0 0;color:var(--ink2);font-size:15px}
@@ -149,7 +148,7 @@ header .btn{padding:10px 16px;font-size:14px;margin-left:8px}
 
 /* pricing */
 .price{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;margin-top:40px;align-items:stretch}
-.pcard{padding:clamp(26px,4vw,40px);border-radius:26px;border:1px solid rgba(51,227,227,.45);background:linear-gradient(150deg,rgba(51,227,227,.14),rgba(255,255,255,.02));box-shadow:0 40px 100px -50px rgba(51,227,227,.6)}
+.pcard{padding:clamp(26px,4vw,40px);border-radius:26px;border:1px solid rgba(56,182,255,.45);background:linear-gradient(150deg,rgba(56,182,255,.14),rgba(255,255,255,.02));box-shadow:0 40px 100px -50px rgba(56,182,255,.6)}
 .pcard .amt{font-family:var(--display);font-size:clamp(80px,11vw,130px);line-height:.85;color:#fff}
 .pcard .amt small{font-size:.32em;color:var(--ink2);letter-spacing:.02em}
 .pcard .plus{font-family:var(--display);font-size:clamp(34px,4vw,46px);color:var(--cyan);margin:8px 0 6px}
@@ -189,18 +188,18 @@ footer{border-top:1px solid var(--line);padding:28px 0 calc(28px + env(safe-area
 /* ===== Animated pass (20 Nov) ===== */
 .blobs{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
 .blobs i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.22}
-.blobs i:nth-child(1){width:48vw;height:48vw;left:-10vw;top:-12vw;background:#0E9E9E;opacity:.26;animation:b1 22s ease-in-out infinite alternate}
-.blobs i:nth-child(2){width:40vw;height:40vw;right:-12vw;top:10vh;background:#33E3E3;opacity:.12;animation:b2 26s ease-in-out infinite alternate}
+.blobs i:nth-child(1){width:48vw;height:48vw;left:-10vw;top:-12vw;background:#1E8FD6;opacity:.26;animation:b1 22s ease-in-out infinite alternate}
+.blobs i:nth-child(2){width:40vw;height:40vw;right:-12vw;top:10vh;background:#38B6FF;opacity:.12;animation:b2 26s ease-in-out infinite alternate}
 .blobs i:nth-child(3){width:36vw;height:36vw;left:30vw;bottom:-18vw;background:#1C6F8F;opacity:.2;animation:b3 30s ease-in-out infinite alternate}
 @keyframes b1{to{transform:translate(18vw,22vh) scale(1.2)}}
 @keyframes b2{to{transform:translate(-22vw,30vh) scale(.85)}}
 @keyframes b3{to{transform:translate(-14vw,-24vh) scale(1.15)}}
-.grid-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(51,227,227,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(51,227,227,.05) 1px,transparent 1px);background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 20%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 0%,#000 20%,transparent 70%)}
-.cglow{position:fixed;width:520px;height:520px;border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(circle,rgba(51,227,227,.14),transparent 60%);transform:translate(-50%,-50%);transition:opacity .4s;opacity:0}
+.grid-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(56,182,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(56,182,255,.05) 1px,transparent 1px);background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000 20%,transparent 70%);mask-image:radial-gradient(ellipse at 50% 0%,#000 20%,transparent 70%)}
+.cglow{position:fixed;width:520px;height:520px;border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(circle,rgba(56,182,255,.14),transparent 60%);transform:translate(-50%,-50%);transition:opacity .4s;opacity:0}
 .h1w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.05em}
 .h1w>span{display:inline-block;transform:translateY(105%);animation:rise .9s cubic-bezier(.2,.9,.2,1) forwards}
 @keyframes rise{to{transform:none}}
-.bill{position:absolute;right:-2%;bottom:-6%;width:clamp(230px,22vw,290px);padding:14px;border-radius:18px;background:rgba(5,22,26,.92);border:1px solid rgba(51,227,227,.35);backdrop-filter:blur(10px);box-shadow:0 30px 60px -24px rgba(0,0,0,.95),0 0 50px -20px rgba(51,227,227,.55);z-index:3}
+.bill{position:absolute;right:-2%;bottom:-6%;width:clamp(230px,22vw,290px);padding:14px;border-radius:18px;background:rgba(5,22,26,.92);border:1px solid rgba(56,182,255,.35);backdrop-filter:blur(10px);box-shadow:0 30px 60px -24px rgba(0,0,0,.95),0 0 50px -20px rgba(56,182,255,.55);z-index:3}
 .bill-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .bill-h small{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
 .bill-h b{font-family:var(--display);font-weight:400;font-size:34px;line-height:1;color:#fff}
@@ -219,21 +218,21 @@ footer{border-top:1px solid var(--line);padding:28px 0 calc(28px + env(safe-area
 .show-tabs button{all:unset;box-sizing:border-box;cursor:pointer;padding:18px 20px;border-radius:18px;border:1px solid var(--line);background:var(--card);position:relative;overflow:hidden;transition:border-color .3s,background .3s}
 .show-tabs button b{display:block;color:#fff;font-size:17px;margin-bottom:3px}
 .show-tabs button span{color:var(--ink2);font-size:14.5px}
-.show-tabs button[aria-selected="true"]{border-color:rgba(51,227,227,.55);background:linear-gradient(135deg,rgba(51,227,227,.12),rgba(255,255,255,.02))}
+.show-tabs button[aria-selected="true"]{border-color:rgba(56,182,255,.55);background:linear-gradient(135deg,rgba(56,182,255,.12),rgba(255,255,255,.02))}
 .show-tabs button .prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--cyan)}
 .show-tabs button[aria-selected="true"] .prog{animation:prog 5s linear forwards}
 @keyframes prog{to{width:100%}}
 .show-view{position:relative;aspect-ratio:1100/728;perspective:1600px}
 .show-view figure{position:absolute;inset:0;margin:0;display:grid;place-items:center;opacity:0;transform:rotateY(-10deg) translateZ(-60px) scale(.96);transition:opacity .7s ease,transform .9s cubic-bezier(.2,.9,.2,1)}
 .show-view figure.on{opacity:1;transform:none}
-.show-view img{max-width:100%;max-height:100%;border-radius:18px;border:1px solid var(--line);box-shadow:0 50px 100px -40px rgba(0,0,0,.95),0 0 80px -30px rgba(51,227,227,.5)}
+.show-view img{max-width:100%;max-height:100%;border-radius:18px;border:1px solid var(--line);box-shadow:0 50px 100px -40px rgba(0,0,0,.95),0 0 80px -30px rgba(56,182,255,.5)}
 .show-view figure{display:flex!important;align-items:center;justify-content:center}
 .show-view figure img{max-height:100%;max-width:100%;width:auto;height:auto}
 .show-view figure.ph img{height:100%;width:auto;border-radius:28px;border:8px solid #0b0f10}
 @media (max-width:860px){.show{grid-template-columns:1fr}.show-view{order:-1}}
 .shots{display:none}
 .tilt{transform-style:preserve-3d;transition:transform .45s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s}
-.tilt.lift{transition:transform .12s linear,border-color .3s,box-shadow .3s;box-shadow:0 30px 60px -30px rgba(0,0,0,.9),0 0 40px -20px rgba(51,227,227,.5)}
+.tilt.lift{transition:transform .12s linear,border-color .3s,box-shadow .3s;box-shadow:0 30px 60px -30px rgba(0,0,0,.9),0 0 40px -20px rgba(56,182,255,.5)}
 .feat i{transition:transform .5s cubic-bezier(.2,1.4,.3,1)}
 .feat:hover i{transform:translateZ(30px) rotate(-8deg) scale(1.12)}
 .steps{position:relative}
@@ -244,11 +243,11 @@ footer{border-top:1px solid var(--line);padding:28px 0 calc(28px + env(safe-area
 .vs .meter i{display:block;height:100%;width:0;border-radius:inherit;transition:width 1.6s cubic-bezier(.2,.8,.2,1)}
 .vs .win .meter i{background:linear-gradient(90deg,#1fb985,var(--good))}.vs .lose .meter i{background:rgba(255,255,255,.35)}
 .pcard{position:relative;isolation:isolate;border-color:transparent}
-.pcard::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--ang,0deg),transparent 0 60%,var(--cyan) 75%,#9FFFFF 80%,transparent 92%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 5s linear infinite;z-index:-1}
+.pcard::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--ang,0deg),transparent 0 60%,var(--cyan) 75%,#9ED8FF 80%,transparent 92%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 5s linear infinite;z-index:-1}
 @property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
 @keyframes spin{to{--ang:360deg}}
 .pcard .amt{animation:pulse 3.5s ease-in-out infinite}
-@keyframes pulse{50%{text-shadow:0 0 40px rgba(51,227,227,.45)}}
+@keyframes pulse{50%{text-shadow:0 0 40px rgba(56,182,255,.45)}}
 .btn.cy{position:relative;overflow:hidden}
 .btn.cy::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:sheen 3.8s ease-in-out infinite}
 @keyframes sheen{0%,60%{left:-60%}100%{left:130%}}
@@ -256,10 +255,10 @@ footer{border-top:1px solid var(--line);padding:28px 0 calc(28px + env(safe-area
 
 /* ===== Human pass (20 Nov): fewer effects, real people, varied sections ===== */
 .blobs,.grid-bg,.cglow,.bill{display:none!important}
-body::before{background:radial-gradient(60vw 40vw at 80% -10%,rgba(51,227,227,.10),transparent 60%),linear-gradient(180deg,#041214,#05161A 60%,#041214)}
+body::before{background:radial-gradient(60vw 40vw at 80% -10%,rgba(56,182,255,.10),transparent 60%),linear-gradient(180deg,#050c16,#06101c 60%,#050c16)}
 .btn.cy::after{display:none}
 .pcard::before{display:none}
-.pcard{border-color:rgba(51,227,227,.45)}
+.pcard{border-color:rgba(56,182,255,.45)}
 .pcard .amt{animation:none}
 .stage .chip.a{display:block}
 .steps::after{display:none}
@@ -300,7 +299,7 @@ h2{font-family:var(--body);font-weight:800;text-transform:none;letter-spacing:-.
 .logos p{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 18px}
 .logos ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(12px,2vw,22px)}
 .logos li{display:flex;flex-direction:column;align-items:center;gap:8px;width:118px;text-align:center}
-.logos .tile{width:92px;height:92px;border-radius:22px;background:#0d2023;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;box-shadow:0 14px 30px -18px rgba(0,0,0,.9);transition:transform .3s}
+.logos .tile{width:92px;height:92px;border-radius:22px;background:#0c1826;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;box-shadow:0 14px 30px -18px rgba(0,0,0,.9);transition:transform .3s}
 .logos li:hover .tile{transform:translateY(-3px)}
 .logos img{max-width:80%;max-height:80%;object-fit:contain;display:block}
 .logos span{font-size:12px;line-height:1.3;color:var(--ink2)}
@@ -332,12 +331,12 @@ section.band{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,2
 /* browser frame for desktop screenshots */
 .show-view figure:not(.ph) img{border-radius:0 0 14px 14px;border-top:0}
 .show-view figure:not(.ph){flex-direction:column}
-.show-view figure:not(.ph)::before{content:"";display:block;width:min(100%,var(--fw,100%));height:28px;border-radius:14px 14px 0 0;background:#0e1b1e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='12'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23ff5f57'/%3E%3Ccircle cx='24' cy='6' r='5' fill='%23febc2e'/%3E%3Ccircle cx='42' cy='6' r='5' fill='%2328c840'/%3E%3C/svg%3E") 12px center no-repeat;border:1px solid var(--line);border-bottom:0}
+.show-view figure:not(.ph)::before{content:"";display:block;width:min(100%,var(--fw,100%));height:28px;border-radius:14px 14px 0 0;background:#0c1826 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='12'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23ff5f57'/%3E%3Ccircle cx='24' cy='6' r='5' fill='%23febc2e'/%3E%3Ccircle cx='42' cy='6' r='5' fill='%2328c840'/%3E%3C/svg%3E") 12px center no-repeat;border:1px solid var(--line);border-bottom:0}
 /* before / after */
 .ba{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:36px}
 .ba > div{padding:clamp(24px,3vw,34px);border-radius:22px;border:1px solid var(--line)}
 .ba .before{background:rgba(255,255,255,.02)}
-.ba .after{background:linear-gradient(160deg,rgba(51,227,227,.10),rgba(255,255,255,.02));border-color:rgba(51,227,227,.35)}
+.ba .after{background:linear-gradient(160deg,rgba(56,182,255,.10),rgba(255,255,255,.02));border-color:rgba(56,182,255,.35)}
 .ba h3{font-size:14px;font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px}
 .ba .before h3{color:var(--bad)}.ba .after h3{color:var(--cyan)}
 .ba ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
@@ -352,7 +351,7 @@ section.band{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,2
 .faqx .faq{margin-top:0;max-width:none}
 @media (max-width:860px){.faqx{grid-template-columns:1fr}.faqx .head{position:static}}
 /* sticky try-it bar on phones */
-.mbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:40;display:none;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:rgba(6,25,28,.94);border:1px solid rgba(51,227,227,.35);backdrop-filter:blur(10px);box-shadow:0 20px 40px -20px rgba(0,0,0,.9);transform:translateY(140%);transition:transform .4s cubic-bezier(.2,.9,.2,1)}
+.mbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:40;display:none;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:rgba(8,19,31,.94);border:1px solid rgba(56,182,255,.35);backdrop-filter:blur(10px);box-shadow:0 20px 40px -20px rgba(0,0,0,.9);transform:translateY(140%);transition:transform .4s cubic-bezier(.2,.9,.2,1)}
 .mbar.on{transform:none}
 .mbar span{font-size:14px;color:var(--ink2)}.mbar b{color:#fff}
 .mbar .btn{padding:11px 16px;font-size:14.5px}
@@ -384,7 +383,7 @@ h2.go .w>span{transform:none}
 .ba.go .after li{opacity:1;transform:none}
 .does-list{position:relative}
 .does-list::before{content:"";position:absolute;left:-18px;top:0;width:2px;height:100%;background:var(--line)}
-.does-list::after{content:"";position:absolute;left:-18px;top:0;width:2px;height:100%;background:var(--cyan);transform:scaleY(var(--p,0));transform-origin:0 0;box-shadow:0 0 12px rgba(51,227,227,.6)}
+.does-list::after{content:"";position:absolute;left:-18px;top:0;width:2px;height:100%;background:var(--cyan);transform:scaleY(var(--p,0));transform-origin:0 0;box-shadow:0 0 12px rgba(56,182,255,.6)}
 .does-list li{opacity:.4;transition:opacity .5s}
 .does-list li b{transition:color .5s}
 .does-list li.lit{opacity:1}.does-list li.lit b{color:var(--cyan)}
@@ -394,46 +393,122 @@ h2.go .w>span{transform:none}
 .res2 .big{transform:scale(.9);opacity:0;transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity .8s}
 .res2.go .big{transform:none;opacity:1}
 .pcard.in{animation:settle 1.2s cubic-bezier(.2,.8,.2,1) both}
-@keyframes settle{0%{transform:translateY(50px) scale(.95);box-shadow:0 0 0 rgba(51,227,227,0)}60%{transform:translateY(-6px) scale(1.01);box-shadow:0 30px 90px -30px rgba(51,227,227,.55)}100%{transform:none;box-shadow:0 30px 80px -40px rgba(51,227,227,.35)}}
+@keyframes settle{0%{transform:translateY(50px) scale(.95);box-shadow:0 0 0 rgba(56,182,255,0)}60%{transform:translateY(-6px) scale(1.01);box-shadow:0 30px 90px -30px rgba(56,182,255,.55)}100%{transform:none;box-shadow:0 30px 80px -40px rgba(56,182,255,.35)}}
 @media (max-width:860px){.does-list::before,.does-list::after{left:-10px}}
 @media (prefers-reduced-motion:reduce){h2 .w>span,.ba .after li,.res2 li,.res2 .big{transform:none!important;opacity:1!important;transition:none}.does-list li{opacity:1}.pcard.in{animation:none}}
+/* academy logos */
+.logos{padding:clamp(28px,4vw,44px) 0 0}
+.logos p{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center;margin:0 0 18px}
+.logos ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(12px,2vw,22px)}
+.logos li{display:flex;flex-direction:column;align-items:center;gap:8px;width:118px;text-align:center}
+.logos .tile{width:92px;height:92px;border-radius:22px;background:#0c1826;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;box-shadow:0 14px 30px -18px rgba(0,0,0,.9);transition:transform .3s}
+.logos li:hover .tile{transform:translateY(-3px)}
+.logos img{max-width:80%;max-height:80%;object-fit:contain;display:block}
+.logos span{font-size:12px;line-height:1.3;color:var(--ink2)}
+.logos .tile.light{background:#fff;border-color:#fff}
+
+/* own booking page */
+.own{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,3vw,36px);margin-top:40px;align-items:end}
+.own figure{margin:0;text-align:center}
+.own .ph{border-radius:36px;padding:9px;background:#0b0f10;border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 80px -36px rgba(0,0,0,.95);max-width:280px;margin:0 auto;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.own figure:nth-child(2) .ph{transform:translateY(-24px)}
+.own figure:hover .ph{transform:translateY(-8px)}
+.own figure:nth-child(2):hover .ph{transform:translateY(-32px)}
+.own .ph img{display:block;width:100%;border-radius:28px}
+.own figcaption{margin-top:16px}
+.own figcaption b{display:block;color:#fff;font-size:17px}
+.own figcaption a{font-size:14px;text-decoration:none}
+.own-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.own-list span{padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink2);font-size:14px}
+@media (max-width:760px){.own{grid-template-columns:1fr}.own figure:nth-child(2) .ph{transform:none}}
+/* ===== £10k pass (21 Nov): photo hero, proof, pinned billing story ===== */
+.hero{position:relative;min-height:min(92vh,880px);display:flex;align-items:flex-end;padding:0 0 clamp(40px,6vw,72px);overflow:hidden;isolation:isolate}
+html,body{overflow-x:clip}
+.hbg{position:absolute;top:0;bottom:0;right:0;width:54%;z-index:-1;overflow:hidden}
+.hbg img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block;animation:kb 22s ease-out both;transform-origin:50% 30%}
+@keyframes kb{from{transform:scale(1.14)}to{transform:scale(1)}}
+.hbg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#050c16 0%,rgba(5,12,22,.6) 18%,rgba(5,12,22,0) 40%),linear-gradient(0deg,#050c16 0%,rgba(5,12,22,0) 36%)}
+.hcopy{max-width:560px;padding-top:clamp(90px,14vh,160px)}
+.hero h1{font-size:clamp(60px,6.6vw,100px)}
+.hero .lede{max-width:34ch;text-shadow:0 2px 18px rgba(5,12,22,.9)}
+.hproof{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:26px;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--ink2)}
+.hproof b{color:#fff;font-family:var(--display);font-weight:400;font-size:24px;letter-spacing:.02em;margin-right:6px;vertical-align:-2px}
+.hphone{display:none;position:absolute;right:clamp(16px,6vw,90px);bottom:clamp(40px,7vw,90px);width:clamp(150px,15vw,210px);border-radius:28px;padding:7px;background:#0b0f10;border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 80px -30px rgba(0,0,0,.95),0 0 50px -20px rgba(56,182,255,.5);animation:float 7s ease-in-out infinite}
+.hphone img{display:block;width:100%;border-radius:22px}
+.hchip{position:absolute;right:clamp(16px,4vw,60px);bottom:clamp(40px,7vw,90px);padding:10px 14px;border-radius:14px;background:rgba(8,19,31,.9);border:1px solid var(--line);backdrop-filter:blur(8px);font-size:13px;color:var(--ink2);box-shadow:0 20px 40px -20px rgba(0,0,0,.9);animation:float2 6s ease-in-out infinite}
+.hchip b{display:block;font-family:var(--display);font-weight:400;font-size:30px;line-height:1;color:var(--good)}
+@media (max-width:900px){.hero{min-height:auto;padding-top:0}.hbg{width:100%;bottom:auto;height:min(78vw,440px)}.hbg img{object-position:50% 18%}.hbg::after{background:linear-gradient(0deg,#050c16 2%,rgba(5,12,22,.4) 40%,rgba(5,12,22,0) 70%)}.hcopy{padding-top:min(66vw,380px)}.hphone,.hchip{display:none}}
+.logos{padding:clamp(40px,6vw,64px) 0 0}
+.logos ul{gap:clamp(14px,3vw,34px)}
+.logos li{opacity:0;transform:translateY(16px);transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.logos.go li{opacity:1;transform:none}
+/* pinned billing-day story */
+.pin{padding:0}
+.pin-track{height:320vh;position:relative}
+.pin-stick{position:sticky;top:68px;height:calc(100vh - 68px);display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,72px);align-items:center}
+.pin-amt{font-family:var(--display);font-size:clamp(84px,14vw,200px);line-height:.85;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.pin-amt.done{color:var(--good)}
+.pin-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.08);margin:26px 0 14px;overflow:hidden;max-width:520px}
+.pin-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan2),var(--cyan));border-radius:99px}
+.pin-note{color:var(--muted);font-size:14px;margin:0}
+.pin-r{position:relative;min-height:220px}
+.beat{position:absolute;inset:0 0 auto 0;opacity:0;transform:translateY(30px);transition:opacity .5s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.beat.on{opacity:1;transform:none}
+.beat small{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px}
+.beat h3{font-family:var(--body);font-weight:800;font-size:clamp(30px,3.6vw,46px);line-height:1.05;letter-spacing:-.02em;color:#fff;margin-bottom:14px}
+.beat p{color:var(--ink2);font-size:clamp(17px,1.8vw,20px);line-height:1.55;margin:0;max-width:34ch}
+.pin-dots{display:flex;gap:8px;margin-top:22px}
+.pin-dots i{width:28px;height:4px;border-radius:9px;background:rgba(255,255,255,.12);transition:background .4s}
+.pin-dots i.on{background:var(--cyan)}
+@media (max-width:860px){.pin-stick{grid-template-columns:1fr;align-content:center;gap:28px}.pin-r{min-height:190px}}
+@media (prefers-reduced-motion:reduce){.hbg img{animation:none}.pin-track{height:auto}.pin-stick{position:static;height:auto;padding-block:80px}.beat{position:static;opacity:1;transform:none;margin-bottom:28px}.pin-r{min-height:0}.logos li{opacity:1;transform:none}}
+.brand img{display:block;height:48px;width:auto}.fgrid .brand img{height:60px}@media (max-width:760px){.brand img{height:38px}}
 </style>
 </head>
 <body>
 
 <header class="top"><div class="wrap">
-  <a class="brand" href="/">PLAYER <span>PORTAL</span></a>
-  <nav><a href="#see">See it</a><a href="#john">Why I built it</a><a href="#does">What it does</a><a href="#results">Results</a><a href="#price">Price</a><a href="#faq">FAQ</a><a href="https://johnleitchmentor.com/">ASCEND →</a></nav>
+  <a class="brand" href="/"><img src="/home/pp-logo.webp" alt="The Player Portal" width="480" height="134"></a>
+  <nav><a href="#see">See it</a><a href="#billing">Billing day</a><a href="#own">Their pages</a><a href="#does">What it does</a><a href="#results">Results</a><a href="#price">Price</a><a href="#faq">FAQ</a><a href="https://johnleitchmentor.com/">ASCEND →</a></nav>
   <a class="btn cy" href="/onboard">Try it free</a>
 </div></header>
 
-<div class="hero"><div class="wrap hero-grid">
-  <div>
+<div class="hero">
+  <div class="hbg"><img src="/home/john-pitch-wide.webp" alt="John Leitch at the pitch" fetchpriority="high"></div>
+  <div class="wrap"><div class="hcopy">
     <p class="eyebrow">The booking and billing system for football academies</p>
     <h1><span class="h1w"><span style="animation-delay:0.00s">Parents</span></span> <span class="h1w"><span style="animation-delay:0.09s">book.</span></span> <br><span class="h1w"><span style="animation-delay:0.18s">Members</span></span> <span class="h1w"><span style="animation-delay:0.27s">pay.</span></span> <br><span class="h1w"><span class="c" style="animation-delay:0.36s">Nobody</span></span> <span class="h1w"><span class="c" style="animation-delay:0.45s">chases.</span></span></h1>
-    <p class="lede">Player Portal is the software I built to run football academies. Your booking page, your payments on the 1st, your trials, camps and registers, all in one place. Parents pay online. You stop chasing.</p>
-    <div class="cta-row"><a class="btn cy" href="/onboard">Start your 14-day free trial</a><a class="btn ln" href="#see">See the screens</a></div>
-    <p class="fine" style="margin-top:14px">No card needed to start. Cancel any time.</p>
-
-  </div>
-  <div class="stage" aria-hidden="true">
-    <div class="dash" id="tilt"><img src="/home/pp-dashboard.jpg" alt=""></div>
-    <div class="phone"><img src="/home/pp-phone.jpg" alt=""></div>
-    <div class="chip a"><b>£14,661</b>collected on billing day</div>
-    <div class="chip b"><b>102</b>families at one academy</div>
-  </div>
-</div><div class="wrap">
-    <div class="stats">
-      <div><b data-count="79" data-pre="£" data-post="k+">£79k+</b><span>paid by parents through Player Portal</span></div>
-      <div><b data-count="405">405</b><span>memberships billing automatically every month</span></div>
-      <div><b data-count="8">8</b><span>academies running on it right now</span></div>
-    </div>
-</div></div>
+    <p class="lede">The software I built to run my own academy. Parents book and pay online, memberships go out on the 1st, and you stop chasing.</p>
+    <div class="cta-row"><a class="btn cy" href="/onboard">Start your 14-day free trial</a><a class="btn ln" href="#billing">See billing day</a></div>
+    <div class="hproof"><span><b>£78k+</b>paid to academies</span><span><b>398</b>children on auto-billing</span><span><b>7</b>academies</span></div>
+  </div></div>
+  <div class="hchip" aria-hidden="true"><b>£14,661</b>collected on billing day</div>
+  <div class="hphone" aria-hidden="true"><img src="/home/pp-phone.webp" alt=""></div>
+</div>
 
 <div class="tick" aria-hidden="true"><div class="tick-in">
   <span>Booking page</span><span>Paid on the 1st</span><span>Free trials</span><span>Joining links</span><span>Holiday camps</span><span>Waitlists</span><span>1-2-1 sessions</span><span>Registers</span><span>Welcome packs</span><span>Parent app</span><span>Failed card retries</span><span>Your dashboard</span>
   <span>Booking page</span><span>Paid on the 1st</span><span>Free trials</span><span>Joining links</span><span>Holiday camps</span><span>Waitlists</span><span>1-2-1 sessions</span><span>Registers</span><span>Welcome packs</span><span>Parent app</span><span>Failed card retries</span><span>Your dashboard</span>
 </div></div>
+
+<div class="wrap logos"><p>Academies running on Player Portal</p><ul><li><div class="tile"><img src="/home/logos/jamie-allan-football-academy.png" alt="Jamie Allan Football Academy logo" loading="lazy"></div><span>Jamie Allan Football Academy</span></li><li><div class="tile light"><img src="/home/logos/profootballcoachingni.jpg" alt="Pro Football Coaching logo" loading="lazy"></div><span>Pro Football Coaching</span></li><li><div class="tile"><img src="/home/logos/no1-goalkeeping-academy.png" alt="No.1 Goalkeeping Academy logo" loading="lazy"></div><span>No.1 Goalkeeping Academy</span></li><li><div class="tile light"><img src="/home/logos/gold-and-gray-soccer-academy-aberdeen.jpg" alt="Gold and Gray Soccer Academy logo" loading="lazy"></div><span>Gold and Gray Soccer Academy</span></li><li><div class="tile"><img src="/home/logos/talent-football-academy-ltd.png" alt="Talent Football Academy logo" loading="lazy"></div><span>Talent Football Academy</span></li><li><div class="tile"><img src="/home/logos/cfcoaching.png" alt="CFCoaching logo" loading="lazy"></div><span>CFCoaching</span></li><li><div class="tile"><img src="/home/logos/lewis-black-football-academy.png" alt="Lewis Black Football Academy logo" loading="lazy"></div><span>Lewis Black Football Academy</span></li></ul></div>
+
+<section class="pin" id="billing" aria-label="Billing day"><div class="pin-track"><div class="pin-stick wrap">
+  <div>
+    <p class="eyebrow">Billing day · 1 November 2026</p>
+    <div class="pin-amt" id="pa">£0</div>
+    <div class="pin-bar"><i id="pb"></i></div>
+    <p class="pin-note">Collected in one day across academies on Player Portal.</p>
+  </div>
+  <div>
+    <div class="pin-r">
+      <div class="beat on"><small>The 1st</small><h3>Memberships go out on their own.</h3><p>Every family is charged automatically. You don't send a single message.</p></div>
+      <div class="beat"><small>A card fails</small><h3>It's sorted for you.</h3><p>The card is retried and the parent gets a link to pay. You can see exactly who's behind.</p></div>
+      <div class="beat"><small>By the end of the day</small><h3>£14,661 in. Nobody chased.</h3><p>Paid straight into each academy's own bank account.</p></div>
+    </div>
+    <div class="pin-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+  </div>
+</div></div></section>
 
 <section id="see"><div class="wrap">
   <p class="eyebrow">See it working</p>
@@ -448,20 +523,28 @@ h2.go .w>span{transform:none}
       <button role="tab" aria-selected="false" data-sh="4"><b>Paid on the 1st</b><span>Every membership collected and paid out to your bank.</span><i class="prog"></i></button>
     </div>
     <div class="show-view">
-      <figure class="on"><img src="/home/pp-booking.jpg" alt="An academy booking page on Player Portal"></figure>
-      <figure class="ph"><img src="/home/pp-phone.jpg" alt="The booking page on a phone" loading="lazy"></figure>
-      <figure><img src="/home/pp-dashboard.jpg" alt="The academy dashboard" loading="lazy"></figure>
-      <figure class="ph"><img src="/home/pp-parent.jpg" alt="A parent's app" loading="lazy"></figure>
-      <figure><img src="/home/pp-payments.jpg" alt="Payments and memberships" loading="lazy"></figure>
+      <figure class="on"><img src="/home/pp-booking.webp" alt="An academy booking page on Player Portal"></figure>
+      <figure class="ph"><img src="/home/pp-phone.webp" alt="The booking page on a phone" loading="lazy"></figure>
+      <figure><img src="/home/pp-dashboard.webp" alt="The academy dashboard" loading="lazy"></figure>
+      <figure class="ph"><img src="/home/pp-parent.webp" alt="A parent's app" loading="lazy"></figure>
+      <figure><img src="/home/pp-payments.webp" alt="Payments and memberships" loading="lazy"></figure>
     </div>
   </div>
   <div class="shots">
-    <figure class="shot w rv"><img src="/home/pp-booking.jpg" alt="An academy booking page on Player Portal" loading="lazy"><figcaption><b>Your booking page.</b>Parents pick a class, see spaces left, and book and pay online, day or night.</figcaption></figure>
-    <figure class="shot p rv"><img src="/home/pp-phone.jpg" alt="The booking page on a phone" loading="lazy"><figcaption><b>On their phone.</b>Where most parents book.</figcaption></figure>
-    <figure class="shot p rv"><img src="/home/pp-parent.jpg" alt="A parent's app" loading="lazy"><figcaption><b>The parent app.</b>Next session, what they pay, messages. Fewer WhatsApps for you.</figcaption></figure>
-    <figure class="shot w rv"><img src="/home/pp-dashboard.jpg" alt="The academy dashboard" loading="lazy"><figcaption><b>Your dashboard.</b>Monthly income, who's paying, who's at risk and today's sessions, first thing in the morning.</figcaption></figure>
-    <figure class="shot f rv"><img src="/home/pp-payments.jpg" alt="Payments and memberships" loading="lazy"><figcaption><b>Paid on the 1st.</b>Every membership collected automatically and paid out to your bank.</figcaption></figure>
+    <figure class="shot w rv"><img src="/home/pp-booking.webp" alt="An academy booking page on Player Portal" loading="lazy"><figcaption><b>Your booking page.</b>Parents pick a class, see spaces left, and book and pay online, day or night.</figcaption></figure>
+    <figure class="shot p rv"><img src="/home/pp-phone.webp" alt="The booking page on a phone" loading="lazy"><figcaption><b>On their phone.</b>Where most parents book.</figcaption></figure>
+    <figure class="shot p rv"><img src="/home/pp-parent.webp" alt="A parent's app" loading="lazy"><figcaption><b>The parent app.</b>Next session, what they pay, messages. Fewer WhatsApps for you.</figcaption></figure>
+    <figure class="shot w rv"><img src="/home/pp-dashboard.webp" alt="The academy dashboard" loading="lazy"><figcaption><b>Your dashboard.</b>Monthly income, who's paying, who's at risk and today's sessions, first thing in the morning.</figcaption></figure>
+    <figure class="shot f rv"><img src="/home/pp-payments.webp" alt="Payments and memberships" loading="lazy"><figcaption><b>Paid on the 1st.</b>Every membership collected automatically and paid out to your bank.</figcaption></figure>
   </div>
+</div></section>
+
+<section id="own"><div class="wrap">
+  <p class="eyebrow">Your own booking page</p>
+  <h2>Your page, in your colours.</h2>
+  <p class="lede">Every academy gets its own booking page with its logo, colours and photos. These are three real ones, live right now.</p>
+  <div class="own"><figure><div class="ph"><img src="/home/bp-jamie-allan-football-academy.webp" alt="Jamie Allan Football Academy booking page on a phone" loading="lazy"></div><figcaption><b>Jamie Allan Football Academy</b><a href="/book/jamie-allan-football-academy" target="_blank" rel="noopener">See their live page →</a></figcaption></figure><figure><div class="ph"><img src="/home/bp-no1-goalkeeping-academy.webp" alt="No.1 Goalkeeping Academy booking page on a phone" loading="lazy"></div><figcaption><b>No.1 Goalkeeping Academy</b><a href="/book/no1-goalkeeping-academy" target="_blank" rel="noopener">See their live page →</a></figcaption></figure><figure><div class="ph"><img src="/home/bp-profootballcoachingni.webp" alt="Pro Football Coaching booking page on a phone" loading="lazy"></div><figcaption><b>Pro Football Coaching</b><a href="/book/profootballcoachingni" target="_blank" rel="noopener">See their live page →</a></figcaption></figure></div>
+  <div class="own-list"><span>Your logo and colours</span><span>A banner photo or video</span><span>Classes, ages, prices and spaces left</span><span>A free trial button</span><span>Your own link to share</span><span>Links that show one programme, for ads</span><span>Built for phones</span></div>
 </div></section>
 
 <section class="band" id="before"><div class="wrap">
@@ -486,12 +569,12 @@ h2.go .w>span{transform:none}
 </div></section>
 
 <section id="john"><div class="wrap note">
-  <img src="/home/start-john.jpg" alt="John Leitch pitch-side" loading="lazy">
+  <img src="/home/john-coaching.webp" alt="John Leitch coaching" loading="lazy">
   <div>
     <p class="eyebrow">Why I built it</p>
     <div class="letter">
       <p>I ran a football academy for eight years. At its biggest it had 350 players a week across six venues.</p>
-      <p>And every month it was the same. A spreadsheet, a pile of bank transfers, and me messaging parents late at night to ask if they'd paid. I was paying £120 a month for software that couldn't even tell me who owed me money.</p>
+      <p>Every month it was the same: a spreadsheet, a pile of bank transfers, and me messaging parents late at night to ask if they'd paid.</p>
       <p>So I built the thing I wished I'd had. Parents book and pay themselves, memberships go out on the 1st, and I know who's paid without asking anyone.</p>
       <p>I've sold my academy since. Player Portal is what I took from it.</p>
     </div>
@@ -534,12 +617,12 @@ h2.go .w>span{transform:none}
   <p class="eyebrow">Results</p>
   <h2>What it's doing for academies right now.</h2>
   <div class="res2">
-    <div class="big"><b data-count="102">102</b><span>families on automatic monthly billing at one academy. Nobody chased for a payment.</span></div>
+    <div class="big"><b data-count="110">110</b><span>families on automatic monthly billing at one academy. Nobody chased for a payment.</span></div>
     <ul>
       <li><b>£14,661</b>collected in one day across academies on billing day, 1 November.</li>
       <li><b>12 of 12</b>places sold and paid online for a holiday camp, full before the day.</li>
       <li><b>6 families</b>signed up and paid at a brand-new academy in its first week.</li>
-      <li><b>405</b>memberships billing automatically every month across 8 academies.</li>
+      <li><b>398</b>children billing automatically every month across 7 academies.</li>
     </ul>
   </div>
 </div></section>
@@ -586,7 +669,7 @@ h2.go .w>span{transform:none}
 
 <footer><div class="wrap">
   <div class="fgrid">
-    <div><a class="brand" href="/">PLAYER <span>PORTAL</span></a><p>The booking and billing system for football academies, built by John Leitch.</p></div>
+    <div><a class="brand" href="/"><img src="/home/pp-logo.webp" alt="The Player Portal" width="480" height="134"></a><p>The booking and billing system for football academies, built by John Leitch.</p></div>
     <div><h4>Player Portal</h4><a href="/onboard">Start free trial</a><a href="/auth/signin">Log in</a><a href="#price">Price</a><a href="#faq">Questions</a></div>
     <div><h4>John Leitch</h4><a href="https://johnleitchmentor.com/">ASCEND mentoring</a><a href="https://johnleitchmentor.com/dashboard">The ASCEND app</a><a href="https://johnleitchmentor.com/ecosystem">Have it done for you</a></div>
   </div>
@@ -683,9 +766,9 @@ h2.go .w>span{transform:none}
   }
   if (reduce) { document.querySelectorAll('.does-list li').forEach(function (l) { l.classList.add('lit') }); return }
   // Scroll-linked: hero layers, screens, feature rail
-  var hero = document.querySelector('.hero'), copy = hero && hero.querySelector('.hero-grid > div'),
-      dash = document.querySelector('.stage .dash'), phone = document.querySelector('.stage .phone'),
-      ca = document.querySelector('.stage .chip.a'), cb = document.querySelector('.stage .chip.b'),
+  var hero = document.querySelector('.hero'), copy = hero && hero.querySelector('.hcopy'),
+      dash = document.querySelector('.hbg img'), phone = document.querySelector('.hphone'),
+      ca = document.querySelector('.hchip'), cb = null,
       view = document.querySelector('.show-view'), list = document.querySelector('.does-list'),
       items = list ? [].slice.call(list.children) : [], small = innerWidth < 760, ticking = false
   function frame() {
@@ -693,7 +776,7 @@ h2.go .w>span{transform:none}
     var y = scrollY, H = innerHeight
     if (hero && y < hero.offsetHeight * 1.2) {
       var k = small ? .5 : 1
-      if (dash) dash.style.translate = (y * .08 * k) + 'px ' + (-y * .18 * k) + 'px'
+      if (dash) dash.style.translate = '0 ' + (y * .3 * k) + 'px'
       if (phone) phone.style.translate = (-y * .05 * k) + 'px ' + (y * .22 * k) + 'px'
       if (ca) ca.style.translate = '0 ' + (-y * .35 * k) + 'px'
       if (cb) cb.style.translate = '0 ' + (y * .3 * k) + 'px'
@@ -711,6 +794,28 @@ h2.go .w>span{transform:none}
   }
   addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(frame) } }, { passive: true })
   addEventListener('resize', frame); frame()
+})()
+</script>
+<script>
+(function () {
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+  var L = document.querySelector('.logos')
+  if (L) { L.querySelectorAll('li').forEach(function (li, k) { li.style.transitionDelay = (k * 90) + 'ms' }); if (reduce) L.classList.add('go'); else new IntersectionObserver(function (es, o) { es.forEach(function (e) { if (e.isIntersecting) { L.classList.add('go'); o.disconnect() } }) }, { threshold: .3 }).observe(L) }
+  var track = document.querySelector('.pin-track'), amt = document.getElementById('pa'), bar = document.getElementById('pb'),
+      beats = [].slice.call(document.querySelectorAll('.beat')), dots = [].slice.call(document.querySelectorAll('.pin-dots i')), T = 14661
+  if (!track) return
+  if (reduce) { amt.textContent = '£14,661'; amt.classList.add('done'); bar.style.width = '100%'; return }
+  var ticking = false
+  function f() {
+    ticking = false
+    var r = track.getBoundingClientRect(), span = r.height - innerHeight, p = Math.min(1, Math.max(0, -r.top / span))
+    var e = 1 - Math.pow(1 - Math.min(1, p / .85), 2)
+    amt.textContent = '£' + Math.round(T * e).toLocaleString('en-GB'); amt.classList.toggle('done', e >= 1)
+    bar.style.width = (e * 100).toFixed(1) + '%'
+    var b = p < .33 ? 0 : p < .66 ? 1 : 2
+    beats.forEach(function (x, k) { x.classList.toggle('on', k === b) }); dots.forEach(function (x, k) { x.classList.toggle('on', k <= b) })
+  }
+  addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(f) } }, { passive: true }); addEventListener('resize', f); f()
 })()
 </script>
 </body>
