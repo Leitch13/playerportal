@@ -66,6 +66,7 @@ const FEATURES = [
   ['Bookings: every free trial is for a real class (form + server)', 'src/app/book/[slug]/trial/quick/TrialForm.tsx', ['data-testid="trial-class"', "setError('Please choose a class for the trial.')"]],
   ['Bookings: the trial route refuses a trial with no class', `${A}/api/trials/book/route.ts`, ["if (!groupId) {\n    return NextResponse.json({ error: 'Please choose a class for the trial.' }"]],
   ['Attendance: every upcoming trial shows, no 60-day-ahead cut-off', `${D}/attendance/page.tsx`, ["No upper limit: every upcoming trial shows"]],
+  ['Classes: places by date (members + trials of the limit) on the class page', `${D}/groups/[id]/page.tsx`, ['<PlacesByDate days={placesByDate} />', 'upcomingClassDates(todayUk', 'dayPlaces(pl, d)']],
   ['Bookings: the public Enquire endpoint runs the door check', `${A}/api/leads/create/route.ts`, ['checkBookingDetails({', 'checkLeadEmail(em', 'checkParentIp(ip)', "source !== 'website' || status !== 'new'"]],
   ['Bookings: paid trials run the door check', `${A}/api/trial-bookings/paid/route.ts`, ['checkBookingDetails({', 'checkLeadEmail(String(parentEmail)']],
   ['Bookings: whole-camp checkout runs the door check', `${A}/api/stripe/camp-checkout/route.ts`, ['checkBookingDetails({ parentName', 'checkLeadEmail(String(parentEmail)']],

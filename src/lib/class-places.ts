@@ -138,3 +138,40 @@ export async function alertOverLimitDays(db: Db, todayIso: string, sendEmail: (o
   }
   return alerted
 }
+
+/**
+ * Places by date, for the academy's class page (John, 22 Nov 2026: "make sure he can
+ * see how many have filled up"). Every class day for the next weeks, plus any later
+ * day that already has a trial booked (Rosa Sports had trials 10 weeks out), each with
+ * members + trials against the limit, counted exactly as the trial booking check counts.
+ */
+export type DayPlacesState = 'open' | 'filling' | 'full' | 'over'
+export interface DayPlaces { date: string; members: number; trials: string[]; taken: number; capacity: number; left: number; state: DayPlacesState }
+
+const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+/** Class days from the later of today and the term start, `weeks` of them, plus extra (trial) days; sorted, no repeats. */
+export function upcomingClassDates(todayIso: string, dayOfWeek: string | null | undefined, termStartIso: string | null | undefined, weeks: number, extraDates: string[] = []): string[] {
+  const out = new Set(extraDates.filter((d) => d >= todayIso))
+  const target = dayOfWeek ? DOW_NAMES.indexOf(dayOfWeek) : -1
+  if (target >= 0) {
+    const startIso = termStartIso && termStartIso.slice(0, 10) > todayIso ? termStartIso.slice(0, 10) : todayIso
+    const d = new Date(`${startIso}T12:00:00Z`)
+    while (d.getUTCDay() !== target) d.setUTCDate(d.getUTCDate() + 1)
+    for (let i = 0; i < weeks; i++) {
+      out.add(d.toISOString().slice(0, 10))
+      d.setUTCDate(d.getUTCDate() + 7)
+    }
+  }
+  return [...out].sort()
+}
+
+/** Filling = 2 or fewer places left (or a fifth of the class, if bigger). */
+export function dayPlaces(c: ClassPlaces, date: string): DayPlaces {
+  const trials = (c.trials[date] || []).map((t) => t.child)
+  const taken = c.members + trials.length
+  const left = c.capacity - taken
+  const filling = Math.max(2, Math.ceil(c.capacity / 5))
+  const state: DayPlacesState = left < 0 ? 'over' : left === 0 ? 'full' : left <= filling ? 'filling' : 'open'
+  return { date, members: c.members, trials, taken, capacity: c.capacity, left, state }
+}

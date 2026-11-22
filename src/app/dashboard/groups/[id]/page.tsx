@@ -13,7 +13,7 @@ import { pricesForClass } from '@/lib/class-prices'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { ageOn, latestClassDate } from '@/lib/class-register'
 import { paidTrialPence } from '@/lib/trial-booking'
-import { loadClassPlaces, placesDb, overBy, overLine } from '@/lib/class-places'
+import { loadClassPlaces, placesDb, overBy, overLine, upcomingClassDates, dayPlaces, type DayPlaces } from '@/lib/class-places'
 
 export default async function GroupDetailPage({
   params,
@@ -156,6 +156,18 @@ export default async function GroupDetailPage({
     const pl = (await loadClassPlaces(placesDb(), group.organisation_id as string, [group.id as string], from, to).catch(() => new Map())).get(group.id as string)
     if (pl) overDays = Object.entries(pl.trials as Record<string, { child: string }[]>).filter(([, t]) => overBy(pl.capacity, pl.members, t.length) > 0).sort(([a], [b]) => a.localeCompare(b))
       .map(([date, t]) => ({ date, line: overLine(pl.capacity, pl.members, t.map((x) => x.child)) }))
+  }
+  // Places by date: the next 8 class days plus any later day with a trial, members + trials of the limit. Staff only.
+  let placesByDate: DayPlaces[] = []
+  if (isAdmin) {
+    const termId = (group as { term_id?: string | null }).term_id
+    const { data: term } = termId ? await supabase.from('terms').select('start_date').eq('id', termId).maybeSingle() : { data: null }
+    const farAhead = new Date(Date.now() + 400 * 86400000).toISOString().slice(0, 10)
+    const pl = (await loadClassPlaces(placesDb(), group.organisation_id as string, [group.id as string], todayUk, farAhead).catch(() => new Map())).get(group.id as string)
+    if (pl) {
+      placesByDate = upcomingClassDates(todayUk, group.day_of_week as string | null, (term as { start_date?: string | null } | null)?.start_date ?? null, 8, Object.keys(pl.trials))
+        .map((d) => dayPlaces(pl, d))
+    }
   }
   // Red box next to each child: what's outstanding (src/lib/class-outstanding.ts). Staff only.
   const outstandingByPlayer = isAdmin
@@ -315,6 +327,8 @@ export default async function GroupDetailPage({
           </p>
         </div>
 
+        <PlacesByDate days={placesByDate} />
+
         {/* Quick actions */}
         {isAdmin && (
           <div className="flex items-center gap-3 flex-wrap">
@@ -465,6 +479,41 @@ function OverLimitDays({ days }: { days: { date: string; line: string }[] }) {
         </p>
       ))}
       <p className="mt-1 text-[#ff6b6b]/80">The class filled after the trial was booked. Move the trial to another day or class, or keep them.</p>
+    </div>
+  )
+}
+
+/** Each upcoming class day: "Wed 3 Feb · 12 members + 4 trials · 16 of 20 · 4 left". Orange when nearly full, red when full or over. */
+function PlacesByDate({ days }: { days: DayPlaces[] }) {
+  if (!days.length) return null
+  const tone: Record<DayPlaces['state'], string> = {
+    open: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    filling: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    full: 'bg-red-500/15 text-red-400 border-red-500/30',
+    over: 'bg-red-500/25 text-red-300 border-red-500/50',
+  }
+  const pill = (d: DayPlaces) => (d.state === 'over' ? `${-d.left} over` : d.state === 'full' ? 'Full' : `${d.left} left`)
+  return (
+    <div className="bg-[#0f1a2b] border border-[#1d2c42] rounded-2xl p-5" data-testid="class-places-by-date">
+      <h2 className="text-sm font-bold text-white">Places by date</h2>
+      <p className="text-xs text-white/40 mt-0.5 mb-3">Members and booked trials on each day. Parents can&apos;t book a trial onto a full day.</p>
+      <ul className="divide-y divide-[#1d2c42]">
+        {days.map((d) => (
+          <li key={d.date} className="py-2.5 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white">
+                {new Date(`${d.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })}
+                <span className="font-normal text-white/50" style={{ fontVariantNumeric: 'tabular-nums' }}> · {d.taken} of {d.capacity}</span>
+              </p>
+              <p className="text-xs text-white/45 truncate">
+                {d.members} member{d.members === 1 ? '' : 's'}
+                {d.trials.length > 0 && <> + {d.trials.length} trial{d.trials.length === 1 ? '' : 's'}: <span className="text-white/65">{d.trials.join(', ')}</span></>}
+              </p>
+            </div>
+            <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold border ${tone[d.state]}`}>{pill(d)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
