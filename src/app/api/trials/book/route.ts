@@ -70,6 +70,14 @@ async function refuse(
   return NextResponse.json({ error: message }, { status: 400 })
 }
 
+/** Level goes at the top of the notes so the academy sees it on the trial and the register (no level column). */
+const LEVELS: Record<string, string> = { beginner: 'Beginner', development: 'Development', intermediate: 'Intermediate', advanced: 'Advanced', elite: 'Elite' }
+function trialNotes(level: string, notes: string): string | null {
+  const l = LEVELS[level.toLowerCase()]
+  const out = [l ? `Level: ${l}` : '', notes].filter(Boolean).join('\n')
+  return out || null
+}
+
 export async function POST(request: NextRequest) {
   const ip = clientIpOf(request.headers)
   if (!rateLimit(`trial-book:${ip}`, 6, 3600000).success) {
@@ -201,7 +209,7 @@ export async function POST(request: NextRequest) {
     childAge,
     sessionDate: sessionDate || null,
     secondSessionDate: secondDate,
-    notes: s(raw.notes, 2000) || null,
+    notes: trialNotes(s(raw.childLevel, 20), s(raw.notes, 2000)),
     termsVersionHash: versionHash,
     termsAcceptedAt: new Date().toISOString(),
     trialSource: s(raw.trialSource, 60) || null,

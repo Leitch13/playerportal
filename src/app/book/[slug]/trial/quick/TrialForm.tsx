@@ -6,6 +6,15 @@ import Link from 'next/link'
 import { deriveTrialSource, SOURCE_LABELS, type CanonicalSource } from '@/lib/trial-source-derive'
 import { fbTrackSingle } from '@/lib/meta-pixel'
 
+/** Same levels as booking a class (src/app/book/[slug]/class/[groupId]/quick-book/QuickBookForm.tsx). */
+const TRIAL_LEVELS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'development', label: 'Development' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+  { value: 'elite', label: 'Elite' },
+]
+
 interface TrialFormProps {
   orgId: string
   /** Free sessions per child per class: 1, or 2 if the academy chose 2 (src/lib/free-trials.ts). */
@@ -45,6 +54,7 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
   const [secondDate, setSecondDate] = useState('')
   const [showMore, setShowMore] = useState(false)
   const [childAge, setChildAge] = useState('')
+  const [childLevel, setChildLevel] = useState('')
   const [phone, setPhone] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
@@ -198,8 +208,8 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!parentName || !parentEmail || !childName || !phone.trim()) {
-      setError('Please fill in all required fields, including a phone number.')
+    if (!parentName || !parentEmail || !childName || !phone.trim() || !childAge || !childLevel) {
+      setError('Please fill in your name, email, mobile number, and your child’s name, age and level.')
       return
     }
     if (validDates.length > 0 && !sessionDate) {
@@ -249,6 +259,7 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
         phone,
         childName,
         childAge: childAge || null,
+        childLevel: childLevel || null,
         sessionDate: sessionDate || null,
         secondSessionDate: (offerSecond && secondDate) || null,
         notes: notes || null,
@@ -359,6 +370,29 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
         />
       </div>
 
+      {/* Mobile is required, so it is always on show. On 21 Nov 2026 it sat under
+          "Add more details (optional)" and Rosa Sports parents at an event got
+          "fill in all required fields, including a phone number" with no box in sight. */}
+      <div>
+        <label className="text-xs font-medium text-white/50 block mb-1.5">Mobile Number *</label>
+        <input
+          type="tel"
+          required
+          autoComplete="tel"
+          inputMode="tel"
+          data-testid="trial-phone"
+          className={inputClass}
+          style={{ ['--tw-ring-color' as string]: primaryColor }}
+          placeholder="07xxx xxx xxx"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+      </div>
+      {/* Left empty by people; scripts that fill every box fill this too. */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+        <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} /></label>
+      </div>
+
       <div>
         <label className="text-xs font-medium text-white/50 block mb-1.5">Child&apos;s First Name *</label>
         <input
@@ -369,6 +403,40 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
           onChange={(e) => setChildName(e.target.value)}
           required
         />
+      </div>
+
+      {/* Like booking a class (QuickBookForm): the coach needs the child's age and level up front (John, 22 Nov 2026). */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-medium text-white/50 block mb-1.5">Child&apos;s Age *</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            min="2"
+            max="18"
+            data-testid="trial-age"
+            className={inputClass}
+            style={{ ['--tw-ring-color' as string]: primaryColor }}
+            placeholder="8"
+            value={childAge}
+            onChange={(e) => setChildAge(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-white/50 block mb-1.5">Player Level *</label>
+          <select
+            data-testid="trial-level"
+            className={inputClass}
+            style={{ ['--tw-ring-color' as string]: primaryColor }}
+            value={childLevel}
+            onChange={(e) => setChildLevel(e.target.value)}
+            required
+          >
+            <option value="" className="bg-[#111]">Choose…</option>
+            {TRIAL_LEVELS.map((l) => <option key={l.value} value={l.value} className="bg-[#111]">{l.label}</option>)}
+          </select>
+        </div>
       </div>
 
       {preselectedGroupId && groups.length === 1 ? (
@@ -471,36 +539,6 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
 
       {showMore && (
         <div className="space-y-4 pt-2 border-t border-white/[0.06]">
-          <div>
-            <label className="text-xs font-medium text-white/50 block mb-1.5">Child&apos;s Age</label>
-            <input
-              type="number"
-              min="3"
-              max="18"
-              className={inputClass}
-              style={{ ['--tw-ring-color' as string]: primaryColor }}
-              placeholder="8"
-              value={childAge}
-              onChange={(e) => setChildAge(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-white/50 block mb-1.5">Mobile Number *</label>
-            <input
-              type="tel"
-              required
-              autoComplete="tel"
-              className={inputClass}
-              style={{ ['--tw-ring-color' as string]: primaryColor }}
-              placeholder="07xxx xxx xxx"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-          {/* Left empty by people; scripts that fill every box fill this too. */}
-          <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
-            <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} /></label>
-          </div>
           <div>
             <label className="text-xs font-medium text-white/50 block mb-1.5">Notes / Message</label>
             <textarea
