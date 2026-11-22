@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { sameTrial, TRIAL_ALREADY_BOOKED_MESSAGE } from '@/lib/trial-alerts'
-import { checkBookingDetails } from '@/lib/booking-guard'
+import { checkBookingDetails, cleanContactFields } from '@/lib/booking-guard'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { trialPlaceFree, placesDb, CLASS_FULL_TRIAL_MESSAGE } from '@/lib/class-places'
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       parentPhone,
       sessionDate,
       promoCode,
-    } = await request.json()
+    } = cleanContactFields(await request.json())
 
     if (!groupId) {
       return NextResponse.json({ error: 'Missing groupId' }, { status: 400 })

@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { checkParentIp } from '@/lib/ip-reputation'
-import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
+import { checkBookingDetails, cleanTyped, clientIpOf } from '@/lib/booking-guard'
 import { AWAITING_ACTION, newToken, confirmUrl, type PendingTrial } from '@/lib/trial-email-confirm'
 import { freeTrialsFor, secondDateOk, canBook, trialDatesLabel } from '@/lib/free-trials'
 
@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
   }
   const body = {
     parentName: s(raw.parentName, 120),
-    email: s(raw.parentEmail, 200).toLowerCase(),
-    phone: s(raw.phone, 40),
+    email: cleanTyped(s(raw.parentEmail, 200)).toLowerCase(),
+    phone: cleanTyped(s(raw.phone, 40)),
     childName: s(raw.childName, 120),
   }
   const childAge = Number.isFinite(Number(raw.childAge)) && s(String(raw.childAge ?? '')) ? Math.round(Number(raw.childAge)) : null

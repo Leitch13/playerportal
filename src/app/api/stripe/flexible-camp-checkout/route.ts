@@ -29,7 +29,7 @@ import { mapStripeCheckoutError } from '@/lib/stripe-errors'
 import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-readiness'
 import { FLEXIBLE_CAMPS_ENABLED, BOOKING_MODE_FLEXIBLE_DAYS, sellsSingleDays, wholeCampDiscount, daySeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
-import { checkBookingDetails } from '@/lib/booking-guard'
+import { checkBookingDetails, cleanContactFields } from '@/lib/booking-guard'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 1. Body parse + required-field check ───────────────────────
-    const body = await request.json()
+    const body = cleanContactFields(await request.json())
     const {
       campId,
       organisationId,

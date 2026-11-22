@@ -8,7 +8,7 @@ import { isConnectChargeReady, CONNECT_NOT_READY_MESSAGE } from '@/lib/connect-r
 import { evaluatePromo, applyPromoPence, type PromoRow } from '@/lib/promo'
 import { sellsSingleDays, wholeCampSeatsLeft } from '@/lib/flexible-camps'
 import { loadCampSeats } from '@/lib/camp-seats'
-import { checkBookingDetails } from '@/lib/booking-guard'
+import { checkBookingDetails, cleanContactFields } from '@/lib/booking-guard'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 
 // Parent-facing money route: give it real headroom instead of the platform
@@ -26,7 +26,7 @@ function getServiceClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = cleanContactFields(await request.json())
     const {
       campId,
       organisationId,

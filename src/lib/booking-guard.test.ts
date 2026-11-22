@@ -28,4 +28,13 @@ describe('booking door check', () => {
     expect(phoneLooksReal('123')).toBe(false)
     expect(phoneLooksReal('')).toBe(false)
   })
+
+  it('accepts numbers and names with invisible marks or Arabic digits (Rosa Sports, 21 Nov 2026)', () => {
+    expect(phoneLooksReal('\u200f07700900123')).toBe(true)
+    expect(phoneLooksReal('\u202a+44 7700 900123\u202c')).toBe(true)
+    expect(phoneLooksReal('٠٧٧٠٠٩٠٠١٢٣')).toBe(true)
+    expect(phoneLooksReal('۰۷۷۰۰۹۰۰۱۲۳')).toBe(true)
+    expect(checkBookingDetails({ ...ok, parentName: '\u200fsajeda', childName: 'hosen', phone: '\u200f447700900123' })).toBeNull()
+    expect(phoneLooksReal('\u200f\u200f')).toBe(false)
+  })
 })

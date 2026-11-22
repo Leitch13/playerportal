@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkLeadEmail } from '@/lib/lead-email-checks'
 import { checkParentIp } from '@/lib/ip-reputation'
-import { checkBookingDetails, clientIpOf } from '@/lib/booking-guard'
+import { checkBookingDetails, cleanContactFields, clientIpOf } from '@/lib/booking-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +30,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>
   try {
-    body = await request.json()
+    body = cleanContactFields(await request.json())
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
