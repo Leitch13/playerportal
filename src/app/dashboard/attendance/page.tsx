@@ -239,7 +239,7 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
   // if the academy is browsing back through past sessions. The client
   // filters by selected group + date.
   const trialWindowStart = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString().split('T')[0]
-  const trialWindowEnd = new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString().split('T')[0]
+  // No upper limit: every upcoming trial shows, however far ahead (Rosa Sports' 3 Feb trials, John 22 Nov 2026).
 
   const [{ data: groups }, { data: players }, { data: enrolments }, { data: trials }] = await Promise.all([
     supabase
@@ -264,7 +264,6 @@ async function CoachAttendance({ orgId }: { orgId: string }) {
       .eq('organisation_id', orgId)
       .in('status', ['pending', 'confirmed'])
       .gte('preferred_date', trialWindowStart)
-      .lte('preferred_date', trialWindowEnd)
       .order('preferred_date'),
   ])
 

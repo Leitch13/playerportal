@@ -212,6 +212,11 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
       setError('Please fill in your name, email, mobile number, and your child’s name, age and level.')
       return
     }
+    // Every trial is for a real class, so it takes a place and shows on that class's register (John, 22 Nov 2026).
+    if (!groupId) {
+      setError('Please choose a class for the trial.')
+      return
+    }
     if (validDates.length > 0 && !sessionDate) {
       setError('Please pick a date for the trial.')
       return
@@ -479,14 +484,16 @@ export default function TrialForm({ orgId, freeTrials = 1, metaPixelId = null, g
         </div>
       ) : (
         <div>
-          <label className="text-xs font-medium text-white/50 block mb-1.5">Select a Class</label>
+          <label className="text-xs font-medium text-white/50 block mb-1.5">Select a Class *</label>
           <select
+            required
+            data-testid="trial-class"
             className={inputClass}
             style={{ ['--tw-ring-color' as string]: primaryColor }}
             value={groupId}
             onChange={(e) => { setGroupId(e.target.value); setSessionDate(''); setSecondDate('') }}
           >
-            <option value="">Any available class</option>
+            <option value="">Choose a class…</option>
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.name}

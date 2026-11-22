@@ -96,6 +96,10 @@ export async function POST(request: NextRequest) {
   if (!UUID.test(orgId) || (groupId && !UUID.test(groupId))) {
     return NextResponse.json({ error: 'Bad request' }, { status: 400 })
   }
+  // A trial with no class held no place and showed on no register ("Any available class", until 22 Nov 2026).
+  if (!groupId) {
+    return NextResponse.json({ error: 'Please choose a class for the trial.' }, { status: 400 })
+  }
   const body = {
     parentName: s(raw.parentName, 120),
     email: cleanTyped(s(raw.parentEmail, 200)).toLowerCase(),

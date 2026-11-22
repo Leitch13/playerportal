@@ -84,7 +84,7 @@ export default function AttendanceManager({
   }, [groupId, enrolmentMap, playerMap])
 
   // P2 — Trial guests for the selected group + date. Filtered client-side
-  // off the prefetched ±60-day window so changing date is instant.
+  // off the prefetched list (60 days back, every upcoming one) so changing date is instant.
   const todaysTrials = useMemo(() => {
     if (!groupId || !sessionDate) return [] as TrialGuest[]
     return trials
