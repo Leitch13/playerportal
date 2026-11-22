@@ -4,6 +4,7 @@ import DiscountCodeBox, { type AppliedCode } from '@/components/DiscountCodeBox'
 import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { isAlreadyRegistered } from '@/lib/already-registered'
 import { createClient } from '@/lib/supabase/client'
 import AcademySearch from '@/components/AcademySearch'
 import { isQuarterlyEnabledForOrgPublic } from '@/lib/quarterly-billing'
@@ -50,6 +51,7 @@ function SignUp() {
   const [orgError, setOrgError] = useState('')
   const [showAcademySearch, setShowAcademySearch] = useState(false)
   const [error, setError] = useState('')
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
   const [loading, setLoading] = useState(false)
   // True until we've checked whether the user is already signed in. Prevents the
   // step-1 form flashing on screen before the useEffect bumps logged-in users to step 2/3.
@@ -293,8 +295,13 @@ function SignUp() {
     const supabase = createClient()
     const metadata: Record<string, string> = { full_name: fullName, phone, role: inviteRole, org_slug: orgSlug.trim().toLowerCase() }
     if (refCode) metadata.ref_code = refCode
-    const { error: signUpError } = await supabase.auth.signUp({ email, password, options: { data: metadata } })
-    if (signUpError) { setError(signUpError.message); setLoading(false) }
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password, options: { data: metadata } })
+    if (isAlreadyRegistered(signUpError, signUpData?.user)) {
+      // Account exists already (e.g. started before and left). Never a dead end: send them to sign in, with the emailed-link option.
+      setError(`You already have an account with ${email}. Sign in below, or tap "Email link" on the sign-in page and we'll email you a login link.`)
+      setAlreadyRegistered(true); setLoading(false)
+    }
+    else if (signUpError) { setError(signUpError.message); setLoading(false) }
     else {
       // Staff invites (coach/admin) skip the child/subscription steps and go straight to dashboard
       if (isStaffInvite) {
@@ -559,6 +566,11 @@ function SignUp() {
                 </label>
               </div>
               {error && <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
+              {alreadyRegistered && (
+                <Link href={`/auth/signin?mode=link${orgSlug.trim() ? `&org=${encodeURIComponent(orgSlug.trim().toLowerCase())}` : ''}`} data-testid="signup-existing-account-signin" className="block w-full text-center py-3 rounded-xl font-bold text-sm" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
+                  Sign in to my account
+                </Link>
+              )}
               <button type="submit" disabled={loading || !agreedToTerms} className="w-full py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: '#0a0a0a' }}>
                 {loading ? <><Spinner size={20} />Creating account...</> : 'Next \u2192'}
               </button>

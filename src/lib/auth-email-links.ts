@@ -20,22 +20,24 @@ import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'node:crypto'
 import { sendEmail } from './email'
 import { authLinkEmail } from './email-templates'
+import { safeBookingReturn } from './already-registered'
 
 export type AuthLinkKind = 'reset' | 'signin'
 export const AUTH_LINK_SENT = 'auth.email_link_sent'
 export const MAX_PER_15_MIN = 3
 
 /** Where the emailed link goes: /auth/confirm signs them in, then on to the next page. */
-export function authLinkUrl(appUrl: string, hashedToken: string, kind: AuthLinkKind): string {
+export function authLinkUrl(appUrl: string, hashedToken: string, kind: AuthLinkKind, returnTo?: string | null): string {
   const type = kind === 'reset' ? 'recovery' : 'magiclink'
-  const next = kind === 'reset' ? '/auth/reset-password' : '/dashboard'
+  // A sign-in link may bring a parent back to the booking page they were on (booking pages only).
+  const next = kind === 'reset' ? '/auth/reset-password' : (safeBookingReturn(returnTo) || '/dashboard')
   return `${appUrl.replace(/\/$/, '')}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=${type}&next=${encodeURIComponent(next)}`
 }
 
 /** A uuid-shaped key for the address (audit_log.entity_id is a uuid); the address itself is never stored. */
 export const emailKey = (email: string) => { const h = createHash('sha256').update(email.trim().toLowerCase()).digest('hex'); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}` }
 
-export async function sendAuthLink(rawEmail: string, kind: AuthLinkKind, appUrl: string): Promise<{ sent: boolean; reason?: string }> {
+export async function sendAuthLink(rawEmail: string, kind: AuthLinkKind, appUrl: string, returnTo?: string | null): Promise<{ sent: boolean; reason?: string }> {
   const email = String(rawEmail || '').trim().toLowerCase()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { sent: false, reason: 'bad_email' }
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
@@ -53,7 +55,7 @@ export async function sendAuthLink(rawEmail: string, kind: AuthLinkKind, appUrl:
   const { data: org } = prof?.organisation_id ? await admin.from('organisations').select('name').eq('id', prof.organisation_id).maybeSingle() : { data: null }
   const academy = (org?.name as string | undefined) || null
   const firstName = ((prof?.full_name as string | null) || '').trim().split(/\s+/)[0] || null
-  const mail = authLinkEmail({ kind, link: authLinkUrl(appUrl, hashed, kind), academyName: academy, firstName })
+  const mail = authLinkEmail({ kind, link: authLinkUrl(appUrl, hashed, kind, returnTo), academyName: academy, firstName })
   const r = await sendEmail({ to: email, ...mail, fromName: academy || 'Player Portal' })
   await admin.from('audit_log').insert({ organisation_id: prof?.organisation_id ?? null, user_id: data.user.id, action: AUTH_LINK_SENT, entity_type: 'auth_email', entity_id: key, details: { kind, ok: !!r.success } }).then(() => {}, () => {})
   return { sent: !!r.success }

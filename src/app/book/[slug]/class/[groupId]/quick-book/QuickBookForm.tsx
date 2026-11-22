@@ -8,6 +8,7 @@ import { StartDatePicker } from '@/components/billing/StartDatePicker'
 import { isoDate } from '@/lib/billing/next-session'
 import { fbTrackSingle } from '@/lib/meta-pixel'
 import { postJson } from '@/lib/post-json'
+import { isAlreadyRegistered } from '@/lib/already-registered'
 
 interface Plan {
   id: string
@@ -148,6 +149,10 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
   const [startDate, setStartDate] = useState<string>(defaultStartIso)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState('')
+  // Email already has an account (e.g. started booking before and left): offer a login link, never a dead end.
+  const [existingAccount, setExistingAccount] = useState(false)
+  const [linkState, setLinkState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [linkMsg, setLinkMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [activeStep, setActiveStep] = useState(0)
@@ -197,16 +202,21 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
   }
 
   async function handleBookAndPay() {
-    setGlobalError('')
+    setGlobalError(''); setExistingAccount(false); setLinkState('idle')
     setLoading(true)
     try {
       const supabase = createClient()
       let userId: string | null = null
       if (!isLoggedIn) {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, phone, role: 'parent', org_slug: orgSlug.trim().toLowerCase() } } })
-        if (signUpError) { setGlobalError(signUpError.message); setLoading(false); return }
-        userId = signUpData.user?.id || null
-        fetch('/api/email/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parentName: fullName, parentEmail: email, academyName: orgName }) }).catch(() => {})
+        if (isAlreadyRegistered(signUpError, signUpData?.user)) {
+          // They have an account already. If the password they typed is theirs, carry straight on.
+          const { data: signedIn } = await supabase.auth.signInWithPassword({ email, password })
+          if (!signedIn?.user) { setExistingAccount(true); setLoading(false); return }
+          userId = signedIn.user.id
+        } else if (signUpError) { setGlobalError(signUpError.message); setLoading(false); return }
+        else userId = signUpData.user?.id || null
+        if (!signUpError && signUpData?.user?.identities?.length) fetch('/api/email/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parentName: fullName, parentEmail: email, academyName: orgName }) }).catch(() => {})
       } else {
         const { data: { user } } = await supabase.auth.getUser()
         userId = user?.id || null
@@ -543,6 +553,29 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
           {childDisplayName && <div className="flex items-center justify-between text-sm"><span className="text-white/50">Child</span><span className="font-semibold text-white">{childDisplayName}</span></div>}
           {selectedPlan && (<><div className="flex items-center justify-between text-sm"><span className="text-white/50">Plan</span><span className="font-semibold text-white">{selectedPlan.name}</span></div><div className="border-t border-white/[0.06]" /><div className="flex items-center justify-between text-sm"><span className="text-white/50">Total</span><span className="text-lg font-extrabold text-white">{displayPrice}</span></div></>)}
         </div>
+        {existingAccount && (
+          <div className="mb-4 px-4 py-4 rounded-xl bg-white/[0.04] border text-sm" style={{ borderColor: `${primaryColor}55` }} data-testid="quickbook-existing-account">
+            <p className="font-bold text-white">You already have an account with {email}</p>
+            <p className="text-white/60 mt-1 text-xs leading-relaxed">No problem. We&apos;ll email you a login link. Tap it and you&apos;ll come straight back here to finish booking.</p>
+            {linkState === 'sent' ? (
+              <p className="mt-3 text-xs font-semibold" style={{ color: primaryColor }}>Link sent. Check your inbox (and junk) for an email from {orgName}. Open it on this phone.</p>
+            ) : (
+              <button type="button" data-testid="quickbook-email-login-link" disabled={linkState === 'sending'}
+                onClick={async () => {
+                  setLinkState('sending'); setLinkMsg('')
+                  const returnTo = typeof window !== 'undefined' ? window.location.pathname : ''
+                  const res = await fetch('/api/auth/email-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, kind: 'signin', returnTo }) }).catch(() => null)
+                  if (res && res.ok) setLinkState('sent')
+                  else { setLinkState('error'); setLinkMsg(((await res?.json().catch(() => ({}))) as { error?: string } | undefined)?.error || 'Something went wrong. Please try again.') }
+                }}
+                className="mt-3 w-full rounded-xl px-4 py-3 text-sm font-bold text-black" style={{ backgroundColor: primaryColor }}>
+                {linkState === 'sending' ? 'Sending link…' : 'Email me a login link'}
+              </button>
+            )}
+            {linkState === 'error' && <p className="mt-2 text-xs text-red-400">{linkMsg}</p>}
+            <p className="mt-3 text-xs text-white/40">Know your password? <Link href={`/auth/signin?redirect=/book/${orgSlug}/class/${groupId}/quick-book`} className="underline" style={{ color: primaryColor }}>Sign in</Link></p>
+          </div>
+        )}
         {globalError && (
           <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">
             <svg className="w-4 h-4 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
