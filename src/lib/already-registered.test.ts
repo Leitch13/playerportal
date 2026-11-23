@@ -12,6 +12,7 @@ describe('already registered', () => {
   it('leaves every other error alone', () => {
     expect(isAlreadyRegistered({ message: 'Password should be at least 6 characters' })).toBe(false)
     expect(isAlreadyRegistered({ message: 'Database error saving new user' })).toBe(false)
+    expect(isAlreadyRegistered({ message: 'Something already exists' })).toBe(false)
     expect(isAlreadyRegistered(null, { identities: [{}] })).toBe(false)
     expect(isAlreadyRegistered(null, null)).toBe(false)
   })
@@ -20,6 +21,7 @@ describe('already registered', () => {
 describe('login link back to a booking page', () => {
   it('only allows booking pages on this site', () => {
     expect(safeBookingReturn('/book/profootballcoachingni/class/abc-123/quick-book')).toBe('/book/profootballcoachingni/class/abc-123/quick-book')
+    expect(safeBookingReturn('/book/ProFootball/class/abc')).toBe('/book/ProFootball/class/abc')
     expect(safeBookingReturn('//evil.com')).toBe(null)
     expect(safeBookingReturn('https://evil.com/book/x')).toBe(null)
     expect(safeBookingReturn('/dashboard/settings')).toBe(null)

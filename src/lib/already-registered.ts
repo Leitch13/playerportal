@@ -11,11 +11,11 @@ export function isAlreadyRegistered(err: AuthErr, user?: { identities?: unknown[
   if (!err && user && Array.isArray(user.identities) && user.identities.length === 0) return true
   if (!err) return false
   if (err.code === 'user_already_exists' || err.code === 'email_exists') return true
-  return /already (been )?registered|already exists/i.test(err.message || '')
+  return /user already registered|has already been registered/i.test(err.message || '')
 }
 
 /** Where an emailed login link may send someone back to: a booking page on this site only. */
 export function safeBookingReturn(raw: unknown): string | null {
   if (typeof raw !== 'string' || raw.length > 300) return null
-  return /^\/book\/[a-z0-9-]+(\/[A-Za-z0-9_-]+)*$/.test(raw) ? raw : null
+  return /^\/book\/[A-Za-z0-9-]+(\/[A-Za-z0-9_-]+)*$/.test(raw) ? raw : null
 }

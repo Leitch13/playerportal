@@ -223,6 +223,15 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
       }
       if (!userId) { setGlobalError('Could not authenticate. Please try again.'); setLoading(false); return }
 
+      // An account belongs to one academy. Booking here with an account from another academy would save
+      // the child under that academy while paying this one (audit of 65924d2, 22 Nov 2026), so stop.
+      const { data: me } = await supabase.from('profiles').select('organisation_id').eq('id', userId).single()
+      if (me?.organisation_id && me.organisation_id !== orgId) {
+        if (!isLoggedIn) await supabase.auth.signOut()   // we only just signed them in: don't leave them signed in here
+        setGlobalError(`That email is registered with a different academy, so it can't be used to book with ${orgName}. Please use a different email address.`)
+        setLoading(false); return
+      }
+
       // Record T&C acceptance for audit trail — best-effort, never blocks booking.
       // - New signup (!isLoggedIn): they ticked agreedToTerms in step 1
       // - Logged-in: they saw the "By booking you confirm..." note above the pay button
@@ -573,7 +582,7 @@ export function QuickBookForm({ isLoggedIn, existingChildren, initialChildId, pl
               </button>
             )}
             {linkState === 'error' && <p className="mt-2 text-xs text-red-400">{linkMsg}</p>}
-            <p className="mt-3 text-xs text-white/40">Know your password? <Link href={`/auth/signin?redirect=/book/${orgSlug}/class/${groupId}/quick-book`} className="underline" style={{ color: primaryColor }}>Sign in</Link></p>
+            <p className="mt-3 text-xs text-white/40">Know your password? Type it in the password box above and press Book &amp; Pay again.</p>
           </div>
         )}
         {globalError && (
