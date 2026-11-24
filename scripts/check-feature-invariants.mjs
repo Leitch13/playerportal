@@ -180,6 +180,8 @@ const FEATURES = [
   ['Camp booking: the by-the-day route refuses a booking without them', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['campDetailsProblem(', "'camp_details_missing'"]],
 
   // ── released 12 Oct 2026
+  // 24 Nov 2026, John: "theres no login". The top bar of theplayerportal.net shows Log in on every screen size (the menu hides on phones).
+  ['Homepage: Log in in the top bar', 'public/home/index.html', ['<a class="login" href="/auth/signin">Log in</a>']],
   ['Dashboard: the calm academy home', 'src/components/CommandCentre.tsx', ['data-testid="calm-dashboard"', 'data-testid="dash-todo"', 'data-testid="dash-figures"']],
   ['Request payment: the academy must choose when the parent starts paying', `${D}/players/[id]/RequestPaymentButton.tsx`, ["useState<'today' | 'next_month' | null>(null)", 'Choose when they start paying.', '!firstBilling']],
   ['1-2-1 timetable: the phone agenda', `${D}/one-to-one/timetable/page.tsx`, ['data-testid="timetable-agenda"', 'timetable-block-time', 'timetable-roll']],
