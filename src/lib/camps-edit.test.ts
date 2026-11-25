@@ -9,6 +9,8 @@ describe('before the first booking (WLFA, 25 Nov 2026)', () => {
     expect(unbookedEditError({ start_date: '2026-12-21', end_date: '2026-11-25', price: 75 }, '2026-11-25')).toMatch(/end before it starts/)
     expect(unbookedEditError({ start_date: '2026-11-20', end_date: '2026-11-30', price: 75 }, '2026-11-25')).toMatch(/passed/)
     expect(unbookedEditError({ start_date: '2026-12-21', end_date: '2026-12-23', price: NaN }, '2026-11-25')).toMatch(/price/)
+    expect(unbookedEditError({ start_date: '2026-12-21', end_date: '2026-12-23', price: 50, early_bird_price: 60 }, '2026-11-25')).toMatch(/early-bird/)
+    expect(unbookedEditError({ start_date: '2026-12-21', end_date: '2026-12-23', price: null }, '2026-11-25')).toBeNull()
   })
   it('only lets price, dates and schedule through', () => {
     expect(Object.keys(pickUnbookedCampFields({ price: 1, start_date: 'a', end_date: 'b', schedule: [], name: 'x', is_published: true })).sort()).toEqual(['end_date', 'price', 'schedule', 'start_date'])

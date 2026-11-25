@@ -166,7 +166,8 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     freeEdit &&
     (startDate !== camp.start_date || endDate !== camp.end_date || price !== origPrice ||
       JSON.stringify(schedule) !== JSON.stringify(origSchedule))
-  const freeErr = freeChanged ? unbookedEditError({ start_date: startDate, end_date: endDate, price: parseFloat(price) }, todayISO()) : null
+  const priceValue = price.trim() === '' && origPrice === '' ? null : parseFloat(price)
+  const freeErr = freeChanged ? unbookedEditError({ start_date: startDate, end_date: endDate, price: priceValue, early_bird_price: camp.early_bird_price }, todayISO()) : null
   const structuralChanged =
     !freeEdit &&
     structuralEnabled &&
@@ -261,7 +262,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     // the defence-in-depth filter.
     if (freeChanged && !freeErr) {
       const free = pickUnbookedCampFields({
-        price: parseFloat(price),
+        ...(price !== origPrice && priceValue !== null ? { price: priceValue } : {}),
         start_date: startDate,
         end_date: endDate,
         schedule: schedule.map((d) => ({ ...d, activities: d.activities.filter((a) => a.trim() !== '') })),
@@ -321,7 +322,7 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
         const { count: rows } = await supabase.from('camp_bookings').select('*', { count: 'exact', head: true }).eq('camp_id', camp.id)
         if ((rows ?? 0) > 0) { setError('A family has just booked this camp, so the price and dates are locked again. Close this and open it again.'); setSaving(false); return }
       }
-      const weekPrice = freeChanged ? parseFloat(price) : camp.price != null ? Number(camp.price) : null
+      const weekPrice = freeChanged && priceValue !== null ? priceValue : camp.price != null ? Number(camp.price) : null
       if (isWholeCamp && sellDays) {
         const dp = parseFloat(dayPrice)
         if (!Number.isFinite(dp) || dp < 0) { setError('Enter a price per day, e.g. 25'); setSaving(false); return }

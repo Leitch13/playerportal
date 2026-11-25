@@ -176,12 +176,14 @@ export function pickUnbookedCampFields(input: Record<string, unknown>): Partial<
   return out as Partial<UnbookedCampFields>
 }
 
-export function unbookedEditError(next: { start_date: string; end_date: string; price: number }, todayIso: string): string | null {
+// price null = the camp has no price set and none was entered (left as it is).
+export function unbookedEditError(next: { start_date: string; end_date: string; price: number | null; early_bird_price?: number | null }, todayIso: string): string | null {
   const s = parseISODate(next.start_date), e = parseISODate(next.end_date)
   if (isNaN(s) || isNaN(e)) return 'Pick a start date and an end date.'
   if (e < s) return 'The camp can\u2019t end before it starts.'
   if (next.start_date < todayIso) return 'That start date has passed. Pick today or later.'
-  if (!Number.isFinite(next.price) || next.price < 0) return 'Enter the price in pounds, e.g. 75.'
+  if (next.price !== null && (!Number.isFinite(next.price) || next.price < 0)) return 'Enter the price in pounds, e.g. 75.'
+  if (next.price !== null && next.early_bird_price != null && Number(next.early_bird_price) >= next.price) return `The early-bird price (£${Number(next.early_bird_price)}) has to stay below the normal price.`
   return null
 }
 
