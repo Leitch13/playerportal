@@ -22,6 +22,9 @@ import {
   capacityError,
   pickAdditiveCampFields,
   additiveEditError,
+  pickUnbookedCampFields,
+  unbookedEditError,
+  rebuildSchedule,
   generateScheduleDays,
   campDayCount,
   type ScheduleDay,
@@ -77,6 +80,8 @@ type Props = {
   // dashboard/camps/page.tsx and forwarded via CampActions. Default false
   // ⇒ fail-safe locked for flexible camps.
   flexiblePublishAllowed?: boolean
+  // No booking rows of any kind yet: price, dates and schedule are free to change.
+  unbooked?: boolean
 }
 
 const inputCls =
@@ -98,7 +103,7 @@ function cloneSchedule(s: ScheduleDay[] | null | undefined): ScheduleDay[] {
   return s.map((d) => ({ day: d.day, date: d.date, activities: [...(d.activities || [])] }))
 }
 
-export default function CampEditForm({ camp, bookedCount, trainingGroups, onClose, structuralEnabled = false, flexiblePublishAllowed = false }: Props) {
+export default function CampEditForm({ camp, bookedCount, trainingGroups, onClose, structuralEnabled = false, flexiblePublishAllowed = false, unbooked = false }: Props) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -147,12 +152,23 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
   const [endDate, setEndDate] = useState(camp.end_date)
   const [schedule, setSchedule] = useState<ScheduleDay[]>(cloneSchedule(camp.schedule))
   const [showImpact, setShowImpact] = useState(false)
+  // Before the first booking a whole-camp camp is fully editable (src/lib/camps-edit.ts).
+  const freeEdit = unbooked && isWholeCamp
+  const origPrice = camp.price != null ? String(camp.price) : ''
+  const [price, setPrice] = useState(origPrice)
+  const setDates = (s: string, e: string) => { setStartDate(s); setEndDate(e); if (freeEdit) setSchedule((prev) => rebuildSchedule(s, e, prev)) }
 
   const capValue = parseInt(maxCapacity, 10)
   const capError = maxCapacity ? capacityError(capValue, bookedCount) : null
 
   // Structural change detection + guard.
+  const freeChanged =
+    freeEdit &&
+    (startDate !== camp.start_date || endDate !== camp.end_date || price !== origPrice ||
+      JSON.stringify(schedule) !== JSON.stringify(origSchedule))
+  const freeErr = freeChanged ? unbookedEditError({ start_date: startDate, end_date: endDate, price: parseFloat(price) }, todayISO()) : null
   const structuralChanged =
+    !freeEdit &&
     structuralEnabled &&
     (startDate !== camp.start_date ||
       endDate !== camp.end_date ||
@@ -243,6 +259,15 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     // when a structural change is staged and the guard passes. The guard
     // guarantees start_date is earlier-and-not-past; pickAdditiveCampFields is
     // the defence-in-depth filter.
+    if (freeChanged && !freeErr) {
+      const free = pickUnbookedCampFields({
+        price: parseFloat(price),
+        start_date: startDate,
+        end_date: endDate,
+        schedule: schedule.map((d) => ({ ...d, activities: d.activities.filter((a) => a.trim() !== '') })),
+      })
+      return { ...safe, ...free }
+    }
     if (structuralEnabled && structuralChanged && !additiveErr) {
       const additive = pickAdditiveCampFields({
         start_date: startDate,
@@ -291,11 +316,17 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     try {
       const supabase = createClient()
       const payload: Record<string, unknown> = buildPayload()
+      // A family may have booked since this form opened: then price and dates stay as they were.
+      if (freeChanged) {
+        const { count: rows } = await supabase.from('camp_bookings').select('*', { count: 'exact', head: true }).eq('camp_id', camp.id)
+        if ((rows ?? 0) > 0) { setError('A family has just booked this camp, so the price and dates are locked again. Close this and open it again.'); setSaving(false); return }
+      }
+      const weekPrice = freeChanged ? parseFloat(price) : camp.price != null ? Number(camp.price) : null
       if (isWholeCamp && sellDays) {
         const dp = parseFloat(dayPrice)
         if (!Number.isFinite(dp) || dp < 0) { setError('Enter a price per day, e.g. 25'); setSaving(false); return }
-        if (camp.price != null && dp * campDayCount(startDate, endDate) < Number(camp.price)) {
-          setError(`£${dp} a day for ${campDayCount(startDate, endDate)} days is less than the full-week price of £${Number(camp.price)} — nobody would book the week. Raise the day price.`); setSaving(false); return
+        if (weekPrice != null && dp * campDayCount(startDate, endDate) < weekPrice) {
+          setError(`£${dp} a day for ${campDayCount(startDate, endDate)} days is less than the full-week price of £${weekPrice} — nobody would book the week. Raise the day price.`); setSaving(false); return
         }
         payload.flex_price_per_day = dp
       }
@@ -319,6 +350,10 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
       }
       // First time days go on sale: one camp_days row per date, capped at the camp's capacity.
       // Rows that already exist (from a dates extension or an earlier save) are left alone.
+      // Nothing booked: single days that fall outside the new dates simply go.
+      if (freeChanged && isWholeCamp && sellDays) {
+        await supabase.from('camp_days').delete().eq('camp_id', camp.id).or(`date.lt.${startDate},date.gt.${endDate}`)
+      }
       if (isWholeCamp && sellDays) {
         const { data: existingDays } = await supabase.from('camp_days').select('date').eq('camp_id', camp.id)
         const have = new Set(((existingDays || []) as { date: string }[]).map((d) => d.date))
@@ -364,6 +399,10 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
     }
     if (capError) {
       setError(capError)
+      return
+    }
+    if (freeErr) {
+      setError(freeErr)
       return
     }
     if (structuralEnabled && structuralChanged && additiveErr) {
@@ -423,12 +462,14 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           <div className="rounded-lg border border-dashed border-[#293b58] p-3 space-y-3">
             <p className="text-[11px] uppercase tracking-wider text-white/40 flex items-center gap-1.5">
               <span aria-hidden>&#128274;</span>
-              {structuralEnabled ? 'Price stays locked' : 'Locked — editable in a future update'}
+              {freeEdit ? 'Nobody has booked yet' : structuralEnabled ? 'Price stays locked' : 'Locked — editable in a future update'}
             </p>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-white/50 mb-1">Start Date</label>
-                {structuralEnabled && !campEnded ? (
+                {freeEdit ? (
+                  <input type="date" value={startDate} min={todayISO()} onChange={(e) => setDates(e.target.value, endDate < e.target.value ? e.target.value : endDate)} className={`${inputCls} ${freeErr ? 'border-rose-500/60' : ''}`} />
+                ) : structuralEnabled && !campEnded ? (
                   <input
                     type="date"
                     value={startDate}
@@ -443,7 +484,9 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
               </div>
               <div>
                 <label className="block text-xs text-white/50 mb-1">End Date</label>
-                {structuralEnabled && !campEnded ? (
+                {freeEdit ? (
+                  <input type="date" value={endDate} min={startDate} onChange={(e) => setDates(startDate, e.target.value)} className={`${inputCls} ${freeErr ? 'border-rose-500/60' : ''}`} />
+                ) : structuralEnabled && !campEnded ? (
                   <input
                     type="date"
                     value={endDate}
@@ -457,7 +500,11 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
               </div>
               <div>
                 <label className="block text-xs text-white/50 mb-1">Price</label>
-                <div className={lockedCls}>{camp.price != null ? `£${Number(camp.price).toFixed(0)}` : '—'}</div>
+                {freeEdit ? (
+                  <input type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g. 75" className={inputCls} />
+                ) : (
+                  <div className={lockedCls}>{camp.price != null ? `£${Number(camp.price).toFixed(0)}` : '—'}</div>
+                )}
               </div>
             </div>
             {isDayByDay && !campEnded && (
@@ -489,10 +536,14 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                 )}
               </div>
             )}
-            {structuralEnabled && campEnded && (
+            {freeEdit && (
+              <p className="text-[11px] text-white/40">Nobody has booked this camp yet, so you can change the dates and price. Once the first family books, they lock to protect that booking.</p>
+            )}
+            {freeErr && <p className="text-xs text-rose-400">{freeErr}</p>}
+            {!freeEdit && structuralEnabled && campEnded && (
               <p className="text-[11px] text-white/30">This camp has ended — dates &amp; schedule are locked.</p>
             )}
-            {structuralEnabled && !campEnded && (
+            {!freeEdit && structuralEnabled && !campEnded && (
               <p className="text-[11px] text-white/40">
                 Dates can only grow — start earlier or end later, never the reverse. No charge is made; existing
                 bookings simply cover the longer camp.
@@ -502,11 +553,11 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
           </div>
 
           {/* Additive schedule (Phase 2A) */}
-          {structuralEnabled && !campEnded && (
+          {(freeEdit || (structuralEnabled && !campEnded)) && (
             <div className="rounded-lg border border-[#1d2c42] p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">Daily Schedule</h3>
-                {(endDate > camp.end_date || startDate < camp.start_date) && (
+                {!freeEdit && (endDate > camp.end_date || startDate < camp.start_date) && (
                   <button
                     type="button"
                     onClick={handleGenerateNewDays}
@@ -517,13 +568,13 @@ export default function CampEditForm({ camp, bookedCount, trainingGroups, onClos
                 )}
               </div>
               <p className="text-[11px] text-white/40">
-                Add-only: existing days and activities are locked. You can append new activities or add the new days.
+                {freeEdit ? 'One entry per camp day. Change the dates above and the days follow.' : 'Add-only: existing days and activities are locked. You can append new activities or add the new days.'}
               </p>
               {schedule.length === 0 && <p className="text-xs text-white/40">No schedule entries yet.</p>}
               <div className="space-y-3">
                 {schedule.map((day, dayIdx) => {
-                  const lockedCount = origActivityCount.get(day.date) ?? 0
-                  const isNewDay = !origDates.has(day.date)
+                  const lockedCount = freeEdit ? 0 : origActivityCount.get(day.date) ?? 0
+                  const isNewDay = !freeEdit && !origDates.has(day.date)
                   return (
                     <div key={`${day.date}-${dayIdx}`} className="border border-[#1d2c42] rounded-lg p-3">
                       <h4 className="text-xs font-medium text-white mb-2">

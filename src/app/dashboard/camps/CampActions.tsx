@@ -60,6 +60,8 @@ type Props = {
   trainingGroups?: { id: string; name: string }[]
   // Phase 2A — structural-edit sub-gate (passed through to CampEditForm).
   structuralEnabled?: boolean
+  // No booking rows of any kind: price and dates can be changed (src/lib/camps-edit.ts).
+  unbooked?: boolean
   // Flexible Camps (Phase 1). When 'flexible_days', publishing is blocked
   // until the parent booking flow ships. Optional so existing whole-camp
   // rows render exactly as before (undefined ⇒ treated as whole-camp).
@@ -75,7 +77,7 @@ type Props = {
   flexiblePublishAllowed?: boolean
 }
 
-export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, bookingMode, flexiblePublishAllowed = false }: Props) {
+export default function CampActions({ campId, campName, isPublished, orgSlug, editEnabled, camp, bookedCount, trainingGroups, structuralEnabled, unbooked = false, bookingMode, flexiblePublishAllowed = false }: Props) {
   const [open, setOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const canEdit = !!editEnabled && !!camp
@@ -244,6 +246,7 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
           trainingGroups={trainingGroups || []}
           onClose={() => setEditOpen(false)}
           structuralEnabled={!!structuralEnabled}
+          unbooked={unbooked}
           flexiblePublishAllowed={flexiblePublishAllowed}
         />
       )}

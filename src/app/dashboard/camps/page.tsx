@@ -138,12 +138,15 @@ export default async function CampsPage() {
   const waitingCounts = waitingByCamp((waitRows || []) as Array<{ notes: string | null }>)
 
   // Build booking stats per camp
-  const campStats: Record<string, { bookingCount: number; paidCount: number; revenue: number; unpaidCount: number }> = {}
+  const campStats: Record<string, { bookingCount: number; paidCount: number; revenue: number; unpaidCount: number; anyRows: number }> = {}
   for (const camp of allCamps) {
     const campBookings = allBookings.filter((b) => b.camp_id === camp.id)
     const paidBookings = campBookings.filter((b) => b.payment_status === 'paid')
     campStats[camp.id] = {
       bookingCount: campBookings.filter((b) => ['pending', 'paid'].includes(b.payment_status)).length,
+      // Booking rows of ANY status (cancelled and refunded included): zero means nothing
+      // has ever been booked, so the edit form unlocks price and dates.
+      anyRows: campBookings.length,
       paidCount: paidBookings.length,
       revenue: paidBookings.reduce((sum, b) => sum + Number(b.amount_paid || 0), 0),
       // Booked but not paid yet: these hold a place.
@@ -178,7 +181,7 @@ export default async function CampsPage() {
   // how it is laid out changed. Camps are grouped by where they are in their
   // life: on sale or coming up, drafts, and past (folded away). ──
   const withStatus = allCamps.map((camp) => {
-    const stats = campStats[camp.id] || { bookingCount: 0, paidCount: 0, revenue: 0, unpaidCount: 0 }
+    const stats = campStats[camp.id] || { bookingCount: 0, paidCount: 0, revenue: 0, unpaidCount: 0, anyRows: 0 }
     return { camp, stats, status: getCampStatus(camp, stats.bookingCount) }
   })
   const live = withStatus.filter((c) => ['ongoing', 'upcoming', 'full'].includes(c.status)).sort((a, b) => a.camp.start_date.localeCompare(b.camp.start_date))
@@ -260,6 +263,7 @@ export default async function CampsPage() {
                   organisation_id: camp.organisation_id,
                 } : undefined}
                 bookedCount={CAMP_EDIT_ENABLED ? stats.bookingCount : undefined}
+                unbooked={stats.anyRows === 0}
                 trainingGroups={CAMP_EDIT_ENABLED ? trainingGroups : undefined}
                 structuralEnabled={CAMP_EDIT_ENABLED && CAMP_STRUCTURAL_EDIT_ENABLED}
                 // Flexible Camps (Phase 1) — CampActions uses this

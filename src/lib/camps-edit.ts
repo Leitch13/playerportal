@@ -158,6 +158,40 @@ export function generateScheduleDays(startDate: string, endDate: string): Schedu
   return days
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Before the first booking (John, 25 Nov 2026: WLFA set up a camp with the wrong
+// dates, couldn't fix it, and had to make it again). While a whole-camp camp has
+// NO booking rows of any kind, nothing has been paid against it, so price, start,
+// end and schedule can all change, in any direction. The first booking locks them
+// again (the additive rules above). Same for every academy.
+// ───────────────────────────────────────────────────────────────────────────
+export type UnbookedCampFields = { price: number; start_date: string; end_date: string; schedule: ScheduleDay[] }
+export const UNBOOKED_CAMP_FIELDS: readonly (keyof UnbookedCampFields)[] = ['price', 'start_date', 'end_date', 'schedule'] as const
+
+export function pickUnbookedCampFields(input: Record<string, unknown>): Partial<UnbookedCampFields> {
+  const out: Record<string, unknown> = {}
+  for (const k of UNBOOKED_CAMP_FIELDS) {
+    if (k in input) out[k] = input[k]
+  }
+  return out as Partial<UnbookedCampFields>
+}
+
+export function unbookedEditError(next: { start_date: string; end_date: string; price: number }, todayIso: string): string | null {
+  const s = parseISODate(next.start_date), e = parseISODate(next.end_date)
+  if (isNaN(s) || isNaN(e)) return 'Pick a start date and an end date.'
+  if (e < s) return 'The camp can\u2019t end before it starts.'
+  if (next.start_date < todayIso) return 'That start date has passed. Pick today or later.'
+  if (!Number.isFinite(next.price) || next.price < 0) return 'Enter the price in pounds, e.g. 75.'
+  return null
+}
+
+// The schedule for new dates: one day per date in start..end, keeping whatever
+// activities were already written for a date that is still in the camp.
+export function rebuildSchedule(startDate: string, endDate: string, current: ScheduleDay[]): ScheduleDay[] {
+  const byDate = new Map((current || []).map((d) => [d.date, d]))
+  return generateScheduleDays(startDate, endDate).map((d) => ({ ...d, activities: [...(byDate.get(d.date)?.activities || [])] }))
+}
+
 // Append-only check: every original day (matched by date) must still be present,
 // and every original activity occurrence must still be present in that day
 // (multiset, so a removed/edited duplicate is caught). Additions are allowed.
