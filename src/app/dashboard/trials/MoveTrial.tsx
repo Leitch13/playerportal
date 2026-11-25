@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { nextClassDates } from '@/lib/trial-move'
+import { nextClassDates, moveFromDay } from '@/lib/trial-move'
 
-export interface MoveClass { id: string; name: string; dayOfWeek: string | null; timeSlot: string | null }
+export interface MoveClass { id: string; name: string; dayOfWeek: string | null; timeSlot: string | null; termStart?: string | null }
 
 /** Trials page → Move: pick a class and one of its next dates (src/app/api/admin/trials/[id]/move). */
 export default function MoveTrial({ trialId, childName, groupId, classes, card = false }: { trialId: string; childName: string; groupId: string | null; classes: MoveClass[]; card?: boolean }) {
@@ -18,7 +18,8 @@ export default function MoveTrial({ trialId, childName, groupId, classes, card =
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
   const c = classes.find((x) => x.id === cls)
-  const dates = nextClassDates(c?.dayOfWeek, today, 8)
+  // A term that hasn't started yet: dates from its first day, not from today.
+  const dates = nextClassDates(c?.dayOfWeek, moveFromDay(today, c?.termStart), 8)
   const label = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
 
   async function move() {

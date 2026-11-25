@@ -25,14 +25,22 @@ export function nextClassDates(dayOfWeek: string | null | undefined, todayIso: s
   return out
 }
 
+/** First day a trial can be moved to: today, or the class's term start when the term hasn't
+ * started yet (Rosa Sports, 25 Nov 2026: a term starting 1 Feb offered only December dates). */
+export function moveFromDay(todayIso: string, termStartIso: string | null | undefined): string {
+  return termStartIso && /^\d{4}-\d{2}-\d{2}/.test(termStartIso) && termStartIso.slice(0, 10) > todayIso ? termStartIso.slice(0, 10) : todayIso
+}
+
 /** Statuses a trial can be moved from. A trial that happened (attended) or joined can't. */
 export const MOVABLE = ['pending', 'confirmed', 'cancelled', 'no_show'] as const
 
-export function moveProblem(t: { status: string | null; converted?: boolean | null }, dayOfWeek: string | null | undefined, dateIso: string, todayIso: string): string | null {
+export function moveProblem(t: { status: string | null; converted?: boolean | null }, dayOfWeek: string | null | undefined, dateIso: string, todayIso: string, termStartIso?: string | null): string | null {
   if (t.converted) return 'This child has already joined.'
   if (!(MOVABLE as readonly string[]).includes(String(t.status || 'pending'))) return 'This trial has already happened. Book a new one instead.'
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) return 'Pick a date.'
   if (dateIso < todayIso) return 'That date has gone. Pick today or later.'
+  const from = moveFromDay(todayIso, termStartIso)
+  if (dateIso < from) return `This class starts on ${new Date(`${from}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })}. Pick that day or later.`
   const want = weekdayIndex(dayOfWeek)
   if (want != null && new Date(`${dateIso}T12:00:00Z`).getUTCDay() !== want) return `That class runs on ${String(dayOfWeek).trim()}s. Pick one of those.`
   return null

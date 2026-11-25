@@ -427,6 +427,8 @@ const FEATURES = [
   ['Classes: live register uses the NA rule', `${D}/attendance/register/[groupId]/LiveRegisterClient.tsx`, ['const hasMedical = hasMedicalNote(p.medical_info)']],
   ['1-2-1s: Regulars as session cards', `${O}/regulars/page.tsx`, ['regular-block', 'regulars-headline', 'Resend link', 'regulars-released']],
   ['Trials: Move to another date or class', `${D}/trials/TrialManager.tsx`, ['<MoveTrial trialId={t.id}']],
+  ['Trials: Move offers dates from the term start when the term has not started', `${D}/trials/MoveTrial.tsx`, ['nextClassDates(c?.dayOfWeek, moveFromDay(today, c?.termStart), 8)']],
+  ['Trials: Move refuses a date before the term starts', 'src/app/api/admin/trials/[id]/move/route.ts', ['moveProblem(t, g.day_of_week as string | null, date, today, termStart)']],
   ['Trials: a move checks the day, a free place, and emails the family', `${A}/api/admin/trials/[id]/move/route.ts`, ['moveProblem(t, g.day_of_week', 'await trialPlaceFree(db, groupId, date)', 'reminder_48h_sent: false']],
   ['Discounts: page in the menu', 'src/components/Navigation.tsx', ["{ href: '/dashboard/discounts', label: 'Discounts', icon: 'tag' }"]],
   ['Discounts: codes, automatic discounts and children on one page', `${D}/discounts/page.tsx`, ['<PromoCodeManager orgId={orgId} />', 'Children with a discount', 'Sibling discount']],

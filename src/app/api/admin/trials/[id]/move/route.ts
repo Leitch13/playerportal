@@ -28,12 +28,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!t || t.organisation_id !== orgId) return NextResponse.json({ ok: false, error: 'Trial not found' }, { status: 404 })
 
   const groupId = String(body.groupId || t.training_group_id || '')
-  const { data: g } = await db.from('training_groups').select('id, organisation_id, name, day_of_week, time_slot, location, class_type').eq('id', groupId).maybeSingle()
+  const { data: g } = await db.from('training_groups').select('id, organisation_id, name, day_of_week, time_slot, location, class_type, term:terms(start_date)').eq('id', groupId).maybeSingle()
   if (!g || g.organisation_id !== orgId || g.class_type === '1-2-1') return NextResponse.json({ ok: false, error: 'Pick one of your classes.' }, { status: 400 })
 
   const date = String(body.date || '')
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
-  const problem = moveProblem(t, g.day_of_week as string | null, date, today)
+  const termStart = (g.term as unknown as { start_date?: string | null } | null)?.start_date ?? null
+  const problem = moveProblem(t, g.day_of_week as string | null, date, today, termStart)
   if (problem) return NextResponse.json({ ok: false, error: problem }, { status: 400 })
   const sameSpot = t.training_group_id === groupId && t.preferred_date === date && ['pending', 'confirmed'].includes(t.status as string)
   if (sameSpot) return NextResponse.json({ ok: true, unchanged: true })
