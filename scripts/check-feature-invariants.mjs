@@ -27,6 +27,7 @@ const FEATURES = [
   ['Camps: whole-camp checkout checks and records the backup contact', `${A}/api/stripe/camp-checkout/route.ts`, ['backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })', 'bookingId: booking.id, name: backupName']],
   ['Camps: by-the-day checkout checks and records the backup contact', `${A}/api/stripe/flexible-camp-checkout/route.ts`, ['backupContactProblem({ name: backupName, phone: backupPhone, parentPhone })', 'bookingId, name: backupName']],
   ['Camps: the register shows the backup contact and a link to ask for one', `${D}/camps/[campId]/RosterClient.tsx`, ['camp-perday-backup', 'camp-backup-copy-link', 'camp-no-backup-count', "'Backup contact', 'Backup phone'"]],
+  ['Camps: the Edit box is drawn on the page body (the card badge blur hid it, WLFA 26 Nov)', `${D}/camps/CampActions.tsx`, ['{canEdit && editOpen && camp && typeof document !== \'undefined\' && createPortal(']],
   ['Camps: price and dates editable until the first booking, re-checked on save', `${D}/camps/CampEditForm.tsx`, ['const freeEdit = unbooked && isWholeCamp', "supabase.from('camp_bookings').select('*', { count: 'exact', head: true }).eq('camp_id', camp.id)"]],
   ['Camps: the camps page tells the edit form when nothing is booked', `${D}/camps/page.tsx`, ['unbooked={stats.anyRows === 0}', 'anyRows: campBookings.length']],
   ['Camps: the camp page reads each booking\'s backup contact', `${D}/camps/[campId]/page.tsx`, ['latestBackups(', 'CAMP_BACKUP_ACTION', 'backup_phone: backups.get(b.id)']],

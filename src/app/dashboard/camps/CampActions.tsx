@@ -239,7 +239,10 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
       )}
 
       {/* Camps Safe Edit — Phase 1A. Lean edit modal, safe fields only. */}
-      {canEdit && editOpen && camp && (
+      {/* Drawn on document.body: the ⋮ button sits inside the card's blurred badge, and a
+          backdrop-filter ancestor traps position:fixed children inside it, so the box opened
+          but could not be seen (WLFA, 26 Nov). Same reason the menu above uses a portal. */}
+      {canEdit && editOpen && camp && typeof document !== 'undefined' && createPortal(
         <CampEditForm
           camp={camp}
           bookedCount={bookedCount || 0}
@@ -248,7 +251,8 @@ export default function CampActions({ campId, campName, isPublished, orgSlug, ed
           structuralEnabled={!!structuralEnabled}
           unbooked={unbooked}
           flexiblePublishAllowed={flexiblePublishAllowed}
-        />
+        />,
+        document.body
       )}
     </>
   )
